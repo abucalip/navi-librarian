@@ -689,7 +689,8 @@ document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
     showPage(button.dataset.page);
     if (button.dataset.page === 'settings') loadSlskdSettings();
-    if (button.dataset.page === 'acquisitions') loadAcquisitions();
+    if (button.dataset.page === 'acquisitions') startAcquisitionStream();
+    else stopAcquisitionStream();
   }));
 
 document.querySelectorAll('button[data-go]').forEach(button =>
@@ -720,11 +721,9 @@ function pretty(value) {
   return JSON.stringify(value, null, 2);
 }
 
-async function loadAcquisitions() {
+function renderAcquisitions(data) {
   const target = $('acquisitionCards');
-  $('acquisitionsStatus').textContent = 'Loading acquisition status…';
   try {
-    const data = await requestJSON('/api/acquisitions');
     target.replaceChildren();
     const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
@@ -815,10 +814,38 @@ async function loadAcquisitions() {
   }
 }
 
+async function loadAcquisitions() {
+  $('acquisitionsStatus').textContent = 'Connecting to acquisition status…';
+  try {
+    renderAcquisitions(await requestJSON('/api/acquisitions'));
+  } catch (error) {
+    $('acquisitionsStatus').textContent = error.message;
+  }
+}
+
+let acquisitionStream = null;
+function startAcquisitionStream() {
+  if (acquisitionStream) return;
+  loadAcquisitions();
+  acquisitionStream = new EventSource('/api/acquisitions/stream');
+  acquisitionStream.onmessage = event => {
+    try {
+      renderAcquisitions(JSON.parse(event.data));
+    } catch (error) {
+      console.error('Could not render acquisition update:', error);
+    }
+  };
+  acquisitionStream.onerror = () => {
+    $('acquisitionsStatus').textContent = 'Reconnecting to live download updates…';
+  };
+}
+function stopAcquisitionStream() {
+  if (!acquisitionStream) return;
+  acquisitionStream.close();
+  acquisitionStream = null;
+}
+
 $('refreshAcquisitions').addEventListener('click', loadAcquisitions);
-setInterval(() => {
-  if (!$('acquisitions').classList.contains('hidden')) loadAcquisitions();
-}, 2000);
 
 function getRecommendations(data) {
   if (Array.isArray(data)) return data;
