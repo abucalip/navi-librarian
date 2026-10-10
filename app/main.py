@@ -252,8 +252,9 @@ def queue_reviewed_candidate(payload: dict):
         raise HTTPException(status_code=502, detail="Could not queue the selected candidate.")
 
 
-# Album artwork is presentation metadata only; recommendations work without it.
+# Artwork is optional presentation metadata; discovery works without it.
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
+_ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
 _artwork_cache = {}
 
 
@@ -267,21 +268,25 @@ def album_artwork(artist: str = "", album: str = ""):
     key = (artist.casefold(), album.casefold())
     now = monotonic()
     cached = _artwork_cache.get(key)
-    if cached and now - cached["time"] < _ARTWORK_CACHE_TTL:
-        return cached["data"]
+    if cached:
+        ttl = _ARTWORK_CACHE_TTL if cached["data"].get("artwork_url") else _ARTWORK_NEGATIVE_CACHE_TTL
+        if now - cached["time"] < ttl:
+            return cached["data"]
 
-    term = " ".join(part for part in (artist, album) if part)
-    query = urlencode({"term": term, "entity": "album", "media": "music", "limit": 8})
-    endpoint = "https://itunes.apple.com/search?" + query
-    result = {"artwork_url": None, "source": "Apple/iTunes"}
+    result = {"artwork_url": None, "image_kind": "album", "source": "Deezer"}
     try:
+        if artist and album:
+            query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 8})
+        else:
+            query = urlencode({"q": artist or album, "limit": 8})
+        endpoint = "https://api.deezer.com/search/album?" + query
         with urlopen(endpoint, timeout=3) as response:
             payload = json.loads(response.read().decode("utf-8"))
-        albums = payload.get("results") or []
+        albums = payload.get("data") or []
 
         def match_score(item):
-            candidate_artist = str(item.get("artistName") or "").casefold()
-            candidate_album = str(item.get("collectionName") or "").casefold()
+            candidate_artist = str((item.get("artist") or {}).get("name") or "").casefold()
+            candidate_album = str(item.get("title") or "").casefold()
             score = 0
             if artist.casefold() == candidate_artist:
                 score += 5
@@ -295,18 +300,38 @@ def album_artwork(artist: str = "", album: str = ""):
 
         if albums:
             match = max(albums, key=match_score)
-            artwork = match.get("artworkUrl100") or match.get("artworkUrl60")
-            if artwork:
-                artwork = artwork.replace("100x100bb", "600x600bb")
-                artwork = artwork.replace("100x100-75", "600x600-75")
-                result = {
-                    "artwork_url": artwork,
-                    "source": "Apple/iTunes",
-                    "matched_artist": match.get("artistName"),
-                    "matched_album": match.get("collectionName"),
-                }
+            if match_score(match) >= 5:
+                artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
+                if artwork:
+                    result = {
+                        "artwork_url": artwork.replace("http://", "https://", 1),
+                        "image_kind": "album",
+                        "source": "Deezer",
+                        "matched_artist": (match.get("artist") or {}).get("name"),
+                        "matched_album": match.get("title"),
+                    }
+
+        # If the album is not in the catalog, use a matching artist photo instead.
+        if not result["artwork_url"] and artist:
+            artist_query = urlencode({"q": artist, "limit": 8})
+            with urlopen("https://api.deezer.com/search/artist?" + artist_query, timeout=3) as response:
+                artist_payload = json.loads(response.read().decode("utf-8"))
+            artists = artist_payload.get("data") or []
+            exact = next(
+                (item for item in artists if str(item.get("name") or "").casefold() == artist.casefold()),
+                None,
+            )
+            if exact:
+                photo = exact.get("picture_xl") or exact.get("picture_big") or exact.get("picture_medium")
+                if photo:
+                    result = {
+                        "artwork_url": photo.replace("http://", "https://", 1),
+                        "image_kind": "artist",
+                        "source": "Deezer",
+                        "matched_artist": exact.get("name"),
+                    }
     except Exception:
-        # Artwork is optional. A catalog outage must never break discovery.
+        # A catalog outage must never break discovery or recommendation results.
         pass
 
     _artwork_cache[key] = {"time": monotonic(), "data": result}
