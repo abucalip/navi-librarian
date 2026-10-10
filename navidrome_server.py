@@ -3315,7 +3315,8 @@ def _discovery_live_download_progress(job):
     for name, expected in expected_by_name.items():
         item = tracked_by_name.get(name) or {}
         state = str(item.get("state") or "").replace("_", "").casefold()
-        if state in completed_states:
+        is_completed_state = state in completed_states
+        if is_completed_state:
             completed += 1
 
         try:
@@ -3335,7 +3336,7 @@ def _discovery_live_download_progress(job):
         if size:
             transferred = min(transferred, size)
             total_bytes += size
-            if transferred >= size:
+            if transferred >= size and not is_completed_state:
                 completed += 1
         transferred_bytes += transferred
         file_byte_snapshot[name] = transferred
