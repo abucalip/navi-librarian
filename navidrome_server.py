@@ -3228,8 +3228,7 @@ def discovery_get_acquisition_status():
     """Return persistent acquisition status and resume interrupted import watchers."""
     jobs = _discovery_list_acquisition_jobs()
     resumable = {
-        "downloading", "download_complete_waiting_for_folder", "monitor_error",
-        "download_complete_move_failed", "monitor_timeout"
+        "downloading", "download_complete_waiting_for_folder", "monitor_error"
     }
     for job in jobs:
         identity = (job["artist_key"], job["album_key"])
