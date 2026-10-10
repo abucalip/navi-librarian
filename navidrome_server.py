@@ -3453,9 +3453,13 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         "file_count": len(candidate.get("files") or []),
         "downloads_path": settings.get("slskd_downloads_path"),
     }
+    safe_settings = {
+        key: value for key, value in (settings or {}).items()
+        if key not in {"slskd_api_key", "api_key"}
+    }
     _discovery_save_acquisition_job(
         artist, album, "downloading", details,
-        candidate=candidate, settings=settings,
+        candidate=candidate, settings=safe_settings,
     )
     _discovery_update_acquisition_status(artist, album, "downloading", details)
     with _DISCOVERY_IMPORT_LOCK:
