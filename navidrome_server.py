@@ -2418,6 +2418,50 @@ def _lastfm_top_albums(artist, limit=8):
     return output
 
 
+def _lastfm_artist_genres(artist):
+    """Return cached Last.fm top tags for an artist, suitable for display grouping."""
+    payload = _lastfm_cached_call(
+        "artist.getTopTags", ttl_seconds=30 * 24 * 60 * 60,
+        artist=artist,
+    )
+    if not payload:
+        return []
+    records = items(payload.get("toptags", {}).get("tag"))
+    tags = []
+    for record in records:
+        name = str(record.get("name") or "").strip()
+        if name and name.casefold() not in {tag.casefold() for tag in tags}:
+            tags.append(name)
+        if len(tags) >= 8:
+            break
+    return tags
+
+
+def _deep_dive_genre_families(tags):
+    text = " ".join(str(tag).casefold() for tag in tags)
+    rules = [
+        ("jazz", ("jazz", "bebop", "swing")),
+        ("african", ("african", "afrobeat", "afrobeats", "afropop", "highlife",
+                     "soukous", "malian", "tuareg", "desert blues", "ethiopian",
+                     "mbalax", "senegalese")),
+        ("alternative", ("alternative", "indie rock", "post-punk", "art rock",
+                         "garage rock", "shoegaze")),
+        ("brazilian", ("brazilian", "samba", "bossa nova", "mpb", "tropicalia",
+                       "tropicália")),
+        ("hip-hop", ("hip hop", "hip-hop", "rap")),
+        ("rnb-soul", ("r&b", "rnb", "neo-soul", "soul")),
+        ("electronic", ("electronic", "electronica", "house", "techno", "trip hop",
+                        "trip-hop", "downtempo", "idm")),
+        ("funk", ("funk",)),
+        ("north-african-middle-eastern", ("arabic", "raï", "rai", "maghreb",
+            "north african", "algerian", "moroccan", "tunisian", "gnawa",
+            "gnaoua", "chaabi", "middle eastern", "andalusi", "malouf")),
+        ("rock", ("rock", "punk", "metal", "grunge")),
+        ("pop", ("pop",)),
+    ]
+    return [family for family, terms in rules if any(term in text for term in terms)]
+
+
 def _lastfm_similar_artists(artist, limit=8):
     payload = _lastfm_cached_call(
         "artist.getSimilar", ttl_seconds=60 * 24 * 60 * 60,
@@ -2683,8 +2727,18 @@ def _build_artist_deep_dive_list():
             if old is None or candidate.get("similar_artist_score", 0) > old.get("similar_artist_score", 0):
                 candidates[key] = candidate
 
-    import math
+    # Genre tags are presentation metadata only: they do not change candidate scores.
+    artist_genre_cache = {}
     for item in candidates.values():
+        artist_name = str(item.get("artist") or "").strip()
+        cache_key = _music_key(artist_name)
+        if not item.get("genres") and artist_name:
+            if cache_key not in artist_genre_cache:
+                artist_genre_cache[cache_key] = _lastfm_artist_genres(artist_name)
+            item["genres"] = artist_genre_cache[cache_key]
+        if not item.get("genre_families"):
+            item["genre_families"] = _deep_dive_genre_families(item.get("genres") or [])
+        import math
         popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
         playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
         candidate_score = float(item.get("candidate_pool_score", 0) or 0)
@@ -3618,6 +3672,7 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         "source_username": candidate.get("username"),
         "folder": candidate.get("folder"),
         "file_count": len(candidate.get("files") or []),
+        "quality_summary": list(candidate.get("quality_summary") or []),
         "downloads_path": settings.get("slskd_downloads_path"),
     }
     safe_settings = {
@@ -3773,6 +3828,7 @@ def discovery_acquire_album(
 
             candidate_for_monitor = dict(candidate)
             candidate_for_monitor["files"] = selected_files
+            candidate_for_monitor["quality_summary"] = list(candidate.get("quality_summary") or [])
             start_state = _slskd_candidate_start_state(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
@@ -3839,12 +3895,19 @@ def discovery_queue_slskd_candidate(
     artist: str = "",
     album: str = "",
     folder: str = "",
+    quality_summary_json: str = "[]",
 ) -> str:
     """Queue a user-reviewed slskd candidate and import it into the library when complete."""
     try:
         files = json.loads(files_json)
         if not isinstance(files, list) or not files:
             return json.dumps({"ok": False, "error": "files_json must be a non-empty JSON list."})
+        try:
+            quality_summary = json.loads(quality_summary_json or "[]")
+            if not isinstance(quality_summary, list):
+                quality_summary = []
+        except (ValueError, TypeError):
+            quality_summary = []
         normalized = []
         for item in files:
             if not isinstance(item, dict) or not item.get("filename"):
@@ -3867,6 +3930,7 @@ def discovery_queue_slskd_candidate(
                 "username": username,
                 "folder": folder or Path(normalized[0]["filename"].replace("\\", "/")).parent.name,
                 "files": normalized,
+                "quality_summary": quality_summary,
             }
             _discovery_start_import_watcher(artist.strip(), album.strip(), candidate, settings)
             import_started = True
