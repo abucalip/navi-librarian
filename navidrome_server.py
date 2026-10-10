@@ -2690,6 +2690,10 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_cd",
     ],
     "auto_acquire_for_me": True,
+    "slskd_downloads_path": str(Path(os.environ.get(
+        "SLSKD_DOWNLOADS_MOUNT",
+        str(MUSIC_DIR.parent.parent / "downloads"),
+    )).expanduser()),
 }
 
 
@@ -2757,6 +2761,9 @@ def discovery_get_slskd_settings() -> str:
         "slskd_url": settings.get("slskd_url", _DISCOVERY_SETTINGS_DEFAULTS["slskd_url"]),
         "api_key_configured": bool(settings.get("slskd_api_key")),
         "auto_acquire_for_me": bool(settings.get("auto_acquire_for_me", True)),
+        "slskd_downloads_path": settings.get(
+            "slskd_downloads_path", _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+        ),
         "quality_priority": settings.get(
             "quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"]
         ),
@@ -2775,6 +2782,7 @@ def discovery_set_slskd_settings(
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
     auto_acquire_for_me: bool | None = None,
+    slskd_downloads_path: str | None = None,
 ) -> str:
     """Save slskd URL, API key, and quality order. Blank API key preserves the saved key."""
     from urllib.parse import urlparse
@@ -2798,6 +2806,14 @@ def discovery_set_slskd_settings(
     }
     if auto_acquire_for_me is not None:
         values["auto_acquire_for_me"] = bool(auto_acquire_for_me)
+    if slskd_downloads_path is not None:
+        download_path = str(Path(slskd_downloads_path).expanduser())
+        if not Path(download_path).is_absolute():
+            return json.dumps({
+                "ok": False,
+                "error": "The slskd downloads path must be an absolute path visible to this app.",
+            })
+        values["slskd_downloads_path"] = download_path
     if api_key.strip():
         values["slskd_api_key"] = api_key.strip()
     _discovery_settings_write(values)
@@ -2946,6 +2962,246 @@ def _slskd_extract_candidates(payload, artist, album, priority):
     return candidates
 
 
+def _slskd_download_transfer_files(base_url, headers, username):
+    """Return the files slskd currently tracks for a peer."""
+    from urllib.parse import quote
+    response = httpx.get(
+        f"{base_url}/api/v0/transfers/downloads/{quote(str(username), safe='')}",
+        headers=headers,
+        timeout=8,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if isinstance(payload, list):
+        roots = payload
+    elif isinstance(payload, dict):
+        roots = payload.get("directories") or payload.get("items") or [payload]
+    else:
+        roots = []
+    found = []
+    for root in roots:
+        if not isinstance(root, dict):
+            continue
+        for file_record in root.get("files") or []:
+            if isinstance(file_record, dict):
+                found.append(file_record)
+        for directory in root.get("directories") or []:
+            if not isinstance(directory, dict):
+                continue
+            for file_record in directory.get("files") or []:
+                if isinstance(file_record, dict):
+                    found.append(file_record)
+    return found
+
+
+def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
+    """Wait briefly for a queued candidate to start; cancel a stalled queue before fallback."""
+    from urllib.parse import quote
+    expected = {
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        for item in candidate.get("files", [])
+    }
+    deadline = time.monotonic() + timeout
+    last_files = []
+    while time.monotonic() < deadline:
+        try:
+            tracked = _slskd_download_transfer_files(
+                base_url, headers, candidate["username"]
+            )
+        except (httpx.HTTPError, ValueError, TypeError):
+            return None
+        last_files = [
+            item for item in tracked
+            if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
+        ]
+        states = {str(item.get("state") or "").replace("_", "").casefold() for item in last_files}
+        if states.intersection({"inprogress", "succeeded", "completed", "transferring", "downloading"}):
+            return True
+        if states and states.issubset({"failed", "errored", "cancelled", "canceled"}):
+            return False
+        time.sleep(1)
+    if not last_files:
+        return False
+    queued = [
+        item for item in last_files
+        if str(item.get("state") or "").replace("_", "").casefold() in {"queued", "initializing", "requested"}
+    ]
+    if not queued:
+        return None
+    # Do not start another source while the first one's files remain queued.
+    # A failed cancellation is treated as uncertain rather than risking duplicate downloads.
+    for item in queued:
+        file_id = str(item.get("filename") or item.get("id") or "")
+        if not file_id:
+            return None
+        try:
+            cancelled = httpx.delete(
+                f"{base_url}/api/v0/transfers/downloads/{quote(str(candidate['username']), safe='')}/{quote(file_id, safe='')}",
+                headers=headers,
+                timeout=6,
+            )
+            if cancelled.status_code not in (200, 202, 204, 404):
+                return None
+        except httpx.HTTPError:
+            return None
+    return False
+
+
+def _discovery_safe_folder_name(value):
+    value = str(value or "").replace("\\", "/").split("/")[-1]
+    value = "".join(character for character in value if character not in "\\0")
+    value = value.strip().strip(".")
+    return value or "Unknown"
+
+
+def _discovery_update_acquisition_status(artist, album, status, details=None):
+    """Update acquisition state on an existing For Me item without creating a new one."""
+    try:
+        identity = (_music_key(artist), _music_key(album))
+        row = next((
+            item for item in _discovery_feedback_rows()
+            if item["scope"] == "album" and item["status"] == "for_me"
+            and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
+        ), None)
+        if not row:
+            return
+        metadata = row.get("metadata") or {}
+        metadata["auto_acquisition"] = {
+            "status": status, "updated_at": time.time(), **(details or {})
+        }
+        _discovery_save_feedback("album", artist, album, "for_me", metadata)
+    except Exception:
+        pass
+
+
+def _discovery_locate_completed_album(download_root, candidate):
+    """Find the completed source folder by its folder name and expected files."""
+    import os
+    root = Path(download_root).expanduser()
+    if not root.is_dir():
+        return None
+    expected = {
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]: int(item.get("size") or 0)
+        for item in candidate.get("files", [])
+    }
+    if not expected:
+        return None
+    wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
+    matches = []
+    for current, directories, filenames in os.walk(root, followlinks=False):
+        directories[:] = [name for name in directories if not name.startswith(".")]
+        current_path = Path(current)
+        present = set(filenames)
+        matched = [name for name in expected if name in present]
+        if current_path.name == wanted_folder and len(matched) == len(expected):
+            size_ok = all(
+                expected[name] <= 0 or (current_path / name).stat().st_size == expected[name]
+                for name in expected
+            )
+            if size_ok:
+                matches.append(current_path)
+    return matches[0] if len(matches) == 1 else None
+
+
+def _discovery_watch_and_import_album(artist, album, candidate, settings):
+    """Wait for every queued file to finish, then move the album folder into the library."""
+    import shutil
+    base_url, api_key, _ = _slskd_config()
+    headers = {"X-API-KEY": api_key}
+    download_root = Path(str(settings.get("slskd_downloads_path") or "")).expanduser()
+    music_root = MUSIC_DIR.expanduser()
+    expected = {
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        for item in candidate.get("files", [])
+    }
+    deadline = time.monotonic() + 48 * 60 * 60
+    completed_at = None
+    while time.monotonic() < deadline:
+        try:
+            tracked = _slskd_download_transfer_files(
+                base_url, headers, candidate["username"]
+            )
+            matching = [
+                item for item in tracked
+                if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
+            ]
+            states = {
+                str(item.get("state") or "").replace("_", "").casefold()
+                for item in matching
+            }
+            if states.intersection({"failed", "errored", "cancelled", "canceled"}):
+                _discovery_update_acquisition_status(artist, album, "download_failed", {
+                    "source_username": candidate["username"], "states": sorted(states)
+                })
+                return
+            if len(matching) >= len(expected) and matching and all(
+                str(item.get("state") or "").replace("_", "").casefold()
+                in {"succeeded", "completed"}
+                for item in matching
+            ):
+                completed_at = completed_at or time.monotonic()
+                source = _discovery_locate_completed_album(download_root, candidate)
+                if source is None:
+                    _discovery_update_acquisition_status(artist, album, "download_complete_waiting_for_folder", {
+                        "source_username": candidate["username"],
+                        "downloads_path_available": download_root.is_dir(),
+                    })
+                else:
+                    if not music_root.is_dir():
+                        _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+                            "source_folder": str(source)
+                        })
+                        return
+                    artist_dir = music_root / _discovery_safe_folder_name(artist)
+                    album_dir = artist_dir / _discovery_safe_folder_name(album)
+                    if album_dir.exists():
+                        _discovery_update_acquisition_status(artist, album, "destination_exists", {
+                            "destination": str(album_dir)
+                        })
+                        return
+                    artist_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(source), str(album_dir))
+                    _discovery_update_acquisition_status(artist, album, "imported", {
+                        "destination": str(album_dir),
+                        "source_username": candidate["username"],
+                        "imported_at": time.time(),
+                    })
+                    return
+                # Keep looking for the local SMB/NFS-visible folder for up to six hours.
+                if time.monotonic() - completed_at > 6 * 60 * 60:
+                    _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                        "downloads_path": str(download_root),
+                        "folder": candidate.get("folder"),
+                    })
+                    return
+        except Exception as exc:
+            _discovery_update_acquisition_status(artist, album, "monitor_error", {
+                "error": type(exc).__name__
+            })
+        time.sleep(15)
+    _discovery_update_acquisition_status(artist, album, "monitor_timeout", {
+        "source_username": candidate["username"]
+    })
+
+
+def _discovery_start_import_watcher(artist, album, candidate, settings):
+    import threading
+    _discovery_update_acquisition_status(artist, album, "downloading", {
+        "source_username": candidate["username"],
+        "folder": candidate.get("folder"),
+        "file_count": len(candidate.get("files") or []),
+        "downloads_path": settings.get("slskd_downloads_path"),
+    })
+    threading.Thread(
+        target=_discovery_watch_and_import_album,
+        args=(artist, album, candidate, dict(settings)),
+        name="navidrome-import-" + hashlib.sha1(
+            (_music_key(artist) + "|" + _music_key(album)).encode("utf-8")
+        ).hexdigest()[:10],
+        daemon=True,
+    ).start()
+
+
 @mcp.tool()
 def discovery_acquire_album(
     artist: str,
@@ -2953,7 +3209,7 @@ def discovery_acquire_album(
     metadata_json: str = "{}",
     auto_queue: bool = True,
 ) -> str:
-    """Search slskd for an album; auto-queue only one clear match, otherwise return review candidates."""
+    """Search slskd; queue the best clear match, fall back to faster/next sources if it does not start, and import on completion."""
     import uuid
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})
@@ -2985,9 +3241,6 @@ def discovery_acquire_album(
         deadline = time.monotonic() + 18
         payload_by_peer = {}
         while time.monotonic() < deadline:
-            # The search resource exposes completion state; includeResponses is
-            # supported by current slskd releases. Fall back to the responses route
-            # for versions that expose it separately.
             search_state = {}
             try:
                 state_response = httpx.get(
@@ -3002,7 +3255,7 @@ def discovery_acquire_album(
                     search_state = state_data
                     state_payload = state_data.get("responses")
                     if isinstance(state_payload, list):
-                        for index, entry in enumerate(state_payload):
+                        for entry in state_payload:
                             identity = (
                                 entry.get("username") or entry.get("user") or "",
                                 json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
@@ -3036,49 +3289,100 @@ def discovery_acquire_album(
             ):
                 break
             time.sleep(0.75)
-        payload = list(payload_by_peer.values())
-        candidates = _slskd_extract_candidates(payload, artist, album, priority)
+        candidates = _slskd_extract_candidates(
+            list(payload_by_peer.values()), artist, album, priority
+        )
         if not candidates:
             return json.dumps({
                 "ok": True, "status": "no_matches",
                 "artist": artist, "album": album, "search_id": search_id,
                 "message": "No sufficiently album-matching audio folders were found.",
             }, ensure_ascii=False)
-        top = candidates[0]
-        # A near-tie between different folders/peers is ambiguous and must be reviewed.
-        near_tie = len(candidates) > 1 and (
-            candidates[1]["clear_match"]
-            and candidates[0]["clear_match"]
-            and candidates[1]["average_quality_rank"] == candidates[0]["average_quality_rank"]
-            and candidates[0]["upload_speed"] <= candidates[1]["upload_speed"] * 1.15
-        )
-        if not auto_queue or not top["clear_match"] or near_tie:
+        clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
+        if not auto_queue or not clear_candidates:
             return json.dumps({
                 "ok": True, "status": "review_required",
                 "artist": artist, "album": album, "search_id": search_id,
                 "candidates": candidates[:10],
-                "message": "Review the candidate folders before queueing a download.",
+                "message": "No candidate met the automatic-download criteria; review the candidates and choose one.",
             }, ensure_ascii=False)
-        selected_files = [
-            {"filename": item["filename"], "size": item["size"]}
-            for item in top["files"]
-        ]
-        queue = httpx.post(
-            f"{base_url}/api/v0/transfers/downloads/{top['username']}",
-            headers=headers,
-            json=selected_files,
-            timeout=12,
-        )
-        queue.raise_for_status()
+
+        failures = []
+        uncertain = None
+        for candidate in clear_candidates[:10]:
+            selected_files = [
+                {"filename": item["filename"], "size": item["size"]}
+                for item in candidate["files"]
+            ]
+            try:
+                queue = httpx.post(
+                    f"{base_url}/api/v0/transfers/downloads/{candidate['username']}",
+                    headers=headers,
+                    json=selected_files,
+                    timeout=12,
+                )
+                queue.raise_for_status()
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                failures.append({
+                    "username": candidate["username"],
+                    "folder": candidate["folder"],
+                    "error": type(exc).__name__,
+                })
+                continue
+
+            candidate_for_monitor = dict(candidate)
+            candidate_for_monitor["files"] = selected_files
+            start_state = _slskd_candidate_start_state(
+                base_url, headers, candidate_for_monitor, timeout=8
+            )
+            if start_state is False:
+                failures.append({
+                    "username": candidate["username"],
+                    "folder": candidate["folder"],
+                    "error": "download_did_not_start",
+                })
+                continue
+            if start_state is None:
+                uncertain = candidate
+                break
+            _discovery_start_import_watcher(
+                artist, album, candidate_for_monitor, settings
+            )
+            return json.dumps({
+                "ok": True, "status": "queued",
+                "artist": artist, "album": album,
+                "source_username": candidate["username"],
+                "folder": candidate["folder"],
+                "file_count": len(selected_files),
+                "quality_summary": candidate["quality_summary"],
+                "upload_speed": candidate["upload_speed"],
+                "fallback_attempts": failures,
+                "message": "Download started from the best clear match. The album will be moved into the music library when all files finish.",
+            }, ensure_ascii=False)
+
+        if uncertain is not None:
+            candidate_for_monitor = dict(uncertain)
+            candidate_for_monitor["files"] = [
+                {"filename": item["filename"], "size": item["size"]}
+                for item in uncertain["files"]
+            ]
+            _discovery_start_import_watcher(
+                artist, album, candidate_for_monitor, settings
+            )
+            return json.dumps({
+                "ok": True, "status": "queued_unconfirmed",
+                "artist": artist, "album": album,
+                "source_username": uncertain["username"],
+                "folder": uncertain["folder"],
+                "fallback_attempts": failures,
+                "message": "slskd accepted the queue request, but its transfer state could not be verified. Monitoring this source to avoid duplicate downloads.",
+            }, ensure_ascii=False)
+
         return json.dumps({
-            "ok": True, "status": "queued",
+            "ok": False, "status": "queue_failed",
             "artist": artist, "album": album,
-            "source_username": top["username"],
-            "folder": top["folder"],
-            "file_count": len(selected_files),
-            "quality_summary": top["quality_summary"],
-            "upload_speed": top["upload_speed"],
-            "message": "Clear album match queued in slskd.",
+            "attempts": failures,
+            "message": "None of the clear-match sources started a download. No user arbitration is needed because the candidates met the match criteria; check slskd connectivity/peer availability and retry.",
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         return json.dumps({
@@ -3087,13 +3391,15 @@ def discovery_acquire_album(
             "detail": str(exc)[:300],
         }, ensure_ascii=False)
 
-
 @mcp.tool()
 def discovery_queue_slskd_candidate(
     username: str,
     files_json: str,
+    artist: str = "",
+    album: str = "",
+    folder: str = "",
 ) -> str:
-    """Queue a user-reviewed slskd candidate. files_json is a list of filename/size objects."""
+    """Queue a user-reviewed slskd candidate and import it into the library when complete."""
     try:
         files = json.loads(files_json)
         if not isinstance(files, list) or not files:
@@ -3106,7 +3412,7 @@ def discovery_queue_slskd_candidate(
                 "filename": str(item["filename"]),
                 "size": int(item.get("size") or 0),
             })
-        base_url, api_key, _ = _slskd_config()
+        base_url, api_key, settings = _slskd_config()
         response = httpx.post(
             f"{base_url}/api/v0/transfers/downloads/{username}",
             headers={"X-API-KEY": api_key},
@@ -3114,16 +3420,26 @@ def discovery_queue_slskd_candidate(
             timeout=12,
         )
         response.raise_for_status()
+        import_started = False
+        if artist.strip() and album.strip():
+            candidate = {
+                "username": username,
+                "folder": folder or Path(normalized[0]["filename"].replace("\\", "/")).parent.name,
+                "files": normalized,
+            }
+            _discovery_start_import_watcher(artist.strip(), album.strip(), candidate, settings)
+            import_started = True
         return json.dumps({
             "ok": True, "status": "queued",
             "username": username, "file_count": len(normalized),
+            "import_monitor_started": import_started,
+            "message": "Candidate queued. The album will be moved into the library after all files finish." if import_started else "Candidate queued.",
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         return json.dumps({
             "ok": False, "error": f"Could not queue candidate ({type(exc).__name__}).",
             "detail": str(exc)[:300],
         }, ensure_ascii=False)
-
 
 @mcp.tool()
 def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
