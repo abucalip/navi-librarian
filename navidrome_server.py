@@ -2774,7 +2774,7 @@ def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
-    auto_acquire_for_me: bool = True,
+    auto_acquire_for_me: bool | None = None,
 ) -> str:
     """Save slskd URL, API key, and quality order. Blank API key preserves the saved key."""
     from urllib.parse import urlparse
@@ -2795,8 +2795,9 @@ def discovery_set_slskd_settings(
     values = {
         "slskd_url": url,
         "quality_priority": quality,
-        "auto_acquire_for_me": bool(auto_acquire_for_me),
     }
+    if auto_acquire_for_me is not None:
+        values["auto_acquire_for_me"] = bool(auto_acquire_for_me)
     if api_key.strip():
         values["slskd_api_key"] = api_key.strip()
     _discovery_settings_write(values)
