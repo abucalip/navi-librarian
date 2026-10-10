@@ -582,7 +582,10 @@ function showPage(name) {
 }
 
 document.querySelectorAll('nav button[data-page]').forEach(button =>
-  button.addEventListener('click', () => showPage(button.dataset.page)));
+  button.addEventListener('click', () => {
+    showPage(button.dataset.page);
+    if (button.dataset.page === 'settings') loadSlskdSettings();
+  }));
 
 document.querySelectorAll('button[data-go]').forEach(button =>
   button.addEventListener('click', () => showPage(button.dataset.go)));
