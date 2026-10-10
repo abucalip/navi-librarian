@@ -265,6 +265,7 @@ def queue_reviewed_candidate(payload: dict):
             artist=artist,
             album=album,
             folder=folder,
+            quality_summary_json=json.dumps(payload.get("quality_summary") or [], ensure_ascii=False),
         ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not queue the selected candidate.")
@@ -429,6 +430,15 @@ p { line-height: 1.55; }
 .discovery-controls input, .discovery-controls select { width: 100%; min-width: 0; background: #202221; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 4px; }
 #recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 11px/1.5 var(--mono); letter-spacing: .02em; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
+.genre-row { min-width: 0; }
+.genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
+.genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
+.genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
+.genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; }
+.genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
+@media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
 .card:hover { border-color: #686044; transform: translateY(-2px); }
 .card-art {
@@ -739,6 +749,15 @@ function renderAcquisitions(data) {
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
       addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const details = job.details || {};
+      const qualityLabels = {
+        mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
+        mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
+      };
+      const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
+      if (quality.length) {
+        addTextElement(card, 'p', 'card-meta',
+          'Quality profile: ' + quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · '));
+      }
       const progress = details.live_progress;
       if (job.status === 'downloading' && progress) {
         const progressRow = document.createElement('div');
@@ -1116,14 +1135,75 @@ function discoveryStatus(name, message) {
   $(discoveryViews[name][1]).textContent = message;
 }
 
+function deepDiveGenre(item) {
+  const families = Array.isArray(item.genre_families) ? item.genre_families : [];
+  const family = families.find(value => String(value || '').trim());
+  if (family) return String(family).replaceAll('_', '-').toLocaleLowerCase();
+  const tags = Array.isArray(item.genres) ? item.genres : [];
+  const text = tags.join(' ').toLocaleLowerCase();
+  const rules = [
+    ['jazz', /jazz|bebop|swing/],
+    ['african', /african|afrobeat|afropop|highlife|soukous|malian|tuareg|desert blues|ethiopian/],
+    ['alternative', /alternative|indie rock|post-punk|art rock|garage rock|shoegaze/],
+    ['brazilian', /brazilian|samba|bossa nova|\bmpb\b|tropic[aá]lia/],
+    ['hip-hop', /hip.?hop|rap/],
+    ['rnb-soul', /r&b|rnb|neo-soul|soul/],
+    ['electronic', /electronic|electronica|house|techno|trip.?hop|downtempo/],
+    ['funk', /funk/],
+    ['north-african-middle-eastern', /arabic|ra[iï]|maghreb|north african|algerian|moroccan|tunisian|gnawa|chaabi|middle eastern/],
+    ['rock', /rock|punk|metal|grunge/],
+    ['pop', /pop/],
+  ];
+  const match = rules.find(([, pattern]) => pattern.test(text));
+  return match ? match[0] : 'other';
+}
+
+function genreRowLabel(key) {
+  const labels = {
+    'jazz': 'Jazz', 'african': 'African Music', 'alternative': 'Alternative',
+    'brazilian': 'Brazilian Music', 'hip-hop': 'Hip-Hop', 'rnb-soul': 'R&B / Soul',
+    'electronic': 'Electronic', 'funk': 'Funk',
+    'north-african-middle-eastern': 'North African & Middle Eastern',
+    'north-african': 'North African', 'bossa-nova-brazilian': 'Brazilian / Bossa Nova',
+    'rock': 'Rock', 'pop': 'Pop', 'other': 'Other Discoveries',
+  };
+  return labels[key] || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
 async function loadDiscovery(name) {
   discoveryStatus(name, 'Loading…');
   const target = $(discoveryViews[name][0]);
   target.replaceChildren();
+  target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
+  const destinationByItem = new Map();
 
   try {
-    const data = await requestJSON(`/api/discovery/${name}?count=30`);
+    const data = await requestJSON(`/api/discovery/${name}?count=${name === 'artist_deep_dive' ? 150 : 30}`);
     const items = data.items || data.recommendations || [];
+
+    if (name === 'artist_deep_dive') {
+      const grouped = new Map();
+      for (const item of items) {
+        const key = deepDiveGenre(item);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(item);
+      }
+      const orderedGroups = [...grouped.entries()].sort((a, b) =>
+        (b[1].length - a[1].length) || a[0].localeCompare(b[0]));
+      for (const [genre, genreItems] of orderedGroups) {
+        const row = document.createElement('section');
+        row.className = 'genre-row';
+        const heading = document.createElement('div');
+        heading.className = 'genre-row-heading';
+        addTextElement(heading, 'h3', '', genreRowLabel(genre));
+        addTextElement(heading, 'span', 'genre-row-count', `${genreItems.length} albums`);
+        const track = document.createElement('div');
+        track.className = 'genre-row-track';
+        row.append(heading, track);
+        target.append(row);
+        for (const item of genreItems) destinationByItem.set(item, track);
+      }
+    }
 
     discoveryStatus(name, `${items.length} item(s)`);
 
@@ -1175,7 +1255,7 @@ async function loadDiscovery(name) {
       button('Search slskd', () => searchAlbum(artist, album, item));
 
       card.append(actions);
-      target.append(card);
+      (destinationByItem.get(item) || target).append(card);
     }
 
     if (!items.length) addTextElement(target, 'p', '',
@@ -1246,7 +1326,8 @@ async function searchAlbum(artist, album, metadata) {
             const files = (candidate.files || []).map(f =>
               ({filename:f.filename, size:f.size}));
             const result = await sendJSON('/api/acquire/queue', 'POST',
-              {username:candidate.username, artist, album, folder:candidate.folder, files});
+              {username:candidate.username, artist, album, folder:candidate.folder, files,
+             quality_summary:candidate.quality_summary || []});
             $('acquireStatus').textContent = result.message || result.status;
             queue.textContent = 'Queue requested';
           } catch (error) {
