@@ -3031,7 +3031,7 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     # Do not start another source while the first one's files remain queued.
     # A failed cancellation is treated as uncertain rather than risking duplicate downloads.
     for item in queued:
-        file_id = str(item.get("filename") or item.get("id") or "")
+        file_id = str(item.get("id") or item.get("filename") or "")
         if not file_id:
             return None
         try:
