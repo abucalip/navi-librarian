@@ -3335,6 +3335,8 @@ def _discovery_live_download_progress(job):
         if size:
             transferred = min(transferred, size)
             total_bytes += size
+            if transferred >= size:
+                completed += 1
         transferred_bytes += transferred
         file_byte_snapshot[name] = transferred
 
