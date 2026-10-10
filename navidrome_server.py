@@ -3286,6 +3286,10 @@ def _discovery_locate_completed_album(download_root, candidate):
     for current, directories, filenames in os.walk(root, followlinks=False):
         directories[:] = [name for name in directories if not name.startswith(".")]
         current_path = Path(current)
+        # Never treat the completed-download root itself as an album folder:
+        # moving it would move every completed download into the music library.
+        if current_path.resolve() == root.resolve():
+            continue
         actual_names = {name.casefold(): name for name in filenames}
         if not all(name in actual_names for name in expected):
             continue
