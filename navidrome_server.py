@@ -1937,6 +1937,19 @@ def recommend_new_music(count: int = 10) -> str:
 
         "category_targets": targets,
         "category_counts": dict(selected_counts),
+        "category_shortfalls": {
+            category: max(0, target - selected_counts.get(category, 0))
+            for category, target in targets.items()
+        },
+        "category_targets_met": all(
+            selected_counts.get(category, 0) >= target
+            for category, target in targets.items()
+        ),
+        "recommendations_returned": len(found),
+        "unclassified_recommendations": sum(
+            1 for recommendation in found
+            if recommendation.get("discovery_category") == "unclassified"
+        ),
         "diversity_style_targets": diversity_style_targets,
         "diversity_style_counts": {
             style: selected_styles.get(style, 0)
