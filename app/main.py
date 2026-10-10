@@ -156,6 +156,14 @@ def discovery_feedback(payload: dict):
         raise HTTPException(status_code=502, detail="Could not save discovery feedback.")
 
 
+@app.get("/api/acquisitions")
+def acquisition_status():
+    try:
+        return parse_result(librarian.discovery_get_acquisition_status())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
+
+
 @app.get("/api/settings/slskd")
 def get_slskd_settings():
     try:
@@ -426,6 +434,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
     <button data-page="personalDiscoveries">Personal Discoveries</button>
     <button data-page="classics">Classics</button>
     <button data-page="artistDeepDive">Artist Deep Dives</button>
+    <button data-page="acquisitions">Acquisitions</button>
     <button data-page="settings">Settings</button>
   </nav>
 
@@ -584,6 +593,16 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
   </div>
 </section>
 
+<section id="acquisitions" class="page hidden">
+  <div class="panel">
+    <h2>Acquisition status</h2>
+    <p class="muted">Persistent download and import status, including failures. Active jobs are resumed when this page checks in.</p>
+    <p id="acquisitionsStatus"></p>
+    <div id="acquisitionCards" class="cards"></div>
+    <button id="refreshAcquisitions">Refresh status</button>
+  </div>
+</section>
+
 <section id="acquireReview" class="page hidden">
   <div class="panel">
     <h2>Review download candidates</h2>
@@ -609,6 +628,7 @@ document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
     showPage(button.dataset.page);
     if (button.dataset.page === 'settings') loadSlskdSettings();
+    if (button.dataset.page === 'acquisitions') loadAcquisitions();
   }));
 
 document.querySelectorAll('button[data-go]').forEach(button =>
@@ -638,6 +658,50 @@ async function checkConnection() {
 function pretty(value) {
   return JSON.stringify(value, null, 2);
 }
+
+async function loadAcquisitions() {
+  const target = $('acquisitionCards');
+  $('acquisitionsStatus').textContent = 'Loading acquisition status…';
+  try {
+    const data = await requestJSON('/api/acquisitions');
+    target.replaceChildren();
+    const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
+    $('acquisitionsStatus').textContent = jobs.length
+      ? `${jobs.length} acquisition record(s). Last refreshed ${new Date().toLocaleTimeString()}.`
+      : 'No acquisition records yet.';
+    for (const job of jobs) {
+      const card = document.createElement('article');
+      card.className = 'card';
+      addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
+      addTextElement(card, 'h3', '', job.album || 'Unknown album');
+      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
+      const details = job.details || {};
+      const lines = [
+        details.message,
+        details.error,
+        details.source_folder ? 'Source: ' + details.source_folder : '',
+        details.destination ? 'Destination: ' + details.destination : '',
+        details.downloads_path ? 'Downloads: ' + details.downloads_path : '',
+        details.source_username ? 'Peer: ' + details.source_username : '',
+        details.file_count ? 'Expected files: ' + details.file_count : '',
+        details.states ? 'Transfer states: ' + details.states.join(', ') : '',
+        job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
+      ].filter(Boolean);
+      for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
+      if (details.status && details.status !== job.status) {
+        addTextElement(card, 'pre', 'debug', pretty(details));
+      }
+      target.append(card);
+    }
+  } catch (error) {
+    $('acquisitionsStatus').textContent = error.message;
+  }
+}
+
+$('refreshAcquisitions').addEventListener('click', loadAcquisitions);
+setInterval(() => {
+  if (!$('acquisitions').classList.contains('hidden')) loadAcquisitions();
+}, 15000);
 
 function getRecommendations(data) {
   if (Array.isArray(data)) return data;
