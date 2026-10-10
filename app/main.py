@@ -754,10 +754,10 @@ function renderAcquisitions(data) {
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
       };
       const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
-      if (quality.length) {
-        addTextElement(card, 'p', 'card-meta',
-          'Quality profile: ' + quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · '));
-      }
+      addTextElement(card, 'p', 'card-meta',
+        'Quality profile: ' + (quality.length
+          ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
+          : 'Not reported'));
       const progress = details.live_progress;
       if (job.status === 'downloading' && progress) {
         const progressRow = document.createElement('div');
