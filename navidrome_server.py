@@ -2698,6 +2698,7 @@ _DEEP_DIVE_REFRESH_LOCK = __import__("threading").Lock()
 
 
 _DISCOVERY_SETTINGS_DEFAULTS = {
+    "music_library_path": str(MUSIC_DIR),
     "slskd_url": "http://192.168.1.12:5030",
     "quality_priority": [
         "mp3_320",
@@ -2732,6 +2733,7 @@ def _discovery_settings_init():
 
 
 def _discovery_settings_read():
+    global MUSIC_DIR
     _discovery_settings_init()
     settings = dict(_DISCOVERY_SETTINGS_DEFAULTS)
     with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
@@ -2743,6 +2745,12 @@ def _discovery_settings_read():
             settings[key] = json.loads(value)
         except (ValueError, TypeError):
             continue
+
+    configured_music_path = str(settings.get("music_library_path") or "").strip()
+    if configured_music_path:
+        candidate_music_path = Path(configured_music_path).expanduser()
+        if candidate_music_path.is_absolute():
+            MUSIC_DIR = candidate_music_path
 
     # Migrate the former downloads-root defaults to slskd's actual completed
     # directory when that directory is available on the current host. This
@@ -2796,6 +2804,7 @@ def discovery_get_slskd_settings() -> str:
     """Read acquisition settings without returning the stored API key."""
     settings = _discovery_settings_read()
     return json.dumps({
+        "music_library_path": settings.get("music_library_path", str(MUSIC_DIR)),
         "slskd_url": settings.get("slskd_url", _DISCOVERY_SETTINGS_DEFAULTS["slskd_url"]),
         "api_key_configured": bool(settings.get("slskd_api_key")),
         "auto_acquire_for_me": bool(settings.get("auto_acquire_for_me", True)),
@@ -2821,8 +2830,9 @@ def discovery_set_slskd_settings(
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
     auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
+    music_library_path: str | None = None,
 ) -> str:
-    """Save slskd URL, API key, and quality order. Blank API key preserves the saved key."""
+    """Save acquisition settings and paths. Blank API key preserves the saved key."""
     from urllib.parse import urlparse
     url = (slskd_url or "").strip().rstrip("/")
     parsed = urlparse(url)
@@ -2842,6 +2852,19 @@ def discovery_set_slskd_settings(
         "slskd_url": url,
         "quality_priority": quality,
     }
+    if music_library_path is not None:
+        music_path = str(Path(music_library_path).expanduser())
+        if not Path(music_path).is_absolute():
+            return json.dumps({
+                "ok": False,
+                "error": "The music library path must be an absolute path visible to this app.",
+            })
+        if not Path(music_path).is_dir():
+            return json.dumps({
+                "ok": False,
+                "error": "The music library path must exist and be a directory visible to this app.",
+            })
+        values["music_library_path"] = music_path
     if auto_acquire_for_me is not None:
         values["auto_acquire_for_me"] = bool(auto_acquire_for_me)
     if slskd_downloads_path is not None:
@@ -2855,8 +2878,12 @@ def discovery_set_slskd_settings(
     if api_key.strip():
         values["slskd_api_key"] = api_key.strip()
     _discovery_settings_write(values)
+    global MUSIC_DIR
+    if music_library_path is not None:
+        MUSIC_DIR = Path(values["music_library_path"])
     return json.dumps({
         "ok": True,
+        "music_library_path": str(MUSIC_DIR),
         "slskd_url": url,
         "api_key_configured": bool(_discovery_settings_read().get("slskd_api_key")),
         "quality_priority": quality,
