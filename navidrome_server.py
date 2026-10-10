@@ -3257,8 +3257,111 @@ def _discovery_list_acquisition_jobs():
     return jobs
 
 
+def _discovery_live_download_progress(job):
+    """Return best-effort live progress for an active slskd album download."""
+    candidate = job.get("candidate") or {}
+    expected_files = candidate.get("files") or []
+    username = candidate.get("username")
+    if not expected_files or not username:
+        return None
+
+    try:
+        base_url, api_key, _ = _slskd_config()
+        tracked = _slskd_download_transfer_files(
+            base_url, {"X-API-KEY": api_key}, username
+        )
+    except Exception:
+        return {
+            "available": False,
+            "total_tracks": len(expected_files),
+            "remaining_tracks": len(expected_files),
+            "completed_tracks": 0,
+            "percent": None,
+            "speed_bytes_per_second": None,
+        }
+
+    def basename(value):
+        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+
+    expected_by_name = {}
+    for item in expected_files:
+        name = basename(item.get("filename"))
+        if name:
+            expected_by_name[name] = item
+
+    tracked_by_name = {}
+    for item in tracked:
+        name = basename(item.get("filename"))
+        if name in expected_by_name:
+            # Keep the most advanced transfer record if slskd returns duplicates.
+            prior = tracked_by_name.get(name)
+            state = str(item.get("state") or "").replace("_", "").casefold()
+            prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
+            rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
+            if prior is None or rank(state) >= rank(prior_state):
+                tracked_by_name[name] = item
+
+    completed_states = {"succeeded", "completed"}
+    active_states = {"inprogress", "transferring", "downloading"}
+    completed = 0
+    speed = 0
+    total_bytes = 0
+    transferred_bytes = 0
+    have_speed = False
+
+    for name, expected in expected_by_name.items():
+        item = tracked_by_name.get(name) or {}
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        if state in completed_states:
+            completed += 1
+
+        size = expected.get("size") or item.get("size") or 0
+        try:
+            size = max(0, int(size))
+        except (TypeError, ValueError):
+            size = 0
+        transferred = 0
+        for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
+            if item.get(key) is not None:
+                try:
+                    transferred = max(0, int(item[key]))
+                    break
+                except (TypeError, ValueError):
+                    pass
+        if size <= 0:
+            try:
+                size = max(0, int(item.get("size") or 0))
+            except (TypeError, ValueError):
+                size = 0
+        if state in completed_states and size:
+            transferred = size
+        total_bytes += size
+        transferred_bytes += min(transferred, size) if size else transferred
+
+        if state in active_states or (item and state not in completed_states):
+            for key in ("averageSpeed", "speed", "bytesPerSecond", "currentSpeed"):
+                if item.get(key) is not None:
+                    try:
+                        speed += max(0, int(float(item[key])))
+                        have_speed = True
+                        break
+                    except (TypeError, ValueError):
+                        pass
+
+    percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
+    total_tracks = len(expected_by_name)
+    return {
+        "available": True,
+        "total_tracks": total_tracks,
+        "completed_tracks": min(completed, total_tracks),
+        "remaining_tracks": max(0, total_tracks - completed),
+        "percent": percent,
+        "speed_bytes_per_second": speed if have_speed else None,
+    }
+
+
 def discovery_get_acquisition_status():
-    """Return persistent acquisition status and resume interrupted import watchers."""
+    """Return persistent acquisition state plus best-effort live download progress."""
     jobs = _discovery_list_acquisition_jobs()
     resumable = {
         "downloading", "download_complete_waiting_for_folder", "monitor_error"
@@ -3279,10 +3382,19 @@ def discovery_get_acquisition_status():
             name="navidrome-import-recovery",
             daemon=True,
         ).start()
-    return json.dumps({"ok": True, "acquisitions": [
-        {k: v for k, v in job.items() if k not in {"candidate", "settings", "artist_key", "album_key"}}
-        for job in jobs
-    ]}, ensure_ascii=False, indent=2)
+    acquisitions = []
+    for job in jobs:
+        public_job = {
+            k: v for k, v in job.items()
+            if k not in {"candidate", "settings", "artist_key", "album_key"}
+        }
+        if job["status"] == "downloading":
+            progress = _discovery_live_download_progress(job)
+            if progress is not None:
+                public_job["details"] = dict(public_job.get("details") or {})
+                public_job["details"]["live_progress"] = progress
+        acquisitions.append(public_job)
+    return json.dumps({"ok": True, "acquisitions": acquisitions}, ensure_ascii=False, indent=2)
 
 
 def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
