@@ -1,11 +1,11 @@
 import json
 from html import escape
-from time import monotonic
+from time import monotonic, sleep
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 import navidrome_server as librarian
 
@@ -164,6 +164,24 @@ def acquisition_status():
         return parse_result(librarian.discovery_get_acquisition_status())
     except Exception:
         raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
+
+
+@app.get("/api/acquisitions/stream")
+def acquisition_status_stream():
+    def events():
+        while True:
+            try:
+                payload = parse_result(librarian.discovery_get_acquisition_status())
+                yield "data: " + json.dumps(payload, ensure_ascii=False) + "\\n\\n"
+            except Exception:
+                yield "event: error\\ndata: {}\\n\\n"
+            sleep(1)
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/api/settings/slskd")
