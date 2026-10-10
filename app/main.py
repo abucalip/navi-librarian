@@ -176,7 +176,11 @@ def set_slskd_settings(payload: dict):
             slskd_url=url,
             api_key=api_key,
             quality_priority_json=json.dumps(quality),
-            slskd_downloads_path=str(payload.get("slskd_downloads_path") or "/Volumes/media/downloads"),
+            slskd_downloads_path=(
+                str(payload["slskd_downloads_path"]).strip()
+                if "slskd_downloads_path" in payload
+                else None
+            ),
         ))
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
@@ -554,10 +558,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
              placeholder="Enter key to set or replace it"
              autocomplete="new-password">
     </label>
-    <label>Downloads folder as mounted on this Mac
-      <input id="slskdDownloadsPath" type="text" value="/Volumes/media/downloads">
+    <label>slskd completed-download directory visible to the Librarian backend
+      <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete">
     </label>
-    <p class="muted">This must point to the same slskd downloads directory, accessible through the mounted media share. The default assumes /Volumes/media/downloads.</p>
+    <p class="muted">Use an absolute path on the machine running the Librarian backend, not a path inside the slskd container. The default is detected by the backend for the current host.</p>
     <h3>Audio quality priority</h3>
     <label>First choice <select class="quality-priority"></select></label>
     <label>Second choice <select class="quality-priority"></select></label>
@@ -998,7 +1002,7 @@ async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
-    $('slskdDownloadsPath').value = data.slskd_downloads_path || '/Volumes/media/downloads';
+    $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
     document.querySelectorAll('.quality-priority').forEach((select, index) => {
       select.replaceChildren();
