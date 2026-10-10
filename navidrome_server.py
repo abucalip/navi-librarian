@@ -3257,8 +3257,13 @@ def _discovery_list_acquisition_jobs():
     return jobs
 
 
+# Per-process snapshots used to calculate an instantaneous speed from byte deltas.
+_DISCOVERY_PROGRESS_SNAPSHOTS = {}
+_DISCOVERY_PROGRESS_SNAPSHOT_LOCK = __import__("threading").Lock()
+
+
 def _discovery_live_download_progress(job):
-    """Return best-effort live progress for an active slskd album download."""
+    """Return live slskd progress and a delta-based speed estimate."""
     candidate = job.get("candidate") or {}
     expected_files = candidate.get("files") or []
     username = candidate.get("username")
@@ -3292,22 +3297,20 @@ def _discovery_live_download_progress(job):
     tracked_by_name = {}
     for item in tracked:
         name = basename(item.get("filename"))
-        if name in expected_by_name:
-            # Keep the most advanced transfer record if slskd returns duplicates.
-            prior = tracked_by_name.get(name)
-            state = str(item.get("state") or "").replace("_", "").casefold()
-            prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
-            rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
-            if prior is None or rank(state) >= rank(prior_state):
-                tracked_by_name[name] = item
+        if name not in expected_by_name:
+            continue
+        prior = tracked_by_name.get(name)
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
+        rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
+        if prior is None or rank(state) >= rank(prior_state):
+            tracked_by_name[name] = item
 
     completed_states = {"succeeded", "completed"}
-    active_states = {"inprogress", "transferring", "downloading"}
     completed = 0
-    speed = 0
     total_bytes = 0
     transferred_bytes = 0
-    have_speed = False
+    file_byte_snapshot = {}
 
     for name, expected in expected_by_name.items():
         item = tracked_by_name.get(name) or {}
@@ -3315,9 +3318,8 @@ def _discovery_live_download_progress(job):
         if state in completed_states:
             completed += 1
 
-        size = expected.get("size") or item.get("size") or 0
         try:
-            size = max(0, int(size))
+            size = max(0, int(expected.get("size") or item.get("size") or 0))
         except (TypeError, ValueError):
             size = 0
         transferred = 0
@@ -3328,25 +3330,34 @@ def _discovery_live_download_progress(job):
                     break
                 except (TypeError, ValueError):
                     pass
-        if size <= 0:
-            try:
-                size = max(0, int(item.get("size") or 0))
-            except (TypeError, ValueError):
-                size = 0
         if state in completed_states and size:
             transferred = size
-        total_bytes += size
-        transferred_bytes += min(transferred, size) if size else transferred
+        if size:
+            transferred = min(transferred, size)
+            total_bytes += size
+        transferred_bytes += transferred
+        file_byte_snapshot[name] = transferred
 
-        if state in active_states or (item and state not in completed_states):
-            for key in ("averageSpeed", "speed", "bytesPerSecond", "currentSpeed"):
-                if item.get(key) is not None:
-                    try:
-                        speed += max(0, int(float(item[key])))
-                        have_speed = True
-                        break
-                    except (TypeError, ValueError):
-                        pass
+    now = time.monotonic()
+    snapshot_key = (
+        str(job.get("artist_key") or _music_key(job.get("artist"))),
+        str(job.get("album_key") or _music_key(job.get("album"))),
+        str(username).casefold(),
+    )
+    speed = None
+    with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
+        prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
+        _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
+            "at": now, "files": file_byte_snapshot,
+        }
+        if prior:
+            elapsed = now - prior["at"]
+            if elapsed >= 0.5:
+                delta = sum(
+                    max(0, value - int(prior["files"].get(name, 0)))
+                    for name, value in file_byte_snapshot.items()
+                )
+                speed = int(delta / elapsed)
 
     percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
     total_tracks = len(expected_by_name)
@@ -3356,7 +3367,7 @@ def _discovery_live_download_progress(job):
         "completed_tracks": min(completed, total_tracks),
         "remaining_tracks": max(0, total_tracks - completed),
         "percent": percent,
-        "speed_bytes_per_second": speed if have_speed else None,
+        "speed_bytes_per_second": speed,
     }
 
 
