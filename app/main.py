@@ -420,8 +420,8 @@ p { line-height: 1.55; }
 }
 .card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--yellow); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
 .card:hover .card-art::after { transform: scaleX(1); }
-.card-art img { display: none; width: 100%; height: 100%; object-fit: cover; }
-.card-art.has-image img { display: block; }
+.card-art img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .18s ease; }
+.card-art.has-image img { opacity: 1; }
 .card-art.has-image .card-art-placeholder { display: none; }
 .card-art-placeholder { padding: 12px; color: #b5aa79; text-align: center; font: 500 10px/1.5 var(--mono); letter-spacing: .12em; }
 .card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--yellow); font: 600 28px/1 var(--display); letter-spacing: -.02em; }
