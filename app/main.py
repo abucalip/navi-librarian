@@ -181,6 +181,11 @@ def set_slskd_settings(payload: dict):
                 if "slskd_downloads_path" in payload
                 else None
             ),
+            music_library_path=(
+                str(payload["music_library_path"]).strip()
+                if "music_library_path" in payload
+                else None
+            ),
         ))
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
@@ -558,6 +563,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
              placeholder="Enter key to set or replace it"
              autocomplete="new-password">
     </label>
+    <label>Music library directory visible to the Librarian backend
+      <input id="musicLibraryPath" type="text" placeholder="/media/library/music">
+    </label>
+    <p class="muted">This directory is used for library scans and importing completed albums. Use an absolute path on the machine running the Librarian backend.</p>
     <label>slskd completed-download directory visible to the Librarian backend
       <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete">
     </label>
@@ -1002,6 +1011,7 @@ async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
+    $('musicLibraryPath').value = data.music_library_path || '';
     $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
     document.querySelectorAll('.quality-priority').forEach((select, index) => {
@@ -1031,6 +1041,7 @@ $('saveSlskd').addEventListener('click', async () => {
 
   const payload = {
     slskd_url: $('slskdUrl').value.trim(),
+    music_library_path: $('musicLibraryPath').value.trim(),
     slskd_downloads_path: $('slskdDownloadsPath').value.trim(),
     quality_priority: priorities
   };
