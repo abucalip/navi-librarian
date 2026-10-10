@@ -172,9 +172,9 @@ def acquisition_status_stream():
         while True:
             try:
                 payload = parse_result(librarian.discovery_get_acquisition_status())
-                yield "data: " + json.dumps(payload, ensure_ascii=False) + "\\n\\n"
+                yield "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
             except Exception:
-                yield "event: error\\ndata: {}\\n\\n"
+                yield "event: error\ndata: {}\n\n"
             sleep(1)
 
     return StreamingResponse(
