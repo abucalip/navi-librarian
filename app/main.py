@@ -755,6 +755,18 @@ function addTextElement(parent, tag, className, text) {
   return el;
 }
 
+const artworkLoaders = new WeakMap();
+const artworkObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const load = artworkLoaders.get(entry.target);
+        if (load) load();
+        artworkObserver.unobserve(entry.target);
+      }
+    }, {rootMargin: '220px'})
+  : null;
+
 function attachArtwork(card, artist, album) {
   const art = document.createElement('div');
   art.className = 'card-art';
@@ -771,16 +783,24 @@ function attachArtwork(card, artist, album) {
   art.append(image, placeholder);
   card.append(art);
 
-  const query = new URLSearchParams({artist: artist || '', album: album || ''});
-  fetch('/api/artwork?' + query.toString())
-    .then(response => response.ok ? response.json() : null)
-    .then(data => {
-      if (!data || !data.artwork_url) return;
-      image.onload = () => art.classList.add('has-image');
-      image.onerror = () => art.classList.remove('has-image');
-      image.src = data.artwork_url;
-    })
-    .catch(() => {});
+  const loadArtwork = () => {
+    if (art.dataset.requested) return;
+    art.dataset.requested = 'true';
+    const query = new URLSearchParams({artist: artist || '', album: album || ''});
+    fetch('/api/artwork?' + query.toString())
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (!data || !data.artwork_url) return;
+        image.onload = () => art.classList.add('has-image');
+        image.onerror = () => art.classList.remove('has-image');
+        image.src = data.artwork_url;
+      })
+      .catch(() => {});
+  };
+
+  artworkLoaders.set(art, loadArtwork);
+  if (artworkObserver) artworkObserver.observe(art);
+  else loadArtwork();
 }
 
 let allRecommendations = [];
