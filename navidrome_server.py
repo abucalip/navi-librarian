@@ -393,19 +393,20 @@ def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
 
 
 def _listenbrainz_recent(days=30, page_limit=3):
-    """Fetch recent public ListenBrainz listens, with bounded pagination."""
+    """Fetch recent public ListenBrainz listens in smaller, bounded pages."""
     import time
     import httpx
 
     min_ts = int(time.time()) - days * 86400
     max_ts = None
     listens = []
+    page_size = 100
 
     headers = {"User-Agent": "NavidromeLibrarian/1.0"}
 
     with httpx.Client(timeout=30, follow_redirects=True) as client:
         for _ in range(page_limit):
-            params = {"min_ts": min_ts, "count": 1000}
+            params = {"min_ts": min_ts, "count": page_size}
             if max_ts is not None:
                 params["max_ts"] = max_ts
 
@@ -422,7 +423,7 @@ def _listenbrainz_recent(days=30, page_limit=3):
 
             listens.extend(page)
 
-            if len(page) < 1000:
+            if len(page) < page_size:
                 break
 
             oldest = min(
@@ -579,7 +580,7 @@ def recent_listening_profile(days: int = 30) -> str:
             for (artist, album), count in albums.most_common(10)
         ],
         "note": (
-            "History retrieval is bounded to three pages of up to 1,000 "
+            "History retrieval is bounded to three pages of up to 100 "
             "listens each. If the limit is reached, results may be incomplete."
         ),
         "read_only": True,
@@ -1960,6 +1961,1203 @@ def recommend_new_music(count: int = 10) -> str:
     }, ensure_ascii=False, indent=2)
 
 
+# Persistent discovery state. Kept beside this server, separate from the music library.
+DISCOVERY_DB = Path(__file__).with_name("navidrome_discovery.sqlite3")
+_DISCOVERY_REFRESH_LOCK = __import__("threading").Lock()
+
+
+def _discovery_init():
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_feedback (
+                scope TEXT NOT NULL,
+                artist_key TEXT NOT NULL,
+                album_key TEXT NOT NULL DEFAULT '',
+                artist TEXT NOT NULL,
+                album TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (scope, artist_key, album_key)
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_lists (
+                name TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                generated_at REAL NOT NULL
+            )
+        """)
+        db.commit()
+
+
+def _discovery_read_list(name):
+    _discovery_init()
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        row = db.execute(
+            "SELECT payload_json, generated_at FROM discovery_lists WHERE name = ?",
+            (name,),
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        payload = json.loads(row[0])
+    except (ValueError, TypeError):
+        return None
+    return {"payload": payload, "generated_at": row[1]}
+
+
+def _discovery_write_list(name, payload):
+    _discovery_init()
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        db.execute(
+            "INSERT OR REPLACE INTO discovery_lists (name, payload_json, generated_at) VALUES (?, ?, ?)",
+            (name, json.dumps(payload, ensure_ascii=False), time.time()),
+        )
+        db.commit()
+
+
+def _discovery_feedback_rows():
+    _discovery_init()
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        rows = db.execute(
+            "SELECT scope, artist_key, album_key, artist, album, status, metadata_json, created_at, updated_at "
+            "FROM discovery_feedback"
+        ).fetchall()
+    return [
+        {
+            "scope": row[0], "artist_key": row[1], "album_key": row[2],
+            "artist": row[3], "album": row[4], "status": row[5],
+            "metadata": json.loads(row[6] or "{}"),
+            "created_at": row[7], "updated_at": row[8],
+        }
+        for row in rows
+    ]
+
+
+def _discovery_save_feedback(scope, artist, album, status, metadata=None):
+    now = time.time()
+    artist_key = _music_key(artist)
+    album_key = _music_key(album) if album else ""
+    if not artist_key:
+        raise ValueError("artist is required")
+    if scope == "album" and not album_key:
+        raise ValueError("album is required for album feedback")
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        db.execute(
+            "INSERT INTO discovery_feedback "
+            "(scope, artist_key, album_key, artist, album, status, metadata_json, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(scope, artist_key, album_key) DO UPDATE SET "
+            "artist=excluded.artist, album=excluded.album, status=excluded.status, "
+            "metadata_json=excluded.metadata_json, updated_at=excluded.updated_at",
+            (
+                scope, artist_key, album_key, artist.strip(), (album or "").strip(),
+                status, json.dumps(metadata or {}, ensure_ascii=False), now, now,
+            ),
+        )
+        db.commit()
+
+
+def _discovery_refresh_personal(count=20):
+    if not _DISCOVERY_REFRESH_LOCK.acquire(blocking=False):
+        return {"ok": False, "status": "already_running", "list": "personal"}
+    try:
+        raw = recommend_new_music(count=count)
+        try:
+            payload = json.loads(raw) if isinstance(raw, str) else raw
+        except (ValueError, TypeError):
+            payload = {"error": "Recommendation engine returned invalid JSON."}
+        if not isinstance(payload, dict) or payload.get("error"):
+            return {"ok": False, "status": "error", "details": payload}
+        _discovery_write_list("personal", payload)
+        return {
+            "ok": True,
+            "list": "personal",
+            "generated_at": time.time(),
+            "recommendations": len(payload.get("recommendations", [])),
+        }
+    finally:
+        _DISCOVERY_REFRESH_LOCK.release()
+
+
+@mcp.tool()
+def discovery_set_feedback(
+    artist: str,
+    album: str,
+    action: str,
+    metadata_json: str = "{}",
+) -> str:
+    """Save an album to For Me, dismiss it, dismiss its artist, or remove it from For Me.
+
+    action is save, dismiss, dismiss_artist, or remove_for_me. Dismissal is
+    persisted internally and excluded from future visible recommendations.
+    """
+    if action not in {"save", "dismiss", "dismiss_artist", "remove_for_me"}:
+        return json.dumps({
+            "ok": False,
+            "error": "action must be save, dismiss, dismiss_artist, or remove_for_me",
+        })
+    if not artist.strip() or not album.strip():
+        return json.dumps({"ok": False, "error": "artist and album are required"})
+    try:
+        metadata = json.loads(metadata_json or "{}")
+        if not isinstance(metadata, dict):
+            metadata = {}
+    except (ValueError, TypeError):
+        metadata = {}
+
+    try:
+        if action == "save":
+            _discovery_save_feedback("album", artist, album, "for_me", metadata)
+        elif action == "dismiss":
+            _discovery_save_feedback("album", artist, album, "not_for_me", metadata)
+        elif action == "dismiss_artist":
+            _discovery_save_feedback("album", artist, album, "not_for_me", metadata)
+            _discovery_save_feedback("artist", artist, "", "not_for_me_artist", {})
+        else:
+            _discovery_init()
+            with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+                db.execute(
+                    "DELETE FROM discovery_feedback WHERE scope='album' AND artist_key=? AND album_key=? AND status='for_me'",
+                    (_music_key(artist), _music_key(album)),
+                )
+                db.commit()
+        return json.dumps({
+            "ok": True,
+            "action": action,
+            "artist": artist.strip(),
+            "album": album.strip(),
+        }, ensure_ascii=False)
+    except Exception as exc:
+        return json.dumps({"ok": False, "error": str(exc)})
+
+
+_LASTFM_REQUEST_LOCK = __import__("threading").Lock()
+_LASTFM_LAST_REQUEST_AT = 0.0
+
+
+def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
+    global _LASTFM_LAST_REQUEST_AT
+    api_key = os.environ.get("LASTFM_API_KEY", "").strip()
+    if not api_key:
+        return None
+    cache_identity = json.dumps(
+        {"method": method, "params": params},
+        sort_keys=True, ensure_ascii=False,
+    )
+    cache_key = "discovery:lastfm:" + hashlib.sha256(
+        cache_identity.encode("utf-8")
+    ).hexdigest()
+    cached = _metadata_cache_get(cache_key, ttl_seconds)
+    if cached is not None:
+        return cached
+    try:
+        with _LASTFM_REQUEST_LOCK:
+            wait = 0.2 - (time.monotonic() - _LASTFM_LAST_REQUEST_AT)
+            if wait > 0:
+                time.sleep(wait)
+            _LASTFM_LAST_REQUEST_AT = time.monotonic()
+        response = httpx.get(
+            "https://ws.audioscrobbler.com/2.0/",
+            params={
+                "method": method,
+                "api_key": api_key,
+                "format": "json",
+                "autocorrect": 1,
+                **params,
+            },
+            headers={"User-Agent": "NavidromeLibrarian/1.0"},
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("error"):
+            return None
+        _metadata_cache_set(cache_key, payload)
+        return payload
+    except (httpx.HTTPError, ValueError, TypeError):
+        return None
+
+
+def _discovery_library_snapshot():
+    cached = _discovery_read_list("library_snapshot")
+    if cached and time.time() - cached["generated_at"] < 10 * 60:
+        return cached["payload"]
+
+    root = api_call("getArtists")
+    indexes = root.get("artists", {}).get("index", [])
+    artists = [
+        {
+            "id": artist.get("id"),
+            "name": artist.get("name", "").strip(),
+            "album_count": int(artist.get("albumCount") or 0),
+        }
+        for index in indexes
+        for artist in items(index.get("artist"))
+        if artist.get("name")
+    ]
+
+    albums = []
+    seen_ids = set()
+    complete = False
+    for offset in range(0, 50000, 500):
+        album_root = api_call(
+            "getAlbumList2", type="alphabeticalByName", size=500, offset=offset
+        )
+        page = items(album_root.get("albumList2", {}).get("album"))
+        for album in page:
+            album_id = album.get("id")
+            if album_id and album_id in seen_ids:
+                continue
+            if album_id:
+                seen_ids.add(album_id)
+            albums.append({
+                "id": album_id,
+                "artist": album.get("artist", ""),
+                "album": album.get("name", ""),
+                "year": album.get("year"),
+                "coverArt": album.get("coverArt"),
+            })
+        if len(page) < 500:
+            complete = True
+            break
+    if not complete:
+        raise RuntimeError("Navidrome album inventory exceeded the safety limit.")
+
+    snapshot = {"artists": artists, "albums": albums}
+    _discovery_write_list("library_snapshot", snapshot)
+    return snapshot
+
+
+def _lastfm_top_albums(artist, limit=8):
+    payload = _lastfm_cached_call(
+        "artist.getTopAlbums", ttl_seconds=30 * 24 * 60 * 60,
+        artist=artist, limit=limit,
+    )
+    if not payload:
+        return []
+    records = items(payload.get("topalbums", {}).get("album"))
+    output = []
+    for album in records:
+        title = (album.get("name") or "").strip()
+        if not title:
+            continue
+        stats = album.get("playcount")
+        output.append({
+            "artist": artist,
+            "album": title,
+            "mbid": album.get("mbid") or None,
+            "lastfm_listeners": int(album.get("listeners") or 0),
+            "lastfm_playcount": int(stats or 0),
+            "lastfm_url": album.get("url"),
+        })
+    return output
+
+
+def _lastfm_similar_artists(artist, limit=8):
+    payload = _lastfm_cached_call(
+        "artist.getSimilar", ttl_seconds=60 * 24 * 60 * 60,
+        artist=artist, limit=limit,
+    )
+    if not payload:
+        return []
+    records = items(payload.get("similarartists", {}).get("artist"))
+    output = []
+    for item in records:
+        name = (item.get("name") or "").strip()
+        if name:
+            try:
+                match = float(item.get("match") or 0)
+            except (ValueError, TypeError):
+                match = 0.0
+            output.append({"artist": name, "similarity": match})
+    return output
+
+
+def _musicbrainz_critical_rating(mbid):
+    if not mbid:
+        return None
+    cache_key = "discovery:mb-release-group-rating:" + str(mbid)
+    cached = _metadata_cache_get(cache_key, ttl_seconds=180 * 24 * 60 * 60)
+    if cached is not None:
+        return cached
+    try:
+        # MusicBrainz requests must be spaced to respect its public API limit.
+        time.sleep(1.1)
+        response = httpx.get(
+            f"https://musicbrainz.org/ws/2/release-group/{mbid}",
+            params={"fmt": "json", "inc": "ratings"},
+            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+            timeout=15,
+        )
+        if response.status_code == 404:
+            _metadata_cache_set(cache_key, {"rating": None, "votes": 0})
+            return {"rating": None, "votes": 0}
+        response.raise_for_status()
+        data = response.json()
+        rating = data.get("rating") or {}
+        result = {
+            "rating": rating.get("value"),
+            "votes": int(rating.get("votes-count") or 0),
+        }
+        _metadata_cache_set(cache_key, result)
+        return result
+    except (httpx.HTTPError, ValueError, TypeError):
+        return None
+
+
+def _build_classics_list():
+    snapshot = _discovery_library_snapshot()
+    library_artists = snapshot["artists"]
+    owned = {
+        (_music_key(item["artist"]), _music_key(item["album"]))
+        for item in snapshot["albums"]
+    }
+    candidates = {}
+    # Work through every artist in the library. Cached Last.fm responses make
+    # subsequent daily runs substantially cheaper than the initial build.
+    for index, artist_record in enumerate(
+        sorted(library_artists, key=lambda item: item["album_count"], reverse=True)
+    ):
+        artist = artist_record["name"]
+        for album in _lastfm_top_albums(artist, limit=8):
+            key = (_music_key(album["artist"]), _music_key(album["album"]))
+            if key in owned:
+                continue
+            old = candidates.get(key)
+            if old is None or album["lastfm_listeners"] > old["lastfm_listeners"]:
+                candidates[key] = {
+                    **album,
+                    "discovery_type": "classic",
+                    "discovery_source": "Last.fm artist top albums",
+                    "artist_library_album_count": artist_record["album_count"],
+                }
+        # Avoid a long unbounded burst to Last.fm on the first build.
+        if index and index % 5 == 0:
+            time.sleep(0.15)
+
+    ranked = sorted(
+        candidates.values(),
+        key=lambda item: (
+            item["lastfm_listeners"],
+            item["lastfm_playcount"],
+        ),
+        reverse=True,
+    )
+
+    # MusicBrainz ratings add a critical-recognition signal when available.
+    # Only enrich the strongest candidates; ratings are sparse and community supplied.
+    for index, candidate in enumerate(ranked[:80]):
+        rating = _musicbrainz_critical_rating(candidate.get("mbid"))
+        if rating:
+            candidate["musicbrainz_rating"] = rating.get("rating")
+            candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
+    def classic_score(item):
+        import math
+        popularity = math.log10(item["lastfm_listeners"] + 1)
+        playcount = math.log10(item["lastfm_playcount"] + 1)
+        rating = item.get("musicbrainz_rating")
+        votes = item.get("musicbrainz_rating_votes", 0)
+        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
+        # Popularity remains useful when community ratings are unavailable;
+        # ratings can influence the score only when votes exist.
+        return popularity * 0.65 + playcount * 0.20 + critical * 1.5
+
+    for item in ranked:
+        item["discovery_score"] = round(classic_score(item), 4)
+        item["critical_recognition_available"] = bool(
+            item.get("musicbrainz_rating") is not None
+            and item.get("musicbrainz_rating_votes", 0)
+        )
+    ranked.sort(key=lambda item: item["discovery_score"], reverse=True)
+    return {
+        "list": "classics",
+        "source": "Last.fm album popularity + MusicBrainz community ratings where available",
+        "generated_at": time.time(),
+        "library_artists_considered": len(library_artists),
+        "owned_albums_checked": len(owned),
+        "critical_ratings_available": sum(
+            1 for item in ranked if item["critical_recognition_available"]
+        ),
+        "items": ranked[:100],
+        "limitations": [
+            "Last.fm top-album lists are popularity signals, not definitive critical consensus.",
+            "MusicBrainz ratings are community-supplied and may be absent or based on few votes.",
+            "Ownership checks compare normalized artist and album names; aliases and editions may need review.",
+        ],
+    }
+
+
+def _build_artist_deep_dive_list():
+    snapshot = _discovery_library_snapshot()
+    artists = snapshot["artists"]
+    albums = snapshot["albums"]
+    owned_artists = {
+        _music_key(item["name"]): item
+        for item in artists
+    }
+    owned_albums = {
+        (_music_key(item["artist"]), _music_key(item["album"]))
+        for item in albums
+    }
+    anchors = [
+        item for item in artists
+        if item["album_count"] >= 3 and item["name"]
+    ]
+    candidates = {}
+
+    # First find missing albums from artists with a substantial owned presence.
+    for index, anchor in enumerate(
+        sorted(anchors, key=lambda item: item["album_count"], reverse=True)
+    ):
+        for album in _lastfm_top_albums(anchor["name"], limit=8):
+            key = (_music_key(album["artist"]), _music_key(album["album"]))
+            if key in owned_albums:
+                continue
+            candidate = {
+                **album,
+                "discovery_type": "artist_deep_dive",
+                "reason": "Missing album from an artist already well represented in your library",
+                "anchor_artist": anchor["name"],
+                "anchor_album_count": anchor["album_count"],
+                "artist_similarity": 1.0,
+            }
+            old = candidates.get(key)
+            if old is None or candidate["anchor_album_count"] > old["anchor_album_count"]:
+                candidates[key] = candidate
+        if index and index % 5 == 0:
+            time.sleep(0.15)
+
+    # Then discover similar artists that are not represented in the library.
+    similar_artist_scores = {}
+    for index, anchor in enumerate(
+        sorted(anchors, key=lambda item: item["album_count"], reverse=True)
+    ):
+        for similar in _lastfm_similar_artists(anchor["name"], limit=8):
+            similar_key = _music_key(similar["artist"])
+            if similar_key in owned_artists:
+                continue
+            existing = similar_artist_scores.get(similar_key)
+            score = similar["similarity"] * (1.0 + min(anchor["album_count"], 15) / 30)
+            if existing is None or score > existing["score"]:
+                similar_artist_scores[similar_key] = {
+                    "artist": similar["artist"],
+                    "score": score,
+                    "anchor_artist": anchor["name"],
+                    "anchor_album_count": anchor["album_count"],
+                    "similarity": similar["similarity"],
+                }
+        if index and index % 5 == 0:
+            time.sleep(0.15)
+
+    for similar in similar_artist_scores.values():
+        for album in _lastfm_top_albums(similar["artist"], limit=5):
+            key = (_music_key(album["artist"]), _music_key(album["album"]))
+            if key in owned_albums or _music_key(album["artist"]) in owned_artists:
+                continue
+            candidate = {
+                **album,
+                "discovery_type": "similar_artist",
+                "reason": "A similar artist not currently represented in your library",
+                "anchor_artist": similar["anchor_artist"],
+                "anchor_album_count": similar["anchor_album_count"],
+                "artist_similarity": round(similar["similarity"], 4),
+                "similar_artist_score": round(similar["score"], 4),
+            }
+            old = candidates.get(key)
+            if old is None or candidate.get("similar_artist_score", 0) > old.get("similar_artist_score", 0):
+                candidates[key] = candidate
+
+    import math
+    for item in candidates.values():
+        popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
+        playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
+        item["discovery_score"] = round(
+            popularity * 0.65 + playcount * 0.20
+            + float(item.get("similar_artist_score", 0)) * 0.15,
+            4,
+        )
+    ranked = sorted(
+        candidates.values(),
+        key=lambda item: item["discovery_score"],
+        reverse=True,
+    )
+    return {
+        "list": "artist_deep_dive",
+        "source": "Navidrome library presence + Last.fm top albums and similar artists",
+        "generated_at": time.time(),
+        "artists_with_three_or_more_owned_albums": len(anchors),
+        "missing_albums_and_similar_artist_candidates": len(ranked),
+        "items": ranked[:150],
+        "limitations": [
+            "Artist similarity is sourced from Last.fm and is not a guarantee of musical fit.",
+            "Popularity uses Last.fm listener and play counts where available.",
+            "Ownership checks compare normalized artist and album names; aliases and editions may need review.",
+        ],
+    }
+
+
+def _discovery_refresh_other(list_name):
+    lock = _CLASSICS_REFRESH_LOCK if list_name == "classics" else _DEEP_DIVE_REFRESH_LOCK
+    if not lock.acquire(blocking=False):
+        return {"ok": False, "status": "already_running", "list": list_name}
+    try:
+        if list_name == "classics":
+            payload = _build_classics_list()
+        elif list_name == "artist_deep_dive":
+            payload = _build_artist_deep_dive_list()
+        else:
+            return {"ok": False, "error": "Unknown discovery list"}
+        _discovery_write_list(list_name, payload)
+        return {
+            "ok": True, "list": list_name, "generated_at": time.time(),
+            "items": len(payload.get("items", [])),
+        }
+    except Exception as exc:
+        return {"ok": False, "list": list_name, "error": str(exc)}
+    finally:
+        lock.release()
+
+
+_CLASSICS_REFRESH_LOCK = __import__("threading").Lock()
+_DEEP_DIVE_REFRESH_LOCK = __import__("threading").Lock()
+
+
+_DISCOVERY_SETTINGS_DEFAULTS = {
+    "slskd_url": "http://192.168.1.12:5030",
+    "quality_priority": [
+        "mp3_320",
+        "mp3_193_319",
+        "mp3_192",
+        "flac_cd",
+    ],
+}
+
+
+def _discovery_settings_init():
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_settings (
+                setting_key TEXT PRIMARY KEY,
+                value_json TEXT NOT NULL,
+                updated_at REAL NOT NULL
+            )
+        """)
+        db.commit()
+    # This database now contains an API credential: restrict local file access.
+    try:
+        os.chmod(DISCOVERY_DB, 0o600)
+    except OSError:
+        pass
+
+
+def _discovery_settings_read():
+    _discovery_settings_init()
+    settings = dict(_DISCOVERY_SETTINGS_DEFAULTS)
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        rows = db.execute(
+            "SELECT setting_key, value_json FROM discovery_settings"
+        ).fetchall()
+    for key, value in rows:
+        try:
+            settings[key] = json.loads(value)
+        except (ValueError, TypeError):
+            continue
+    return settings
+
+
+def _discovery_settings_write(values):
+    _discovery_settings_init()
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        for key, value in values.items():
+            db.execute(
+                "INSERT OR REPLACE INTO discovery_settings "
+                "(setting_key, value_json, updated_at) VALUES (?, ?, ?)",
+                (key, json.dumps(value, ensure_ascii=False), time.time()),
+            )
+        db.commit()
+
+
+def _slskd_config():
+    settings = _discovery_settings_read()
+    api_key = settings.get("slskd_api_key", "")
+    base_url = str(settings.get("slskd_url") or "").strip().rstrip("/")
+    parsed = urlparse(base_url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("slskd URL must be a valid HTTP or HTTPS URL.")
+    if not api_key:
+        raise ValueError("Add the slskd API key in Discovery Settings first.")
+    return base_url, api_key, settings
+
+
+@mcp.tool()
+def discovery_get_slskd_settings() -> str:
+    """Read acquisition settings without returning the stored API key."""
+    settings = _discovery_settings_read()
+    return json.dumps({
+        "slskd_url": settings.get("slskd_url", _DISCOVERY_SETTINGS_DEFAULTS["slskd_url"]),
+        "api_key_configured": bool(settings.get("slskd_api_key")),
+        "quality_priority": settings.get(
+            "quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"]
+        ),
+        "quality_labels": {
+            "mp3_320": "MP3 320 kbps",
+            "mp3_193_319": "MP3 193–319 kbps",
+            "mp3_192": "MP3 192 kbps",
+            "flac_cd": "FLAC (CD quality preferred; metadata may not verify this)",
+        },
+    }, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def discovery_set_slskd_settings(
+    slskd_url: str = "http://192.168.1.12:5030",
+    api_key: str = "",
+    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
+) -> str:
+    """Save slskd URL, API key, and quality order. Blank API key preserves the saved key."""
+    from urllib.parse import urlparse
+    url = (slskd_url or "").strip().rstrip("/")
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return json.dumps({"ok": False, "error": "Enter a valid HTTP or HTTPS slskd URL."})
+    try:
+        quality = json.loads(quality_priority_json)
+    except (ValueError, TypeError):
+        return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
+    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
+    if not isinstance(quality, list) or len(quality) != 4 or set(quality) != allowed:
+        return json.dumps({
+            "ok": False,
+            "error": "Quality priority must contain each supported tier exactly once.",
+        })
+    values = {
+        "slskd_url": url,
+        "quality_priority": quality,
+    }
+    if api_key.strip():
+        values["slskd_api_key"] = api_key.strip()
+    _discovery_settings_write(values)
+    return json.dumps({
+        "ok": True,
+        "slskd_url": url,
+        "api_key_configured": bool(_discovery_settings_read().get("slskd_api_key")),
+        "quality_priority": quality,
+        "message": "Settings saved. The API key is never returned by this tool.",
+    }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_test_slskd_connection() -> str:
+    """Test the configured slskd API without exposing the API key."""
+    try:
+        base_url, api_key, _ = _slskd_config()
+        response = httpx.get(
+            base_url + "/api/v0/server",
+            headers={"X-API-KEY": api_key},
+            timeout=8,
+        )
+        if response.status_code in (401, 403):
+            return json.dumps({
+                "ok": False, "status": "authentication_failed",
+                "message": "slskd rejected the API key. Check the key in Settings.",
+            })
+        response.raise_for_status()
+        return json.dumps({
+            "ok": True, "status": "connected",
+            "http_status": response.status_code,
+            "message": "slskd API connection succeeded.",
+        })
+    except (httpx.HTTPError, ValueError) as exc:
+        return json.dumps({
+            "ok": False, "status": "connection_failed",
+            "message": str(exc),
+        })
+
+
+def _slskd_quality_tier(file_record, filename, priority):
+    import re
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension == "flac":
+        tier = "flac_cd"
+    elif extension == "mp3":
+        bitrate = file_record.get("bitRate") or file_record.get("bitrate")
+        try:
+            bitrate = int(bitrate)
+        except (ValueError, TypeError):
+            match = re.search(r"(?<!\d)(320|256|224|192|160|128)\s?kbps", filename, re.I)
+            bitrate = int(match.group(1)) if match else 0
+        if bitrate >= 320:
+            tier = "mp3_320"
+        elif 193 <= bitrate <= 319:
+            tier = "mp3_193_319"
+        elif bitrate == 192:
+            tier = "mp3_192"
+        else:
+            tier = "other"
+    else:
+        tier = "other"
+    return priority.index(tier) if tier in priority else len(priority) + 1, tier
+
+
+def _slskd_extract_candidates(payload, artist, album, priority):
+    import re
+    from collections import defaultdict
+    audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
+    def norm(value):
+        return _music_key(str(value or ""))
+    groups = defaultdict(list)
+    for response in payload if isinstance(payload, list) else []:
+        username = response.get("username") or response.get("user") or ""
+        speed = response.get("uploadSpeed") or response.get("averageSpeed") or response.get("speed") or 0
+        try:
+            speed = int(speed)
+        except (TypeError, ValueError):
+            speed = 0
+        files = response.get("files") or response.get("fileList") or []
+        for file_record in files if isinstance(files, list) else []:
+            filename = str(file_record.get("filename") or file_record.get("path") or "")
+            if not filename or "/" not in filename and "\\" not in filename:
+                continue
+            ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            if ext not in audio_exts:
+                continue
+            path_parts = re.split(r"[/\\]+", filename)
+            path_text = " ".join(path_parts[:-1])
+            file_text = path_parts[-1]
+            # Require a useful album-level match; filenames alone are weak evidence.
+            album_in_path = norm(album) in norm(path_text)
+            artist_in_path = norm(artist) in norm(path_text)
+            title_match = norm(album) in norm(file_text)
+            artist_match = norm(artist) in norm(path_text + " " + file_text)
+            if not (album_in_path or title_match):
+                continue
+            parent = path_parts[-2] if len(path_parts) >= 2 else path_text
+            folder_key = (username, parent)
+            rank, tier = _slskd_quality_tier(file_record, filename, priority)
+            try:
+                size = int(file_record.get("size") or 0)
+            except (TypeError, ValueError):
+                size = 0
+            groups[folder_key].append({
+                "filename": filename,
+                "size": size,
+                "quality_tier": tier,
+                "quality_rank": rank,
+                "upload_speed": speed,
+                "artist_match": artist_match or artist_in_path,
+                "album_match": album_in_path or title_match,
+                "artist_in_path": artist_in_path,
+                "album_in_path": album_in_path,
+            })
+    candidates = []
+    for (username, folder), files in groups.items():
+        tiers = [item["quality_rank"] for item in files if item["quality_rank"] <= len(priority)]
+        avg_rank = sum(tiers) / len(tiers) if tiers else len(priority) + 1
+        all_clear = any(item["artist_in_path"] for item in files) and any(
+            item["album_in_path"] for item in files
+        )
+        score = 0.55 * (1.0 if any(x["album_in_path"] for x in files) else 0.65)
+        score += 0.25 * (1.0 if any(x["artist_match"] for x in files) else 0.0)
+        score += 0.20 * min(len(files) / 8.0, 1.0)
+        candidates.append({
+            "username": username,
+            "folder": folder,
+            "file_count": len(files),
+            "files": files,
+            "average_quality_rank": round(avg_rank, 3),
+            "upload_speed": max((x["upload_speed"] for x in files), default=0),
+            "confidence": round(score, 3),
+            "clear_match": bool(all_clear and len(files) >= 3 and score >= 0.9),
+            "quality_summary": sorted({
+                item["quality_tier"] for item in files
+            }),
+        })
+    candidates.sort(key=lambda item: (
+        not item["clear_match"],
+        item["average_quality_rank"],
+        -item["upload_speed"],
+        -item["confidence"],
+        -item["file_count"],
+    ))
+    return candidates
+
+
+@mcp.tool()
+def discovery_acquire_album(
+    artist: str,
+    album: str,
+    metadata_json: str = "{}",
+    auto_queue: bool = True,
+) -> str:
+    """Search slskd for an album; auto-queue only one clear match, otherwise return review candidates."""
+    import uuid
+    if not artist.strip() or not album.strip():
+        return json.dumps({"ok": False, "error": "Artist and album are required."})
+    try:
+        base_url, api_key, settings = _slskd_config()
+    except ValueError as exc:
+        return json.dumps({"ok": False, "status": "settings_required", "message": str(exc)})
+    priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
+    headers = {"X-API-KEY": api_key}
+    search_id = str(uuid.uuid4())
+    try:
+        response = httpx.post(
+            base_url + "/api/v0/searches",
+            headers=headers,
+            json={
+                "id": search_id,
+                "searchText": f"{artist} {album}",
+                "fileLimit": 1000,
+                "filterResponses": True,
+                "maximumPeerQueueLength": 100,
+                "minimumResponseFileCount": 1,
+                "minimumPeerUploadSpeed": 0,
+                "responseLimit": 100,
+                "searchTimeout": 15000,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        deadline = time.monotonic() + 18
+        payload_by_peer = {}
+        while time.monotonic() < deadline:
+            # The search resource exposes completion state; includeResponses is
+            # supported by current slskd releases. Fall back to the responses route
+            # for versions that expose it separately.
+            search_state = {}
+            try:
+                state_response = httpx.get(
+                    f"{base_url}/api/v0/searches/{search_id}",
+                    params={"includeResponses": "true"},
+                    headers=headers,
+                    timeout=8,
+                )
+                state_response.raise_for_status()
+                state_data = state_response.json()
+                if isinstance(state_data, dict):
+                    search_state = state_data
+                    state_payload = state_data.get("responses")
+                    if isinstance(state_payload, list):
+                        for index, entry in enumerate(state_payload):
+                            identity = (
+                                entry.get("username") or entry.get("user") or "",
+                                json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
+                            )
+                            payload_by_peer[identity] = entry
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code not in (404, 405):
+                    raise
+            response_poll = httpx.get(
+                f"{base_url}/api/v0/searches/{search_id}/responses",
+                headers=headers,
+                timeout=8,
+            )
+            if response_poll.status_code not in (404, 405):
+                response_poll.raise_for_status()
+                data = response_poll.json()
+                response_items = (
+                    data if isinstance(data, list)
+                    else data.get("responses") or data.get("items") or []
+                    if isinstance(data, dict) else []
+                )
+                for entry in response_items if isinstance(response_items, list) else []:
+                    identity = (
+                        entry.get("username") or entry.get("user") or "",
+                        json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
+                    )
+                    payload_by_peer[identity] = entry
+            state_text = str(search_state.get("state") or "").lower()
+            if search_state.get("isComplete") is True or (
+                state_text and ("complete" in state_text or "timedout" in state_text)
+            ):
+                break
+            time.sleep(0.75)
+        payload = list(payload_by_peer.values())
+        candidates = _slskd_extract_candidates(payload, artist, album, priority)
+        if not candidates:
+            return json.dumps({
+                "ok": True, "status": "no_matches",
+                "artist": artist, "album": album, "search_id": search_id,
+                "message": "No sufficiently album-matching audio folders were found.",
+            }, ensure_ascii=False)
+        top = candidates[0]
+        # A near-tie between different folders/peers is ambiguous and must be reviewed.
+        near_tie = len(candidates) > 1 and (
+            candidates[1]["clear_match"]
+            and candidates[0]["clear_match"]
+            and candidates[1]["average_quality_rank"] == candidates[0]["average_quality_rank"]
+            and candidates[0]["upload_speed"] <= candidates[1]["upload_speed"] * 1.15
+        )
+        if not auto_queue or not top["clear_match"] or near_tie:
+            return json.dumps({
+                "ok": True, "status": "review_required",
+                "artist": artist, "album": album, "search_id": search_id,
+                "candidates": candidates[:10],
+                "message": "Review the candidate folders before queueing a download.",
+            }, ensure_ascii=False)
+        selected_files = [
+            {"filename": item["filename"], "size": item["size"]}
+            for item in top["files"]
+        ]
+        queue = httpx.post(
+            f"{base_url}/api/v0/transfers/downloads/{top['username']}",
+            headers=headers,
+            json=selected_files,
+            timeout=12,
+        )
+        queue.raise_for_status()
+        return json.dumps({
+            "ok": True, "status": "queued",
+            "artist": artist, "album": album,
+            "source_username": top["username"],
+            "folder": top["folder"],
+            "file_count": len(selected_files),
+            "quality_summary": top["quality_summary"],
+            "upload_speed": top["upload_speed"],
+            "message": "Clear album match queued in slskd.",
+        }, ensure_ascii=False)
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        return json.dumps({
+            "ok": False, "status": "slskd_error",
+            "message": f"slskd request failed: {type(exc).__name__}",
+            "detail": str(exc)[:300],
+        }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_queue_slskd_candidate(
+    username: str,
+    files_json: str,
+) -> str:
+    """Queue a user-reviewed slskd candidate. files_json is a list of filename/size objects."""
+    try:
+        files = json.loads(files_json)
+        if not isinstance(files, list) or not files:
+            return json.dumps({"ok": False, "error": "files_json must be a non-empty JSON list."})
+        normalized = []
+        for item in files:
+            if not isinstance(item, dict) or not item.get("filename"):
+                return json.dumps({"ok": False, "error": "Each file requires a filename."})
+            normalized.append({
+                "filename": str(item["filename"]),
+                "size": int(item.get("size") or 0),
+            })
+        base_url, api_key, _ = _slskd_config()
+        response = httpx.post(
+            f"{base_url}/api/v0/transfers/downloads/{username}",
+            headers={"X-API-KEY": api_key},
+            json=normalized,
+            timeout=12,
+        )
+        response.raise_for_status()
+        return json.dumps({
+            "ok": True, "status": "queued",
+            "username": username, "file_count": len(normalized),
+        }, ensure_ascii=False)
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        return json.dumps({
+            "ok": False, "error": f"Could not queue candidate ({type(exc).__name__}).",
+            "detail": str(exc)[:300],
+        }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
+    """Read saved discovery results or the For Me list.
+
+    list_name is personal or for_me. Dismissed albums and artists are hidden
+    from personal results; For Me entries are marked acquired when found in
+    the current Navidrome album inventory.
+    """
+    if list_name not in {"personal", "for_me", "classics", "artist_deep_dive"}:
+        return json.dumps({
+            "error": "list_name must be personal, classics, artist_deep_dive, or for_me."
+        })
+    if not 1 <= count <= 150:
+        return json.dumps({"error": "count must be between 1 and 150"})
+
+    feedback = _discovery_feedback_rows()
+    saved = {
+        (row["artist_key"], row["album_key"]): row
+        for row in feedback
+        if row["scope"] == "album" and row["status"] == "for_me"
+    }
+
+    if list_name == "for_me":
+        try:
+            snapshot = _discovery_library_snapshot()
+            owned = {
+                (_music_key(a.get("artist", "")), _music_key(a.get("album", "")))
+                for a in snapshot["albums"]
+            }
+            inventory_available = True
+        except Exception:
+            owned = set()
+            inventory_available = False
+
+        entries = []
+        for row in sorted(saved.values(), key=lambda item: item["updated_at"], reverse=True):
+            entries.append({
+                "artist": row["artist"],
+                "album": row["album"],
+                "saved_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "acquired": (
+                    (row["artist_key"], row["album_key"]) in owned
+                    if inventory_available else None
+                ),
+                "metadata": row["metadata"],
+            })
+        return json.dumps({
+            "list": "for_me",
+            "count": len(entries[:count]),
+            "total": len(entries),
+            "items": entries[:count],
+            "library_inventory_available": inventory_available,
+            "read_only_except_user_list": True,
+        }, ensure_ascii=False, indent=2)
+
+    cached = _discovery_read_list(list_name)
+    if not cached:
+        return json.dumps({
+            "list": list_name,
+            "generated_at": None,
+            "items": [],
+            "message": "No saved list yet. Use discovery_refresh_list or wait for the daily background refresh.",
+        }, ensure_ascii=False, indent=2)
+
+    payload = cached["payload"]
+    source_items = payload.get("recommendations", []) if list_name == "personal" else payload.get("items", [])
+    dismissed_albums = {
+        (row["artist_key"], row["album_key"])
+        for row in feedback
+        if row["scope"] == "album" and row["status"] == "not_for_me"
+    }
+    dismissed_artists = {
+        row["artist_key"]
+        for row in feedback
+        if row["scope"] == "artist" and row["status"] == "not_for_me_artist"
+    }
+    visible = []
+    for item in source_items:
+        artist_key = _music_key(item.get("artist", ""))
+        album_key = _music_key(item.get("album", ""))
+        identity = (artist_key, album_key)
+        if identity in dismissed_albums or artist_key in dismissed_artists:
+            continue
+        if identity in saved:
+            continue
+        visible.append(item)
+
+    result = {
+        "list": list_name,
+        "generated_at": cached["generated_at"],
+        "total_before_feedback": len(source_items),
+        "count": min(count, len(visible)),
+        "items": visible[:count],
+        "source": payload.get("source"),
+        "limitations": payload.get("limitations", []),
+    }
+    if list_name == "personal":
+        result["recommendations"] = visible[:count]
+        result["diagnostics"] = {
+            key: payload.get(key)
+            for key in (
+                "source", "recent_listens_retrieved", "library_albums_indexed",
+                "metadata_lookup_errors", "limitations"
+            )
+            if key in payload
+        }
+    for key in (
+        "library_artists_considered", "owned_albums_checked",
+        "critical_ratings_available", "artists_with_three_or_more_owned_albums",
+        "missing_albums_and_similar_artist_candidates",
+    ):
+        if key in payload:
+            result[key] = payload[key]
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+def _discovery_refresh_all():
+    results = []
+    results.append(_discovery_refresh_personal(20))
+    results.append(_discovery_refresh_other("classics"))
+    results.append(_discovery_refresh_other("artist_deep_dive"))
+    return results
+
+
+@mcp.tool()
+def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
+    """Refresh personal, classics, artist_deep_dive, or all discovery lists.
+
+    Personal uses the existing ListenBrainz recommendation engine. Classics
+    and Artist Deep Dives use Last.fm and MusicBrainz data. The latter two run
+    in the background because their first full refresh can take several minutes.
+    """
+    import threading
+
+    if list_name not in {"personal", "classics", "artist_deep_dive", "all"}:
+        return json.dumps({
+            "ok": False,
+            "error": "list_name must be personal, classics, artist_deep_dive, or all",
+        })
+    if not 1 <= count <= 20:
+        return json.dumps({"ok": False, "error": "count must be between 1 and 20"})
+
+    if list_name == "personal":
+        return json.dumps(_discovery_refresh_personal(count), ensure_ascii=False, indent=2)
+
+    target = _discovery_refresh_all if list_name == "all" else _discovery_refresh_other
+    args = () if list_name == "all" else (list_name,)
+    thread = threading.Thread(
+        target=target,
+        args=args,
+        name="navidrome-refresh-" + list_name,
+        daemon=True,
+    )
+    thread.start()
+    return json.dumps({
+        "ok": True,
+        "status": "started",
+        "list": list_name,
+        "message": "Refresh is running in the background. Read the list again to check when fresh results are available.",
+    }, ensure_ascii=False)
+
+
+def _discovery_scheduler():
+    """Refresh each discovery list when its stored results are older than 24 hours."""
+    while True:
+        try:
+            for list_name in ("personal", "classics", "artist_deep_dive"):
+                cached = _discovery_read_list(list_name)
+                stale = (
+                    cached is None
+                    or time.time() - cached["generated_at"] >= 24 * 60 * 60
+                )
+                if not stale:
+                    continue
+                if list_name == "personal":
+                    _discovery_refresh_personal(20)
+                else:
+                    _discovery_refresh_other(list_name)
+        except Exception:
+            # Background discovery must not take down the MCP service.
+            pass
+        time.sleep(3600)
+
+
+def _start_discovery_scheduler():
+    import threading
+    thread = threading.Thread(
+        target=_discovery_scheduler,
+        name="navidrome-discovery-scheduler",
+        daemon=True,
+    )
+    thread.start()
+
 
 @mcp.tool()
 def restart_server() -> str:
@@ -2130,4 +3328,5 @@ def apply_server_patch(old_text: str, new_text: str) -> str:
 
 
 if __name__ == "__main__":
+    _start_discovery_scheduler()
     mcp.run(transport="streamable-http", host="127.0.0.1", port=8000)

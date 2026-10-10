@@ -24,3 +24,5 @@ htmlcov/
 build/
 dist/
 *.bak-*
+
+web-venv/
