@@ -66,7 +66,23 @@ BASE_URL = os.environ["NAVIDROME_URL"].rstrip("/")
 USERNAME = os.environ["NAVIDROME_USER"]
 PASSWORD = os.environ["NAVIDROME_PASSWORD"]
 
-MUSIC_DIR = Path("/Volumes/media/library/music")
+def _default_music_dir():
+    """Choose an explicit override or the native mount path for this host."""
+    configured = os.environ.get("NAVIDROME_MUSIC_DIR")
+    if configured:
+        return Path(configured).expanduser()
+
+    server_path = Path("/media/library/music")
+    mac_path = Path("/Volumes/media/library/music")
+    if server_path.is_dir():
+        return server_path
+    if mac_path.is_dir():
+        return mac_path
+    # The production deployment is the media LXC; this is its default.
+    return server_path
+
+
+MUSIC_DIR = _default_music_dir()
 
 parsed_url = urlparse(BASE_URL)
 if parsed_url.scheme not in ("http", "https"):
@@ -2690,10 +2706,11 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_cd",
     ],
     "auto_acquire_for_me": True,
-    "slskd_downloads_path": str(Path(os.environ.get(
-        "SLSKD_DOWNLOADS_MOUNT",
-        str(MUSIC_DIR.parent.parent / "downloads"),
-    )).expanduser()),
+    "slskd_downloads_path": str(Path(
+        os.environ.get("SLSKD_DOWNLOADS_DIR")
+        or os.environ.get("SLSKD_DOWNLOADS_MOUNT")
+        or str(MUSIC_DIR.parent.parent / "downloads" / "slskd" / "complete")
+    ).expanduser()),
 }
 
 
@@ -2726,6 +2743,27 @@ def _discovery_settings_read():
             settings[key] = json.loads(value)
         except (ValueError, TypeError):
             continue
+
+    # Migrate the former downloads-root defaults to slskd's actual completed
+    # directory when that directory is available on the current host. This
+    # also handles a settings DB moved from the Mac development environment
+    # to the Debian media LXC without overwriting custom paths.
+    saved_path = str(settings.get("slskd_downloads_path") or "")
+    legacy_paths = {
+        str(MUSIC_DIR.parent.parent / "downloads"),
+        "/Volumes/media/downloads",
+        "/media/downloads",
+    }
+    current_default = _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+    if (
+        saved_path in legacy_paths
+        and saved_path != current_default
+        and Path(current_default).is_dir()
+    ):
+        settings["slskd_downloads_path"] = current_default
+        _discovery_settings_write({
+            "slskd_downloads_path": current_default,
+        })
     return settings
 
 
@@ -3075,32 +3113,61 @@ def _discovery_update_acquisition_status(artist, album, status, details=None):
 
 
 def _discovery_locate_completed_album(download_root, candidate):
-    """Find the completed source folder by its folder name and expected files."""
+    """Find a unique completed folder using expected filenames and file sizes.
+
+    Prefer the peer's advertised folder name when it matches, but do not
+    require it: slskd's local completed-folder layout can differ from the
+    remote share folder name.
+    """
     import os
+
     root = Path(download_root).expanduser()
     if not root.is_dir():
         return None
-    expected = {
-        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]: int(item.get("size") or 0)
-        for item in candidate.get("files", [])
-    }
+
+    expected = {}
+    for item in candidate.get("files", []):
+        filename = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+        if filename:
+            expected[filename.casefold()] = int(item.get("size") or 0)
     if not expected:
         return None
+
     wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
     matches = []
     for current, directories, filenames in os.walk(root, followlinks=False):
         directories[:] = [name for name in directories if not name.startswith(".")]
         current_path = Path(current)
-        present = set(filenames)
-        matched = [name for name in expected if name in present]
-        if current_path.name == wanted_folder and len(matched) == len(expected):
-            size_ok = all(
-                expected[name] <= 0 or (current_path / name).stat().st_size == expected[name]
-                for name in expected
-            )
-            if size_ok:
-                matches.append(current_path)
-    return matches[0] if len(matches) == 1 else None
+        actual_names = {name.casefold(): name for name in filenames}
+        if not all(name in actual_names for name in expected):
+            continue
+
+        size_ok = True
+        for folded_name, expected_size in expected.items():
+            actual_name = actual_names[folded_name]
+            try:
+                actual_size = (current_path / actual_name).stat().st_size
+            except OSError:
+                size_ok = False
+                break
+            if expected_size > 0 and actual_size != expected_size:
+                size_ok = False
+                break
+        if size_ok:
+            matches.append(current_path)
+
+    if not matches:
+        return None
+
+    named_matches = [
+        path for path in matches
+        if path.name.casefold() == str(wanted_folder or "").casefold()
+    ]
+    if len(named_matches) == 1:
+        return named_matches[0]
+    if len(matches) == 1:
+        return matches[0]
+    return None
 
 
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
@@ -3108,7 +3175,10 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
     import shutil
     base_url, api_key, _ = _slskd_config()
     headers = {"X-API-KEY": api_key}
-    download_root = Path(str(settings.get("slskd_downloads_path") or "")).expanduser()
+    download_root = Path(str(
+        settings.get("slskd_downloads_path")
+        or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+    )).expanduser()
     music_root = MUSIC_DIR.expanduser()
     expected = {
         str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
@@ -3159,9 +3229,18 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                             "destination": str(album_dir)
                         })
                         return
-                    artist_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.move(str(source), str(album_dir))
+                    try:
+                        artist_dir.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(source), str(album_dir))
+                    except OSError as exc:
+                        _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                            "source_folder": str(source),
+                            "destination": str(album_dir),
+                            "error": str(exc),
+                        })
+                        return
                     _discovery_update_acquisition_status(artist, album, "imported", {
+                        "source_folder": str(source),
                         "destination": str(album_dir),
                         "source_username": candidate["username"],
                         "imported_at": time.time(),
