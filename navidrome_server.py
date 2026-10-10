@@ -2787,6 +2787,10 @@ def _discovery_settings_write(values):
         db.commit()
 
 
+# Load persisted directory overrides before any library operation runs.
+_discovery_settings_read()
+
+
 def _slskd_config():
     settings = _discovery_settings_read()
     api_key = settings.get("slskd_api_key", "")
