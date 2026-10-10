@@ -1498,6 +1498,9 @@ def recommend_new_music(count: int = 10) -> str:
     candidate_decisions = {}
 
     def record_decision(candidate, status, reason):
+        previous = candidate_decisions.get(id(candidate))
+        if previous and previous.get("status") == "selected":
+            return
         candidate_decisions[id(candidate)] = {
             "status": status,
             "reason": reason,
@@ -1507,12 +1510,14 @@ def recommend_new_music(count: int = 10) -> str:
         candidate,
         allow_over_quota=False,
         allow_over_family_cap=False,
+        allow_over_diversity_style=False,
     ):
         nonlocal checked
         category = candidate["discovery_category"]
         style = candidate.get("diversity_style", "other")
         if (
-            style in diversity_style_targets
+            not allow_over_diversity_style
+            and style in diversity_style_targets
             and selected_styles[style] >= diversity_style_targets[style]
         ):
             record_decision(
@@ -1774,6 +1779,34 @@ def recommend_new_music(count: int = 10) -> str:
             if len(found) >= count or checked >= 60:
                 break
             consider(candidate, allow_over_quota=True)
+
+    # Final fallback: fill any remaining slots from the strongest candidates
+    # across all categories, relaxing category, family, and style caps only
+    # after the normal allocation attempts have been exhausted.
+    if len(found) < count and checked < 60:
+        remaining_candidates = sorted(
+            (
+                candidate
+                for category in (
+                    "adjacent",
+                    "cross_genre",
+                    "adventurous",
+                    "unclassified",
+                )
+                for candidate in candidates_by_category[category]
+            ),
+            key=lambda candidate: candidate["discovery_score"],
+            reverse=True,
+        )
+        for candidate in remaining_candidates:
+            if len(found) >= count or checked >= 60:
+                break
+            consider(
+                candidate,
+                allow_over_quota=True,
+                allow_over_family_cap=True,
+                allow_over_diversity_style=True,
+            )
 
 
     # Temporary diagnostics: inspect all resolved candidates before return.
