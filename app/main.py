@@ -176,6 +176,7 @@ def set_slskd_settings(payload: dict):
             slskd_url=url,
             api_key=api_key,
             quality_priority_json=json.dumps(quality),
+            slskd_downloads_path=str(payload.get("slskd_downloads_path") or "/Volumes/media/downloads"),
         ))
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
@@ -214,6 +215,9 @@ def acquire_album(payload: dict):
 @app.post("/api/acquire/queue")
 def queue_reviewed_candidate(payload: dict):
     username = str(payload.get("username") or "").strip()
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    folder = str(payload.get("folder") or "").strip()
     files = payload.get("files")
     if not username or not isinstance(files, list) or not files:
         raise HTTPException(status_code=400, detail="username and a non-empty files list are required")
@@ -221,6 +225,9 @@ def queue_reviewed_candidate(payload: dict):
         return parse_result(librarian.discovery_queue_slskd_candidate(
             username=username,
             files_json=json.dumps(files, ensure_ascii=False),
+            artist=artist,
+            album=album,
+            folder=folder,
         ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not queue the selected candidate.")
@@ -547,6 +554,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
              placeholder="Enter key to set or replace it"
              autocomplete="new-password">
     </label>
+    <label>Downloads folder as mounted on this Mac
+      <input id="slskdDownloadsPath" type="text" value="/Volumes/media/downloads">
+    </label>
+    <p class="muted">This must point to the same slskd downloads directory, accessible through the mounted media share. The default assumes /Volumes/media/downloads.</p>
     <h3>Audio quality priority</h3>
     <label>First choice <select class="quality-priority"></select></label>
     <label>Second choice <select class="quality-priority"></select></label>
@@ -933,13 +944,13 @@ document.querySelectorAll('[data-refresh-discovery]').forEach(button =>
 async function searchAlbum(artist, album, metadata) {
   showPage('acquireReview');
   $('acquireStatus').textContent =
-    `Searching for ${artist} — ${album}. No download will be queued automatically.`;
+    `Searching for ${artist} — ${album}. A clear match will be queued automatically; review is only needed when the match criteria are not met.`;
   const target = $('acquireCards');
   target.replaceChildren();
 
   try {
     const data = await sendJSON('/api/acquire', 'POST',
-      {artist, album, metadata, auto_queue:false});
+      {artist, album, metadata, auto_queue:true});
 
     $('acquireStatus').textContent = data.message || data.status || 'Search complete.';
 
@@ -964,7 +975,7 @@ async function searchAlbum(artist, album, metadata) {
             const files = (candidate.files || []).map(f =>
               ({filename:f.filename, size:f.size}));
             const result = await sendJSON('/api/acquire/queue', 'POST',
-              {username:candidate.username, files});
+              {username:candidate.username, artist, album, folder:candidate.folder, files});
             $('acquireStatus').textContent = result.message || result.status;
             queue.textContent = 'Queue requested';
           } catch (error) {
@@ -987,6 +998,7 @@ async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
+    $('slskdDownloadsPath').value = data.slskd_downloads_path || '/Volumes/media/downloads';
 
     document.querySelectorAll('.quality-priority').forEach((select, index) => {
       select.replaceChildren();
@@ -1015,6 +1027,7 @@ $('saveSlskd').addEventListener('click', async () => {
 
   const payload = {
     slskd_url: $('slskdUrl').value.trim(),
+    slskd_downloads_path: $('slskdDownloadsPath').value.trim(),
     quality_priority: priorities
   };
   if ($('slskdApiKey').value) payload.api_key = $('slskdApiKey').value;
