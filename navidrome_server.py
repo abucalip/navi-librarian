@@ -2073,6 +2073,76 @@ def _discovery_save_feedback(scope, artist, album, status, metadata=None):
         db.commit()
 
 
+# Prevent duplicate automatic searches for the same For Me album.
+_DISCOVERY_AUTO_ACQUIRE_LOCK = __import__("threading").Lock()
+_DISCOVERY_AUTO_ACQUIRE_ACTIVE = set()
+
+
+def _discovery_auto_acquire_for_me(artist, album):
+    identity = (_music_key(artist), _music_key(album))
+    with _DISCOVERY_AUTO_ACQUIRE_LOCK:
+        if identity in _DISCOVERY_AUTO_ACQUIRE_ACTIVE:
+            return
+        _DISCOVERY_AUTO_ACQUIRE_ACTIVE.add(identity)
+    try:
+        rows = _discovery_feedback_rows()
+        existing = next((
+            row for row in rows
+            if row["scope"] == "album"
+            and row["artist_key"] == identity[0]
+            and row["album_key"] == identity[1]
+            and row["status"] == "for_me"
+        ), None)
+        if not existing:
+            return
+        metadata = existing.get("metadata") or {}
+        prior = metadata.get("auto_acquisition") or {}
+        if prior.get("status") == "queued":
+            return
+        settings = _discovery_settings_read()
+        if not settings.get("auto_acquire_for_me", True):
+            metadata["auto_acquisition"] = {"status": "disabled", "checked_at": time.time()}
+            _discovery_save_feedback("album", artist, album, "for_me", metadata)
+            return
+        metadata["auto_acquisition"] = {"status": "searching", "started_at": time.time()}
+        _discovery_save_feedback("album", artist, album, "for_me", metadata)
+        result_text = discovery_acquire_album(
+            artist, album, metadata_json=json.dumps(metadata, ensure_ascii=False),
+            auto_queue=True,
+        )
+        try:
+            result = json.loads(result_text)
+        except (ValueError, TypeError):
+            result = {"ok": False, "status": "invalid_response"}
+        metadata["auto_acquisition"] = {
+            "status": result.get("status", "error"),
+            "checked_at": time.time(),
+            "result": result,
+        }
+        _discovery_save_feedback("album", artist, album, "for_me", metadata)
+    except Exception as exc:
+        try:
+            rows = _discovery_feedback_rows()
+            existing = next((
+                row for row in rows
+                if row["scope"] == "album"
+                and row["artist_key"] == identity[0]
+                and row["album_key"] == identity[1]
+                and row["status"] == "for_me"
+            ), None)
+            metadata = (existing or {}).get("metadata") or {}
+            metadata["auto_acquisition"] = {
+                "status": "error", "checked_at": time.time(),
+                "message": type(exc).__name__,
+            }
+            _discovery_save_feedback("album", artist, album, "for_me", metadata)
+        except Exception:
+            pass
+    finally:
+        with _DISCOVERY_AUTO_ACQUIRE_LOCK:
+            _DISCOVERY_AUTO_ACQUIRE_ACTIVE.discard(identity)
+
+
 def _discovery_refresh_personal(count=20):
     if not _DISCOVERY_REFRESH_LOCK.acquire(blocking=False):
         return {"ok": False, "status": "already_running", "list": "personal"}
@@ -2124,6 +2194,13 @@ def discovery_set_feedback(
     try:
         if action == "save":
             _discovery_save_feedback("album", artist, album, "for_me", metadata)
+            import threading
+            threading.Thread(
+                target=_discovery_auto_acquire_for_me,
+                args=(artist.strip(), album.strip()),
+                name="navidrome-auto-acquire",
+                daemon=True,
+            ).start()
         elif action == "dismiss":
             _discovery_save_feedback("album", artist, album, "not_for_me", metadata)
         elif action == "dismiss_artist":
@@ -2142,6 +2219,14 @@ def discovery_set_feedback(
             "action": action,
             "artist": artist.strip(),
             "album": album.strip(),
+            "auto_acquisition": (
+                "started_in_background"
+                if action == "save" else None
+            ),
+            "note": (
+                "For Me save triggers an slskd search. Only a clear, non-ambiguous album-folder match is queued automatically; uncertain matches require review."
+                if action == "save" else None
+            ),
         }, ensure_ascii=False)
     except Exception as exc:
         return json.dumps({"ok": False, "error": str(exc)})
@@ -2443,6 +2528,57 @@ def _build_artist_deep_dive_list():
         if index and index % 5 == 0:
             time.sleep(0.15)
 
+    # Reuse resolved candidates that were not selected for the main list.
+    # Only surface albums by artists already represented by 3+ owned albums,
+    # so this lane is anchored in library depth rather than listening history.
+    personal_cache = _discovery_read_list("personal")
+    personal_payload = personal_cache.get("payload", {}) if personal_cache else {}
+    resolved_candidates = personal_payload.get("debug_all_candidates", [])
+    anchors_by_key = {_music_key(item["name"]): item for item in anchors}
+    for candidate in resolved_candidates if isinstance(resolved_candidates, list) else []:
+        candidate_artist = str(candidate.get("artist") or "").strip()
+        candidate_album = str(candidate.get("album") or "").strip()
+        anchor = anchors_by_key.get(_music_key(candidate_artist))
+        if not anchor or not candidate_album:
+            continue
+        if candidate.get("exact_owned") or candidate.get("selection_decision") == "selected":
+            continue
+        key = (_music_key(candidate_artist), _music_key(candidate_album))
+        if key in owned_albums:
+            continue
+        candidate_score = candidate.get("discovery_score", candidate.get("score", 0))
+        try:
+            candidate_score = max(0.0, float(candidate_score or 0))
+        except (TypeError, ValueError):
+            candidate_score = 0.0
+        enriched = {
+            "artist": candidate_artist,
+            "album": candidate_album,
+            "mbid": candidate.get("mbid"),
+            "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
+            "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
+            "discovery_type": "artist_deep_dive",
+            "discovery_source": "resolved_candidate_pool_beyond_main_selection",
+            "reason": (
+                "An additional resolved candidate for an artist with at least "
+                "three albums in your library; not selected for the main list."
+            ),
+            "anchor_artist": anchor["name"],
+            "anchor_album_count": anchor["album_count"],
+            "artist_similarity": 1.0,
+            "candidate_pool_score": candidate_score,
+            "candidate_pool_category": candidate.get("assigned_category"),
+            "genres": candidate.get("genre_tags") or candidate.get("genres") or [],
+            "genre_families": candidate.get("genre_families") or [],
+        }
+        old = candidates.get(key)
+        if old is None:
+            candidates[key] = enriched
+        else:
+            old["also_found_in_resolved_candidate_pool"] = True
+            old["candidate_pool_score"] = candidate_score
+            old["candidate_pool_category"] = candidate.get("assigned_category")
+
     # Then discover similar artists that are not represented in the library.
     similar_artist_scores = {}
     for index, anchor in enumerate(
@@ -2487,9 +2623,16 @@ def _build_artist_deep_dive_list():
     for item in candidates.values():
         popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
         playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
+        candidate_score = float(item.get("candidate_pool_score", 0) or 0)
+        candidate_bonus = candidate_score * 10.0
+        anchor_bonus = (
+            min(int(item.get("anchor_album_count", 0) or 0), 15) * 0.05
+            if candidate_score else 0.0
+        )
         item["discovery_score"] = round(
             popularity * 0.65 + playcount * 0.20
-            + float(item.get("similar_artist_score", 0)) * 0.15,
+            + float(item.get("similar_artist_score", 0)) * 0.15
+            + candidate_bonus + anchor_bonus,
             4,
         )
     ranked = sorted(
@@ -2546,6 +2689,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "mp3_192",
         "flac_cd",
     ],
+    "auto_acquire_for_me": True,
 }
 
 
@@ -2612,6 +2756,7 @@ def discovery_get_slskd_settings() -> str:
     return json.dumps({
         "slskd_url": settings.get("slskd_url", _DISCOVERY_SETTINGS_DEFAULTS["slskd_url"]),
         "api_key_configured": bool(settings.get("slskd_api_key")),
+        "auto_acquire_for_me": bool(settings.get("auto_acquire_for_me", True)),
         "quality_priority": settings.get(
             "quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"]
         ),
@@ -2629,6 +2774,7 @@ def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
+    auto_acquire_for_me: bool = True,
 ) -> str:
     """Save slskd URL, API key, and quality order. Blank API key preserves the saved key."""
     from urllib.parse import urlparse
@@ -2649,6 +2795,7 @@ def discovery_set_slskd_settings(
     values = {
         "slskd_url": url,
         "quality_priority": quality,
+        "auto_acquire_for_me": bool(auto_acquire_for_me),
     }
     if api_key.strip():
         values["slskd_api_key"] = api_key.strip()
