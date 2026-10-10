@@ -432,6 +432,14 @@ p { line-height: 1.55; }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
 .genre-tag { padding: 3px 6px; color: #bfc0b6; background: #30322e; border: 1px solid #41433d; border-radius: 2px; font: 10px/1.35 var(--mono); }
 .card-meta, .card-source { margin-top: 7px; margin-bottom: 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.download-progress { display: flex; align-items: center; gap: 14px; margin: 13px; padding: 12px; background: #1c1e1d; border: 1px solid #353834; }
+.progress-ring { position: relative; display: grid; place-items: center; flex: 0 0 72px; width: 72px; height: 72px; border-radius: 50%; background: conic-gradient(var(--yellow) var(--progress, 0%), #3b3d39 0); }
+.progress-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: #1c1e1d; }
+.progress-ring span { position: relative; z-index: 1; color: var(--text); font: 500 14px/1 var(--mono); }
+.download-progress-copy { min-width: 0; }
+.download-progress-label { margin: 0 0 4px; color: var(--yellow); font: 500 10px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+.download-progress-stat { margin: 0; color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
+.download-progress-stat + .download-progress-stat { margin-top: 3px; color: var(--muted); }
 .card-source { padding-top: 8px; border-top: 1px solid #353834; }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
 .card-actions button { padding: 7px 8px; background: #2a2c29; }
@@ -711,6 +719,40 @@ async function loadAcquisitions() {
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
       addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const details = job.details || {};
+      const progress = details.live_progress;
+      if (job.status === 'downloading' && progress) {
+        const progressRow = document.createElement('div');
+        progressRow.className = 'download-progress';
+        const ring = document.createElement('div');
+        ring.className = 'progress-ring';
+        const percent = Number.isFinite(Number(progress.percent)) && progress.percent !== null
+          ? Math.max(0, Math.min(100, Number(progress.percent))) : null;
+        ring.style.setProperty('--progress', percent === null ? '0%' : percent + '%');
+        ring.setAttribute('role', 'img');
+        ring.setAttribute('aria-label', percent === null ? 'Download progress unavailable' : 'Download ' + Math.round(percent) + ' percent complete');
+        const percentText = document.createElement('span');
+        percentText.textContent = percent === null ? '—' : Math.round(percent) + '%';
+        ring.append(percentText);
+        const copy = document.createElement('div');
+        copy.className = 'download-progress-copy';
+        addTextElement(copy, 'p', 'download-progress-label', 'Download progress');
+        const speed = progress.speed_bytes_per_second;
+        let speedText = 'Speed unavailable';
+        if (Number.isFinite(Number(speed)) && speed !== null) {
+          const value = Math.max(0, Number(speed));
+          speedText = value >= 1024 * 1024
+            ? (value / (1024 * 1024)).toFixed(1) + ' MB/s'
+            : value >= 1024 ? (value / 1024).toFixed(0) + ' KB/s' : Math.round(value) + ' B/s';
+        }
+        addTextElement(copy, 'p', 'download-progress-stat', speedText);
+        const remaining = Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
+        const totalTracks = Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
+        addTextElement(copy, 'p', 'download-progress-stat',
+          remaining === null ? 'Tracks remaining unavailable' :
+          String(remaining) + ' of ' + (totalTracks === null ? '?' : totalTracks) + ' tracks remaining');
+        progressRow.append(ring, copy);
+        card.append(progressRow);
+      }
       const lines = [
         details.message,
         details.error,
