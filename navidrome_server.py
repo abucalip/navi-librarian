@@ -3238,6 +3238,20 @@ def _discovery_save_acquisition_job(artist, album, status, details=None,
     if not artist_key or not album_key:
         raise ValueError("artist and album are required")
     with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        if not (details or {}).get("quality_summary"):
+            previous = db.execute(
+                "SELECT details_json FROM discovery_acquisitions "
+                "WHERE artist_key=? AND album_key=?",
+                (artist_key, album_key),
+            ).fetchone()
+            if previous:
+                try:
+                    previous_details = json.loads(previous[0] or "{}")
+                except (ValueError, TypeError):
+                    previous_details = {}
+                previous_quality = previous_details.get("quality_summary")
+                if previous_quality:
+                    details = {**(details or {}), "quality_summary": previous_quality}
         db.execute(
             "INSERT INTO discovery_acquisitions "
             "(artist_key, album_key, artist, album, status, details_json, candidate_json, "
@@ -3863,6 +3877,7 @@ def discovery_acquire_album(
                 {"filename": item["filename"], "size": item["size"]}
                 for item in uncertain["files"]
             ]
+            candidate_for_monitor["quality_summary"] = list(uncertain.get("quality_summary") or [])
             _discovery_start_import_watcher(
                 artist, album, candidate_for_monitor, settings
             )
