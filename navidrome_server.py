@@ -3324,14 +3324,18 @@ def _discovery_live_download_progress(job):
         except (TypeError, ValueError):
             size = 0
         transferred = 0
+        raw_transferred = 0
+        has_transfer_counter = False
         for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
             if item.get(key) is not None:
                 try:
-                    transferred = max(0, int(item[key]))
+                    raw_transferred = max(0, int(item[key]))
+                    transferred = raw_transferred
+                    has_transfer_counter = True
                     break
                 except (TypeError, ValueError):
                     pass
-        if state in completed_states and size:
+        if is_completed_state and size:
             transferred = size
         if size:
             transferred = min(transferred, size)
@@ -3339,7 +3343,8 @@ def _discovery_live_download_progress(job):
             if transferred >= size and not is_completed_state:
                 completed += 1
         transferred_bytes += transferred
-        file_byte_snapshot[name] = transferred
+        # Speed uses only actual counters, never an inferred completed-file size.
+        file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
 
     now = time.monotonic()
     snapshot_key = (
