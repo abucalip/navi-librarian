@@ -1,6 +1,8 @@
 import json
 from html import escape
 from time import monotonic
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
@@ -250,6 +252,67 @@ def queue_reviewed_candidate(payload: dict):
         raise HTTPException(status_code=502, detail="Could not queue the selected candidate.")
 
 
+# Album artwork is presentation metadata only; recommendations work without it.
+_ARTWORK_CACHE_TTL = 6 * 60 * 60
+_artwork_cache = {}
+
+
+@app.get("/api/artwork")
+def album_artwork(artist: str = "", album: str = ""):
+    artist = artist.strip()[:180]
+    album = album.strip()[:180]
+    if not artist and not album:
+        raise HTTPException(status_code=400, detail="artist or album is required")
+
+    key = (artist.casefold(), album.casefold())
+    now = monotonic()
+    cached = _artwork_cache.get(key)
+    if cached and now - cached["time"] < _ARTWORK_CACHE_TTL:
+        return cached["data"]
+
+    term = " ".join(part for part in (artist, album) if part)
+    query = urlencode({"term": term, "entity": "album", "media": "music", "limit": 8})
+    endpoint = "https://itunes.apple.com/search?" + query
+    result = {"artwork_url": None, "source": "Apple/iTunes"}
+    try:
+        with urlopen(endpoint, timeout=3) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        albums = payload.get("results") or []
+
+        def match_score(item):
+            candidate_artist = str(item.get("artistName") or "").casefold()
+            candidate_album = str(item.get("collectionName") or "").casefold()
+            score = 0
+            if artist.casefold() == candidate_artist:
+                score += 5
+            elif artist and artist.casefold() in candidate_artist:
+                score += 2
+            if album.casefold() == candidate_album:
+                score += 8
+            elif album and (album.casefold() in candidate_album or candidate_album in album.casefold()):
+                score += 4
+            return score
+
+        if albums:
+            match = max(albums, key=match_score)
+            artwork = match.get("artworkUrl100") or match.get("artworkUrl60")
+            if artwork:
+                artwork = artwork.replace("100x100bb", "600x600bb")
+                artwork = artwork.replace("100x100-75", "600x600-75")
+                result = {
+                    "artwork_url": artwork,
+                    "source": "Apple/iTunes",
+                    "matched_artist": match.get("artistName"),
+                    "matched_album": match.get("collectionName"),
+                }
+    except Exception:
+        # Artwork is optional. A catalog outage must never break discovery.
+        pass
+
+    _artwork_cache[key] = {"time": monotonic(), "data": result}
+    return result
+
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     return HTMLResponse(PAGE)
@@ -263,167 +326,114 @@ PAGE = r"""
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navidrome Librarian</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 :root {
   color-scheme: dark;
-  --bg: #111318;
-  --panel: #1b1e26;
-  --border: #303440;
-  --text: #eef0f6;
-  --muted: #a5abba;
-  --accent: #a8b8ff;
-  --green: #8cdda9;
-  --red: #ff9999;
+  --bg: #191a1a; --surface: #222424; --surface-raised: #292b2a; --surface-hover: #30322f;
+  --border: #3b3d39; --text: #f0eee5; --muted: #a5a69c; --subtle: #77796f;
+  --yellow: #e9c64a; --yellow-dim: #554b26; --red: #e05b4f; --green: #a8c59a;
+  --radius: 6px; --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "IBM Plex Sans", sans-serif; --mono: "IBM Plex Mono", monospace;
 }
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.55 -apple-system, BlinkMacSystemFont, sans-serif;
-}
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; }
+button, select, input { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
+button { cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+button:hover { border-color: var(--yellow); background: var(--surface-hover); }
+button:disabled { opacity: .55; cursor: wait; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 header {
-  padding: 30px max(22px, calc((100% - 1050px)/2));
-  border-bottom: 1px solid var(--border);
+  position: fixed; inset: 0 0 auto 0; z-index: 20; min-height: 82px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 15px 30px; background: #1d1f1e; border-bottom: 1px solid var(--border);
 }
-header h1 { margin: 0; font-size: 27px; }
-header p { color: var(--muted); margin: 5px 0 0; }
-main {
-  max-width: 1050px;
-  margin: 26px auto;
-  padding: 0 22px 50px;
+header h1 { display: flex; align-items: center; gap: 12px; margin: 0; font: 700 29px/.95 var(--display); letter-spacing: .025em; text-transform: uppercase; }
+header h1::before {
+  content: "NL"; display: grid; place-items: center; width: 37px; height: 37px;
+  color: #191a1a; background: var(--yellow); border-bottom: 4px solid var(--red);
+  font: 700 16px/1 var(--mono); letter-spacing: -.08em;
 }
-nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
-button, select {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 14px;
-  border-radius: 9px;
-  font: inherit;
+header p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .025em; text-align: right; }
+main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
+nav {
+  position: fixed; z-index: 15; inset: 82px auto 0 0; width: 220px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px; overflow-y: auto;
+  padding: 23px 13px; background: #1d1f1e; border-right: 1px solid var(--border);
 }
-button { cursor: pointer; }
-button:hover { border-color: var(--accent); }
-button.active { background: #292f48; border-color: var(--accent); }
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 22px;
-  margin-bottom: 18px;
-  min-width: 0;
-}
-h2 { margin-top: 0; font-size: 20px; }
-h3 { margin-bottom: 5px; }
+nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: var(--subtle); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; }
+nav button { position: relative; width: 100%; padding: 10px 12px 10px 15px; text-align: left; color: #b7b8ae; background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
+nav button:hover { color: var(--text); background: var(--surface-raised); }
+nav button.active { color: var(--text); background: #2b2d29; box-shadow: inset 3px 0 var(--yellow); }
+nav button.active::after { content: ""; position: absolute; top: 9px; right: 10px; width: 5px; height: 5px; background: var(--red); border-radius: 50%; }
+.panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
+.panel h2 { margin: 0 0 9px; font: 600 34px/1.05 var(--display); letter-spacing: .01em; }
+.panel h2::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 11px; background: var(--red); }
+h3 { margin: 0 0 5px; font-size: 16px; line-height: 1.3; }
+p { line-height: 1.55; }
+.panel > p { max-width: 760px; }
 .muted { color: var(--muted); }
 .status { font-weight: 600; }
 .ok { color: var(--green); }
 .error { color: var(--red); }
-.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-#result {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font: 13px/1.6 ui-monospace, SFMono-Regular, monospace;
-  color: #d8dbea;
+.controls { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 18px 0 14px; }
+.controls label { color: var(--muted); font-size: 13px; }
+.controls button, .card-actions button, #settings button { font-size: 12px; font-weight: 600; letter-spacing: .015em; }
+#loadRecommendations, #saveSlskd { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
+#loadRecommendations:hover, #saveSlskd:hover { background: #f3d66b; border-color: #f3d66b; }
+.discovery-controls { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); gap: 8px; margin: 17px 0 8px; }
+.discovery-controls input, .discovery-controls select { width: 100%; min-width: 0; background: #202221; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 4px; }
+#recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 11px/1.5 var(--mono); letter-spacing: .02em; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
+.card:hover { border-color: #686044; transform: translateY(-2px); }
+.card-art {
+  position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; width: 100%; overflow: hidden;
+  background: linear-gradient(135deg, transparent 49.5%, rgba(233,198,74,.12) 50%, transparent 50.5%), #30322e;
+  border-bottom: 1px solid var(--border);
 }
-.discovery-controls {
-  display: grid;
-  grid-template-columns: minmax(180px, 2fr) repeat(2, minmax(150px, 1fr));
-  gap: 10px;
-  margin: 18px 0 8px;
+.card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--yellow); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+.card:hover .card-art::after { transform: scaleX(1); }
+.card-art img { display: none; width: 100%; height: 100%; object-fit: cover; }
+.card-art.has-image img { display: block; }
+.card-art-placeholder { padding: 12px; color: #b5aa79; text-align: center; font: 500 10px/1.5 var(--mono); letter-spacing: .12em; }
+.card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--yellow); font: 600 28px/1 var(--display); letter-spacing: -.02em; }
+.card > :not(.card-art) { margin-left: 13px; margin-right: 13px; }
+.card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--yellow); background: #353124; border-left: 2px solid var(--yellow); border-radius: 0; font: 500 9px/1.4 var(--mono); letter-spacing: .055em; text-transform: uppercase; }
+.card h3 { margin-top: 0; margin-bottom: 4px; font: 600 20px/1.1 var(--display); letter-spacing: .005em; overflow-wrap: anywhere; }
+.card-artist { margin-top: 0; margin-bottom: 13px; color: #c0c0b5; font-size: 12px; }
+.genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.genre-tag { padding: 3px 6px; color: #bfc0b6; background: #30322e; border: 1px solid #41433d; border-radius: 2px; font: 10px/1.35 var(--mono); }
+.card-meta, .card-source { margin-top: 7px; margin-bottom: 0; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.card-source { padding-top: 8px; border-top: 1px solid #353834; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
+.card-actions button { padding: 7px 8px; background: #2a2c29; }
+.card-actions button:first-child { border-color: #655b31; }
+.hidden { display: none !important; }
+details { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; }
+summary { color: var(--muted); cursor: pointer; font-size: 12px; }
+pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: #c6c7bd; font: 11px/1.6 var(--mono); }
+#settings label { display: block; margin: 14px 0; color: #c8c8bd; font-size: 12px; }
+#settings input, #settings select { display: block; width: 100%; max-width: 520px; margin-top: 6px; }
+.discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--subtle); font: 10px/1.6 var(--mono); }
+@media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
+@media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
+@media (max-width: 620px) {
+  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { width: 32px; height: 32px; font-size: 14px; } header p { display: none; }
+  nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); }
+  nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; } nav button.active { box-shadow: inset 0 -3px var(--yellow); } nav button.active::after { display: none; }
+  main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
-
-.discovery-controls input,
-.discovery-controls select {
-  width: 100%;
-  min-width: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 12px;
-  border-radius: 9px;
-  font: inherit;
-}
-
-.discovery-controls input:focus,
-.discovery-controls select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-#recommendationCount {
-  margin: 8px 0 14px;
-  font-size: 13px;
-}
-
-@media (max-width: 650px) {
-  .discovery-controls {
-    grid-template-columns: 1fr;
-  }
-}
-
-.cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: 12px; }
-.card { border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
-.card-category {
-  display: inline-block;
-  margin: 0 0 10px;
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--accent);
-  font-size: 12px;
-  text-transform: capitalize;
-}
-
-.card h3 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  line-height: 1.35;
-}
-
-.card-artist {
-  margin: 0 0 14px;
-  color: var(--muted);
-}
-
-.genre-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.genre-tag {
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #292d38;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.card-meta,
-.card-source {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.card h3 { font-size: 16px; }
-.card p { margin: 5px 0; color: var(--muted); }
-.hidden { display: none; }
-footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
-
-.discovery-settings {display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-#settings label {display:block;margin:12px 0}
-#settings input,#settings select {display:block;width:100%;max-width:480px;padding:9px;margin-top:5px}
-.card-actions {display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.card-actions button {font-size:13px;padding:7px 10px}
-
+@media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 </style>
 </head>
 <body>
 <header>
   <h1>Navidrome Librarian</h1>
-  <p>Your music library, listening history and discovery recommendations.</p>
+  <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
 </header>
 <main>
   <nav>
@@ -513,8 +523,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
   </section>
 
   <footer>
-    Read-only interface. It does not modify music files or playlists.
-    Recommendation metadata may be cached by the existing engine.
+    Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
   </footer>
 
 <section id="forMe" class="page hidden">
@@ -721,6 +730,34 @@ function addTextElement(parent, tag, className, text) {
   return el;
 }
 
+function attachArtwork(card, artist, album) {
+  const art = document.createElement('div');
+  art.className = 'card-art';
+  art.setAttribute('aria-hidden', 'true');
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'card-art-placeholder';
+  placeholder.textContent = 'COVER NOT FOUND';
+
+  const image = document.createElement('img');
+  image.alt = '';
+  image.loading = 'lazy';
+  image.decoding = 'async';
+  art.append(image, placeholder);
+  card.append(art);
+
+  const query = new URLSearchParams({artist: artist || '', album: album || ''});
+  fetch('/api/artwork?' + query.toString())
+    .then(response => response.ok ? response.json() : null)
+    .then(data => {
+      if (!data || !data.artwork_url) return;
+      image.onload = () => art.classList.add('has-image');
+      image.onerror = () => art.classList.remove('has-image');
+      image.src = data.artwork_url;
+    })
+    .catch(() => {});
+}
+
 let allRecommendations = [];
 let recommendationData = null;
 
@@ -782,6 +819,7 @@ function applyRecommendationFilters() {
   for (const item of filtered) {
     const card = document.createElement('article');
     card.className = 'card';
+    attachArtwork(card, item.artist || item.album_artist || '', item.album || item.title || item.name || '');
 
     const categoryName = (item.discovery_category || 'Unclassified')
       .replaceAll('_', ' ');
@@ -939,6 +977,7 @@ async function loadDiscovery(name) {
       const album = item.album || item.title || 'Untitled album';
       const card = document.createElement('article');
       card.className = 'card';
+      attachArtwork(card, artist, album);
 
       addTextElement(card, 'p', 'card-category',
         (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
