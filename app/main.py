@@ -709,10 +709,13 @@ async function loadAcquisitions() {
     const data = await requestJSON('/api/acquisitions');
     target.replaceChildren();
     const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
+    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
     $('acquisitionsStatus').textContent = jobs.length
-      ? `${jobs.length} acquisition record(s). Last refreshed ${new Date().toLocaleTimeString()}.`
+      ? `${jobs.length} acquisition record(s).`
       : 'No acquisition records yet.';
     for (const job of jobs) {
+      const dismissalKey = [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
+      if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const card = document.createElement('article');
       card.className = 'card';
       addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
@@ -765,6 +768,25 @@ async function loadAcquisitions() {
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
       for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
+      if (job.status === 'imported') {
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.textContent = 'Dismiss';
+        dismiss.addEventListener('click', () => {
+          const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+          stored.add(dismissalKey);
+          localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+          card.remove();
+          const visibleCards = target.querySelectorAll('.card').length;
+          $('acquisitionsStatus').textContent = visibleCards
+            ? visibleCards + ' acquisition record(s).'
+            : 'No acquisition records to show.';
+        });
+        actions.append(dismiss);
+        card.append(actions);
+      }
       if (details.status && details.status !== job.status) {
         addTextElement(card, 'pre', 'debug', pretty(details));
       }
@@ -778,7 +800,7 @@ async function loadAcquisitions() {
 $('refreshAcquisitions').addEventListener('click', loadAcquisitions);
 setInterval(() => {
   if (!$('acquisitions').classList.contains('hidden')) loadAcquisitions();
-}, 15000);
+}, 2000);
 
 function getRecommendations(data) {
   if (Array.isArray(data)) return data;
