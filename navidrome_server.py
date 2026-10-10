@@ -2018,6 +2018,21 @@ def _discovery_init():
                 generated_at REAL NOT NULL
             )
         """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_acquisitions (
+                artist_key TEXT NOT NULL,
+                album_key TEXT NOT NULL,
+                artist TEXT NOT NULL,
+                album TEXT NOT NULL,
+                status TEXT NOT NULL,
+                details_json TEXT NOT NULL DEFAULT '{}',
+                candidate_json TEXT NOT NULL DEFAULT '{}',
+                settings_json TEXT NOT NULL DEFAULT '{}',
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (artist_key, album_key)
+            )
+        """)
         db.commit()
 
 
@@ -3123,8 +3138,44 @@ def _discovery_safe_folder_name(value):
     return value or "Unknown"
 
 
+_DISCOVERY_IMPORT_LOCK = __import__("threading").Lock()
+_DISCOVERY_IMPORT_ACTIVE = set()
+
+
+def _discovery_save_acquisition_job(artist, album, status, details=None,
+                                    candidate=None, settings=None):
+    """Persist acquisition state independently of discovery recommendation lists."""
+    _discovery_init()
+    now = time.time()
+    artist_key, album_key = _music_key(artist), _music_key(album)
+    if not artist_key or not album_key:
+        raise ValueError("artist and album are required")
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        db.execute(
+            "INSERT INTO discovery_acquisitions "
+            "(artist_key, album_key, artist, album, status, details_json, candidate_json, "
+            "settings_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(artist_key, album_key) DO UPDATE SET "
+            "artist=excluded.artist, album=excluded.album, status=excluded.status, "
+            "details_json=excluded.details_json, "
+            "candidate_json=CASE WHEN excluded.candidate_json='{}' THEN discovery_acquisitions.candidate_json ELSE excluded.candidate_json END, "
+            "settings_json=CASE WHEN excluded.settings_json='{}' THEN discovery_acquisitions.settings_json ELSE excluded.settings_json END, "
+            "updated_at=excluded.updated_at",
+            (artist_key, album_key, artist.strip(), album.strip(), status,
+             json.dumps({"status": status, "updated_at": now, **(details or {})}, ensure_ascii=False),
+             json.dumps(candidate or {}, ensure_ascii=False),
+             json.dumps(settings or {}, ensure_ascii=False), now, now),
+        )
+        db.commit()
+
+
 def _discovery_update_acquisition_status(artist, album, status, details=None):
-    """Update acquisition state on an existing For Me item without creating a new one."""
+    """Persist acquisition state independently and mirror it onto For Me when present."""
+    details = details or {}
+    try:
+        _discovery_save_acquisition_job(artist, album, status, details)
+    except Exception:
+        pass
     try:
         identity = (_music_key(artist), _music_key(album))
         row = next((
@@ -3132,15 +3183,82 @@ def _discovery_update_acquisition_status(artist, album, status, details=None):
             if item["scope"] == "album" and item["status"] == "for_me"
             and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
         ), None)
-        if not row:
-            return
-        metadata = row.get("metadata") or {}
-        metadata["auto_acquisition"] = {
-            "status": status, "updated_at": time.time(), **(details or {})
-        }
-        _discovery_save_feedback("album", artist, album, "for_me", metadata)
+        if row:
+            metadata = row.get("metadata") or {}
+            metadata["auto_acquisition"] = {
+                "status": status, "updated_at": time.time(), **details
+            }
+            _discovery_save_feedback("album", artist, album, "for_me", metadata)
     except Exception:
         pass
+
+
+def _discovery_list_acquisition_jobs():
+    _discovery_init()
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        rows = db.execute(
+            "SELECT artist_key, album_key, artist, album, status, details_json, "
+            "candidate_json, settings_json, created_at, updated_at "
+            "FROM discovery_acquisitions ORDER BY updated_at DESC"
+        ).fetchall()
+    jobs = []
+    for row in rows:
+        try:
+            details = json.loads(row[5] or "{}")
+        except (ValueError, TypeError):
+            details = {"status": row[4]}
+        try:
+            candidate = json.loads(row[6] or "{}")
+        except (ValueError, TypeError):
+            candidate = {}
+        try:
+            settings = json.loads(row[7] or "{}")
+        except (ValueError, TypeError):
+            settings = {}
+        jobs.append({
+            "artist_key": row[0], "album_key": row[1], "artist": row[2],
+            "album": row[3], "status": row[4], "details": details,
+            "candidate": candidate, "settings": settings,
+            "created_at": row[8], "updated_at": row[9],
+        })
+    return jobs
+
+
+def discovery_get_acquisition_status():
+    """Return persistent acquisition status and resume interrupted import watchers."""
+    jobs = _discovery_list_acquisition_jobs()
+    resumable = {
+        "downloading", "download_complete_waiting_for_folder", "monitor_error",
+        "download_complete_move_failed", "monitor_timeout"
+    }
+    for job in jobs:
+        identity = (job["artist_key"], job["album_key"])
+        candidate, settings = job["candidate"], job["settings"]
+        if job["status"] not in resumable or not candidate.get("files") or not candidate.get("username"):
+            continue
+        with _DISCOVERY_IMPORT_LOCK:
+            if identity in _DISCOVERY_IMPORT_ACTIVE:
+                continue
+            _DISCOVERY_IMPORT_ACTIVE.add(identity)
+        import threading
+        threading.Thread(
+            target=_discovery_import_watcher_entry,
+            args=(job["artist"], job["album"], candidate, settings, identity),
+            name="navidrome-import-recovery",
+            daemon=True,
+        ).start()
+    return json.dumps({"ok": True, "acquisitions": [
+        {k: v for k, v in job.items() if k not in {"candidate", "settings", "artist_key", "album_key"}}
+        for job in jobs
+    ]}, ensure_ascii=False, indent=2)
+
+
+def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
+    try:
+        _discovery_watch_and_import_album(artist, album, candidate, settings)
+    finally:
+        with _DISCOVERY_IMPORT_LOCK:
+            _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
 def _discovery_locate_completed_album(download_root, candidate):
@@ -3202,7 +3320,7 @@ def _discovery_locate_completed_album(download_root, candidate):
 
 
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
-    """Wait for every queued file to finish, then move the album folder into the library."""
+    """Import once all expected files exist with matching sizes, even if slskd prunes transfer records."""
     import shutil
     base_url, api_key, _ = _slskd_config()
     headers = {"X-API-KEY": api_key}
@@ -3219,6 +3337,38 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
     completed_at = None
     while time.monotonic() < deadline:
         try:
+            # Filesystem completion is authoritative: slskd may prune successful
+            # transfer records before this watcher polls them again.
+            source = _discovery_locate_completed_album(download_root, candidate)
+            if source is not None:
+                if not music_root.is_dir():
+                    _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+                        "source_folder": str(source), "downloads_path": str(download_root),
+                        "library_path": str(music_root)
+                    })
+                    return
+                artist_dir = music_root / _discovery_safe_folder_name(artist)
+                album_dir = artist_dir / _discovery_safe_folder_name(album)
+                if album_dir.exists():
+                    _discovery_update_acquisition_status(artist, album, "destination_exists", {
+                        "source_folder": str(source), "destination": str(album_dir)
+                    })
+                    return
+                try:
+                    artist_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(source), str(album_dir))
+                except OSError as exc:
+                    _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                        "source_folder": str(source), "destination": str(album_dir),
+                        "error": str(exc), "downloads_path": str(download_root)
+                    })
+                    return
+                _discovery_update_acquisition_status(artist, album, "imported", {
+                    "source_folder": str(source), "destination": str(album_dir),
+                    "source_username": candidate.get("username"), "imported_at": time.time()
+                })
+                return
+
             tracked = _slskd_download_transfer_files(
                 base_url, headers, candidate["username"]
             )
@@ -3296,15 +3446,25 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
 
 def _discovery_start_import_watcher(artist, album, candidate, settings):
     import threading
-    _discovery_update_acquisition_status(artist, album, "downloading", {
-        "source_username": candidate["username"],
+    identity = (_music_key(artist), _music_key(album))
+    details = {
+        "source_username": candidate.get("username"),
         "folder": candidate.get("folder"),
         "file_count": len(candidate.get("files") or []),
         "downloads_path": settings.get("slskd_downloads_path"),
-    })
+    }
+    _discovery_save_acquisition_job(
+        artist, album, "downloading", details,
+        candidate=candidate, settings=settings,
+    )
+    _discovery_update_acquisition_status(artist, album, "downloading", details)
+    with _DISCOVERY_IMPORT_LOCK:
+        if identity in _DISCOVERY_IMPORT_ACTIVE:
+            return
+        _DISCOVERY_IMPORT_ACTIVE.add(identity)
     threading.Thread(
-        target=_discovery_watch_and_import_album,
-        args=(artist, album, candidate, dict(settings)),
+        target=_discovery_import_watcher_entry,
+        args=(artist, album, dict(candidate), dict(settings), identity),
         name="navidrome-import-" + hashlib.sha1(
             (_music_key(artist) + "|" + _music_key(album)).encode("utf-8")
         ).hexdigest()[:10],
