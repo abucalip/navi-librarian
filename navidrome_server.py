@@ -4019,35 +4019,92 @@ def _discovery_is_dismissed(artist, album):
 
 
 def discovery_dismiss_acquisition(artist, album):
-    """Dismiss an acquisition card and stop its import watcher without deleting downloaded files."""
+    """Dismiss an acquisition and safely remove its staging download files when identifiable."""
     _discovery_init()
     identity = (_music_key(artist), _music_key(album))
     with _DISCOVERY_IMPORT_TRANSITION_LOCK:
         with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
             row = db.execute(
-                "SELECT status, details_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?",
+                "SELECT status, details_json, candidate_json, settings_json "
+                "FROM discovery_acquisitions WHERE artist_key=? AND album_key=?",
                 identity,
             ).fetchone()
             if not row:
                 return json.dumps({"ok": False, "error": "Acquisition not found."})
-            if row[0] in {"importing", "imported"}:
-                return json.dumps({
-                    "ok": False,
-                    "error": "The album is already being imported or has been imported; it cannot be dismissed now.",
-                })
+            previous_status = str(row[0] or "")
             try:
                 details = json.loads(row[1] or "{}")
             except (ValueError, TypeError):
                 details = {}
-            details.update({"status": "dismissed", "dismissed_at": time.time()})
+            try:
+                candidate = json.loads(row[2] or "{}")
+            except (ValueError, TypeError):
+                candidate = {}
+            try:
+                saved_settings = json.loads(row[3] or "{}")
+            except (ValueError, TypeError):
+                saved_settings = {}
+
+            # Never delete the imported music-library copy. Dismissal remains
+            # available in every state, but only staging/download files are cleanup targets.
+            cleanup = "not_applicable"
+            if previous_status not in {"importing", "imported"}:
+                files = candidate.get("files") or []
+                username = str(candidate.get("username") or "").strip()
+                if files and username:
+                    try:
+                        base_url, api_key, current_settings = _slskd_config()
+                    except Exception as exc:
+                        return json.dumps({
+                            "ok": False,
+                            "error": "Could not connect to slskd to safely cancel and remove this download.",
+                            "detail": type(exc).__name__,
+                        }, ensure_ascii=False)
+                    download_root = (
+                        saved_settings.get("slskd_downloads_path")
+                        or current_settings.get("slskd_downloads_path")
+                        or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+                    )
+                    if not _discovery_cancel_and_clean_source(
+                        download_root, candidate, base_url, {"X-API-KEY": api_key}
+                    ):
+                        return json.dumps({
+                            "ok": False,
+                            "error": "Could not safely cancel the transfer and remove its download folder. The card was not dismissed; inspect the download folder and slskd transfer state.",
+                        }, ensure_ascii=False)
+                    cleanup = "removed"
+                elif previous_status in {
+                    "downloading", "download_complete_waiting_for_folder",
+                    "download_complete_move_failed", "monitor_error", "importing",
+                }:
+                    return json.dumps({
+                        "ok": False,
+                        "error": "The download's source files cannot be identified safely, so nothing was deleted and the card was not dismissed.",
+                    }, ensure_ascii=False)
+
+            details.update({
+                "status": "dismissed",
+                "dismissed_at": time.time(),
+                "dismissed_previous_status": previous_status,
+                "dismissal_download_cleanup": cleanup,
+            })
             db.execute(
                 "UPDATE discovery_acquisitions SET status='dismissed', details_json=?, updated_at=? "
                 "WHERE artist_key=? AND album_key=?",
                 (json.dumps(details, ensure_ascii=False), time.time(), *identity),
             )
             db.commit()
-    return json.dumps({"ok": True, "status": "dismissed", "message": "Acquisition card dismissed. Existing download files were left untouched."})
+    message = (
+        "Acquisition dismissed and staging download files removed."
+        if cleanup == "removed"
+        else "Acquisition card dismissed."
+    )
+    if previous_status == "imported":
+        message += " The imported music-library album was left intact."
+    return json.dumps({
+        "ok": True, "status": "dismissed", "download_cleanup": cleanup,
+        "message": message,
+    }, ensure_ascii=False)
 
 
 def _discovery_skip_requested(artist, album):
