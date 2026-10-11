@@ -1,6 +1,7 @@
 import json
 from html import escape
 from time import monotonic, sleep
+import threading
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
@@ -275,6 +276,74 @@ def queue_reviewed_candidate(payload: dict):
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
 _ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
 _artwork_cache = {}
+_MUSICBRAINZ_YEAR_CACHE_TTL = 180 * 24 * 60 * 60
+_musicbrainz_year_cache = {}
+_musicbrainz_year_lock = threading.Lock()
+_musicbrainz_last_request = 0.0
+
+
+def _musicbrainz_album_year(artist: str, album: str):
+    """Find an album's first release year when the artwork catalogue omits it."""
+    global _musicbrainz_last_request
+    key = (artist.casefold().strip(), album.casefold().strip())
+    cached = _musicbrainz_year_cache.get(key)
+    now = monotonic()
+    if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
+        return cached["year"]
+    if not artist or not album:
+        return None
+
+    year = None
+    try:
+        # Serialize lookups and respect MusicBrainz's public API rate limit.
+        with _musicbrainz_year_lock:
+            cached = _musicbrainz_year_cache.get(key)
+            now = monotonic()
+            if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
+                return cached["year"]
+            wait = 1.1 - (now - _musicbrainz_last_request)
+            if wait > 0:
+                sleep(wait)
+            query = urlencode({
+                "query": f'artist:"{artist}" AND releasegroup:"{album}"',
+                "fmt": "json",
+                "limit": 5,
+            })
+            request = __import__("urllib.request", fromlist=["Request"]).Request(
+                "https://musicbrainz.org/ws/2/release-group/?" + query,
+                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+            )
+            _musicbrainz_last_request = monotonic()
+            with urlopen(request, timeout=6) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            groups = payload.get("release-groups") or []
+            artist_key = artist.casefold()
+            album_key = album.casefold()
+            best = None
+            for group in groups:
+                title = str(group.get("title") or "").casefold()
+                credits = " ".join(
+                    str(part.get("name") or "")
+                    for part in (group.get("artist-credit") or [])
+                    if isinstance(part, dict)
+                ).casefold()
+                title_match = title == album_key or title in album_key or album_key in title
+                artist_match = artist_key in credits or credits in artist_key
+                score = int(group.get("score") or 0)
+                if title_match and artist_match and score >= 70:
+                    best = group
+                    break
+            if best:
+                date_text = str(best.get("first-release-date") or "")
+                year_text = date_text[:4]
+                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
+                    year = int(year_text)
+    except Exception:
+        # Year metadata is best-effort and must never break artwork rendering.
+        pass
+
+    _musicbrainz_year_cache[key] = {"time": monotonic(), "year": year}
+    return year
 
 
 @app.get("/api/artwork")
@@ -331,6 +400,11 @@ def album_artwork(artist: str = "", album: str = ""):
                     "matched_album": match.get("title"),
                     "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
                 }
+
+        # Deezer's album search often omits release dates. Fall back to
+        # MusicBrainz so years can still be shown even when artwork exists.
+        if not result.get("year") and artist and album:
+            result["year"] = _musicbrainz_album_year(artist, album)
 
         # If the album is not in the catalog, use a matching artist photo instead.
         if not result["artwork_url"] and artist:
@@ -439,16 +513,16 @@ p { line-height: 1.55; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
 .genre-row-arrows { display: flex; gap: 6px; margin-left: auto; }
-.genre-row-arrow { display: grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 1px solid #81713b; background: #353124; color: var(--yellow); font: 700 22px/1 var(--body); }
-.genre-row-arrow:hover { background: var(--yellow); color: #191a1a; border-color: var(--yellow); }
+.genre-row-arrow { display: grid; place-items: center; width: 38px; height: 34px; padding: 0; border: 0; background: transparent; color: var(--yellow); font: 700 36px/.8 var(--display); text-shadow: 0 1px 0 #9a8127; }
+.genre-row-arrow:hover { background: transparent; color: #ffe477; transform: scale(1.12); }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
 .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-art .get-album:hover { background: #f3d66b; transform: scale(1.06); }
-.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 9px; right: 9px; display: grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 1px solid rgba(224,91,79,.9); border-radius: 50%; background: rgba(25,26,26,.92); color: #ff766d; font: 500 21px/1 var(--body); box-shadow: 0 2px 10px rgba(0,0,0,.4); }
-.card .card-art .deep-dive-dismiss:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: #fff; font: 600 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
+.card .card-art .deep-dive-dismiss:hover { background: transparent; color: #ff766d; border: 0; transform: scale(1.12); }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
 .card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
@@ -1278,7 +1352,7 @@ async function loadDiscovery(name) {
         arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
-        for (const [symbol, direction] of [['←', -1], ['→', 1]]) {
+        for (const [symbol, direction] of [['<', -1], ['>', 1]]) {
           const arrow = document.createElement('button');
           arrow.className = 'genre-row-arrow';
           arrow.type = 'button';
