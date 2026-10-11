@@ -315,6 +315,11 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             staging.mkdir()
             (staging / "01.flac").write_bytes(b"1234")
             destination = artist_dir / "Album"
+            (staging / ".navidrome-import.json").write_text(json.dumps({
+                "source": str(source.resolve()),
+                "destination": str(destination),
+                "tracks": {"01.flac": 4, "02.flac": 3},
+            }), encoding="utf-8")
             self.ns["MUSIC_DIR"] = music
             self.ns["jobs"].append({
                 "artist_key": "artist",
