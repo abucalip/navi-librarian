@@ -3552,29 +3552,29 @@ def _discovery_save_acquisition_job(artist, album, status, details=None,
 
 
 def _discovery_update_acquisition_status(artist, album, status, details=None):
-    """Persist acquisition state independently and mirror it onto For Me when present."""
+    """Persist acquisition state and mirror it to For Me without racing dismissal."""
     details = details or {}
     try:
         with _DISCOVERY_IMPORT_TRANSITION_LOCK:
             if status != "dismissed" and _discovery_is_dismissed(artist, album):
                 return
             _discovery_save_acquisition_job(artist, album, status, details)
+
+            identity = (_music_key(artist), _music_key(album))
+            row = next((
+                item for item in _discovery_feedback_rows()
+                if item["scope"] == "album" and item["status"] == "for_me"
+                and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
+            ), None)
+            if row:
+                metadata = row.get("metadata") or {}
+                metadata["auto_acquisition"] = {
+                    "status": status, "updated_at": time.time(), **details
+                }
+                _discovery_save_feedback("album", artist, album, "for_me", metadata)
     except Exception:
-        pass
-    try:
-        identity = (_music_key(artist), _music_key(album))
-        row = next((
-            item for item in _discovery_feedback_rows()
-            if item["scope"] == "album" and item["status"] == "for_me"
-            and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
-        ), None)
-        if row:
-            metadata = row.get("metadata") or {}
-            metadata["auto_acquisition"] = {
-                "status": status, "updated_at": time.time(), **details
-            }
-            _discovery_save_feedback("album", artist, album, "for_me", metadata)
-    except Exception:
+        # Acquisition state remains best-effort, as before; an unavailable
+        # feedback store must not crash the download watcher.
         pass
 
 
