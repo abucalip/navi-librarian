@@ -5107,10 +5107,24 @@ def discovery_acquire_album(
             }, ensure_ascii=False)
         with _DISCOVERY_IMPORT_LOCK:
             watcher_active = identity in _DISCOVERY_IMPORT_ACTIVE
-        if identity in _DISCOVERY_ACQUIRE_ACTIVE or watcher_active:
+        existing_job = next((
+            job for job in _discovery_list_acquisition_jobs()
+            if job["artist_key"] == identity[0] and job["album_key"] == identity[1]
+        ), None)
+        existing_status = (existing_job or {}).get("status")
+        if existing_status in {"importing", "imported"}:
+            return json.dumps({
+                "ok": False, "status": existing_status, "artist": artist, "album": album,
+                "message": "This album is already being imported or is in the library.",
+            }, ensure_ascii=False)
+        if (
+            identity in _DISCOVERY_ACQUIRE_ACTIVE
+            or watcher_active
+            or existing_status == "downloading"
+        ):
             return json.dumps({
                 "ok": False, "status": "already_in_progress", "artist": artist, "album": album,
-                "message": "An acquisition request or watcher is already active for this album.",
+                "message": "An acquisition request or download is already active for this album.",
             }, ensure_ascii=False)
         _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
     try:
