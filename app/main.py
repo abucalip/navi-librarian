@@ -736,6 +736,8 @@ p { line-height: 1.55; }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
 .card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
+.get-album.requested, .card .card-art .get-album.requested, .card .card-actions .get-album.requested { background: #c83232; border-color: #f05b5b; color: #fff; cursor: default; box-shadow: 0 3px 12px rgba(120,0,0,.35); }
+.get-album.requested:hover, .card .card-art .get-album.requested:hover, .card .card-actions .get-album.requested:hover { background: #c83232; border-color: #f05b5b; transform: none; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
@@ -1048,16 +1050,18 @@ function formatDownloadBytes(value) {
   return amount.toFixed(amount >= 100 ? 0 : 1) + ' ' + units[unit];
 }
 
-function renderAcquisitions(data) {
-  const target = $('acquisitionCards');
+function renderAcquisitions(data, targetOverride = null, statusOverride = null, onlyIdentity = null) {
+  const target = targetOverride || $('acquisitionCards');
+  const status = statusOverride || $('acquisitionsStatus');
   try {
     target.replaceChildren();
     const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
-    $('acquisitionsStatus').textContent = jobs.length
+    status.textContent = jobs.length
       ? `${jobs.length} acquisition record(s).`
       : 'No acquisition records yet.';
     for (const job of jobs) {
+      if (onlyIdentity && [job.artist || '', job.album || ''].join('::').toLocaleLowerCase() !== onlyIdentity) continue;
       const dismissalKey = [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const card = document.createElement('article');
@@ -1134,9 +1138,9 @@ function renderAcquisitions(data) {
             const result = await sendJSON('/api/acquisitions/skip', 'POST', {
               artist: job.artist, album: job.album
             });
-            $('acquisitionsStatus').textContent = result.message || 'Source switch requested.';
+            status.textContent = result.message || 'Source switch requested.';
           } catch (error) {
-            $('acquisitionsStatus').textContent = error.message;
+            status.textContent = error.message;
             stallButton.disabled = false;
           }
         });
@@ -1177,14 +1181,14 @@ function renderAcquisitions(data) {
               });
               await loadAcquisitions();
             } catch (error) {
-              $('acquisitionsStatus').textContent = error.message;
+              status.textContent = error.message;
               retry.disabled = false;
               retry.textContent = 'Try again';
             }
           });
           actions.append(retry);
         }
-        if (!['importing', 'imported'].includes(job.status)) {
+        {
           const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
@@ -1199,11 +1203,11 @@ function renderAcquisitions(data) {
             localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
             card.remove();
             const visibleCards = target.querySelectorAll('.card').length;
-            $('acquisitionsStatus').textContent = visibleCards
+            status.textContent = visibleCards
               ? visibleCards + ' acquisition record(s).'
               : 'No acquisition records to show.';
           } catch (error) {
-            $('acquisitionsStatus').textContent = error.message;
+            status.textContent = error.message;
             dismiss.disabled = false;
           }
         });
@@ -1217,7 +1221,7 @@ function renderAcquisitions(data) {
       target.append(card);
     }
   } catch (error) {
-    $('acquisitionsStatus').textContent = error.message;
+    status.textContent = error.message;
   }
 }
 
@@ -1931,6 +1935,7 @@ async function searchAlbum(artist, album, metadata, button = null) {
   if (button && button.disabled) return;
   if (button) {
     button.disabled = true;
+    button.classList.add('requested');
     button.textContent = 'requested';
     button.title = 'Acquisition requested';
     button.setAttribute('aria-label', 'Acquisition requested for ' + album);
@@ -1940,11 +1945,29 @@ async function searchAlbum(artist, album, metadata, button = null) {
       {artist, album, metadata, auto_queue:true});
     const statusTarget = document.querySelector('.page:not(.hidden) .status');
     if (statusTarget && data.message) statusTarget.textContent = data.message;
-    // Stay on the discovery page; the persistent Acquisitions view shows progress/failures.
+    // Keep the user on the discovery page, but immediately show the matching acquisition card here.
     await loadAcquisitions();
+    const visiblePage = document.querySelector('.page:not(.hidden)');
+    if (visiblePage) {
+      let inlinePanel = visiblePage.querySelector('.acquisition-inline-panel');
+      if (!inlinePanel) {
+        inlinePanel = document.createElement('div');
+        inlinePanel.className = 'panel acquisition-inline-panel';
+        addTextElement(inlinePanel, 'h2', '', 'Download status');
+        addTextElement(inlinePanel, 'p', 'muted', 'Live acquisition status for the album you just requested.');
+        const inlineCards = document.createElement('div');
+        inlineCards.className = 'cards acquisition-inline-cards';
+        inlinePanel.append(inlineCards);
+        visiblePage.append(inlinePanel);
+      }
+      const inlineCards = inlinePanel.querySelector('.acquisition-inline-cards');
+      const identity = [artist || '', album || ''].join('::').toLocaleLowerCase();
+      renderAcquisitions(await requestJSON('/api/acquisitions'), inlineCards, inlinePanel.querySelector('p'), identity);
+    }
   } catch (error) {
     if (button) {
       button.disabled = false;
+      button.classList.remove('requested');
       button.textContent = 'get';
       button.title = 'Get this album';
       button.setAttribute('aria-label', 'Get ' + album);
