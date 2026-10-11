@@ -4009,12 +4009,12 @@ def discovery_skip_acquisition_source(artist, album):
                 return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
             details["skip_requested"] = True
             details["skip_requested_at"] = time.time()
-            db.execute(
+            cursor = db.execute(
                 "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
                 "WHERE artist_key=? AND album_key=? AND status='downloading'",
                 (json.dumps(details, ensure_ascii=False), time.time(), *identity),
             )
-            if db.total_changes == 0:
+            if cursor.rowcount != 1:
                 return json.dumps({"ok": False, "error": "Acquisition state changed; please refresh and try again."})
             db.commit()
     return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
@@ -4823,7 +4823,7 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
             "error": type(exc).__name__,
             "message": "Could not start the acquisition watcher.",
         })
-        raise
+        return
 
 
 @mcp.tool()
