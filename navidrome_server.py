@@ -3696,6 +3696,8 @@ def discovery_get_acquisition_status():
         ).start()
     acquisitions = []
     for job in jobs:
+        if job["status"] == "dismissed":
+            continue
         public_job = {
             k: v for k, v in job.items()
             if k not in {"candidate", "settings", "artist_key", "album_key"}
