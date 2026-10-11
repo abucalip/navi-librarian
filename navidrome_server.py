@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import random
 import secrets
 import sqlite3
 import time
@@ -2548,67 +2549,76 @@ def _build_classics_list():
         if index and index % 5 == 0:
             time.sleep(0.15)
 
-    ranked = sorted(
-        candidates.values(),
-        key=lambda item: (
-            item["lastfm_listeners"],
-            item["lastfm_playcount"],
-        ),
-        reverse=True,
-    )
-
-    # MusicBrainz ratings add a critical-recognition signal when available.
-    # Only enrich the strongest candidates; ratings are sparse and community supplied.
-    for index, candidate in enumerate(ranked[:80]):
-        rating = _musicbrainz_critical_rating(
-            candidate.get("mbid"), include_year=index < 25
-        )
-        if rating:
-            candidate["musicbrainz_rating"] = rating.get("rating")
-            candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
-            if rating.get("year"):
-                candidate["year"] = rating["year"]
-    def classic_score(item):
-        import math
-        popularity = math.log10(item["lastfm_listeners"] + 1)
-        playcount = math.log10(item["lastfm_playcount"] + 1)
-        rating = item.get("musicbrainz_rating")
-        votes = item.get("musicbrainz_rating_votes", 0)
-        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
-        # Popularity remains useful when community ratings are unavailable;
-        # ratings can influence the score only when votes exist.
-        return popularity * 0.65 + playcount * 0.20 + critical * 1.5
-
-    for item in ranked:
-        item["discovery_score"] = round(classic_score(item), 4)
-        item["critical_recognition_available"] = bool(
-            item.get("musicbrainz_rating") is not None
-            and item.get("musicbrainz_rating_votes", 0)
-        )
-    # Reduce the advantage of already-famous releases and prevent one artist
-    # from taking over the collection list. Popularity still contributes, but
-    # lesser-known candidates receive an exploration bonus.
+    # Build a broad candidate pool before choosing the visible collection list.
+    # Popularity is only a weak tie-breaker; critical recognition and rotating
+    # exploration have much more influence than Last.fm listener totals.
     import math
-    for item in ranked:
+    for item in candidates.values():
+        rating = item.get("musicbrainz_rating")
+        votes = int(item.get("musicbrainz_rating_votes") or 0)
+        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
         listeners = max(0, int(item.get("lastfm_listeners") or 0))
-        listener_magnitude = math.log10(listeners + 1)
+        plays = max(0, int(item.get("lastfm_playcount") or 0))
+        popularity_magnitude = math.log10(listeners + 1)
+        play_magnitude = math.log10(plays + 1)
+        item["critical_recognition_available"] = bool(rating is not None and votes)
+        item["discovery_score"] = round(critical * 2.4 - popularity_magnitude * 0.30 - play_magnitude * 0.06, 4)
+        item["exploration_score"] = item["discovery_score"] + random.uniform(-0.8, 0.8)
+
+    ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
+
+    # Genre metadata helps keep the collection lane from becoming one long
+    # popularity chart. Last.fm tag results are cached between refreshes.
+    genre_cache = {}
+    for item in ranked[:300]:
+        artist_key = _music_key(item.get("artist", ""))
+        if artist_key not in genre_cache:
+            genre_cache[artist_key] = _lastfm_artist_genres(item.get("artist", ""))
+        item["genres"] = genre_cache[artist_key]
+        item["genre_families"] = sorted(_deep_dive_genre_families(item["genres"]))
+        if not item["genre_families"]:
+            item["genre_families"] = ["other"]
+    for item in ranked[300:]:
+        item["genres"] = []
+        item["genre_families"] = ["other"]
+
+    # Re-sort after enriching the broader pool; add fresh jitter so a manual
+    # refresh can rotate recommendations even when upstream API caches are warm.
+    for item in ranked:
         item["exploration_score"] = round(
-            item["discovery_score"] - listener_magnitude * 0.45
-            + max(0.0, 5.5 - listener_magnitude) * 0.18,
-            4,
+            item["discovery_score"] + random.uniform(-0.8, 0.8), 4
         )
     ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
+
     diversified = []
-    per_artist = {}
+    artist_counts = {}
+    family_counts = {}
+    deferred = []
     for item in ranked:
         artist_key = _music_key(item.get("artist", ""))
-        if per_artist.get(artist_key, 0) >= 3:
+        families = item.get("genre_families") or ["other"]
+        family = next((value for value in families if family_counts.get(value, 0) < 8), families[0])
+        if artist_counts.get(artist_key, 0) >= 2 or family_counts.get(family, 0) >= 8:
+            deferred.append(item)
             continue
-        per_artist[artist_key] = per_artist.get(artist_key, 0) + 1
+        item["primary_genre_family"] = family
         diversified.append(item)
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        family_counts[family] = family_counts.get(family, 0) + 1
+        if len(diversified) >= 100:
+            break
+    if len(diversified) < 100:
+        for item in deferred:
+            artist_key = _music_key(item.get("artist", ""))
+            if artist_counts.get(artist_key, 0) >= 2:
+                continue
+            diversified.append(item)
+            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+            if len(diversified) >= 100:
+                break
     return {
         "list": "classics",
-        "source": "Last.fm album popularity + MusicBrainz community ratings where available",
+        "source": "Exploration-weighted candidates with MusicBrainz ratings and genre/artist diversity",
         "generated_at": time.time(),
         "library_artists_considered": len(library_artists),
         "owned_albums_checked": len(owned),
@@ -2616,7 +2626,7 @@ def _build_classics_list():
             1 for item in ranked if item["critical_recognition_available"]
         ),
         "items": diversified[:100],
-        "diversity_strategy": "Exploration-adjusted popularity and critical recognition, with at most three albums per artist.",
+        "diversity_strategy": "Popularity is a weak signal; rotate the pool with genre caps and at most two albums per artist.",
         "limitations": [
             "Last.fm top-album lists are popularity signals, not definitive critical consensus.",
             "MusicBrainz ratings are community-supplied and may be absent or based on few votes.",
@@ -2817,6 +2827,15 @@ def _build_artist_deep_dive_list():
             + max(0.0, 6.0 - listener_magnitude) * 0.35,
             4,
         )
+    # Rotate otherwise-equivalent candidates on every refresh, then enforce
+    # artist, anchor and genre diversity rather than letting Last.fm's default
+    # popularity ordering dominate the page.
+    for item in candidates.values():
+        item["exploration_score"] = round(
+            float(item.get("exploration_score", 0) or 0)
+            + random.uniform(-1.25, 1.25),
+            4,
+        )
     ranked = sorted(
         candidates.values(),
         key=lambda item: (
@@ -2828,17 +2847,36 @@ def _build_artist_deep_dive_list():
     diversified = []
     artist_counts = {}
     anchor_counts = {}
+    genre_counts = {}
+    deferred = []
     for item in ranked:
         artist_key = _music_key(item.get("artist", ""))
         anchor_key = _music_key(item.get("anchor_artist", ""))
-        if artist_counts.get(artist_key, 0) >= 2:
+        families = item.get("genre_families") or ["other"]
+        family = next((value for value in families if genre_counts.get(value, 0) < 12), families[0])
+        if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4) or genre_counts.get(family, 0) >= 12:
+            deferred.append(item)
             continue
-        if anchor_key and anchor_counts.get(anchor_key, 0) >= 4:
-            continue
+        item["primary_genre_family"] = family
         diversified.append(item)
         artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        genre_counts[family] = genre_counts.get(family, 0) + 1
         if anchor_key:
             anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+        if len(diversified) >= 150:
+            break
+    if len(diversified) < 150:
+        for item in deferred:
+            artist_key = _music_key(item.get("artist", ""))
+            anchor_key = _music_key(item.get("anchor_artist", ""))
+            if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4):
+                continue
+            diversified.append(item)
+            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+            if anchor_key:
+                anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+            if len(diversified) >= 150:
+                break
     # Resolve years only for a bounded top slice with MusicBrainz IDs. The
     # release-group metadata is cached, so later refreshes reuse these lookups.
     for item in ranked[:25]:
@@ -2849,14 +2887,14 @@ def _build_artist_deep_dive_list():
             item["year"] = rating["year"]
     return {
         "list": "artist_deep_dive",
-        "source": "Navidrome library presence + Last.fm top albums and similar artists",
+        "source": "Library depth + similar-artist candidates, exploration rotation and genre diversity",
         "generated_at": time.time(),
         "artists_with_three_or_more_owned_albums": len(anchors),
         "missing_albums_and_similar_artist_candidates": len(ranked),
         "items": diversified[:150],
         "limitations": [
             "Artist similarity is sourced from Last.fm and is not a guarantee of musical fit.",
-            "Popularity uses Last.fm listener and play counts where available.",
+            "Popularity is deliberately down-weighted and candidates rotate across genres and artists.",
             "Ownership checks compare normalized artist and album names; aliases and editions may need review.",
         ],
     }
