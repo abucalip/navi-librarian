@@ -3677,6 +3677,8 @@ def discovery_get_acquisition_status():
         "downloading", "download_complete_waiting_for_folder", "monitor_error"
     }
     for job in jobs:
+        if job["status"] == "dismissed":
+            continue
         identity = (job["artist_key"], job["album_key"])
         candidate, settings = job["candidate"], job["settings"]
         if job["status"] not in resumable or not candidate.get("files") or not candidate.get("username"):
@@ -3775,6 +3777,40 @@ def _discovery_locate_completed_album(download_root, candidate):
     if len(matches) == 1:
         return matches[0]
     return None
+
+
+def _discovery_is_dismissed(artist, album):
+    return any(
+        job["artist_key"] == _music_key(artist)
+        and job["album_key"] == _music_key(album)
+        and job["status"] == "dismissed"
+        for job in _discovery_list_acquisition_jobs()
+    )
+
+
+def discovery_dismiss_acquisition(artist, album):
+    """Dismiss an acquisition card and stop its import watcher without deleting downloaded files."""
+    _discovery_init()
+    identity = (_music_key(artist), _music_key(album))
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        row = db.execute(
+            "SELECT details_json FROM discovery_acquisitions WHERE artist_key=? AND album_key=?",
+            identity,
+        ).fetchone()
+        if not row:
+            return json.dumps({"ok": False, "error": "Acquisition not found."})
+        try:
+            details = json.loads(row[0] or "{}")
+        except (ValueError, TypeError):
+            details = {}
+        details.update({"status": "dismissed", "dismissed_at": time.time()})
+        db.execute(
+            "UPDATE discovery_acquisitions SET status='dismissed', details_json=?, updated_at=? "
+            "WHERE artist_key=? AND album_key=?",
+            (json.dumps(details, ensure_ascii=False), time.time(), *identity),
+        )
+        db.commit()
+    return json.dumps({"ok": True, "status": "dismissed", "message": "Acquisition card dismissed. Existing download files were left untouched."})
 
 
 def _discovery_skip_requested(artist, album):
@@ -3969,6 +4005,8 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
     source_switches = 0
     while time.monotonic() < deadline:
         try:
+            if _discovery_is_dismissed(artist, album):
+                return
             if _discovery_skip_requested(artist, album):
                 next_candidate = _discovery_switch_to_next_source(
                     artist, album, candidate, settings, download_root, headers, "manual_skip"
