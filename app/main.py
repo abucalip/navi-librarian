@@ -435,16 +435,20 @@ p { line-height: 1.55; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
-.genre-row-scroll-cue { margin-left: auto; color: var(--yellow); font: 500 9px/1.4 var(--mono); letter-spacing: .1em; white-space: nowrap; }
-.genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; }
+.genre-row-arrows { display: flex; gap: 6px; margin-left: auto; }
+.genre-row-arrow { display: grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 1px solid #81713b; background: #353124; color: var(--yellow); font: 700 22px/1 var(--body); }
+.genre-row-arrow:hover { background: var(--yellow); color: #191a1a; border-color: var(--yellow); }
+.genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
-.deep-dive-card { position: relative; }
-.deep-dive-card h3 .album-year, .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
-.deep-dive-card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
-.deep-dive-card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
-.deep-dive-card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
-.deep-dive-card .deep-dive-dismiss { position: absolute; z-index: 3; top: 8px; right: 8px; display: grid; place-items: center; width: 29px; height: 29px; padding: 0; border: 1px solid rgba(224,91,79,.75); border-radius: 50%; background: rgba(25,26,26,.88); color: #ff766d; font: 500 20px/1 var(--body); box-shadow: 0 2px 10px rgba(0,0,0,.35); }
-.deep-dive-card .deep-dive-dismiss:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.card { position: relative; }
+.card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
+.card .card-art .get-album:hover { background: #f3d66b; transform: scale(1.06); }
+.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 9px; right: 9px; display: grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 1px solid rgba(224,91,79,.9); border-radius: 50%; background: rgba(25,26,26,.92); color: #ff766d; font: 500 21px/1 var(--body); box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+.card .card-art .deep-dive-dismiss:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
+.card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
+.card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
@@ -512,7 +516,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
     <button data-page="profile">Listening profile</button>
     <button data-page="forMe">For Me</button>
     <button data-page="personalDiscoveries">Personal Discoveries</button>
-    <button data-page="classics">Classics</button>
+    <button data-page="classics">Add to your collection</button>
     <button data-page="artistDeepDive">Artist Deep Dives</button>
     <button data-page="acquisitions">Acquisitions</button>
     <button data-page="settings">Settings</button>
@@ -619,9 +623,9 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 <section id="classics" class="page hidden">
   <div class="panel">
-    <h2>Classics</h2>
-    <p>Popular albums worth exploring. Popularity does not necessarily indicate critical acclaim.</p>
-    <button data-load-discovery="classics">Load classics</button>
+    <h2>Add to your collection</h2>
+    <p>Find acclaimed albums and less obvious discoveries to expand your library.</p>
+    <button data-load-discovery="classics">Load albums</button>
     <button data-refresh-discovery="classics">Refresh</button>
     <p id="classicsStatus"></p>
     <div id="classicsCards" class="cards"></div>
@@ -907,7 +911,7 @@ const artworkObserver = 'IntersectionObserver' in window
 function attachArtwork(card, artist, album) {
   const art = document.createElement('div');
   art.className = 'card-art';
-  art.setAttribute('aria-hidden', 'true');
+  art.setAttribute('aria-label', 'Album artwork and acquisition actions');
 
   const placeholder = document.createElement('div');
   placeholder.className = 'card-art-placeholder';
@@ -1000,8 +1004,18 @@ function applyRecommendationFilters() {
 
   for (const item of filtered) {
     const card = document.createElement('article');
-    card.className = 'card';
-    attachArtwork(card, item.artist || item.album_artist || '', item.album || item.title || item.name || '');
+    card.className = 'card editorial-card';
+    const artist = item.artist || item.album_artist || '';
+    const album = item.album || item.title || item.name || '';
+    attachArtwork(card, artist, album);
+    const artContainer = card.querySelector('.card-art');
+    const getButton = document.createElement('button');
+    getButton.className = 'get-album';
+    getButton.textContent = 'get';
+    getButton.title = 'Get this album';
+    getButton.setAttribute('aria-label', 'Get ' + album);
+    getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+    artContainer.append(getButton);
 
     const categoryName = (item.discovery_category || 'Unclassified')
       .replaceAll('_', ' ');
@@ -1190,7 +1204,17 @@ async function loadDiscovery(name) {
 
   try {
     const data = await requestJSON(`/api/discovery/${name}?count=${name === 'artist_deep_dive' ? 150 : 30}`);
-    const items = data.items || data.recommendations || [];
+    let items = data.items || data.recommendations || [];
+    if (name === 'classics') {
+      const artistCounts = new Map();
+      items = items.filter(item => {
+        const key = String(item.artist || item.album_artist || '').trim().toLocaleLowerCase();
+        const count = artistCounts.get(key) || 0;
+        if (count >= 3) return false;
+        artistCounts.set(key, count + 1);
+        return true;
+      });
+    }
     if (name !== 'for_me' && !data.generated_at && !items.length && !autoRefreshStarted.has(name)) {
       autoRefreshStarted.add(name);
       discoveryStatus(name, 'Building the first list in the background…');
@@ -1219,9 +1243,20 @@ async function loadDiscovery(name) {
         heading.className = 'genre-row-heading';
         addTextElement(heading, 'h3', '', genreRowLabel(genre));
         addTextElement(heading, 'span', 'genre-row-count', `${genreItems.length} albums`);
-        addTextElement(heading, 'span', 'genre-row-scroll-cue', 'SCROLL  →');
+        const arrows = document.createElement('div');
+        arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
+        for (const [symbol, direction] of [['←', -1], ['→', 1]]) {
+          const arrow = document.createElement('button');
+          arrow.className = 'genre-row-arrow';
+          arrow.type = 'button';
+          arrow.textContent = symbol;
+          arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');
+          arrow.addEventListener('click', () => track.scrollBy({left: direction * Math.max(250, track.clientWidth * 0.8), behavior: 'smooth'}));
+          arrows.append(arrow);
+        }
+        heading.append(arrows);
         row.append(heading, track);
         target.append(row);
         for (const item of genreItems) destinationByItem.set(item, track);
@@ -1237,7 +1272,7 @@ async function loadDiscovery(name) {
       const album = item.album || item.title || 'Untitled album';
       const isDeepDive = name === 'artist_deep_dive';
       const card = document.createElement('article');
-      card.className = isDeepDive ? 'card deep-dive-card' : 'card';
+      card.className = 'card editorial-card';
       attachArtwork(card, artist, album);
 
       addTextElement(card, 'p', 'card-category',
@@ -1275,25 +1310,30 @@ async function loadDiscovery(name) {
         actions.append(b);
       };
 
-      if (isDeepDive) {
-        const notForMe = document.createElement('button');
-        notForMe.className = 'deep-dive-dismiss';
-        notForMe.textContent = '×';
-        notForMe.title = 'Not for me';
-        notForMe.setAttribute('aria-label', 'Not for me');
-        notForMe.addEventListener('click',
-          () => sendFeedback('dismiss', artist, album, item, name));
-        card.append(notForMe);
-        button('get', () => searchAlbum(artist, album, item), 'get-album');
-      } else {
+      const artContainer = card.querySelector('.card-art');
+      const getButton = document.createElement('button');
+      getButton.className = 'get-album';
+      getButton.textContent = 'get';
+      getButton.title = 'Get this album';
+      getButton.setAttribute('aria-label', 'Get ' + album);
+      getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+      artContainer.append(getButton);
+
+      const notForMe = document.createElement('button');
+      notForMe.className = 'deep-dive-dismiss';
+      notForMe.textContent = '×';
+      notForMe.title = name === 'for_me' ? 'Remove from For Me' : 'Not for me';
+      notForMe.setAttribute('aria-label', notForMe.title);
+      notForMe.addEventListener('click', () => sendFeedback(
+        name === 'for_me' ? 'remove_for_me' : 'dismiss', artist, album, item, name));
+      artContainer.append(notForMe);
+
+      if (name !== 'artist_deep_dive') {
         button(name === 'for_me' ? 'Remove from For Me' : '＋ For Me',
           () => sendFeedback(name === 'for_me' ? 'remove_for_me' : 'save',
                              artist, album, item, name));
-        button('Dismiss album',
-          () => sendFeedback('dismiss', artist, album, item, name));
-        button('Dismiss artist',
+        if (name !== 'for_me') button('Dismiss artist',
           () => sendFeedback('dismiss_artist', artist, album, item, name));
-        button('Search slskd', () => searchAlbum(artist, album, item));
       }
 
       card.append(actions);
