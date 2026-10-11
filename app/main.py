@@ -52,9 +52,19 @@ def health():
 _PROFILE_CACHE_TTL = 300
 _profile_cache = {}
 
-# Wikipedia artist biographies are cached for a day to avoid repeated lookups.
+# Artist biographies are cached for a day. Wikidata identifies the intended
+# musical entity first; Wikipedia is only used when its page points back to
+# that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
+# versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
+_ARTIST_DESCRIPTION_RE = __import__("re").compile(
+    r"\\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
+    r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
+    r"guitarist|bassist|drummer|keyboardist|record producer|music producer|"
+    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\\b",
+    __import__("re").IGNORECASE,
+)
 
 
 @app.get("/api/artist-bio")
@@ -70,42 +80,70 @@ def artist_bio(artist: str):
 
     bio = ""
     try:
+        headers = {
+            "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)"
+        }
         search = httpx.get(
-            "https://en.wikipedia.org/w/api.php",
-            params={"action": "query", "list": "search", "srsearch": name,
-                    "format": "json", "srlimit": 5},
-            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+            "https://www.wikidata.org/w/api.php",
+            params={
+                "action": "wbsearchentities",
+                "search": name,
+                "language": "en",
+                "uselang": "en",
+                "format": "json",
+                "limit": 10,
+            },
+            headers=headers,
             timeout=5,
         )
         search.raise_for_status()
-        results = search.json().get("query", {}).get("search", [])
-        # Prefer an exact page-title match to avoid biographies of similarly
-        # named artists.
-        results.sort(key=lambda item: (
-            str(item.get("title", "")).casefold() != name.casefold(),
-            -int(item.get("wordcount") or 0),
+        entities = search.json().get("search", [])
+
+        # Never accept a result based only on a matching name. Its structured
+        # description must identify a musician, band, or another music act.
+        music_entities = [
+            item for item in entities
+            if item.get("id")
+            and _ARTIST_DESCRIPTION_RE.search(str(item.get("description") or ""))
+        ]
+        music_entities.sort(key=lambda item: (
+            str(item.get("label") or "").casefold() != name.casefold(),
+            str(item.get("label") or "").casefold() != name.casefold().replace("the ", "", 1),
         ))
-        for result in results[:3]:
-            title = str(result.get("title") or "")
-            if not title:
+
+        for entity in music_entities:
+            qid = str(entity.get("id") or "")
+            label = str(entity.get("label") or "")
+            if not qid or not label:
                 continue
-            summary = httpx.get(
-                "https://en.wikipedia.org/api/rest_v1/page/summary/"
-                + __import__("urllib.parse", fromlist=["quote"]).quote(title.replace(" ", "_"), safe=""),
-                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-                timeout=5,
-            )
-            if summary.status_code != 200:
-                continue
-            extract = " ".join(str(summary.json().get("extract") or "").split())
-            if not extract or summary.json().get("type") == "disambiguation":
-                continue
-            # The first sentence gives the compact identity/biographical lead.
-            match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
-            bio = match.group(0) if match else extract[:240]
-            if len(bio) > 280:
-                bio = bio[:277].rsplit(" ", 1)[0] + "…"
-            break
+
+            # Wikidata's description is already a trustworthy short fallback.
+            fallback_bio = str(entity.get("description") or "").strip()
+            try:
+                summary = httpx.get(
+                    "https://en.wikipedia.org/api/rest_v1/page/summary/"
+                    + __import__("urllib.parse", fromlist=["quote"]).quote(label.replace(" ", "_"), safe=""),
+                    headers=headers,
+                    timeout=5,
+                )
+                if summary.status_code == 200:
+                    page = summary.json()
+                    # Critical identity check: don't use a similarly named
+                    # Wikipedia page unless it is linked to the chosen Wikidata item.
+                    if str(page.get("wikibase_item") or "") == qid:
+                        extract = " ".join(str(page.get("extract") or "").split())
+                        if extract and page.get("type") != "disambiguation":
+                            match = __import__("re").search(r"^.*?[.!?](?=\\s|$)", extract)
+                            bio = match.group(0) if match else extract[:240]
+                            if len(bio) > 280:
+                                bio = bio[:277].rsplit(" ", 1)[0] + "…"
+                            break
+            except Exception:
+                pass
+
+            if fallback_bio:
+                bio = fallback_bio
+                break
     except Exception:
         bio = ""
 
@@ -512,7 +550,9 @@ def album_artwork(artist: str = "", album: str = ""):
         if albums:
             match = max(albums, key=match_score)
             if match_score(match) >= 5:
-                artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
+                # Deezer's medium variant is 250x250; avoid xl/big URLs
+                # so the browser never downloads oversized cover art.
+                artwork = match.get("cover_medium")
                 release_date = str(match.get("release_date") or "")
                 year_text = release_date[:4]
                 result = {
@@ -540,7 +580,8 @@ def album_artwork(artist: str = "", album: str = ""):
                 None,
             )
             if exact:
-                photo = exact.get("picture_xl") or exact.get("picture_big") or exact.get("picture_medium")
+                # Medium artist portraits are 250x250, within the 400px cap.
+                photo = exact.get("picture_medium")
                 if photo:
                     result = {
                         "artwork_url": photo.replace("http://", "https://", 1),
