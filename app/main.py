@@ -595,8 +595,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
     <button class="active" data-page="dashboard">Dashboard</button>
     <button data-page="recommendations">Recommendations</button>
     <button data-page="profile">Listening profile</button>
-    <button data-page="forMe">For Me</button>
-    <button data-page="personalDiscoveries">Personal Discoveries</button>
+        <button data-page="personalDiscoveries">Personal Discoveries</button>
     <button data-page="classics">Add to your collection</button>
     <button data-page="artistDeepDive">Artist Deep Dives</button>
     <button data-page="acquisitions">Acquisitions</button>
@@ -680,16 +679,6 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   <footer>
     Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
   </footer>
-
-<section id="forMe" class="page hidden">
-  <div class="panel">
-    <h2>For Me</h2>
-    <p>Albums saved for later.</p>
-    <button data-load-discovery="for_me">Reload saved albums</button>
-    <p id="forMeStatus"></p>
-    <div id="forMeCards" class="cards"></div>
-  </div>
-</section>
 
 <section id="personalDiscoveries" class="page hidden">
   <div class="panel">
@@ -1241,7 +1230,6 @@ $('loadProfile').addEventListener('click', async () => {
 
 
 const discoveryViews = {
-  for_me: ['forMeCards','forMeStatus'],
   personal: ['personalCards','personalStatus'],
   classics: ['classicsCards','classicsStatus'],
   artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus']
@@ -1401,14 +1389,7 @@ async function loadDiscovery(name) {
       if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
         `Last.fm playcount: ${Number(item.lastfm_playcount).toLocaleString()}`);
 
-      if (name === 'for_me') {
-        addTextElement(card, 'p', 'card-meta',
-          item.acquired === true ? '✓ In your library' :
-          item.acquired === false ? 'Not found in the library index' :
-          'Library presence not confirmed');
-      }
-
-      const actions = document.createElement('div');
+        const actions = document.createElement('div');
       actions.className = 'card-actions';
 
       const button = (label, callback, className = '') => {
@@ -1431,15 +1412,12 @@ async function loadDiscovery(name) {
       const notForMe = document.createElement('button');
       notForMe.className = 'deep-dive-dismiss';
       notForMe.textContent = '×';
-      notForMe.title = name === 'for_me' ? 'Remove from For Me' : 'Not for me';
+      notForMe.title = 'Not for me';
       notForMe.setAttribute('aria-label', notForMe.title);
-      notForMe.addEventListener('click', () => sendFeedback(
-        name === 'for_me' ? 'remove_for_me' : 'dismiss', artist, album, item, name));
+      notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name));
       artContainer.append(notForMe);
 
-      if (name !== 'artist_deep_dive' && name !== 'for_me') {
-        button('＋ For Me',
-          () => sendFeedback('save', artist, album, item, name));
+      if (name !== 'artist_deep_dive') {
         button('Dismiss artist',
           () => sendFeedback('dismiss_artist', artist, album, item, name));
       }
@@ -1449,7 +1427,7 @@ async function loadDiscovery(name) {
     }
 
     if (!items.length && !autoRefreshStarted.has(name)) addTextElement(target, 'p', '',
-      name === 'for_me' ? 'No saved albums yet.' : 'No results. Try refreshing this list.');
+      'No results. Try refreshing this list.');
   } catch (error) {
     discoveryStatus(name, error.message);
   }
@@ -1460,7 +1438,6 @@ async function sendFeedback(action, artist, album, metadata, listName) {
     await sendJSON('/api/discovery/feedback', 'POST',
       {action, artist, album, metadata});
     await loadDiscovery(listName);
-    if (listName !== 'for_me') await loadDiscovery('for_me');
   } catch (error) {
     discoveryStatus(listName, error.message);
   }
