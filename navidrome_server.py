@@ -3320,406 +3320,10 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     """Wait briefly for a queued candidate to start; cancel a stalled queue before fallback."""
     from urllib.parse import quote
     expected = {
-        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+            max(0, int(item.get("size") or 0))
         for item in candidate.get("files", [])
-    }
-    deadline = time.monotonic() + timeout
-    last_files = []
-    while time.monotonic() < deadline:
-        try:
-            tracked = _slskd_download_transfer_files(
-                base_url, headers, candidate["username"]
-            )
-        except (httpx.HTTPError, ValueError, TypeError):
-            return None
-        last_files = [
-            item for item in tracked
-            if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
-        ]
-        states = {str(item.get("state") or "").replace("_", "").casefold() for item in last_files}
-        if states.intersection({"inprogress", "succeeded", "completed", "transferring", "downloading"}):
-            return True
-        if states and states.issubset({"failed", "errored", "cancelled", "canceled"}):
-            return False
-        time.sleep(1)
-    if not last_files:
-        return False
-    queued = [
-        item for item in last_files
-        if str(item.get("state") or "").replace("_", "").casefold() in {"queued", "initializing", "requested"}
-    ]
-    if not queued:
-        return None
-    # Do not start another source while the first one's files remain queued.
-    # A failed cancellation is treated as uncertain rather than risking duplicate downloads.
-    for item in queued:
-        file_id = str(item.get("id") or item.get("filename") or "")
-        if not file_id:
-            return None
-        try:
-            cancelled = httpx.delete(
-                f"{base_url}/api/v0/transfers/downloads/{quote(str(candidate['username']), safe='')}/{quote(file_id, safe='')}",
-                headers=headers,
-                timeout=6,
-            )
-            if cancelled.status_code not in (200, 202, 204, 404):
-                return None
-        except httpx.HTTPError:
-            return None
-    return False
-
-
-def _discovery_safe_folder_name(value):
-    value = str(value or "").replace("\\", "/").split("/")[-1]
-    value = "".join(character for character in value if character not in "\\0")
-    value = value.strip().strip(".")
-    return value or "Unknown"
-
-
-_DISCOVERY_IMPORT_LOCK = __import__("threading").Lock()
-_DISCOVERY_IMPORT_ACTIVE = set()
-
-
-def _discovery_save_acquisition_job(artist, album, status, details=None,
-                                    candidate=None, settings=None):
-    """Persist acquisition state independently of discovery recommendation lists."""
-    _discovery_init()
-    now = time.time()
-    artist_key, album_key = _music_key(artist), _music_key(album)
-    if not artist_key or not album_key:
-        raise ValueError("artist and album are required")
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        if not (details or {}).get("quality_summary"):
-            previous = db.execute(
-                "SELECT details_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?",
-                (artist_key, album_key),
-            ).fetchone()
-            if previous:
-                try:
-                    previous_details = json.loads(previous[0] or "{}")
-                except (ValueError, TypeError):
-                    previous_details = {}
-                previous_quality = previous_details.get("quality_summary")
-                if previous_quality:
-                    details = {**(details or {}), "quality_summary": previous_quality}
-        db.execute(
-            "INSERT INTO discovery_acquisitions "
-            "(artist_key, album_key, artist, album, status, details_json, candidate_json, "
-            "settings_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(artist_key, album_key) DO UPDATE SET "
-            "artist=excluded.artist, album=excluded.album, status=excluded.status, "
-            "details_json=excluded.details_json, "
-            "candidate_json=CASE WHEN excluded.candidate_json='{}' THEN discovery_acquisitions.candidate_json ELSE excluded.candidate_json END, "
-            "settings_json=CASE WHEN excluded.settings_json='{}' THEN discovery_acquisitions.settings_json ELSE excluded.settings_json END, "
-            "updated_at=excluded.updated_at",
-            (artist_key, album_key, artist.strip(), album.strip(), status,
-             json.dumps({"status": status, "updated_at": now, **(details or {})}, ensure_ascii=False),
-             json.dumps(candidate or {}, ensure_ascii=False),
-             json.dumps(settings or {}, ensure_ascii=False), now, now),
-        )
-        db.commit()
-
-
-def _discovery_update_acquisition_status(artist, album, status, details=None):
-    """Persist acquisition state independently and mirror it onto For Me when present."""
-    details = details or {}
-    try:
-        _discovery_save_acquisition_job(artist, album, status, details)
-    except Exception:
-        pass
-    try:
-        identity = (_music_key(artist), _music_key(album))
-        row = next((
-            item for item in _discovery_feedback_rows()
-            if item["scope"] == "album" and item["status"] == "for_me"
-            and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
-        ), None)
-        if row:
-            metadata = row.get("metadata") or {}
-            metadata["auto_acquisition"] = {
-                "status": status, "updated_at": time.time(), **details
-            }
-            _discovery_save_feedback("album", artist, album, "for_me", metadata)
-    except Exception:
-        pass
-
-
-def _discovery_list_acquisition_jobs():
-    _discovery_init()
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        rows = db.execute(
-            "SELECT artist_key, album_key, artist, album, status, details_json, "
-            "candidate_json, settings_json, created_at, updated_at "
-            "FROM discovery_acquisitions ORDER BY updated_at DESC"
-        ).fetchall()
-    jobs = []
-    for row in rows:
-        try:
-            details = json.loads(row[5] or "{}")
-        except (ValueError, TypeError):
-            details = {"status": row[4]}
-        try:
-            candidate = json.loads(row[6] or "{}")
-        except (ValueError, TypeError):
-            candidate = {}
-        try:
-            settings = json.loads(row[7] or "{}")
-        except (ValueError, TypeError):
-            settings = {}
-        jobs.append({
-            "artist_key": row[0], "album_key": row[1], "artist": row[2],
-            "album": row[3], "status": row[4], "details": details,
-            "candidate": candidate, "settings": settings,
-            "created_at": row[8], "updated_at": row[9],
-        })
-    return jobs
-
-
-# Per-process snapshots used to calculate an instantaneous speed from byte deltas.
-_DISCOVERY_PROGRESS_SNAPSHOTS = {}
-_DISCOVERY_PROGRESS_SNAPSHOT_LOCK = __import__("threading").Lock()
-
-
-def _discovery_live_download_progress(job):
-    """Return live slskd progress and a delta-based speed estimate."""
-    candidate = job.get("candidate") or {}
-    expected_files = candidate.get("files") or []
-    username = candidate.get("username")
-    if not expected_files or not username:
-        return None
-
-    try:
-        base_url, api_key, _ = _slskd_config()
-        tracked = _slskd_download_transfer_files(
-            base_url, {"X-API-KEY": api_key}, username
-        )
-    except Exception:
-        return {
-            "available": False,
-            "total_tracks": len(expected_files),
-            "remaining_tracks": len(expected_files),
-            "completed_tracks": 0,
-            "percent": None,
-            "speed_bytes_per_second": None,
-        }
-
-    def basename(value):
-        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
-
-    expected_by_name = {}
-    for item in expected_files:
-        name = basename(item.get("filename"))
-        if name:
-            expected_by_name[name] = item
-
-    tracked_by_name = {}
-    for item in tracked:
-        name = basename(item.get("filename"))
-        if name not in expected_by_name:
-            continue
-        prior = tracked_by_name.get(name)
-        state = str(item.get("state") or "").replace("_", "").casefold()
-        prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
-        rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
-        if prior is None or rank(state) >= rank(prior_state):
-            tracked_by_name[name] = item
-
-    completed_states = {"succeeded", "completed"}
-    completed = 0
-    total_bytes = 0
-    transferred_bytes = 0
-    file_byte_snapshot = {}
-
-    for name, expected in expected_by_name.items():
-        item = tracked_by_name.get(name) or {}
-        state = str(item.get("state") or "").replace("_", "").casefold()
-        is_completed_state = state in completed_states
-        if is_completed_state:
-            completed += 1
-
-        try:
-            size = max(0, int(expected.get("size") or item.get("size") or 0))
-        except (TypeError, ValueError):
-            size = 0
-        transferred = 0
-        raw_transferred = 0
-        has_transfer_counter = False
-        for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
-            if item.get(key) is not None:
-                try:
-                    raw_transferred = max(0, int(item[key]))
-                    transferred = raw_transferred
-                    has_transfer_counter = True
-                    break
-                except (TypeError, ValueError):
-                    pass
-        if is_completed_state and size:
-            transferred = size
-        if size:
-            transferred = min(transferred, size)
-            total_bytes += size
-            transferred_bytes += transferred
-            if transferred >= size and not is_completed_state:
-                completed += 1
-        # Speed uses only actual counters, never an inferred completed-file size.
-        file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
-
-    now = time.monotonic()
-    snapshot_key = (
-        str(job.get("artist_key") or _music_key(job.get("artist"))),
-        str(job.get("album_key") or _music_key(job.get("album"))),
-        str(username).casefold(),
-    )
-    speed = None
-    with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
-        prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
-        _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
-            "at": now, "files": file_byte_snapshot,
-        }
-        if prior:
-            elapsed = now - prior["at"]
-            if elapsed >= 0.5:
-                delta = sum(
-                    max(0, value - int(prior["files"].get(name, 0)))
-                    for name, value in file_byte_snapshot.items()
-                )
-                speed = int(delta / elapsed)
-
-    percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
-    total_tracks = len(expected_by_name)
-    return {
-        "available": True,
-        "total_tracks": total_tracks,
-        "completed_tracks": min(completed, total_tracks),
-        "remaining_tracks": max(0, total_tracks - completed),
-        "percent": percent,
-        "total_size_bytes": total_bytes if total_bytes else None,
-        "remaining_size_bytes": max(0, total_bytes - transferred_bytes) if total_bytes else None,
-        "speed_bytes_per_second": speed,
-    }
-
-
-def discovery_get_acquisition_status():
-    """Return persistent acquisition state plus best-effort live download progress."""
-    jobs = _discovery_list_acquisition_jobs()
-    resumable = {
-        "downloading", "download_complete_waiting_for_folder", "monitor_error"
-    }
-    for job in jobs:
-        identity = (job["artist_key"], job["album_key"])
-        candidate, settings = job["candidate"], job["settings"]
-        if job["status"] not in resumable or not candidate.get("files") or not candidate.get("username"):
-            continue
-        with _DISCOVERY_IMPORT_LOCK:
-            if identity in _DISCOVERY_IMPORT_ACTIVE:
-                continue
-            _DISCOVERY_IMPORT_ACTIVE.add(identity)
-        import threading
-        threading.Thread(
-            target=_discovery_import_watcher_entry,
-            args=(job["artist"], job["album"], candidate, settings, identity),
-            name="navidrome-import-recovery",
-            daemon=True,
-        ).start()
-    acquisitions = []
-    for job in jobs:
-        public_job = {
-            k: v for k, v in job.items()
-            if k not in {"candidate", "settings", "artist_key", "album_key"}
-        }
-        if job["status"] == "downloading":
-            progress = _discovery_live_download_progress(job)
-            if progress is not None:
-                public_job["details"] = dict(public_job.get("details") or {})
-                public_job["details"]["live_progress"] = progress
-        acquisitions.append(public_job)
-    return json.dumps({"ok": True, "acquisitions": acquisitions}, ensure_ascii=False, indent=2)
-
-
-def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
-    try:
-        _discovery_watch_and_import_album(artist, album, candidate, settings)
-    finally:
-        with _DISCOVERY_IMPORT_LOCK:
-            _DISCOVERY_IMPORT_ACTIVE.discard(identity)
-
-
-def _discovery_locate_completed_album(download_root, candidate):
-    """Find a unique completed folder using expected filenames and file sizes.
-
-    Prefer the peer's advertised folder name when it matches, but do not
-    require it: slskd's local completed-folder layout can differ from the
-    remote share folder name.
-    """
-    import os
-
-    root = Path(download_root).expanduser()
-    if not root.is_dir():
-        return None
-
-    expected = {}
-    for item in candidate.get("files", []):
-        filename = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
-        if filename:
-            expected[filename.casefold()] = int(item.get("size") or 0)
-    if not expected:
-        return None
-
-    wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
-    matches = []
-    for current, directories, filenames in os.walk(root, followlinks=False):
-        directories[:] = [name for name in directories if not name.startswith(".")]
-        current_path = Path(current)
-        # Never treat the completed-download root itself as an album folder:
-        # moving it would move every completed download into the music library.
-        if current_path.resolve() == root.resolve():
-            continue
-        actual_names = {name.casefold(): name for name in filenames}
-        if not all(name in actual_names for name in expected):
-            continue
-
-        size_ok = True
-        for folded_name, expected_size in expected.items():
-            actual_name = actual_names[folded_name]
-            try:
-                actual_size = (current_path / actual_name).stat().st_size
-            except OSError:
-                size_ok = False
-                break
-            if expected_size > 0 and actual_size != expected_size:
-                size_ok = False
-                break
-        if size_ok:
-            matches.append(current_path)
-
-    if not matches:
-        return None
-
-    named_matches = [
-        path for path in matches
-        if path.name.casefold() == str(wanted_folder or "").casefold()
-    ]
-    if len(named_matches) == 1:
-        return named_matches[0]
-    if len(matches) == 1:
-        return matches[0]
-    return None
-
-
-def _discovery_watch_and_import_album(artist, album, candidate, settings):
-    """Import once all expected files exist with matching sizes, even if slskd prunes transfer records."""
-    import shutil
-    base_url, api_key, _ = _slskd_config()
-    headers = {"X-API-KEY": api_key}
-    download_root = Path(str(
-        settings.get("slskd_downloads_path")
-        or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
-    )).expanduser()
-    music_root = MUSIC_DIR.expanduser()
-    expected = {
-        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
-        for item in candidate.get("files", [])
+        if str(item.get("filename") or "").strip()
     }
     deadline = time.monotonic() + 48 * 60 * 60
     completed_at = None
@@ -3760,32 +3364,65 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
             tracked = _slskd_download_transfer_files(
                 base_url, headers, candidate["username"]
             )
-            matching = [
-                item for item in tracked
-                if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
-            ]
+            matching_by_name = {}
+            for item in tracked:
+                name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                if name not in expected:
+                    continue
+                previous = matching_by_name.get(name)
+                state = str(item.get("state") or "").replace("_", "").casefold()
+                previous_state = str((previous or {}).get("state") or "").replace("_", "").casefold()
+                if previous is None or (
+                    state in {"succeeded", "completed"}
+                    and previous_state not in {"succeeded", "completed"}
+                ):
+                    matching_by_name[name] = item
+
             states = {
                 str(item.get("state") or "").replace("_", "").casefold()
-                for item in matching
+                for item in matching_by_name.values()
             }
             if states.intersection({"failed", "errored", "cancelled", "canceled"}):
                 _discovery_update_acquisition_status(artist, album, "download_failed", {
                     "source_username": candidate["username"], "states": sorted(states)
                 })
                 return
-            if len(matching) >= len(expected) and matching and all(
-                str(item.get("state") or "").replace("_", "").casefold()
-                in {"succeeded", "completed"}
-                for item in matching
-            ):
+
+            # The progress UI can reach 100% when byte counters reach the
+            # advertised file sizes, before slskd changes transfers to a
+            # terminal succeeded/completed state. Treat those counters as
+            # completion evidence too, but only import after the actual files
+            # appear in the completed-download directory.
+            all_transfers_complete = bool(expected) and all(
+                name in matching_by_name and (
+                    str(matching_by_name[name].get("state") or "").replace("_", "").casefold()
+                    in {"succeeded", "completed"}
+                    or (
+                        expected_size > 0
+                        and any(
+                            matching_by_name[name].get(key) is not None
+                            and str(matching_by_name[name][key]).isdigit()
+                            and int(matching_by_name[name][key]) >= expected_size
+                            for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes")
+                        )
+                    )
+                )
+                for name, expected_size in expected.items()
+            )
+            if all_transfers_complete:
                 completed_at = completed_at or time.monotonic()
                 source = _discovery_locate_completed_album(download_root, candidate)
                 if source is None:
                     _discovery_update_acquisition_status(artist, album, "download_complete_waiting_for_folder", {
                         "source_username": candidate["username"],
+                        "downloads_path": str(download_root),
                         "downloads_path_available": download_root.is_dir(),
+                        "expected_folder": candidate.get("folder"),
+                        "expected_files": len(expected),
+                        "matched_transfer_records": len(matching_by_name),
+                        "transfer_states": sorted(states),
+                        "completion_evidence": "transfer byte counters or terminal states",
                     })
-                else:
                     if not music_root.is_dir():
                         _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
                             "source_folder": str(source)
