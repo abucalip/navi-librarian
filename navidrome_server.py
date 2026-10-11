@@ -3986,31 +3986,37 @@ def _discovery_skip_requested(artist, album):
 def discovery_skip_acquisition_source(artist, album):
     """Request a safe switch to the next eligible source for a stalled acquisition."""
     _discovery_init()
-    identity = (_music_key(artist), _music_key(album))
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        row = db.execute(
-            "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
-            "WHERE artist_key=? AND album_key=?", identity,
-        ).fetchone()
-        if not row:
-            return json.dumps({"ok": False, "error": "Acquisition not found."})
-        if row[0] != "downloading":
-            return json.dumps({"ok": False, "error": "This acquisition is not downloading."})
-        try:
-            candidate = json.loads(row[2] or "{}")
-            details = json.loads(row[1] or "{}")
-        except (ValueError, TypeError):
-            candidate, details = {}, {}
-        if not candidate.get("fallback_candidates"):
-            return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
-        details["skip_requested"] = True
-        details["skip_requested_at"] = time.time()
-        db.execute(
-            "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
-            "WHERE artist_key=? AND album_key=?",
-            (json.dumps(details, ensure_ascii=False), time.time(), *identity),
-        )
-        db.commit()
+    # Keep the status check and skip request atomic with dismissal in this process.
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        identity = (_music_key(artist), _music_key(album))
+        with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+            row = db.execute(
+                "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
+                "WHERE artist_key=? AND album_key=?", identity,
+            ).fetchone()
+            if not row:
+                return json.dumps({"ok": False, "error": "Acquisition not found."})
+            if row[0] == "dismissed":
+                return json.dumps({"ok": False, "error": "This acquisition has been dismissed."})
+            if row[0] != "downloading":
+                return json.dumps({"ok": False, "error": "This acquisition is not downloading."})
+            try:
+                candidate = json.loads(row[2] or "{}")
+                details = json.loads(row[1] or "{}")
+            except (ValueError, TypeError):
+                candidate, details = {}, {}
+            if not candidate.get("fallback_candidates"):
+                return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
+            details["skip_requested"] = True
+            details["skip_requested_at"] = time.time()
+            db.execute(
+                "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
+                "WHERE artist_key=? AND album_key=? AND status='downloading'",
+                (json.dumps(details, ensure_ascii=False), time.time(), *identity),
+            )
+            if db.total_changes == 0:
+                return json.dumps({"ok": False, "error": "Acquisition state changed; please refresh and try again."})
+            db.commit()
     return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
 
 
