@@ -1008,10 +1008,13 @@ function applyRecommendationFilters() {
 
     addTextElement(card, 'p', 'card-category', categoryName);
 
-    addTextElement(
-      card, 'h3', '',
-      item.album || item.title || item.name || 'Untitled album'
-    );
+    const title = document.createElement('h3');
+    title.append(document.createTextNode(item.album || item.title || item.name || 'Untitled album'));
+    const year = Number(item.year || item.release_year || item.first_release_year || 0);
+    if (year >= 1900 && year <= 2100) {
+      addTextElement(title, 'span', 'album-year', String(year));
+    }
+    card.append(title);
 
     addTextElement(
       card, 'p', 'card-artist',
