@@ -726,6 +726,9 @@ p { line-height: 1.55; }
 .progress-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: #1c1e1d; }
 .progress-ring span { position: relative; z-index: 1; color: var(--text); font: 500 14px/1 var(--mono); }
 .download-progress-copy { min-width: 0; }
+.download-progress-speed-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 12px; }
+.download-progress-speed-row .download-progress-stat + .download-progress-stat { margin-top: 0; color: var(--muted); }
+.download-progress-copy > .download-progress-stat { margin-top: 3px; }
 .download-progress-label { margin: 0 0 4px; color: var(--yellow); font: 500 10px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
 .download-progress-stat { margin: 0; color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
 .download-progress-stat + .download-progress-stat { margin-top: 3px; color: var(--muted); }
@@ -999,6 +1002,20 @@ function pretty(value) {
   return JSON.stringify(value, null, 2);
 }
 
+function formatDownloadBytes(value) {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return null;
+  if (bytes < 1024) return Math.round(bytes) + ' B';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let amount = bytes / 1024;
+  let unit = 0;
+  while (amount >= 1024 && unit < units.length - 1) {
+    amount /= 1024;
+    unit += 1;
+  }
+  return amount.toFixed(amount >= 100 ? 0 : 1) + ' ' + units[unit];
+}
+
 function renderAcquisitions(data) {
   const target = $('acquisitionCards');
   try {
@@ -1051,7 +1068,16 @@ function renderAcquisitions(data) {
             ? (value / (1024 * 1024)).toFixed(1) + ' MB/s'
             : value >= 1024 ? (value / 1024).toFixed(0) + ' KB/s' : Math.round(value) + ' B/s';
         }
-        addTextElement(copy, 'p', 'download-progress-stat', speedText);
+        const speedAndSize = document.createElement('div');
+        speedAndSize.className = 'download-progress-speed-row';
+        addTextElement(speedAndSize, 'p', 'download-progress-stat', speedText);
+        const totalSize = formatDownloadBytes(progress.total_size_bytes);
+        const remainingSize = formatDownloadBytes(progress.remaining_size_bytes);
+        if (totalSize !== null && remainingSize !== null) {
+          addTextElement(speedAndSize, 'p', 'download-progress-stat',
+            'Total ' + totalSize + ' · ' + remainingSize + ' remaining');
+        }
+        copy.append(speedAndSize);
         const remaining = Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
         const totalTracks = Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
         addTextElement(copy, 'p', 'download-progress-stat',
