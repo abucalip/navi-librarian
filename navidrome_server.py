@@ -4627,7 +4627,11 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 for item in candidate.get("files", [])
                 if str(item.get("filename") or "").strip()
             }
-            matched = _discovery_match_completed_album_files(album_dir, candidate)
+            matched = (
+                _discovery_match_completed_album_files(album_dir, candidate)
+                if album_dir.is_dir() and not album_dir.is_symlink()
+                else None
+            )
             if expected_names and matched and set(matched) == expected_names:
                 _discovery_update_acquisition_status(artist, album, "imported", {
                     "source_folder": details.get("source_folder"),
