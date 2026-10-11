@@ -302,6 +302,48 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(self.ns["status_updates"][-1][0][2], "imported")
         self.assertTrue(self.ns["status_updates"][-1][0][3]["recovered_after_restart"])
 
+    def test_partial_staging_is_rolled_back_to_download_folder_after_restart(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            music = root / "music"
+            artist_dir = music / "Artist"
+            artist_dir.mkdir(parents=True)
+            source = root / "downloads" / "Album"
+            source.mkdir(parents=True)
+            (source / "02.flac").write_bytes(b"567")
+            staging = artist_dir / ".navidrome-import-interrupted"
+            staging.mkdir()
+            (staging / "01.flac").write_bytes(b"1234")
+            destination = artist_dir / "Album"
+            self.ns["MUSIC_DIR"] = music
+            self.ns["jobs"].append({
+                "artist_key": "artist",
+                "album_key": "album",
+                "status": "importing",
+                "details": {
+                    "source_folder": str(source),
+                    "destination": str(destination),
+                },
+            })
+            candidate = {
+                "username": "peer",
+                "files": [
+                    {"filename": "Album/01.flac", "size": 4},
+                    {"filename": "Album/02.flac", "size": 3},
+                ],
+            }
+
+            recovered = self.ns["_discovery_reconcile_interrupted_import"](
+                "Artist", "Album", candidate
+            )
+
+            self.assertFalse(recovered)
+            self.assertEqual((source / "01.flac").read_bytes(), b"1234")
+            self.assertEqual((source / "02.flac").read_bytes(), b"567")
+            self.assertFalse(staging.exists())
+            self.assertFalse(destination.exists())
+            self.assertEqual(self.ns["status_updates"], [])
+
     def test_interrupted_import_does_not_reconcile_wrong_or_incomplete_destination(self):
         with tempfile.TemporaryDirectory() as temp:
             music = Path(temp)
