@@ -3309,18 +3309,21 @@ def _slskd_extract_candidates(payload, artist, album, priority, expected_track_c
         files = list(best_by_track.values())
         tiers = [item["quality_rank"] for item in files if item["quality_rank"] <= len(priority)]
         avg_rank = sum(tiers) / len(tiers) if tiers else len(priority) + 1
-        all_clear = any(item["artist_in_path"] for item in files) and any(
-            item["album_in_path"] for item in files
-        )
+        artist_evidence = any(item["artist_match"] or item["artist_in_path"] for item in files)
+        album_evidence = any(item["album_match"] for item in files)
         unique_tracks = {
             _slskd_track_identity(item["filename"])
             for item in files
             if _slskd_track_identity(item["filename"])
         }
         unique_track_count = len(unique_tracks)
-        # Without catalog track-count metadata, require a substantial album-sized result;
-        # short or ambiguous releases go to manual review rather than auto-queueing.
-        minimum_required = max(8, int(expected_track_count or 0))
+        # Allow modest search/catalog mismatch: require at least 70% of an expected
+        # track count (minimum 3), or 5 unique tracks when catalog count is unknown.
+        # This still rejects tiny partial folders without blocking short releases.
+        minimum_required = (
+            max(3, (int(expected_track_count) * 7 + 9) // 10)
+            if expected_track_count else 5
+        )
         score = 0.55 * (1.0 if any(x["album_in_path"] for x in files) else 0.65)
         score += 0.25 * (1.0 if any(x["artist_match"] for x in files) else 0.0)
         score += 0.20 * min(unique_track_count / 8.0, 1.0)
@@ -3336,9 +3339,9 @@ def _slskd_extract_candidates(payload, artist, album, priority, expected_track_c
             "average_quality_rank": round(avg_rank, 3),
             "upload_speed": max((x["upload_speed"] for x in files), default=0),
             "confidence": round(score, 3),
-            "clear_match": bool(all_clear and complete_enough and score >= 0.9),
+            "clear_match": bool(artist_evidence and album_evidence and complete_enough and score >= 0.72),
             "eligibility_reason": (
-                "eligible" if all_clear and complete_enough and score >= 0.9
+                "eligible" if artist_evidence and album_evidence and complete_enough and score >= 0.72
                 else f"only {unique_track_count} unique tracks; need at least {minimum_required}"
                 if not complete_enough else "album/artist match confidence below threshold"
             ),
@@ -4235,9 +4238,21 @@ def discovery_acquire_album(
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})
     try:
+        metadata = json.loads(metadata_json or "{}")
+        if not isinstance(metadata, dict):
+            metadata = {}
+    except (ValueError, TypeError):
+        metadata = {}
+    try:
         base_url, api_key, settings = _slskd_config()
     except ValueError as exc:
-        return json.dumps({"ok": False, "status": "settings_required", "message": str(exc)})
+        message = str(exc)
+        _discovery_save_acquisition_job(
+            artist, album, "settings_required",
+            {"message": message, "metadata": metadata},
+        )
+        return json.dumps({"ok": False, "status": "settings_required", "artist": artist,
+                           "album": album, "message": message}, ensure_ascii=False)
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
     search_id = str(uuid.uuid4())
@@ -4310,28 +4325,41 @@ def discovery_acquire_album(
             ):
                 break
             time.sleep(0.75)
-        try:
-            metadata = json.loads(metadata_json or "{}")
-        except (ValueError, TypeError):
-            metadata = {}
         expected_track_count = _discovery_expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
         )
         if not candidates:
+            message = "No matching album folders were found. You can try again later."
+            _discovery_save_acquisition_job(
+                artist, album, "no_matches",
+                {"message": message, "search_id": search_id, "metadata": metadata},
+            )
             return json.dumps({
-                "ok": True, "status": "no_matches",
-                "artist": artist, "album": album, "search_id": search_id,
-                "message": "No sufficiently album-matching audio folders were found.",
+                "ok": True, "status": "no_matches", "artist": artist, "album": album,
+                "search_id": search_id, "message": message,
             }, ensure_ascii=False)
         clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
-        if not auto_queue or not clear_candidates:
+        if not auto_queue:
             return json.dumps({
-                "ok": True, "status": "review_required",
-                "artist": artist, "album": album, "search_id": search_id,
-                "candidates": candidates[:10],
-                "message": "No candidate met the automatic-download criteria; review the candidates and choose one.",
+                "ok": True, "status": "review_required", "artist": artist, "album": album,
+                "search_id": search_id, "candidates": candidates[:10],
+                "message": "Candidate review was requested explicitly.",
+            }, ensure_ascii=False)
+        if not clear_candidates:
+            best = candidates[0]
+            message = "Potential files were found, but none met the relaxed artist, album, and track-count checks. You can try again later."
+            _discovery_save_acquisition_job(
+                artist, album, "no_matches",
+                {"message": message, "search_id": search_id, "metadata": metadata,
+                 "candidate_count": len(candidates),
+                 "best_candidate_reason": best.get("eligibility_reason")},
+            )
+            return json.dumps({
+                "ok": True, "status": "no_matches", "artist": artist, "album": album,
+                "search_id": search_id, "candidate_count": len(candidates),
+                "message": message,
             }, ensure_ascii=False)
 
         failures = []
@@ -4421,17 +4449,24 @@ def discovery_acquire_album(
                 "message": "slskd accepted the queue request, but its transfer state could not be verified. Monitoring this source to avoid duplicate downloads.",
             }, ensure_ascii=False)
 
+        message = "None of the matching sources started a download. Check slskd/peer availability and try again."
+        _discovery_save_acquisition_job(
+            artist, album, "queue_failed",
+            {"message": message, "attempts": failures, "metadata": metadata},
+        )
         return json.dumps({
-            "ok": False, "status": "queue_failed",
-            "artist": artist, "album": album,
-            "attempts": failures,
-            "message": "None of the clear-match sources started a download. No user arbitration is needed because the candidates met the match criteria; check slskd connectivity/peer availability and retry.",
+            "ok": False, "status": "queue_failed", "artist": artist, "album": album,
+            "attempts": failures, "message": message,
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
+        message = f"slskd request failed: {type(exc).__name__}"
+        _discovery_save_acquisition_job(
+            artist, album, "slskd_error",
+            {"message": message, "detail": str(exc)[:300], "metadata": metadata},
+        )
         return json.dumps({
-            "ok": False, "status": "slskd_error",
-            "message": f"slskd request failed: {type(exc).__name__}",
-            "detail": str(exc)[:300],
+            "ok": False, "status": "slskd_error", "artist": artist, "album": album,
+            "message": message, "detail": str(exc)[:300],
         }, ensure_ascii=False)
 
 @mcp.tool()
