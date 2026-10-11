@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import random
 import secrets
 import sqlite3
 import time
@@ -2418,6 +2419,50 @@ def _lastfm_top_albums(artist, limit=8):
     return output
 
 
+def _lastfm_artist_genres(artist):
+    """Return cached Last.fm top tags for an artist, suitable for display grouping."""
+    payload = _lastfm_cached_call(
+        "artist.getTopTags", ttl_seconds=30 * 24 * 60 * 60,
+        artist=artist,
+    )
+    if not payload:
+        return []
+    records = items(payload.get("toptags", {}).get("tag"))
+    tags = []
+    for record in records:
+        name = str(record.get("name") or "").strip()
+        if name and name.casefold() not in {tag.casefold() for tag in tags}:
+            tags.append(name)
+        if len(tags) >= 8:
+            break
+    return tags
+
+
+def _deep_dive_genre_families(tags):
+    text = " ".join(str(tag).casefold() for tag in tags)
+    rules = [
+        ("jazz", ("jazz", "bebop", "swing")),
+        ("african", ("african", "afrobeat", "afrobeats", "afropop", "highlife",
+                     "soukous", "malian", "tuareg", "desert blues", "ethiopian",
+                     "mbalax", "senegalese")),
+        ("alternative", ("alternative", "indie rock", "post-punk", "art rock",
+                         "garage rock", "shoegaze")),
+        ("brazilian", ("brazilian", "samba", "bossa nova", "mpb", "tropicalia",
+                       "tropicália")),
+        ("hip-hop", ("hip hop", "hip-hop", "rap")),
+        ("rnb-soul", ("r&b", "rnb", "neo-soul", "soul")),
+        ("electronic", ("electronic", "electronica", "house", "techno", "trip hop",
+                        "trip-hop", "downtempo", "idm")),
+        ("funk", ("funk",)),
+        ("north-african-middle-eastern", ("arabic", "raï", "rai", "maghreb",
+            "north african", "algerian", "moroccan", "tunisian", "gnawa",
+            "gnaoua", "chaabi", "middle eastern", "andalusi", "malouf")),
+        ("rock", ("rock", "punk", "metal", "grunge")),
+        ("pop", ("pop",)),
+    ]
+    return [family for family, terms in rules if any(term in text for term in terms)]
+
+
 def _lastfm_similar_artists(artist, limit=8):
     payload = _lastfm_cached_call(
         "artist.getSimilar", ttl_seconds=60 * 24 * 60 * 60,
@@ -2438,12 +2483,12 @@ def _lastfm_similar_artists(artist, limit=8):
     return output
 
 
-def _musicbrainz_critical_rating(mbid):
+def _musicbrainz_critical_rating(mbid, include_year=False):
     if not mbid:
         return None
     cache_key = "discovery:mb-release-group-rating:" + str(mbid)
     cached = _metadata_cache_get(cache_key, ttl_seconds=180 * 24 * 60 * 60)
-    if cached is not None:
+    if cached is not None and (not include_year or "year" in cached):
         return cached
     try:
         # MusicBrainz requests must be spaced to respect its public API limit.
@@ -2455,14 +2500,18 @@ def _musicbrainz_critical_rating(mbid):
             timeout=15,
         )
         if response.status_code == 404:
-            _metadata_cache_set(cache_key, {"rating": None, "votes": 0})
-            return {"rating": None, "votes": 0}
+            empty_result = {"rating": None, "votes": 0, "year": None}
+            _metadata_cache_set(cache_key, empty_result)
+            return empty_result
         response.raise_for_status()
         data = response.json()
         rating = data.get("rating") or {}
+        release_date = str(data.get("first-release-date") or "")
+        year_text = release_date[:4]
         result = {
             "rating": rating.get("value"),
             "votes": int(rating.get("votes-count") or 0),
+            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
         }
         _metadata_cache_set(cache_key, result)
         return result
@@ -2500,50 +2549,108 @@ def _build_classics_list():
         if index and index % 5 == 0:
             time.sleep(0.15)
 
-    ranked = sorted(
+    # Add critical-rating evidence for a rotating shortlist. Rating lookups are
+    # cached; listener counts are used only to bound the number of requests.
+    rating_shortlist = sorted(
         candidates.values(),
-        key=lambda item: (
-            item["lastfm_listeners"],
-            item["lastfm_playcount"],
-        ),
+        key=lambda item: int(item.get("lastfm_listeners") or 0),
         reverse=True,
-    )
-
-    # MusicBrainz ratings add a critical-recognition signal when available.
-    # Only enrich the strongest candidates; ratings are sparse and community supplied.
-    for index, candidate in enumerate(ranked[:80]):
-        rating = _musicbrainz_critical_rating(candidate.get("mbid"))
+    )[:80]
+    for index, candidate in enumerate(rating_shortlist):
+        rating = _musicbrainz_critical_rating(
+            candidate.get("mbid"), include_year=index < 30
+        )
         if rating:
             candidate["musicbrainz_rating"] = rating.get("rating")
             candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
-    def classic_score(item):
-        import math
-        popularity = math.log10(item["lastfm_listeners"] + 1)
-        playcount = math.log10(item["lastfm_playcount"] + 1)
-        rating = item.get("musicbrainz_rating")
-        votes = item.get("musicbrainz_rating_votes", 0)
-        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
-        # Popularity remains useful when community ratings are unavailable;
-        # ratings can influence the score only when votes exist.
-        return popularity * 0.65 + playcount * 0.20 + critical * 1.5
+            if rating.get("year"):
+                candidate["year"] = rating["year"]
 
-    for item in ranked:
-        item["discovery_score"] = round(classic_score(item), 4)
-        item["critical_recognition_available"] = bool(
-            item.get("musicbrainz_rating") is not None
-            and item.get("musicbrainz_rating_votes", 0)
+    # Build a broad candidate pool before choosing the visible collection list.
+    # Popularity is only a weak tie-breaker; critical recognition and rotating
+    # exploration have much more influence than Last.fm listener totals.
+    import math
+    for item in candidates.values():
+        rating = item.get("musicbrainz_rating")
+        votes = int(item.get("musicbrainz_rating_votes") or 0)
+        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
+        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        plays = max(0, int(item.get("lastfm_playcount") or 0))
+        popularity_magnitude = math.log10(listeners + 1)
+        play_magnitude = math.log10(plays + 1)
+        item["critical_recognition_available"] = bool(rating is not None and votes)
+        # Unrated and less-heard albums get room to surface; popularity alone
+        # should not beat a diverse candidate pool.
+        exploration_credit = 0.9 if not (rating is not None and votes) else 0.0
+        item["discovery_score"] = round(
+            critical * 1.6 - popularity_magnitude * 0.55
+            - play_magnitude * 0.10 + exploration_credit,
+            4,
         )
-    ranked.sort(key=lambda item: item["discovery_score"], reverse=True)
+        item["exploration_score"] = item["discovery_score"] + random.uniform(-1.4, 1.4)
+
+    ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
+
+    # Genre metadata helps keep the collection lane from becoming one long
+    # popularity chart. Last.fm tag results are cached between refreshes.
+    genre_cache = {}
+    for item in ranked[:300]:
+        artist_key = _music_key(item.get("artist", ""))
+        if artist_key not in genre_cache:
+            genre_cache[artist_key] = _lastfm_artist_genres(item.get("artist", ""))
+        item["genres"] = genre_cache[artist_key]
+        item["genre_families"] = sorted(_deep_dive_genre_families(item["genres"]))
+        if not item["genre_families"]:
+            item["genre_families"] = ["other"]
+    for item in ranked[300:]:
+        item["genres"] = []
+        item["genre_families"] = ["other"]
+
+    # Re-sort after enriching the broader pool; add fresh jitter so a manual
+    # refresh can rotate recommendations even when upstream API caches are warm.
+    for item in ranked:
+        item["exploration_score"] = round(
+            item["discovery_score"] + random.uniform(-1.4, 1.4), 4
+        )
+    ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
+
+    diversified = []
+    artist_counts = {}
+    family_counts = {}
+    deferred = []
+    for item in ranked:
+        artist_key = _music_key(item.get("artist", ""))
+        families = item.get("genre_families") or ["other"]
+        family = next((value for value in families if family_counts.get(value, 0) < 8), families[0])
+        if artist_counts.get(artist_key, 0) >= 2 or family_counts.get(family, 0) >= 8:
+            deferred.append(item)
+            continue
+        item["primary_genre_family"] = family
+        diversified.append(item)
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        family_counts[family] = family_counts.get(family, 0) + 1
+        if len(diversified) >= 100:
+            break
+    if len(diversified) < 100:
+        for item in deferred:
+            artist_key = _music_key(item.get("artist", ""))
+            if artist_counts.get(artist_key, 0) >= 2:
+                continue
+            diversified.append(item)
+            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+            if len(diversified) >= 100:
+                break
     return {
         "list": "classics",
-        "source": "Last.fm album popularity + MusicBrainz community ratings where available",
+        "source": "Exploration-weighted candidates with MusicBrainz ratings and genre/artist diversity",
         "generated_at": time.time(),
         "library_artists_considered": len(library_artists),
         "owned_albums_checked": len(owned),
         "critical_ratings_available": sum(
             1 for item in ranked if item["critical_recognition_available"]
         ),
-        "items": ranked[:100],
+        "items": diversified[:100],
+        "diversity_strategy": "Popularity is a weak signal; rotate the pool with genre caps and at most two albums per artist.",
         "limitations": [
             "Last.fm top-album lists are popularity signals, not definitive critical consensus.",
             "MusicBrainz ratings are community-supplied and may be absent or based on few votes.",
@@ -2619,6 +2726,7 @@ def _build_artist_deep_dive_list():
             "artist": candidate_artist,
             "album": candidate_album,
             "mbid": candidate.get("mbid"),
+            "year": candidate.get("year") or candidate.get("release_year") or candidate.get("first_release_year"),
             "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
             "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
             "discovery_type": "artist_deep_dive",
@@ -2648,7 +2756,7 @@ def _build_artist_deep_dive_list():
     for index, anchor in enumerate(
         sorted(anchors, key=lambda item: item["album_count"], reverse=True)
     ):
-        for similar in _lastfm_similar_artists(anchor["name"], limit=8):
+        for similar in _lastfm_similar_artists(anchor["name"], limit=15):
             similar_key = _music_key(similar["artist"])
             if similar_key in owned_artists:
                 continue
@@ -2683,37 +2791,134 @@ def _build_artist_deep_dive_list():
             if old is None or candidate.get("similar_artist_score", 0) > old.get("similar_artist_score", 0):
                 candidates[key] = candidate
 
-    import math
+    # Genre tags are presentation metadata only: they do not change candidate scores.
+    # Last.fm top tags can be sparse for lesser-known artists; when that happens,
+    # inherit tags from the 3+ album library artist that surfaced this candidate.
+    artist_genre_cache = {}
     for item in candidates.values():
-        popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
-        playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
+        artist_name = str(item.get("artist") or "").strip()
+        anchor_name = str(item.get("anchor_artist") or "").strip()
+        cache_key = _music_key(artist_name)
+        if not item.get("genres") and artist_name:
+            if cache_key not in artist_genre_cache:
+                artist_genre_cache[cache_key] = _lastfm_artist_genres(artist_name)
+            item["genres"] = artist_genre_cache[cache_key]
+        if not item.get("genres") and anchor_name:
+            anchor_key = _music_key(anchor_name)
+            if anchor_key not in artist_genre_cache:
+                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
+            item["genres"] = artist_genre_cache[anchor_key]
+            item["genre_inherited_from_anchor"] = bool(item["genres"])
+        if not item.get("genre_families"):
+            item["genre_families"] = _deep_dive_genre_families(item.get("genres") or [])
+        # Generic tags such as "seen live" can exist without identifying a genre.
+        # If those tags don't classify, try the library anchor's genre tags instead.
+        if not item.get("genre_families") and anchor_name:
+            anchor_key = _music_key(anchor_name)
+            if not artist_genre_cache.get(anchor_key):
+                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
+            anchor_families = _deep_dive_genre_families(artist_genre_cache.get(anchor_key) or [])
+            if anchor_families:
+                item["genres"] = artist_genre_cache[anchor_key]
+                item["genre_families"] = anchor_families
+                item["genre_inherited_from_anchor"] = True
+        import math
+        popularity = math.log10(max(0, int(item.get("lastfm_listeners") or 0)) + 1)
+        playcount = math.log10(max(0, int(item.get("lastfm_playcount") or 0)) + 1)
         candidate_score = float(item.get("candidate_pool_score", 0) or 0)
-        candidate_bonus = candidate_score * 10.0
+        # Similarity to an established library artist and candidate-pool evidence
+        # should matter more than global Last.fm popularity.
+        candidate_bonus = candidate_score * 2.5
         anchor_bonus = (
             min(int(item.get("anchor_album_count", 0) or 0), 15) * 0.05
             if candidate_score else 0.0
         )
         item["discovery_score"] = round(
-            popularity * 0.65 + playcount * 0.20
-            + float(item.get("similar_artist_score", 0)) * 0.15
+            popularity * 0.15 + playcount * 0.03
+            + float(item.get("similar_artist_score", 0)) * 2.0
             + candidate_bonus + anchor_bonus,
+            4,
+        )
+    # Strongly penalize listener-count dominance and give genuinely lesser-known
+    # artists a meaningful exploration bonus. Last.fm's top-album endpoint is
+    # popularity-sorted, so cap both artist and anchor repetition afterwards.
+    import math
+    for item in candidates.values():
+        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        listener_magnitude = math.log10(listeners + 1)
+        item["exploration_score"] = round(
+            item["discovery_score"] - listener_magnitude * 0.65
+            + max(0.0, 6.0 - listener_magnitude) * 0.35,
+            4,
+        )
+    # Rotate otherwise-equivalent candidates on every refresh, then enforce
+    # artist, anchor and genre diversity rather than letting Last.fm's default
+    # popularity ordering dominate the page.
+    for item in candidates.values():
+        item["exploration_score"] = round(
+            float(item.get("exploration_score", 0) or 0)
+            + random.uniform(-1.25, 1.25),
             4,
         )
     ranked = sorted(
         candidates.values(),
-        key=lambda item: item["discovery_score"],
+        key=lambda item: (
+            item["exploration_score"],
+            float(item.get("similar_artist_score", 0) or 0),
+        ),
         reverse=True,
     )
+    diversified = []
+    artist_counts = {}
+    anchor_counts = {}
+    genre_counts = {}
+    deferred = []
+    for item in ranked:
+        artist_key = _music_key(item.get("artist", ""))
+        anchor_key = _music_key(item.get("anchor_artist", ""))
+        families = item.get("genre_families") or ["other"]
+        family = next((value for value in families if genre_counts.get(value, 0) < 12), families[0])
+        if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4) or genre_counts.get(family, 0) >= 12:
+            deferred.append(item)
+            continue
+        item["primary_genre_family"] = family
+        diversified.append(item)
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        genre_counts[family] = genre_counts.get(family, 0) + 1
+        if anchor_key:
+            anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+        if len(diversified) >= 150:
+            break
+    if len(diversified) < 150:
+        for item in deferred:
+            artist_key = _music_key(item.get("artist", ""))
+            anchor_key = _music_key(item.get("anchor_artist", ""))
+            if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4):
+                continue
+            diversified.append(item)
+            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+            if anchor_key:
+                anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+            if len(diversified) >= 150:
+                break
+    # Resolve years only for a bounded top slice with MusicBrainz IDs. The
+    # release-group metadata is cached, so later refreshes reuse these lookups.
+    for item in ranked[:25]:
+        if item.get("year") or not item.get("mbid"):
+            continue
+        rating = _musicbrainz_critical_rating(item.get("mbid"), include_year=True)
+        if rating and rating.get("year"):
+            item["year"] = rating["year"]
     return {
         "list": "artist_deep_dive",
-        "source": "Navidrome library presence + Last.fm top albums and similar artists",
+        "source": "Library depth + similar-artist candidates, exploration rotation and genre diversity",
         "generated_at": time.time(),
         "artists_with_three_or_more_owned_albums": len(anchors),
         "missing_albums_and_similar_artist_candidates": len(ranked),
-        "items": ranked[:150],
+        "items": diversified[:150],
         "limitations": [
             "Artist similarity is sourced from Last.fm and is not a guarantee of musical fit.",
-            "Popularity uses Last.fm listener and play counts where available.",
+            "Popularity is deliberately down-weighted and candidates rotate across genres and artists.",
             "Ownership checks compare normalized artist and album names; aliases and editions may need review.",
         ],
     }
@@ -3184,6 +3389,20 @@ def _discovery_save_acquisition_job(artist, album, status, details=None,
     if not artist_key or not album_key:
         raise ValueError("artist and album are required")
     with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        if not (details or {}).get("quality_summary"):
+            previous = db.execute(
+                "SELECT details_json FROM discovery_acquisitions "
+                "WHERE artist_key=? AND album_key=?",
+                (artist_key, album_key),
+            ).fetchone()
+            if previous:
+                try:
+                    previous_details = json.loads(previous[0] or "{}")
+                except (ValueError, TypeError):
+                    previous_details = {}
+                previous_quality = previous_details.get("quality_summary")
+                if previous_quality:
+                    details = {**(details or {}), "quality_summary": previous_quality}
         db.execute(
             "INSERT INTO discovery_acquisitions "
             "(artist_key, album_key, artist, album, status, details_json, candidate_json, "
@@ -3257,8 +3476,130 @@ def _discovery_list_acquisition_jobs():
     return jobs
 
 
+# Per-process snapshots used to calculate an instantaneous speed from byte deltas.
+_DISCOVERY_PROGRESS_SNAPSHOTS = {}
+_DISCOVERY_PROGRESS_SNAPSHOT_LOCK = __import__("threading").Lock()
+
+
+def _discovery_live_download_progress(job):
+    """Return live slskd progress and a delta-based speed estimate."""
+    candidate = job.get("candidate") or {}
+    expected_files = candidate.get("files") or []
+    username = candidate.get("username")
+    if not expected_files or not username:
+        return None
+
+    try:
+        base_url, api_key, _ = _slskd_config()
+        tracked = _slskd_download_transfer_files(
+            base_url, {"X-API-KEY": api_key}, username
+        )
+    except Exception:
+        return {
+            "available": False,
+            "total_tracks": len(expected_files),
+            "remaining_tracks": len(expected_files),
+            "completed_tracks": 0,
+            "percent": None,
+            "speed_bytes_per_second": None,
+        }
+
+    def basename(value):
+        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+
+    expected_by_name = {}
+    for item in expected_files:
+        name = basename(item.get("filename"))
+        if name:
+            expected_by_name[name] = item
+
+    tracked_by_name = {}
+    for item in tracked:
+        name = basename(item.get("filename"))
+        if name not in expected_by_name:
+            continue
+        prior = tracked_by_name.get(name)
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
+        rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
+        if prior is None or rank(state) >= rank(prior_state):
+            tracked_by_name[name] = item
+
+    completed_states = {"succeeded", "completed"}
+    completed = 0
+    total_bytes = 0
+    transferred_bytes = 0
+    file_byte_snapshot = {}
+
+    for name, expected in expected_by_name.items():
+        item = tracked_by_name.get(name) or {}
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        is_completed_state = state in completed_states
+        if is_completed_state:
+            completed += 1
+
+        try:
+            size = max(0, int(expected.get("size") or item.get("size") or 0))
+        except (TypeError, ValueError):
+            size = 0
+        transferred = 0
+        raw_transferred = 0
+        has_transfer_counter = False
+        for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
+            if item.get(key) is not None:
+                try:
+                    raw_transferred = max(0, int(item[key]))
+                    transferred = raw_transferred
+                    has_transfer_counter = True
+                    break
+                except (TypeError, ValueError):
+                    pass
+        if is_completed_state and size:
+            transferred = size
+        if size:
+            transferred = min(transferred, size)
+            total_bytes += size
+            if transferred >= size and not is_completed_state:
+                completed += 1
+        transferred_bytes += transferred
+        # Speed uses only actual counters, never an inferred completed-file size.
+        file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
+
+    now = time.monotonic()
+    snapshot_key = (
+        str(job.get("artist_key") or _music_key(job.get("artist"))),
+        str(job.get("album_key") or _music_key(job.get("album"))),
+        str(username).casefold(),
+    )
+    speed = None
+    with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
+        prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
+        _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
+            "at": now, "files": file_byte_snapshot,
+        }
+        if prior:
+            elapsed = now - prior["at"]
+            if elapsed >= 0.5:
+                delta = sum(
+                    max(0, value - int(prior["files"].get(name, 0)))
+                    for name, value in file_byte_snapshot.items()
+                )
+                speed = int(delta / elapsed)
+
+    percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
+    total_tracks = len(expected_by_name)
+    return {
+        "available": True,
+        "total_tracks": total_tracks,
+        "completed_tracks": min(completed, total_tracks),
+        "remaining_tracks": max(0, total_tracks - completed),
+        "percent": percent,
+        "speed_bytes_per_second": speed,
+    }
+
+
 def discovery_get_acquisition_status():
-    """Return persistent acquisition status and resume interrupted import watchers."""
+    """Return persistent acquisition state plus best-effort live download progress."""
     jobs = _discovery_list_acquisition_jobs()
     resumable = {
         "downloading", "download_complete_waiting_for_folder", "monitor_error"
@@ -3279,10 +3620,19 @@ def discovery_get_acquisition_status():
             name="navidrome-import-recovery",
             daemon=True,
         ).start()
-    return json.dumps({"ok": True, "acquisitions": [
-        {k: v for k, v in job.items() if k not in {"candidate", "settings", "artist_key", "album_key"}}
-        for job in jobs
-    ]}, ensure_ascii=False, indent=2)
+    acquisitions = []
+    for job in jobs:
+        public_job = {
+            k: v for k, v in job.items()
+            if k not in {"candidate", "settings", "artist_key", "album_key"}
+        }
+        if job["status"] == "downloading":
+            progress = _discovery_live_download_progress(job)
+            if progress is not None:
+                public_job["details"] = dict(public_job.get("details") or {})
+                public_job["details"]["live_progress"] = progress
+        acquisitions.append(public_job)
+    return json.dumps({"ok": True, "acquisitions": acquisitions}, ensure_ascii=False, indent=2)
 
 
 def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
@@ -3487,6 +3837,7 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         "source_username": candidate.get("username"),
         "folder": candidate.get("folder"),
         "file_count": len(candidate.get("files") or []),
+        "quality_summary": list(candidate.get("quality_summary") or []),
         "downloads_path": settings.get("slskd_downloads_path"),
     }
     safe_settings = {
@@ -3642,6 +3993,7 @@ def discovery_acquire_album(
 
             candidate_for_monitor = dict(candidate)
             candidate_for_monitor["files"] = selected_files
+            candidate_for_monitor["quality_summary"] = list(candidate.get("quality_summary") or [])
             start_state = _slskd_candidate_start_state(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
@@ -3676,6 +4028,7 @@ def discovery_acquire_album(
                 {"filename": item["filename"], "size": item["size"]}
                 for item in uncertain["files"]
             ]
+            candidate_for_monitor["quality_summary"] = list(uncertain.get("quality_summary") or [])
             _discovery_start_import_watcher(
                 artist, album, candidate_for_monitor, settings
             )
@@ -3708,12 +4061,19 @@ def discovery_queue_slskd_candidate(
     artist: str = "",
     album: str = "",
     folder: str = "",
+    quality_summary_json: str = "[]",
 ) -> str:
     """Queue a user-reviewed slskd candidate and import it into the library when complete."""
     try:
         files = json.loads(files_json)
         if not isinstance(files, list) or not files:
             return json.dumps({"ok": False, "error": "files_json must be a non-empty JSON list."})
+        try:
+            quality_summary = json.loads(quality_summary_json or "[]")
+            if not isinstance(quality_summary, list):
+                quality_summary = []
+        except (ValueError, TypeError):
+            quality_summary = []
         normalized = []
         for item in files:
             if not isinstance(item, dict) or not item.get("filename"):
@@ -3736,6 +4096,7 @@ def discovery_queue_slskd_candidate(
                 "username": username,
                 "folder": folder or Path(normalized[0]["filename"].replace("\\", "/")).parent.name,
                 "files": normalized,
+                "quality_summary": quality_summary,
             }
             _discovery_start_import_watcher(artist.strip(), album.strip(), candidate, settings)
             import_started = True
