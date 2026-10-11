@@ -185,6 +185,28 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
         self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
         self.assertEqual(list(self.destination_parent.glob(".navidrome-import-*")), [])
 
+    def test_import_aborts_before_writing_if_music_filesystem_identity_changed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "downloads"
+            source.mkdir()
+            (source / "01 - Track.flac").write_bytes(b"1234")
+            (source / "02 - Track.flac").write_bytes(b"567")
+            music = root / "music"
+            music.mkdir()
+            destination = music / "Artist - Album"
+
+            with self.assertRaisesRegex(OSError, "filesystem changed"):
+                HELPERS["_discovery_import_matched_album_files"](
+                    source, destination, self.candidate,
+                    expected_music_root=music, expected_device=music.stat().st_dev + 1,
+                )
+
+            self.assertTrue((source / "01 - Track.flac").exists())
+            self.assertTrue((source / "02 - Track.flac").exists())
+            self.assertFalse(destination.exists())
+            self.assertEqual(list(music.iterdir()), [])
+
     def test_conflicting_duplicate_remote_basenames_are_ambiguous(self):
         candidate = {"files": [
             {"filename": "A/01.flac", "size": 4},
