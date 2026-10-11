@@ -3559,9 +3559,9 @@ def _discovery_live_download_progress(job):
         if size:
             transferred = min(transferred, size)
             total_bytes += size
+            transferred_bytes += transferred
             if transferred >= size and not is_completed_state:
                 completed += 1
-        transferred_bytes += transferred
         # Speed uses only actual counters, never an inferred completed-file size.
         file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
 
@@ -3594,6 +3594,8 @@ def _discovery_live_download_progress(job):
         "completed_tracks": min(completed, total_tracks),
         "remaining_tracks": max(0, total_tracks - completed),
         "percent": percent,
+        "total_size_bytes": total_bytes if total_bytes else None,
+        "remaining_size_bytes": max(0, total_bytes - transferred_bytes) if total_bytes else None,
         "speed_bytes_per_second": speed,
     }
 
