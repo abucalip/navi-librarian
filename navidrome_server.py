@@ -4628,8 +4628,72 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 if str(item.get("filename") or "").strip()
             }
             matched = _discovery_match_completed_album_files(album_dir, candidate)
-            if not expected_names or not matched or set(matched) != expected_names:
+            if expected_names and matched and set(matched) == expected_names:
+                _discovery_update_acquisition_status(artist, album, "imported", {
+                    "source_folder": details.get("source_folder"),
+                    "destination": str(album_dir),
+                    "source_username": candidate.get("username"),
+                    "imported_at": time.time(),
+                    "recovered_after_restart": True,
+                })
+                return True
+
+            # A crash during cross-filesystem moves can leave some tracks in a
+            # hidden staging directory and others in the source folder. Restore
+            # those staged tracks only when ownership and sizes are unambiguous.
+            source_folder = Path(details.get("source_folder") or "")
+            if not source_folder.is_dir() or source_folder.is_symlink():
                 return False
+            expected_sizes = {}
+            for item in candidate.get("files", []):
+                name = str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1]
+                if not name:
+                    continue
+                try:
+                    size = int(item.get("size") or 0)
+                except (TypeError, ValueError):
+                    return False
+                key = name.casefold()
+                if key in expected_sizes and expected_sizes[key] != size:
+                    return False
+                expected_sizes[key] = size
+            if not expected_sizes:
+                return False
+
+            staging_dirs = [
+                path for path in artist_dir.parent.glob(".navidrome-import-*")
+                if path.is_dir() and not path.is_symlink()
+            ]
+            recoverable = []
+            for staging in staging_dirs:
+                try:
+                    entries = list(staging.iterdir())
+                    if not entries or any(
+                        item.is_symlink() or not item.is_file() for item in entries
+                    ):
+                        continue
+                    valid = True
+                    for item in entries:
+                        key = item.name.casefold()
+                        if key not in expected_sizes or item.stat(follow_symlinks=False).st_size != expected_sizes[key]:
+                            valid = False
+                            break
+                        if (source_folder / item.name).exists() or (source_folder / item.name).is_symlink():
+                            valid = False
+                            break
+                    if valid:
+                        recoverable.append((staging, entries))
+                except (OSError, RuntimeError):
+                    continue
+
+            if len(recoverable) != 1:
+                return False
+            import shutil
+            staging, entries = recoverable[0]
+            for item in entries:
+                shutil.move(str(item), str(source_folder / item.name))
+            staging.rmdir()
+            return False
         except (OSError, RuntimeError, TypeError, ValueError):
             return False
 
