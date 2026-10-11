@@ -3941,16 +3941,21 @@ def _discovery_import_matched_album_files(source, destination, candidate):
             raise FileExistsError(str(destination))
         staging.rename(destination)
     except Exception:
+        rollback_complete = True
         for staged_path, original_path in reversed(moved):
             if staged_path.exists() and not original_path.exists():
                 try:
                     shutil.move(str(staged_path), str(original_path))
                 except OSError:
-                    pass
+                    rollback_complete = False
+            elif staged_path.exists() or not original_path.exists():
+                rollback_complete = False
         try:
-            manifest.unlink(missing_ok=True)
-            staging.rmdir()
+            if rollback_complete:
+                manifest.unlink(missing_ok=True)
+                staging.rmdir()
         except OSError:
+            # Keep the manifest and remaining staged tracks for restart recovery.
             pass
         raise
 def _discovery_is_dismissed(artist, album):
