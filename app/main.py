@@ -2,6 +2,7 @@ import json
 import random
 from html import escape
 from time import monotonic, sleep
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import httpx
 from urllib.parse import urlencode
@@ -12,6 +13,11 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 
 import navidrome_server as librarian
 
+
+_EXTERNAL_HTTP = httpx.Client(
+    timeout=httpx.Timeout(3.0, connect=1.5),
+    headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)"},
+)
 
 app = FastAPI(
     title="Navidrome Librarian",
@@ -79,73 +85,69 @@ def artist_bio(artist: str):
         return {"artist": name, "bio": cached["bio"]}
 
     bio = ""
-    try:
-        headers = {
-            "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)"
-        }
-        search = httpx.get(
-            "https://www.wikidata.org/w/api.php",
-            params={
-                "action": "wbsearchentities",
-                "search": name,
-                "language": "en",
-                "uselang": "en",
-                "format": "json",
-                "limit": 10,
-            },
-            headers=headers,
-            timeout=5,
+    params = {
+        "action": "wbsearchentities",
+        "search": name,
+        "language": "en",
+        "uselang": "en",
+        "format": "json",
+        "limit": 10,
+    }
+    summary_url = (
+        "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        + __import__("urllib.parse", fromlist=["quote"]).quote(name.replace(" ", "_"), safe="")
+    )
+
+    # Start both network requests together. The summary is used only after its
+    # Wikidata identity is checked, so the faster path doesn't reintroduce
+    # wrong-name biographies such as Rainbow the optical phenomenon.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        search_future = pool.submit(
+            _EXTERNAL_HTTP.get, "https://www.wikidata.org/w/api.php", params=params
         )
-        search.raise_for_status()
-        entities = search.json().get("search", [])
+        summary_future = pool.submit(_EXTERNAL_HTTP.get, summary_url)
+        entities = []
+        page = {}
+        try:
+            search_response = search_future.result()
+            search_response.raise_for_status()
+            entities = search_response.json().get("search", [])
+        except Exception:
+            pass
+        try:
+            summary_response = summary_future.result()
+            if summary_response.status_code == 200:
+                page = summary_response.json()
+        except Exception:
+            pass
 
-        # Never accept a result based only on a matching name. Its structured
-        # description must identify a musician, band, or another music act.
-        music_entities = [
-            item for item in entities
-            if item.get("id")
-            and _ARTIST_DESCRIPTION_RE.search(str(item.get("description") or ""))
-        ]
-        music_entities.sort(key=lambda item: (
-            str(item.get("label") or "").casefold() != name.casefold(),
-            str(item.get("label") or "").casefold() != name.casefold().replace("the ", "", 1),
-        ))
+    music_entities = [
+        item for item in entities
+        if item.get("id")
+        and _ARTIST_DESCRIPTION_RE.search(str(item.get("description") or ""))
+    ]
+    music_entities.sort(key=lambda item: (
+        str(item.get("label") or "").casefold() != key,
+        str(item.get("label") or "").casefold() != key.replace("the ", "", 1),
+    ))
 
-        for entity in music_entities:
-            qid = str(entity.get("id") or "")
-            label = str(entity.get("label") or "")
-            if not qid or not label:
-                continue
+    page_qid = str(page.get("wikibase_item") or "")
+    if page_qid and page.get("type") != "disambiguation":
+        matching_entity = next(
+            (item for item in music_entities if str(item.get("id") or "") == page_qid),
+            None,
+        )
+        if matching_entity:
+            extract = " ".join(str(page.get("extract") or "").split())
+            if extract:
+                match = __import__("re").search(r"^.*?[.!?](?=\\s|$)", extract)
+                bio = match.group(0) if match else extract[:240]
+                if len(bio) > 280:
+                    bio = bio[:277].rsplit(" ", 1)[0] + "…"
 
-            # Wikidata's description is already a trustworthy short fallback.
-            fallback_bio = str(entity.get("description") or "").strip()
-            try:
-                summary = httpx.get(
-                    "https://en.wikipedia.org/api/rest_v1/page/summary/"
-                    + __import__("urllib.parse", fromlist=["quote"]).quote(label.replace(" ", "_"), safe=""),
-                    headers=headers,
-                    timeout=5,
-                )
-                if summary.status_code == 200:
-                    page = summary.json()
-                    # Critical identity check: don't use a similarly named
-                    # Wikipedia page unless it is linked to the chosen Wikidata item.
-                    if str(page.get("wikibase_item") or "") == qid:
-                        extract = " ".join(str(page.get("extract") or "").split())
-                        if extract and page.get("type") != "disambiguation":
-                            match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
-                            bio = match.group(0) if match else extract[:240]
-                            if len(bio) > 280:
-                                bio = bio[:277].rsplit(" ", 1)[0] + "…"
-                            break
-            except Exception:
-                pass
-
-            if fallback_bio:
-                bio = fallback_bio
-                break
-    except Exception:
-        bio = ""
+    # Fast, safe fallback: use Wikidata's own music-related description.
+    if not bio and music_entities:
+        bio = str(music_entities[0].get("description") or "").strip()
 
     _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
     return {"artist": name, "bio": bio}
@@ -529,8 +531,9 @@ def album_artwork(artist: str = "", album: str = ""):
         else:
             query = urlencode({"q": artist or album, "limit": 8})
         endpoint = "https://api.deezer.com/search/album?" + query
-        with urlopen(endpoint, timeout=3) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        response = _EXTERNAL_HTTP.get(endpoint)
+        response.raise_for_status()
+        payload = response.json()
         albums = payload.get("data") or []
 
         def match_score(item):
@@ -550,9 +553,8 @@ def album_artwork(artist: str = "", album: str = ""):
         if albums:
             match = max(albums, key=match_score)
             if match_score(match) >= 5:
-                # Deezer's medium variant is 250x250; avoid xl/big URLs
-                # so the browser never downloads oversized cover art.
-                artwork = match.get("cover_medium")
+                # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
+                artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
                 release_date = str(match.get("release_date") or "")
                 year_text = release_date[:4]
                 result = {
@@ -564,24 +566,23 @@ def album_artwork(artist: str = "", album: str = ""):
                     "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
                 }
 
-        # Deezer's album search often omits release dates. Fall back to
-        # MusicBrainz so years can still be shown even when artwork exists.
-        if not result.get("year") and artist and album:
-            result["year"] = _musicbrainz_album_year(artist, album)
-
+        # Do not perform a serialized MusicBrainz lookup here: it rate-limits
+        # requests and can delay artwork by several seconds. Deezer release dates
+        # are shown when available; missing years must never delay the cover.
         # If the album is not in the catalog, use a matching artist photo instead.
         if not result["artwork_url"] and artist:
             artist_query = urlencode({"q": artist, "limit": 8})
-            with urlopen("https://api.deezer.com/search/artist?" + artist_query, timeout=3) as response:
-                artist_payload = json.loads(response.read().decode("utf-8"))
+            response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + artist_query)
+            response.raise_for_status()
+            artist_payload = response.json()
             artists = artist_payload.get("data") or []
             exact = next(
                 (item for item in artists if str(item.get("name") or "").casefold() == artist.casefold()),
                 None,
             )
             if exact:
-                # Medium artist portraits are 250x250, within the 400px cap.
-                photo = exact.get("picture_medium")
+                # Prefer high-resolution artist portraits; fall back if unavailable.
+                photo = exact.get("picture_xl") or exact.get("picture_big") or exact.get("picture_medium")
                 if photo:
                     result = {
                         "artwork_url": photo.replace("http://", "https://", 1),
@@ -948,13 +949,27 @@ function showPage(name) {
     el.classList.toggle('active', el.dataset.page === name));
 }
 
+const initializedPages = new Set(['dashboard']);
+
+function initializePage(name) {
+  if (initializedPages.has(name)) return;
+  initializedPages.add(name);
+  if (name === 'recommendations') $('loadRecommendations').click();
+  else if (name === 'profile') $('loadProfile').click();
+  else if (name === 'personalDiscoveries') loadDiscovery('personal');
+  else if (name === 'classics') loadDiscovery('classics', {rotate: true});
+  else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
+  else if (name === 'settings') { loadSlskdSettings(); checkConnection(); }
+  else if (name === 'acquisitions') startAcquisitionStream();
+}
+
 document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
-    showPage(button.dataset.page);
-    if (button.dataset.page === 'dashboard') loadDashboardPicks();
-    if (button.dataset.page === 'settings') { loadSlskdSettings(); checkConnection(); }
-    if (button.dataset.page === 'acquisitions') startAcquisitionStream();
-    else stopAcquisitionStream();
+    const name = button.dataset.page;
+    showPage(name);
+    initializePage(name);
+    if (name === 'dashboard' && !initializedPages.has('dashboard')) loadDashboardPicks();
+    if (name !== 'acquisitions') stopAcquisitionStream();
   }));
 
 document.querySelectorAll('button[data-go]').forEach(button =>
@@ -1140,6 +1155,18 @@ function addTextElement(parent, tag, className, text) {
 
 const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
+const artworkRequests = new Map();
+const artistBioRequests = new Map();
+
+function cachedJSONRequest(cache, key, url) {
+  if (!cache.has(key)) {
+    const request = fetch(url)
+      .then(response => response.ok ? response.json() : null)
+      .catch(() => null);
+    cache.set(key, request);
+  }
+  return cache.get(key);
+}
 const artistBioObserver = 'IntersectionObserver' in window
   ? new IntersectionObserver(entries => {
       for (const entry of entries) {
@@ -1232,8 +1259,8 @@ function attachArtwork(card, artist, album) {
     if (art.dataset.requested) return;
     art.dataset.requested = 'true';
     const query = new URLSearchParams({artist: artist || '', album: album || ''});
-    fetch('/api/artwork?' + query.toString())
-      .then(response => response.ok ? response.json() : null)
+    const cacheKey = (artist || '').trim().toLocaleLowerCase() + '::' + (album || '').trim().toLocaleLowerCase();
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
       .then(data => {
         if (!data) return;
         if (data.year) applyAlbumYear(card, data.year);
@@ -1629,8 +1656,8 @@ async function loadDiscovery(name, options = {}) {
         const loadBio = () => {
           if (card.dataset.bioRequested) return;
           card.dataset.bioRequested = 'true';
-          fetch('/api/artist-bio?artist=' + encodeURIComponent(artist))
-            .then(response => response.ok ? response.json() : null)
+          const bioKey = artist.trim().toLocaleLowerCase();
+          cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
             .then(result => {
               if (!result || !result.bio) return;
               bio.textContent = result.bio;
@@ -1888,16 +1915,9 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
-// Populate data-driven pages on startup. Connection diagnostics live in Settings.
+// Populate only the visible dashboard on startup. Other pages load on first visit
+// so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
-$('loadRecommendations').click();
-$('loadProfile').click();
-for (const listName of Object.keys(discoveryViews)) {
-  loadDiscovery(listName, {rotate: listName === 'classics' || listName === 'artist_deep_dive'});
-}
-requestJSON('/api/acquisitions').then(renderAcquisitions).catch(error => {
-  $('acquisitionsStatus').textContent = error.message;
-});
 </script>
 </body>
 </html>
