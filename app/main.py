@@ -1945,25 +1945,8 @@ async function searchAlbum(artist, album, metadata, button = null) {
       {artist, album, metadata, auto_queue:true});
     const statusTarget = document.querySelector('.page:not(.hidden) .status');
     if (statusTarget && data.message) statusTarget.textContent = data.message;
-    // Keep the user on the discovery page, but immediately show the matching acquisition card here.
+    // Keep the user on the current page. Acquisition cards are shown only in the Acquisitions view.
     await loadAcquisitions();
-    const visiblePage = document.querySelector('.page:not(.hidden)');
-    if (visiblePage) {
-      let inlinePanel = visiblePage.querySelector('.acquisition-inline-panel');
-      if (!inlinePanel) {
-        inlinePanel = document.createElement('div');
-        inlinePanel.className = 'panel acquisition-inline-panel';
-        addTextElement(inlinePanel, 'h2', '', 'Download status');
-        addTextElement(inlinePanel, 'p', 'muted', 'Live acquisition status for the album you just requested.');
-        const inlineCards = document.createElement('div');
-        inlineCards.className = 'cards acquisition-inline-cards';
-        inlinePanel.append(inlineCards);
-        visiblePage.append(inlinePanel);
-      }
-      const inlineCards = inlinePanel.querySelector('.acquisition-inline-cards');
-      const identity = [artist || '', album || ''].join('::').toLocaleLowerCase();
-      renderAcquisitions(await requestJSON('/api/acquisitions'), inlineCards, inlinePanel.querySelector('p'), identity);
-    }
   } catch (error) {
     if (button) {
       button.disabled = false;
