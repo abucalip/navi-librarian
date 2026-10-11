@@ -2504,9 +2504,12 @@ def _musicbrainz_critical_rating(mbid):
         response.raise_for_status()
         data = response.json()
         rating = data.get("rating") or {}
+        release_date = str(data.get("first-release-date") or "")
+        year_text = release_date[:4]
         result = {
             "rating": rating.get("value"),
             "votes": int(rating.get("votes-count") or 0),
+            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
         }
         _metadata_cache_set(cache_key, result)
         return result
@@ -2560,6 +2563,8 @@ def _build_classics_list():
         if rating:
             candidate["musicbrainz_rating"] = rating.get("rating")
             candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
+            if rating.get("year"):
+                candidate["year"] = rating["year"]
     def classic_score(item):
         import math
         popularity = math.log10(item["lastfm_listeners"] + 1)
@@ -2577,7 +2582,27 @@ def _build_classics_list():
             item.get("musicbrainz_rating") is not None
             and item.get("musicbrainz_rating_votes", 0)
         )
-    ranked.sort(key=lambda item: item["discovery_score"], reverse=True)
+    # Reduce the advantage of already-famous releases and prevent one artist
+    # from taking over the collection list. Popularity still contributes, but
+    # lesser-known candidates receive an exploration bonus.
+    import math
+    for item in ranked:
+        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        listener_magnitude = math.log10(listeners + 1)
+        item["exploration_score"] = round(
+            item["discovery_score"] - listener_magnitude * 0.45
+            + max(0.0, 5.5 - listener_magnitude) * 0.18,
+            4,
+        )
+    ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
+    diversified = []
+    per_artist = {}
+    for item in ranked:
+        artist_key = _music_key(item.get("artist", ""))
+        if per_artist.get(artist_key, 0) >= 3:
+            continue
+        per_artist[artist_key] = per_artist.get(artist_key, 0) + 1
+        diversified.append(item)
     return {
         "list": "classics",
         "source": "Last.fm album popularity + MusicBrainz community ratings where available",
@@ -2587,7 +2612,8 @@ def _build_classics_list():
         "critical_ratings_available": sum(
             1 for item in ranked if item["critical_recognition_available"]
         ),
-        "items": ranked[:100],
+        "items": diversified[:100],
+        "diversity_strategy": "Exploration-adjusted popularity and critical recognition, with at most three albums per artist.",
         "limitations": [
             "Last.fm top-album lists are popularity signals, not definitive critical consensus.",
             "MusicBrainz ratings are community-supplied and may be absent or based on few votes.",
@@ -2774,11 +2800,30 @@ def _build_artist_deep_dive_list():
             + candidate_bonus + anchor_bonus,
             4,
         )
+    # Exploration ranking softens the advantage of very high listener counts,
+    # giving lower-profile related artists a fairer chance to appear.
+    import math
+    for item in candidates.values():
+        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        listener_magnitude = math.log10(listeners + 1)
+        item["exploration_score"] = round(
+            item["discovery_score"] - listener_magnitude * 0.4
+            + max(0.0, 5.5 - listener_magnitude) * 0.22,
+            4,
+        )
     ranked = sorted(
         candidates.values(),
-        key=lambda item: item["discovery_score"],
+        key=lambda item: item["exploration_score"],
         reverse=True,
     )
+    # Resolve years only for a bounded top slice with MusicBrainz IDs. The
+    # release-group metadata is cached, so later refreshes reuse these lookups.
+    for item in ranked[:25]:
+        if item.get("year") or not item.get("mbid"):
+            continue
+        rating = _musicbrainz_critical_rating(item.get("mbid"))
+        if rating and rating.get("year"):
+            item["year"] = rating["year"]
     return {
         "list": "artist_deep_dive",
         "source": "Navidrome library presence + Last.fm top albums and similar artists",
