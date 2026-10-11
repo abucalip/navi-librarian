@@ -357,9 +357,9 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             recovered = self.ns["_discovery_reconcile_interrupted_import"](
                 "Artist", "Album", candidate
             )
+            self.assertTrue((destination / "01.flac").exists())
 
         self.assertFalse(recovered)
-        self.assertTrue((destination / "01.flac").exists())
         self.assertEqual(self.ns["status_updates"], [])
 
     def test_partial_staging_is_rolled_back_to_download_folder_after_restart(self):
