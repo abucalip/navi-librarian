@@ -4708,8 +4708,11 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 return False
             artist_dir = music_root / _discovery_safe_folder_name(artist)
             album_dir = artist_dir / _discovery_safe_folder_name(album)
-            destination = Path(expected_destination)
-            if str(destination) != str(album_dir):
+            # macOS commonly exposes temporary paths through /var -> /private/var.
+            # Normalize recorded paths before comparing them with the resolved library
+            # root, otherwise valid recovery manifests are rejected on that platform.
+            destination = Path(expected_destination).expanduser().resolve()
+            if destination != album_dir.resolve():
                 return False
             if artist_dir.is_symlink() or album_dir.is_symlink():
                 return False
@@ -4751,7 +4754,8 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                         }
                         source_value = details.get("source_folder")
                         if (
-                            manifest_data.get("destination") == str(album_dir)
+                            manifest_data.get("destination")
+                            and Path(manifest_data["destination"]).expanduser().resolve() == album_dir.resolve()
                             and source_value
                             and manifest_data.get("source") == str(Path(source_value).expanduser().resolve())
                             and manifest_tracks == expected_sizes
@@ -4806,7 +4810,8 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                     manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
                     if (
                         manifest_data.get("source") != str(source_folder.resolve(strict=True))
-                        or manifest_data.get("destination") != str(album_dir)
+                        or not manifest_data.get("destination")
+                        or Path(manifest_data["destination"]).expanduser().resolve() != album_dir.resolve()
                         or {str(k).casefold(): int(v) for k, v in manifest_data.get("tracks", {}).items()} != expected_sizes
                     ):
                         continue
