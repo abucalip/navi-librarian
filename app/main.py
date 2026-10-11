@@ -1359,11 +1359,10 @@ async function loadDiscovery(name) {
         name === 'for_me' ? 'remove_for_me' : 'dismiss', artist, album, item, name));
       artContainer.append(notForMe);
 
-      if (name !== 'artist_deep_dive') {
-        button(name === 'for_me' ? 'Remove from For Me' : '＋ For Me',
-          () => sendFeedback(name === 'for_me' ? 'remove_for_me' : 'save',
-                             artist, album, item, name));
-        if (name !== 'for_me') button('Dismiss artist',
+      if (name !== 'artist_deep_dive' && name !== 'for_me') {
+        button('＋ For Me',
+          () => sendFeedback('save', artist, album, item, name));
+        button('Dismiss artist',
           () => sendFeedback('dismiss_artist', artist, album, item, name));
       }
 
