@@ -4641,7 +4641,10 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
             # A crash during cross-filesystem moves can leave some tracks in a
             # hidden staging directory and others in the source folder. Restore
             # those staged tracks only when ownership and sizes are unambiguous.
-            source_folder = Path(details.get("source_folder") or "")
+            source_folder_value = details.get("source_folder")
+            if not source_folder_value:
+                return False
+            source_folder = Path(source_folder_value).expanduser()
             if not source_folder.is_dir() or source_folder.is_symlink():
                 return False
             expected_sizes = {}
@@ -4661,7 +4664,7 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 return False
 
             staging_dirs = [
-                path for path in artist_dir.parent.glob(".navidrome-import-*")
+                path for path in artist_dir.glob(".navidrome-import-*")
                 if path.is_dir() and not path.is_symlink()
             ]
             recoverable = []
