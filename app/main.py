@@ -1228,7 +1228,9 @@ async function loadDiscovery(name) {
       }
     }
 
-    discoveryStatus(name, `${items.length} item(s)`);
+    if (items.length || data.generated_at || name === 'for_me') {
+      discoveryStatus(name, `${items.length} item(s)`);
+    }
 
     for (const item of items) {
       const artist = item.artist || item.album_artist || 'Unknown artist';
@@ -1298,7 +1300,7 @@ async function loadDiscovery(name) {
       (destinationByItem.get(item) || target).append(card);
     }
 
-    if (!items.length) addTextElement(target, 'p', '',
+    if (!items.length && !autoRefreshStarted.has(name)) addTextElement(target, 'p', '',
       name === 'for_me' ? 'No saved albums yet.' : 'No results. Try refreshing this list.');
   } catch (error) {
     discoveryStatus(name, error.message);
