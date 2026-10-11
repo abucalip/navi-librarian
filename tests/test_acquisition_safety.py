@@ -128,6 +128,20 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
         self.assertFalse((self.destination / ".navidrome-import.json").exists())
         self.assertFalse(self.source.joinpath("01 - Track.flac").exists())
 
+    def test_unknown_or_zero_advertised_track_size_is_rejected(self):
+        candidate = {
+            "files": [{"filename": "Album/01 - Track.flac", "size": 0}]
+        }
+        self.assertIsNone(
+            HELPERS["_discovery_match_completed_album_files"](self.source, candidate)
+        )
+        with self.assertRaisesRegex(OSError, "Expected tracks no longer match"):
+            HELPERS["_discovery_import_matched_album_files"](
+                self.source, self.destination, candidate
+            )
+        self.assertTrue((self.source / "01 - Track.flac").exists())
+        self.assertFalse(self.destination.exists())
+
     def test_existing_destination_is_never_overwritten(self):
         self.destination.mkdir()
         marker = self.destination / "keep.txt"
