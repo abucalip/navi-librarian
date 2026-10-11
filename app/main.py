@@ -990,7 +990,10 @@ function applyRecommendationFilters() {
 
     const itemCategory = item.discovery_category || 'unclassified';
 
-    return (!query || searchable.includes(query)) &&
+    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
+    const key = [item.artist || item.album_artist || '', item.album || item.title || item.name || '']
+      .map(value => String(value).trim().toLocaleLowerCase()).join('::');
+    return !dismissed.has(key) && (!query || searchable.includes(query)) &&
       (category === 'all' || itemCategory === category);
   });
 
@@ -1030,6 +1033,19 @@ function applyRecommendationFilters() {
     getButton.setAttribute('aria-label', 'Get ' + album);
     getButton.addEventListener('click', () => searchAlbum(artist, album, item));
     artContainer.append(getButton);
+    const dismissButton = document.createElement('button');
+    dismissButton.className = 'deep-dive-dismiss';
+    dismissButton.textContent = '×';
+    dismissButton.title = 'Not for me';
+    dismissButton.setAttribute('aria-label', 'Not for me');
+    dismissButton.addEventListener('click', () => {
+      const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
+      const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
+      dismissed.add(key);
+      localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
+      applyRecommendationFilters();
+    });
+    artContainer.append(dismissButton);
 
     const categoryName = (item.discovery_category || 'Unclassified')
       .replaceAll('_', ' ');
