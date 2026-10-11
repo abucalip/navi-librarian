@@ -3508,6 +3508,7 @@ _DISCOVERY_IMPORT_LOCK = __import__("threading").Lock()
 # committing the local import/dismiss state, never during the download.
 _DISCOVERY_IMPORT_TRANSITION_LOCK = __import__("threading").RLock()
 _DISCOVERY_IMPORT_ACTIVE = set()
+_DISCOVERY_ACQUIRE_ACTIVE = set()
 
 
 def _discovery_save_acquisition_job(artist, album, status, details=None,
@@ -4843,8 +4844,7 @@ def _discovery_queue_candidate_unless_dismissed(
         return response
 
 
-@mcp.tool()
-def discovery_acquire_album(
+def _discovery_acquire_album_impl(
     artist: str,
     album: str,
     metadata_json: str = "{}",
@@ -5086,6 +5086,39 @@ def discovery_acquire_album(
             "ok": False, "status": "slskd_error", "artist": artist, "album": album,
             "message": message, "detail": str(exc)[:300],
         }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_acquire_album(
+    artist: str,
+    album: str,
+    metadata_json: str = "{}",
+    auto_queue: bool = True,
+) -> str:
+    """Prevent concurrent duplicate acquisition searches for the same album."""
+    if not artist.strip() or not album.strip():
+        return json.dumps({"ok": False, "error": "Artist and album are required."})
+    identity = (_music_key(artist), _music_key(album))
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return json.dumps({
+                "ok": False, "status": "dismissed", "artist": artist, "album": album,
+                "message": "This acquisition was dismissed. Undismiss it before retrying.",
+            }, ensure_ascii=False)
+        with _DISCOVERY_IMPORT_LOCK:
+            watcher_active = identity in _DISCOVERY_IMPORT_ACTIVE
+        if identity in _DISCOVERY_ACQUIRE_ACTIVE or watcher_active:
+            return json.dumps({
+                "ok": False, "status": "already_in_progress", "artist": artist, "album": album,
+                "message": "An acquisition request or watcher is already active for this album.",
+            }, ensure_ascii=False)
+        _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
+    try:
+        return _discovery_acquire_album_impl(artist, album, metadata_json, auto_queue)
+    finally:
+        with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+            _DISCOVERY_ACQUIRE_ACTIVE.discard(identity)
+
 
 @mcp.tool()
 def discovery_queue_slskd_candidate(
