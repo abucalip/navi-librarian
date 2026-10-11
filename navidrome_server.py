@@ -3762,6 +3762,176 @@ def _discovery_locate_completed_album(download_root, candidate):
     return None
 
 
+def _discovery_skip_requested(artist, album):
+    for job in _discovery_list_acquisition_jobs():
+        if job["artist_key"] == _music_key(artist) and job["album_key"] == _music_key(album):
+            return bool((job.get("details") or {}).get("skip_requested"))
+    return False
+
+
+def discovery_skip_acquisition_source(artist, album):
+    """Request a safe switch to the next eligible source for a stalled acquisition."""
+    _discovery_init()
+    identity = (_music_key(artist), _music_key(album))
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        row = db.execute(
+            "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
+            "WHERE artist_key=? AND album_key=?", identity,
+        ).fetchone()
+        if not row:
+            return json.dumps({"ok": False, "error": "Acquisition not found."})
+        if row[0] != "downloading":
+            return json.dumps({"ok": False, "error": "This acquisition is not downloading."})
+        try:
+            candidate = json.loads(row[2] or "{}")
+            details = json.loads(row[1] or "{}")
+        except (ValueError, TypeError):
+            candidate, details = {}, {}
+        if not candidate.get("fallback_candidates"):
+            return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
+        details["skip_requested"] = True
+        details["skip_requested_at"] = time.time()
+        db.execute(
+            "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
+            "WHERE artist_key=? AND album_key=?",
+            (json.dumps(details, ensure_ascii=False), time.time(), *identity),
+        )
+        db.commit()
+    return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
+
+
+def _discovery_cancel_and_clean_source(download_root, candidate, base_url, headers):
+    """Cancel active transfers, then remove this source's album folder before retrying."""
+    import shutil
+    from urllib.parse import quote
+    expected = {
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        for item in candidate.get("files", [])
+    }
+    try:
+        tracked = _slskd_download_transfer_files(base_url, headers, candidate["username"])
+    except Exception:
+        return False
+    active_states = {"queued", "initializing", "requested", "inprogress", "transferring", "downloading"}
+    for item in tracked:
+        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        if name not in expected or state not in active_states:
+            continue
+        file_id = str(item.get("id") or item.get("filename") or "")
+        if not file_id:
+            return False
+        try:
+            response = httpx.delete(
+                f"{base_url}/api/v0/transfers/downloads/{quote(str(candidate['username']), safe='')}/{quote(file_id, safe='')}",
+                headers=headers, timeout=8,
+            )
+            if response.status_code not in (200, 202, 204, 404):
+                return False
+        except httpx.HTTPError:
+            return False
+
+    root = Path(download_root).expanduser().resolve()
+    wanted = _discovery_safe_folder_name(candidate.get("folder"))
+    targets = []
+    direct = root / wanted
+    if direct.is_dir():
+        targets = [direct]
+    else:
+        try:
+            targets = [path for path in root.rglob(wanted) if path.is_dir() and path.name == wanted]
+        except OSError:
+            return False
+        if len(targets) > 1:
+            return False
+    for target in targets:
+        resolved = target.resolve()
+        if resolved == root or root not in resolved.parents:
+            return False
+        try:
+            shutil.rmtree(resolved)
+        except OSError:
+            return False
+    return True
+
+
+def _discovery_switch_to_next_source(artist, album, candidate, settings, download_root, headers, reason):
+    """Switch only among prevalidated complete candidates, cleaning the previous album folder first."""
+    base_url, _, _ = _slskd_config()
+    fallbacks = list(candidate.get("fallback_candidates") or [])
+    if not fallbacks:
+        _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
+            "source_username": candidate.get("username"),
+            "reason": reason,
+            "message": "No other complete eligible source is available.",
+        })
+        return None
+    if not _discovery_cancel_and_clean_source(download_root, candidate, base_url, headers):
+        _discovery_update_acquisition_status(artist, album, "source_switch_failed", {
+            "source_username": candidate.get("username"),
+            "reason": reason,
+            "error": "Could not safely cancel transfers or clean the previous album folder.",
+        })
+        return None
+    for index, next_candidate in enumerate(fallbacks):
+        files = [
+            {"filename": item.get("filename"), "size": int(item.get("size") or 0)}
+            for item in next_candidate.get("files", [])
+            if item.get("filename")
+        ]
+        if not files or not next_candidate.get("username"):
+            continue
+        try:
+            response = httpx.post(
+                f"{base_url}/api/v0/transfers/downloads/{next_candidate['username']}",
+                headers=headers, json=files, timeout=12,
+            )
+            response.raise_for_status()
+        except (httpx.HTTPError, ValueError, TypeError):
+            continue
+        monitor_candidate = dict(next_candidate)
+        monitor_candidate["files"] = files
+        monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
+        start_state = _slskd_candidate_start_state(base_url, headers, monitor_candidate, timeout=8)
+        if start_state is not True:
+            # A queued/uncertain transfer is not safe to overlap with another source.
+            if start_state is None:
+                _discovery_update_acquisition_status(artist, album, "source_switch_uncertain", {
+                    "source_username": next_candidate.get("username"),
+                    "message": "Could not confirm whether the next source started; manual inspection is required.",
+                })
+                return None
+            _discovery_cancel_and_clean_source(download_root, monitor_candidate, base_url, headers)
+            continue
+        previous_details = next(
+            (job.get("details") or {} for job in _discovery_list_acquisition_jobs()
+             if job["artist_key"] == _music_key(artist) and job["album_key"] == _music_key(album)),
+            {},
+        )
+        details = {
+            "source_username": next_candidate.get("username"),
+            "folder": next_candidate.get("folder"),
+            "file_count": len(files),
+            "unique_track_count": next_candidate.get("unique_track_count"),
+            "expected_track_count": next_candidate.get("expected_track_count"),
+            "quality_summary": list(next_candidate.get("quality_summary") or []),
+            "downloads_path": str(download_root),
+            "source_switches": int(previous_details.get("source_switches") or 0) + 1,
+            "previous_source_username": candidate.get("username"),
+            "source_switch_reason": reason,
+            "message": "Previous source stalled; switched to the next complete eligible source.",
+        }
+        _discovery_save_acquisition_job(artist, album, "downloading", details,
+                                        candidate=monitor_candidate, settings=settings)
+        return monitor_candidate
+    _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
+        "source_username": candidate.get("username"),
+        "reason": reason,
+        "message": "Every remaining eligible source failed to start.",
+    })
+    return None
+
+
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
     """Import once all expected files exist with matching sizes, even if slskd prunes transfer records."""
     import shutil
@@ -3778,8 +3948,28 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
     }
     deadline = time.monotonic() + 48 * 60 * 60
     completed_at = None
+    last_progress_at = time.monotonic()
+    last_progress_bytes = 0
+    stall_detected_at = None
+    source_switches = 0
     while time.monotonic() < deadline:
         try:
+            if _discovery_skip_requested(artist, album):
+                next_candidate = _discovery_switch_to_next_source(
+                    artist, album, candidate, settings, download_root, headers, "manual_skip"
+                )
+                if next_candidate is None:
+                    return
+                candidate = next_candidate
+                expected = {
+                    str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                    for item in candidate.get("files", [])
+                }
+                last_progress_at = time.monotonic()
+                last_progress_bytes = 0
+                stall_detected_at = None
+                source_switches += 1
+                continue
             # Filesystem completion is authoritative: slskd may prune successful
             # transfer records before this watcher polls them again.
             source = _discovery_locate_completed_album(download_root, candidate)
@@ -3823,6 +4013,53 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                 str(item.get("state") or "").replace("_", "").casefold()
                 for item in matching
             }
+            current_bytes = 0
+            for item in matching:
+                for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
+                    try:
+                        if item.get(key) is not None:
+                            current_bytes += max(0, int(item[key]))
+                            break
+                    except (TypeError, ValueError):
+                        pass
+            now_mono = time.monotonic()
+            if current_bytes > last_progress_bytes:
+                last_progress_bytes = current_bytes
+                last_progress_at = now_mono
+                stall_detected_at = None
+            stalled_for = now_mono - last_progress_at
+            if stalled_for >= 120 and candidate.get("fallback_candidates"):
+                if stall_detected_at is None:
+                    stall_detected_at = time.time()
+                    _discovery_update_acquisition_status(artist, album, "downloading", {
+                        "source_username": candidate.get("username"),
+                        "folder": candidate.get("folder"),
+                        "quality_summary": list(candidate.get("quality_summary") or []),
+                        "zero_progress_seconds": int(stalled_for),
+                        "stall_detected_at": stall_detected_at,
+                        "skip_countdown_seconds": 15,
+                        "fallback_count": len(candidate.get("fallback_candidates") or []),
+                        "source_switches": source_switches,
+                        "message": "No download progress for 2 minutes. Switching automatically in 15 seconds unless skipped manually.",
+                    })
+                skip_requested = _discovery_skip_requested(artist, album)
+                if skip_requested or time.time() - stall_detected_at >= 15:
+                    next_candidate = _discovery_switch_to_next_source(
+                        artist, album, candidate, settings, download_root, headers,
+                        "manual_skip" if skip_requested else "zero_progress_timeout",
+                    )
+                    if next_candidate is None:
+                        return
+                    candidate = next_candidate
+                    expected = {
+                        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                        for item in candidate.get("files", [])
+                    }
+                    last_progress_at = time.monotonic()
+                    last_progress_bytes = 0
+                    stall_detected_at = None
+                    source_switches += 1
+                    continue
             if states.intersection({"failed", "errored", "cancelled", "canceled"}):
                 _discovery_update_acquisition_status(artist, album, "download_failed", {
                     "source_username": candidate["username"], "states": sorted(states)
@@ -3881,7 +4118,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
             _discovery_update_acquisition_status(artist, album, "monitor_error", {
                 "error": type(exc).__name__
             })
-        time.sleep(15)
+        time.sleep(2)
     _discovery_update_acquisition_status(artist, album, "monitor_timeout", {
         "source_username": candidate["username"]
     })
