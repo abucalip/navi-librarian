@@ -435,15 +435,16 @@ p { line-height: 1.55; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
+.genre-row-scroll-cue { margin-left: auto; color: var(--yellow); font: 500 9px/1.4 var(--mono); letter-spacing: .1em; white-space: nowrap; }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
-.deep-dive-card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.deep-dive-card { position: relative; }
+.deep-dive-card h3 .album-year, .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .deep-dive-card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
-.deep-dive-card .card-actions .not-for-me { padding: 6px 0; border: 0; background: transparent; color: #ef7770; font-size: 11px; }
-.deep-dive-card .card-actions .not-for-me:hover { color: #ffaaa4; background: transparent; }
-.deep-dive-card .card-actions .not-for-me .cross { margin-right: 4px; font-size: 15px; line-height: 1; }
-.deep-dive-card .card-actions .get-album { width: 43px; height: 36px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 3px; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
+.deep-dive-card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .deep-dive-card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
+.deep-dive-card .deep-dive-dismiss { position: absolute; z-index: 3; top: 8px; right: 8px; display: grid; place-items: center; width: 29px; height: 29px; padding: 0; border: 1px solid rgba(224,91,79,.75); border-radius: 50%; background: rgba(25,26,26,.88); color: #ff766d; font: 500 20px/1 var(--body); box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+.deep-dive-card .deep-dive-dismiss:hover { background: var(--red); color: #fff; border-color: var(--red); }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
@@ -1187,6 +1188,17 @@ async function loadDiscovery(name) {
   try {
     const data = await requestJSON(`/api/discovery/${name}?count=${name === 'artist_deep_dive' ? 150 : 30}`);
     const items = data.items || data.recommendations || [];
+    if (name !== 'for_me' && !data.generated_at && !items.length && !autoRefreshStarted.has(name)) {
+      autoRefreshStarted.add(name);
+      discoveryStatus(name, 'Building the first list in the background…');
+      try {
+        await sendJSON(`/api/discovery/${name}/refresh`, 'POST', {count: 20});
+        pollDiscoveryUntilReady(name);
+      } catch (error) {
+        autoRefreshStarted.delete(name);
+        discoveryStatus(name, error.message);
+      }
+    }
 
     if (name === 'artist_deep_dive') {
       const grouped = new Map();
@@ -1204,6 +1216,7 @@ async function loadDiscovery(name) {
         heading.className = 'genre-row-heading';
         addTextElement(heading, 'h3', '', genreRowLabel(genre));
         addTextElement(heading, 'span', 'genre-row-count', `${genreItems.length} albums`);
+        addTextElement(heading, 'span', 'genre-row-scroll-cue', 'SCROLL  →');
         const track = document.createElement('div');
         track.className = 'genre-row-track';
         row.append(heading, track);
@@ -1227,7 +1240,7 @@ async function loadDiscovery(name) {
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
       const year = Number(item.year || item.release_year || item.first_release_year || 0);
-      if (isDeepDive && year >= 1900 && year <= 2100) {
+      if (year >= 1900 && year <= 2100) {
         addTextElement(title, 'span', 'album-year', String(year));
       }
       card.append(title);
@@ -1259,14 +1272,13 @@ async function loadDiscovery(name) {
 
       if (isDeepDive) {
         const notForMe = document.createElement('button');
-        notForMe.className = 'not-for-me';
-        const cross = document.createElement('span');
-        cross.className = 'cross';
-        cross.textContent = '×';
-        notForMe.append(cross, document.createTextNode('not for me'));
+        notForMe.className = 'deep-dive-dismiss';
+        notForMe.textContent = '×';
+        notForMe.title = 'Not for me';
+        notForMe.setAttribute('aria-label', 'Not for me');
         notForMe.addEventListener('click',
           () => sendFeedback('dismiss', artist, album, item, name));
-        actions.append(notForMe);
+        card.append(notForMe);
         button('get', () => searchAlbum(artist, album, item), 'get-album');
       } else {
         button(name === 'for_me' ? 'Remove from For Me' : '＋ For Me',
@@ -1316,6 +1328,34 @@ document.querySelectorAll('[data-load-discovery]').forEach(button =>
 
 document.querySelectorAll('[data-refresh-discovery]').forEach(button =>
   button.addEventListener('click', () => refreshDiscovery(button.dataset.refreshDiscovery)));
+
+const autoRefreshStarted = new Set();
+const autoRefreshPolls = new Map();
+
+async function pollDiscoveryUntilReady(name) {
+  const attempts = autoRefreshPolls.get(name) || 0;
+  if (attempts >= 60) {
+    discoveryStatus(name, 'Still generating in the background. You can keep browsing; reload this list later.');
+    autoRefreshStarted.delete(name);
+    autoRefreshPolls.delete(name);
+    return;
+  }
+  autoRefreshPolls.set(name, attempts + 1);
+  setTimeout(async () => {
+    try {
+      const data = await requestJSON(`/api/discovery/${name}?count=${name === 'artist_deep_dive' ? 150 : 30}`);
+      if (data.generated_at) {
+        autoRefreshStarted.delete(name);
+        autoRefreshPolls.delete(name);
+        await loadDiscovery(name);
+      } else {
+        await pollDiscoveryUntilReady(name);
+      }
+    } catch (error) {
+      discoveryStatus(name, error.message);
+    }
+  }, 5000);
+}
 
 async function searchAlbum(artist, album, metadata) {
   showPage('acquireReview');
@@ -1432,7 +1472,15 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
+// Populate every data-driven page on first open; saved discovery lists load immediately,
+// and missing lists start their first background refresh without requiring a button click.
 checkConnection();
+$('loadRecommendations').click();
+$('loadProfile').click();
+for (const listName of Object.keys(discoveryViews)) loadDiscovery(listName);
+requestJSON('/api/acquisitions').then(renderAcquisitions).catch(error => {
+  $('acquisitionsStatus').textContent = error.message;
+});
 </script>
 </body>
 </html>
