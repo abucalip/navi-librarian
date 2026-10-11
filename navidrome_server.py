@@ -3675,7 +3675,7 @@ def _discovery_match_completed_album_files(folder, candidate):
         if selected is None and expected_size > 0:
             stem, suffix = Path(expected_name).stem, Path(expected_name).suffix
             collision_pattern = re.compile(
-                r"^" + re.escape(stem) + r"_\\d+" + re.escape(suffix) + r"$",
+                r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
                 re.IGNORECASE,
             )
             alternatives = [
