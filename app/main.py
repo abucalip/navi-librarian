@@ -50,6 +50,66 @@ def health():
 _PROFILE_CACHE_TTL = 300
 _profile_cache = {}
 
+# Wikipedia artist biographies are cached for a day to avoid repeated lookups.
+_ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
+_artist_bio_cache = {}
+
+
+@app.get("/api/artist-bio")
+def artist_bio(artist: str):
+    name = str(artist or "").strip()
+    if not name or len(name) > 180:
+        raise HTTPException(status_code=400, detail="A valid artist name is required.")
+    key = name.casefold()
+    now = monotonic()
+    cached = _artist_bio_cache.get(key)
+    if cached and now - cached["time"] < _ARTIST_BIO_CACHE_TTL:
+        return {"artist": name, "bio": cached["bio"]}
+
+    bio = ""
+    try:
+        search = httpx.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={"action": "query", "list": "search", "srsearch": name,
+                    "format": "json", "srlimit": 5},
+            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+            timeout=5,
+        )
+        search.raise_for_status()
+        results = search.json().get("query", {}).get("search", [])
+        # Prefer an exact page-title match to avoid biographies of similarly
+        # named artists.
+        results.sort(key=lambda item: (
+            str(item.get("title", "")).casefold() != name.casefold(),
+            -int(item.get("wordcount") or 0),
+        ))
+        for result in results[:3]:
+            title = str(result.get("title") or "")
+            if not title:
+                continue
+            summary = httpx.get(
+                "https://en.wikipedia.org/api/rest_v1/page/summary/"
+                + __import__("urllib.parse", fromlist=["quote"]).quote(title.replace(" ", "_"), safe=""),
+                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+                timeout=5,
+            )
+            if summary.status_code != 200:
+                continue
+            extract = " ".join(str(summary.json().get("extract") or "").split())
+            if not extract or summary.json().get("type") == "disambiguation":
+                continue
+            # The first sentence gives the compact identity/biographical lead.
+            match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
+            bio = match.group(0) if match else extract[:240]
+            if len(bio) > 280:
+                bio = bio[:277].rsplit(" ", 1)[0] + "…"
+            break
+    except Exception:
+        bio = ""
+
+    _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+    return {"artist": name, "bio": bio}
+
 
 @app.get("/api/profile")
 def listening_profile(days: int = 30):
@@ -523,10 +583,11 @@ p { line-height: 1.55; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
 .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.card .artist-bio { margin-top: 7px; color: var(--muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-art .get-album:hover { background: #f3d66b; transform: scale(1.06); }
-.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: #fff; font: 600 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
-.card .card-art .deep-dive-dismiss:hover { background: transparent; color: #ff766d; border: 0; transform: scale(1.12); }
+.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: #ff5148; font: 700 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
+.card .card-art .deep-dive-dismiss:hover { background: transparent; color: #ff827a; border: 0; transform: scale(1.12); }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
 .card .card-actions .get-album { width: 42px; height: 42px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 50%; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
@@ -967,6 +1028,17 @@ function addTextElement(parent, tag, className, text) {
 }
 
 const artworkLoaders = new WeakMap();
+const bioLoaders = new WeakMap();
+const artistBioObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const load = bioLoaders.get(entry.target);
+        if (load) load();
+        artistBioObserver.unobserve(entry.target);
+      }
+    }, {rootMargin: '240px'})
+  : null;
 const artworkObserver = 'IntersectionObserver' in window
   ? new IntersectionObserver(entries => {
       for (const entry of entries) {
@@ -1360,7 +1432,7 @@ async function loadDiscovery(name) {
       }
     }
 
-    if (items.length || data.generated_at || name === 'for_me') {
+    if (items.length || data.generated_at) {
       discoveryStatus(name, `${items.length} item(s)`);
     }
 
@@ -1382,6 +1454,26 @@ async function loadDiscovery(name) {
       }
       card.append(title);
       addTextElement(card, 'p', 'card-artist', artist);
+
+      if (isDeepDive) {
+        const bio = addTextElement(card, 'p', 'artist-bio', '');
+        bio.hidden = true;
+        const loadBio = () => {
+          if (card.dataset.bioRequested) return;
+          card.dataset.bioRequested = 'true';
+          fetch('/api/artist-bio?artist=' + encodeURIComponent(artist))
+            .then(response => response.ok ? response.json() : null)
+            .then(result => {
+              if (!result || !result.bio) return;
+              bio.textContent = result.bio;
+              bio.hidden = false;
+            })
+            .catch(() => {});
+        };
+        bioLoaders.set(card, loadBio);
+        if (artistBioObserver) artistBioObserver.observe(card);
+        else loadBio();
+      }
 
       if (item.reason && !isDeepDive) addTextElement(card, 'p', 'card-meta', item.reason);
       if (item.anchor_artist) addTextElement(card, 'p', 'card-meta',
