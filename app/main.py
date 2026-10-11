@@ -1697,7 +1697,8 @@ async function pollDiscoveryUntilReady(name) {
       if (data.generated_at) {
         autoRefreshStarted.delete(name);
         autoRefreshPolls.delete(name);
-        await loadDiscovery(name);
+        await loadDiscovery(name, {rotate: name === 'classics' || name === 'artist_deep_dive'});
+        loadDashboardPicks();
       } else {
         await pollDiscoveryUntilReady(name);
       }
@@ -1826,7 +1827,9 @@ $('testSlskd').addEventListener('click', async () => {
 loadDashboardPicks();
 $('loadRecommendations').click();
 $('loadProfile').click();
-for (const listName of Object.keys(discoveryViews)) loadDiscovery(listName);
+for (const listName of Object.keys(discoveryViews)) {
+  loadDiscovery(listName, {rotate: listName === 'classics' || listName === 'artist_deep_dive'});
+}
 requestJSON('/api/acquisitions').then(renderAcquisitions).catch(error => {
   $('acquisitionsStatus').textContent = error.message;
 });
