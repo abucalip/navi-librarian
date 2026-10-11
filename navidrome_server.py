@@ -3201,7 +3201,48 @@ def _slskd_quality_tier(file_record, filename, priority):
     return priority.index(tier) if tier in priority else len(priority) + 1, tier
 
 
-def _slskd_extract_candidates(payload, artist, album, priority):
+def _discovery_expected_track_count(metadata):
+    """Read an expected track count from common recommendation metadata shapes."""
+    if not isinstance(metadata, dict):
+        return None
+    keys = ("track_count", "trackCount", "number_of_tracks", "numberOfTracks",
+            "total_tracks", "totalTracks", "tracks_count", "tracksCount", "trackcount")
+    queue = [metadata]
+    seen = set()
+    while queue:
+        current = queue.pop(0)
+        if not isinstance(current, dict) or id(current) in seen:
+            continue
+        seen.add(id(current))
+        for key in keys:
+            value = current.get(key)
+            try:
+                count = int(value)
+                if count > 0:
+                    return count
+            except (TypeError, ValueError):
+                pass
+        for key in ("tracks", "tracklist", "track_list", "album", "release", "metadata"):
+            value = current.get(key)
+            if isinstance(value, list) and value:
+                # Track objects are strong evidence; don't mistake unrelated arrays for tracks.
+                if all(isinstance(item, dict) for item in value):
+                    return len(value)
+            elif isinstance(value, dict):
+                queue.append(value)
+    return None
+
+
+def _slskd_track_identity(filename):
+    """A filename-based track identity that ignores extensions and numeric collision suffixes."""
+    import re
+    name = str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+    stem = Path(name).stem.casefold()
+    stem = re.sub(r"_\d+$", "", stem)
+    return _music_key(stem)
+
+
+def _slskd_extract_candidates(payload, artist, album, priority, expected_track_count=None):
     import re
     from collections import defaultdict
     audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
@@ -3258,18 +3299,34 @@ def _slskd_extract_candidates(payload, artist, album, priority):
         all_clear = any(item["artist_in_path"] for item in files) and any(
             item["album_in_path"] for item in files
         )
+        unique_tracks = {
+            _slskd_track_identity(item["filename"])
+            for item in files
+            if _slskd_track_identity(item["filename"])
+        }
+        unique_track_count = len(unique_tracks)
+        minimum_required = max(3, int(expected_track_count or 0))
         score = 0.55 * (1.0 if any(x["album_in_path"] for x in files) else 0.65)
         score += 0.25 * (1.0 if any(x["artist_match"] for x in files) else 0.0)
-        score += 0.20 * min(len(files) / 8.0, 1.0)
+        score += 0.20 * min(unique_track_count / 8.0, 1.0)
+        complete_enough = unique_track_count >= minimum_required
         candidates.append({
             "username": username,
             "folder": folder,
             "file_count": len(files),
+            "unique_track_count": unique_track_count,
+            "expected_track_count": expected_track_count,
+            "complete_enough": complete_enough,
             "files": files,
             "average_quality_rank": round(avg_rank, 3),
             "upload_speed": max((x["upload_speed"] for x in files), default=0),
             "confidence": round(score, 3),
-            "clear_match": bool(all_clear and len(files) >= 3 and score >= 0.9),
+            "clear_match": bool(all_clear and complete_enough and score >= 0.9),
+            "eligibility_reason": (
+                "eligible" if all_clear and complete_enough and score >= 0.9
+                else f"only {unique_track_count} unique tracks; need at least {minimum_required}"
+                if not complete_enough else "album/artist match confidence below threshold"
+            ),
             "quality_summary": sorted({
                 item["quality_tier"] for item in files
             }),
@@ -3950,8 +4007,14 @@ def discovery_acquire_album(
             ):
                 break
             time.sleep(0.75)
+        try:
+            metadata = json.loads(metadata_json or "{}")
+        except (ValueError, TypeError):
+            metadata = {}
+        expected_track_count = _discovery_expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
-            list(payload_by_peer.values()), artist, album, priority
+            list(payload_by_peer.values()), artist, album, priority,
+            expected_track_count=expected_track_count,
         )
         if not candidates:
             return json.dumps({
@@ -3994,6 +4057,13 @@ def discovery_acquire_album(
             candidate_for_monitor = dict(candidate)
             candidate_for_monitor["files"] = selected_files
             candidate_for_monitor["quality_summary"] = list(candidate.get("quality_summary") or [])
+            candidate_for_monitor["fallback_candidates"] = [
+                {**item, "files": [
+                    {"filename": file["filename"], "size": file["size"]}
+                    for file in item.get("files", [])
+                ]}
+                for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
+            ]
             start_state = _slskd_candidate_start_state(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
