@@ -3903,7 +3903,7 @@ def _discovery_locate_completed_album(download_root, candidate):
     return None
 
 
-def _discovery_import_matched_album_files(source, destination, candidate):
+def _discovery_import_matched_album_files(source, destination, candidate, expected_music_root=None, expected_device=None):
     """Stage only the verified expected tracks, leaving unrelated files behind."""
     import json
     import shutil
@@ -3927,6 +3927,16 @@ def _discovery_import_matched_album_files(source, destination, candidate):
     if any(name.casefold() == manifest_name.casefold() for name in matched):
         raise OSError("A track name conflicts with the reserved import manifest")
 
+    def assert_music_storage_identity():
+        # If a mount disappears, the same path can expose the underlying local
+        # directory. Device checks prevent continuing an import on that fallback.
+        if expected_device is None:
+            return
+        root = Path(expected_music_root)
+        if root.stat().st_dev != expected_device or parent.stat().st_dev != expected_device:
+            raise OSError("Music-library filesystem changed during import; refusing further writes")
+
+    assert_music_storage_identity()
     staging = parent / (".navidrome-import-" + uuid.uuid4().hex)
     staging.mkdir(parents=True, exist_ok=False)
     manifest = staging / manifest_name
@@ -3942,9 +3952,11 @@ def _discovery_import_matched_album_files(source, destination, candidate):
     try:
         manifest.write_text(json.dumps(manifest_data, ensure_ascii=False), encoding="utf-8")
         for expected_name, actual_path in matched.items():
+            assert_music_storage_identity()
             staged_path = staging / expected_name
             shutil.move(str(actual_path), str(staged_path))
             moved.append((staged_path, actual_path))
+        assert_music_storage_identity()
         if destination.exists() or destination.is_symlink():
             raise FileExistsError(str(destination))
         # Rename first while the recovery manifest is present. If the process
@@ -4547,6 +4559,16 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
             })
             return "failed"
 
+        try:
+            music_device = music_root.stat().st_dev
+        except OSError:
+            music_device = None
+        if music_device is None:
+            _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+                "source_folder": str(source), "library_path": str(music_root),
+            })
+            return "failed"
+
         artist_dir = music_root / _discovery_safe_folder_name(artist)
         album_dir = artist_dir / _discovery_safe_folder_name(album)
 
@@ -4585,6 +4607,8 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
         }):
             return "failed"
         try:
+            if music_root.stat().st_dev != music_device:
+                raise OSError("Music-library filesystem changed before import")
             artist_dir.mkdir(parents=True, exist_ok=True)
 
             # Revalidate immediately before creating staging files.
@@ -4598,7 +4622,12 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
             if album_dir.exists() or album_dir.is_symlink():
                 raise FileExistsError(str(album_dir))
 
-            _discovery_import_matched_album_files(source, album_dir, candidate)
+            if music_root.stat().st_dev != music_device or artist_dir.stat().st_dev != music_device:
+                raise OSError("Music-library filesystem changed before import")
+            _discovery_import_matched_album_files(
+                source, album_dir, candidate,
+                expected_music_root=music_root, expected_device=music_device,
+            )
         except OSError as exc:
             _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
                 "source_folder": str(source), "destination": str(album_dir),
