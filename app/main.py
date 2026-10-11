@@ -326,6 +326,42 @@ def acquisition_status():
         raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
 
 
+@app.post("/api/acquisitions/skip")
+def skip_acquisition_source(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_skip_acquisition_source(
+            artist=artist, album=album,
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=409, detail=result.get("error", "Could not skip source."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not request a source switch.")
+
+
+@app.post("/api/acquisitions/dismiss")
+def dismiss_acquisition(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_dismiss_acquisition(artist=artist, album=album))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=404, detail=result.get("error", "Acquisition not found."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not dismiss acquisition.")
+
+
 @app.get("/api/acquisitions/stream")
 def acquisition_status_stream():
     def events():
@@ -931,14 +967,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   </div>
 </section>
 
-<section id="acquireReview" class="page hidden">
-  <div class="panel">
-    <h2>Review download candidates</h2>
-    <p id="acquireStatus"></p>
-    <div id="acquireCards" class="cards"></div>
-    <button data-page="personalDiscoveries">Back to discoveries</button>
-  </div>
-</section>
+
 
 </main>
 
@@ -1087,6 +1116,30 @@ function renderAcquisitions(data) {
         progressRow.append(ring, copy);
         card.append(progressRow);
       }
+      if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
+        const stallButton = document.createElement('button');
+        stallButton.type = 'button';
+        stallButton.className = 'skip-source-button';
+        const secondsLeft = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
+        stallButton.textContent = secondsLeft > 0
+          ? 'Skip to next source (' + secondsLeft + 's)'
+          : 'Switching source…';
+        stallButton.disabled = secondsLeft <= 0;
+        stallButton.addEventListener('click', async () => {
+          stallButton.disabled = true;
+          stallButton.textContent = 'Requesting source switch…';
+          try {
+            const result = await sendJSON('/api/acquisitions/skip', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            $('acquisitionsStatus').textContent = result.message || 'Source switch requested.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            stallButton.disabled = false;
+          }
+        });
+        card.append(stallButton);
+      }
       const lines = [
         details.message,
         details.error,
@@ -1104,24 +1157,57 @@ function renderAcquisitions(data) {
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
       for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
-      if (job.status === 'imported') {
+      if (job.status !== 'dismissed') {
         const actions = document.createElement('div');
         actions.className = 'card-actions';
-        const dismiss = document.createElement('button');
+        const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
+        if (retryableStatuses.has(job.status)) {
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.textContent = 'Try again';
+          retry.addEventListener('click', async () => {
+            retry.disabled = true;
+            retry.textContent = 'Retrying…';
+            try {
+              await sendJSON('/api/acquire', 'POST', {
+                artist: job.artist, album: job.album,
+                metadata: details.metadata || {}, auto_queue: true
+              });
+              await loadAcquisitions();
+            } catch (error) {
+              $('acquisitionsStatus').textContent = error.message;
+              retry.disabled = false;
+              retry.textContent = 'Try again';
+            }
+          });
+          actions.append(retry);
+        }
+        if (!['importing', 'imported'].includes(job.status)) {
+          const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
-        dismiss.addEventListener('click', () => {
-          const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
-          stored.add(dismissalKey);
-          localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
-          card.remove();
-          const visibleCards = target.querySelectorAll('.card').length;
-          $('acquisitionsStatus').textContent = visibleCards
-            ? visibleCards + ' acquisition record(s).'
-            : 'No acquisition records to show.';
+        dismiss.addEventListener('click', async () => {
+          dismiss.disabled = true;
+          try {
+            await sendJSON('/api/acquisitions/dismiss', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+            stored.add(dismissalKey);
+            localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+            card.remove();
+            const visibleCards = target.querySelectorAll('.card').length;
+            $('acquisitionsStatus').textContent = visibleCards
+              ? visibleCards + ' acquisition record(s).'
+              : 'No acquisition records to show.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            dismiss.disabled = false;
+          }
         });
-        actions.append(dismiss);
-        card.append(actions);
+          actions.append(dismiss);
+        }
+        if (actions.childElementCount) card.append(actions);
       }
       if (details.status && details.status !== job.status) {
         addTextElement(card, 'pre', 'debug', pretty(details));
@@ -1263,7 +1349,7 @@ async function loadDashboardPicks() {
       get.textContent = 'get';
       get.title = 'Get this album';
       get.setAttribute('aria-label', 'Get ' + album);
-      get.addEventListener('click', () => searchAlbum(artist, album, item));
+      get.addEventListener('click', () => searchAlbum(artist, album, item, get));
       art.append(get);
       target.append(card);
     }
@@ -1389,7 +1475,7 @@ function applyRecommendationFilters() {
     getButton.textContent = 'get';
     getButton.title = 'Get this album';
     getButton.setAttribute('aria-label', 'Get ' + album);
-    getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+    getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
     artContainer.append(getButton);
     const dismissButton = document.createElement('button');
     dismissButton.className = 'deep-dive-dismiss';
@@ -1732,7 +1818,7 @@ async function loadDiscovery(name, options = {}) {
       getButton.textContent = 'get';
       getButton.title = 'Get this album';
       getButton.setAttribute('aria-label', 'Get ' + album);
-      getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+      getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
       artContainer.append(getButton);
 
       const notForMe = document.createElement('button');
@@ -1839,60 +1925,32 @@ async function pollDiscoveryUntilReady(name) {
   }, 5000);
 }
 
-async function searchAlbum(artist, album, metadata) {
-  showPage('acquireReview');
-  $('acquireStatus').textContent =
-    `Searching for ${artist} — ${album}. A clear match will be queued automatically; review is only needed when the match criteria are not met.`;
-  const target = $('acquireCards');
-  target.replaceChildren();
-
+async function searchAlbum(artist, album, metadata, button = null) {
+  if (button && button.disabled) return;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'requested';
+    button.title = 'Acquisition requested';
+    button.setAttribute('aria-label', 'Acquisition requested for ' + album);
+  }
   try {
     const data = await sendJSON('/api/acquire', 'POST',
       {artist, album, metadata, auto_queue:true});
-
-    $('acquireStatus').textContent = data.message || data.status || 'Search complete.';
-
-    if (data.status === 'review_required') {
-      for (const candidate of data.candidates || []) {
-        const card = document.createElement('article');
-        card.className = 'card';
-        addTextElement(card, 'h3', '', candidate.folder || candidate.username);
-        addTextElement(card, 'p', 'card-meta',
-          `${candidate.file_count} files · ${(candidate.quality_summary || []).join(', ')}`);
-
-        for (const file of (candidate.files || []).slice(0, 10)) {
-          addTextElement(card, 'p', 'card-meta', file.filename);
-        }
-
-        const queue = document.createElement('button');
-        queue.textContent = 'Queue this candidate';
-        queue.addEventListener('click', async () => {
-          if (!confirm(`Queue ${candidate.file_count} files from ${candidate.username}?`)) return;
-          queue.disabled = true;
-          try {
-            const files = (candidate.files || []).map(f =>
-              ({filename:f.filename, size:f.size}));
-            const result = await sendJSON('/api/acquire/queue', 'POST',
-              {username:candidate.username, artist, album, folder:candidate.folder, files,
-             quality_summary:candidate.quality_summary || []});
-            $('acquireStatus').textContent = result.message || result.status;
-            queue.textContent = 'Queue requested';
-          } catch (error) {
-            $('acquireStatus').textContent = error.message;
-            queue.disabled = false;
-          }
-        });
-        card.append(queue);
-        target.append(card);
-      }
-    } else {
-      addTextElement(target, 'p', '', data.message || data.status || pretty(data));
-    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget && data.message) statusTarget.textContent = data.message;
+    // Stay on the discovery page; the persistent Acquisitions view shows progress/failures.
+    await loadAcquisitions();
   } catch (error) {
-    $('acquireStatus').textContent = error.message;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'get';
+      button.title = 'Get this album';
+      button.setAttribute('aria-label', 'Get ' + album);
+    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget) statusTarget.textContent = error.message;
   }
 }
-
 async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
