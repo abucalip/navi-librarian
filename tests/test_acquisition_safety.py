@@ -300,7 +300,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
 
         self.assertTrue(recovered)
         self.assertEqual(self.ns["status_updates"][-1][0][2], "imported")
-        self.assertTrue(self.ns["status_updates"][-1][1]["recovered_after_restart"])
+        self.assertTrue(self.ns["status_updates"][-1][0][3]["recovered_after_restart"])
 
     def test_interrupted_import_does_not_reconcile_wrong_or_incomplete_destination(self):
         with tempfile.TemporaryDirectory() as temp:
