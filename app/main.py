@@ -1003,6 +1003,7 @@ function pretty(value) {
 }
 
 function formatDownloadBytes(value) {
+  if (value === null || value === undefined || value === '') return null;
   const bytes = Number(value);
   if (!Number.isFinite(bytes) || bytes < 0) return null;
   if (bytes < 1024) return Math.round(bytes) + ' B';
