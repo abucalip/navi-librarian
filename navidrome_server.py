@@ -5017,6 +5017,34 @@ def _discovery_acquire_album_impl(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
             if start_state is False:
+                # Do not try another peer until the previous queue attempt is
+                # confirmed stopped and its exact partial folder is safe to clean.
+                download_root = Path(str(
+                    settings.get("slskd_downloads_path")
+                    or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+                )).expanduser()
+                if not _discovery_cancel_and_clean_source(
+                    download_root, candidate_for_monitor, base_url, headers
+                ):
+                    _discovery_update_acquisition_status(
+                        artist, album, "source_switch_failed", {
+                            "source_username": candidate.get("username"),
+                            "folder": candidate.get("folder"),
+                            "error": (
+                                "The queued source did not start, but its transfers "
+                                "or partial files could not be safely confirmed and "
+                                "cleaned. No further source was queued."
+                            ),
+                        },
+                    )
+                    return json.dumps({
+                        "ok": False, "status": "source_switch_failed",
+                        "artist": artist, "album": album,
+                        "message": (
+                            "The first source did not start, and cleanup could not "
+                            "be confirmed. Check the acquisition status before retrying."
+                        ),
+                    }, ensure_ascii=False)
                 failures.append({
                     "username": candidate["username"],
                     "folder": candidate["folder"],
