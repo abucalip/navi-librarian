@@ -1080,6 +1080,28 @@ function renderAcquisitions(data) {
       if (job.status !== 'dismissed') {
         const actions = document.createElement('div');
         actions.className = 'card-actions';
+        const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
+        if (retryableStatuses.has(job.status)) {
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.textContent = 'Try again';
+          retry.addEventListener('click', async () => {
+            retry.disabled = true;
+            retry.textContent = 'Retrying…';
+            try {
+              await sendJSON('/api/acquire', 'POST', {
+                artist: job.artist, album: job.album,
+                metadata: details.metadata || {}, auto_queue: true
+              });
+              await loadAcquisitions();
+            } catch (error) {
+              $('acquisitionsStatus').textContent = error.message;
+              retry.disabled = false;
+              retry.textContent = 'Try again';
+            }
+          });
+          actions.append(retry);
+        }
         const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
@@ -1226,7 +1248,7 @@ async function loadDashboardPicks() {
       get.textContent = 'get';
       get.title = 'Get this album';
       get.setAttribute('aria-label', 'Get ' + album);
-      get.addEventListener('click', () => searchAlbum(artist, album, item));
+      get.addEventListener('click', () => searchAlbum(artist, album, item, get));
       art.append(get);
       target.append(card);
     }
@@ -1351,7 +1373,7 @@ function applyRecommendationFilters() {
     getButton.textContent = 'get';
     getButton.title = 'Get this album';
     getButton.setAttribute('aria-label', 'Get ' + album);
-    getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+    getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
     artContainer.append(getButton);
     const dismissButton = document.createElement('button');
     dismissButton.className = 'deep-dive-dismiss';
@@ -1694,7 +1716,7 @@ async function loadDiscovery(name, options = {}) {
       getButton.textContent = 'get';
       getButton.title = 'Get this album';
       getButton.setAttribute('aria-label', 'Get ' + album);
-      getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+      getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
       artContainer.append(getButton);
 
       const notForMe = document.createElement('button');
@@ -1801,60 +1823,32 @@ async function pollDiscoveryUntilReady(name) {
   }, 5000);
 }
 
-async function searchAlbum(artist, album, metadata) {
-  showPage('acquireReview');
-  $('acquireStatus').textContent =
-    `Searching for ${artist} — ${album}. A clear match will be queued automatically; review is only needed when the match criteria are not met.`;
-  const target = $('acquireCards');
-  target.replaceChildren();
-
+async function searchAlbum(artist, album, metadata, button = null) {
+  if (button && button.disabled) return;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'requested';
+    button.title = 'Acquisition requested';
+    button.setAttribute('aria-label', 'Acquisition requested for ' + album);
+  }
   try {
     const data = await sendJSON('/api/acquire', 'POST',
       {artist, album, metadata, auto_queue:true});
-
-    $('acquireStatus').textContent = data.message || data.status || 'Search complete.';
-
-    if (data.status === 'review_required') {
-      for (const candidate of data.candidates || []) {
-        const card = document.createElement('article');
-        card.className = 'card';
-        addTextElement(card, 'h3', '', candidate.folder || candidate.username);
-        addTextElement(card, 'p', 'card-meta',
-          `${candidate.file_count} files · ${(candidate.quality_summary || []).join(', ')}`);
-
-        for (const file of (candidate.files || []).slice(0, 10)) {
-          addTextElement(card, 'p', 'card-meta', file.filename);
-        }
-
-        const queue = document.createElement('button');
-        queue.textContent = 'Queue this candidate';
-        queue.addEventListener('click', async () => {
-          if (!confirm(`Queue ${candidate.file_count} files from ${candidate.username}?`)) return;
-          queue.disabled = true;
-          try {
-            const files = (candidate.files || []).map(f =>
-              ({filename:f.filename, size:f.size}));
-            const result = await sendJSON('/api/acquire/queue', 'POST',
-              {username:candidate.username, artist, album, folder:candidate.folder, files,
-             quality_summary:candidate.quality_summary || []});
-            $('acquireStatus').textContent = result.message || result.status;
-            queue.textContent = 'Queue requested';
-          } catch (error) {
-            $('acquireStatus').textContent = error.message;
-            queue.disabled = false;
-          }
-        });
-        card.append(queue);
-        target.append(card);
-      }
-    } else {
-      addTextElement(target, 'p', '', data.message || data.status || pretty(data));
-    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget && data.message) statusTarget.textContent = data.message;
+    // Stay on the discovery page; the persistent Acquisitions view shows progress/failures.
+    await loadAcquisitions();
   } catch (error) {
-    $('acquireStatus').textContent = error.message;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'get';
+      button.title = 'Get this album';
+      button.setAttribute('aria-label', 'Get ' + album);
+    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget) statusTarget.textContent = error.message;
   }
 }
-
 async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
