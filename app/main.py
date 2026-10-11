@@ -1,4 +1,5 @@
 import json
+import random
 from html import escape
 from time import monotonic, sleep
 import threading
@@ -110,6 +111,39 @@ def artist_bio(artist: str):
 
     _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
     return {"artist": name, "bio": bio}
+
+
+@app.get("/api/dashboard-picks")
+def dashboard_picks(count: int = 10):
+    if not 1 <= count <= 20:
+        raise HTTPException(status_code=400, detail="count must be between 1 and 20")
+    combined = []
+    seen = set()
+    categories = (
+        ("personal", "Personal discoveries"),
+        ("classics", "Add to your collection"),
+        ("artist_deep_dive", "Artist Deep Dives"),
+    )
+    for list_name, label in categories:
+        try:
+            data = parse_result(librarian.discovery_get_list(list_name=list_name, count=150))
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        items = data.get("items") or data.get("recommendations") or []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            artist = str(item.get("artist") or item.get("album_artist") or "").strip()
+            album = str(item.get("album") or item.get("title") or "").strip()
+            identity = (artist.casefold(), album.casefold())
+            if not artist or not album or identity in seen:
+                continue
+            seen.add(identity)
+            combined.append({**item, "artist": artist, "album": album, "dashboard_category": label})
+    random.shuffle(combined)
+    return {"items": combined[:count], "count": min(count, len(combined)), "pool_size": len(combined)}
 
 
 @app.get("/api/profile")
@@ -573,6 +607,12 @@ p { line-height: 1.55; }
 #recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 11px/1.5 var(--mono); letter-spacing: .02em; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
+.dashboard-carousel { display: flex; gap: 15px; overflow-x: auto; padding: 3px 2px 15px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
+.dashboard-carousel > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
+.dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.dashboard-carousel-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+.dashboard-carousel-heading button { margin-left: auto; }
+.dashboard-picks-status { min-height: 18px; color: var(--muted); font-size: 11px; }
 .genre-row { min-width: 0; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
@@ -666,17 +706,15 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
   <section id="dashboard" class="page">
     <div class="panel">
-      <h2>Connection</h2>
-      <p id="connection" class="status">Checking Navidrome…</p>
-      <p class="muted">The web app uses your existing Navidrome Librarian engine.</p>
-      <button id="checkConnection">Check connection</button>
-    </div>
-    <div class="panel">
-      <h2>Quick start</h2>
-      <p>Generate music recommendations or explore your recent listening profile.</p>
-      <p class="muted">Requests may take a little while while metadata and discovery sources are checked.</p>
-      <button data-go="recommendations">Explore recommendations</button>
-      <button data-go="profile">View listening profile</button>
+      <div class="dashboard-carousel-heading">
+        <div>
+          <h2>Ten from the collection</h2>
+          <p>A fresh, random mix from every discovery lane.</p>
+        </div>
+        <button id="shuffleDashboard">Shuffle picks ↻</button>
+      </div>
+      <p id="dashboardPicksStatus" class="dashboard-picks-status">Finding something unexpected…</p>
+      <div id="dashboardCarousel" class="dashboard-carousel" aria-label="Random album recommendations"></div>
     </div>
   </section>
 
@@ -777,6 +815,12 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 <section id="settings" class="page hidden">
   <div class="panel">
+    <h2>Connection</h2>
+    <p id="connection" class="status">Not checked yet.</p>
+    <p class="muted">Check whether the Librarian can reach Navidrome.</p>
+    <button id="checkConnection">Check connection</button>
+  </div>
+  <div class="panel">
     <h2>slskd Settings</h2>
     <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
     <label>slskd URL
@@ -842,7 +886,7 @@ function showPage(name) {
 document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
     showPage(button.dataset.page);
-    if (button.dataset.page === 'settings') loadSlskdSettings();
+    if (button.dataset.page === 'settings') { loadSlskdSettings(); checkConnection(); }
     if (button.dataset.page === 'acquisitions') startAcquisitionStream();
     else stopAcquisitionStream();
   }));
@@ -1060,6 +1104,47 @@ function applyAlbumYear(card, value) {
     addTextElement(title, 'span', 'album-year', String(year));
   }
 }
+
+async function loadDashboardPicks() {
+  const target = $('dashboardCarousel');
+  const status = $('dashboardPicksStatus');
+  target.replaceChildren();
+  status.textContent = 'Picking ten albums across your discovery lists…';
+  try {
+    const data = await requestJSON('/api/dashboard-picks?count=10&nonce=' + Date.now());
+    const items = data.items || [];
+    for (const item of items) {
+      const artist = item.artist || item.album_artist || 'Unknown artist';
+      const album = item.album || item.title || 'Untitled album';
+      const card = document.createElement('article');
+      card.className = 'card editorial-card';
+      attachArtwork(card, artist, album);
+      addTextElement(card, 'p', 'card-category', item.dashboard_category || 'Discovery');
+      const title = document.createElement('h3');
+      title.append(document.createTextNode(album));
+      const year = Number(item.year || item.release_year || item.first_release_year || 0);
+      if (year >= 1900 && year <= 2100) addTextElement(title, 'span', 'album-year', String(year));
+      card.append(title);
+      addTextElement(card, 'p', 'card-artist', artist);
+      const art = card.querySelector('.card-art');
+      const get = document.createElement('button');
+      get.className = 'get-album';
+      get.textContent = 'get';
+      get.title = 'Get this album';
+      get.setAttribute('aria-label', 'Get ' + album);
+      get.addEventListener('click', () => searchAlbum(artist, album, item));
+      art.append(get);
+      target.append(card);
+    }
+    status.textContent = items.length
+      ? `${items.length} randomly selected albums from ${data.pool_size || items.length} available suggestions.`
+      : 'No suggestions yet. Open a discovery page and refresh its list first.';
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+$('shuffleDashboard').addEventListener('click', loadDashboardPicks);
 
 function attachArtwork(card, artist, album) {
   const art = document.createElement('div');
@@ -1365,17 +1450,22 @@ function genreRowLabel(key) {
   return labels[key] || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
-async function loadDiscovery(name) {
-  discoveryStatus(name, 'Loading…');
+async function loadDiscovery(name, options = {}) {
+  discoveryStatus(name, options.rotate ? 'Rotating suggestions…' : 'Loading…');
   const target = $(discoveryViews[name][0]);
   target.replaceChildren();
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
 
   try {
-    const data = await requestJSON(`/api/discovery/${name}?count=${name === 'artist_deep_dive' ? 150 : 30}`);
+    const poolCount = name === 'artist_deep_dive' ? 150 : name === 'classics' ? 100 : 30;
+    const data = await requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`);
     let items = data.items || data.recommendations || [];
+    if ((name === 'classics' || name === 'artist_deep_dive') && options.rotate) {
+      items = [...items].sort(() => Math.random() - 0.5);
+    }
     if (name === 'classics') {
+      if (items.length > 30) items = items.slice(0, 30);
       const artistCounts = new Map();
       items = items.filter(item => {
         const key = String(item.artist || item.album_artist || '').trim().toLocaleLowerCase();
@@ -1403,6 +1493,14 @@ async function loadDiscovery(name) {
         const key = deepDiveGenre(item);
         if (!grouped.has(key)) grouped.set(key, []);
         grouped.get(key).push(item);
+      }
+      // Show no more than 15 albums per genre row. Randomize the larger
+      // saved pool first so Load albums can rotate choices without waiting
+      // for expensive upstream metadata requests.
+      for (const [genre, genreItems] of grouped) {
+        if (genreItems.length > 15) {
+          grouped.set(genre, genreItems.slice(0, 15));
+        }
       }
       const orderedGroups = [...grouped.entries()].sort((a, b) =>
         (b[1].length - a[1].length) || a[0].localeCompare(b[0]));
@@ -1539,17 +1637,43 @@ async function sendFeedback(action, artist, album, metadata, listName) {
 }
 
 async function refreshDiscovery(name) {
-  discoveryStatus(name, 'Refreshing…');
+  discoveryStatus(name, 'Starting a fresh discovery pass…');
   try {
-    await sendJSON(`/api/discovery/${name}/refresh`, 'POST', {count:20});
-    setTimeout(() => loadDiscovery(name), 1200);
+    const before = await requestJSON(`/api/discovery/${name}?count=1&nonce=${Date.now()}`);
+    const previous = Number(before.generated_at || 0);
+    const started = await sendJSON(`/api/discovery/${name}/refresh`, 'POST', {count:20});
+    if (started.status === 'already_running') {
+      discoveryStatus(name, 'A refresh is already running; waiting for its new results…');
+    } else {
+      discoveryStatus(name, 'Generating fresh suggestions. This may take a few minutes…');
+    }
+    const deadline = Date.now() + 5 * 60 * 1000;
+    while (Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      const current = await requestJSON(`/api/discovery/${name}?count=1&nonce=${Date.now()}`);
+      const stamp = Number(current.generated_at || 0);
+      if (stamp > previous) {
+        await loadDiscovery(name, {rotate: true});
+        if (name === 'classics' || name === 'artist_deep_dive') await loadDiscovery(name, {rotate: true});
+        if ($('dashboard').classList.contains('hidden') === false) loadDashboardPicks();
+        return;
+      }
+    }
+    discoveryStatus(name, 'The refresh is still running. Try Load albums again in a little while.');
   } catch (error) {
     discoveryStatus(name, error.message);
   }
 }
 
 document.querySelectorAll('[data-load-discovery]').forEach(button =>
-  button.addEventListener('click', () => loadDiscovery(button.dataset.loadDiscovery)));
+  button.addEventListener('click', async () => {
+    const name = button.dataset.loadDiscovery;
+    if (name === 'classics' || name === 'artist_deep_dive') {
+      await loadDiscovery(name, {rotate: true});
+    } else {
+      await loadDiscovery(name);
+    }
+  }));
 
 document.querySelectorAll('[data-refresh-discovery]').forEach(button =>
   button.addEventListener('click', () => refreshDiscovery(button.dataset.refreshDiscovery)));
@@ -1697,9 +1821,8 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
-// Populate every data-driven page on first open; saved discovery lists load immediately,
-// and missing lists start their first background refresh without requiring a button click.
-checkConnection();
+// Populate data-driven pages on startup. Connection diagnostics live in Settings.
+loadDashboardPicks();
 $('loadRecommendations').click();
 $('loadProfile').click();
 for (const listName of Object.keys(discoveryViews)) loadDiscovery(listName);
