@@ -4615,11 +4615,13 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 return False
             if artist_dir.is_symlink() or album_dir.is_symlink():
                 return False
-            if not artist_dir.is_dir() or not album_dir.is_dir():
+            if not artist_dir.is_dir():
+                return False
+            if album_dir.exists() and not album_dir.is_dir():
                 return False
             if artist_dir.resolve(strict=True).parent != music_root:
                 return False
-            if album_dir.resolve(strict=True).parent != artist_dir.resolve(strict=True):
+            if album_dir.is_dir() and album_dir.resolve(strict=True).parent != artist_dir.resolve(strict=True):
                 return False
 
             expected_names = {
@@ -4653,7 +4655,7 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 return False
             expected_sizes = {}
             for item in candidate.get("files", []):
-                name = str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1]
+                name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
                 if not name:
                     continue
                 try:
