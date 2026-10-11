@@ -4623,7 +4623,7 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 return False
 
             expected_names = {
-                str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1].casefold()
+                str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
                 for item in candidate.get("files", [])
                 if str(item.get("filename") or "").strip()
             }
