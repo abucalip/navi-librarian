@@ -3945,11 +3945,17 @@ def _discovery_import_matched_album_files(source, destination, candidate):
             staged_path = staging / expected_name
             shutil.move(str(actual_path), str(staged_path))
             moved.append((staged_path, actual_path))
-        # Remove recovery metadata before the complete staged album is exposed.
-        manifest.unlink()
         if destination.exists() or destination.is_symlink():
             raise FileExistsError(str(destination))
+        # Rename first while the recovery manifest is present. If the process
+        # dies immediately afterward, reconciliation can still identify this
+        # complete import and remove the manifest safely.
         staging.rename(destination)
+        try:
+            (destination / manifest_name).unlink()
+        except OSError:
+            # A completed destination plus its manifest is recoverable on restart.
+            pass
     except Exception:
         rollback_complete = True
         for staged_path, original_path in reversed(moved):
@@ -4668,6 +4674,32 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 else None
             )
             if expected_names and matched and set(matched) == expected_names:
+                # If the process stopped after publishing the directory but
+                # before removing its manifest, remove only a matching manifest.
+                manifest = album_dir / ".navidrome-import.json"
+                if manifest.is_file() and not manifest.is_symlink():
+                    try:
+                        manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+                        expected_sizes = {
+                            str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+                                int(item.get("size") or 0)
+                            for item in candidate.get("files", [])
+                            if str(item.get("filename") or "").strip()
+                        }
+                        manifest_tracks = {
+                            str(name).casefold(): int(size)
+                            for name, size in manifest_data.get("tracks", {}).items()
+                        }
+                        source_value = details.get("source_folder")
+                        if (
+                            manifest_data.get("destination") == str(album_dir)
+                            and source_value
+                            and manifest_data.get("source") == str(Path(source_value).resolve(strict=True))
+                            and manifest_tracks == expected_sizes
+                        ):
+                            manifest.unlink()
+                    except (OSError, RuntimeError, ValueError, TypeError):
+                        pass
                 _discovery_update_acquisition_status(artist, album, "imported", {
                     "source_folder": details.get("source_folder"),
                     "destination": str(album_dir),
