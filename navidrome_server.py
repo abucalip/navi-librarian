@@ -2579,8 +2579,15 @@ def _build_classics_list():
         popularity_magnitude = math.log10(listeners + 1)
         play_magnitude = math.log10(plays + 1)
         item["critical_recognition_available"] = bool(rating is not None and votes)
-        item["discovery_score"] = round(critical * 2.4 - popularity_magnitude * 0.30 - play_magnitude * 0.06, 4)
-        item["exploration_score"] = item["discovery_score"] + random.uniform(-0.8, 0.8)
+        # Unrated and less-heard albums get room to surface; popularity alone
+        # should not beat a diverse candidate pool.
+        exploration_credit = 0.9 if not (rating is not None and votes) else 0.0
+        item["discovery_score"] = round(
+            critical * 1.6 - popularity_magnitude * 0.55
+            - play_magnitude * 0.10 + exploration_credit,
+            4,
+        )
+        item["exploration_score"] = item["discovery_score"] + random.uniform(-1.4, 1.4)
 
     ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
 
@@ -2603,7 +2610,7 @@ def _build_classics_list():
     # refresh can rotate recommendations even when upstream API caches are warm.
     for item in ranked:
         item["exploration_score"] = round(
-            item["discovery_score"] + random.uniform(-0.8, 0.8), 4
+            item["discovery_score"] + random.uniform(-1.4, 1.4), 4
         )
     ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
 
