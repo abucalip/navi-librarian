@@ -3945,13 +3945,23 @@ def _discovery_switch_to_next_source(artist, album, candidate, settings, downloa
         monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
         start_state = _slskd_candidate_start_state(base_url, headers, monitor_candidate, timeout=8)
         if start_state is not True:
-            # A queued/uncertain transfer is not safe to overlap with another source.
             if start_state is None:
-                _discovery_update_acquisition_status(artist, album, "source_switch_uncertain", {
+                # The new source may be active. Persist it and keep monitoring rather
+                # than queueing another peer or abandoning a possibly live transfer.
+                monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
+                details = {
                     "source_username": next_candidate.get("username"),
-                    "message": "Could not confirm whether the next source started; manual inspection is required.",
-                })
-                return None
+                    "folder": next_candidate.get("folder"),
+                    "file_count": len(files),
+                    "quality_summary": list(next_candidate.get("quality_summary") or []),
+                    "downloads_path": str(download_root),
+                    "previous_source_username": candidate.get("username"),
+                    "source_switch_reason": reason,
+                    "message": "The next source was queued but its start could not be confirmed; monitoring it to avoid duplicate downloads.",
+                }
+                _discovery_save_acquisition_job(artist, album, "downloading", details,
+                                                candidate=monitor_candidate, settings=settings)
+                return monitor_candidate
             _discovery_cancel_and_clean_source(download_root, monitor_candidate, base_url, headers)
             continue
         previous_details = next(
