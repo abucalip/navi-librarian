@@ -4827,6 +4827,23 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
 
 
 @mcp.tool()
+def _discovery_queue_candidate_unless_dismissed(
+    artist, album, base_url, headers, username, selected_files
+):
+    """Queue a source atomically with dismissal in this process."""
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return None
+        response = httpx.post(
+            f"{base_url}/api/v0/transfers/downloads/{username}",
+            headers=headers,
+            json=selected_files,
+            timeout=12,
+        )
+        response.raise_for_status()
+        return response
+
+
 def discovery_acquire_album(
     artist: str,
     album: str,
@@ -4847,7 +4864,7 @@ def discovery_acquire_album(
         base_url, api_key, settings = _slskd_config()
     except ValueError as exc:
         message = str(exc)
-        _discovery_save_acquisition_job(
+        _discovery_update_acquisition_status(
             artist, album, "settings_required",
             {"message": message, "metadata": metadata},
         )
@@ -4932,7 +4949,7 @@ def discovery_acquire_album(
         )
         if not candidates:
             message = "No matching album folders were found. You can try again later."
-            _discovery_save_acquisition_job(
+            _discovery_update_acquisition_status(
                 artist, album, "no_matches",
                 {"message": message, "search_id": search_id, "metadata": metadata},
             )
@@ -4950,7 +4967,7 @@ def discovery_acquire_album(
         if not clear_candidates:
             best = candidates[0]
             message = "Potential files were found, but none met the relaxed artist, album, and track-count checks. You can try again later."
-            _discovery_save_acquisition_job(
+            _discovery_update_acquisition_status(
                 artist, album, "no_matches",
                 {"message": message, "search_id": search_id, "metadata": metadata,
                  "candidate_count": len(candidates),
@@ -4970,13 +4987,14 @@ def discovery_acquire_album(
                 for item in candidate["files"]
             ]
             try:
-                queue = httpx.post(
-                    f"{base_url}/api/v0/transfers/downloads/{candidate['username']}",
-                    headers=headers,
-                    json=selected_files,
-                    timeout=12,
+                queue = _discovery_queue_candidate_unless_dismissed(
+                    artist, album, base_url, headers, candidate["username"], selected_files
                 )
-                queue.raise_for_status()
+                if queue is None:
+                    return json.dumps({
+                        "ok": False, "status": "dismissed", "artist": artist, "album": album,
+                        "message": "This acquisition was dismissed before a source could be queued.",
+                    }, ensure_ascii=False)
             except (httpx.HTTPError, ValueError, TypeError) as exc:
                 failures.append({
                     "username": candidate["username"],
@@ -5050,7 +5068,7 @@ def discovery_acquire_album(
             }, ensure_ascii=False)
 
         message = "None of the matching sources started a download. Check slskd/peer availability and try again."
-        _discovery_save_acquisition_job(
+        _discovery_update_acquisition_status(
             artist, album, "queue_failed",
             {"message": message, "attempts": failures, "metadata": metadata},
         )
@@ -5060,7 +5078,7 @@ def discovery_acquire_album(
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         message = f"slskd request failed: {type(exc).__name__}"
-        _discovery_save_acquisition_job(
+        _discovery_update_acquisition_status(
             artist, album, "slskd_error",
             {"message": message, "detail": str(exc)[:300], "metadata": metadata},
         )
