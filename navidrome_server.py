@@ -2663,6 +2663,7 @@ def _build_artist_deep_dive_list():
             "artist": candidate_artist,
             "album": candidate_album,
             "mbid": candidate.get("mbid"),
+            "year": candidate.get("year") or candidate.get("release_year") or candidate.get("first_release_year"),
             "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
             "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
             "discovery_type": "artist_deep_dive",
@@ -2747,6 +2748,17 @@ def _build_artist_deep_dive_list():
             item["genre_inherited_from_anchor"] = bool(item["genres"])
         if not item.get("genre_families"):
             item["genre_families"] = _deep_dive_genre_families(item.get("genres") or [])
+        # Generic tags such as "seen live" can exist without identifying a genre.
+        # If those tags don't classify, try the library anchor's genre tags instead.
+        if not item.get("genre_families") and anchor_name:
+            anchor_key = _music_key(anchor_name)
+            if not artist_genre_cache.get(anchor_key):
+                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
+            anchor_families = _deep_dive_genre_families(artist_genre_cache.get(anchor_key) or [])
+            if anchor_families:
+                item["genres"] = artist_genre_cache[anchor_key]
+                item["genre_families"] = anchor_families
+                item["genre_inherited_from_anchor"] = True
         import math
         popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
         playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
