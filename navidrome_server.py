@@ -4826,7 +4826,6 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         return
 
 
-@mcp.tool()
 def _discovery_queue_candidate_unless_dismissed(
     artist, album, base_url, headers, username, selected_files
 ):
@@ -4844,6 +4843,7 @@ def _discovery_queue_candidate_unless_dismissed(
         return response
 
 
+@mcp.tool()
 def discovery_acquire_album(
     artist: str,
     album: str,
