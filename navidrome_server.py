@@ -3628,7 +3628,7 @@ def discovery_get_acquisition_status():
             k: v for k, v in job.items()
             if k not in {"candidate", "settings", "artist_key", "album_key"}
         }
-        if job["status"] == "downloading":
+        if job["status"] in {"downloading", "download_complete_waiting_for_folder"}:
             progress = _discovery_live_download_progress(job)
             if progress is not None:
                 public_job["details"] = dict(public_job.get("details") or {})
