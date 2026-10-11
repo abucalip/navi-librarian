@@ -2555,7 +2555,7 @@ def _build_classics_list():
         candidates.values(),
         key=lambda item: int(item.get("lastfm_listeners") or 0),
         reverse=True,
-    )[:100]
+    )[:80]
     for index, candidate in enumerate(rating_shortlist):
         rating = _musicbrainz_critical_rating(
             candidate.get("mbid"), include_year=index < 30
