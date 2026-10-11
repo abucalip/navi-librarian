@@ -4606,7 +4606,8 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
             return "failed"
 
         if not _discovery_update_acquisition_status(artist, album, "importing", {
-            "source_folder": str(source), "destination": str(album_dir)
+            "source_folder": str(source), "destination": str(album_dir),
+            "music_root_device": music_device,
         }):
             return "failed"
         try:
@@ -4679,6 +4680,12 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
 
         try:
             music_root = Path(MUSIC_DIR).expanduser().resolve(strict=True)
+            recorded_device = details.get("music_root_device")
+            # Older jobs lack this proof of mount identity. Do not mutate or
+            # reconcile their files automatically: the mountpoint may now be
+            # exposing an unrelated underlying local directory.
+            if recorded_device is None or music_root.stat().st_dev != int(recorded_device):
+                return False
             artist_dir = music_root / _discovery_safe_folder_name(artist)
             album_dir = artist_dir / _discovery_safe_folder_name(album)
             destination = Path(expected_destination)
