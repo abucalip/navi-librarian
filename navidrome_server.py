@@ -3201,7 +3201,48 @@ def _slskd_quality_tier(file_record, filename, priority):
     return priority.index(tier) if tier in priority else len(priority) + 1, tier
 
 
-def _slskd_extract_candidates(payload, artist, album, priority):
+def _discovery_expected_track_count(metadata):
+    """Read an expected track count from common recommendation metadata shapes."""
+    if not isinstance(metadata, dict):
+        return None
+    keys = ("track_count", "trackCount", "number_of_tracks", "numberOfTracks",
+            "total_tracks", "totalTracks", "tracks_count", "tracksCount", "trackcount")
+    queue = [metadata]
+    seen = set()
+    while queue:
+        current = queue.pop(0)
+        if not isinstance(current, dict) or id(current) in seen:
+            continue
+        seen.add(id(current))
+        for key in keys:
+            value = current.get(key)
+            try:
+                count = int(value)
+                if count > 0:
+                    return count
+            except (TypeError, ValueError):
+                pass
+        for key in ("tracks", "tracklist", "track_list", "album", "release", "metadata"):
+            value = current.get(key)
+            if isinstance(value, list) and value:
+                # Track objects are strong evidence; don't mistake unrelated arrays for tracks.
+                if all(isinstance(item, dict) for item in value):
+                    return len(value)
+            elif isinstance(value, dict):
+                queue.append(value)
+    return None
+
+
+def _slskd_track_identity(filename):
+    """A filename-based track identity that ignores extensions and numeric collision suffixes."""
+    import re
+    name = str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+    stem = Path(name).stem.casefold()
+    stem = re.sub(r"_\d+$", "", stem)
+    return _music_key(stem)
+
+
+def _slskd_extract_candidates(payload, artist, album, priority, expected_track_count=None):
     import re
     from collections import defaultdict
     audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
@@ -3253,23 +3294,57 @@ def _slskd_extract_candidates(payload, artist, album, priority):
             })
     candidates = []
     for (username, folder), files in groups.items():
+        # If the same track is advertised more than once in a folder, retain one
+        # copy: highest-priority quality tier, then largest file size as tie-break.
+        best_by_track = {}
+        for item in files:
+            track_key = _slskd_track_identity(item["filename"])
+            if not track_key:
+                continue
+            previous = best_by_track.get(track_key)
+            if (previous is None
+                    or (item["quality_rank"], -item["size"]) <
+                       (previous["quality_rank"], -previous["size"])):
+                best_by_track[track_key] = item
+        files = list(best_by_track.values())
         tiers = [item["quality_rank"] for item in files if item["quality_rank"] <= len(priority)]
         avg_rank = sum(tiers) / len(tiers) if tiers else len(priority) + 1
-        all_clear = any(item["artist_in_path"] for item in files) and any(
-            item["album_in_path"] for item in files
+        artist_evidence = any(item["artist_match"] or item["artist_in_path"] for item in files)
+        album_evidence = any(item["album_match"] for item in files)
+        unique_tracks = {
+            _slskd_track_identity(item["filename"])
+            for item in files
+            if _slskd_track_identity(item["filename"])
+        }
+        unique_track_count = len(unique_tracks)
+        # Allow modest search/catalog mismatch: require at least 70% of an expected
+        # track count (minimum 3), or 5 unique tracks when catalog count is unknown.
+        # This still rejects tiny partial folders without blocking short releases.
+        minimum_required = (
+            max(3, (int(expected_track_count) * 7 + 9) // 10)
+            if expected_track_count else 5
         )
         score = 0.55 * (1.0 if any(x["album_in_path"] for x in files) else 0.65)
         score += 0.25 * (1.0 if any(x["artist_match"] for x in files) else 0.0)
-        score += 0.20 * min(len(files) / 8.0, 1.0)
+        score += 0.20 * min(unique_track_count / 8.0, 1.0)
+        complete_enough = unique_track_count >= minimum_required
         candidates.append({
             "username": username,
             "folder": folder,
             "file_count": len(files),
+            "unique_track_count": unique_track_count,
+            "expected_track_count": expected_track_count,
+            "complete_enough": complete_enough,
             "files": files,
             "average_quality_rank": round(avg_rank, 3),
             "upload_speed": max((x["upload_speed"] for x in files), default=0),
             "confidence": round(score, 3),
-            "clear_match": bool(all_clear and len(files) >= 3 and score >= 0.9),
+            "clear_match": bool(artist_evidence and album_evidence and complete_enough and score >= 0.72),
+            "eligibility_reason": (
+                "eligible" if artist_evidence and album_evidence and complete_enough and score >= 0.72
+                else f"only {unique_track_count} unique tracks; need at least {minimum_required}"
+                if not complete_enough else "album/artist match confidence below threshold"
+            ),
             "quality_summary": sorted({
                 item["quality_tier"] for item in files
             }),
@@ -3285,44 +3360,83 @@ def _slskd_extract_candidates(payload, artist, album, priority):
 
 
 def _slskd_download_transfer_files(base_url, headers, username):
-    """Return the files slskd currently tracks for a peer."""
+    """Return tracked files while preserving their remote-directory identity."""
     from urllib.parse import quote
+
     response = httpx.get(
-        f"{base_url}/api/v0/transfers/downloads/{quote(str(username), safe='')}",
+        f"{base_url}/api/v0/transfers/downloads/"
+        f"{quote(str(username), safe='')}",
         headers=headers,
         timeout=8,
     )
     response.raise_for_status()
     payload = response.json()
+
     if isinstance(payload, list):
         roots = payload
     elif isinstance(payload, dict):
         roots = payload.get("directories") or payload.get("items") or [payload]
     else:
         roots = []
-    found = []
-    for root in roots:
-        if not isinstance(root, dict):
-            continue
-        for file_record in root.get("files") or []:
-            if isinstance(file_record, dict):
-                found.append(file_record)
-        for directory in root.get("directories") or []:
-            if not isinstance(directory, dict):
-                continue
-            for file_record in directory.get("files") or []:
-                if isinstance(file_record, dict):
-                    found.append(file_record)
-    return found
 
+    found = []
+
+    def add_files(directory_record, fallback_directory=None):
+        if not isinstance(directory_record, dict):
+            return
+
+        remote_directory = (
+            directory_record.get("directory")
+            or fallback_directory
+        )
+
+        for file_record in directory_record.get("files") or []:
+            if not isinstance(file_record, dict):
+                continue
+
+            # Return a copy; do not mutate the API response.
+            item = dict(file_record)
+            item["_transfer_directory"] = (
+                str(remote_directory)
+                if remote_directory is not None
+                else None
+            )
+            found.append(item)
+
+        for child in directory_record.get("directories") or []:
+            if isinstance(child, dict):
+                add_files(child, remote_directory)
+
+    for root in roots:
+        if isinstance(root, dict):
+            add_files(root)
+
+    return found
 
 def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     """Wait briefly for a queued candidate to start; cancel a stalled queue before fallback."""
     from urllib.parse import quote
-    expected = {
-        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
-        for item in candidate.get("files", [])
-    }
+    def normalized_remote_path(value):
+        value = str(value or "").replace("\\", "/")
+        parts = [part for part in value.split("/") if part not in ("", ".")]
+        if any(part == ".." for part in parts):
+            return None
+        return "/".join(parts).casefold()
+
+    expected = set()
+    expected_directories = set()
+    for item in candidate.get("files", []):
+        filename = str(item.get("filename") or "").replace("\\", "/")
+        normalized = normalized_remote_path(filename)
+        name = filename.rsplit("/", 1)[-1].casefold()
+        if not name or normalized is None or "/" not in normalized:
+            return None
+        expected.add(name)
+        expected_directories.add(normalized.rsplit("/", 1)[0])
+    if len(expected_directories) != 1:
+        return None
+    expected_directory = next(iter(expected_directories))
+
     deadline = time.monotonic() + timeout
     last_files = []
     while time.monotonic() < deadline:
@@ -3332,10 +3446,23 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
             )
         except (httpx.HTTPError, ValueError, TypeError):
             return None
-        last_files = [
-            item for item in tracked
-            if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
-        ]
+        last_files = []
+        for item in tracked:
+            filename = str(item.get("filename") or "").replace("\\", "/")
+            name = filename.rsplit("/", 1)[-1].casefold()
+            if name not in expected:
+                continue
+            directory = item.get("_transfer_directory")
+            if directory is None:
+                normalized_filename = normalized_remote_path(filename)
+                if normalized_filename is None or "/" not in normalized_filename:
+                    return None
+                directory = normalized_filename.rsplit("/", 1)[0]
+            normalized_directory = normalized_remote_path(directory)
+            if normalized_directory is None:
+                return None
+            if normalized_directory == expected_directory:
+                last_files.append(item)
         states = {str(item.get("state") or "").replace("_", "").casefold() for item in last_files}
         if states.intersection({"inprogress", "succeeded", "completed", "transferring", "downloading"}):
             return True
@@ -3377,7 +3504,11 @@ def _discovery_safe_folder_name(value):
 
 
 _DISCOVERY_IMPORT_LOCK = __import__("threading").Lock()
+# Serializes dismissal against the final import transition. Held only while
+# committing the local import/dismiss state, never during the download.
+_DISCOVERY_IMPORT_TRANSITION_LOCK = __import__("threading").RLock()
 _DISCOVERY_IMPORT_ACTIVE = set()
+_DISCOVERY_ACQUIRE_ACTIVE = set()
 
 
 def _discovery_save_acquisition_job(artist, album, status, details=None,
@@ -3422,27 +3553,40 @@ def _discovery_save_acquisition_job(artist, album, status, details=None,
 
 
 def _discovery_update_acquisition_status(artist, album, status, details=None):
-    """Persist acquisition state independently and mirror it onto For Me when present."""
+    """Persist acquisition state and best-effort mirror it to For Me.
+
+    Return True only when the authoritative acquisition row was persisted.
+    Feedback metadata is a secondary projection and must not turn a successful
+    acquisition-state write into a reported persistence failure.
+    """
     details = details or {}
     try:
-        _discovery_save_acquisition_job(artist, album, status, details)
+        with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+            if status != "dismissed" and _discovery_is_dismissed(artist, album):
+                return False
+            _discovery_save_acquisition_job(artist, album, status, details)
+            persisted = True
+
+            try:
+                identity = (_music_key(artist), _music_key(album))
+                row = next((
+                    item for item in _discovery_feedback_rows()
+                    if item["scope"] == "album" and item["status"] == "for_me"
+                    and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
+                ), None)
+                if row:
+                    metadata = row.get("metadata") or {}
+                    metadata["auto_acquisition"] = {
+                        "status": status, "updated_at": time.time(), **details
+                    }
+                    _discovery_save_feedback("album", artist, album, "for_me", metadata)
+            except Exception:
+                # Feedback is a secondary view; the acquisition row is authoritative.
+                pass
+            return persisted
     except Exception:
-        pass
-    try:
-        identity = (_music_key(artist), _music_key(album))
-        row = next((
-            item for item in _discovery_feedback_rows()
-            if item["scope"] == "album" and item["status"] == "for_me"
-            and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
-        ), None)
-        if row:
-            metadata = row.get("metadata") or {}
-            metadata["auto_acquisition"] = {
-                "status": status, "updated_at": time.time(), **details
-            }
-            _discovery_save_feedback("album", artist, album, "for_me", metadata)
-    except Exception:
-        pass
+        # Callers that are about to mutate files can now stop if persistence failed.
+        return False
 
 
 def _discovery_list_acquisition_jobs():
@@ -3559,9 +3703,9 @@ def _discovery_live_download_progress(job):
         if size:
             transferred = min(transferred, size)
             total_bytes += size
+            transferred_bytes += transferred
             if transferred >= size and not is_completed_state:
                 completed += 1
-        transferred_bytes += transferred
         # Speed uses only actual counters, never an inferred completed-file size.
         file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
 
@@ -3594,6 +3738,8 @@ def _discovery_live_download_progress(job):
         "completed_tracks": min(completed, total_tracks),
         "remaining_tracks": max(0, total_tracks - completed),
         "percent": percent,
+        "total_size_bytes": total_bytes if total_bytes else None,
+        "remaining_size_bytes": max(0, total_bytes - transferred_bytes) if total_bytes else None,
         "speed_bytes_per_second": speed,
     }
 
@@ -3602,9 +3748,12 @@ def discovery_get_acquisition_status():
     """Return persistent acquisition state plus best-effort live download progress."""
     jobs = _discovery_list_acquisition_jobs()
     resumable = {
-        "downloading", "download_complete_waiting_for_folder", "monitor_error"
+        "downloading", "download_complete_waiting_for_folder", "monitor_error",
+        "importing",
     }
     for job in jobs:
+        if job["status"] == "dismissed":
+            continue
         identity = (job["artist_key"], job["album_key"])
         candidate, settings = job["candidate"], job["settings"]
         if job["status"] not in resumable or not candidate.get("files") or not candidate.get("username"):
@@ -3622,11 +3771,13 @@ def discovery_get_acquisition_status():
         ).start()
     acquisitions = []
     for job in jobs:
+        if job["status"] == "dismissed":
+            continue
         public_job = {
             k: v for k, v in job.items()
             if k not in {"candidate", "settings", "artist_key", "album_key"}
         }
-        if job["status"] == "downloading":
+        if job["status"] in {"downloading", "download_complete_waiting_for_folder"}:
             progress = _discovery_live_download_progress(job)
             if progress is not None:
                 public_job["details"] = dict(public_job.get("details") or {})
@@ -3638,17 +3789,91 @@ def discovery_get_acquisition_status():
 def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
     try:
         _discovery_watch_and_import_album(artist, album, candidate, settings)
+    except Exception as exc:
+        # Failures before the watch loop's own exception handler (for example,
+        # invalid configuration during watcher initialization) must not leave a
+        # stale "downloading" job behind.
+        _discovery_update_acquisition_status(artist, album, "monitor_error", {
+            "error": type(exc).__name__,
+            "message": "Acquisition watcher stopped unexpectedly.",
+        })
     finally:
         with _DISCOVERY_IMPORT_LOCK:
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
-def _discovery_locate_completed_album(download_root, candidate):
-    """Find a unique completed folder using expected filenames and file sizes.
+def _discovery_match_completed_album_files(folder, candidate):
+    """Match each unique expected basename to a local file.
 
-    Prefer the peer's advertised folder name when it matches, but do not
-    require it: slskd's local completed-folder layout can differ from the
-    remote share folder name.
+    Collision-suffixed filenames are accepted only when their numeric suffix
+    and advertised file size establish a unique match.
+    """
+    import re
+
+    folder = Path(folder)
+    files = [p for p in folder.iterdir() if p.is_file() and not p.is_symlink()]
+    used = set()
+    matched = {}
+
+    expected_by_name = {}
+    for item in candidate.get("files", []):
+        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+        if not name:
+            continue
+        key = name.casefold()
+        try:
+            size = int(item.get("size"))
+        except (TypeError, ValueError):
+            return None
+        # Album tracks must have a known, positive advertised size. Treating a
+        # missing/zero size as a wildcard could mistake a partial transfer for
+        # a completed track during import or restart reconciliation.
+        if size <= 0:
+            return None
+
+        # Identical basenames with conflicting advertised sizes are ambiguous.
+        if key in expected_by_name and expected_by_name[key][1] != size:
+            return None
+        expected_by_name.setdefault(key, (name, size))
+
+    for key, (expected_name, expected_size) in expected_by_name.items():
+        exact = [
+            p for p in files
+            if p.name.casefold() == key
+            and p not in used
+            and (expected_size <= 0 or p.stat().st_size == expected_size)
+        ]
+        selected = exact[0] if len(exact) == 1 else None
+
+        if selected is None and expected_size > 0:
+            stem, suffix = Path(expected_name).stem, Path(expected_name).suffix
+            pattern = re.compile(
+                r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
+                re.IGNORECASE,
+            )
+            alternatives = [
+                p for p in files
+                if p not in used
+                and pattern.match(p.name)
+                and p.stat().st_size == expected_size
+            ]
+            if len(alternatives) == 1:
+                selected = alternatives[0]
+
+        if selected is None:
+            return None
+
+        matched[expected_name] = selected
+        used.add(selected)
+
+    return matched or None
+
+def _discovery_locate_completed_album(download_root, candidate):
+    """Find a unique completed folder whose expected tracks match names and sizes.
+
+    slskd may append a numeric suffix to a filename to avoid collisions. Such
+    files are accepted only when both the original basename and expected size
+    match, and the caller imports only the matched files—not the whole folder.
     """
     import os
 
@@ -3656,39 +3881,20 @@ def _discovery_locate_completed_album(download_root, candidate):
     if not root.is_dir():
         return None
 
-    expected = {}
-    for item in candidate.get("files", []):
-        filename = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
-        if filename:
-            expected[filename.casefold()] = int(item.get("size") or 0)
-    if not expected:
-        return None
-
     wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
     matches = []
-    for current, directories, filenames in os.walk(root, followlinks=False):
+    for current, directories, _filenames in os.walk(root, followlinks=False):
         directories[:] = [name for name in directories if not name.startswith(".")]
         current_path = Path(current)
         # Never treat the completed-download root itself as an album folder:
         # moving it would move every completed download into the music library.
         if current_path.resolve() == root.resolve():
             continue
-        actual_names = {name.casefold(): name for name in filenames}
-        if not all(name in actual_names for name in expected):
-            continue
-
-        size_ok = True
-        for folded_name, expected_size in expected.items():
-            actual_name = actual_names[folded_name]
-            try:
-                actual_size = (current_path / actual_name).stat().st_size
-            except OSError:
-                size_ok = False
-                break
-            if expected_size > 0 and actual_size != expected_size:
-                size_ok = False
-                break
-        if size_ok:
+        try:
+            matched_files = _discovery_match_completed_album_files(current_path, candidate)
+        except OSError:
+            matched_files = None
+        if matched_files:
             matches.append(current_path)
 
     if not matches:
@@ -3698,121 +3904,1145 @@ def _discovery_locate_completed_album(download_root, candidate):
         path for path in matches
         if path.name.casefold() == str(wanted_folder or "").casefold()
     ]
+    # Matching track names and sizes do not prove source-folder ownership.
+    # If the expected folder name is absent or ambiguous, refuse to import.
     if len(named_matches) == 1:
         return named_matches[0]
-    if len(matches) == 1:
-        return matches[0]
     return None
+
+
+def _discovery_import_matched_album_files(source, destination, candidate, expected_music_root=None, expected_device=None):
+    """Stage only the verified expected tracks, leaving unrelated files behind."""
+    import json
+    import shutil
+    import uuid
+
+    matched = _discovery_match_completed_album_files(source, candidate)
+    if not matched:
+        raise OSError("Expected tracks no longer match files in the completed folder")
+
+    destination = Path(destination)
+    parent = destination.parent
+
+    # Refuse existing destinations, including broken symlinks, before
+    # creating any staging directory.
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(str(destination))
+    if parent.is_symlink() or not parent.is_dir():
+        raise OSError("Import destination parent is not a real directory")
+
+    manifest_name = ".navidrome-import.json"
+    if any(name.casefold() == manifest_name.casefold() for name in matched):
+        raise OSError("A track name conflicts with the reserved import manifest")
+
+    def assert_music_storage_identity():
+        # If a mount disappears, the same path can expose the underlying local
+        # directory. Device checks prevent continuing an import on that fallback.
+        if expected_device is None:
+            return
+        root = Path(expected_music_root)
+        if root.stat().st_dev != expected_device or parent.stat().st_dev != expected_device:
+            raise OSError("Music-library filesystem changed during import; refusing further writes")
+
+    assert_music_storage_identity()
+    staging = parent / (".navidrome-import-" + uuid.uuid4().hex)
+    staging.mkdir(parents=True, exist_ok=False)
+    manifest = staging / manifest_name
+    manifest_data = {
+        "source": str(Path(source).resolve()),
+        "destination": str(destination),
+        "tracks": {
+            name: int(path.stat().st_size)
+            for name, path in matched.items()
+        },
+    }
+    moved = []
+    try:
+        manifest.write_text(json.dumps(manifest_data, ensure_ascii=False), encoding="utf-8")
+        for expected_name, actual_path in matched.items():
+            assert_music_storage_identity()
+            expected_size = int(manifest_data["tracks"][expected_name])
+            try:
+                source_stat = actual_path.lstat()
+            except OSError as exc:
+                raise OSError(f"Expected track disappeared before staging: {expected_name}") from exc
+            if not actual_path.is_file() or actual_path.is_symlink() or source_stat.st_size != expected_size:
+                raise OSError(f"Expected track changed before staging: {expected_name}")
+            staged_path = staging / expected_name
+            shutil.move(str(actual_path), str(staged_path))
+            # Record the move before post-move validation so rollback can restore
+            # even a path swapped for a symlink between lstat and move.
+            moved.append((staged_path, actual_path))
+            staged_stat = staged_path.lstat()
+            if staged_path.is_symlink() or not staged_path.is_file() or staged_stat.st_size != expected_size:
+                raise OSError(f"Staged track failed validation: {expected_name}")
+        assert_music_storage_identity()
+        if destination.exists() or destination.is_symlink():
+            raise FileExistsError(str(destination))
+        # Rename first while the recovery manifest is present. If the process
+        # dies immediately afterward, reconciliation can still identify this
+        # complete import and remove the manifest safely.
+        staging.rename(destination)
+        try:
+            (destination / manifest_name).unlink()
+        except OSError:
+            # A completed destination plus its manifest is recoverable on restart.
+            pass
+    except Exception:
+        rollback_complete = True
+        for staged_path, original_path in reversed(moved):
+            if staged_path.exists() and not original_path.exists():
+                try:
+                    assert_music_storage_identity()
+                    shutil.move(str(staged_path), str(original_path))
+                except OSError:
+                    # If the library mount changed, leave staged data and its
+                    # manifest untouched for later/manual recovery.
+                    rollback_complete = False
+            elif staged_path.exists() or not original_path.exists():
+                rollback_complete = False
+        try:
+            if rollback_complete:
+                manifest.unlink(missing_ok=True)
+                staging.rmdir()
+        except OSError:
+            # Keep the manifest and remaining staged tracks for restart recovery.
+            pass
+        raise
+def _discovery_is_dismissed(artist, album):
+    return any(
+        job["artist_key"] == _music_key(artist)
+        and job["album_key"] == _music_key(album)
+        and job["status"] == "dismissed"
+        for job in _discovery_list_acquisition_jobs()
+    )
+
+
+def discovery_dismiss_acquisition(artist, album):
+    """Dismiss an acquisition card and stop its import watcher without deleting downloaded files."""
+    _discovery_init()
+    identity = (_music_key(artist), _music_key(album))
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+            row = db.execute(
+                "SELECT status, details_json FROM discovery_acquisitions "
+                "WHERE artist_key=? AND album_key=?",
+                identity,
+            ).fetchone()
+            if not row:
+                return json.dumps({"ok": False, "error": "Acquisition not found."})
+            if row[0] in {"importing", "imported"}:
+                return json.dumps({
+                    "ok": False,
+                    "error": "The album is already being imported or has been imported; it cannot be dismissed now.",
+                })
+            try:
+                details = json.loads(row[1] or "{}")
+            except (ValueError, TypeError):
+                details = {}
+            details.update({"status": "dismissed", "dismissed_at": time.time()})
+            db.execute(
+                "UPDATE discovery_acquisitions SET status='dismissed', details_json=?, updated_at=? "
+                "WHERE artist_key=? AND album_key=?",
+                (json.dumps(details, ensure_ascii=False), time.time(), *identity),
+            )
+            db.commit()
+    return json.dumps({"ok": True, "status": "dismissed", "message": "Acquisition card dismissed. Existing download files were left untouched."})
+
+
+def _discovery_skip_requested(artist, album):
+    for job in _discovery_list_acquisition_jobs():
+        if job["artist_key"] == _music_key(artist) and job["album_key"] == _music_key(album):
+            return bool((job.get("details") or {}).get("skip_requested"))
+    return False
+
+
+def discovery_skip_acquisition_source(artist, album):
+    """Request a safe switch to the next eligible source for a stalled acquisition."""
+    _discovery_init()
+    # Keep the status check and skip request atomic with dismissal in this process.
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        identity = (_music_key(artist), _music_key(album))
+        with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+            row = db.execute(
+                "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
+                "WHERE artist_key=? AND album_key=?", identity,
+            ).fetchone()
+            if not row:
+                return json.dumps({"ok": False, "error": "Acquisition not found."})
+            if row[0] == "dismissed":
+                return json.dumps({"ok": False, "error": "This acquisition has been dismissed."})
+            if row[0] != "downloading":
+                return json.dumps({"ok": False, "error": "This acquisition is not downloading."})
+            try:
+                candidate = json.loads(row[2] or "{}")
+                details = json.loads(row[1] or "{}")
+            except (ValueError, TypeError):
+                candidate, details = {}, {}
+            if not candidate.get("fallback_candidates"):
+                return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
+            details["skip_requested"] = True
+            details["skip_requested_at"] = time.time()
+            cursor = db.execute(
+                "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
+                "WHERE artist_key=? AND album_key=? AND status='downloading'",
+                (json.dumps(details, ensure_ascii=False), time.time(), *identity),
+            )
+            if cursor.rowcount != 1:
+                return json.dumps({"ok": False, "error": "Acquisition state changed; please refresh and try again."})
+            db.commit()
+    return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
+
+
+def _discovery_cancel_and_clean_source(
+    download_root, candidate, base_url, headers
+):
+    """
+    Cancel only transfers belonging to the exact remote album directory.
+
+    Preflight every local file before changing anything. Refuse cleanup if
+    source identity or local file ownership is ambiguous.
+    """
+    import re
+    from urllib.parse import quote
+
+    def normalized_path(value):
+        """Normalize separators without treating different paths as equal."""
+        value = str(value or "").replace("\\", "/")
+        parts = [part for part in value.split("/") if part not in ("", ".")]
+
+        if any(part == ".." for part in parts):
+            return None
+
+        return "/".join(parts).casefold()
+
+    def basename(value):
+        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1]
+
+    username = str(candidate.get("username") or "")
+    files = candidate.get("files") or []
+
+    if not username or not files:
+        return False
+
+    # Build an unambiguous expected-track inventory.
+    expected_by_name = {}
+    remote_directories = set()
+
+    for item in files:
+        filename = str(item.get("filename") or "")
+        name = basename(filename)
+
+        try:
+            size = int(item.get("size"))
+        except (TypeError, ValueError):
+            return False
+
+        # A missing or invalid advertised size makes safe cleanup impossible.
+        if not name or size <= 0:
+            return False
+
+        remote_path = normalized_path(filename)
+        if remote_path is None or "/" not in remote_path:
+            return False
+
+        remote_directory = remote_path.rsplit("/", 1)[0]
+        remote_directories.add(remote_directory)
+
+        key = name.casefold()
+
+        # Duplicate basenames make local file ownership ambiguous.
+        if key in expected_by_name:
+            return False
+
+        expected_by_name[key] = {
+            "name": name,
+            "size": size,
+        }
+
+    # Every advertised track must belong to one identifiable remote directory.
+    if len(remote_directories) != 1:
+        return False
+
+    expected_remote_directory = next(iter(remote_directories))
+
+    # Reject a symlink at the configured path before resolving it.
+    try:
+        original_root = Path(download_root).expanduser()
+        if original_root.is_symlink():
+            return False
+        root = original_root.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+
+    if not root.is_dir():
+        return False
+
+    wanted = _discovery_safe_folder_name(candidate.get("folder"))
+    if not wanted:
+        return False
+
+    direct = root / wanted
+
+    # Do not follow a symlink, even if it points inside the download root.
+    if direct.is_symlink():
+        return False
+
+    if direct.is_dir():
+        targets = [direct]
+    elif direct.exists():
+        # A file or other object with the expected folder name is ambiguous.
+        return False
+    else:
+        try:
+            targets = [
+                path
+                for path in root.rglob(wanted)
+                if path.name == wanted
+                and path.is_dir()
+                and not path.is_symlink()
+            ]
+        except OSError:
+            return False
+
+    # Never guess which of multiple same-named folders belongs to this job.
+    if len(targets) > 1:
+        return False
+
+    target = targets[0] if targets else None
+
+    planned_deletions = []
+
+    # Preflight the entire local folder. Nothing has been cancelled or
+    # deleted yet. Any unexpected entry aborts cleanup.
+    if target is not None:
+        try:
+            resolved_target = target.resolve(strict=True)
+
+            if (
+                resolved_target == root
+                or root not in resolved_target.parents
+                or target.is_symlink()
+            ):
+                return False
+
+            for actual in target.iterdir():
+                # Never follow symlinks, recurse into directories, or remove
+                # special files.
+                if actual.is_symlink() or not actual.is_file():
+                    return False
+
+                actual_name = actual.name
+                key = actual_name.casefold()
+
+                expected = expected_by_name.get(key)
+
+                try:
+                    actual_size = actual.stat(follow_symlinks=False).st_size
+                except OSError:
+                    return False
+
+                if expected is not None:
+                    # Exact-name tracks may be incomplete downloads, but
+                    # must not exceed their advertised size.
+                    if actual_size > expected["size"]:
+                        return False
+
+                    planned_deletions.append(actual)
+                    continue
+
+                # Collision-suffixed files are identifiable only when
+                # exactly one expected track matches and the size is exact.
+                collision_matches = []
+
+                for expected_item in expected_by_name.values():
+                    expected_name = expected_item["name"]
+                    expected_size = expected_item["size"]
+
+                    stem = Path(expected_name).stem
+                    suffix = Path(expected_name).suffix
+
+                    pattern = re.compile(
+                        r"^"
+                        + re.escape(stem)
+                        + r"_\d+"
+                        + re.escape(suffix)
+                        + r"$",
+                        re.IGNORECASE,
+                    )
+
+                    if (
+                        pattern.fullmatch(actual_name)
+                        and actual_size == expected_size
+                    ):
+                        collision_matches.append(expected_item)
+
+                if len(collision_matches) != 1:
+                    # An unrelated or ambiguous file means we cannot
+                    # safely claim that cleanup is complete.
+                    return False
+
+                planned_deletions.append(actual)
+
+        except (OSError, RuntimeError):
+            return False
+
+    # Inspect the peer's current transfers. Do not cancel by basename alone.
+    try:
+        tracked = _slskd_download_transfer_files(
+            base_url, headers, username
+        )
+    except Exception:
+        return False
+
+    active_states = {
+        "queued",
+        "initializing",
+        "requested",
+        "inprogress",
+        "transferring",
+        "downloading",
+    }
+
+    transfers_to_cancel = []
+
+    for item in tracked:
+        name = basename(item.get("filename"))
+        expected = expected_by_name.get(name.casefold())
+
+        if expected is None:
+            continue
+
+        state = (
+            str(item.get("state") or "")
+            .replace("_", "")
+            .casefold()
+        )
+
+        if state not in active_states:
+            continue
+
+        # A tracked file's directory must be explicit. If it is missing,
+        # derive it only from a full remote filename.
+        tracked_directory = item.get("_transfer_directory")
+
+        if tracked_directory is None:
+            tracked_filename = str(item.get("filename") or "")
+            normalized_filename = normalized_path(tracked_filename)
+
+            if normalized_filename is None or "/" not in normalized_filename:
+                return False
+
+            tracked_directory = normalized_filename.rsplit("/", 1)[0]
+
+        normalized_tracked_directory = normalized_path(tracked_directory)
+
+        if normalized_tracked_directory is None:
+            return False
+
+        # A known, different directory belongs to a different remote file:
+        # leave it alone.
+        if normalized_tracked_directory != expected_remote_directory:
+            continue
+
+        # For the matching remote directory, require an identifiable
+        # transfer ID and consistent advertised size.
+        try:
+            tracked_size = int(item.get("size"))
+        except (TypeError, ValueError):
+            return False
+
+        if tracked_size != expected["size"]:
+            return False
+
+        file_id = str(item.get("id") or "")
+        if not file_id:
+            return False
+
+        transfers_to_cancel.append((file_id, name.casefold()))
+
+    # All checks above are read-only. Only now begin cancelling transfers.
+    for file_id, _name in transfers_to_cancel:
+        try:
+            response = httpx.delete(
+                f"{base_url}/api/v0/transfers/downloads/"
+                f"{quote(username, safe='')}/"
+                f"{quote(file_id, safe='')}",
+                headers=headers,
+                timeout=8,
+            )
+
+            if response.status_code not in (200, 202, 204, 404):
+                return False
+
+        except httpx.HTTPError:
+            return False
+
+    # Verify that no active transfer remains for this exact source directory.
+    try:
+        remaining = _slskd_download_transfer_files(
+            base_url, headers, username
+        )
+    except Exception:
+        return False
+
+    for item in remaining:
+        name = basename(item.get("filename"))
+        expected = expected_by_name.get(name.casefold())
+
+        if expected is None:
+            continue
+
+        state = (
+            str(item.get("state") or "")
+            .replace("_", "")
+            .casefold()
+        )
+
+        if state not in active_states:
+            continue
+
+        directory = item.get("_transfer_directory")
+
+        if directory is None:
+            normalized_filename = normalized_path(item.get("filename"))
+
+            if normalized_filename is None or "/" not in normalized_filename:
+                return False
+
+            directory = normalized_filename.rsplit("/", 1)[0]
+
+        normalized_directory = normalized_path(directory)
+
+        if normalized_directory is None:
+            return False
+
+        if normalized_directory == expected_remote_directory:
+            # Cancellation is not confirmed; do not delete local files.
+            return False
+
+    # Transfers are now confirmed stopped. Remove only the preflighted files.
+    try:
+        for path in planned_deletions:
+            if path.is_symlink() or not path.is_file():
+                return False
+
+            path.unlink()
+
+        # Remove the folder only if it is now empty.
+        # Never recursively delete a directory.
+        if target is not None:
+            try:
+                target.rmdir()
+            except OSError:
+                # Do not report success if anything appeared or remained.
+                return False
+
+    except OSError:
+        return False
+
+    return True
+    return True
+
+def _discovery_switch_to_next_source(artist, album, candidate, settings, download_root, headers, reason):
+    """Serialize fallback switching against dismissal so no source is queued afterward."""
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return None
+        return _discovery_switch_to_next_source_locked(
+            artist, album, candidate, settings, download_root, headers, reason
+        )
+
+
+def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, download_root, headers, reason):
+    """Switch only among prevalidated complete candidates, cleaning the previous album folder first."""
+    base_url, _, _ = _slskd_config()
+    fallbacks = list(candidate.get("fallback_candidates") or [])
+    if not fallbacks:
+        _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
+            "source_username": candidate.get("username"),
+            "reason": reason,
+            "message": "No other complete eligible source is available.",
+        })
+        return None
+    if not _discovery_cancel_and_clean_source(download_root, candidate, base_url, headers):
+        _discovery_update_acquisition_status(artist, album, "source_switch_failed", {
+            "source_username": candidate.get("username"),
+            "reason": reason,
+            "error": "Could not safely cancel transfers or clean the previous album folder.",
+        })
+        return None
+    for index, next_candidate in enumerate(fallbacks):
+        files = [
+            {"filename": item.get("filename"), "size": int(item.get("size") or 0)}
+            for item in next_candidate.get("files", [])
+            if item.get("filename")
+        ]
+        if not files or not next_candidate.get("username"):
+            continue
+        queue_error = None
+        try:
+            response = httpx.post(
+                f"{base_url}/api/v0/transfers/downloads/{next_candidate['username']}",
+                headers=headers, json=files, timeout=12,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            # The server may have accepted the request before the connection
+            # failed. Inspect the source before considering another peer.
+            queue_error = type(exc).__name__
+        except (ValueError, TypeError):
+            continue
+        monitor_candidate = dict(next_candidate)
+        monitor_candidate["files"] = files
+        monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
+        start_state = _slskd_candidate_start_state(base_url, headers, monitor_candidate, timeout=8)
+        if start_state is not True:
+            if start_state is None:
+                # The new source may be active. Persist it and keep monitoring rather
+                # than queueing another peer or abandoning a possibly live transfer.
+                details = {
+                    "source_username": next_candidate.get("username"),
+                    "folder": next_candidate.get("folder"),
+                    "file_count": len(files),
+                    "quality_summary": list(next_candidate.get("quality_summary") or []),
+                    "downloads_path": str(download_root),
+                    "previous_source_username": candidate.get("username"),
+                    "source_switch_reason": reason,
+                    "queue_error": queue_error,
+                    "message": (
+                        "The fallback queue outcome is uncertain; monitoring this "
+                        "source to avoid duplicate downloads."
+                        if queue_error else
+                        "The next source was queued but its start could not be confirmed; monitoring it to avoid duplicate downloads."
+                    ),
+                }
+                _discovery_save_acquisition_job(artist, album, "downloading", details,
+                                                candidate=monitor_candidate, settings=settings)
+                return monitor_candidate
+            if not _discovery_cancel_and_clean_source(
+                download_root, monitor_candidate, base_url, headers
+            ):
+                _discovery_update_acquisition_status(artist, album, "source_switch_failed", {
+                    "source_username": next_candidate.get("username"),
+                    "reason": reason,
+                    "error": (
+                        "Fallback source did not start and its transfers/files "
+                        "could not be safely cancelled and cleaned. No further "
+                        "source will be queued."
+                    ),
+                })
+                return None
+            continue
+        previous_details = next(
+            (job.get("details") or {} for job in _discovery_list_acquisition_jobs()
+             if job["artist_key"] == _music_key(artist) and job["album_key"] == _music_key(album)),
+            {},
+        )
+        details = {
+            "source_username": next_candidate.get("username"),
+            "folder": next_candidate.get("folder"),
+            "file_count": len(files),
+            "unique_track_count": next_candidate.get("unique_track_count"),
+            "expected_track_count": next_candidate.get("expected_track_count"),
+            "quality_summary": list(next_candidate.get("quality_summary") or []),
+            "downloads_path": str(download_root),
+            "source_switches": int(previous_details.get("source_switches") or 0) + 1,
+            "previous_source_username": candidate.get("username"),
+            "source_switch_reason": reason,
+            "message": "Previous source stalled; switched to the next complete eligible source.",
+        }
+        _discovery_save_acquisition_job(artist, album, "downloading", details,
+                                        candidate=monitor_candidate, settings=settings)
+        return monitor_candidate
+    _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
+        "source_username": candidate.get("username"),
+        "reason": reason,
+        "message": "Every remaining eligible source failed to start.",
+    })
+    return None
+
+
+def _discovery_import_completed_source(artist, album, source, music_root, candidate):
+    """Import a verified source only if dismissal has not won the race."""
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return "dismissed"
+
+        try:
+            music_root = Path(music_root).expanduser().resolve(strict=True)
+        except (OSError, RuntimeError, TypeError, ValueError):
+            music_root = None
+
+        if music_root is None or not music_root.is_dir():
+            _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+                "source_folder": str(source),
+                "downloads_path": str(source.parent),
+                "library_path": str(music_root),
+            })
+            return "failed"
+
+        try:
+            music_device = music_root.stat().st_dev
+        except OSError:
+            music_device = None
+        if music_device is None:
+            _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+                "source_folder": str(source), "library_path": str(music_root),
+            })
+            return "failed"
+
+        artist_dir = music_root / _discovery_safe_folder_name(artist)
+        album_dir = artist_dir / _discovery_safe_folder_name(album)
+
+        # Reject symlinked artist paths and non-directory filesystem objects.
+        if artist_dir.is_symlink() or (
+            artist_dir.exists() and not artist_dir.is_dir()
+        ):
+            _discovery_update_acquisition_status(
+                artist, album, "download_complete_move_failed",
+                {"error": "Unsafe import destination: artist path is a symlink or not a directory."},
+            )
+            return "failed"
+
+        if artist_dir.exists():
+            try:
+                resolved_artist = artist_dir.resolve(strict=True)
+            except (OSError, RuntimeError):
+                resolved_artist = None
+
+            if resolved_artist is None or resolved_artist.parent != music_root:
+                _discovery_update_acquisition_status(
+                    artist, album, "download_complete_move_failed",
+                    {"error": "Unsafe import destination: artist directory is outside the music root."},
+                )
+                return "failed"
+
+        # exists() alone misses broken symlinks.
+        if album_dir.exists() or album_dir.is_symlink():
+            _discovery_update_acquisition_status(artist, album, "destination_exists", {
+                "source_folder": str(source), "destination": str(album_dir)
+            })
+            return "failed"
+
+        if not _discovery_update_acquisition_status(artist, album, "importing", {
+            "source_folder": str(source), "destination": str(album_dir),
+            "music_root_device": music_device,
+        }):
+            return "failed"
+        try:
+            if music_root.stat().st_dev != music_device:
+                raise OSError("Music-library filesystem changed before import")
+            artist_dir.mkdir(parents=True, exist_ok=True)
+
+            # Revalidate immediately before creating staging files.
+            if artist_dir.is_symlink() or not artist_dir.is_dir():
+                raise OSError("Artist destination is not a real directory")
+
+            resolved_artist = artist_dir.resolve(strict=True)
+            if resolved_artist.parent != music_root:
+                raise OSError("Artist destination resolves outside the music root")
+
+            if album_dir.exists() or album_dir.is_symlink():
+                raise FileExistsError(str(album_dir))
+
+            if music_root.stat().st_dev != music_device or artist_dir.stat().st_dev != music_device:
+                raise OSError("Music-library filesystem changed before import")
+            _discovery_import_matched_album_files(
+                source, album_dir, candidate,
+                expected_music_root=music_root, expected_device=music_device,
+            )
+        except OSError as exc:
+            _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                "source_folder": str(source), "destination": str(album_dir),
+                "error": str(exc), "downloads_path": str(source.parent),
+            })
+            return "failed"
+        except Exception as exc:
+            # Do not leave the persistent acquisition stuck in "importing" if
+            # an unexpected import error occurs; retain the completed download.
+            _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                "source_folder": str(source), "destination": str(album_dir),
+                "error": f"Unexpected import error ({type(exc).__name__}): {exc}",
+                "downloads_path": str(source.parent),
+            })
+            return "failed"
+
+        _discovery_update_acquisition_status(artist, album, "imported", {
+            "source_folder": str(source), "destination": str(album_dir),
+            "source_username": candidate.get("username"), "imported_at": time.time()
+        })
+        return "imported"
+
+
+def _discovery_reconcile_interrupted_import(artist, album, candidate):
+    """Mark a previously completed filesystem move imported after a process crash.
+
+    Reconciliation is deliberately limited to jobs still marked importing and
+    to the exact destination recorded before the move began.
+    """
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return False
+
+        identity = (_music_key(artist), _music_key(album))
+        job = next((
+            item for item in _discovery_list_acquisition_jobs()
+            if (item.get("artist_key"), item.get("album_key")) == identity
+        ), None)
+        if not job or job.get("status") != "importing":
+            return False
+
+        details = job.get("details") or {}
+        expected_destination = details.get("destination")
+        if not expected_destination:
+            return False
+
+        try:
+            music_root = Path(MUSIC_DIR).expanduser().resolve(strict=True)
+            recorded_device = details.get("music_root_device")
+            # Older jobs lack this proof of mount identity. Do not mutate or
+            # reconcile their files automatically: the mountpoint may now be
+            # exposing an unrelated underlying local directory.
+            if recorded_device is None or music_root.stat().st_dev != int(recorded_device):
+                return False
+            artist_dir = music_root / _discovery_safe_folder_name(artist)
+            album_dir = artist_dir / _discovery_safe_folder_name(album)
+            # macOS commonly exposes temporary paths through /var -> /private/var.
+            # Normalize recorded paths before comparing them with the resolved library
+            # root, otherwise valid recovery manifests are rejected on that platform.
+            destination = Path(expected_destination).expanduser().resolve()
+            if destination != album_dir.resolve():
+                return False
+            if artist_dir.is_symlink() or album_dir.is_symlink():
+                return False
+            if not artist_dir.is_dir():
+                return False
+            if album_dir.exists() and not album_dir.is_dir():
+                return False
+            if artist_dir.resolve(strict=True).parent != music_root:
+                return False
+            if album_dir.is_dir() and album_dir.resolve(strict=True).parent != artist_dir.resolve(strict=True):
+                return False
+
+            expected_names = {
+                str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                for item in candidate.get("files", [])
+                if str(item.get("filename") or "").strip()
+            }
+            matched = (
+                _discovery_match_completed_album_files(album_dir, candidate)
+                if album_dir.is_dir() and not album_dir.is_symlink()
+                else None
+            )
+            if expected_names and matched and set(matched) == expected_names:
+                # If the process stopped after publishing the directory but
+                # before removing its manifest, remove only a matching manifest.
+                manifest = album_dir / ".navidrome-import.json"
+                if manifest.is_file() and not manifest.is_symlink():
+                    try:
+                        manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+                        expected_sizes = {
+                            str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+                                int(item.get("size") or 0)
+                            for item in candidate.get("files", [])
+                            if str(item.get("filename") or "").strip()
+                        }
+                        manifest_tracks = {
+                            str(name).casefold(): int(size)
+                            for name, size in manifest_data.get("tracks", {}).items()
+                        }
+                        source_value = details.get("source_folder")
+                        if (
+                            manifest_data.get("destination")
+                            and Path(manifest_data["destination"]).expanduser().resolve() == album_dir.resolve()
+                            and source_value
+                            and manifest_data.get("source") == str(Path(source_value).expanduser().resolve())
+                            and manifest_tracks == expected_sizes
+                        ):
+                            manifest.unlink()
+                    except (OSError, RuntimeError, ValueError, TypeError):
+                        pass
+                _discovery_update_acquisition_status(artist, album, "imported", {
+                    "source_folder": details.get("source_folder"),
+                    "destination": str(album_dir),
+                    "source_username": candidate.get("username"),
+                    "imported_at": time.time(),
+                    "recovered_after_restart": True,
+                })
+                return True
+
+            # A crash during cross-filesystem moves can leave some tracks in a
+            # hidden staging directory and others in the source folder. Restore
+            # those staged tracks only when ownership and sizes are unambiguous.
+            source_folder_value = details.get("source_folder")
+            if not source_folder_value:
+                return False
+            source_folder = Path(source_folder_value).expanduser()
+            if not source_folder.is_dir() or source_folder.is_symlink():
+                return False
+            expected_sizes = {}
+            for item in candidate.get("files", []):
+                name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+                if not name:
+                    continue
+                try:
+                    size = int(item.get("size") or 0)
+                except (TypeError, ValueError):
+                    return False
+                key = name.casefold()
+                if key in expected_sizes and expected_sizes[key] != size:
+                    return False
+                expected_sizes[key] = size
+            if not expected_sizes:
+                return False
+
+            staging_dirs = [
+                path for path in artist_dir.glob(".navidrome-import-*")
+                if path.is_dir() and not path.is_symlink()
+            ]
+            recoverable = []
+            for staging in staging_dirs:
+                try:
+                    manifest = staging / ".navidrome-import.json"
+                    if manifest.is_symlink() or not manifest.is_file():
+                        continue
+                    manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+                    if (
+                        manifest_data.get("source") != str(source_folder.resolve(strict=True))
+                        or not manifest_data.get("destination")
+                        or Path(manifest_data["destination"]).expanduser().resolve() != album_dir.resolve()
+                        or {str(k).casefold(): int(v) for k, v in manifest_data.get("tracks", {}).items()} != expected_sizes
+                    ):
+                        continue
+                    entries = [item for item in staging.iterdir() if item != manifest]
+                    if not entries or any(
+                        item.is_symlink() or not item.is_file() for item in entries
+                    ):
+                        continue
+                    valid = True
+                    for item in entries:
+                        key = item.name.casefold()
+                        if key not in expected_sizes or item.stat(follow_symlinks=False).st_size != expected_sizes[key]:
+                            valid = False
+                            break
+                        if (source_folder / item.name).exists() or (source_folder / item.name).is_symlink():
+                            valid = False
+                            break
+                    if valid:
+                        recoverable.append((staging, entries, manifest))
+                except (OSError, RuntimeError, ValueError, TypeError):
+                    continue
+
+            if len(recoverable) != 1:
+                return False
+            import shutil
+            import shutil
+            staging, entries, manifest = recoverable[0]
+            for item in entries:
+                shutil.move(str(item), str(source_folder / item.name))
+            manifest.unlink()
+            staging.rmdir()
+            return False
+        except (OSError, RuntimeError, TypeError, ValueError):
+            return False
+
+        _discovery_update_acquisition_status(artist, album, "imported", {
+            "source_folder": details.get("source_folder"),
+            "destination": str(album_dir),
+            "source_username": candidate.get("username"),
+            "imported_at": time.time(),
+            "recovered_after_restart": True,
+        })
+        return True
 
 
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
     """Import once all expected files exist with matching sizes, even if slskd prunes transfer records."""
     import shutil
+    music_root = MUSIC_DIR.expanduser()
+    if _discovery_reconcile_interrupted_import(artist, album, candidate):
+        return
     base_url, api_key, _ = _slskd_config()
     headers = {"X-API-KEY": api_key}
     download_root = Path(str(
         settings.get("slskd_downloads_path")
         or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
     )).expanduser()
-    music_root = MUSIC_DIR.expanduser()
     expected = {
         str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
         for item in candidate.get("files", [])
     }
+    expected_sizes = {
+        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+            max(0, int(item.get("size") or 0))
+        for item in candidate.get("files", [])
+        if str(item.get("filename") or "").strip()
+    }
     deadline = time.monotonic() + 48 * 60 * 60
     completed_at = None
+    last_progress_at = time.monotonic()
+    last_progress_bytes = 0
+    stall_detected_at = None
+    source_switches = 0
     while time.monotonic() < deadline:
         try:
+            if _discovery_is_dismissed(artist, album):
+                return
+            if _discovery_skip_requested(artist, album):
+                next_candidate = _discovery_switch_to_next_source(
+                    artist, album, candidate, settings, download_root, headers, "manual_skip"
+                )
+                if next_candidate is None:
+                    return
+                candidate = next_candidate
+                expected = {
+                    str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                    for item in candidate.get("files", [])
+                }
+                expected_sizes = {
+                    str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+                        max(0, int(item.get("size") or 0))
+                    for item in candidate.get("files", [])
+                    if str(item.get("filename") or "").strip()
+                }
+                last_progress_at = time.monotonic()
+                last_progress_bytes = 0
+                stall_detected_at = None
+                completed_at = None
+                source_switches += 1
+                continue
             # Filesystem completion is authoritative: slskd may prune successful
             # transfer records before this watcher polls them again.
             source = _discovery_locate_completed_album(download_root, candidate)
             if source is not None:
-                if not music_root.is_dir():
-                    _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
-                        "source_folder": str(source), "downloads_path": str(download_root),
-                        "library_path": str(music_root)
-                    })
+                result = _discovery_import_completed_source(
+                    artist, album, source, music_root, candidate
+                )
+                if result in {"dismissed", "failed", "imported"}:
                     return
-                artist_dir = music_root / _discovery_safe_folder_name(artist)
-                album_dir = artist_dir / _discovery_safe_folder_name(album)
-                if album_dir.exists():
-                    _discovery_update_acquisition_status(artist, album, "destination_exists", {
-                        "source_folder": str(source), "destination": str(album_dir)
-                    })
-                    return
-                try:
-                    artist_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.move(str(source), str(album_dir))
-                except OSError as exc:
-                    _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
-                        "source_folder": str(source), "destination": str(album_dir),
-                        "error": str(exc), "downloads_path": str(download_root)
-                    })
-                    return
-                _discovery_update_acquisition_status(artist, album, "imported", {
-                    "source_folder": str(source), "destination": str(album_dir),
-                    "source_username": candidate.get("username"), "imported_at": time.time()
-                })
-                return
 
             tracked = _slskd_download_transfer_files(
                 base_url, headers, candidate["username"]
             )
-            matching = [
-                item for item in tracked
-                if str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold() in expected
-            ]
+            matching_by_name = {}
+            for item in tracked:
+                name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                if name not in expected:
+                    continue
+                previous = matching_by_name.get(name)
+                state = str(item.get("state") or "").replace("_", "").casefold()
+                previous_state = str((previous or {}).get("state") or "").replace("_", "").casefold()
+                if previous is None or (
+                    state in {"succeeded", "completed"}
+                    and previous_state not in {"succeeded", "completed"}
+                ):
+                    matching_by_name[name] = item
+
             states = {
                 str(item.get("state") or "").replace("_", "").casefold()
-                for item in matching
+                for item in matching_by_name.values()
             }
+            current_bytes = 0
+            for item in matching_by_name.values():
+                for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
+                    try:
+                        if item.get(key) is not None:
+                            current_bytes += max(0, int(item[key]))
+                            break
+                    except (TypeError, ValueError):
+                        pass
+            now_mono = time.monotonic()
+            if current_bytes > last_progress_bytes:
+                last_progress_bytes = current_bytes
+                last_progress_at = now_mono
+                stall_detected_at = None
+            stalled_for = now_mono - last_progress_at
+            if (stalled_for >= 120 and candidate.get("fallback_candidates")
+                    and not (states and states.issubset({"succeeded", "completed"}))):
+                if stall_detected_at is None:
+                    stall_detected_at = time.time()
+                    _discovery_update_acquisition_status(artist, album, "downloading", {
+                        "source_username": candidate.get("username"),
+                        "folder": candidate.get("folder"),
+                        "quality_summary": list(candidate.get("quality_summary") or []),
+                        "zero_progress_seconds": int(stalled_for),
+                        "stall_detected_at": stall_detected_at,
+                        "skip_countdown_seconds": 15,
+                        "fallback_count": len(candidate.get("fallback_candidates") or []),
+                        "source_switches": source_switches,
+                        "message": "No download progress for 2 minutes. Switching automatically in 15 seconds unless skipped manually.",
+                    })
+                skip_requested = _discovery_skip_requested(artist, album)
+                if skip_requested or time.time() - stall_detected_at >= 15:
+                    next_candidate = _discovery_switch_to_next_source(
+                        artist, album, candidate, settings, download_root, headers,
+                        "manual_skip" if skip_requested else "zero_progress_timeout",
+                    )
+                    if next_candidate is None:
+                        return
+                    candidate = next_candidate
+                    expected = {
+                        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+                        for item in candidate.get("files", [])
+                    }
+                    expected_sizes = {
+                        str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold():
+                            max(0, int(item.get("size") or 0))
+                        for item in candidate.get("files", [])
+                        if str(item.get("filename") or "").strip()
+                    }
+                    last_progress_at = time.monotonic()
+                    last_progress_bytes = 0
+                    stall_detected_at = None
+                    completed_at = None
+                    source_switches += 1
+                    continue
             if states.intersection({"failed", "errored", "cancelled", "canceled"}):
                 _discovery_update_acquisition_status(artist, album, "download_failed", {
                     "source_username": candidate["username"], "states": sorted(states)
                 })
                 return
-            if len(matching) >= len(expected) and matching and all(
-                str(item.get("state") or "").replace("_", "").casefold()
-                in {"succeeded", "completed"}
-                for item in matching
-            ):
+
+            # Byte counters can reach the advertised file sizes before slskd
+            # switches transfers to succeeded/completed. Use them as completion
+            # evidence too, while still requiring the files on disk before import.
+            all_transfers_complete = bool(expected) and all(
+                name in matching_by_name and (
+                    str(matching_by_name[name].get("state") or "").replace("_", "").casefold()
+                    in {"succeeded", "completed"}
+                    or (
+                        expected_sizes.get(name, 0) > 0
+                        and any(
+                            matching_by_name[name].get(key) is not None
+                            and str(matching_by_name[name][key]).isdigit()
+                            and int(matching_by_name[name][key]) >= expected_sizes[name]
+                            for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes")
+                        )
+                    )
+                )
+                for name in expected
+            )
+            if all_transfers_complete:
                 completed_at = completed_at or time.monotonic()
                 source = _discovery_locate_completed_album(download_root, candidate)
                 if source is None:
                     _discovery_update_acquisition_status(artist, album, "download_complete_waiting_for_folder", {
                         "source_username": candidate["username"],
+                        "downloads_path": str(download_root),
                         "downloads_path_available": download_root.is_dir(),
+                        "expected_folder": candidate.get("folder"),
+                        "expected_files": len(expected),
+                        "matched_transfer_records": len(matching_by_name),
+                        "transfer_states": sorted(states),
+                        "completion_evidence": "transfer byte counters or terminal states",
                     })
                 else:
-                    if not music_root.is_dir():
-                        _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
-                            "source_folder": str(source)
-                        })
+                    result = _discovery_import_completed_source(
+                        artist, album, source, music_root, candidate
+                    )
+                    if result in {"dismissed", "failed", "imported"}:
                         return
-                    artist_dir = music_root / _discovery_safe_folder_name(artist)
-                    album_dir = artist_dir / _discovery_safe_folder_name(album)
-                    if album_dir.exists():
-                        _discovery_update_acquisition_status(artist, album, "destination_exists", {
-                            "destination": str(album_dir)
-                        })
-                        return
-                    try:
-                        artist_dir.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(source), str(album_dir))
-                    except OSError as exc:
-                        _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
-                            "source_folder": str(source),
-                            "destination": str(album_dir),
-                            "error": str(exc),
-                        })
-                        return
-                    _discovery_update_acquisition_status(artist, album, "imported", {
-                        "source_folder": str(source),
-                        "destination": str(album_dir),
-                        "source_username": candidate["username"],
-                        "imported_at": time.time(),
-                    })
-                    return
                 # Keep looking for the local SMB/NFS-visible folder for up to six hours.
                 if time.monotonic() - completed_at > 6 * 60 * 60:
                     _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
@@ -3824,7 +5054,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
             _discovery_update_acquisition_status(artist, album, "monitor_error", {
                 "error": type(exc).__name__
             })
-        time.sleep(15)
+        time.sleep(2)
     _discovery_update_acquisition_status(artist, album, "monitor_timeout", {
         "source_username": candidate["username"]
     })
@@ -3844,27 +5074,63 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         key: value for key, value in (settings or {}).items()
         if key not in {"slskd_api_key", "api_key"}
     }
-    _discovery_save_acquisition_job(
-        artist, album, "downloading", details,
-        candidate=candidate, settings=safe_settings,
-    )
-    _discovery_update_acquisition_status(artist, album, "downloading", details)
-    with _DISCOVERY_IMPORT_LOCK:
-        if identity in _DISCOVERY_IMPORT_ACTIVE:
+    # Reserve the watcher before writing status so duplicate starts cannot
+    # overwrite an existing job's state. Serialize reservation against dismissal.
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
             return
-        _DISCOVERY_IMPORT_ACTIVE.add(identity)
-    threading.Thread(
+        with _DISCOVERY_IMPORT_LOCK:
+            if identity in _DISCOVERY_IMPORT_ACTIVE:
+                return
+            _DISCOVERY_IMPORT_ACTIVE.add(identity)
+        try:
+            _discovery_save_acquisition_job(
+                artist, album, "downloading", details,
+                candidate=candidate, settings=safe_settings,
+            )
+            _discovery_update_acquisition_status(artist, album, "downloading", details)
+        except Exception:
+            with _DISCOVERY_IMPORT_LOCK:
+                _DISCOVERY_IMPORT_ACTIVE.discard(identity)
+            raise
+    watcher = threading.Thread(
         target=_discovery_import_watcher_entry,
         args=(artist, album, dict(candidate), dict(settings), identity),
         name="navidrome-import-" + hashlib.sha1(
             (_music_key(artist) + "|" + _music_key(album)).encode("utf-8")
         ).hexdigest()[:10],
         daemon=True,
-    ).start()
+    )
+    try:
+        watcher.start()
+    except Exception as exc:
+        with _DISCOVERY_IMPORT_LOCK:
+            _DISCOVERY_IMPORT_ACTIVE.discard(identity)
+        _discovery_update_acquisition_status(artist, album, "monitor_error", {
+            "error": type(exc).__name__,
+            "message": "Could not start the acquisition watcher.",
+        })
+        return
 
 
-@mcp.tool()
-def discovery_acquire_album(
+def _discovery_queue_candidate_unless_dismissed(
+    artist, album, base_url, headers, username, selected_files
+):
+    """Queue a source atomically with dismissal in this process."""
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return None
+        response = httpx.post(
+            f"{base_url}/api/v0/transfers/downloads/{username}",
+            headers=headers,
+            json=selected_files,
+            timeout=12,
+        )
+        response.raise_for_status()
+        return response
+
+
+def _discovery_acquire_album_impl(
     artist: str,
     album: str,
     metadata_json: str = "{}",
@@ -3875,9 +5141,21 @@ def discovery_acquire_album(
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})
     try:
+        metadata = json.loads(metadata_json or "{}")
+        if not isinstance(metadata, dict):
+            metadata = {}
+    except (ValueError, TypeError):
+        metadata = {}
+    try:
         base_url, api_key, settings = _slskd_config()
     except ValueError as exc:
-        return json.dumps({"ok": False, "status": "settings_required", "message": str(exc)})
+        message = str(exc)
+        _discovery_update_acquisition_status(
+            artist, album, "settings_required",
+            {"message": message, "metadata": metadata},
+        )
+        return json.dumps({"ok": False, "status": "settings_required", "artist": artist,
+                           "album": album, "message": message}, ensure_ascii=False)
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
     search_id = str(uuid.uuid4())
@@ -3950,22 +5228,41 @@ def discovery_acquire_album(
             ):
                 break
             time.sleep(0.75)
+        expected_track_count = _discovery_expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
-            list(payload_by_peer.values()), artist, album, priority
+            list(payload_by_peer.values()), artist, album, priority,
+            expected_track_count=expected_track_count,
         )
         if not candidates:
+            message = "No matching album folders were found. You can try again later."
+            _discovery_update_acquisition_status(
+                artist, album, "no_matches",
+                {"message": message, "search_id": search_id, "metadata": metadata},
+            )
             return json.dumps({
-                "ok": True, "status": "no_matches",
-                "artist": artist, "album": album, "search_id": search_id,
-                "message": "No sufficiently album-matching audio folders were found.",
+                "ok": True, "status": "no_matches", "artist": artist, "album": album,
+                "search_id": search_id, "message": message,
             }, ensure_ascii=False)
         clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
-        if not auto_queue or not clear_candidates:
+        if not auto_queue:
             return json.dumps({
-                "ok": True, "status": "review_required",
-                "artist": artist, "album": album, "search_id": search_id,
-                "candidates": candidates[:10],
-                "message": "No candidate met the automatic-download criteria; review the candidates and choose one.",
+                "ok": True, "status": "review_required", "artist": artist, "album": album,
+                "search_id": search_id, "candidates": candidates[:10],
+                "message": "Candidate review was requested explicitly.",
+            }, ensure_ascii=False)
+        if not clear_candidates:
+            best = candidates[0]
+            message = "Potential files were found, but none met the relaxed artist, album, and track-count checks. You can try again later."
+            _discovery_update_acquisition_status(
+                artist, album, "no_matches",
+                {"message": message, "search_id": search_id, "metadata": metadata,
+                 "candidate_count": len(candidates),
+                 "best_candidate_reason": best.get("eligibility_reason")},
+            )
+            return json.dumps({
+                "ok": True, "status": "no_matches", "artist": artist, "album": album,
+                "search_id": search_id, "candidate_count": len(candidates),
+                "message": message,
             }, ensure_ascii=False)
 
         failures = []
@@ -3976,14 +5273,45 @@ def discovery_acquire_album(
                 for item in candidate["files"]
             ]
             try:
-                queue = httpx.post(
-                    f"{base_url}/api/v0/transfers/downloads/{candidate['username']}",
-                    headers=headers,
-                    json=selected_files,
-                    timeout=12,
+                queue = _discovery_queue_candidate_unless_dismissed(
+                    artist, album, base_url, headers, candidate["username"], selected_files
                 )
-                queue.raise_for_status()
-            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                if queue is None:
+                    return json.dumps({
+                        "ok": False, "status": "dismissed", "artist": artist, "album": album,
+                        "message": "This acquisition was dismissed before a source could be queued.",
+                    }, ensure_ascii=False)
+            except httpx.HTTPError as exc:
+                # A timeout or server error can happen after slskd accepted
+                # the queue request. Monitor this peer before considering a
+                # fallback, otherwise two sources could download the album.
+                candidate_for_monitor = dict(candidate)
+                candidate_for_monitor["files"] = selected_files
+                candidate_for_monitor["quality_summary"] = list(
+                    candidate.get("quality_summary") or []
+                )
+                candidate_for_monitor["fallback_candidates"] = [
+                    {**item, "files": [
+                        {"filename": file["filename"], "size": file["size"]}
+                        for file in item.get("files", [])
+                    ]}
+                    for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
+                ]
+                _discovery_start_import_watcher(
+                    artist, album, candidate_for_monitor, settings
+                )
+                return json.dumps({
+                    "ok": True, "status": "queued_unconfirmed",
+                    "artist": artist, "album": album,
+                    "source_username": candidate["username"],
+                    "folder": candidate["folder"],
+                    "message": (
+                        "The queue request returned an HTTP error, so its outcome "
+                        "is uncertain. Monitoring this source before attempting "
+                        "another peer to avoid duplicate downloads."
+                    ),
+                }, ensure_ascii=False)
+            except (ValueError, TypeError) as exc:
                 failures.append({
                     "username": candidate["username"],
                     "folder": candidate["folder"],
@@ -3994,10 +5322,45 @@ def discovery_acquire_album(
             candidate_for_monitor = dict(candidate)
             candidate_for_monitor["files"] = selected_files
             candidate_for_monitor["quality_summary"] = list(candidate.get("quality_summary") or [])
+            candidate_for_monitor["fallback_candidates"] = [
+                {**item, "files": [
+                    {"filename": file["filename"], "size": file["size"]}
+                    for file in item.get("files", [])
+                ]}
+                for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
+            ]
             start_state = _slskd_candidate_start_state(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
             if start_state is False:
+                # Do not try another peer until the previous queue attempt is
+                # confirmed stopped and its exact partial folder is safe to clean.
+                download_root = Path(str(
+                    settings.get("slskd_downloads_path")
+                    or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+                )).expanduser()
+                if not _discovery_cancel_and_clean_source(
+                    download_root, candidate_for_monitor, base_url, headers
+                ):
+                    _discovery_update_acquisition_status(
+                        artist, album, "source_switch_failed", {
+                            "source_username": candidate.get("username"),
+                            "folder": candidate.get("folder"),
+                            "error": (
+                                "The queued source did not start, but its transfers "
+                                "or partial files could not be safely confirmed and "
+                                "cleaned. No further source was queued."
+                            ),
+                        },
+                    )
+                    return json.dumps({
+                        "ok": False, "status": "source_switch_failed",
+                        "artist": artist, "album": album,
+                        "message": (
+                            "The first source did not start, and cleanup could not "
+                            "be confirmed. Check the acquisition status before retrying."
+                        ),
+                    }, ensure_ascii=False)
                 failures.append({
                     "username": candidate["username"],
                     "folder": candidate["folder"],
@@ -4029,6 +5392,13 @@ def discovery_acquire_album(
                 for item in uncertain["files"]
             ]
             candidate_for_monitor["quality_summary"] = list(uncertain.get("quality_summary") or [])
+            candidate_for_monitor["fallback_candidates"] = [
+                {**item, "files": [
+                    {"filename": file["filename"], "size": file["size"]}
+                    for file in item.get("files", [])
+                ]}
+                for item in clear_candidates[clear_candidates.index(uncertain) + 1:10]
+            ]
             _discovery_start_import_watcher(
                 artist, album, candidate_for_monitor, settings
             )
@@ -4041,18 +5411,113 @@ def discovery_acquire_album(
                 "message": "slskd accepted the queue request, but its transfer state could not be verified. Monitoring this source to avoid duplicate downloads.",
             }, ensure_ascii=False)
 
+        message = "None of the matching sources started a download. Check slskd/peer availability and try again."
+        _discovery_update_acquisition_status(
+            artist, album, "queue_failed",
+            {"message": message, "attempts": failures, "metadata": metadata},
+        )
         return json.dumps({
-            "ok": False, "status": "queue_failed",
-            "artist": artist, "album": album,
-            "attempts": failures,
-            "message": "None of the clear-match sources started a download. No user arbitration is needed because the candidates met the match criteria; check slskd connectivity/peer availability and retry.",
+            "ok": False, "status": "queue_failed", "artist": artist, "album": album,
+            "attempts": failures, "message": message,
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
+        message = f"slskd request failed: {type(exc).__name__}"
+        _discovery_update_acquisition_status(
+            artist, album, "slskd_error",
+            {"message": message, "detail": str(exc)[:300], "metadata": metadata},
+        )
         return json.dumps({
-            "ok": False, "status": "slskd_error",
-            "message": f"slskd request failed: {type(exc).__name__}",
-            "detail": str(exc)[:300],
+            "ok": False, "status": "slskd_error", "artist": artist, "album": album,
+            "message": message, "detail": str(exc)[:300],
         }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_acquire_album(
+    artist: str,
+    album: str,
+    metadata_json: str = "{}",
+    auto_queue: bool = True,
+) -> str:
+    """Prevent concurrent duplicate acquisition searches for the same album."""
+    if not artist.strip() or not album.strip():
+        return json.dumps({"ok": False, "error": "Artist and album are required."})
+    identity = (_music_key(artist), _music_key(album))
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return json.dumps({
+                "ok": False, "status": "dismissed", "artist": artist, "album": album,
+                "message": "This acquisition was dismissed. Undismiss it before retrying.",
+            }, ensure_ascii=False)
+        with _DISCOVERY_IMPORT_LOCK:
+            watcher_active = identity in _DISCOVERY_IMPORT_ACTIVE
+        existing_job = next((
+            job for job in _discovery_list_acquisition_jobs()
+            if job["artist_key"] == identity[0] and job["album_key"] == identity[1]
+        ), None)
+        existing_status = (existing_job or {}).get("status")
+        if existing_status in {"importing", "imported"}:
+            return json.dumps({
+                "ok": False, "status": existing_status, "artist": artist, "album": album,
+                "message": "This album is already being imported or is in the library.",
+            }, ensure_ascii=False)
+        if existing_status == "downloading" and not watcher_active:
+            # Recover the persisted monitor after a process restart rather than
+            # treating a stale in-memory watcher flag as proof the job is active.
+            candidate = (existing_job or {}).get("candidate") or {}
+            settings = (existing_job or {}).get("settings") or {}
+            if candidate.get("username") and candidate.get("files"):
+                try:
+                    _discovery_start_import_watcher(
+                        existing_job["artist"], existing_job["album"],
+                        candidate, settings,
+                    )
+                except Exception as exc:
+                    return json.dumps({
+                        "ok": False, "status": "monitor_recovery_failed",
+                        "artist": artist, "album": album,
+                        "message": (
+                            "The saved download could not be resumed safely. "
+                            "Inspect slskd and acquisition status before retrying."
+                        ),
+                        "error": type(exc).__name__,
+                    }, ensure_ascii=False)
+                with _DISCOVERY_IMPORT_LOCK:
+                    recovery_started = identity in _DISCOVERY_IMPORT_ACTIVE
+                return json.dumps({
+                    "ok": True, "status": (
+                        "recovery_started" if recovery_started else "already_in_progress"
+                    ),
+                    "artist": artist, "album": album,
+                    "message": (
+                        "Resumed monitoring the saved download without queueing "
+                        "another source."
+                    ),
+                }, ensure_ascii=False)
+            return json.dumps({
+                "ok": False, "status": "recovery_unavailable",
+                "artist": artist, "album": album,
+                "message": (
+                    "The saved download has no usable source details. Inspect "
+                    "slskd and acquisition status before retrying."
+                ),
+            }, ensure_ascii=False)
+        if (
+            identity in _DISCOVERY_ACQUIRE_ACTIVE
+            or watcher_active
+            or existing_status == "downloading"
+        ):
+            return json.dumps({
+                "ok": False, "status": "already_in_progress", "artist": artist, "album": album,
+                "message": "An acquisition request or download is already active for this album.",
+            }, ensure_ascii=False)
+        _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
+    try:
+        return _discovery_acquire_album_impl(artist, album, metadata_json, auto_queue)
+    finally:
+        with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+            _DISCOVERY_ACQUIRE_ACTIVE.discard(identity)
+
 
 @mcp.tool()
 def discovery_queue_slskd_candidate(

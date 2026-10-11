@@ -2,6 +2,7 @@ import json
 import random
 from html import escape
 from time import monotonic, sleep
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import httpx
 from urllib.parse import urlencode
@@ -12,6 +13,11 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 
 import navidrome_server as librarian
 
+
+_EXTERNAL_HTTP = httpx.Client(
+    timeout=httpx.Timeout(3.0, connect=1.5),
+    headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)"},
+)
 
 app = FastAPI(
     title="Navidrome Librarian",
@@ -52,9 +58,19 @@ def health():
 _PROFILE_CACHE_TTL = 300
 _profile_cache = {}
 
-# Wikipedia artist biographies are cached for a day to avoid repeated lookups.
+# Artist biographies are cached for a day. Wikidata identifies the intended
+# musical entity first; Wikipedia is only used when its page points back to
+# that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
+# versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
+_ARTIST_DESCRIPTION_RE = __import__("re").compile(
+    r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
+    r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
+    r"guitarist|bassist|drummer|keyboardist|record producer|music producer|"
+    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\b",
+    __import__("re").IGNORECASE,
+)
 
 
 @app.get("/api/artist-bio")
@@ -69,45 +85,69 @@ def artist_bio(artist: str):
         return {"artist": name, "bio": cached["bio"]}
 
     bio = ""
-    try:
-        search = httpx.get(
-            "https://en.wikipedia.org/w/api.php",
-            params={"action": "query", "list": "search", "srsearch": name,
-                    "format": "json", "srlimit": 5},
-            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-            timeout=5,
+    params = {
+        "action": "wbsearchentities",
+        "search": name,
+        "language": "en",
+        "uselang": "en",
+        "format": "json",
+        "limit": 10,
+    }
+    summary_url = (
+        "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        + __import__("urllib.parse", fromlist=["quote"]).quote(name.replace(" ", "_"), safe="")
+    )
+
+    # Start both network requests together. The summary is used only after its
+    # Wikidata identity is checked, so the faster path doesn't reintroduce
+    # wrong-name biographies such as Rainbow the optical phenomenon.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        search_future = pool.submit(
+            _EXTERNAL_HTTP.get, "https://www.wikidata.org/w/api.php", params=params
         )
-        search.raise_for_status()
-        results = search.json().get("query", {}).get("search", [])
-        # Prefer an exact page-title match to avoid biographies of similarly
-        # named artists.
-        results.sort(key=lambda item: (
-            str(item.get("title", "")).casefold() != name.casefold(),
-            -int(item.get("wordcount") or 0),
-        ))
-        for result in results[:3]:
-            title = str(result.get("title") or "")
-            if not title:
-                continue
-            summary = httpx.get(
-                "https://en.wikipedia.org/api/rest_v1/page/summary/"
-                + __import__("urllib.parse", fromlist=["quote"]).quote(title.replace(" ", "_"), safe=""),
-                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-                timeout=5,
-            )
-            if summary.status_code != 200:
-                continue
-            extract = " ".join(str(summary.json().get("extract") or "").split())
-            if not extract or summary.json().get("type") == "disambiguation":
-                continue
-            # The first sentence gives the compact identity/biographical lead.
-            match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
-            bio = match.group(0) if match else extract[:240]
-            if len(bio) > 280:
-                bio = bio[:277].rsplit(" ", 1)[0] + "…"
-            break
-    except Exception:
-        bio = ""
+        summary_future = pool.submit(_EXTERNAL_HTTP.get, summary_url)
+        entities = []
+        page = {}
+        try:
+            search_response = search_future.result()
+            search_response.raise_for_status()
+            entities = search_response.json().get("search", [])
+        except Exception:
+            pass
+        try:
+            summary_response = summary_future.result()
+            if summary_response.status_code == 200:
+                page = summary_response.json()
+        except Exception:
+            pass
+
+    music_entities = [
+        item for item in entities
+        if item.get("id")
+        and _ARTIST_DESCRIPTION_RE.search(str(item.get("description") or ""))
+    ]
+    music_entities.sort(key=lambda item: (
+        str(item.get("label") or "").casefold() != key,
+        str(item.get("label") or "").casefold() != key.replace("the ", "", 1),
+    ))
+
+    page_qid = str(page.get("wikibase_item") or "")
+    if page_qid and page.get("type") != "disambiguation":
+        matching_entity = next(
+            (item for item in music_entities if str(item.get("id") or "") == page_qid),
+            None,
+        )
+        if matching_entity:
+            extract = " ".join(str(page.get("extract") or "").split())
+            if extract:
+                match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
+                bio = match.group(0) if match else extract[:240]
+                if len(bio) > 280:
+                    bio = bio[:277].rsplit(" ", 1)[0] + "…"
+
+    # Fast, safe fallback: use Wikidata's own music-related description.
+    if not bio and music_entities:
+        bio = str(music_entities[0].get("description") or "").strip()
 
     _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
     return {"artist": name, "bio": bio}
@@ -284,6 +324,44 @@ def acquisition_status():
         return parse_result(librarian.discovery_get_acquisition_status())
     except Exception:
         raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
+
+
+@app.post("/api/acquisitions/skip")
+def skip_acquisition_source(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_skip_acquisition_source(
+            artist=artist, album=album,
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=409, detail=result.get("error", "Could not skip source."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not request a source switch.")
+
+
+@app.post("/api/acquisitions/dismiss")
+def dismiss_acquisition(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_dismiss_acquisition(artist=artist, album=album))
+        if isinstance(result, dict) and not result.get("ok"):
+            message = result.get("error", "Could not dismiss acquisition.")
+            status_code = 404 if message == "Acquisition not found." else 409
+            raise HTTPException(status_code=status_code, detail=message)
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not dismiss acquisition.")
 
 
 @app.get("/api/acquisitions/stream")
@@ -491,8 +569,9 @@ def album_artwork(artist: str = "", album: str = ""):
         else:
             query = urlencode({"q": artist or album, "limit": 8})
         endpoint = "https://api.deezer.com/search/album?" + query
-        with urlopen(endpoint, timeout=3) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        response = _EXTERNAL_HTTP.get(endpoint)
+        response.raise_for_status()
+        payload = response.json()
         albums = payload.get("data") or []
 
         def match_score(item):
@@ -512,6 +591,7 @@ def album_artwork(artist: str = "", album: str = ""):
         if albums:
             match = max(albums, key=match_score)
             if match_score(match) >= 5:
+                # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
                 artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
                 release_date = str(match.get("release_date") or "")
                 year_text = release_date[:4]
@@ -524,22 +604,22 @@ def album_artwork(artist: str = "", album: str = ""):
                     "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
                 }
 
-        # Deezer's album search often omits release dates. Fall back to
-        # MusicBrainz so years can still be shown even when artwork exists.
-        if not result.get("year") and artist and album:
-            result["year"] = _musicbrainz_album_year(artist, album)
-
+        # Do not perform a serialized MusicBrainz lookup here: it rate-limits
+        # requests and can delay artwork by several seconds. Deezer release dates
+        # are shown when available; missing years must never delay the cover.
         # If the album is not in the catalog, use a matching artist photo instead.
         if not result["artwork_url"] and artist:
             artist_query = urlencode({"q": artist, "limit": 8})
-            with urlopen("https://api.deezer.com/search/artist?" + artist_query, timeout=3) as response:
-                artist_payload = json.loads(response.read().decode("utf-8"))
+            response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + artist_query)
+            response.raise_for_status()
+            artist_payload = response.json()
             artists = artist_payload.get("data") or []
             exact = next(
                 (item for item in artists if str(item.get("name") or "").casefold() == artist.casefold()),
                 None,
             )
             if exact:
+                # Prefer high-resolution artist portraits; fall back if unavailable.
                 photo = exact.get("picture_xl") or exact.get("picture_big") or exact.get("picture_medium")
                 if photo:
                     result = {
@@ -684,6 +764,9 @@ p { line-height: 1.55; }
 .progress-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: #1c1e1d; }
 .progress-ring span { position: relative; z-index: 1; color: var(--text); font: 500 14px/1 var(--mono); }
 .download-progress-copy { min-width: 0; }
+.download-progress-speed-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 12px; }
+.download-progress-speed-row .download-progress-stat + .download-progress-stat { margin-top: 0; color: var(--muted); }
+.download-progress-copy > .download-progress-stat { margin-top: 3px; }
 .download-progress-label { margin: 0 0 4px; color: var(--yellow); font: 500 10px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
 .download-progress-stat { margin: 0; color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
 .download-progress-stat + .download-progress-stat { margin-top: 3px; color: var(--muted); }
@@ -886,14 +969,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   </div>
 </section>
 
-<section id="acquireReview" class="page hidden">
-  <div class="panel">
-    <h2>Review download candidates</h2>
-    <p id="acquireStatus"></p>
-    <div id="acquireCards" class="cards"></div>
-    <button data-page="personalDiscoveries">Back to discoveries</button>
-  </div>
-</section>
+
 
 </main>
 
@@ -907,13 +983,26 @@ function showPage(name) {
     el.classList.toggle('active', el.dataset.page === name));
 }
 
+const initializedPages = new Set(['dashboard']);
+
+function initializePage(name) {
+  if (initializedPages.has(name)) return;
+  initializedPages.add(name);
+  if (name === 'recommendations') $('loadRecommendations').click();
+  else if (name === 'profile') $('loadProfile').click();
+  else if (name === 'personalDiscoveries') loadDiscovery('personal');
+  else if (name === 'classics') loadDiscovery('classics', {rotate: true});
+  else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
+  else if (name === 'settings') { loadSlskdSettings(); checkConnection(); }
+  else if (name === 'acquisitions') startAcquisitionStream();
+}
+
 document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
-    showPage(button.dataset.page);
-    if (button.dataset.page === 'dashboard') loadDashboardPicks();
-    if (button.dataset.page === 'settings') { loadSlskdSettings(); checkConnection(); }
-    if (button.dataset.page === 'acquisitions') startAcquisitionStream();
-    else stopAcquisitionStream();
+    const name = button.dataset.page;
+    showPage(name);
+    initializePage(name);
+    if (name !== 'acquisitions') stopAcquisitionStream();
   }));
 
 document.querySelectorAll('button[data-go]').forEach(button =>
@@ -944,6 +1033,21 @@ function pretty(value) {
   return JSON.stringify(value, null, 2);
 }
 
+function formatDownloadBytes(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return null;
+  if (bytes < 1024) return Math.round(bytes) + ' B';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let amount = bytes / 1024;
+  let unit = 0;
+  while (amount >= 1024 && unit < units.length - 1) {
+    amount /= 1024;
+    unit += 1;
+  }
+  return amount.toFixed(amount >= 100 ? 0 : 1) + ' ' + units[unit];
+}
+
 function renderAcquisitions(data) {
   const target = $('acquisitionCards');
   try {
@@ -972,7 +1076,7 @@ function renderAcquisitions(data) {
           ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
           : 'Not reported'));
       const progress = details.live_progress;
-      if (job.status === 'downloading' && progress) {
+      if (['downloading', 'download_complete_waiting_for_folder'].includes(job.status) && progress) {
         const progressRow = document.createElement('div');
         progressRow.className = 'download-progress';
         const ring = document.createElement('div');
@@ -996,7 +1100,16 @@ function renderAcquisitions(data) {
             ? (value / (1024 * 1024)).toFixed(1) + ' MB/s'
             : value >= 1024 ? (value / 1024).toFixed(0) + ' KB/s' : Math.round(value) + ' B/s';
         }
-        addTextElement(copy, 'p', 'download-progress-stat', speedText);
+        const speedAndSize = document.createElement('div');
+        speedAndSize.className = 'download-progress-speed-row';
+        addTextElement(speedAndSize, 'p', 'download-progress-stat', speedText);
+        const totalSize = formatDownloadBytes(progress.total_size_bytes);
+        const remainingSize = formatDownloadBytes(progress.remaining_size_bytes);
+        if (totalSize !== null && remainingSize !== null) {
+          addTextElement(speedAndSize, 'p', 'download-progress-stat',
+            'Total ' + totalSize + ' · ' + remainingSize + ' remaining');
+        }
+        copy.append(speedAndSize);
         const remaining = Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
         const totalTracks = Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
         addTextElement(copy, 'p', 'download-progress-stat',
@@ -1004,6 +1117,30 @@ function renderAcquisitions(data) {
           String(remaining) + ' of ' + (totalTracks === null ? '?' : totalTracks) + ' tracks remaining');
         progressRow.append(ring, copy);
         card.append(progressRow);
+      }
+      if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
+        const stallButton = document.createElement('button');
+        stallButton.type = 'button';
+        stallButton.className = 'skip-source-button';
+        const secondsLeft = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
+        stallButton.textContent = secondsLeft > 0
+          ? 'Skip to next source (' + secondsLeft + 's)'
+          : 'Switching source…';
+        stallButton.disabled = secondsLeft <= 0;
+        stallButton.addEventListener('click', async () => {
+          stallButton.disabled = true;
+          stallButton.textContent = 'Requesting source switch…';
+          try {
+            const result = await sendJSON('/api/acquisitions/skip', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            $('acquisitionsStatus').textContent = result.message || 'Source switch requested.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            stallButton.disabled = false;
+          }
+        });
+        card.append(stallButton);
       }
       const lines = [
         details.message,
@@ -1014,27 +1151,65 @@ function renderAcquisitions(data) {
         details.source_username ? 'Peer: ' + details.source_username : '',
         details.file_count ? 'Expected files: ' + details.file_count : '',
         details.states ? 'Transfer states: ' + details.states.join(', ') : '',
+        details.transfer_states ? 'Transfer states: ' + details.transfer_states.join(', ') : '',
+        details.expected_folder ? 'Expected folder: ' + details.expected_folder : '',
+        details.matched_transfer_records !== undefined ? 'Matched transfer records: ' + details.matched_transfer_records + ' / ' + (details.expected_files ?? details.file_count ?? '?') : '',
+        details.downloads_path_available === false ? 'Completed-download directory is not accessible to the backend.' : '',
+        details.completion_evidence ? 'Completion evidence: ' + details.completion_evidence : '',
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
       for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
-      if (job.status === 'imported') {
+      if (job.status !== 'dismissed') {
         const actions = document.createElement('div');
         actions.className = 'card-actions';
-        const dismiss = document.createElement('button');
+        const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
+        if (retryableStatuses.has(job.status)) {
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.textContent = 'Try again';
+          retry.addEventListener('click', async () => {
+            retry.disabled = true;
+            retry.textContent = 'Retrying…';
+            try {
+              await sendJSON('/api/acquire', 'POST', {
+                artist: job.artist, album: job.album,
+                metadata: details.metadata || {}, auto_queue: true
+              });
+              await loadAcquisitions();
+            } catch (error) {
+              $('acquisitionsStatus').textContent = error.message;
+              retry.disabled = false;
+              retry.textContent = 'Try again';
+            }
+          });
+          actions.append(retry);
+        }
+        if (!['importing', 'imported'].includes(job.status)) {
+          const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
-        dismiss.addEventListener('click', () => {
-          const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
-          stored.add(dismissalKey);
-          localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
-          card.remove();
-          const visibleCards = target.querySelectorAll('.card').length;
-          $('acquisitionsStatus').textContent = visibleCards
-            ? visibleCards + ' acquisition record(s).'
-            : 'No acquisition records to show.';
+        dismiss.addEventListener('click', async () => {
+          dismiss.disabled = true;
+          try {
+            await sendJSON('/api/acquisitions/dismiss', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+            stored.add(dismissalKey);
+            localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+            card.remove();
+            const visibleCards = target.querySelectorAll('.card').length;
+            $('acquisitionsStatus').textContent = visibleCards
+              ? visibleCards + ' acquisition record(s).'
+              : 'No acquisition records to show.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            dismiss.disabled = false;
+          }
         });
-        actions.append(dismiss);
-        card.append(actions);
+          actions.append(dismiss);
+        }
+        if (actions.childElementCount) card.append(actions);
       }
       if (details.status && details.status !== job.status) {
         addTextElement(card, 'pre', 'debug', pretty(details));
@@ -1099,6 +1274,25 @@ function addTextElement(parent, tag, className, text) {
 
 const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
+const artworkRequests = new Map();
+const artistBioRequests = new Map();
+
+function cachedJSONRequest(cache, key, url) {
+  if (!cache.has(key)) {
+    const request = fetch(url)
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (data === null) cache.delete(key);
+        return data;
+      })
+      .catch(() => {
+        cache.delete(key);
+        return null;
+      });
+    cache.set(key, request);
+  }
+  return cache.get(key);
+}
 const artistBioObserver = 'IntersectionObserver' in window
   ? new IntersectionObserver(entries => {
       for (const entry of entries) {
@@ -1157,7 +1351,7 @@ async function loadDashboardPicks() {
       get.textContent = 'get';
       get.title = 'Get this album';
       get.setAttribute('aria-label', 'Get ' + album);
-      get.addEventListener('click', () => searchAlbum(artist, album, item));
+      get.addEventListener('click', () => searchAlbum(artist, album, item, get));
       art.append(get);
       target.append(card);
     }
@@ -1191,14 +1385,15 @@ function attachArtwork(card, artist, album) {
     if (art.dataset.requested) return;
     art.dataset.requested = 'true';
     const query = new URLSearchParams({artist: artist || '', album: album || ''});
-    fetch('/api/artwork?' + query.toString())
-      .then(response => response.ok ? response.json() : null)
+    const cacheKey = (artist || '').trim().toLocaleLowerCase() + '::' + (album || '').trim().toLocaleLowerCase();
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
       .then(data => {
         if (!data) return;
         if (data.year) applyAlbumYear(card, data.year);
         if (!data.artwork_url) return;
         image.onload = () => art.classList.add('has-image');
         image.onerror = () => art.classList.remove('has-image');
+        image.fetchPriority = art.getBoundingClientRect().top < window.innerHeight ? 'high' : 'auto';
         image.src = data.artwork_url;
       })
       .catch(() => {});
@@ -1282,7 +1477,7 @@ function applyRecommendationFilters() {
     getButton.textContent = 'get';
     getButton.title = 'Get this album';
     getButton.setAttribute('aria-label', 'Get ' + album);
-    getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+    getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
     artContainer.append(getButton);
     const dismissButton = document.createElement('button');
     dismissButton.className = 'deep-dive-dismiss';
@@ -1588,8 +1783,8 @@ async function loadDiscovery(name, options = {}) {
         const loadBio = () => {
           if (card.dataset.bioRequested) return;
           card.dataset.bioRequested = 'true';
-          fetch('/api/artist-bio?artist=' + encodeURIComponent(artist))
-            .then(response => response.ok ? response.json() : null)
+          const bioKey = artist.trim().toLocaleLowerCase();
+          cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
             .then(result => {
               if (!result || !result.bio) return;
               bio.textContent = result.bio;
@@ -1625,7 +1820,7 @@ async function loadDiscovery(name, options = {}) {
       getButton.textContent = 'get';
       getButton.title = 'Get this album';
       getButton.setAttribute('aria-label', 'Get ' + album);
-      getButton.addEventListener('click', () => searchAlbum(artist, album, item));
+      getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
       artContainer.append(getButton);
 
       const notForMe = document.createElement('button');
@@ -1732,60 +1927,32 @@ async function pollDiscoveryUntilReady(name) {
   }, 5000);
 }
 
-async function searchAlbum(artist, album, metadata) {
-  showPage('acquireReview');
-  $('acquireStatus').textContent =
-    `Searching for ${artist} — ${album}. A clear match will be queued automatically; review is only needed when the match criteria are not met.`;
-  const target = $('acquireCards');
-  target.replaceChildren();
-
+async function searchAlbum(artist, album, metadata, button = null) {
+  if (button && button.disabled) return;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'requested';
+    button.title = 'Acquisition requested';
+    button.setAttribute('aria-label', 'Acquisition requested for ' + album);
+  }
   try {
     const data = await sendJSON('/api/acquire', 'POST',
       {artist, album, metadata, auto_queue:true});
-
-    $('acquireStatus').textContent = data.message || data.status || 'Search complete.';
-
-    if (data.status === 'review_required') {
-      for (const candidate of data.candidates || []) {
-        const card = document.createElement('article');
-        card.className = 'card';
-        addTextElement(card, 'h3', '', candidate.folder || candidate.username);
-        addTextElement(card, 'p', 'card-meta',
-          `${candidate.file_count} files · ${(candidate.quality_summary || []).join(', ')}`);
-
-        for (const file of (candidate.files || []).slice(0, 10)) {
-          addTextElement(card, 'p', 'card-meta', file.filename);
-        }
-
-        const queue = document.createElement('button');
-        queue.textContent = 'Queue this candidate';
-        queue.addEventListener('click', async () => {
-          if (!confirm(`Queue ${candidate.file_count} files from ${candidate.username}?`)) return;
-          queue.disabled = true;
-          try {
-            const files = (candidate.files || []).map(f =>
-              ({filename:f.filename, size:f.size}));
-            const result = await sendJSON('/api/acquire/queue', 'POST',
-              {username:candidate.username, artist, album, folder:candidate.folder, files,
-             quality_summary:candidate.quality_summary || []});
-            $('acquireStatus').textContent = result.message || result.status;
-            queue.textContent = 'Queue requested';
-          } catch (error) {
-            $('acquireStatus').textContent = error.message;
-            queue.disabled = false;
-          }
-        });
-        card.append(queue);
-        target.append(card);
-      }
-    } else {
-      addTextElement(target, 'p', '', data.message || data.status || pretty(data));
-    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget && data.message) statusTarget.textContent = data.message;
+    // Stay on the discovery page; the persistent Acquisitions view shows progress/failures.
+    await loadAcquisitions();
   } catch (error) {
-    $('acquireStatus').textContent = error.message;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'get';
+      button.title = 'Get this album';
+      button.setAttribute('aria-label', 'Get ' + album);
+    }
+    const statusTarget = document.querySelector('.page:not(.hidden) .status');
+    if (statusTarget) statusTarget.textContent = error.message;
   }
 }
-
 async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
@@ -1847,16 +2014,9 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
-// Populate data-driven pages on startup. Connection diagnostics live in Settings.
+// Populate only the visible dashboard on startup. Other pages load on first visit
+// so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
-$('loadRecommendations').click();
-$('loadProfile').click();
-for (const listName of Object.keys(discoveryViews)) {
-  loadDiscovery(listName, {rotate: listName === 'classics' || listName === 'artist_deep_dive'});
-}
-requestJSON('/api/acquisitions').then(renderAcquisitions).catch(error => {
-  $('acquisitionsStatus').textContent = error.message;
-});
 </script>
 </body>
 </html>
