@@ -305,6 +305,23 @@ def skip_acquisition_source(payload: dict):
         raise HTTPException(status_code=502, detail="Could not request a source switch.")
 
 
+@app.post("/api/acquisitions/dismiss")
+def dismiss_acquisition(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_dismiss_acquisition(artist=artist, album=album))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=404, detail=result.get("error", "Acquisition not found."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not dismiss acquisition.")
+
+
 @app.get("/api/acquisitions/stream")
 def acquisition_status_stream():
     def events():
@@ -1060,21 +1077,30 @@ function renderAcquisitions(data) {
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
       for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
-      if (job.status === 'imported') {
+      if (job.status !== 'dismissed') {
         const actions = document.createElement('div');
         actions.className = 'card-actions';
         const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
-        dismiss.addEventListener('click', () => {
-          const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
-          stored.add(dismissalKey);
-          localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
-          card.remove();
-          const visibleCards = target.querySelectorAll('.card').length;
-          $('acquisitionsStatus').textContent = visibleCards
-            ? visibleCards + ' acquisition record(s).'
-            : 'No acquisition records to show.';
+        dismiss.addEventListener('click', async () => {
+          dismiss.disabled = true;
+          try {
+            await sendJSON('/api/acquisitions/dismiss', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+            stored.add(dismissalKey);
+            localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+            card.remove();
+            const visibleCards = target.querySelectorAll('.card').length;
+            $('acquisitionsStatus').textContent = visibleCards
+              ? visibleCards + ' acquisition record(s).'
+              : 'No acquisition records to show.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            dismiss.disabled = false;
+          }
         });
         actions.append(dismiss);
         card.append(actions);
