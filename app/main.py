@@ -140,7 +140,7 @@ def artist_bio(artist: str):
         if matching_entity:
             extract = " ".join(str(page.get("extract") or "").split())
             if extract:
-                match = __import__("re").search(r"^.*?[.!?](?=\\s|$)", extract)
+                match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
                 bio = match.group(0) if match else extract[:240]
                 if len(bio) > 280:
                     bio = bio[:277].rsplit(" ", 1)[0] + "…"
@@ -968,7 +968,6 @@ document.querySelectorAll('nav button[data-page]').forEach(button =>
     const name = button.dataset.page;
     showPage(name);
     initializePage(name);
-    if (name === 'dashboard' && !initializedPages.has('dashboard')) loadDashboardPicks();
     if (name !== 'acquisitions') stopAcquisitionStream();
   }));
 
@@ -1162,7 +1161,14 @@ function cachedJSONRequest(cache, key, url) {
   if (!cache.has(key)) {
     const request = fetch(url)
       .then(response => response.ok ? response.json() : null)
-      .catch(() => null);
+      .then(data => {
+        if (data === null) cache.delete(key);
+        return data;
+      })
+      .catch(() => {
+        cache.delete(key);
+        return null;
+      });
     cache.set(key, request);
   }
   return cache.get(key);
@@ -1267,6 +1273,7 @@ function attachArtwork(card, artist, album) {
         if (!data.artwork_url) return;
         image.onload = () => art.classList.add('has-image');
         image.onerror = () => art.classList.remove('has-image');
+        image.fetchPriority = art.getBoundingClientRect().top < window.innerHeight ? 'high' : 'auto';
         image.src = data.artwork_url;
       })
       .catch(() => {});
