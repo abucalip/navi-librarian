@@ -3815,7 +3815,13 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                 if source is None:
                     _discovery_update_acquisition_status(artist, album, "download_complete_waiting_for_folder", {
                         "source_username": candidate["username"],
+                        "downloads_path": str(download_root),
                         "downloads_path_available": download_root.is_dir(),
+                        "expected_folder": candidate.get("folder"),
+                        "expected_files": len(expected),
+                        "matched_transfer_records": len(matching_by_name),
+                        "transfer_states": sorted(states),
+                        "completion_evidence": "transfer byte counters or terminal states",
                     })
                 else:
                     if not music_root.is_dir():
