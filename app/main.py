@@ -354,7 +354,9 @@ def dismiss_acquisition(payload: dict):
     try:
         result = parse_result(librarian.discovery_dismiss_acquisition(artist=artist, album=album))
         if isinstance(result, dict) and not result.get("ok"):
-            raise HTTPException(status_code=404, detail=result.get("error", "Acquisition not found."))
+            message = result.get("error", "Could not dismiss acquisition.")
+            status_code = 404 if message == "Acquisition not found." else 409
+            raise HTTPException(status_code=status_code, detail=message)
         return result
     except HTTPException:
         raise
