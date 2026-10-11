@@ -2728,14 +2728,23 @@ def _build_artist_deep_dive_list():
                 candidates[key] = candidate
 
     # Genre tags are presentation metadata only: they do not change candidate scores.
+    # Last.fm top tags can be sparse for lesser-known artists; when that happens,
+    # inherit tags from the 3+ album library artist that surfaced this candidate.
     artist_genre_cache = {}
     for item in candidates.values():
         artist_name = str(item.get("artist") or "").strip()
+        anchor_name = str(item.get("anchor_artist") or "").strip()
         cache_key = _music_key(artist_name)
         if not item.get("genres") and artist_name:
             if cache_key not in artist_genre_cache:
                 artist_genre_cache[cache_key] = _lastfm_artist_genres(artist_name)
             item["genres"] = artist_genre_cache[cache_key]
+        if not item.get("genres") and anchor_name:
+            anchor_key = _music_key(anchor_name)
+            if anchor_key not in artist_genre_cache:
+                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
+            item["genres"] = artist_genre_cache[anchor_key]
+            item["genre_inherited_from_anchor"] = bool(item["genres"])
         if not item.get("genre_families"):
             item["genre_families"] = _deep_dive_genre_families(item.get("genres") or [])
         import math
