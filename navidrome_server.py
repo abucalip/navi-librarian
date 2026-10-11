@@ -2499,8 +2499,9 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
             timeout=15,
         )
         if response.status_code == 404:
-            _metadata_cache_set(cache_key, {"rating": None, "votes": 0})
-            return {"rating": None, "votes": 0}
+            empty_result = {"rating": None, "votes": 0, "year": None}
+            _metadata_cache_set(cache_key, empty_result)
+            return empty_result
         response.raise_for_status()
         data = response.json()
         rating = data.get("rating") or {}
@@ -2721,7 +2722,7 @@ def _build_artist_deep_dive_list():
     for index, anchor in enumerate(
         sorted(anchors, key=lambda item: item["album_count"], reverse=True)
     ):
-        for similar in _lastfm_similar_artists(anchor["name"], limit=8):
+        for similar in _lastfm_similar_artists(anchor["name"], limit=15):
             similar_key = _music_key(similar["artist"])
             if similar_key in owned_artists:
                 continue
