@@ -4583,16 +4583,78 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
         return "imported"
 
 
+def _discovery_reconcile_interrupted_import(artist, album, candidate):
+    """Mark a previously completed filesystem move imported after a process crash.
+
+    Reconciliation is deliberately limited to jobs still marked importing and
+    to the exact destination recorded before the move began.
+    """
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return False
+
+        identity = (_music_key(artist), _music_key(album))
+        job = next((
+            item for item in _discovery_list_acquisition_jobs()
+            if (item.get("artist_key"), item.get("album_key")) == identity
+        ), None)
+        if not job or job.get("status") != "importing":
+            return False
+
+        details = job.get("details") or {}
+        expected_destination = details.get("destination")
+        if not expected_destination:
+            return False
+
+        try:
+            music_root = Path(MUSIC_DIR).expanduser().resolve(strict=True)
+            artist_dir = music_root / _discovery_safe_folder_name(artist)
+            album_dir = artist_dir / _discovery_safe_folder_name(album)
+            destination = Path(expected_destination)
+            if str(destination) != str(album_dir):
+                return False
+            if artist_dir.is_symlink() or album_dir.is_symlink():
+                return False
+            if not artist_dir.is_dir() or not album_dir.is_dir():
+                return False
+            if artist_dir.resolve(strict=True).parent != music_root:
+                return False
+            if album_dir.resolve(strict=True).parent != artist_dir.resolve(strict=True):
+                return False
+
+            expected_names = {
+                str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1].casefold()
+                for item in candidate.get("files", [])
+                if str(item.get("filename") or "").strip()
+            }
+            matched = _discovery_match_completed_album_files(album_dir, candidate)
+            if not expected_names or not matched or set(matched) != expected_names:
+                return False
+        except (OSError, RuntimeError, TypeError, ValueError):
+            return False
+
+        _discovery_update_acquisition_status(artist, album, "imported", {
+            "source_folder": details.get("source_folder"),
+            "destination": str(album_dir),
+            "source_username": candidate.get("username"),
+            "imported_at": time.time(),
+            "recovered_after_restart": True,
+        })
+        return True
+
+
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
     """Import once all expected files exist with matching sizes, even if slskd prunes transfer records."""
     import shutil
+    music_root = MUSIC_DIR.expanduser()
+    if _discovery_reconcile_interrupted_import(artist, album, candidate):
+        return
     base_url, api_key, _ = _slskd_config()
     headers = {"X-API-KEY": api_key}
     download_root = Path(str(
         settings.get("slskd_downloads_path")
         or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
     )).expanduser()
-    music_root = MUSIC_DIR.expanduser()
     expected = {
         str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
         for item in candidate.get("files", [])
