@@ -4407,13 +4407,18 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
         ]
         if not files or not next_candidate.get("username"):
             continue
+        queue_error = None
         try:
             response = httpx.post(
                 f"{base_url}/api/v0/transfers/downloads/{next_candidate['username']}",
                 headers=headers, json=files, timeout=12,
             )
             response.raise_for_status()
-        except (httpx.HTTPError, ValueError, TypeError):
+        except httpx.HTTPError as exc:
+            # The server may have accepted the request before the connection
+            # failed. Inspect the source before considering another peer.
+            queue_error = type(exc).__name__
+        except (ValueError, TypeError):
             continue
         monitor_candidate = dict(next_candidate)
         monitor_candidate["files"] = files
@@ -4423,7 +4428,6 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
             if start_state is None:
                 # The new source may be active. Persist it and keep monitoring rather
                 # than queueing another peer or abandoning a possibly live transfer.
-                monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
                 details = {
                     "source_username": next_candidate.get("username"),
                     "folder": next_candidate.get("folder"),
@@ -4432,7 +4436,13 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
                     "downloads_path": str(download_root),
                     "previous_source_username": candidate.get("username"),
                     "source_switch_reason": reason,
-                    "message": "The next source was queued but its start could not be confirmed; monitoring it to avoid duplicate downloads.",
+                    "queue_error": queue_error,
+                    "message": (
+                        "The fallback queue outcome is uncertain; monitoring this "
+                        "source to avoid duplicate downloads."
+                        if queue_error else
+                        "The next source was queued but its start could not be confirmed; monitoring it to avoid duplicate downloads."
+                    ),
                 }
                 _discovery_save_acquisition_job(artist, album, "downloading", details,
                                                 candidate=monitor_candidate, settings=settings)
