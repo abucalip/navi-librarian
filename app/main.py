@@ -1045,7 +1045,7 @@ function renderAcquisitions(data) {
           ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
           : 'Not reported'));
       const progress = details.live_progress;
-      if (job.status === 'downloading' && progress) {
+      if (['downloading', 'download_complete_waiting_for_folder'].includes(job.status) && progress) {
         const progressRow = document.createElement('div');
         progressRow.className = 'download-progress';
         const ring = document.createElement('div');
@@ -1096,6 +1096,11 @@ function renderAcquisitions(data) {
         details.source_username ? 'Peer: ' + details.source_username : '',
         details.file_count ? 'Expected files: ' + details.file_count : '',
         details.states ? 'Transfer states: ' + details.states.join(', ') : '',
+        details.transfer_states ? 'Transfer states: ' + details.transfer_states.join(', ') : '',
+        details.expected_folder ? 'Expected folder: ' + details.expected_folder : '',
+        details.matched_transfer_records !== undefined ? 'Matched transfer records: ' + details.matched_transfer_records + ' / ' + (details.expected_files ?? details.file_count ?? '?') : '',
+        details.downloads_path_available === false ? 'Completed-download directory is not accessible to the backend.' : '',
+        details.completion_evidence ? 'Completion evidence: ' + details.completion_evidence : '',
         job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
       ].filter(Boolean);
       for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
