@@ -5,6 +5,7 @@ import random
 import secrets
 import sqlite3
 import time
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -3802,11 +3803,18 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
+def _discovery_filename_key(value):
+    """Normalize names for case-insensitive matching across macOS filesystems."""
+    return unicodedata.normalize("NFC", str(value or "")).casefold()
+
+
 def _discovery_match_completed_album_files(folder, candidate):
     """Match each unique expected basename to a local file.
 
     Collision-suffixed filenames are accepted only when their numeric suffix
-    and advertised file size establish a unique match.
+    and advertised file size establish a unique match. Unicode normalization
+    handles filenames returned in different forms by macOS filesystems and
+    remote transfer metadata.
     """
     import re
 
@@ -3820,7 +3828,7 @@ def _discovery_match_completed_album_files(folder, candidate):
         name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
         if not name:
             continue
-        key = name.casefold()
+        key = _discovery_filename_key(name)
         try:
             size = int(item.get("size"))
         except (TypeError, ValueError):
@@ -3839,14 +3847,15 @@ def _discovery_match_completed_album_files(folder, candidate):
     for key, (expected_name, expected_size) in expected_by_name.items():
         exact = [
             p for p in files
-            if p.name.casefold() == key
+            if _discovery_filename_key(p.name) == key
             and p not in used
             and (expected_size <= 0 or p.stat().st_size == expected_size)
         ]
         selected = exact[0] if len(exact) == 1 else None
 
         if selected is None and expected_size > 0:
-            stem, suffix = Path(expected_name).stem, Path(expected_name).suffix
+            normalized_expected = unicodedata.normalize("NFC", expected_name)
+            stem, suffix = Path(normalized_expected).stem, Path(normalized_expected).suffix
             pattern = re.compile(
                 r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
                 re.IGNORECASE,
@@ -3854,7 +3863,7 @@ def _discovery_match_completed_album_files(folder, candidate):
             alternatives = [
                 p for p in files
                 if p not in used
-                and pattern.match(p.name)
+                and pattern.match(unicodedata.normalize("NFC", p.name))
                 and p.stat().st_size == expected_size
             ]
             if len(alternatives) == 1:
@@ -3900,9 +3909,10 @@ def _discovery_locate_completed_album(download_root, candidate):
     if not matches:
         return None
 
+    wanted_folder_key = _discovery_filename_key(wanted_folder)
     named_matches = [
         path for path in matches
-        if path.name.casefold() == str(wanted_folder or "").casefold()
+        if _discovery_filename_key(path.name) == wanted_folder_key
     ]
     # Matching track names and sizes do not prove source-folder ownership.
     # If the expected folder name is absent or ambiguous, refuse to import.
@@ -5091,8 +5101,11 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                     })
                     return
         except Exception as exc:
+            # Preserve the actual failure reason so recurring monitor errors can
+            # be diagnosed from acquisition status without attaching a debugger.
             _discovery_update_acquisition_status(artist, album, "monitor_error", {
-                "error": type(exc).__name__
+                "error": type(exc).__name__,
+                "error_message": str(exc)[:500],
             })
         time.sleep(2)
     _discovery_update_acquisition_status(artist, album, "monitor_timeout", {
