@@ -922,14 +922,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   </div>
 </section>
 
-<section id="acquireReview" class="page hidden">
-  <div class="panel">
-    <h2>Review download candidates</h2>
-    <p id="acquireStatus"></p>
-    <div id="acquireCards" class="cards"></div>
-    <button data-page="personalDiscoveries">Back to discoveries</button>
-  </div>
-</section>
+
 
 </main>
 
