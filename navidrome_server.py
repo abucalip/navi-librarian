@@ -3895,6 +3895,7 @@ def _discovery_locate_completed_album(download_root, candidate):
 
 def _discovery_import_matched_album_files(source, destination, candidate):
     """Stage only the verified expected tracks, leaving unrelated files behind."""
+    import json
     import shutil
     import uuid
 
@@ -3912,15 +3913,30 @@ def _discovery_import_matched_album_files(source, destination, candidate):
     if parent.is_symlink() or not parent.is_dir():
         raise OSError("Import destination parent is not a real directory")
 
+    manifest_name = ".navidrome-import.json"
+    if any(name.casefold() == manifest_name.casefold() for name in matched):
+        raise OSError("A track name conflicts with the reserved import manifest")
+
     staging = parent / (".navidrome-import-" + uuid.uuid4().hex)
     staging.mkdir(parents=True, exist_ok=False)
+    manifest = staging / manifest_name
+    manifest_data = {
+        "source": str(Path(source).resolve()),
+        "destination": str(destination),
+        "tracks": {
+            name: int(path.stat().st_size)
+            for name, path in matched.items()
+        },
+    }
     moved = []
     try:
+        manifest.write_text(json.dumps(manifest_data, ensure_ascii=False), encoding="utf-8")
         for expected_name, actual_path in matched.items():
             staged_path = staging / expected_name
             shutil.move(str(actual_path), str(staged_path))
             moved.append((staged_path, actual_path))
-        # Destination should not exist; rename the complete staged album into place.
+        # Remove recovery metadata before the complete staged album is exposed.
+        manifest.unlink()
         if destination.exists() or destination.is_symlink():
             raise FileExistsError(str(destination))
         staging.rename(destination)
@@ -3932,6 +3948,7 @@ def _discovery_import_matched_album_files(source, destination, candidate):
                 except OSError:
                     pass
         try:
+            manifest.unlink(missing_ok=True)
             staging.rmdir()
         except OSError:
             pass
@@ -4676,7 +4693,17 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
             recoverable = []
             for staging in staging_dirs:
                 try:
-                    entries = list(staging.iterdir())
+                    manifest = staging / ".navidrome-import.json"
+                    if manifest.is_symlink() or not manifest.is_file():
+                        continue
+                    manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+                    if (
+                        manifest_data.get("source") != str(source_folder.resolve(strict=True))
+                        or manifest_data.get("destination") != str(album_dir)
+                        or {str(k).casefold(): int(v) for k, v in manifest_data.get("tracks", {}).items()} != expected_sizes
+                    ):
+                        continue
+                    entries = [item for item in staging.iterdir() if item != manifest]
                     if not entries or any(
                         item.is_symlink() or not item.is_file() for item in entries
                     ):
@@ -4691,16 +4718,18 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                             valid = False
                             break
                     if valid:
-                        recoverable.append((staging, entries))
-                except (OSError, RuntimeError):
+                        recoverable.append((staging, entries, manifest))
+                except (OSError, RuntimeError, ValueError, TypeError):
                     continue
 
             if len(recoverable) != 1:
                 return False
             import shutil
-            staging, entries = recoverable[0]
+            import shutil
+            staging, entries, manifest = recoverable[0]
             for item in entries:
                 shutil.move(str(item), str(source_folder / item.name))
+            manifest.unlink()
             staging.rmdir()
             return False
         except (OSError, RuntimeError, TypeError, ValueError):
