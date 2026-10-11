@@ -2789,36 +2789,56 @@ def _build_artist_deep_dive_list():
                 item["genre_families"] = anchor_families
                 item["genre_inherited_from_anchor"] = True
         import math
-        popularity = math.log10(item.get("lastfm_listeners", 0) + 1)
-        playcount = math.log10(item.get("lastfm_playcount", 0) + 1)
+        popularity = math.log10(max(0, int(item.get("lastfm_listeners") or 0)) + 1)
+        playcount = math.log10(max(0, int(item.get("lastfm_playcount") or 0)) + 1)
         candidate_score = float(item.get("candidate_pool_score", 0) or 0)
-        candidate_bonus = candidate_score * 10.0
+        # Similarity to an established library artist and candidate-pool evidence
+        # should matter more than global Last.fm popularity.
+        candidate_bonus = candidate_score * 2.5
         anchor_bonus = (
             min(int(item.get("anchor_album_count", 0) or 0), 15) * 0.05
             if candidate_score else 0.0
         )
         item["discovery_score"] = round(
-            popularity * 0.65 + playcount * 0.20
-            + float(item.get("similar_artist_score", 0)) * 0.15
+            popularity * 0.15 + playcount * 0.03
+            + float(item.get("similar_artist_score", 0)) * 2.0
             + candidate_bonus + anchor_bonus,
             4,
         )
-    # Exploration ranking softens the advantage of very high listener counts,
-    # giving lower-profile related artists a fairer chance to appear.
+    # Strongly penalize listener-count dominance and give genuinely lesser-known
+    # artists a meaningful exploration bonus. Last.fm's top-album endpoint is
+    # popularity-sorted, so cap both artist and anchor repetition afterwards.
     import math
     for item in candidates.values():
         listeners = max(0, int(item.get("lastfm_listeners") or 0))
         listener_magnitude = math.log10(listeners + 1)
         item["exploration_score"] = round(
-            item["discovery_score"] - listener_magnitude * 0.4
-            + max(0.0, 5.5 - listener_magnitude) * 0.22,
+            item["discovery_score"] - listener_magnitude * 0.65
+            + max(0.0, 6.0 - listener_magnitude) * 0.35,
             4,
         )
     ranked = sorted(
         candidates.values(),
-        key=lambda item: item["exploration_score"],
+        key=lambda item: (
+            item["exploration_score"],
+            float(item.get("similar_artist_score", 0) or 0),
+        ),
         reverse=True,
     )
+    diversified = []
+    artist_counts = {}
+    anchor_counts = {}
+    for item in ranked:
+        artist_key = _music_key(item.get("artist", ""))
+        anchor_key = _music_key(item.get("anchor_artist", ""))
+        if artist_counts.get(artist_key, 0) >= 2:
+            continue
+        if anchor_key and anchor_counts.get(anchor_key, 0) >= 4:
+            continue
+        diversified.append(item)
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        if anchor_key:
+            anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
     # Resolve years only for a bounded top slice with MusicBrainz IDs. The
     # release-group metadata is cached, so later refreshes reuse these lookups.
     for item in ranked[:25]:
@@ -2833,7 +2853,7 @@ def _build_artist_deep_dive_list():
         "generated_at": time.time(),
         "artists_with_three_or_more_owned_albums": len(anchors),
         "missing_albums_and_similar_artist_candidates": len(ranked),
-        "items": ranked[:150],
+        "items": diversified[:150],
         "limitations": [
             "Artist similarity is sourced from Last.fm and is not a guarantee of musical fit.",
             "Popularity uses Last.fm listener and play counts where available.",
