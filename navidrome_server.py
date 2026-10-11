@@ -4995,7 +4995,37 @@ def _discovery_acquire_album_impl(
                         "ok": False, "status": "dismissed", "artist": artist, "album": album,
                         "message": "This acquisition was dismissed before a source could be queued.",
                     }, ensure_ascii=False)
-            except (httpx.HTTPError, ValueError, TypeError) as exc:
+            except httpx.HTTPError as exc:
+                # A timeout or server error can happen after slskd accepted
+                # the queue request. Monitor this peer before considering a
+                # fallback, otherwise two sources could download the album.
+                candidate_for_monitor = dict(candidate)
+                candidate_for_monitor["files"] = selected_files
+                candidate_for_monitor["quality_summary"] = list(
+                    candidate.get("quality_summary") or []
+                )
+                candidate_for_monitor["fallback_candidates"] = [
+                    {**item, "files": [
+                        {"filename": file["filename"], "size": file["size"]}
+                        for file in item.get("files", [])
+                    ]}
+                    for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
+                ]
+                _discovery_start_import_watcher(
+                    artist, album, candidate_for_monitor, settings
+                )
+                return json.dumps({
+                    "ok": True, "status": "queued_unconfirmed",
+                    "artist": artist, "album": album,
+                    "source_username": candidate["username"],
+                    "folder": candidate["folder"],
+                    "message": (
+                        "The queue request returned an HTTP error, so its outcome "
+                        "is uncertain. Monitoring this source before attempting "
+                        "another peer to avoid duplicate downloads."
+                    ),
+                }, ensure_ascii=False)
+            except (ValueError, TypeError) as exc:
                 failures.append({
                     "username": candidate["username"],
                     "folder": candidate["folder"],
