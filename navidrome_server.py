@@ -3821,7 +3821,15 @@ def _discovery_match_completed_album_files(folder, candidate):
         if not name:
             continue
         key = name.casefold()
-        size = max(0, int(item.get("size") or 0))
+        try:
+            size = int(item.get("size"))
+        except (TypeError, ValueError):
+            return None
+        # Album tracks must have a known, positive advertised size. Treating a
+        # missing/zero size as a wildcard could mistake a partial transfer for
+        # a completed track during import or restart reconciliation.
+        if size <= 0:
+            return None
 
         # Identical basenames with conflicting advertised sizes are ambiguous.
         if key in expected_by_name and expected_by_name[key][1] != size:
@@ -3953,8 +3961,18 @@ def _discovery_import_matched_album_files(source, destination, candidate, expect
         manifest.write_text(json.dumps(manifest_data, ensure_ascii=False), encoding="utf-8")
         for expected_name, actual_path in matched.items():
             assert_music_storage_identity()
+            expected_size = int(manifest_data["tracks"][expected_name])
+            try:
+                source_stat = actual_path.lstat()
+            except OSError as exc:
+                raise OSError(f"Expected track disappeared before staging: {expected_name}") from exc
+            if not actual_path.is_file() or actual_path.is_symlink() or source_stat.st_size != expected_size:
+                raise OSError(f"Expected track changed before staging: {expected_name}")
             staged_path = staging / expected_name
             shutil.move(str(actual_path), str(staged_path))
+            staged_stat = staged_path.lstat()
+            if staged_path.is_symlink() or not staged_path.is_file() or staged_stat.st_size != expected_size:
+                raise OSError(f"Staged track failed validation: {expected_name}")
             moved.append((staged_path, actual_path))
         assert_music_storage_identity()
         if destination.exists() or destination.is_symlink():
