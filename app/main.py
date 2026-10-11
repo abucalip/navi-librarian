@@ -2,6 +2,7 @@ import json
 from html import escape
 from time import monotonic, sleep
 import threading
+import httpx
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
