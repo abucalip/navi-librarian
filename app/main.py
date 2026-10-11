@@ -1455,7 +1455,9 @@ async function loadDiscovery(name) {
       card.append(title);
       addTextElement(card, 'p', 'card-artist', artist);
 
-      if (isDeepDive) {
+      const needsBio = isDeepDive ||
+        /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
+      if (needsBio) {
         const bio = addTextElement(card, 'p', 'artist-bio', '');
         bio.hidden = true;
         const loadBio = () => {
@@ -1475,7 +1477,7 @@ async function loadDiscovery(name) {
         else loadBio();
       }
 
-      if (item.reason && !isDeepDive) addTextElement(card, 'p', 'card-meta', item.reason);
+      if (item.reason && !needsBio) addTextElement(card, 'p', 'card-meta', item.reason);
       if (item.anchor_artist) addTextElement(card, 'p', 'card-meta',
         `Similar to ${item.anchor_artist}`);
       if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
