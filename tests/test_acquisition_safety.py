@@ -280,6 +280,11 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             destination = music / "Artist" / "Album"
             destination.mkdir(parents=True)
             (destination / "01.flac").write_bytes(b"1234")
+            (destination / ".navidrome-import.json").write_text(json.dumps({
+                "source": str(Path("/downloads/Album").resolve()),
+                "destination": str(destination),
+                "tracks": {"01.flac": 4},
+            }), encoding="utf-8")
             self.ns["MUSIC_DIR"] = music
             self.ns["jobs"].append({
                 "artist_key": "artist",
@@ -302,6 +307,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertTrue(recovered)
         self.assertEqual(self.ns["status_updates"][-1][0][2], "imported")
         self.assertTrue(self.ns["status_updates"][-1][0][3]["recovered_after_restart"])
+        self.assertFalse((destination / ".navidrome-import.json").exists())
 
     def test_partial_staging_is_rolled_back_to_download_folder_after_restart(self):
         with tempfile.TemporaryDirectory() as temp:
