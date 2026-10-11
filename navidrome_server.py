@@ -2482,12 +2482,12 @@ def _lastfm_similar_artists(artist, limit=8):
     return output
 
 
-def _musicbrainz_critical_rating(mbid):
+def _musicbrainz_critical_rating(mbid, include_year=False):
     if not mbid:
         return None
     cache_key = "discovery:mb-release-group-rating:" + str(mbid)
     cached = _metadata_cache_get(cache_key, ttl_seconds=180 * 24 * 60 * 60)
-    if cached is not None:
+    if cached is not None and (not include_year or "year" in cached):
         return cached
     try:
         # MusicBrainz requests must be spaced to respect its public API limit.
@@ -2559,7 +2559,9 @@ def _build_classics_list():
     # MusicBrainz ratings add a critical-recognition signal when available.
     # Only enrich the strongest candidates; ratings are sparse and community supplied.
     for index, candidate in enumerate(ranked[:80]):
-        rating = _musicbrainz_critical_rating(candidate.get("mbid"))
+        rating = _musicbrainz_critical_rating(
+            candidate.get("mbid"), include_year=index < 25
+        )
         if rating:
             candidate["musicbrainz_rating"] = rating.get("rating")
             candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
@@ -2821,7 +2823,7 @@ def _build_artist_deep_dive_list():
     for item in ranked[:25]:
         if item.get("year") or not item.get("mbid"):
             continue
-        rating = _musicbrainz_critical_rating(item.get("mbid"))
+        rating = _musicbrainz_critical_rating(item.get("mbid"), include_year=True)
         if rating and rating.get("year"):
             item["year"] = rating["year"]
     return {
