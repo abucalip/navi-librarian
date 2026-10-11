@@ -3970,10 +3970,12 @@ def _discovery_import_matched_album_files(source, destination, candidate, expect
                 raise OSError(f"Expected track changed before staging: {expected_name}")
             staged_path = staging / expected_name
             shutil.move(str(actual_path), str(staged_path))
+            # Record the move before post-move validation so rollback can restore
+            # even a path swapped for a symlink between lstat and move.
+            moved.append((staged_path, actual_path))
             staged_stat = staged_path.lstat()
             if staged_path.is_symlink() or not staged_path.is_file() or staged_stat.st_size != expected_size:
                 raise OSError(f"Staged track failed validation: {expected_name}")
-            moved.append((staged_path, actual_path))
         assert_music_storage_identity()
         if destination.exists() or destination.is_symlink():
             raise FileExistsError(str(destination))
