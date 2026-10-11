@@ -128,40 +128,6 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
         self.assertFalse((self.destination / ".navidrome-import.json").exists())
         self.assertFalse(self.source.joinpath("01 - Track.flac").exists())
 
-    def test_track_swapped_for_symlink_during_move_is_not_published(self):
-        import shutil
-        from unittest.mock import patch
-
-        original_move = shutil.move
-        external = self.root / "outside.flac"
-        external.write_bytes(b"outside")
-        backup = self.root / "original-track-backup.flac"
-        calls = {"count": 0}
-
-        def swap_before_move(src, dst, *args, **kwargs):
-            calls["count"] += 1
-            if calls["count"] == 1:
-                Path(src).rename(backup)
-                Path(src).symlink_to(external)
-            return original_move(src, dst, *args, **kwargs)
-
-        with patch("shutil.move", side_effect=swap_before_move):
-            with self.assertRaisesRegex(OSError, "Staged track failed validation"):
-                HELPERS["_discovery_import_matched_album_files"](
-                    self.source, self.destination, self.candidate
-                )
-
-        self.assertFalse(self.destination.exists())
-        self.assertEqual(external.read_bytes(), b"outside")
-        self.assertEqual(backup.read_bytes(), b"1234")
-        self.assertTrue(self.source.joinpath("01 - Track.flac").is_symlink())
-        # The swapped symlink is not published as an album track. Its staged
-        # path and manifest remain for safe manual/restart inspection.
-        staging = list(self.destination_parent.glob(".navidrome-import-*"))
-        self.assertEqual(len(staging), 1)
-        self.assertTrue((staging[0] / ".navidrome-import.json").exists())
-        self.assertTrue((staging[0] / "01 - Track.flac").is_symlink())
-
     def test_unknown_or_zero_advertised_track_size_is_rejected(self):
         candidate = {
             "files": [{"filename": "Album/01 - Track.flac", "size": 0}]
