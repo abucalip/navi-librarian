@@ -886,6 +886,7 @@ function showPage(name) {
 document.querySelectorAll('nav button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
     showPage(button.dataset.page);
+    if (button.dataset.page === 'dashboard') loadDashboardPicks();
     if (button.dataset.page === 'settings') { loadSlskdSettings(); checkConnection(); }
     if (button.dataset.page === 'acquisitions') startAcquisitionStream();
     else stopAcquisitionStream();
@@ -1504,6 +1505,7 @@ async function loadDiscovery(name, options = {}) {
       }
       const orderedGroups = [...grouped.entries()].sort((a, b) =>
         (b[1].length - a[1].length) || a[0].localeCompare(b[0]));
+      items = orderedGroups.flatMap(([, genreItems]) => genreItems);
       for (const [genre, genreItems] of orderedGroups) {
         const row = document.createElement('section');
         row.className = 'genre-row';
@@ -1654,7 +1656,6 @@ async function refreshDiscovery(name) {
       const stamp = Number(current.generated_at || 0);
       if (stamp > previous) {
         await loadDiscovery(name, {rotate: true});
-        if (name === 'classics' || name === 'artist_deep_dive') await loadDiscovery(name, {rotate: true});
         if ($('dashboard').classList.contains('hidden') === false) loadDashboardPicks();
         return;
       }
