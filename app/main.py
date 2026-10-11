@@ -350,6 +350,7 @@ def album_artwork(artist: str = "", album: str = ""):
                         "image_kind": "artist",
                         "source": "Deezer",
                         "matched_artist": exact.get("name"),
+                        "year": result.get("year"),
                     }
     except Exception:
         # A catalog outage must never break discovery or recommendation results.
