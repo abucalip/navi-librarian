@@ -3294,6 +3294,19 @@ def _slskd_extract_candidates(payload, artist, album, priority, expected_track_c
             })
     candidates = []
     for (username, folder), files in groups.items():
+        # If the same track is advertised more than once in a folder, retain one
+        # copy: highest-priority quality tier, then largest file size as tie-break.
+        best_by_track = {}
+        for item in files:
+            track_key = _slskd_track_identity(item["filename"])
+            if not track_key:
+                continue
+            previous = best_by_track.get(track_key)
+            if (previous is None
+                    or (item["quality_rank"], -item["size"]) <
+                       (previous["quality_rank"], -previous["size"])):
+                best_by_track[track_key] = item
+        files = list(best_by_track.values())
         tiers = [item["quality_rank"] for item in files if item["quality_rank"] <= len(priority)]
         avg_rank = sum(tiers) / len(tiers) if tiers else len(priority) + 1
         all_clear = any(item["artist_in_path"] for item in files) and any(
@@ -4339,6 +4352,13 @@ def discovery_acquire_album(
                 for item in uncertain["files"]
             ]
             candidate_for_monitor["quality_summary"] = list(uncertain.get("quality_summary") or [])
+            candidate_for_monitor["fallback_candidates"] = [
+                {**item, "files": [
+                    {"filename": file["filename"], "size": file["size"]}
+                    for file in item.get("files", [])
+                ]}
+                for item in clear_candidates[clear_candidates.index(uncertain) + 1:10]
+            ]
             _discovery_start_import_watcher(
                 artist, album, candidate_for_monitor, settings
             )
