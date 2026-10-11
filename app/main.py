@@ -321,14 +321,16 @@ def album_artwork(artist: str = "", album: str = ""):
             match = max(albums, key=match_score)
             if match_score(match) >= 5:
                 artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
-                if artwork:
-                    result = {
-                        "artwork_url": artwork.replace("http://", "https://", 1),
-                        "image_kind": "album",
-                        "source": "Deezer",
-                        "matched_artist": (match.get("artist") or {}).get("name"),
-                        "matched_album": match.get("title"),
-                    }
+                release_date = str(match.get("release_date") or "")
+                year_text = release_date[:4]
+                result = {
+                    "artwork_url": artwork.replace("http://", "https://", 1) if artwork else None,
+                    "image_kind": "album",
+                    "source": "Deezer",
+                    "matched_artist": (match.get("artist") or {}).get("name"),
+                    "matched_album": match.get("title"),
+                    "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
+                }
 
         # If the album is not in the catalog, use a matching artist photo instead.
         if not result["artwork_url"] and artist:
@@ -908,6 +910,16 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
+function applyAlbumYear(card, value) {
+  const year = Number(value || 0);
+  if (!(year >= 1900 && year <= 2100)) return;
+  card.dataset.releaseYear = String(year);
+  const title = card.querySelector('h3');
+  if (title && !title.querySelector('.album-year')) {
+    addTextElement(title, 'span', 'album-year', String(year));
+  }
+}
+
 function attachArtwork(card, artist, album) {
   const art = document.createElement('div');
   art.className = 'card-art';
@@ -931,7 +943,9 @@ function attachArtwork(card, artist, album) {
     fetch('/api/artwork?' + query.toString())
       .then(response => response.ok ? response.json() : null)
       .then(data => {
-        if (!data || !data.artwork_url) return;
+        if (!data) return;
+        if (data.year) applyAlbumYear(card, data.year);
+        if (!data.artwork_url) return;
         image.onload = () => art.classList.add('has-image');
         image.onerror = () => art.classList.remove('has-image');
         image.src = data.artwork_url;
@@ -1024,7 +1038,7 @@ function applyRecommendationFilters() {
 
     const title = document.createElement('h3');
     title.append(document.createTextNode(item.album || item.title || item.name || 'Untitled album'));
-    const year = Number(item.year || item.release_year || item.first_release_year || 0);
+    const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
     if (year >= 1900 && year <= 2100) {
       addTextElement(title, 'span', 'album-year', String(year));
     }
@@ -1279,7 +1293,7 @@ async function loadDiscovery(name) {
         (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || 0);
+      const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
       if (year >= 1900 && year <= 2100) {
         addTextElement(title, 'span', 'album-year', String(year));
       }
