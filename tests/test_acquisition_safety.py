@@ -153,6 +153,32 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
             )
         self.assertFalse((real_parent / "Artist - Album").exists())
 
+
+    def test_failed_staged_move_rolls_tracks_back_to_source(self):
+        import shutil
+        original_move = shutil.move
+        calls = {"count": 0}
+
+        def fail_on_second_move(src, dst, *args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                raise OSError("simulated second-track move failure")
+            return original_move(src, dst, *args, **kwargs)
+
+        from unittest.mock import patch
+        with patch("shutil.move", side_effect=fail_on_second_move):
+            with self.assertRaises(OSError):
+                HELPERS["_discovery_import_matched_album_files"](
+                    self.source, self.destination, self.candidate
+                )
+
+        self.assertFalse(self.destination.exists())
+        self.assertTrue((self.source / "01 - Track.flac").exists())
+        self.assertTrue((self.source / "02 - Track.flac").exists())
+        self.assertEqual((self.source / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
+        self.assertEqual(list(self.destination_parent.glob(".navidrome-import-*")), [])
+
     def test_conflicting_duplicate_remote_basenames_are_ambiguous(self):
         candidate = {"files": [
             {"filename": "A/01.flac", "size": 4},
@@ -239,6 +265,28 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(json.loads(second_result)["status"], "already_in_progress")
         self.assertEqual(json.loads(first_result[0])["status"], "queued")
 
+
+
+    def test_incomplete_saved_download_details_do_not_start_or_requeue(self):
+        self.ns["jobs"].append({
+            "artist": "Artist",
+            "album": "Album",
+            "artist_key": "artist",
+            "album_key": "album",
+            "status": "downloading",
+            "candidate": {"username": "peer", "files": []},
+            "settings": {},
+        })
+        impl_calls = []
+        watcher_calls = []
+        self.ns["_discovery_acquire_album_impl"] = lambda *args: impl_calls.append(args)
+        self.ns["_discovery_start_import_watcher"] = lambda *args: watcher_calls.append(args)
+
+        result = json.loads(self.ns["discovery_acquire_album"]("Artist", "Album"))
+
+        self.assertEqual(result["status"], "recovery_unavailable")
+        self.assertEqual(impl_calls, [])
+        self.assertEqual(watcher_calls, [])
 
     def test_ambiguous_fallback_queue_is_monitored_without_trying_another_peer(self):
         posts = []
