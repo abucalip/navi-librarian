@@ -3973,8 +3973,11 @@ def _discovery_import_matched_album_files(source, destination, candidate, expect
         for staged_path, original_path in reversed(moved):
             if staged_path.exists() and not original_path.exists():
                 try:
+                    assert_music_storage_identity()
                     shutil.move(str(staged_path), str(original_path))
                 except OSError:
+                    # If the library mount changed, leave staged data and its
+                    # manifest untouched for later/manual recovery.
                     rollback_complete = False
             elif staged_path.exists() or not original_path.exists():
                 rollback_complete = False
