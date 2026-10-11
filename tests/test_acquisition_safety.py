@@ -26,6 +26,7 @@ def load_helpers():
         "_slskd_candidate_start_state",
         "_discovery_queue_candidate_unless_dismissed",
         "_discovery_switch_to_next_source_locked",
+        "_discovery_import_completed_source",
         "discovery_acquire_album",
     }
     selected = [
@@ -60,6 +61,8 @@ def load_helpers():
         "_slskd_download_transfer_files": lambda *_args, **_kwargs: [],
         "_slskd_config": lambda: ("http://slskd", None, {}),
         "_discovery_cancel_and_clean_source": lambda *_args, **_kwargs: True,
+        "_discovery_safe_folder_name": lambda value: str(value).replace("/", "_"),
+        "_discovery_import_matched_album_files": lambda *_args, **_kwargs: None,
         "saved_jobs": [],
         "status_updates": [],
         "_discovery_save_acquisition_job": lambda *args, **kwargs: namespace["saved_jobs"].append((args, kwargs)),
@@ -266,6 +269,25 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(json.loads(first_result[0])["status"], "queued")
 
 
+
+
+    def test_dismissed_job_never_enters_import_transition(self):
+        self.ns["_discovery_is_dismissed"] = lambda artist, album: True
+        status_calls = []
+        import_calls = []
+        self.ns["_discovery_update_acquisition_status"] = lambda *args, **kwargs: status_calls.append(args)
+        self.ns["_discovery_import_matched_album_files"] = lambda *args, **kwargs: import_calls.append(args)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            result = self.ns["_discovery_import_completed_source"](
+                "Artist", "Album", root / "downloaded-album", root,
+                {"username": "peer", "files": [{"filename": "Album/01.flac"}]},
+            )
+
+        self.assertEqual(result, "dismissed")
+        self.assertEqual(status_calls, [])
+        self.assertEqual(import_calls, [])
 
     def test_incomplete_saved_download_details_do_not_start_or_requeue(self):
         self.ns["jobs"].append({
