@@ -68,7 +68,7 @@ def load_helpers():
         "saved_jobs": [],
         "status_updates": [],
         "_discovery_save_acquisition_job": lambda *args, **kwargs: namespace["saved_jobs"].append((args, kwargs)),
-        "_discovery_update_acquisition_status": lambda *args, **kwargs: namespace["status_updates"].append((args, kwargs)),
+        "_discovery_update_acquisition_status": lambda *args, **kwargs: (namespace["status_updates"].append((args, kwargs)) or True),
         "_slskd_candidate_start_state": lambda *args, **kwargs: True,
         "_music_key": lambda value: str(value or "").strip().casefold(),
     }
@@ -376,6 +376,30 @@ class AcquisitionLifecycleTests(unittest.TestCase):
 
         self.assertFalse(recovered)
         self.assertEqual(self.ns["status_updates"], [])
+
+    def test_import_does_not_move_files_if_importing_status_cannot_be_persisted(self):
+        status_calls = []
+        import_calls = []
+        self.ns["_discovery_is_dismissed"] = lambda artist, album: False
+        self.ns["_discovery_update_acquisition_status"] = lambda *args, **kwargs: (
+            status_calls.append(args) or False
+        )
+        self.ns["_discovery_import_matched_album_files"] = lambda *args, **kwargs: import_calls.append(args)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            music = root / "music"
+            music.mkdir()
+            source = root / "downloaded-album"
+            source.mkdir()
+            result = self.ns["_discovery_import_completed_source"](
+                "Artist", "Album", source, music,
+                {"username": "peer", "files": [{"filename": "Album/01.flac", "size": 4}]},
+            )
+
+        self.assertEqual(result, "failed")
+        self.assertEqual(import_calls, [])
+        self.assertEqual(status_calls[0][2], "importing")
 
     def test_dismissed_job_never_enters_import_transition(self):
         self.ns["_discovery_is_dismissed"] = lambda artist, album: True
