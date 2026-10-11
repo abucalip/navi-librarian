@@ -4694,7 +4694,7 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                         if (
                             manifest_data.get("destination") == str(album_dir)
                             and source_value
-                            and manifest_data.get("source") == str(Path(source_value).resolve(strict=True))
+                            and manifest_data.get("source") == str(Path(source_value).expanduser().resolve())
                             and manifest_tracks == expected_sizes
                         ):
                             manifest.unlink()
