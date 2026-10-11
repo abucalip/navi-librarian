@@ -437,6 +437,13 @@ p { line-height: 1.55; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
+.deep-dive-card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.deep-dive-card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
+.deep-dive-card .card-actions .not-for-me { padding: 6px 0; border: 0; background: transparent; color: #ef7770; font-size: 11px; }
+.deep-dive-card .card-actions .not-for-me:hover { color: #ffaaa4; background: transparent; }
+.deep-dive-card .card-actions .not-for-me .cross { margin-right: 4px; font-size: 15px; line-height: 1; }
+.deep-dive-card .card-actions .get-album { width: 43px; height: 36px; padding: 0; display: inline-grid; place-items: center; background: var(--yellow); border: 1px solid var(--yellow); border-radius: 3px; color: #191a1a; font: 700 11px/1 var(--mono); text-transform: uppercase; }
+.deep-dive-card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
@@ -1210,16 +1217,23 @@ async function loadDiscovery(name) {
     for (const item of items) {
       const artist = item.artist || item.album_artist || 'Unknown artist';
       const album = item.album || item.title || 'Untitled album';
+      const isDeepDive = name === 'artist_deep_dive';
       const card = document.createElement('article');
-      card.className = 'card';
+      card.className = isDeepDive ? 'card deep-dive-card' : 'card';
       attachArtwork(card, artist, album);
 
       addTextElement(card, 'p', 'card-category',
         (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
-      addTextElement(card, 'h3', '', album);
+      const title = document.createElement('h3');
+      title.append(document.createTextNode(album));
+      const year = Number(item.year || item.release_year || item.first_release_year || 0);
+      if (isDeepDive && year >= 1900 && year <= 2100) {
+        addTextElement(title, 'span', 'album-year', String(year));
+      }
+      card.append(title);
       addTextElement(card, 'p', 'card-artist', artist);
 
-      if (item.reason) addTextElement(card, 'p', 'card-meta', item.reason);
+      if (item.reason && !isDeepDive) addTextElement(card, 'p', 'card-meta', item.reason);
       if (item.anchor_artist) addTextElement(card, 'p', 'card-meta',
         `Similar to ${item.anchor_artist}`);
       if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
@@ -1235,24 +1249,35 @@ async function loadDiscovery(name) {
       const actions = document.createElement('div');
       actions.className = 'card-actions';
 
-      const button = (label, callback) => {
+      const button = (label, callback, className = '') => {
         const b = document.createElement('button');
         b.textContent = label;
+        if (className) b.className = className;
         b.addEventListener('click', callback);
         actions.append(b);
       };
 
-      button(name === 'for_me' ? 'Remove from For Me' : '＋ For Me',
-        () => sendFeedback(name === 'for_me' ? 'remove_for_me' : 'save',
-                           artist, album, item, name));
-
-      button('Dismiss album',
-        () => sendFeedback('dismiss', artist, album, item, name));
-
-      button('Dismiss artist',
-        () => sendFeedback('dismiss_artist', artist, album, item, name));
-
-      button('Search slskd', () => searchAlbum(artist, album, item));
+      if (isDeepDive) {
+        const notForMe = document.createElement('button');
+        notForMe.className = 'not-for-me';
+        const cross = document.createElement('span');
+        cross.className = 'cross';
+        cross.textContent = '×';
+        notForMe.append(cross, document.createTextNode('not for me'));
+        notForMe.addEventListener('click',
+          () => sendFeedback('dismiss', artist, album, item, name));
+        actions.append(notForMe);
+        button('get', () => searchAlbum(artist, album, item), 'get-album');
+      } else {
+        button(name === 'for_me' ? 'Remove from For Me' : '＋ For Me',
+          () => sendFeedback(name === 'for_me' ? 'remove_for_me' : 'save',
+                             artist, album, item, name));
+        button('Dismiss album',
+          () => sendFeedback('dismiss', artist, album, item, name));
+        button('Dismiss artist',
+          () => sendFeedback('dismiss_artist', artist, album, item, name));
+        button('Search slskd', () => searchAlbum(artist, album, item));
+      }
 
       card.append(actions);
       (destinationByItem.get(item) || target).append(card);
