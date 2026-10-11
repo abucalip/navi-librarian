@@ -125,6 +125,7 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
         self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
         self.assertEqual((self.destination / "02 - Track.flac").read_bytes(), b"567")
         self.assertTrue(unrelated.exists())
+        self.assertFalse((self.destination / ".navidrome-import.json").exists())
         self.assertFalse(self.source.joinpath("01 - Track.flac").exists())
 
     def test_existing_destination_is_never_overwritten(self):
