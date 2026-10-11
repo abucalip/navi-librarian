@@ -323,7 +323,11 @@ def _musicbrainz_album_year(artist: str, album: str):
             for group in groups:
                 title = str(group.get("title") or "").casefold()
                 credits = " ".join(
-                    str(part.get("name") or "")
+                    str(
+                        (part.get("artist") or {}).get("name")
+                        or part.get("name")
+                        or ""
+                    )
                     for part in (group.get("artist-credit") or [])
                     if isinstance(part, dict)
                 ).casefold()
