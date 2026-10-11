@@ -3499,7 +3499,7 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
 
 def _discovery_safe_folder_name(value):
     value = str(value or "").replace("\\", "/").split("/")[-1]
-    value = "".join(character for character in value if character not in "\\0")
+    value = "".join(character for character in value if character != "\\0")
     value = value.strip().strip(".")
     return value or "Unknown"
 
