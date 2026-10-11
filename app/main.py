@@ -731,6 +731,14 @@ p { line-height: 1.55; }
 .card .artist-bio { margin-top: 7px; color: var(--muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
 .card .card-art .get-album:hover { background: #f3d66b; transform: scale(1.06); }
+.card .card-art .get-album.requested,
+.card .card-actions .get-album.requested {
+  background: #e5484d; border-color: #e5484d; color: #fff;
+  cursor: default; box-shadow: 0 3px 12px rgba(229,72,77,.28);
+  transform: none;
+}
+.card .card-art .get-album.requested:hover,
+.card .card-actions .get-album.requested:hover { background: #e5484d; border-color: #e5484d; transform: none; }
 .card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: #ff5148; font: 700 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
 .card .card-art .deep-dive-dismiss:hover { background: transparent; color: #ff827a; border: 0; transform: scale(1.12); }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
@@ -1184,7 +1192,7 @@ function renderAcquisitions(data) {
           });
           actions.append(retry);
         }
-        if (!['importing', 'imported'].includes(job.status)) {
+        if (job.status !== 'dismissed') {
           const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
@@ -1931,6 +1939,7 @@ async function searchAlbum(artist, album, metadata, button = null) {
   if (button && button.disabled) return;
   if (button) {
     button.disabled = true;
+    button.classList.add('requested');
     button.textContent = 'requested';
     button.title = 'Acquisition requested';
     button.setAttribute('aria-label', 'Acquisition requested for ' + album);
@@ -1945,6 +1954,7 @@ async function searchAlbum(artist, album, metadata, button = null) {
   } catch (error) {
     if (button) {
       button.disabled = false;
+      button.classList.remove('requested');
       button.textContent = 'get';
       button.title = 'Get this album';
       button.setAttribute('aria-label', 'Get ' + album);
