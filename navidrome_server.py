@@ -4019,35 +4019,75 @@ def _discovery_is_dismissed(artist, album):
 
 
 def discovery_dismiss_acquisition(artist, album):
-    """Dismiss an acquisition card and stop its import watcher without deleting downloaded files."""
+    """Safely stop an acquisition, clean its known download files, and dismiss its card."""
     _discovery_init()
     identity = (_music_key(artist), _music_key(album))
     with _DISCOVERY_IMPORT_TRANSITION_LOCK:
         with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
             row = db.execute(
-                "SELECT status, details_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?",
+                "SELECT status, details_json, candidate_json, settings_json "
+                "FROM discovery_acquisitions WHERE artist_key=? AND album_key=?",
                 identity,
             ).fetchone()
             if not row:
                 return json.dumps({"ok": False, "error": "Acquisition not found."})
-            if row[0] in {"importing", "imported"}:
-                return json.dumps({
-                    "ok": False,
-                    "error": "The album is already being imported or has been imported; it cannot be dismissed now.",
-                })
+            if row[0] == "dismissed":
+                return json.dumps({"ok": True, "status": "dismissed", "message": "Acquisition is already dismissed."})
             try:
                 details = json.loads(row[1] or "{}")
+                candidate = json.loads(row[2] or "{}")
+                saved_settings = json.loads(row[3] or "{}")
             except (ValueError, TypeError):
-                details = {}
-            details.update({"status": "dismissed", "dismissed_at": time.time()})
+                details, candidate, saved_settings = {}, {}, {}
+
+            files = candidate.get("files") or []
+            cleanup_required = row[0] in {
+                "downloading", "download_complete_waiting_for_folder", "monitor_error",
+                "importing", "imported", "source_switch_failed", "source_switching",
+            } or bool(details.get("source_folder") or details.get("expected_folder"))
+
+            if files:
+                try:
+                    base_url, api_key, current_settings = _slskd_config()
+                    download_root = (
+                        current_settings.get("slskd_downloads_path")
+                        or saved_settings.get("slskd_downloads_path")
+                        or _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
+                    )
+                    cleaned = _discovery_cancel_and_clean_source(
+                        download_root, candidate, base_url, {"X-API-KEY": api_key}
+                    )
+                except Exception:
+                    cleaned = False
+                if not cleaned:
+                    return json.dumps({
+                        "ok": False,
+                        "error": (
+                            "Could not safely cancel this source and remove its download files. "
+                            "Nothing was dismissed; check the download folder and acquisition settings."
+                        ),
+                    })
+            elif cleanup_required:
+                return json.dumps({
+                    "ok": False,
+                    "error": (
+                        "The acquisition may have download files, but its source file inventory is missing. "
+                        "For safety, the card was not dismissed and no files were deleted."
+                    ),
+                })
+
+            details.update({"status": "dismissed", "dismissed_at": time.time(),
+                            "cleanup_confirmed": True})
             db.execute(
                 "UPDATE discovery_acquisitions SET status='dismissed', details_json=?, updated_at=? "
                 "WHERE artist_key=? AND album_key=?",
                 (json.dumps(details, ensure_ascii=False), time.time(), *identity),
             )
             db.commit()
-    return json.dumps({"ok": True, "status": "dismissed", "message": "Acquisition card dismissed. Existing download files were left untouched."})
+    return json.dumps({
+        "ok": True, "status": "dismissed",
+        "message": "Acquisition dismissed and its safely identified download files were removed.",
+    })
 
 
 def _discovery_skip_requested(artist, album):
