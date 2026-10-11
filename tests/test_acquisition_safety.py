@@ -22,6 +22,7 @@ def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
         "_discovery_match_completed_album_files",
+        "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
         "_discovery_queue_candidate_unless_dismissed",
@@ -50,7 +51,8 @@ def load_helpers():
         "_DISCOVERY_IMPORT_ACTIVE": set(),
         "_DISCOVERY_ACQUIRE_ACTIVE": set(),
         "jobs": [],
-        "time": SimpleNamespace(monotonic=lambda: 0, sleep=lambda _seconds: None),
+        "time": SimpleNamespace(monotonic=lambda: 0, sleep=lambda _seconds: None, time=lambda: 123.0),
+        "MUSIC_DIR": Path("/music"),
         "httpx": SimpleNamespace(
             HTTPError=FakeHTTPError,
             delete=lambda *args, **kwargs: SimpleNamespace(status_code=204),
@@ -270,6 +272,63 @@ class AcquisitionLifecycleTests(unittest.TestCase):
 
 
 
+
+    def test_interrupted_import_is_reconciled_when_destination_matches(self):
+        with tempfile.TemporaryDirectory() as temp:
+            music = Path(temp)
+            destination = music / "Artist" / "Album"
+            destination.mkdir(parents=True)
+            (destination / "01.flac").write_bytes(b"1234")
+            self.ns["MUSIC_DIR"] = music
+            self.ns["jobs"].append({
+                "artist_key": "artist",
+                "album_key": "album",
+                "status": "importing",
+                "details": {
+                    "source_folder": "/downloads/Album",
+                    "destination": str(destination),
+                },
+            })
+            candidate = {
+                "username": "peer",
+                "files": [{"filename": "Album/01.flac", "size": 4}],
+            }
+
+            recovered = self.ns["_discovery_reconcile_interrupted_import"](
+                "Artist", "Album", candidate
+            )
+
+        self.assertTrue(recovered)
+        self.assertEqual(self.ns["status_updates"][-1][0][2], "imported")
+        self.assertTrue(self.ns["status_updates"][-1][1]["recovered_after_restart"])
+
+    def test_interrupted_import_does_not_reconcile_wrong_or_incomplete_destination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            music = Path(temp)
+            destination = music / "Artist" / "Album"
+            destination.mkdir(parents=True)
+            (destination / "01.flac").write_bytes(b"bad")
+            self.ns["MUSIC_DIR"] = music
+            self.ns["jobs"].append({
+                "artist_key": "artist",
+                "album_key": "album",
+                "status": "importing",
+                "details": {
+                    "source_folder": "/downloads/Album",
+                    "destination": str(destination),
+                },
+            })
+            candidate = {
+                "username": "peer",
+                "files": [{"filename": "Album/01.flac", "size": 4}],
+            }
+
+            recovered = self.ns["_discovery_reconcile_interrupted_import"](
+                "Artist", "Album", candidate
+            )
+
+        self.assertFalse(recovered)
+        self.assertEqual(self.ns["status_updates"], [])
 
     def test_dismissed_job_never_enters_import_transition(self):
         self.ns["_discovery_is_dismissed"] = lambda artist, album: True
