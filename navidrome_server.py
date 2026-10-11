@@ -3778,6 +3778,14 @@ def discovery_get_acquisition_status():
 def _discovery_import_watcher_entry(artist, album, candidate, settings, identity):
     try:
         _discovery_watch_and_import_album(artist, album, candidate, settings)
+    except Exception as exc:
+        # Failures before the watch loop's own exception handler (for example,
+        # invalid configuration during watcher initialization) must not leave a
+        # stale "downloading" job behind.
+        _discovery_update_acquisition_status(artist, album, "monitor_error", {
+            "error": type(exc).__name__,
+            "message": "Acquisition watcher stopped unexpectedly.",
+        })
     finally:
         with _DISCOVERY_IMPORT_LOCK:
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
@@ -4792,14 +4800,24 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
             with _DISCOVERY_IMPORT_LOCK:
                 _DISCOVERY_IMPORT_ACTIVE.discard(identity)
             raise
-    threading.Thread(
+    watcher = threading.Thread(
         target=_discovery_import_watcher_entry,
         args=(artist, album, dict(candidate), dict(settings), identity),
         name="navidrome-import-" + hashlib.sha1(
             (_music_key(artist) + "|" + _music_key(album)).encode("utf-8")
         ).hexdigest()[:10],
         daemon=True,
-    ).start()
+    )
+    try:
+        watcher.start()
+    except Exception as exc:
+        with _DISCOVERY_IMPORT_LOCK:
+            _DISCOVERY_IMPORT_ACTIVE.discard(identity)
+        _discovery_update_acquisition_status(artist, album, "monitor_error", {
+            "error": type(exc).__name__,
+            "message": "Could not start the acquisition watcher.",
+        })
+        raise
 
 
 @mcp.tool()
