@@ -3645,12 +3645,62 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
             _DISCOVERY_IMPORT_ACTIVE.discard(identity)
 
 
-def _discovery_locate_completed_album(download_root, candidate):
-    """Find a unique completed folder using expected filenames and file sizes.
+def _discovery_match_completed_album_files(folder, candidate):
+    """Map each expected track to a local file, allowing slskd collision suffixes.
 
-    Prefer the peer's advertised folder name when it matches, but do not
-    require it: slskd's local completed-folder layout can differ from the
-    remote share folder name.
+    A suffixed filename is accepted only when it has the same base name plus
+    a numeric collision suffix and its size matches the advertised size.
+    Each local file can satisfy only one expected track.
+    """
+    import re
+
+    folder = Path(folder)
+    files = [path for path in folder.iterdir() if path.is_file()]
+    used = set()
+    matched = {}
+
+    for item in candidate.get("files", []):
+        expected_name = str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1]
+        if not expected_name:
+            continue
+        expected_size = max(0, int(item.get("size") or 0))
+        exact = [
+            path for path in files
+            if path.name.casefold() == expected_name.casefold()
+            and path not in used
+            and (expected_size <= 0 or path.stat().st_size == expected_size)
+        ]
+        selected = exact[0] if len(exact) == 1 else None
+
+        if selected is None and expected_size > 0:
+            stem, suffix = Path(expected_name).stem, Path(expected_name).suffix
+            collision_pattern = re.compile(
+                r"^" + re.escape(stem) + r"_\\d+" + re.escape(suffix) + r"$",
+                re.IGNORECASE,
+            )
+            alternatives = [
+                path for path in files
+                if path not in used
+                and collision_pattern.match(path.name)
+                and path.stat().st_size == expected_size
+            ]
+            if len(alternatives) == 1:
+                selected = alternatives[0]
+
+        if selected is None:
+            return None
+        matched[expected_name] = selected
+        used.add(selected)
+
+    return matched if matched and len(matched) == len(candidate.get("files", [])) else None
+
+
+def _discovery_locate_completed_album(download_root, candidate):
+    """Find a unique completed folder whose expected tracks match names and sizes.
+
+    slskd may append a numeric suffix to a filename to avoid collisions. Such
+    files are accepted only when both the original basename and expected size
+    match, and the caller imports only the matched files—not the whole folder.
     """
     import os
 
@@ -3658,39 +3708,20 @@ def _discovery_locate_completed_album(download_root, candidate):
     if not root.is_dir():
         return None
 
-    expected = {}
-    for item in candidate.get("files", []):
-        filename = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
-        if filename:
-            expected[filename.casefold()] = int(item.get("size") or 0)
-    if not expected:
-        return None
-
     wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
     matches = []
-    for current, directories, filenames in os.walk(root, followlinks=False):
+    for current, directories, _filenames in os.walk(root, followlinks=False):
         directories[:] = [name for name in directories if not name.startswith(".")]
         current_path = Path(current)
         # Never treat the completed-download root itself as an album folder:
         # moving it would move every completed download into the music library.
         if current_path.resolve() == root.resolve():
             continue
-        actual_names = {name.casefold(): name for name in filenames}
-        if not all(name in actual_names for name in expected):
-            continue
-
-        size_ok = True
-        for folded_name, expected_size in expected.items():
-            actual_name = actual_names[folded_name]
-            try:
-                actual_size = (current_path / actual_name).stat().st_size
-            except OSError:
-                size_ok = False
-                break
-            if expected_size > 0 and actual_size != expected_size:
-                size_ok = False
-                break
-        if size_ok:
+        try:
+            matched_files = _discovery_match_completed_album_files(current_path, candidate)
+        except OSError:
+            matched_files = None
+        if matched_files:
             matches.append(current_path)
 
     if not matches:
@@ -3705,6 +3736,42 @@ def _discovery_locate_completed_album(download_root, candidate):
     if len(matches) == 1:
         return matches[0]
     return None
+
+
+def _discovery_import_matched_album_files(source, destination, candidate):
+    """Stage only the verified expected tracks, leaving unrelated files behind."""
+    import shutil
+    import uuid
+
+    matched = _discovery_match_completed_album_files(source, candidate)
+    if not matched:
+        raise OSError("Expected tracks no longer match files in the completed folder")
+
+    destination = Path(destination)
+    staging = destination.parent / (".navidrome-import-" + uuid.uuid4().hex)
+    staging.mkdir(parents=True, exist_ok=False)
+    moved = []
+    try:
+        for expected_name, actual_path in matched.items():
+            staged_path = staging / expected_name
+            shutil.move(str(actual_path), str(staged_path))
+            moved.append((staged_path, actual_path))
+        # Destination should not exist; rename the complete staged album into place.
+        if destination.exists():
+            raise FileExistsError(str(destination))
+        staging.rename(destination)
+    except Exception:
+        for staged_path, original_path in reversed(moved):
+            if staged_path.exists() and not original_path.exists():
+                try:
+                    shutil.move(str(staged_path), str(original_path))
+                except OSError:
+                    pass
+        try:
+            staging.rmdir()
+        except OSError:
+            pass
+        raise
 
 
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
@@ -3750,7 +3817,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                     return
                 try:
                     artist_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.move(str(source), str(album_dir))
+                    _discovery_import_matched_album_files(source, album_dir, candidate)
                 except OSError as exc:
                     _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
                         "source_folder": str(source), "destination": str(album_dir),
@@ -3838,7 +3905,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                         return
                     try:
                         artist_dir.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(source), str(album_dir))
+                        _discovery_import_matched_album_files(source, album_dir, candidate)
                     except OSError as exc:
                         _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
                             "source_folder": str(source),
