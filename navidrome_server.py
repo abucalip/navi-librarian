@@ -3553,30 +3553,40 @@ def _discovery_save_acquisition_job(artist, album, status, details=None,
 
 
 def _discovery_update_acquisition_status(artist, album, status, details=None):
-    """Persist acquisition state and mirror it to For Me without racing dismissal."""
+    """Persist acquisition state and best-effort mirror it to For Me.
+
+    Return True only when the authoritative acquisition row was persisted.
+    Feedback metadata is a secondary projection and must not turn a successful
+    acquisition-state write into a reported persistence failure.
+    """
     details = details or {}
     try:
         with _DISCOVERY_IMPORT_TRANSITION_LOCK:
             if status != "dismissed" and _discovery_is_dismissed(artist, album):
-                return
+                return False
             _discovery_save_acquisition_job(artist, album, status, details)
+            persisted = True
 
-            identity = (_music_key(artist), _music_key(album))
-            row = next((
-                item for item in _discovery_feedback_rows()
-                if item["scope"] == "album" and item["status"] == "for_me"
-                and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
-            ), None)
-            if row:
-                metadata = row.get("metadata") or {}
-                metadata["auto_acquisition"] = {
-                    "status": status, "updated_at": time.time(), **details
-                }
-                _discovery_save_feedback("album", artist, album, "for_me", metadata)
+            try:
+                identity = (_music_key(artist), _music_key(album))
+                row = next((
+                    item for item in _discovery_feedback_rows()
+                    if item["scope"] == "album" and item["status"] == "for_me"
+                    and item["artist_key"] == identity[0] and item["album_key"] == identity[1]
+                ), None)
+                if row:
+                    metadata = row.get("metadata") or {}
+                    metadata["auto_acquisition"] = {
+                        "status": status, "updated_at": time.time(), **details
+                    }
+                    _discovery_save_feedback("album", artist, album, "for_me", metadata)
+            except Exception:
+                # Feedback is a secondary view; the acquisition row is authoritative.
+                pass
+            return persisted
     except Exception:
-        # Acquisition state remains best-effort, as before; an unavailable
-        # feedback store must not crash the download watcher.
-        pass
+        # Callers that are about to mutate files can now stop if persistence failed.
+        return False
 
 
 def _discovery_list_acquisition_jobs():
@@ -4564,9 +4574,10 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
             })
             return "failed"
 
-        _discovery_update_acquisition_status(artist, album, "importing", {
+        if not _discovery_update_acquisition_status(artist, album, "importing", {
             "source_folder": str(source), "destination": str(album_dir)
-        })
+        }):
+            return "failed"
         try:
             artist_dir.mkdir(parents=True, exist_ok=True)
 
