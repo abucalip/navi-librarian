@@ -3305,7 +3305,9 @@ def _slskd_extract_candidates(payload, artist, album, priority, expected_track_c
             if _slskd_track_identity(item["filename"])
         }
         unique_track_count = len(unique_tracks)
-        minimum_required = max(3, int(expected_track_count or 0))
+        # Without catalog track-count metadata, require a substantial album-sized result;
+        # short or ambiguous releases go to manual review rather than auto-queueing.
+        minimum_required = max(8, int(expected_track_count or 0))
         score = 0.55 * (1.0 if any(x["album_in_path"] for x in files) else 0.65)
         score += 0.25 * (1.0 if any(x["artist_match"] for x in files) else 0.0)
         score += 0.20 * min(unique_track_count / 8.0, 1.0)
@@ -4028,7 +4030,8 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                 last_progress_at = now_mono
                 stall_detected_at = None
             stalled_for = now_mono - last_progress_at
-            if stalled_for >= 120 and candidate.get("fallback_candidates"):
+            if (stalled_for >= 120 and candidate.get("fallback_candidates")
+                    and not (states and states.issubset({"succeeded", "completed"}))):
                 if stall_detected_at is None:
                     stall_detected_at = time.time()
                     _discovery_update_acquisition_status(artist, album, "downloading", {
