@@ -4357,6 +4357,16 @@ def _discovery_cancel_and_clean_source(
     return True
 
 def _discovery_switch_to_next_source(artist, album, candidate, settings, download_root, headers, reason):
+    """Serialize fallback switching against dismissal so no source is queued afterward."""
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
+            return None
+        return _discovery_switch_to_next_source_locked(
+            artist, album, candidate, settings, download_root, headers, reason
+        )
+
+
+def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, download_root, headers, reason):
     """Switch only among prevalidated complete candidates, cleaning the previous album folder first."""
     base_url, _, _ = _slskd_config()
     fallbacks = list(candidate.get("fallback_candidates") or [])
@@ -4529,6 +4539,15 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
             _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
                 "source_folder": str(source), "destination": str(album_dir),
                 "error": str(exc), "downloads_path": str(source.parent),
+            })
+            return "failed"
+        except Exception as exc:
+            # Do not leave the persistent acquisition stuck in "importing" if
+            # an unexpected import error occurs; retain the completed download.
+            _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+                "source_folder": str(source), "destination": str(album_dir),
+                "error": f"Unexpected import error ({type(exc).__name__}): {exc}",
+                "downloads_path": str(source.parent),
             })
             return "failed"
 
@@ -4754,15 +4773,25 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
         key: value for key, value in (settings or {}).items()
         if key not in {"slskd_api_key", "api_key"}
     }
-    _discovery_save_acquisition_job(
-        artist, album, "downloading", details,
-        candidate=candidate, settings=safe_settings,
-    )
-    _discovery_update_acquisition_status(artist, album, "downloading", details)
-    with _DISCOVERY_IMPORT_LOCK:
-        if identity in _DISCOVERY_IMPORT_ACTIVE:
+    # Reserve the watcher before writing status so duplicate starts cannot
+    # overwrite an existing job's state. Serialize reservation against dismissal.
+    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
+        if _discovery_is_dismissed(artist, album):
             return
-        _DISCOVERY_IMPORT_ACTIVE.add(identity)
+        with _DISCOVERY_IMPORT_LOCK:
+            if identity in _DISCOVERY_IMPORT_ACTIVE:
+                return
+            _DISCOVERY_IMPORT_ACTIVE.add(identity)
+        try:
+            _discovery_save_acquisition_job(
+                artist, album, "downloading", details,
+                candidate=candidate, settings=safe_settings,
+            )
+            _discovery_update_acquisition_status(artist, album, "downloading", details)
+        except Exception:
+            with _DISCOVERY_IMPORT_LOCK:
+                _DISCOVERY_IMPORT_ACTIVE.discard(identity)
+            raise
     threading.Thread(
         target=_discovery_import_watcher_entry,
         args=(artist, album, dict(candidate), dict(settings), identity),
