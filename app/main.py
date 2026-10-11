@@ -286,6 +286,25 @@ def acquisition_status():
         raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
 
 
+@app.post("/api/acquisitions/skip")
+def skip_acquisition_source(payload: dict):
+    artist = str(payload.get("artist") or "").strip()
+    album = str(payload.get("album") or "").strip()
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+    try:
+        result = parse_result(librarian.discovery_skip_acquisition_source(
+            artist=artist, album=album,
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=409, detail=result.get("error", "Could not skip source."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not request a source switch.")
+
+
 @app.get("/api/acquisitions/stream")
 def acquisition_status_stream():
     def events():
@@ -1004,6 +1023,30 @@ function renderAcquisitions(data) {
           String(remaining) + ' of ' + (totalTracks === null ? '?' : totalTracks) + ' tracks remaining');
         progressRow.append(ring, copy);
         card.append(progressRow);
+      }
+      if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
+        const stallButton = document.createElement('button');
+        stallButton.type = 'button';
+        stallButton.className = 'skip-source-button';
+        const secondsLeft = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
+        stallButton.textContent = secondsLeft > 0
+          ? 'Skip to next source (' + secondsLeft + 's)'
+          : 'Switching source…';
+        stallButton.disabled = secondsLeft <= 0;
+        stallButton.addEventListener('click', async () => {
+          stallButton.disabled = true;
+          stallButton.textContent = 'Requesting source switch…';
+          try {
+            const result = await sendJSON('/api/acquisitions/skip', 'POST', {
+              artist: job.artist, album: job.album
+            });
+            $('acquisitionsStatus').textContent = result.message || 'Source switch requested.';
+          } catch (error) {
+            $('acquisitionsStatus').textContent = error.message;
+            stallButton.disabled = false;
+          }
+        });
+        card.append(stallButton);
       }
       const lines = [
         details.message,
