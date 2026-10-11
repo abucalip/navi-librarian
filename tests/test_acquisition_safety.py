@@ -315,6 +315,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
                 "details": {
                     "source_folder": "/downloads/Album",
                     "destination": str(destination),
+                    "music_root_device": music.stat().st_dev,
                 },
             })
             candidate = {
@@ -357,6 +358,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
                 "details": {
                     "source_folder": str(source),
                     "destination": str(destination),
+                    "music_root_device": music.stat().st_dev,
                 },
             })
             candidate = {
