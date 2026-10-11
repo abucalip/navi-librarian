@@ -59,10 +59,10 @@ _profile_cache = {}
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
 _ARTIST_DESCRIPTION_RE = __import__("re").compile(
-    r"\\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
+    r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
     r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
     r"guitarist|bassist|drummer|keyboardist|record producer|music producer|"
-    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\\b",
+    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\b",
     __import__("re").IGNORECASE,
 )
 
@@ -133,7 +133,7 @@ def artist_bio(artist: str):
                     if str(page.get("wikibase_item") or "") == qid:
                         extract = " ".join(str(page.get("extract") or "").split())
                         if extract and page.get("type") != "disambiguation":
-                            match = __import__("re").search(r"^.*?[.!?](?=\\s|$)", extract)
+                            match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
                             bio = match.group(0) if match else extract[:240]
                             if len(bio) > 280:
                                 bio = bio[:277].rsplit(" ", 1)[0] + "…"
