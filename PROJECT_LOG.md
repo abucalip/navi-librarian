@@ -1,3 +1,14 @@
+## 2026-10-12 — PR #17 follow-up: slskd monitor errors
+
+- **User-observed error:** multiple acquisitions entered `monitor_error` with `HTTPStatusError: 404 Not Found` from slskd's per-peer transfer-list endpoint.
+- **Root cause:** the watcher treated a missing current transfer-list entry as an exceptional failure. The completed-download filesystem is already checked independently on each poll, so an absent transfer record should not stop monitoring.
+- **Fix:** `_slskd_download_transfer_files` returns an empty list for HTTP 404 and continues to raise for other HTTP errors. The strict file/folder checks before import are unchanged.
+- **Regression tests:** added `tests/test_slskd_transfer_lookup.py` for 404, non-404 error propagation, and successful payload parsing.
+- **Commits:** implementation `4ced0a22b980325dde58609087700d0926b65bde`; test `e946d460acc11fb675bd25c1358ef3d243c32dd5`; test-plan update `4ee60d4151899ad5406da979c00d7995e7e8f768`; handoff update `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd`.
+- **PR:** [#17 — Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17), open, not merged/deployed. Latest head is `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd`.
+- **Verification boundary:** user reported 47 tests passing on the earlier revision `17a2bdc`. New tests and latest head still require local execution and CI; no passing claim is made for the current head.
+- **Next:** run syntax checks and the full test suite on the latest PR head; check CI, inspect the final diff, then have the user retest downloads. If errors remain, capture updated `details.error_message` values.
+
 ## 2026-10-12 — Local feature branch merged into main for testing
 
 - **Local branch:** `fix/artwork-size-and-artist-bios` merged into `main` with merge commit `90e1d97` (`Merge local artwork and acquisition fixes`).
