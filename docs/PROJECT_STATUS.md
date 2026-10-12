@@ -1,3 +1,13 @@
+## Latest session — 2026-10-12 (PR #17 merged; acquisition behavior manually verified)
+
+- **PR #17:** [Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17) was squash-merged into GitHub `main` at merge commit `9f4ff509d6a336823912c49d8c049eeea8761b8f`.
+- **Manual verification:** the user reports completed downloads now appear imported. Some acquisitions failed because no sources were available; the user confirmed this is expected and not a regression.
+- **Fixes retained:** bounded acquisition-completion diagnostics; HTTP 404 from slskd's per-peer transfer endpoint is treated as an empty current transfer list while filesystem completion checks continue; non-404 HTTP errors still surface. Import-safety checks were not relaxed.
+- **CI:** Python syntax/full unittest workflow #134 and Docker packaging workflow #41 passed on PR #17 head `ff2153bbaf790b2c0bbfce03c8c7fdb6c7decc12` before merge. User's manual report adds runtime evidence for completed imports.
+- **Deployment:** merge does not establish that a new Docker image was published or that the server was updated. No deployment was performed in this session.
+- **Documentation workflow:** PR #18's GitHub-first workflow content is being carried forward in a fresh branch based on the updated `main`, because its original branch conflicted after PR #17 merged. The replacement PR will be the merge target; no local-only code or commits are involved.
+- **Next:** merge the reconciled documentation PR, then treat image publication/deployment as a separate step if requested.
+
 ## Latest session — 2026-10-12 (slskd monitor-error follow-up; fix in progress)
 
 - **User-reported failure:** several acquisitions entered `monitor_error`. Their persisted details showed `HTTPStatusError: 404 Not Found` from `GET /api/v0/transfers/downloads/{username}` for multiple peers.
