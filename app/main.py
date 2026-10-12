@@ -518,6 +518,66 @@ def _musicbrainz_album_year(artist: str, album: str):
     return year
 
 
+@app.get("/api/album-details")
+def album_details(artist: str = "", album: str = ""):
+    """Return a carefully matched Deezer album and its tracklist for the card popup."""
+    artist = str(artist or "").strip()[:180]
+    album = str(album or "").strip()[:180]
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+
+    def key(value):
+        return "".join(char.casefold() for char in str(value or "") if char.isalnum())
+
+    result = {"artist": artist, "album": album, "year": None, "artwork_url": None, "tracks": []}
+    try:
+        query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 12})
+        response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
+        response.raise_for_status()
+        albums = response.json().get("data") or []
+        exact = [
+            item for item in albums
+            if key((item.get("artist") or {}).get("name")) == key(artist)
+            and key(item.get("title")) == key(album)
+        ]
+        if not exact:
+            result["message"] = "No exact catalog match was found, so the tracklist is unavailable."
+            return result
+
+        match = exact[0]
+        release_date = str(match.get("release_date") or "")
+        year_text = release_date[:4]
+        result.update({
+            "matched_artist": (match.get("artist") or {}).get("name"),
+            "matched_album": match.get("title"),
+            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
+            "artwork_url": (match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium") or "").replace("http://", "https://", 1) or None,
+        })
+        album_id = match.get("id")
+        if not album_id:
+            result["message"] = "Album artwork found, but the catalog did not provide a tracklist ID."
+            return result
+
+        detail_response = _EXTERNAL_HTTP.get(f"https://api.deezer.com/album/{album_id}")
+        detail_response.raise_for_status()
+        details = detail_response.json()
+        result["tracks"] = [
+            {
+                "track_number": int(track.get("track_position") or index + 1),
+                "title": str(track.get("title") or "").strip(),
+                "duration_seconds": int(track.get("duration") or 0),
+            }
+            for index, track in enumerate(details.get("tracks", {}).get("data") or [])
+            if str(track.get("title") or "").strip()
+        ]
+        if not result["tracks"]:
+            result["message"] = "The album was found, but its tracklist is unavailable."
+        return result
+    except Exception:
+        result["message"] = "The album catalog is temporarily unavailable."
+        return result
+
+
 @app.get("/api/artwork")
 def album_artwork(artist: str = "", album: str = ""):
     artist = artist.strip()[:180]
