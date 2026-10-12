@@ -1,3 +1,15 @@
+## Latest session — 2026-10-12 (PR #16 merged; image published)
+
+- **PR:** [#16 — Fix artwork loading after transient provider failures](https://github.com/abucalip/navi-librarian/pull/16), squash-merged into `main`.
+- **Merge commit:** `ac0eec1e628caa0b300e651fcbdbe25535515395`.
+- **Fix:** artwork provider failures are retryable and not negative-cached; browser retries transient failures with bounded backoff. Album-year and artwork request promises now use separate caches, fixing the all-covers-missing regression discovered during manual testing.
+- **Regression tests:** `tests/test_artwork_retry.py` and `tests/test_artwork_cache_isolation.py`.
+- **CI:** Python syntax/test workflow run #114 passed; Docker packaging run #22 passed. Docker publish workflow run #11 passed for merge commit `ac0eec1e628caa0b300e651fcbdbe25535515395`.
+- **Published image:** `ghcr.io/abucalip/navi-librarian:latest` and `ghcr.io/abucalip/navi-librarian:sha-ac0eec1`; manifest digest `sha256:7a9415a7e6d10bd9864a2e03db8c452cfdc35cb69359eaa0e9b0552552afb5b1`.
+- **UI verification:** user tested the PR build and reports album artwork now loads very fast.
+- **Deployment distinction:** image is published, but this session did not have access to the media VM's Docker/Compose shell and did not pull/recreate the production container. Host deployment is pending; follow `docs/DEPLOYMENT.md` and record the running image digest after the host update.
+- **Next:** pull and recreate only `navidrome-librarian` on the media VM, then verify container health and artwork in the deployed UI. Sync local Git without overwriting unrelated local changes.
+
 # Project status and handoff
 
 Last updated: 2026-10-12
