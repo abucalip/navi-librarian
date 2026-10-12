@@ -226,6 +226,7 @@ def app_auth_login(payload: dict, request: Request):
     valid = (
         username == settings.get("app_auth_username")
         and isinstance(password, str)
+        and 0 < len(password) <= 1024
         and bool(settings.get("app_auth_salt"))
         and bool(settings.get("app_auth_hash"))
         and hmac.compare_digest(
@@ -285,8 +286,8 @@ init();
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page():
-    if _session_username(None):
+def login_page(request: Request):
+    if _session_username(request.cookies.get(AUTH_COOKIE_NAME)):
         return RedirectResponse("/", status_code=303)
     return HTMLResponse(
         LOGIN_PAGE,
