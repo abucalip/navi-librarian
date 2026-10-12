@@ -6,7 +6,7 @@ Last updated: 2026-10-12
 
 - Repository: [abucalip/navi-librarian](https://github.com/abucalip/navi-librarian)
 - Default branch: `main`
-- Baseline inspected for this document: `ee9ee14842c5619688c4d4fe799b03f3f024f4f8` — Docker packaging and GHCR publishing workflow.
+- Documentation/handoff update merged in PR #14 at `74264b29062504fce3bf6f7a65121fa43b9f8ec5` (2026-10-12). The earlier code baseline was `ee9ee14842c5619688c4d4fe799b03f3f024f4f8`.
 - Current deployed version: **not verified**.
 - GHCR pull from the Debian media VM recently failed with `unauthorized`. Package visibility/authentication must be resolved before a deployment can be considered verified.
 - The developer's local checkout has a separate in-progress branch with commits not necessarily present on `main`. Do not assume local changes are merged or deployed.
@@ -39,6 +39,13 @@ Use the following meanings consistently:
 | Docker image build | Docker packaging and CI workflow are on `main` | Confirm current workflow run and build |
 | GHCR publication/pull | Not verified; deployment VM reported `unauthorized` | Check package visibility/authentication and pull an exact tag |
 | Production deployment | Not verified | Record image digest, Compose config, logs, and UI smoke-test result |
+
+## Latest session — 2026-10-12
+
+- **Completed:** PR #14 merged into `main` using squash merge. It adds the six project handoff/runbook documents listed below; merge commit: `74264b29062504fce3bf6f7a65121fa43b9f8ec5`.
+- **CI evidence:** GitHub reported the Python syntax-check and Docker-packaging validation workflows passed on PR head `97e887fa8295fff55f05ac72101907bf08819a99`. The PR was documentation-only; no application tests or deployment were run as part of the merge session.
+- **Deployment state:** unchanged and still unverified. GHCR authorization remains unresolved; do not infer that merge or successful CI means the app is deployed.
+- **Next priority:** inspect the current open PRs and actual local branches/worktrees, then resume the highest-priority implementation/testing task. Resolve GHCR package visibility/authentication before attempting registry-based deployment.
 
 ## Known blocker
 
