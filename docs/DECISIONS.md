@@ -67,3 +67,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Choosing a commit tag or digest cannot grant registry access.
 
 **Consequence:** Verify package visibility or authenticate before changing deployment tags.
+
+## D-009 — GitHub is authoritative; assistant owns code changes and commits
+
+**Decision:** GitHub is the sole source of truth for code, commits, pull requests, documentation, and release history. The assistant alone modifies project code and creates commits. The user's local checkout is for fetching and testing GitHub revisions, not for originating authoritative code changes.
+
+**Reason:** Keep a single auditable history and avoid divergence between a local testing baseline and the shared repository.
+
+**Consequence:** Base authoritative work on GitHub refs. Use focused GitHub branches and PRs; report exact commit SHAs and actual CI results. The user tests a specific GitHub branch/commit locally and reports results; the assistant makes any required fix on GitHub. Do not merge local-only commits back into GitHub or merge local `main` into a PR simply to reconcile histories. For testing against a divergent local baseline, use a temporary/disposable branch or worktree and never push that test-only combination. Local changes must be inspected and preserved, not reset or discarded without explicit authorization. Merge, image publication, deployment, and production verification remain separate states.

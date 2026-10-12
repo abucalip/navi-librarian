@@ -1,3 +1,16 @@
+## 2026-10-12 — PR #17 merged; acquisition completion manually verified
+
+- **PR:** [#17 — Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17), squash-merged into `main` at `9f4ff509d6a336823912c49d8c049eeea8761b8f`.
+- **Behavior:** missing slskd per-peer transfer entries (HTTP 404) now produce an empty current transfer list, while filesystem completion inspection continues. Other HTTP failures remain errors; import safeguards are unchanged. Bounded diagnostics identify absent, incomplete, ambiguous, or mismatched completed-download folders.
+- **Validation:** CI Python syntax/full unit suite #134 and Docker packaging #41 passed on tested PR head `ff2153bbaf790b2c0bbfce03c8c7fdb6c7decc12`. User manually reports that completed downloads now appear imported. Acquisitions failing due to no available sources are expected.
+- **Deployment:** no image publication or production deployment was performed in this session.
+- **Documentation:** GitHub-first workflow guidance from PR #18 is being reapplied on a branch based on the post-merge `main`, because the original PR branch conflicts after PR #17.
+
+## 2026-10-12 — GitHub-first development workflow documentation
+
+- Added `docs/DEVELOPMENT_WORKFLOW.md` and decision D-009: GitHub is the sole source of truth; the assistant authors/commits changes; local checkouts are for testing exact GitHub revisions; local-only commits are never reconciled into authoritative PR branches; merge, publish, deploy, and verify are distinct states.
+- The original PR #18 branch conflicted with the updated main in `docs/PROJECT_STATUS.md`. The documentation is being transferred to a fresh branch based on current main to preserve the PR #17 handoff without overwriting it.
+
 ## 2026-10-12 — PR #17 follow-up: slskd monitor errors
 
 - **User-observed error:** multiple acquisitions entered `monitor_error` with `HTTPStatusError: 404 Not Found` from slskd's per-peer transfer-list endpoint.
