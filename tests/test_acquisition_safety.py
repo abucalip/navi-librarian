@@ -7,6 +7,7 @@ import ast
 import json
 import tempfile
 import threading
+import unicodedata
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,6 +22,7 @@ class FakeHTTPError(Exception):
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
+        "_discovery_filename_key",
         "_discovery_match_completed_album_files",
         "_discovery_is_album_candidate",
         "_slskd_album_path_match",
@@ -46,6 +48,7 @@ def load_helpers():
 
     namespace = {
         "Path": Path,
+        "unicodedata": unicodedata,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),
