@@ -57,7 +57,7 @@ def inspect_completed_album(
         }
 
     matching_named: list[Path] = []
-    track_matches_other_names: list[Path] = []
+    track_matches_other_names = False
     diagnostics: list[dict[str, Any]] = []
     named_folder_seen = False
 
@@ -79,15 +79,31 @@ def inspect_completed_album(
 
         if matched:
             if folder_name_matches:
-                matching_named.append(folder)
+                # Two matches are enough to establish ambiguity; avoid retaining
+                # every duplicate path in a large download tree.
+                if len(matching_named) < 2:
+                    matching_named.append(folder)
             else:
-                track_matches_other_names.append(folder)
+                track_matches_other_names = True
 
-        if folder_name_matches or matched:
-            actual_files = [
-                path for path in folder.iterdir()
-                if path.is_file() and not path.is_symlink()
-            ]
+        if (folder_name_matches or matched) and len(diagnostics) < 25:
+            try:
+                actual_files = [
+                    path for path in folder.iterdir()
+                    if path.is_file() and not path.is_symlink()
+                ]
+            except OSError:
+                diagnostics.append({
+                    "folder_name": folder.name,
+                    "folder_name_matches": folder_name_matches,
+                    "track_files_match": bool(matched),
+                    "matched_expected_tracks": len(matched or {}),
+                    "expected_tracks": len(expected_by_name),
+                    "reason": "folder_unreadable",
+                    "missing_expected_files": [],
+                    "size_mismatches": [],
+                })
+                continue
             actual_by_key = {filename_key(path.name): path for path in actual_files}
             missing = []
             size_mismatches = []
