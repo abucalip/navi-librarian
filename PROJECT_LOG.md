@@ -74,3 +74,10 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Used the user-provided vintage cassette image as the browser favicon and the app's header brand icon; also added it to the login/setup page.
 - Current implementation references the provided Vecteezy-hosted image URL directly. Before final Docker packaging, preferably bundle a local copy under the app's static assets so the icon does not depend on external hosting. The image could not be fetched into the repository through the available runtime, so the URL remains external for now.
 - No merge or deployment performed.
+
+
+## 2026-10-12 — Rainbow cassette icon
+
+- Replaced the previous cassette image URL in the favicon, app header, and login/setup page with the user-provided Vexels rainbow cassette image.
+- **Local asset still pending:** the image is viewable through web browsing, but direct download from this runtime fails due to unavailable DNS/network access. The app still references the remote image; do not treat the icon as fully bundled for Docker yet. To complete the local-copy requirement, provide the PNG as a chat attachment or place it in the repository worktree, then update the page to reference the bundled static asset.
+- No merge or deployment performed.
