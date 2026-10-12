@@ -2587,6 +2587,15 @@ def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
     return False
 
 
+
+def _discovery_is_various_artists(value):
+    """Identify compilation pseudo-artists without excluding real individual artists."""
+    import re
+    normalized = re.sub(r"[^a-z]+", " ", str(value or "").casefold()).strip()
+    return normalized in {"various artists", "various artist", "various", "v a"}
+
+
+
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
     snapshot = _discovery_library_snapshot()
@@ -2601,7 +2610,9 @@ def _build_new_releases_list():
     }
     qualified_artists = [
         artist for artist in snapshot["artists"]
-        if artist.get("name") and _music_key(artist["name"]) in full_album_artist_keys
+        if artist.get("name")
+        and not _discovery_is_various_artists(artist["name"])
+        and _music_key(artist["name"]) in full_album_artist_keys
     ]
     qualified_artists.sort(key=lambda item: int(item.get("album_count") or 0), reverse=True)
     from datetime import date, timedelta
@@ -2616,6 +2627,8 @@ def _build_new_releases_list():
 
     for index, artist_record in enumerate(artist_batch):
         artist = artist_record["name"].strip()
+        if _discovery_is_various_artists(artist):
+            continue
         artist_key = _music_key(artist)
         cache_key = f"mb:new-releases:v1:{earliest_year}:{artist_key}"
         payload = _metadata_cache_get(cache_key, ttl_seconds=30 * 24 * 60 * 60)
@@ -2671,6 +2684,13 @@ def _build_new_releases_list():
             # exact artist-credit name rather than a substring match.
             artist_credit = group.get("artist-credit")
             if not _discovery_exact_artist_credit_matches(artist_credit, artist):
+                continue
+            if _discovery_is_various_artists(artist):
+                continue
+            if _discovery_is_various_artists(" ".join(
+                str((part.get("artist") or {}).get("name") or part.get("name") or "")
+                for part in (artist_credit or []) if isinstance(part, dict)
+            )):
                 continue
             identity = (_music_key(artist), _music_key(title))
             if identity in owned:
