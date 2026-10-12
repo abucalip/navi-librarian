@@ -845,7 +845,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   <section id="newReleases" class="page hidden">
     <div class="panel">
       <h2>New releases</h2>
-      <p>Recent full albums by artists who already have a full album in your library.</p>
+      <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
       <div class="controls">
         <button data-load-discovery="new_releases">Load new releases</button>
         <button data-refresh-discovery="new_releases">Refresh in background</button>
