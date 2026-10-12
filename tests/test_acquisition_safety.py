@@ -28,6 +28,7 @@ def load_helpers():
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
         "_slskd_album_path_match",
+        "_slskd_search_response_items",
         "_slskd_path_match_diagnostics",
         "_slskd_queue_failure_action",
         "_slskd_quality_tier",
@@ -179,6 +180,15 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
             classify(SimpleNamespace(response=SimpleNamespace(status_code=503))),
             "uncertain",
         )
+
+    def test_slskd_search_response_payload_normalization(self):
+        normalize = HELPERS["_slskd_search_response_items"]
+        peer = {"username": "peer", "files": [{"filename": "Bombino/Agamgam/01.flac"}]}
+        self.assertEqual(normalize([peer]), [peer])
+        self.assertEqual(normalize({"responses": [peer]}), [peer])
+        self.assertEqual(normalize({"items": [peer]}), [peer])
+        self.assertEqual(normalize({"responses": "not-a-list"}), [])
+        self.assertEqual(normalize(None), [])
 
     def test_path_diagnostics_explain_album_and_artist_match_signals(self):
         diagnose = HELPERS["_slskd_path_match_diagnostics"]
