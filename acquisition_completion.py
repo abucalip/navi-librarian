@@ -105,10 +105,15 @@ def inspect_completed_album(
                 })
                 continue
             actual_by_key = {filename_key(path.name): path for path in actual_files}
+            matched_by_key = {
+                filename_key(name): path for name, path in (matched or {}).items()
+            }
             missing = []
             size_mismatches = []
             for key, (expected_name, expected_size) in expected_by_name.items():
-                actual = actual_by_key.get(key)
+                # Prefer the authoritative match result so collision-suffixed
+                # filenames are not incorrectly reported as missing.
+                actual = matched_by_key.get(key) or actual_by_key.get(key)
                 if actual is None:
                     missing.append(expected_name)
                 elif expected_size > 0 and actual.stat().st_size != expected_size:
