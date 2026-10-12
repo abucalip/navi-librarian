@@ -3,9 +3,11 @@ name: Python syntax check
 on:
   push:
     branches:
+      - main
       - feature/acquisition-integration-hardening
   pull_request:
     branches:
+      - main
       - feature/acquisition-integration-hardening
 
 jobs:
