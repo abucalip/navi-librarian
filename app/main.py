@@ -1,5 +1,12 @@
+import base64
+import hashlib
+import hmac
 import json
+import os
 import random
+import re
+import secrets
+import time
 from html import escape
 from time import monotonic, sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -8,8 +15,8 @@ import httpx
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 import navidrome_server as librarian
 
@@ -24,6 +31,268 @@ app = FastAPI(
     description="A read-only web interface for your music library.",
     version="0.1.0",
 )
+
+
+
+# Single-owner app authentication. Credentials and the signing key live in the
+# persistent data directory; only a PBKDF2 password hash is stored.
+AUTH_COOKIE_NAME = "navil_session"
+AUTH_SESSION_SECONDS = 12 * 60 * 60
+AUTH_PASSWORD_ITERATIONS = 600_000
+AUTH_LOCK = threading.Lock()
+_LOGIN_ATTEMPTS = {}
+_LOGIN_WINDOW_SECONDS = 15 * 60
+_LOGIN_MAX_ATTEMPTS = 8
+
+
+def _load_auth_secret():
+    path = librarian.DATA_DIR / "app_auth.key"
+    librarian.DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        secret = path.read_bytes()
+        if len(secret) < 32:
+            raise RuntimeError("The app authentication key is missing or invalid.")
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        return secret
+    else:
+        secret = secrets.token_bytes(32)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(secret)
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        return secret
+
+
+_AUTH_SECRET = _load_auth_secret()
+
+
+def _auth_settings():
+    return librarian._discovery_settings_read()
+
+
+def _auth_configured():
+    settings = _auth_settings()
+    return bool(
+        settings.get("app_auth_username")
+        and settings.get("app_auth_salt")
+        and settings.get("app_auth_hash")
+    )
+
+
+def _valid_auth_username(username):
+    return bool(re.fullmatch(r"[A-Za-z0-9_.-]{3,64}", str(username or "")))
+
+
+def _valid_auth_password(password):
+    return isinstance(password, str) and 12 <= len(password) <= 1024
+
+
+def _password_digest(password, salt, iterations=AUTH_PASSWORD_ITERATIONS):
+    return hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), bytes.fromhex(salt), iterations
+    ).hex()
+
+
+def _make_session_token(username, now=None):
+    issued_at = int(time.time() if now is None else now)
+    payload = json.dumps(
+        {"u": username, "exp": issued_at + AUTH_SESSION_SECONDS},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
+    signature = hmac.new(_AUTH_SECRET, encoded.encode("ascii"), hashlib.sha256).digest()
+    signed = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
+    return encoded + "." + signed
+
+
+def _session_username(token, now=None):
+    if not token or "." not in token:
+        return None
+    encoded, supplied_signature = token.rsplit(".", 1)
+    expected_signature = base64.urlsafe_b64encode(
+        hmac.new(_AUTH_SECRET, encoded.encode("ascii"), hashlib.sha256).digest()
+    ).rstrip(b"=").decode("ascii")
+    if not hmac.compare_digest(supplied_signature, expected_signature):
+        return None
+    try:
+        payload_bytes = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        payload = json.loads(payload_bytes.decode("utf-8"))
+        settings = _auth_settings()
+        current_time = int(time.time() if now is None else now)
+        if payload.get("exp", 0) <= current_time:
+            return None
+        if payload.get("u") != settings.get("app_auth_username"):
+            return None
+        return payload["u"]
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return None
+
+
+def _set_auth_cookie(response, request, username):
+    response.set_cookie(
+        AUTH_COOKIE_NAME,
+        _make_session_token(username),
+        max_age=AUTH_SESSION_SECONDS,
+        httponly=True,
+        secure=(
+            request.url.scheme == "https"
+            or request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "https"
+        ),
+        samesite="strict",
+        path="/",
+    )
+
+
+@app.middleware("http")
+async def require_app_login(request: Request, call_next):
+    path = request.url.path
+    public_paths = {
+        "/login",
+        "/api/auth/status",
+        "/api/auth/setup",
+        "/api/auth/login",
+        "/api/auth/logout",
+    }
+    if path not in public_paths and _auth_configured():
+        username = _session_username(request.cookies.get(AUTH_COOKIE_NAME))
+        if username:
+            return await call_next(request)
+    elif path in public_paths:
+        return await call_next(request)
+
+    # When no owner exists yet, only the first-run setup screen and auth
+    # endpoints are reachable. Every app/API route remains closed.
+    if path.startswith("/api/"):
+        return JSONResponse({"detail": "Authentication required."}, status_code=401)
+    return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/api/auth/status")
+def app_auth_status():
+    configured = _auth_configured()
+    return {"setup_required": not configured}
+
+
+@app.post("/api/auth/setup")
+def app_auth_setup(payload: dict, request: Request):
+    username = str(payload.get("username") or "").strip()
+    password = payload.get("password")
+    confirmation = payload.get("password_confirmation")
+    with AUTH_LOCK:
+        if _auth_configured():
+            raise HTTPException(status_code=409, detail="App account is already configured.")
+        if not _valid_auth_username(username):
+            raise HTTPException(
+                status_code=400,
+                detail="Username must be 3–64 characters using letters, numbers, dot, underscore, or hyphen.",
+            )
+        if not _valid_auth_password(password):
+            raise HTTPException(status_code=400, detail="Password must be at least 12 characters.")
+        if password != confirmation:
+            raise HTTPException(status_code=400, detail="Passwords do not match.")
+        salt = secrets.token_hex(16)
+        password_hash = _password_digest(password, salt)
+        librarian._discovery_settings_write({
+            "app_auth_username": username,
+            "app_auth_salt": salt,
+            "app_auth_hash": password_hash,
+        })
+    response = JSONResponse({"ok": True, "message": "App account created."})
+    _set_auth_cookie(response, request, username)
+    return response
+
+
+@app.post("/api/auth/login")
+def app_auth_login(payload: dict, request: Request):
+    if not _auth_configured():
+        raise HTTPException(status_code=409, detail="Create the app account first.")
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    attempts = [stamp for stamp in _LOGIN_ATTEMPTS.get(client_ip, []) if now - stamp < _LOGIN_WINDOW_SECONDS]
+    _LOGIN_ATTEMPTS[client_ip] = attempts
+    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Too many login attempts. Try again in 15 minutes.")
+
+    username = str(payload.get("username") or "").strip()
+    password = payload.get("password")
+    settings = _auth_settings()
+    valid = (
+        username == settings.get("app_auth_username")
+        and isinstance(password, str)
+        and bool(settings.get("app_auth_salt"))
+        and bool(settings.get("app_auth_hash"))
+        and hmac.compare_digest(
+            _password_digest(password, settings["app_auth_salt"]),
+            settings["app_auth_hash"],
+        )
+    )
+    if not valid:
+        attempts.append(now)
+        _LOGIN_ATTEMPTS[client_ip] = attempts
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    _LOGIN_ATTEMPTS.pop(client_ip, None)
+    response = JSONResponse({"ok": True, "message": "Signed in."})
+    _set_auth_cookie(response, request, username)
+    return response
+
+
+@app.post("/api/auth/logout")
+def app_auth_logout():
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(AUTH_COOKIE_NAME, path="/", httponly=True, samesite="strict")
+    return response
+
+
+LOGIN_PAGE = r"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Navidrome Librarian</title>
+<style>
+:root{color-scheme:dark;--bg:#171918;--panel:#202321;--text:#f0f0e8;--muted:#b5b8ad;--accent:#e8d34a;--border:#3a3d39}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}
+main{width:min(100%,420px);padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+h1{margin:0 0 6px;font-size:25px}p{color:var(--muted)}label{display:block;margin:16px 0 5px;color:var(--muted);font-size:13px}
+input{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;background:#171918;color:var(--text);font:inherit}
+button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#191a1a;font-weight:700;cursor:pointer}
+#message{min-height:24px;color:#ff9a91}.hint{font-size:12px}
+</style>
+</head>
+<body><main>
+<h1>Navidrome Librarian</h1><p id="intro">Checking app authentication…</p>
+<form id="authForm" hidden>
+<label for="username">Username</label><input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username">
+<label for="password">Password</label><input id="password" name="password" type="password" required minlength="12" maxlength="1024" autocomplete="current-password">
+<div id="confirmationWrap" hidden><label for="confirmation">Confirm password</label><input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password"><p class="hint">Use at least 12 characters. This account controls the whole app.</p></div>
+<button id="submitButton" type="submit">Sign in</button><p id="message" role="alert"></p>
+</form>
+</main>
+<script>
+const form=document.getElementById('authForm'),intro=document.getElementById('intro'),confirmWrap=document.getElementById('confirmationWrap'),button=document.getElementById('submitButton'),message=document.getElementById('message');
+let setup=false;
+async function init(){try{const r=await fetch('/api/auth/status',{cache:'no-store'});const d=await r.json();setup=!!d.setup_required;intro.textContent=setup?'Create the owner account to secure this installation.':'Sign in to continue.';confirmWrap.hidden=!setup;document.getElementById('password').autocomplete=setup?'new-password':'current-password';button.textContent=setup?'Create account':'Sign in';form.hidden=false;document.getElementById('username').focus()}catch(e){intro.textContent='Could not load authentication status. Refresh to try again.'}}
+form.addEventListener('submit',async e=>{e.preventDefault();message.textContent='';button.disabled=true;try{const body={username:document.getElementById('username').value.trim(),password:document.getElementById('password').value};if(setup)body.password_confirmation=document.getElementById('confirmation').value;const r=await fetch(setup?'/api/auth/setup':'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Authentication failed.');window.location.replace('/')}catch(err){message.textContent=err.message}finally{button.disabled=false}});
+init();
+</script></body></html>"""
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page():
+    if _session_username(None):
+        return RedirectResponse("/", status_code=303)
+    return HTMLResponse(
+        LOGIN_PAGE,
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
 
 
 def parse_result(value):
@@ -1008,6 +1277,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
     <button data-page="artistDeepDive">Artist Deep Dives</button>
     <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
     <button data-page="settings">Settings</button>
+    <button id="logoutButton" type="button">Log out</button>
   </nav>
 
   <section id="dashboard" class="page">
@@ -2539,6 +2809,11 @@ $('testSlskd').addEventListener('click', async () => {
   }
 });
 
+
+document.getElementById('logoutButton').addEventListener('click', async () => {
+  try { await fetch('/api/auth/logout', {method: 'POST', cache: 'no-store'}); }
+  finally { window.location.replace('/login'); }
+});
 
 // Populate only the visible dashboard on startup. Other pages load on first visit
 // so their API requests don't compete with the page the user is currently viewing.
