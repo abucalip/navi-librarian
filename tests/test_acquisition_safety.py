@@ -125,9 +125,9 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
         self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/Moon Shaped Pool"))
 
     def test_rejects_unrelated_album_folder(self):
-        self.assertFalse(HELPERS["_slskd_album_path_match"](
-            "Moon River", "Radiohead/Moonlight River"
-        ))
+        matcher = HELPERS["_slskd_album_path_match"]
+        self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
+        self.assertFalse(matcher("AM", "Sam"))
 
 
 class CompletedAlbumMatchingTests(unittest.TestCase):
