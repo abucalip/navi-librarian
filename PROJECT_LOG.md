@@ -6,8 +6,8 @@
 - **Regression tests:** added `tests/test_slskd_transfer_lookup.py` for 404, non-404 error propagation, and successful payload parsing.
 - **Commits:** implementation `4ced0a22b980325dde58609087700d0926b65bde`; test `e946d460acc11fb675bd25c1358ef3d243c32dd5`; test-plan update `4ee60d4151899ad5406da979c00d7995e7e8f768`; handoff update `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd`.
 - **PR:** [#17 — Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17), open, not merged/deployed. Latest head is `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd`.
-- **Verification boundary:** user reported 47 tests passing on the earlier revision `17a2bdc`. New tests and latest head still require local execution and CI; no passing claim is made for the current head.
-- **Next:** run syntax checks and the full test suite on the latest PR head; check CI, inspect the final diff, then have the user retest downloads. If errors remain, capture updated `details.error_message` values.
+- **Verification:** GitHub Actions Python syntax/test workflow #131 passed on code commit `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd` (compile plus full `unittest discover`); Docker packaging workflow #38 passed on that same commit (dependencies, compile, tests, image build). The user has not yet retested acquisition behavior. Later commits update documentation only.
+- **Next:** have the user test the latest PR revision and check the acquisition statuses. If monitor errors persist, capture updated `details.error_message` values; don't assume this is the only possible failure.
 
 ## 2026-10-12 — Local feature branch merged into main for testing
 
