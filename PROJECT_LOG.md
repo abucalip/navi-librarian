@@ -2,6 +2,15 @@
 
 Update this file at the end of every GitHub development session. Keep entries concise: current branch/PR, changed behavior, validation, known caveats, and the next step.
 
+## 2026-10-12 — Successful server installation and baseline smoke tests reported
+
+- **User-reported deployment:** Librarian is installed on the server; the Docker package has been made public.
+- **User-reported working flows:** first-run account creation, entering service credentials through Settings, downloads, and imports all work as intended.
+- **Documentation updates:** corrected `docs/PROJECT_STATUS.md` and `docs/DEPLOYMENT.md`. The earlier GHCR `unauthorized` note is no longer an active blocker according to the user's update.
+- **Evidence boundary:** these are the user's direct test results. This session did not independently inspect the live host, container logs, published image digest, or repeat application tests. The deployed image tag/digest and host details remain to be recorded at the next release/update.
+- **Changes in this session:** documentation only; no application code or server configuration changed. No tests were run in this documentation session.
+- **Next:** preserve the working flows as regression baselines. Before v0.2 implementation, inspect the actual current code and tests, then prioritize a narrowly scoped acquisition-completion reliability fix with regression coverage. Record the exact image tag/digest at the next deployment.
+
 ## 2026-10-12 — PR #15 merged: v0.2 planning from DroppedNeedle review
 
 - **PR:** [#15](https://github.com/abucalip/navi-librarian/pull/15), `docs: plan v0.2 improvements from DroppedNeedle review`, squash-merged into `main`.
