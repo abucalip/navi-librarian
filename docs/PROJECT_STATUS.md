@@ -6,7 +6,7 @@ Last updated: 2026-10-12
 
 - Repository: [abucalip/navi-librarian](https://github.com/abucalip/navi-librarian)
 - Default branch: `main`
-- Documentation/handoff update merged in PR #14 at `74264b29062504fce3bf6f7a65121fa43b9f8ec5` (2026-10-12). The earlier code baseline was `ee9ee14842c5619688c4d4fe799b03f3f024f4f8`.
+- Documentation/handoff update merged in PR #14 at `74264b29062504fce3bf6f7a65121fa43b9f8ec5` (2026-10-12). PR #15's v0.2 planning document merged in `f32b02a13b582e23699bde294eb94b51e5f646cc`.
 - Current deployed version: **not verified**.
 - GHCR pull from the Debian media VM recently failed with `unauthorized`. Package visibility/authentication must be resolved before a deployment can be considered verified.
 - The developer's local checkout has a separate in-progress branch with commits not necessarily present on `main`. Do not assume local changes are merged or deployed.
@@ -40,22 +40,23 @@ Use the following meanings consistently:
 | GHCR publication/pull | Not verified; deployment VM reported `unauthorized` | Check package visibility/authentication and pull an exact tag |
 | Production deployment | Not verified | Record image digest, Compose config, logs, and UI smoke-test result |
 
-## Latest session — 2026-10-12 (v0.2 planning)
+## Latest session — 2026-10-12 (PR #15 merged)
 
-- **Branch/PR:** `docs/v0.2-droppedneedle-lessons`, PR [#15](https://github.com/abucalip/navi-librarian/pull/15) — open, not merged. The PR contains the v0.2 planning document and the session-end updates to this status file and `PROJECT_LOG.md`.
-- **Documentation:** added [`docs/V0.2_DROPPEDNEEDLE_LESSONS.md`](V0.2_DROPPEDNEEDLE_LESSONS.md), a proposed v0.2 backlog based on selected DroppedNeedle implementation patterns. It preserves Librarian's Navidrome–slskd bridge scope and library/taste-aware recommendations, prioritizes acquisition completion reliability and regression tests, and explicitly guards against trading smoothness/stability for complexity.
-- **Design constraints:** modularize responsibilities incrementally; measure performance before optimizing; keep bounded work and safe failure behavior; audit existing cache before adding more; do not copy DroppedNeedle code without reviewing its AGPL-3.0 implications.
-- **Validation:** documentation-only. The new planning document was fetched/read back from the branch. No application tests or UI smoke tests were run; no deployment or runtime verification was performed. No application tests, UI smoke tests, deployment, or runtime verification were performed.
-- **Local checkout:** preserved untouched on `fix/artwork-size-and-artist-bios`, clean and six commits ahead of its recorded origin branch. Other local branches were inspected; no checkout, reset, merge, or cleanup was performed.
-- **Deployment:** still not verified. Existing GHCR `unauthorized` pull blocker remains unresolved.
-- **Next:** review PR #15 and merge only when satisfied with the documentation. For v0.2 implementation, start with a narrowly scoped acquisition-completion reliability change and regression tests; inspect current open PRs and actual code first. Do not infer implementation or deployment from this planning document.
+- **PR:** [#15 — docs: plan v0.2 improvements from DroppedNeedle review](https://github.com/abucalip/navi-librarian/pull/15), squash-merged into `main`.
+- **Merge commit:** `f32b02a13b582e23699bde294eb94b51e5f646cc`.
+- **Documentation:** added [`docs/V0.2_DROPPEDNEEDLE_LESSONS.md`](V0.2_DROPPEDNEEDLE_LESSONS.md), a prioritized planning backlog covering acquisition completion evidence, safe lifecycle boundaries, consistent quality evaluation, recommendation pipeline clarity, caching review, and regression/performance guardrails.
+- **Constraints recorded:** preserve Librarian's Navidrome–slskd bridge and library-/taste-aware recommendations; prioritize smoothness and stability; modularize Python responsibilities incrementally; do not copy DroppedNeedle code without reviewing AGPL-3.0 implications.
+- **CI:** GitHub Actions reported both Python syntax check and Docker packaging validation successful for PR head `3e1f005e413a5522ec2866f30baebf1914cc4868`. This was documentation-only; application tests and UI smoke tests were not run.
+- **Deployment:** not performed. A documentation-only change does not require rebuilding/restarting the application. The existing GHCR `unauthorized` blocker remains unresolved; deployed runtime version remains unverified.
+- **Local checkout:** left untouched on `fix/artwork-size-and-artist-bios`, clean and six commits ahead of its recorded origin; no checkout, reset, or cleanup performed.
+- **Next:** for v0.2 implementation, inspect current code and tests and begin with a narrowly scoped acquisition-completion reliability fix plus regression tests. Resolve GHCR authorization before the next registry-based application deployment.
 
 ## Previous session — 2026-10-12
 
 - **Completed:** PR #14 merged into `main` using squash merge. It adds the six project handoff/runbook documents listed below; merge commit: `74264b29062504fce3bf6f7a65121fa43b9f8ec5`.
-- **CI evidence:** GitHub reported the Python syntax-check and Docker-packaging validation workflows passed on PR head `97e887fa8295fff55f05ac72101907bf08819a99`. The PR was documentation-only; no application tests or deployment were run as part of the merge session.
+- **CI evidence:** GitHub reported the Python syntax-check and Docker-packaging validation workflows passed for PR head `97e887fa8295fff55f05ac72101907bf08819a99`. The PR was documentation-only; no application tests or deployment were run as part of the merge session.
 - **Deployment state:** unchanged and still unverified. GHCR authorization remains unresolved; do not infer that merge or successful CI means the app is deployed.
-- **Next priority:** inspect the current open PRs and actual local branches/worktrees, then resume the highest-priority implementation/testing task. Resolve GHCR package visibility/authentication before attempting registry-based deployment.
+- **Next priority:** inspect current open PRs and local branches/worktrees, then resume the highest-priority implementation/testing task. Resolve GHCR package visibility/authentication before attempting registry-based deployment.
 
 ## Known blocker
 
