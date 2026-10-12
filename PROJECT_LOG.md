@@ -28,3 +28,10 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Album details popup:** clicking the non-button area of dashboard, recommendation, discovery, or acquisition cards opens a modal with artwork, album/artist/year, tracklist, durations, and a Get button beside the artwork. Get-button clicks do not open the modal; Escape/backdrop/close button dismiss it. Tracklist lookup uses an exact artist+album match in Deezer and fails safely when no exact match is found.
 - **Regression test:** added coverage proving exact `Queen` artist credits match while `Queen Tribute` and `The Queens` do not.
 - **Validation:** code changes committed through GitHub; local syntax compilation, full unit tests, and UI smoke test for popup/year coverage/Queen results remain pending. Keep PR unmerged until validation passes.
+
+## 2026-10-12 — All-card year rendering and platform links
+
+- **Root cause of years appearing only on New Releases:** some renderers call `makeAlbumCardInteractive` before creating the card's `h3`. If the item already had a year, `applyAlbumYear` saved it in `data-release-year` but could not attach the badge because the title did not exist yet. The title was then created without the badge.
+- **Fix:** all card types now default to a year lookup when metadata has no year. The shared `addTextElement` helper now checks for a saved `data-release-year` when an `h3` is created and adds the year badge at that point. This handles both asynchronous lookup results and years available before the title exists. Dashboard cards keep their existing explicit year rendering.
+- **Popup platform buttons:** added ListenBrainz, Apple Music, Spotify, Qobuz, and Bandcamp buttons directly beneath the popup artwork. They open targeted artist+album searches in each service in a new tab (the app does not yet have authenticated/platform-specific album IDs to promise a canonical album URL).
+- **Validation:** Python syntax CI, local full unit suite, and UI smoke test for card-year coverage and platform links remain to be checked. PR #12 stays draft, unmerged, and undeployed.
