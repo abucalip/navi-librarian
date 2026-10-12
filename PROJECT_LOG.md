@@ -4,7 +4,7 @@
 - **Changes:** added a sixth sortable quality tier for FLAC Hi-Res (24-bit or sample rate above 44.1 kHz); recognized paired filename resolution labels including `[24-44.1]`; preserved user ordering when migrating four- and five-tier settings; exposed bounded candidate summaries in eligibility/queue failures and path/artist match signals when no source folders are recognized.
 - **Regression coverage:** exact Tinariwen `Idrache (Traces of the Past)` folder variants, candidate completeness, 16/44 metadata classification, Hi-Res filename/metadata classification, and legacy quality-priority migrations.
 - **Diagnosis boundary:** the example paths should pass the existing album-token matcher in isolation; the reported live failure stage is not proven without the actual acquisition status and queue-attempt details. Do not treat the added diagnostics or Hi-Res tier as proof that all such failures are fixed.
-- **Validation:** automated tests and CI not yet run in this session; no production deployment or live slskd calls performed.
+- **Validation:** Python syntax/acquisition-safety workflow #148 passed on code/test head `931ed5d7e983159f36eae1baceb20f437cbd8048`; Docker packaging workflow #55 passed compilation, full unit tests, and Docker image build (post-job cleanup was still finishing at handoff). No production deployment or live slskd calls performed.
 - **Next:** review the PR diff and CI, test the reported album in `prox-mcp-pr17-test`, then use `candidate_diagnostics` and `attempts` to identify the remaining stage if it still fails.
 
 ## 2026-10-13 — PR #20 merged: FLAC 16/44 and sortable quality priorities
