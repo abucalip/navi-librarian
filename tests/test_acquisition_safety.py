@@ -7,6 +7,7 @@ import ast
 import json
 import tempfile
 import threading
+import unicodedata
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,7 +22,12 @@ class FakeHTTPError(Exception):
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
+        "_discovery_filename_key",
         "_discovery_match_completed_album_files",
+        "_discovery_is_album_candidate",
+        "_discovery_exact_artist_credit_matches",
+        "_discovery_is_various_artists",
+        "_slskd_album_path_match",
         "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
@@ -44,6 +50,7 @@ def load_helpers():
 
     namespace = {
         "Path": Path,
+        "unicodedata": unicodedata,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),
@@ -95,6 +102,59 @@ def load_helpers():
 
 
 HELPERS = load_helpers()
+
+
+class RecommendationEligibilityTests(unittest.TestCase):
+    def test_rejects_compilations_remixes_and_non_album_types(self):
+        is_album = HELPERS["_discovery_is_album_candidate"]
+        for item in (
+            {"album": "Greatest Hits"},
+            {"album": "The Remixes"},
+            {"album": "Live at Wembley"},
+            {"album": "An Ordinary Title", "primary_type": "EP"},
+            {"album": "An Ordinary Title", "secondary_types": ["Compilation"]},
+        ):
+            with self.subTest(item=item):
+                self.assertFalse(is_album(item))
+
+    def test_accepts_regular_full_album(self):
+        self.assertTrue(HELPERS["_discovery_is_album_candidate"]({
+            "album": "Back to Black", "primary_type": "Album",
+        }))
+
+
+class NewReleasesArtistCreditTests(unittest.TestCase):
+    def test_requires_exact_artist_credit_name(self):
+        matches = HELPERS["_discovery_exact_artist_credit_matches"]
+        self.assertTrue(matches([{"artist": {"name": "Queen"}}], "Queen"))
+        self.assertFalse(matches([{"artist": {"name": "Queen Tribute"}}], "Queen"))
+        self.assertFalse(matches([{"artist": {"name": "The Queens"}}], "Queen"))
+        self.assertFalse(matches([], "Queen"))
+
+
+class VariousArtistsNewReleasesTests(unittest.TestCase):
+    def test_rejects_various_artists_aliases(self):
+        is_various = HELPERS["_discovery_is_various_artists"]
+        for value in ("Various Artists", "VARIOUS ARTISTS", "Various Artist", "Various", "V.A."):
+            with self.subTest(value=value):
+                self.assertTrue(is_various(value))
+
+    def test_keeps_named_artists(self):
+        is_various = HELPERS["_discovery_is_various_artists"]
+        self.assertFalse(is_various("Queen"))
+        self.assertFalse(is_various("The Various"))
+
+
+class SlskdAlbumPathMatchingTests(unittest.TestCase):
+    def test_matches_edition_suffix_and_partial_album_wording(self):
+        matcher = HELPERS["_slskd_album_path_match"]
+        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/A Moon Shaped Pool (FLAC Deluxe Edition)"))
+        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/Moon Shaped Pool"))
+
+    def test_rejects_unrelated_album_folder(self):
+        matcher = HELPERS["_slskd_album_path_match"]
+        self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
+        self.assertFalse(matcher("AM", "Sam"))
 
 
 class CompletedAlbumMatchingTests(unittest.TestCase):

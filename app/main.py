@@ -1,5 +1,12 @@
+import base64
+import hashlib
+import hmac
 import json
+import os
 import random
+import re
+import secrets
+import time
 from html import escape
 from time import monotonic, sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -8,8 +15,8 @@ import httpx
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 import navidrome_server as librarian
 
@@ -24,6 +31,279 @@ app = FastAPI(
     description="A read-only web interface for your music library.",
     version="0.1.0",
 )
+
+
+@app.get("/assets/cassette.png", include_in_schema=False)
+def cassette_icon():
+    """Serve the bundled app icon without relying on an external image host."""
+    icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cassette.png")
+    return FileResponse(icon_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+
+# Single-owner app authentication. Credentials and the signing key live in the
+# persistent data directory; only a PBKDF2 password hash is stored.
+AUTH_COOKIE_NAME = "navil_session"
+AUTH_SESSION_SECONDS = 12 * 60 * 60
+AUTH_PASSWORD_ITERATIONS = 600_000
+AUTH_LOCK = threading.Lock()
+_LOGIN_ATTEMPTS = {}
+_LOGIN_WINDOW_SECONDS = 15 * 60
+_LOGIN_MAX_ATTEMPTS = 8
+
+
+def _load_auth_secret():
+    path = librarian.DATA_DIR / "app_auth.key"
+    librarian.DATA_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        secret = path.read_bytes()
+        if len(secret) < 32:
+            raise RuntimeError("The app authentication key is missing or invalid.")
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        return secret
+    else:
+        secret = secrets.token_bytes(32)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(secret)
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        return secret
+
+
+_AUTH_SECRET = _load_auth_secret()
+
+
+def _auth_settings():
+    return librarian._discovery_settings_read()
+
+
+def _auth_configured():
+    settings = _auth_settings()
+    return bool(
+        settings.get("app_auth_username")
+        and settings.get("app_auth_salt")
+        and settings.get("app_auth_hash")
+    )
+
+
+def _valid_auth_username(username):
+    return bool(re.fullmatch(r"[A-Za-z0-9_.-]{3,64}", str(username or "")))
+
+
+def _valid_auth_password(password):
+    return isinstance(password, str) and 12 <= len(password) <= 1024
+
+
+def _password_digest(password, salt, iterations=AUTH_PASSWORD_ITERATIONS):
+    return hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), bytes.fromhex(salt), iterations
+    ).hex()
+
+
+def _make_session_token(username, now=None):
+    issued_at = int(time.time() if now is None else now)
+    payload = json.dumps(
+        {"u": username, "exp": issued_at + AUTH_SESSION_SECONDS},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
+    signature = hmac.new(_AUTH_SECRET, encoded.encode("ascii"), hashlib.sha256).digest()
+    signed = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
+    return encoded + "." + signed
+
+
+def _session_username(token, now=None):
+    if not token or "." not in token:
+        return None
+    encoded, supplied_signature = token.rsplit(".", 1)
+    expected_signature = base64.urlsafe_b64encode(
+        hmac.new(_AUTH_SECRET, encoded.encode("ascii"), hashlib.sha256).digest()
+    ).rstrip(b"=").decode("ascii")
+    if not hmac.compare_digest(supplied_signature, expected_signature):
+        return None
+    try:
+        payload_bytes = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+        payload = json.loads(payload_bytes.decode("utf-8"))
+        settings = _auth_settings()
+        current_time = int(time.time() if now is None else now)
+        if payload.get("exp", 0) <= current_time:
+            return None
+        if payload.get("u") != settings.get("app_auth_username"):
+            return None
+        return payload["u"]
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return None
+
+
+def _set_auth_cookie(response, request, username):
+    response.set_cookie(
+        AUTH_COOKIE_NAME,
+        _make_session_token(username),
+        max_age=AUTH_SESSION_SECONDS,
+        httponly=True,
+        secure=(
+            request.url.scheme == "https"
+            or request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "https"
+        ),
+        samesite="strict",
+        path="/",
+    )
+
+
+@app.middleware("http")
+async def require_app_login(request: Request, call_next):
+    path = request.url.path
+    public_paths = {
+        "/login",
+        "/api/auth/status",
+        "/api/auth/setup",
+        "/api/auth/login",
+        "/api/auth/logout",
+    }
+    if path not in public_paths and _auth_configured():
+        username = _session_username(request.cookies.get(AUTH_COOKIE_NAME))
+        if username:
+            return await call_next(request)
+    elif path in public_paths:
+        return await call_next(request)
+
+    # When no owner exists yet, only the first-run setup screen and auth
+    # endpoints are reachable. Every app/API route remains closed.
+    if path.startswith("/api/"):
+        return JSONResponse({"detail": "Authentication required."}, status_code=401)
+    return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/api/auth/status")
+def app_auth_status():
+    configured = _auth_configured()
+    return {"setup_required": not configured}
+
+
+@app.post("/api/auth/setup")
+def app_auth_setup(payload: dict, request: Request):
+    username = str(payload.get("username") or "").strip()
+    password = payload.get("password")
+    confirmation = payload.get("password_confirmation")
+    with AUTH_LOCK:
+        if _auth_configured():
+            raise HTTPException(status_code=409, detail="App account is already configured.")
+        if not _valid_auth_username(username):
+            raise HTTPException(
+                status_code=400,
+                detail="Username must be 3–64 characters using letters, numbers, dot, underscore, or hyphen.",
+            )
+        if not _valid_auth_password(password):
+            raise HTTPException(status_code=400, detail="Password must be at least 12 characters.")
+        if password != confirmation:
+            raise HTTPException(status_code=400, detail="Passwords do not match.")
+        salt = secrets.token_hex(16)
+        password_hash = _password_digest(password, salt)
+        librarian._discovery_settings_write({
+            "app_auth_username": username,
+            "app_auth_salt": salt,
+            "app_auth_hash": password_hash,
+        })
+    response = JSONResponse({"ok": True, "message": "App account created."})
+    _set_auth_cookie(response, request, username)
+    return response
+
+
+@app.post("/api/auth/login")
+def app_auth_login(payload: dict, request: Request):
+    if not _auth_configured():
+        raise HTTPException(status_code=409, detail="Create the app account first.")
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    attempts = [stamp for stamp in _LOGIN_ATTEMPTS.get(client_ip, []) if now - stamp < _LOGIN_WINDOW_SECONDS]
+    _LOGIN_ATTEMPTS[client_ip] = attempts
+    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Too many login attempts. Try again in 15 minutes.")
+
+    username = str(payload.get("username") or "").strip()
+    password = payload.get("password")
+    settings = _auth_settings()
+    valid = (
+        username == settings.get("app_auth_username")
+        and isinstance(password, str)
+        and 0 < len(password) <= 1024
+        and bool(settings.get("app_auth_salt"))
+        and bool(settings.get("app_auth_hash"))
+        and hmac.compare_digest(
+            _password_digest(password, settings["app_auth_salt"]),
+            settings["app_auth_hash"],
+        )
+    )
+    if not valid:
+        attempts.append(now)
+        _LOGIN_ATTEMPTS[client_ip] = attempts
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    _LOGIN_ATTEMPTS.pop(client_ip, None)
+    response = JSONResponse({"ok": True, "message": "Signed in."})
+    _set_auth_cookie(response, request, username)
+    return response
+
+
+@app.post("/api/auth/logout")
+def app_auth_logout():
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(AUTH_COOKIE_NAME, path="/", httponly=True, samesite="strict")
+    return response
+
+
+LOGIN_PAGE = r"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Navidrome Librarian</title>
+<link rel="icon" type="image/png" href="/assets/cassette.png">
+<style>
+:root{color-scheme:dark;--bg:#171918;--panel:#202321;--text:#f0f0e8;--muted:#b5b8ad;--accent:#e8d34a;--border:#3a3d39}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}
+main{width:min(100%,420px);padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+.brand-icon{display:block;width:76px;height:76px;object-fit:contain;margin-bottom:14px;border-radius:8px}
+h1{margin:0 0 6px;font-size:25px}p{color:var(--muted)}label{display:block;margin:16px 0 5px;color:var(--muted);font-size:13px}
+input{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;background:#171918;color:var(--text);font:inherit}
+button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#191a1a;font-weight:700;cursor:pointer}
+#message{min-height:24px;color:#ff9a91}.hint{font-size:12px}
+</style>
+</head>
+<body><main>
+<img class="brand-icon" src="/assets/cassette.png" alt="Vintage cassette tape icon">
+<h1>Navidrome Librarian</h1><p id="intro">Checking app authentication…</p>
+<form id="authForm" hidden>
+<label for="username">Username</label><input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username">
+<label for="password">Password</label><input id="password" name="password" type="password" required minlength="12" maxlength="1024" autocomplete="current-password">
+<div id="confirmationWrap" hidden><label for="confirmation">Confirm password</label><input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password"><p class="hint">Use at least 12 characters. This account controls the whole app.</p></div>
+<button id="submitButton" type="submit">Sign in</button><p id="message" role="alert"></p>
+</form>
+</main>
+<script>
+const form=document.getElementById('authForm'),intro=document.getElementById('intro'),confirmWrap=document.getElementById('confirmationWrap'),button=document.getElementById('submitButton'),message=document.getElementById('message');
+let setup=false;
+async function init(){try{const r=await fetch('/api/auth/status',{cache:'no-store'});const d=await r.json();setup=!!d.setup_required;intro.textContent=setup?'Create the owner account to secure this installation.':'Sign in to continue.';confirmWrap.hidden=!setup;document.getElementById('password').autocomplete=setup?'new-password':'current-password';button.textContent=setup?'Create account':'Sign in';form.hidden=false;document.getElementById('username').focus()}catch(e){intro.textContent='Could not load authentication status. Refresh to try again.'}}
+form.addEventListener('submit',async e=>{e.preventDefault();message.textContent='';button.disabled=true;try{const body={username:document.getElementById('username').value.trim(),password:document.getElementById('password').value};if(setup)body.password_confirmation=document.getElementById('confirmation').value;const r=await fetch(setup?'/api/auth/setup':'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Authentication failed.');window.location.replace('/')}catch(err){message.textContent=err.message}finally{button.disabled=false}});
+init();
+</script></body></html>"""
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    if _session_username(request.cookies.get(AUTH_COOKIE_NAME)):
+        return RedirectResponse("/", status_code=303)
+    return HTMLResponse(
+        LOGIN_PAGE,
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
 
 
 def parse_result(value):
@@ -54,16 +334,13 @@ def health():
         )
 
 
-# Cache successful listening profiles for five minutes.
-_PROFILE_CACHE_TTL = 300
-_profile_cache = {}
-
 # Artist biographies are cached for a day. Wikidata identifies the intended
 # musical entity first; Wikipedia is only used when its page points back to
 # that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
 # versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
+
 _ARTIST_DESCRIPTION_RE = __import__("re").compile(
     r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
     r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
@@ -180,6 +457,8 @@ def dashboard_picks(count: int = 10):
                 continue
             artist = str(item.get("artist") or item.get("album_artist") or "").strip()
             album = str(item.get("album") or item.get("title") or "").strip()
+            if not librarian._discovery_is_album_candidate(item):
+                continue
             identity = (artist.casefold(), album.casefold())
             if not artist or not album or identity in seen:
                 continue
@@ -210,40 +489,6 @@ def dashboard_picks(count: int = 10):
     return {"items": random_picks[:count], "count": min(count, len(random_picks)), "pool_size": len(combined)}
 
 
-@app.get("/api/profile")
-def listening_profile(days: int = 30):
-    if not 1 <= days <= 365:
-        raise HTTPException(
-            status_code=400,
-            detail="days must be between 1 and 365",
-        )
-
-    now = monotonic()
-    cached = _profile_cache.get(days)
-
-    if cached and now - cached["time"] < _PROFILE_CACHE_TTL:
-        return cached["data"]
-
-    try:
-        data = parse_result(
-            librarian.recent_listening_profile(days=days)
-        )
-
-        # Do not cache error responses returned by the MCP function.
-        if not (isinstance(data, dict) and data.get("error")):
-            _profile_cache[days] = {
-                "time": monotonic(),
-                "data": data,
-            }
-
-        return data
-    except Exception:
-        raise HTTPException(
-            status_code=502,
-            detail="Could not retrieve the listening profile.",
-        )
-
-
 @app.get("/api/recommendations")
 def recommendations(count: int = 10):
     if not 1 <= count <= 30:
@@ -253,9 +498,15 @@ def recommendations(count: int = 10):
         )
 
     try:
-        return parse_result(
-            librarian.recommend_new_music(count=count)
-        )
+        data = parse_result(librarian.recommend_new_music(count=count))
+        if isinstance(data, dict):
+            for key in ("recommendations", "items"):
+                if isinstance(data.get(key), list):
+                    data[key] = [
+                        item for item in data[key]
+                        if librarian._discovery_is_album_candidate(item)
+                    ]
+        return data
     except Exception:
         raise HTTPException(
             status_code=502,
@@ -266,7 +517,7 @@ def recommendations(count: int = 10):
 
 @app.get("/api/discovery/{list_name}")
 def discovery_list(list_name: str, count: int = 30):
-    allowed = {"personal", "for_me", "classics", "artist_deep_dive"}
+    allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
     if list_name not in allowed:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     if not 1 <= count <= 150:
@@ -281,7 +532,7 @@ def discovery_list(list_name: str, count: int = 30):
 
 @app.post("/api/discovery/{list_name}/refresh")
 def refresh_discovery_list(list_name: str, payload: dict | None = None):
-    if list_name not in {"personal", "classics", "artist_deep_dive", "all"}:
+    if list_name not in {"personal", "classics", "artist_deep_dive", "new_releases", "all"}:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     payload = payload or {}
     try:
@@ -382,6 +633,93 @@ def acquisition_status_stream():
     )
 
 
+@app.get("/api/settings/navidrome")
+def get_navidrome_settings():
+    try:
+        return parse_result(librarian.discovery_get_navidrome_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read Navidrome settings.")
+
+
+@app.put("/api/settings/navidrome")
+def set_navidrome_settings(payload: dict):
+    try:
+        result = parse_result(librarian.discovery_set_navidrome_settings(
+            navidrome_url=str(payload.get("navidrome_url") or ""),
+            username=str(payload.get("username") or ""),
+            password=str(payload.get("password") or ""),
+            music_library_path=str(payload.get("music_library_path") or ""),
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save Navidrome settings.")
+
+
+@app.post("/api/settings/navidrome/test")
+def test_navidrome_settings():
+    try:
+        return parse_result(librarian.discovery_test_navidrome_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the Navidrome connection.")
+
+
+@app.get("/api/settings/lastfm")
+def get_lastfm_settings():
+    try:
+        return parse_result(librarian.discovery_get_lastfm_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read Last.fm settings.")
+
+
+@app.put("/api/settings/lastfm")
+def set_lastfm_settings(payload: dict):
+    try:
+        return parse_result(librarian.discovery_set_lastfm_settings(api_key=str(payload.get("api_key") or "")))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save Last.fm settings.")
+
+
+@app.post("/api/settings/lastfm/test")
+def test_lastfm_settings():
+    try:
+        return parse_result(librarian.discovery_test_lastfm_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the Last.fm connection.")
+
+
+@app.get("/api/settings/listenbrainz")
+def get_listenbrainz_settings():
+    try:
+        return parse_result(librarian.discovery_get_listenbrainz_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read ListenBrainz settings.")
+
+
+@app.put("/api/settings/listenbrainz")
+def set_listenbrainz_settings(payload: dict):
+    try:
+        result = parse_result(librarian.discovery_set_listenbrainz_settings(username=str(payload.get("username") or "")))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save ListenBrainz settings.")
+
+
+@app.post("/api/settings/listenbrainz/test")
+def test_listenbrainz_settings():
+    try:
+        return parse_result(librarian.discovery_test_listenbrainz_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the ListenBrainz connection.")
+
+
 @app.get("/api/settings/slskd")
 def get_slskd_settings():
     try:
@@ -480,71 +818,175 @@ _musicbrainz_last_request = 0.0
 
 
 def _musicbrainz_album_year(artist: str, album: str):
-    """Find an album's first release year when the artwork catalogue omits it."""
+    """Resolve a release year from an exact MusicBrainz release-group match."""
+    import re
     global _musicbrainz_last_request
-    key = (artist.casefold().strip(), album.casefold().strip())
-    cached = _musicbrainz_year_cache.get(key)
-    now = monotonic()
-    if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
-        return cached["year"]
+
+    def norm(value):
+        return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
+
+    artist = str(artist or "").strip()
+    album = str(album or "").strip()
     if not artist or not album:
         return None
+    key = (norm(artist), norm(album))
+    now = monotonic()
+    cached = _musicbrainz_year_cache.get(key)
+    if cached:
+        ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
+        if now - cached["time"] < ttl:
+            return cached["year"]
 
     year = None
     try:
-        # Serialize lookups and respect MusicBrainz's public API rate limit.
         with _musicbrainz_year_lock:
             cached = _musicbrainz_year_cache.get(key)
             now = monotonic()
-            if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
-                return cached["year"]
+            if cached:
+                ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
+                if now - cached["time"] < ttl:
+                    return cached["year"]
             wait = 1.1 - (now - _musicbrainz_last_request)
             if wait > 0:
                 sleep(wait)
+            escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
+            escaped_album = album.replace("\\", "\\\\").replace('"', '\\"')
             query = urlencode({
-                "query": f'artist:"{artist}" AND releasegroup:"{album}"',
+                "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
                 "fmt": "json",
-                "limit": 5,
+                "limit": 25,
             })
             request = __import__("urllib.request", fromlist=["Request"]).Request(
                 "https://musicbrainz.org/ws/2/release-group/?" + query,
                 headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
             )
             _musicbrainz_last_request = monotonic()
-            with urlopen(request, timeout=6) as response:
+            with urlopen(request, timeout=8) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-            groups = payload.get("release-groups") or []
-            artist_key = artist.casefold()
-            album_key = album.casefold()
-            best = None
-            for group in groups:
-                title = str(group.get("title") or "").casefold()
-                credits = " ".join(
-                    str(
-                        (part.get("artist") or {}).get("name")
-                        or part.get("name")
-                        or ""
-                    )
-                    for part in (group.get("artist-credit") or [])
-                    if isinstance(part, dict)
-                ).casefold()
-                title_match = title == album_key or title in album_key or album_key in title
-                artist_match = artist_key in credits or credits in artist_key
-                score = int(group.get("score") or 0)
-                if title_match and artist_match and score >= 70:
-                    best = group
-                    break
-            if best:
-                date_text = str(best.get("first-release-date") or "")
-                year_text = date_text[:4]
-                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
-                    year = int(year_text)
+
+        exact_dates = []
+        for group in payload.get("release-groups") or []:
+            if norm(group.get("title")) != norm(album):
+                continue
+            credits = []
+            for part in group.get("artist-credit") or []:
+                if not isinstance(part, dict):
+                    continue
+                credit_name = (part.get("artist") or {}).get("name") or part.get("name")
+                if credit_name:
+                    credits.append(str(credit_name))
+            # Accept an exact artist credit or an exact credited member of a
+            # collaboration, never a substring such as "Queen Tribute".
+            if norm(artist) not in {norm(name) for name in credits} and norm("".join(credits)) != norm(artist):
+                continue
+            date_text = str(group.get("first-release-date") or "")
+            year_text = date_text[:4]
+            if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
+                exact_dates.append((date_text or year_text, int(year_text)))
+        if exact_dates:
+            year = min(exact_dates, key=lambda entry: entry[0])[1]
     except Exception:
-        # Year metadata is best-effort and must never break artwork rendering.
+        # The UI can still show artwork; an unavailable catalog is not fatal.
         pass
 
     _musicbrainz_year_cache[key] = {"time": monotonic(), "year": year}
     return year
+
+
+@app.get("/api/album-year")
+def album_year(artist: str = "", album: str = ""):
+    """Return a year only when an authoritative catalog has an exact album match."""
+    artist = str(artist or "").strip()[:180]
+    album = str(album or "").strip()[:180]
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+
+    year = _musicbrainz_album_year(artist, album)
+    source = "MusicBrainz" if year else None
+
+    # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
+    # artist AND album match; fuzzy or artist-only results are never trusted.
+    if not year:
+        def norm(value):
+            return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
+        try:
+            query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
+            response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
+            response.raise_for_status()
+            for item in response.json().get("data") or []:
+                if norm((item.get("artist") or {}).get("name")) != norm(artist):
+                    continue
+                if norm(item.get("title")) != norm(album):
+                    continue
+                year_text = str(item.get("release_date") or "")[:4]
+                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
+                    year = int(year_text)
+                    source = "Deezer"
+                    break
+        except Exception:
+            pass
+
+    return {"artist": artist, "album": album, "year": year, "source": source}
+
+
+@app.get("/api/album-details")
+def album_details(artist: str = "", album: str = ""):
+    """Return a carefully matched Deezer album and its tracklist for the card popup."""
+    artist = str(artist or "").strip()[:180]
+    album = str(album or "").strip()[:180]
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+
+    def key(value):
+        return "".join(char.casefold() for char in str(value or "") if char.isalnum())
+
+    result = {"artist": artist, "album": album, "year": None, "artwork_url": None, "tracks": []}
+    try:
+        query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 12})
+        response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
+        response.raise_for_status()
+        albums = response.json().get("data") or []
+        exact = [
+            item for item in albums
+            if key((item.get("artist") or {}).get("name")) == key(artist)
+            and key(item.get("title")) == key(album)
+        ]
+        if not exact:
+            result["message"] = "No exact catalog match was found, so the tracklist is unavailable."
+            return result
+
+        match = exact[0]
+        release_date = str(match.get("release_date") or "")
+        year_text = release_date[:4]
+        result.update({
+            "matched_artist": (match.get("artist") or {}).get("name"),
+            "matched_album": match.get("title"),
+            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
+            "artwork_url": (match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium") or "").replace("http://", "https://", 1) or None,
+        })
+        album_id = match.get("id")
+        if not album_id:
+            result["message"] = "Album artwork found, but the catalog did not provide a tracklist ID."
+            return result
+
+        detail_response = _EXTERNAL_HTTP.get(f"https://api.deezer.com/album/{album_id}")
+        detail_response.raise_for_status()
+        details = detail_response.json()
+        result["tracks"] = [
+            {
+                "track_number": int(track.get("track_position") or index + 1),
+                "title": str(track.get("title") or "").strip(),
+                "duration_seconds": int(track.get("duration") or 0),
+            }
+            for index, track in enumerate(details.get("tracks", {}).get("data") or [])
+            if str(track.get("title") or "").strip()
+        ]
+        if not result["tracks"]:
+            result["message"] = "The album was found, but its tracklist is unavailable."
+        return result
+    except Exception:
+        result["message"] = "The album catalog is temporarily unavailable."
+        return result
 
 
 @app.get("/api/artwork")
@@ -590,7 +1032,7 @@ def album_artwork(artist: str = "", album: str = ""):
 
         if albums:
             match = max(albums, key=match_score)
-            if match_score(match) >= 5:
+            if match_score(match) >= 9:
                 # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
                 artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
                 release_date = str(match.get("release_date") or "")
@@ -649,6 +1091,7 @@ PAGE = r"""
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navidrome Librarian</title>
+<link rel="icon" type="image/jpeg" href="/assets/cassette.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 :root {
@@ -675,9 +1118,8 @@ header {
 }
 header h1 { display: flex; align-items: center; gap: 12px; margin: 0; font: 700 29px/.95 var(--display); letter-spacing: .025em; text-transform: uppercase; }
 header h1::before {
-  content: "NL"; display: grid; place-items: center; width: 37px; height: 37px;
-  color: #191a1a; background: var(--yellow); border-bottom: 4px solid var(--red);
-  font: 700 16px/1 var(--mono); letter-spacing: -.08em;
+  content: ""; display: block; flex: 0 0 42px; width: 42px; height: 42px;
+  background: center / contain no-repeat url("/assets/cassette.png");
 }
 header p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .025em; text-align: right; }
 main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
@@ -689,6 +1131,8 @@ nav {
 nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: var(--subtle); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; }
 nav button { position: relative; width: 100%; padding: 10px 12px 10px 15px; text-align: left; color: #b7b8ae; background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
 nav button:hover { color: var(--text); background: var(--surface-raised); }
+.nav-count { float: right; min-width: 20px; margin-left: 8px; padding: 1px 5px; border-radius: 10px; color: #191a1a; background: var(--yellow); font: 500 10px/1.6 var(--mono); text-align: center; }
+.nav-count[hidden] { display: none; }
 nav button.active { color: var(--text); background: #2b2d29; box-shadow: inset 3px 0 var(--yellow); }
 nav button.active::after { content: ""; position: absolute; top: 9px; right: 10px; width: 5px; height: 5px; background: var(--red); border-radius: 50%; }
 .panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
@@ -697,6 +1141,15 @@ nav button.active::after { content: ""; position: absolute; top: 9px; right: 10p
 h3 { margin: 0 0 5px; font-size: 16px; line-height: 1.3; }
 p { line-height: 1.55; }
 .panel > p { max-width: 760px; }
+.settings-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 22px 0 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.settings-tabs .settings-tab { padding: 9px 15px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); background: #202221; }
+.settings-tabs .settings-tab.active { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
+.settings-tab-panel { max-width: 760px; }
+.settings-tab-panel[hidden] { display: none; }
+.settings-tab-panel label { display: block; margin: 14px 0; color: var(--muted); font-size: 13px; }
+.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--text); background: #202221; }
+.settings-tab-panel button { margin-right: 6px; }
+#saveNavidrome, #saveLastfm, #saveListenbrainz, #saveSlskd { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
 .muted { color: var(--muted); }
 .status { font-weight: 600; }
 .ok { color: var(--green); }
@@ -727,6 +1180,30 @@ p { line-height: 1.55; }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
+.card.editorial-card, #acquisitionCards > .card, #recommendationCards > .card { cursor: pointer; }
+.album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.78); backdrop-filter: blur(5px); }
+.album-modal-backdrop[hidden] { display: none; }
+.album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: #202221; border: 1px solid #55574e; border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
+.album-modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 38px; height: 38px; padding: 0; font-size: 23px; }
+.album-modal-layout { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: 26px; clear: both; }
+.album-modal-art-column { min-width: 0; align-self: start; }
+.album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: #30322e; border: 1px solid var(--border); }
+.album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: 6px; width: 100%; max-width: 100%; min-width: 0; margin: 8px 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 30px; align-items: center; justify-content: center; width: 30px; min-width: 30px; max-width: 30px; height: 30px; min-height: 30px; max-height: 30px; padding: 5px; overflow: hidden; border: 1px solid #55574e; border-radius: 5px; color: var(--text); background: #292b28; text-decoration: none; transition: border-color .15s, background .15s; }
+.album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 18px; width: 18px; min-width: 18px; max-width: 18px; height: 18px; object-fit: contain; }
+.album-modal-art-column .album-platform-links a:hover { border-color: var(--yellow); background: #36372f; }
+.album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.album-modal-art-column .album-platform-links .platform-icon-fallback { font: 700 10px/1 var(--mono); }
+.album-modal-art .get-album { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; border-radius: 50%; background: var(--yellow); color: #191a1a; border: 2px solid #f6e8a8; font: 700 12px/1 var(--mono); text-transform: uppercase; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
+.album-modal-copy h2 { margin: 0 0 7px; font: 600 34px/1.05 var(--display); overflow-wrap: anywhere; }
+.album-modal-artist { margin: 0 0 20px; color: var(--muted); }
+.album-modal-year { color: var(--yellow); font: 500 12px/1.4 var(--mono); }
+.album-modal-tracklist { margin: 20px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.album-modal-tracklist li { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid #333531; font-size: 13px; }
+.album-modal-tracklist .track-number, .album-modal-tracklist .track-duration { color: var(--subtle); font: 11px/1.4 var(--mono); }
+.album-modal-status { color: var(--muted); font-size: 12px; }
+@media (max-width: 650px) { .album-modal-backdrop { padding: 8px; } .album-modal { padding: 14px; max-height: 96vh; } .album-modal-layout { grid-template-columns: minmax(0,1fr); gap: 18px; } .album-modal-art-column { width: min(100%, 300px); margin: 0 auto; } .album-modal-copy h2 { font-size: 28px; } }
 .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .card .artist-bio { margin-top: 7px; color: var(--muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
@@ -787,7 +1264,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 @media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
 @media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
 @media (max-width: 620px) {
-  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { width: 32px; height: 32px; font-size: 14px; } header p { display: none; }
+  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); }
   nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; } nav button.active { box-shadow: inset 0 -3px var(--yellow); } nav button.active::after { display: none; }
   main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
@@ -805,12 +1282,13 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   <nav>
     <button class="active" data-page="dashboard">Dashboard</button>
     <button data-page="recommendations">Recommendations</button>
-    <button data-page="profile">Listening profile</button>
-        <button data-page="personalDiscoveries">Personal Discoveries</button>
+    <button data-page="newReleases">New releases</button>
+    <button data-page="personalDiscoveries">Personal Discoveries</button>
     <button data-page="classics">Add to your collection</button>
     <button data-page="artistDeepDive">Artist Deep Dives</button>
-    <button data-page="acquisitions">Acquisitions</button>
+    <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
     <button data-page="settings">Settings</button>
+    <button id="logoutButton" type="button">Log out</button>
   </nav>
 
   <section id="dashboard" class="page">
@@ -869,19 +1347,16 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
     </div>
   </section>
 
-  <section id="profile" class="page hidden">
+  <section id="newReleases" class="page hidden">
     <div class="panel">
-      <h2>Recent listening profile</h2>
+      <h2>New releases</h2>
+      <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
       <div class="controls">
-        <label for="days">Period</label>
-        <select id="days">
-          <option value="7">7 days</option>
-          <option value="30" selected>30 days</option>
-          <option value="90">90 days</option>
-        </select>
-        <button id="loadProfile">Load profile</button>
+        <button data-load-discovery="new_releases">Load new releases</button>
+        <button data-refresh-discovery="new_releases">Refresh in background</button>
       </div>
-      <pre id="profileResult" class="muted"></pre>
+      <p id="newReleasesStatus" aria-live="polite"></p>
+      <div id="newReleasesCards" class="cards"></div>
     </div>
   </section>
 
@@ -924,40 +1399,54 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 <section id="settings" class="page hidden">
   <div class="panel">
-    <h2>Connection</h2>
-    <p id="connection" class="status">Not checked yet.</p>
-    <p class="muted">Check whether the Librarian can reach Navidrome.</p>
-    <button id="checkConnection">Check connection</button>
-  </div>
-  <div class="panel">
-    <h2>slskd Settings</h2>
-    <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
-    <label>slskd URL
-      <input id="slskdUrl" type="url" value="http://192.168.1.12:5030">
-    </label>
-    <label>API key
-      <input id="slskdApiKey" type="password"
-             placeholder="Enter key to set or replace it"
-             autocomplete="new-password">
-    </label>
-    <label>Music library directory visible to the Librarian backend
-      <input id="musicLibraryPath" type="text" placeholder="/media/library/music">
-    </label>
-    <p class="muted">This directory is used for library scans and importing completed albums. Use an absolute path on the machine running the Librarian backend.</p>
-    <label>slskd completed-download directory visible to the Librarian backend
-      <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete">
-    </label>
-    <p class="muted">Use an absolute path on the machine running the Librarian backend, not a path inside the slskd container. The default is detected by the backend for the current host.</p>
-    <h3>Audio quality priority</h3>
-    <label>First choice <select class="quality-priority"></select></label>
-    <label>Second choice <select class="quality-priority"></select></label>
-    <label>Third choice <select class="quality-priority"></select></label>
-    <label>Fourth choice <select class="quality-priority"></select></label>
-    <p>
-      <button id="saveSlskd">Save settings</button>
-      <button id="testSlskd">Test connection</button>
-    </p>
-    <p id="slskdStatus"></p>
+    <h2>Settings</h2>
+    <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
+    <div class="settings-tabs" role="tablist" aria-label="Service settings">
+      <button type="button" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
+    </div>
+    <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel">
+      <h3>Navidrome connection</h3>
+      <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://192.168.1.12:4533"></label>
+      <label>Username <input id="navidromeUser" type="text" autocomplete="username"></label>
+      <label>Password <input id="navidromePassword" type="password" placeholder="Leave blank to keep the saved password" autocomplete="new-password"></label>
+      <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
+      <p class="muted">Use the path as seen by the Librarian process/container, not a path inside the Navidrome service.</p>
+      <p id="connection" class="status">Not checked yet.</p>
+      <p><button id="saveNavidrome">Save settings</button> <button id="checkConnection">Test connection</button></p>
+      <p id="navidromeStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>slskd connection</h3>
+      <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
+      <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://192.168.1.12:5030"></label>
+      <label>API key <input id="slskdApiKey" type="password" placeholder="Enter key to set or replace it" autocomplete="new-password"></label>
+      <label>slskd completed-download directory visible to the Librarian backend <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete"></label>
+      <p class="muted">Use an absolute path on the machine/container running the Librarian backend. The directory must be mounted into the container when using Docker.</p>
+      <h3>Audio quality priority</h3>
+      <label>First choice <select class="quality-priority"></select></label>
+      <label>Second choice <select class="quality-priority"></select></label>
+      <label>Third choice <select class="quality-priority"></select></label>
+      <label>Fourth choice <select class="quality-priority"></select></label>
+      <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
+      <p id="slskdStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>Last.fm API</h3>
+      <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
+      <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
+      <p id="lastfmStatus" aria-live="polite"></p>
+      <p><button id="saveLastfm">Save settings</button> <button id="testLastfm">Test connection</button></p>
+    </div>
+    <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>ListenBrainz profile</h3>
+      <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
+      <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
+      <p id="listenbrainzStatus" aria-live="polite"></p>
+      <p><button id="saveListenbrainz">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+    </div>
   </div>
 </section>
 
@@ -975,8 +1464,35 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 </main>
 
+<div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
+  <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
+    <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
+    <div class="album-modal-layout">
+      <div class="album-modal-art-column">
+        <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+        <nav id="albumModalPlatformLinks" class="album-platform-links" aria-label="Find this album on music services"></nav>
+      </div>
+      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
+    </div>
+  </section>
+</div>
 <script>
 const $ = id => document.getElementById(id);
+
+function isAlbumRecommendation(item) {
+  if (!item || typeof item !== 'object') return false;
+  const title = String(item.album || item.title || item.name || '').trim();
+  if (!title) return false;
+  const primary = String(item.primary_type || item['primary-type'] || item.album_type || item.release_type || '').trim().toLowerCase();
+  if (primary && !['album', 'full length album'].includes(primary)) return false;
+  const secondary = item.secondary_types || item['secondary-types'] || item.secondary_type || [];
+  const types = (Array.isArray(secondary) ? secondary : String(secondary).split(/[,;/|]/))
+    .map(value => String(value).toLowerCase().replace(/[^a-z]+/g, ' ').trim());
+  if (types.some(value => ['compilation', 'soundtrack', 'live', 'remix', 'dj mix', 'mixtape', 'ep', 'single', 'karaoke', 'tribute'].includes(value))) return false;
+  const normalized = title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return ![/\bcompilations?\b/, /\bremixes?\b/, /\bremixed\b/, /\bdj\s*mix(?:es)?\b/, /\bmixtapes?\b/, /\bsoundtracks?\b/, /\bkaraoke\b/, /\btribute\b/, /\bgreatest hits\b/, /\bbest of\b/, /\banthology\b/, /\bsamplers?\b/, /\blive\b/]
+    .some(pattern => pattern.test(normalized));
+}
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(el =>
@@ -991,11 +1507,11 @@ function initializePage(name) {
   if (initializedPages.has(name)) return;
   initializedPages.add(name);
   if (name === 'recommendations') $('loadRecommendations').click();
-  else if (name === 'profile') $('loadProfile').click();
+  else if (name === 'newReleases') loadDiscovery('new_releases');
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
-  else if (name === 'settings') { loadSlskdSettings(); checkConnection(); }
+  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
   else if (name === 'acquisitions') startAcquisitionStream();
 }
 
@@ -1056,6 +1572,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
   try {
     target.replaceChildren();
     const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
+    updateActiveDownloadBadge(data);
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
     status.textContent = jobs.length
       ? `${jobs.length} acquisition record(s).`
@@ -1066,10 +1583,13 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const card = document.createElement('article');
       card.className = 'card';
+      makeAlbumCardInteractive(card, job.artist || 'Unknown artist', job.album || 'Unknown album', job.details || {}, true);
       addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
-      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const details = job.details || {};
+      const metadata = details.metadata || {};
+      applyAlbumYear(card, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
+      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
@@ -1225,6 +1745,30 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
   }
 }
 
+const ACTIVE_DOWNLOAD_STATUSES = new Set([
+  'searching', 'requested', 'queued', 'downloading',
+  'download_complete_waiting_for_folder', 'importing',
+  'queue_uncertain', 'recovery_started', 'monitoring',
+]);
+
+function updateActiveDownloadBadge(data) {
+  const badge = $('activeDownloadBadge');
+  if (!badge) return;
+  const jobs = Array.isArray(data && data.acquisitions) ? data.acquisitions : [];
+  const count = jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(String(job.status || '').toLowerCase())).length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+  badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
+}
+
+async function refreshActiveDownloadBadge() {
+  try {
+    updateActiveDownloadBadge(await requestJSON('/api/acquisitions'));
+  } catch (_) {
+    // The navigation badge is advisory; do not surface transient polling errors.
+  }
+}
+
 async function loadAcquisitions() {
   $('acquisitionsStatus').textContent = 'Connecting to acquisition status…';
   try {
@@ -1233,6 +1777,9 @@ async function loadAcquisitions() {
     $('acquisitionsStatus').textContent = error.message;
   }
 }
+
+refreshActiveDownloadBadge();
+setInterval(refreshActiveDownloadBadge, 30000);
 
 let acquisitionStream = null;
 function startAcquisitionStream() {
@@ -1273,6 +1820,14 @@ function addTextElement(parent, tag, className, text) {
   if (className) el.className = className;
   el.textContent = text ?? '';
   parent.append(el);
+  // Some renderers know the year before creating the title. Preserve that
+  // year in data-release-year, then attach the badge as soon as the h3 exists.
+  if (String(tag).toLowerCase() === 'h3' && parent.dataset && parent.dataset.releaseYear) {
+    const year = Number(parent.dataset.releaseYear);
+    if (year >= 1900 && year <= 2100 && !el.querySelector('.album-year')) {
+      addTextElement(el, 'span', 'album-year', String(year));
+    }
+  }
   return el;
 }
 
@@ -1280,6 +1835,8 @@ const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
 const artistBioRequests = new Map();
+const albumCardMetadata = new WeakMap();
+let activeAlbumModal = null;
 
 function cachedJSONRequest(cache, key, url) {
   if (!cache.has(key)) {
@@ -1318,15 +1875,176 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
-function applyAlbumYear(card, value) {
-  const year = Number(value || 0);
-  if (!(year >= 1900 && year <= 2100)) return;
-  card.dataset.releaseYear = String(year);
-  const title = card.querySelector('h3');
-  if (title && !title.querySelector('.album-year')) {
+function parseReleaseYear(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const text = String(value).trim();
+  const match = text.match(/^(\d{4})/);
+  const year = Number(match ? match[1] : value);
+  return Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null;
+}
+
+function firstReleaseYear(...values) {
+  for (const value of values) {
+    const year = parseReleaseYear(value);
+    if (year !== null) return year;
+  }
+  return null;
+}
+
+function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear = true) {
+  card.dataset.albumArtist = String(artist || '');
+  card.dataset.albumTitle = String(album || '');
+  albumCardMetadata.set(card, metadata && typeof metadata === 'object' ? metadata : {});
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);
+  const nested = metadata && typeof metadata.metadata === 'object' ? metadata.metadata : {};
+  const year = firstReleaseYear(
+    metadata.year, metadata.release_year, metadata.first_release_year,
+    nested.year, nested.release_year, nested.first_release_year
+  );
+  if (year !== null) applyAlbumYear(card, year);
+  else if (fetchYear && artist && album) {
+    const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
+    const query = new URLSearchParams({artist: String(artist), album: String(album)});
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/album-year?' + query.toString())
+      .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
+      .catch(() => {});
+  }
+}
+
+function ensureAlbumYearBadge(card) {
+  const year = Number(card && card.dataset ? card.dataset.releaseYear : 0);
+  const title = card && card.querySelector('h3');
+  if (title && year >= 1900 && year <= 2100 && !title.querySelector('.album-year')) {
     addTextElement(title, 'span', 'album-year', String(year));
   }
 }
+
+function applyAlbumYear(card, value) {
+  const year = parseReleaseYear(value);
+  if (year === null) return;
+  card.dataset.releaseYear = String(year);
+  ensureAlbumYearBadge(card);
+  const modalYear = $('albumModalYear');
+  if (activeAlbumModal && activeAlbumModal.card === card && modalYear) modalYear.textContent = String(year);
+}
+
+function setAlbumPlatformLinks(artist, album) {
+  const query = [artist, album].filter(Boolean).join(' ').trim();
+  const encoded = encodeURIComponent(query);
+  const links = [
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://raw.githubusercontent.com/metabrainz/metabrainz-logos/master/logos/ListenBrainz/SVG/ListenBrainz_logo_icon.svg'],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, 'https://cdn.simpleicons.org/applemusic/FA243C'],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded, 'https://cdn.simpleicons.org/spotify/1DB954'],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://community.qobuz.com/s/Qobuz_logo_black-l2kk.jpg'],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, 'https://cdn.simpleicons.org/bandcamp/1DA0C3']
+  ];
+  const nav = $('albumModalPlatformLinks');
+  nav.replaceChildren();
+  for (const [label, href, iconUrl] of links) {
+    const link = document.createElement('a');
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
+    link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
+    const icon = document.createElement('img');
+    icon.src = iconUrl;
+    icon.alt = '';
+    icon.loading = 'lazy';
+    icon.width = 18;
+    icon.height = 18;
+    icon.onerror = () => {
+      icon.remove();
+      link.textContent = label.slice(0, 2);
+      link.classList.add('platform-icon-fallback');
+    };
+    link.append(icon);
+    nav.append(link);
+  }
+}
+function closeAlbumModal() {
+  $('albumModalBackdrop').hidden = true;
+  activeAlbumModal = null;
+}
+
+async function openAlbumModal(card) {
+  const artist = card.dataset.albumArtist || 'Unknown artist';
+  const album = card.dataset.albumTitle || 'Unknown album';
+  const metadata = albumCardMetadata.get(card) || {};
+  const backdrop = $('albumModalBackdrop');
+  const artwork = $('albumModalArtwork');
+  const tracklist = $('albumModalTracklist');
+  const get = $('albumModalGet');
+  activeAlbumModal = {card, artist, album, metadata};
+  $('albumModalTitle').textContent = album;
+  $('albumModalArtist').textContent = artist;
+  $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
+  setAlbumPlatformLinks(artist, album);
+  $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
+  tracklist.replaceChildren();
+  artwork.removeAttribute('src');
+  get.disabled = false;
+  get.classList.remove('requested');
+  get.textContent = 'get';
+  get.onclick = () => searchAlbum(artist, album, metadata, get);
+  backdrop.hidden = false;
+  $('albumModalClose').focus();
+  try {
+    const query = new URLSearchParams({artist, album});
+    const [details, art] = await Promise.all([
+      requestJSON('/api/album-details?' + query.toString()),
+      requestJSON('/api/artwork?' + query.toString()).catch(() => null)
+    ]);
+    if (!activeAlbumModal || activeAlbumModal.card !== card) return;
+    const artworkUrl = details.artwork_url || (art && art.artwork_url);
+    if (artworkUrl) artwork.src = artworkUrl;
+    const year = details.year || (art && art.year) || metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear;
+    if (year) {
+      $('albumModalYear').textContent = String(year);
+      applyAlbumYear(card, year);
+    }
+    const tracks = Array.isArray(details.tracks) ? details.tracks : [];
+    if (tracks.length) {
+      tracks.forEach((track, index) => {
+        const row = document.createElement('li');
+        const number = document.createElement('span');
+        number.className = 'track-number';
+        number.textContent = String(track.track_number || index + 1).padStart(2, '0');
+        const title = document.createElement('span');
+        title.textContent = track.title || 'Untitled track';
+        const duration = document.createElement('span');
+        duration.className = 'track-duration';
+        const seconds = Number(track.duration_seconds);
+        duration.textContent = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds / 60) + ':' + String(Math.floor(seconds % 60)).padStart(2, '0') : '';
+        row.append(number, title, duration);
+        tracklist.append(row);
+      });
+      $('albumModalStatus').textContent = tracks.length + ' tracks';
+    } else {
+      $('albumModalStatus').textContent = details.message || 'Tracklist unavailable for this release.';
+    }
+  } catch (error) {
+    if (activeAlbumModal && activeAlbumModal.card === card) $('albumModalStatus').textContent = 'Could not load tracklist: ' + error.message;
+  }
+}
+
+document.addEventListener('click', event => {
+  const card = event.target.closest && event.target.closest('.card[data-album-title]');
+  if (!card || event.target.closest('button, a, input, select, textarea')) return;
+  openAlbumModal(card);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('albumModalBackdrop').hidden) closeAlbumModal();
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title]')) {
+    event.preventDefault(); openAlbumModal(event.target);
+  }
+});
+$('albumModalClose').addEventListener('click', closeAlbumModal);
+$('albumModalBackdrop').addEventListener('click', event => {
+  if (event.target === $('albumModalBackdrop')) closeAlbumModal();
+});
 
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
@@ -1335,19 +2053,21 @@ async function loadDashboardPicks() {
   status.textContent = 'Picking ten albums across your discovery lists…';
   try {
     const data = await requestJSON('/api/dashboard-picks?count=10&nonce=' + Date.now());
-    const items = data.items || [];
+    const items = (data.items || []).filter(isAlbumRecommendation);
     for (const item of items) {
       const artist = item.artist || item.album_artist || 'Unknown artist';
       const album = item.album || item.title || 'Untitled album';
       const card = document.createElement('article');
       card.className = 'card editorial-card';
+      makeAlbumCardInteractive(card, artist, album, item);
       attachArtwork(card, artist, album);
       addTextElement(card, 'p', 'card-category', item.dashboard_category || 'Discovery');
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || 0);
-      if (year >= 1900 && year <= 2100) addTextElement(title, 'span', 'album-year', String(year));
+      const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+      if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
+      ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
       const art = card.querySelector('.card-art');
       const get = document.createElement('button');
@@ -1413,7 +2133,7 @@ let recommendationData = null;
 
 function renderRecommendations(data) {
   recommendationData = data;
-  allRecommendations = getRecommendations(data);
+  allRecommendations = getRecommendations(data).filter(isAlbumRecommendation);
   $('recommendationDebug').textContent = pretty(data);
   applyRecommendationFilters();
 }
@@ -1474,6 +2194,7 @@ function applyRecommendationFilters() {
     card.className = 'card editorial-card';
     const artist = item.artist || item.album_artist || '';
     const album = item.album || item.title || item.name || '';
+    makeAlbumCardInteractive(card, artist, album, item);
     attachArtwork(card, artist, album);
     const artContainer = card.querySelector('.card-art');
     const getButton = document.createElement('button');
@@ -1504,11 +2225,10 @@ function applyRecommendationFilters() {
 
     const title = document.createElement('h3');
     title.append(document.createTextNode(item.album || item.title || item.name || 'Untitled album'));
-    const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
-    if (year >= 1900 && year <= 2100) {
-      addTextElement(title, 'span', 'album-year', String(year));
-    }
+    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+    if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
     card.append(title);
+    ensureAlbumYearBadge(card);
 
     addTextElement(
       card, 'p', 'card-artist',
@@ -1578,7 +2298,10 @@ $('recommendationSearch').addEventListener('input', applyRecommendationFilters);
 $('categoryFilter').addEventListener('change', applyRecommendationFilters);
 $('recommendationSort').addEventListener('change', applyRecommendationFilters);
 
-$('checkConnection').addEventListener('click', checkConnection);
+$('checkConnection').addEventListener('click', async () => {
+  $('connection').textContent = 'Testing Navidrome…';
+  await testServiceConnection('/api/settings/navidrome/test', 'connection');
+});
 
 $('loadRecommendations').addEventListener('click', async () => {
   const button = $('loadRecommendations');
@@ -1598,23 +2321,11 @@ $('loadRecommendations').addEventListener('click', async () => {
   }
 });
 
-$('loadProfile').addEventListener('click', async () => {
-  const output = $('profileResult');
-  output.textContent = 'Loading listening profile…';
-  try {
-    const data = await requestJSON(
-      '/api/profile?days=' + encodeURIComponent($('days').value));
-    output.textContent = pretty(data);
-  } catch (error) {
-    output.textContent = error.message;
-  }
-});
-
-
 const discoveryViews = {
   personal: ['personalCards','personalStatus'],
   classics: ['classicsCards','classicsStatus'],
-  artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus']
+  artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus'],
+  new_releases: ['newReleasesCards','newReleasesStatus']
 };
 
 const qualityOptions = [
@@ -1685,6 +2396,7 @@ async function loadDiscovery(name, options = {}) {
     const poolCount = name === 'artist_deep_dive' ? 150 : name === 'classics' ? 100 : 30;
     const data = await requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`);
     let items = data.items || data.recommendations || [];
+    if (name !== 'for_me') items = items.filter(isAlbumRecommendation);
     if ((name === 'classics' || name === 'artist_deep_dive') && options.rotate) {
       items = [...items].sort(() => Math.random() - 0.5);
     }
@@ -1713,9 +2425,17 @@ async function loadDiscovery(name, options = {}) {
 
     if (name === 'artist_deep_dive') {
       const grouped = new Map();
+      const artistsByGenre = new Map();
       for (const item of items) {
         const key = deepDiveGenre(item);
-        if (!grouped.has(key)) grouped.set(key, []);
+        const artistKey = String(item.artist || item.album_artist || '').trim().toLocaleLowerCase();
+        if (!grouped.has(key)) {
+          grouped.set(key, []);
+          artistsByGenre.set(key, new Set());
+        }
+        const seenArtists = artistsByGenre.get(key);
+        if (seenArtists.has(artistKey)) continue;
+        seenArtists.add(artistKey);
         grouped.get(key).push(item);
       }
       // Show no more than 15 albums per genre row. Randomize the larger
@@ -1766,17 +2486,17 @@ async function loadDiscovery(name, options = {}) {
       const isDeepDive = name === 'artist_deep_dive';
       const card = document.createElement('article');
       card.className = 'card editorial-card';
+      makeAlbumCardInteractive(card, artist, album, item);
       attachArtwork(card, artist, album);
 
       addTextElement(card, 'p', 'card-category',
         (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
-      if (year >= 1900 && year <= 2100) {
-        addTextElement(title, 'span', 'album-year', String(year));
-      }
+      const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+      if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
+      ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
 
       const needsBio = isDeepDive ||
@@ -1959,11 +2679,93 @@ async function searchAlbum(artist, album, metadata, button = null) {
     if (statusTarget) statusTarget.textContent = error.message;
   }
 }
+async function loadNavidromeSettings() {
+  try {
+    const data = await requestJSON('/api/settings/navidrome');
+    $('navidromeUrl').value = data.navidrome_url || '';
+    $('navidromeUser').value = data.username || '';
+    $('musicLibraryPath').value = data.music_library_path || '';
+    $('navidromePassword').value = '';
+    $('navidromeStatus').textContent = data.password_configured ? 'Password configured.' : 'Password not configured.';
+  } catch (error) { $('navidromeStatus').textContent = error.message; }
+}
+$('saveNavidrome').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/navidrome', 'PUT', {
+      navidrome_url: $('navidromeUrl').value.trim(),
+      username: $('navidromeUser').value.trim(),
+      password: $('navidromePassword').value,
+      music_library_path: $('musicLibraryPath').value.trim()
+    });
+    $('navidromePassword').value = '';
+    $('navidromeStatus').textContent = result.message || 'Settings saved.';
+    await loadNavidromeSettings();
+  } catch (error) { $('navidromeStatus').textContent = error.message; }
+});
+
+async function loadLastfmSettings() {
+  try {
+    const data = await requestJSON('/api/settings/lastfm');
+    $('lastfmApiKey').value = '';
+    $('lastfmStatus').textContent = data.api_key_configured ? 'API key configured.' : 'API key not configured (optional).';
+  } catch (error) { $('lastfmStatus').textContent = error.message; }
+}
+$('saveLastfm').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/lastfm', 'PUT', {api_key: $('lastfmApiKey').value});
+    $('lastfmApiKey').value = '';
+    $('lastfmStatus').textContent = result.message || 'Settings saved.';
+    await loadLastfmSettings();
+  } catch (error) { $('lastfmStatus').textContent = error.message; }
+});
+
+async function loadListenbrainzSettings() {
+  try {
+    const data = await requestJSON('/api/settings/listenbrainz');
+    $('listenbrainzUsername').value = data.username || '';
+    $('listenbrainzStatus').textContent = 'Public profile username.';
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+}
+$('saveListenbrainz').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/listenbrainz', 'PUT', {username: $('listenbrainzUsername').value.trim()});
+    $('listenbrainzStatus').textContent = result.message || 'Settings saved.';
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+});
+
+async function testServiceConnection(endpoint, statusId) {
+  const status = $(statusId);
+  status.textContent = 'Testing connection…';
+  status.className = 'status';
+  try {
+    const data = await sendJSON(endpoint, 'POST');
+    status.textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
+    status.className = data.ok ? 'status ok' : 'status error';
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = 'status error';
+  }
+}
+$('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
+$('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
+
+document.querySelectorAll('[data-settings-tab]').forEach(button => {
+  button.addEventListener('click', () => {
+    const name = button.dataset.settingsTab;
+    document.querySelectorAll('[data-settings-tab]').forEach(tab => {
+      const active = tab === button;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    const panels = {navidrome: 'settingsNavidrome', slskd: 'settingsSlskd', lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz'};
+    document.querySelectorAll('.settings-tab-panel').forEach(panel => { panel.hidden = panel.id !== panels[name]; });
+  });
+});
+
 async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
-    $('musicLibraryPath').value = data.music_library_path || '';
     $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
     document.querySelectorAll('.quality-priority').forEach((select, index) => {
@@ -1993,7 +2795,6 @@ $('saveSlskd').addEventListener('click', async () => {
 
   const payload = {
     slskd_url: $('slskdUrl').value.trim(),
-    music_library_path: $('musicLibraryPath').value.trim(),
     slskd_downloads_path: $('slskdDownloadsPath').value.trim(),
     quality_priority: priorities
   };
@@ -2019,6 +2820,11 @@ $('testSlskd').addEventListener('click', async () => {
   }
 });
 
+
+document.getElementById('logoutButton').addEventListener('click', async () => {
+  try { await fetch('/api/auth/logout', {method: 'POST', cache: 'no-store'}); }
+  finally { window.location.replace('/login'); }
+});
 
 // Populate only the visible dashboard on startup. Other pages load on first visit
 // so their API requests don't compete with the page the user is currently viewing.
