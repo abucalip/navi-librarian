@@ -3717,6 +3717,42 @@ def _slskd_album_path_match(album, text):
     return overlap >= max(2, math.ceil(len(unique_tokens) * 0.6))
 
 
+def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
+    """Return bounded evidence explaining why visible audio paths did not match."""
+    import re
+    audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
+    try:
+        limit = max(1, min(int(limit), 10))
+    except (TypeError, ValueError):
+        limit = 10
+    samples = []
+    for response in payload if isinstance(payload, list) else []:
+        username = response.get("username") or response.get("user") or ""
+        files = response.get("files") or response.get("fileList") or []
+        for item in files if isinstance(files, list) else []:
+            if not isinstance(item, dict):
+                continue
+            filename = str(item.get("filename") or item.get("path") or "")
+            if not filename:
+                continue
+            extension = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            if extension not in audio_exts:
+                continue
+            parts = re.split(r"[/\\]+", filename)
+            parent_text = " ".join(parts[:-1])
+            leaf_name = parts[-1]
+            samples.append({
+                "username": str(username)[:80],
+                "filename": filename[:240],
+                "album_path_match": _slskd_album_path_match(album, parent_text),
+                "album_filename_match": _slskd_album_path_match(album, leaf_name),
+                "artist_path_match": _music_key(artist) in _music_key(parent_text),
+            })
+            if len(samples) >= limit:
+                return samples
+    return samples
+
+
 def _slskd_extract_candidates(payload, artist, album, priority, expected_track_count=None):
     import re
     from collections import defaultdict
@@ -5761,6 +5797,9 @@ def _discovery_acquire_album_impl(
                 if isinstance(item, dict)
                 and Path(str(item.get("filename") or item.get("path") or "")).suffix.casefold() in audio_exts
             )
+            path_diagnostics = _slskd_path_match_diagnostics(
+                list(payload_by_peer.values()), artist, album
+            )
             message = (
                 f"No matching album folders were found among {response_count} peer responses "
                 f"({audio_file_count} audio files). Folder/title matching may not have "
@@ -5771,12 +5810,14 @@ def _discovery_acquire_album_impl(
                 {
                     "message": message, "search_id": search_id, "metadata": metadata,
                     "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                    "path_diagnostics": path_diagnostics,
                 },
             )
             return json.dumps({
                 "ok": True, "status": "no_matches", "artist": artist, "album": album,
                 "search_id": search_id, "message": message,
                 "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                "path_diagnostics": path_diagnostics,
             }, ensure_ascii=False)
         clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
         if not auto_queue:
