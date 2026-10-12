@@ -1,3 +1,12 @@
+## Latest session — 2026-10-12 (PR #17 merged; workflow documentation merged)
+
+- **PR #17:** squash-merged at `9f4ff509d6a336823912c49d8c049eeea8761b8f`. User reports completed downloads now appear imported; acquisitions failing due to unavailable sources are expected. No import-safety checks were weakened.
+- **PR #18:** could not be merged because its project-status edit conflicted with the PR #17 update. Closed as superseded, with its workflow content preserved in replacement PR #19.
+- **PR #19:** [docs: reconcile GitHub-first workflow and project handoff](https://github.com/abucalip/navi-librarian/pull/19), squash-merged at `fe60dd3aaf323bd6f3489f89b13ee9946ba7f382`. Added `docs/DEVELOPMENT_WORKFLOW.md`, recorded decision D-009, and updated this status and `PROJECT_LOG.md`.
+- **CI on PR #19 head** `bca1b143f45b870492f99c86ecdc5ef9ed9d6ec7`: Python syntax/acquisition-safety workflow #136 passed; Docker packaging workflow #43 passed, including compilation, unit tests, and Docker image build. Documentation-only change.
+- **Deployment:** no image publication or production deployment was performed. The merges and packaging validation do not prove that the server is running a new image.
+- **Next:** continue from GitHub `main`. If a release is requested, separately publish/pull the image, record its digest, and verify the running service.
+
 ## Latest session — 2026-10-12 (PR #17 merged; acquisition behavior manually verified)
 
 - **PR #17:** [Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17) was squash-merged into GitHub `main` at merge commit `9f4ff509d6a336823912c49d8c049eeea8761b8f`.
