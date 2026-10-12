@@ -42,10 +42,10 @@ Use the following meanings consistently:
 
 ## Latest session — 2026-10-12 (v0.2 planning)
 
-- **Branch/PR:** `docs/v0.2-droppedneedle-lessons`, PR [#15](https://github.com/abucalip/navi-librarian/pull/15) — open, not merged. Current PR head before this handoff update: `affef7fb2a0f28f7f013f81462b49a876d40c431`; this status/log update will add a follow-up commit to the same PR.
+- **Branch/PR:** `docs/v0.2-droppedneedle-lessons`, PR [#15](https://github.com/abucalip/navi-librarian/pull/15) — open, not merged. The PR contains the v0.2 planning document and the session-end updates to this status file and `PROJECT_LOG.md`.
 - **Documentation:** added [`docs/V0.2_DROPPEDNEEDLE_LESSONS.md`](V0.2_DROPPEDNEEDLE_LESSONS.md), a proposed v0.2 backlog based on selected DroppedNeedle implementation patterns. It preserves Librarian's Navidrome–slskd bridge scope and library/taste-aware recommendations, prioritizes acquisition completion reliability and regression tests, and explicitly guards against trading smoothness/stability for complexity.
 - **Design constraints:** modularize responsibilities incrementally; measure performance before optimizing; keep bounded work and safe failure behavior; audit existing cache before adding more; do not copy DroppedNeedle code without reviewing its AGPL-3.0 implications.
-- **Validation:** documentation-only. The new planning document was fetched/read back from the branch. GitHub reports no commit status checks for the original PR head at the time of this update. No application tests, UI smoke tests, deployment, or runtime verification were performed.
+- **Validation:** documentation-only. The new planning document was fetched/read back from the branch. No application tests or UI smoke tests were run; no deployment or runtime verification was performed. No application tests, UI smoke tests, deployment, or runtime verification were performed.
 - **Local checkout:** preserved untouched on `fix/artwork-size-and-artist-bios`, clean and six commits ahead of its recorded origin branch. Other local branches were inspected; no checkout, reset, merge, or cleanup was performed.
 - **Deployment:** still not verified. Existing GHCR `unauthorized` pull blocker remains unresolved.
 - **Next:** review PR #15 and merge only when satisfied with the documentation. For v0.2 implementation, start with a narrowly scoped acquisition-completion reliability change and regression tests; inspect current open PRs and actual code first. Do not infer implementation or deployment from this planning document.
