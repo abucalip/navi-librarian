@@ -40,7 +40,17 @@ Use the following meanings consistently:
 | GHCR publication/pull | Not verified; deployment VM reported `unauthorized` | Check package visibility/authentication and pull an exact tag |
 | Production deployment | Not verified | Record image digest, Compose config, logs, and UI smoke-test result |
 
-## Latest session — 2026-10-12
+## Latest session — 2026-10-12 (v0.2 planning)
+
+- **Branch/PR:** `docs/v0.2-droppedneedle-lessons`, PR [#15](https://github.com/abucalip/navi-librarian/pull/15) — open, not merged. Current PR head before this handoff update: `affef7fb2a0f28f7f013f81462b49a876d40c431`; this status/log update will add a follow-up commit to the same PR.
+- **Documentation:** added [`docs/V0.2_DROPPEDNEEDLE_LESSONS.md`](V0.2_DROPPEDNEEDLE_LESSONS.md), a proposed v0.2 backlog based on selected DroppedNeedle implementation patterns. It preserves Librarian's Navidrome–slskd bridge scope and library/taste-aware recommendations, prioritizes acquisition completion reliability and regression tests, and explicitly guards against trading smoothness/stability for complexity.
+- **Design constraints:** modularize responsibilities incrementally; measure performance before optimizing; keep bounded work and safe failure behavior; audit existing cache before adding more; do not copy DroppedNeedle code without reviewing its AGPL-3.0 implications.
+- **Validation:** documentation-only. The new planning document was fetched/read back from the branch. GitHub reports no commit status checks for the original PR head at the time of this update. No application tests, UI smoke tests, deployment, or runtime verification were performed.
+- **Local checkout:** preserved untouched on `fix/artwork-size-and-artist-bios`, clean and six commits ahead of its recorded origin branch. Other local branches were inspected; no checkout, reset, merge, or cleanup was performed.
+- **Deployment:** still not verified. Existing GHCR `unauthorized` pull blocker remains unresolved.
+- **Next:** review PR #15 and merge only when satisfied with the documentation. For v0.2 implementation, start with a narrowly scoped acquisition-completion reliability change and regression tests; inspect current open PRs and actual code first. Do not infer implementation or deployment from this planning document.
+
+## Previous session — 2026-10-12
 
 - **Completed:** PR #14 merged into `main` using squash merge. It adds the six project handoff/runbook documents listed below; merge commit: `74264b29062504fce3bf6f7a65121fa43b9f8ec5`.
 - **CI evidence:** GitHub reported the Python syntax-check and Docker-packaging validation workflows passed on PR head `97e887fa8295fff55f05ac72101907bf08819a99`. The PR was documentation-only; no application tests or deployment were run as part of the merge session.
