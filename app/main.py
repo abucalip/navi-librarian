@@ -353,6 +353,93 @@ def acquisition_status_stream():
     )
 
 
+@app.get("/api/settings/navidrome")
+def get_navidrome_settings():
+    try:
+        return parse_result(librarian.discovery_get_navidrome_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read Navidrome settings.")
+
+
+@app.put("/api/settings/navidrome")
+def set_navidrome_settings(payload: dict):
+    try:
+        result = parse_result(librarian.discovery_set_navidrome_settings(
+            navidrome_url=str(payload.get("navidrome_url") or ""),
+            username=str(payload.get("username") or ""),
+            password=str(payload.get("password") or ""),
+            music_library_path=str(payload.get("music_library_path") or ""),
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save Navidrome settings.")
+
+
+@app.post("/api/settings/navidrome/test")
+def test_navidrome_settings():
+    try:
+        return parse_result(librarian.discovery_test_navidrome_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the Navidrome connection.")
+
+
+@app.get("/api/settings/lastfm")
+def get_lastfm_settings():
+    try:
+        return parse_result(librarian.discovery_get_lastfm_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read Last.fm settings.")
+
+
+@app.put("/api/settings/lastfm")
+def set_lastfm_settings(payload: dict):
+    try:
+        return parse_result(librarian.discovery_set_lastfm_settings(api_key=str(payload.get("api_key") or "")))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save Last.fm settings.")
+
+
+@app.post("/api/settings/lastfm/test")
+def test_lastfm_settings():
+    try:
+        return parse_result(librarian.discovery_test_lastfm_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the Last.fm connection.")
+
+
+@app.get("/api/settings/listenbrainz")
+def get_listenbrainz_settings():
+    try:
+        return parse_result(librarian.discovery_get_listenbrainz_settings())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read ListenBrainz settings.")
+
+
+@app.put("/api/settings/listenbrainz")
+def set_listenbrainz_settings(payload: dict):
+    try:
+        result = parse_result(librarian.discovery_set_listenbrainz_settings(username=str(payload.get("username") or "")))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save ListenBrainz settings.")
+
+
+@app.post("/api/settings/listenbrainz/test")
+def test_listenbrainz_settings():
+    try:
+        return parse_result(librarian.discovery_test_listenbrainz_connection())
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the ListenBrainz connection.")
+
+
 @app.get("/api/settings/slskd")
 def get_slskd_settings():
     try:
@@ -774,6 +861,15 @@ nav button.active::after { content: ""; position: absolute; top: 9px; right: 10p
 h3 { margin: 0 0 5px; font-size: 16px; line-height: 1.3; }
 p { line-height: 1.55; }
 .panel > p { max-width: 760px; }
+.settings-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 22px 0 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.settings-tabs .settings-tab { padding: 9px 15px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); background: #202221; }
+.settings-tabs .settings-tab.active { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
+.settings-tab-panel { max-width: 760px; }
+.settings-tab-panel[hidden] { display: none; }
+.settings-tab-panel label { display: block; margin: 14px 0; color: var(--muted); font-size: 13px; }
+.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--text); background: #202221; }
+.settings-tab-panel button { margin-right: 6px; }
+#saveNavidrome, #saveLastfm, #saveListenbrainz, #saveSlskd { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
 .muted { color: var(--muted); }
 .status { font-weight: 600; }
 .ok { color: var(--green); }
@@ -1022,40 +1118,54 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 <section id="settings" class="page hidden">
   <div class="panel">
-    <h2>Connection</h2>
-    <p id="connection" class="status">Not checked yet.</p>
-    <p class="muted">Check whether the Librarian can reach Navidrome.</p>
-    <button id="checkConnection">Check connection</button>
-  </div>
-  <div class="panel">
-    <h2>slskd Settings</h2>
-    <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
-    <label>slskd URL
-      <input id="slskdUrl" type="url" value="http://192.168.1.12:5030">
-    </label>
-    <label>API key
-      <input id="slskdApiKey" type="password"
-             placeholder="Enter key to set or replace it"
-             autocomplete="new-password">
-    </label>
-    <label>Music library directory visible to the Librarian backend
-      <input id="musicLibraryPath" type="text" placeholder="/media/library/music">
-    </label>
-    <p class="muted">This directory is used for library scans and importing completed albums. Use an absolute path on the machine running the Librarian backend.</p>
-    <label>slskd completed-download directory visible to the Librarian backend
-      <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete">
-    </label>
-    <p class="muted">Use an absolute path on the machine running the Librarian backend, not a path inside the slskd container. The default is detected by the backend for the current host.</p>
-    <h3>Audio quality priority</h3>
-    <label>First choice <select class="quality-priority"></select></label>
-    <label>Second choice <select class="quality-priority"></select></label>
-    <label>Third choice <select class="quality-priority"></select></label>
-    <label>Fourth choice <select class="quality-priority"></select></label>
-    <p>
-      <button id="saveSlskd">Save settings</button>
-      <button id="testSlskd">Test connection</button>
-    </p>
-    <p id="slskdStatus"></p>
+    <h2>Settings</h2>
+    <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
+    <div class="settings-tabs" role="tablist" aria-label="Service settings">
+      <button type="button" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
+    </div>
+    <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel">
+      <h3>Navidrome connection</h3>
+      <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://192.168.1.12:4533"></label>
+      <label>Username <input id="navidromeUser" type="text" autocomplete="username"></label>
+      <label>Password <input id="navidromePassword" type="password" placeholder="Leave blank to keep the saved password" autocomplete="new-password"></label>
+      <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
+      <p class="muted">Use the path as seen by the Librarian process/container, not a path inside the Navidrome service.</p>
+      <p id="connection" class="status">Not checked yet.</p>
+      <p><button id="saveNavidrome">Save settings</button> <button id="checkConnection">Test connection</button></p>
+      <p id="navidromeStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>slskd connection</h3>
+      <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
+      <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://192.168.1.12:5030"></label>
+      <label>API key <input id="slskdApiKey" type="password" placeholder="Enter key to set or replace it" autocomplete="new-password"></label>
+      <label>slskd completed-download directory visible to the Librarian backend <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete"></label>
+      <p class="muted">Use an absolute path on the machine/container running the Librarian backend. The directory must be mounted into the container when using Docker.</p>
+      <h3>Audio quality priority</h3>
+      <label>First choice <select class="quality-priority"></select></label>
+      <label>Second choice <select class="quality-priority"></select></label>
+      <label>Third choice <select class="quality-priority"></select></label>
+      <label>Fourth choice <select class="quality-priority"></select></label>
+      <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
+      <p id="slskdStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>Last.fm API</h3>
+      <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
+      <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
+      <p id="lastfmStatus" aria-live="polite"></p>
+      <p><button id="saveLastfm">Save settings</button> <button id="testLastfm">Test connection</button></p>
+    </div>
+    <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>ListenBrainz profile</h3>
+      <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
+      <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
+      <p id="listenbrainzStatus" aria-live="polite"></p>
+      <p><button id="saveListenbrainz">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+    </div>
   </div>
 </section>
 
@@ -1120,7 +1230,7 @@ function initializePage(name) {
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
-  else if (name === 'settings') { loadSlskdSettings(); checkConnection(); }
+  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
   else if (name === 'acquisitions') startAcquisitionStream();
 }
 
@@ -1907,7 +2017,10 @@ $('recommendationSearch').addEventListener('input', applyRecommendationFilters);
 $('categoryFilter').addEventListener('change', applyRecommendationFilters);
 $('recommendationSort').addEventListener('change', applyRecommendationFilters);
 
-$('checkConnection').addEventListener('click', checkConnection);
+$('checkConnection').addEventListener('click', async () => {
+  $('connection').textContent = 'Testing Navidrome…';
+  await testServiceConnection('/api/settings/navidrome/test', 'connection');
+});
 
 $('loadRecommendations').addEventListener('click', async () => {
   const button = $('loadRecommendations');
@@ -2285,11 +2398,87 @@ async function searchAlbum(artist, album, metadata, button = null) {
     if (statusTarget) statusTarget.textContent = error.message;
   }
 }
+async function loadNavidromeSettings() {
+  try {
+    const data = await requestJSON('/api/settings/navidrome');
+    $('navidromeUrl').value = data.navidrome_url || '';
+    $('navidromeUser').value = data.username || '';
+    $('musicLibraryPath').value = data.music_library_path || '';
+    $('navidromePassword').value = '';
+    $('navidromeStatus').textContent = data.password_configured ? 'Password configured.' : 'Password not configured.';
+  } catch (error) { $('navidromeStatus').textContent = error.message; }
+}
+$('saveNavidrome').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/navidrome', 'PUT', {
+      navidrome_url: $('navidromeUrl').value.trim(),
+      username: $('navidromeUser').value.trim(),
+      password: $('navidromePassword').value,
+      music_library_path: $('musicLibraryPath').value.trim()
+    });
+    $('navidromePassword').value = '';
+    $('navidromeStatus').textContent = result.message || 'Settings saved.';
+    await loadNavidromeSettings();
+  } catch (error) { $('navidromeStatus').textContent = error.message; }
+});
+
+async function loadLastfmSettings() {
+  try {
+    const data = await requestJSON('/api/settings/lastfm');
+    $('lastfmApiKey').value = '';
+    $('lastfmStatus').textContent = data.api_key_configured ? 'API key configured.' : 'API key not configured (optional).';
+  } catch (error) { $('lastfmStatus').textContent = error.message; }
+}
+$('saveLastfm').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/lastfm', 'PUT', {api_key: $('lastfmApiKey').value});
+    $('lastfmApiKey').value = '';
+    $('lastfmStatus').textContent = result.message || 'Settings saved.';
+    await loadLastfmSettings();
+  } catch (error) { $('lastfmStatus').textContent = error.message; }
+});
+
+async function loadListenbrainzSettings() {
+  try {
+    const data = await requestJSON('/api/settings/listenbrainz');
+    $('listenbrainzUsername').value = data.username || '';
+    $('listenbrainzStatus').textContent = 'Public profile username.';
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+}
+$('saveListenbrainz').addEventListener('click', async () => {
+  try {
+    const result = await sendJSON('/api/settings/listenbrainz', 'PUT', {username: $('listenbrainzUsername').value.trim()});
+    $('listenbrainzStatus').textContent = result.message || 'Settings saved.';
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+});
+
+async function testServiceConnection(endpoint, statusId) {
+  $(statusId).textContent = 'Testing connection…';
+  try {
+    const data = await sendJSON(endpoint, 'POST');
+    $(statusId).textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
+  } catch (error) { $(statusId).textContent = error.message; }
+}
+$('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
+$('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
+
+document.querySelectorAll('[data-settings-tab]').forEach(button => {
+  button.addEventListener('click', () => {
+    const name = button.dataset.settingsTab;
+    document.querySelectorAll('[data-settings-tab]').forEach(tab => {
+      const active = tab === button;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    const panels = {navidrome: 'settingsNavidrome', slskd: 'settingsSlskd', lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz'};
+    document.querySelectorAll('.settings-tab-panel').forEach(panel => { panel.hidden = panel.id !== panels[name]; });
+  });
+});
+
 async function loadSlskdSettings() {
   try {
     const data = await requestJSON('/api/settings/slskd');
     $('slskdUrl').value = data.slskd_url || '';
-    $('musicLibraryPath').value = data.music_library_path || '';
     $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
     document.querySelectorAll('.quality-priority').forEach((select, index) => {
@@ -2319,7 +2508,6 @@ $('saveSlskd').addEventListener('click', async () => {
 
   const payload = {
     slskd_url: $('slskdUrl').value.trim(),
-    music_library_path: $('musicLibraryPath').value.trim(),
     slskd_downloads_path: $('slskdDownloadsPath').value.trim(),
     quality_priority: priorities
   };
