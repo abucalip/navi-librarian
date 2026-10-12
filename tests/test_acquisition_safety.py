@@ -26,6 +26,7 @@ def load_helpers():
         "_discovery_match_completed_album_files",
         "_discovery_is_album_candidate",
         "_discovery_exact_artist_credit_matches",
+        "_discovery_is_various_artists",
         "_slskd_album_path_match",
         "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
@@ -129,6 +130,19 @@ class NewReleasesArtistCreditTests(unittest.TestCase):
         self.assertFalse(matches([{"artist": {"name": "Queen Tribute"}}], "Queen"))
         self.assertFalse(matches([{"artist": {"name": "The Queens"}}], "Queen"))
         self.assertFalse(matches([], "Queen"))
+
+
+class VariousArtistsNewReleasesTests(unittest.TestCase):
+    def test_rejects_various_artists_aliases(self):
+        is_various = HELPERS["_discovery_is_various_artists"]
+        for value in ("Various Artists", "VARIOUS ARTISTS", "Various Artist", "Various", "V.A."):
+            with self.subTest(value=value):
+                self.assertTrue(is_various(value))
+
+    def test_keeps_named_artists(self):
+        is_various = HELPERS["_discovery_is_various_artists"]
+        self.assertFalse(is_various("Queen"))
+        self.assertFalse(is_various("The Various"))
 
 
 class SlskdAlbumPathMatchingTests(unittest.TestCase):
