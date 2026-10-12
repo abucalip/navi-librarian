@@ -1525,10 +1525,10 @@ function setAlbumPlatformLinks(artist, album) {
   const query = [artist, album].filter(Boolean).join(' ').trim();
   const encoded = encodeURIComponent(query);
   const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://cdn.simpleicons.org/listenbrainz/EB743B'],
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://raw.githubusercontent.com/metabrainz/metabrainz-logos/master/logos/ListenBrainz/SVG/ListenBrainz_logo_icon.svg'],
     ['Apple Music', 'https://music.apple.com/search?term=' + encoded, 'https://cdn.simpleicons.org/applemusic/FA243C'],
     ['Spotify', 'https://open.spotify.com/search/' + encoded, 'https://cdn.simpleicons.org/spotify/1DB954'],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://cdn.simpleicons.org/qobuz/FFFFFF'],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://community.qobuz.com/s/Qobuz_logo_black-l2kk.jpg'],
     ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, 'https://cdn.simpleicons.org/bandcamp/1DA0C3']
   ];
   const nav = $('albumModalPlatformLinks');
