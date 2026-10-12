@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=librarian:librarian app/ ./app/
-COPY --chown=librarian:librarian navidrome_server.py cassette.png ./
+COPY --chown=librarian:librarian navidrome_server.py acquisition_completion.py cassette.png ./
 
 USER librarian
 
