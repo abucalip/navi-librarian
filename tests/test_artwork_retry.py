@@ -5,7 +5,11 @@ from pathlib import Path
 from time import monotonic
 from urllib.parse import urlencode
 
-from fastapi import HTTPException
+class HTTPException(Exception):
+    def __init__(self, status_code, detail):
+        super().__init__(detail)
+        self.status_code = status_code
+
 
 SOURCE = Path(__file__).resolve().parents[1] / "app" / "main.py"
 
