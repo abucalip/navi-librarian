@@ -1,3 +1,12 @@
+## Latest session — 2026-10-12 (local main consolidated for testing)
+
+- **Local merge:** the user merged `fix/artwork-size-and-artist-bios` into local `main`; the local merge commit is `90e1d97` (`Merge local artwork and acquisition fixes`). Local branch listing confirms this commit is the head of `main`.
+- **Testing workflow:** the user reports that `main` passed their tests. The exact commands, test names, and output were not provided in this session, so this is recorded as user-reported validation rather than independently reproduced test evidence.
+- **Purpose:** use local `main` as the sole testing ground going forward. Keep the feature branch as a temporary reference until the merged state is comfortably established; avoid deleting branches or cleaning worktrees without checking their contents first.
+- **Remote/deployment boundary:** this local merge has not been confirmed pushed to GitHub and this session did not deploy anything. The remote default branch and server must not be assumed to contain commit `90e1d97`.
+- **Session actions:** inspected the available local branch/status/log views and current GitHub documentation. The connected local Git tool is read-only, so the documentation handoff is being recorded on GitHub; local working-tree documentation was not edited directly.
+- **Next:** continue development/testing from local `main`. If this merged code should become the shared release baseline, review the diff against remote `main`, then push through the normal Git workflow and verify CI before considering deployment.
+
 ## Latest session — 2026-10-12 (PR #16 merged; image published)
 
 - **PR:** [#16 — Fix artwork loading after transient provider failures](https://github.com/abucalip/navi-librarian/pull/16), squash-merged into `main`.
