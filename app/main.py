@@ -621,7 +621,7 @@ def album_artwork(artist: str = "", album: str = ""):
 
         if albums:
             match = max(albums, key=match_score)
-            if match_score(match) >= 5:
+            if match_score(match) >= 9:
                 # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
                 artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
                 release_date = str(match.get("release_date") or "")
