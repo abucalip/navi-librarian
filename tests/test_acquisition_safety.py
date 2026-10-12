@@ -28,6 +28,7 @@ def load_helpers():
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
         "_slskd_album_path_match",
+        "_slskd_path_match_diagnostics",
         "_slskd_quality_tier",
         "_slskd_track_identity",
         "_slskd_extract_candidates",
@@ -158,6 +159,19 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
         matcher = HELPERS["_slskd_album_path_match"]
         self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
         self.assertFalse(matcher("AM", "Sam"))
+
+    def test_path_diagnostics_explain_album_and_artist_match_signals(self):
+        diagnose = HELPERS["_slskd_path_match_diagnostics"]
+        result = diagnose([{
+            "username": "peer",
+            "files": [{
+                "filename": r"Music\Tinariwen\Tinariwen - Idrache (Traces Of The Past) - 2024\01 - Soixante Trois.flac"
+            }],
+        }], "Tinariwen", "Idrache (Traces of the past)")
+        self.assertEqual(len(result), 1)
+        self.assertTrue(result[0]["album_path_match"])
+        self.assertTrue(result[0]["artist_path_match"])
+        self.assertFalse(result[0]["album_filename_match"])
 
 
     def test_tinariwen_idrache_source_folder_variants_are_clear_candidates(self):
