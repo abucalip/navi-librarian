@@ -49,3 +49,12 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **CI update:** GitHub Actions Python syntax check passed on commit `dae861ee538f8b5837ef1c538f0ed1cf575aecb0` after the year-fetch and Various Artists changes. Official ListenBrainz/Qobuz image URLs were adjusted afterward; full unit tests and visual browser verification remain pending.
 
 - **Additional year-rendering audit:** found that some metadata can contain a full date string (for example, `YYYY-MM-DD`), which `Number(value)` rejected, and one card renderer manually created its title without rechecking a late-arriving year. Added a shared year parser and applied the badge helper after every manually-created album heading.
+
+
+## 2026-10-12 — Service settings and deployment configuration groundwork
+
+- **Branch/PR:** `feature/new-releases-and-recommendation-quality`, PR #12 remains open and unmerged.
+- **Settings UI:** reorganized Settings into four service tabs: Navidrome, slskd, Last.fm, and ListenBrainz. Navidrome owns the library path; slskd retains its server URL, API key, completed-download path, and quality preferences.
+- **Configuration:** added persistent Navidrome URL/username/password settings, optional Last.fm API key settings, and a configurable ListenBrainz username. Blank secret fields preserve existing credentials; settings APIs never return saved secrets. Navidrome credentials are resolved dynamically, so updates take effect without a process restart.
+- **Persistence groundwork:** added `NAVIDROME_LIBRARIAN_DATA_DIR` for application SQLite state, preparing for a Docker-mounted `/data` volume. The discovery settings database remains permission-restricted.
+- **Validation status:** syntax checks, unit tests, and UI/API smoke tests remain to be run. Docker packaging is intentionally deferred.
