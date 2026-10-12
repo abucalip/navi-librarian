@@ -2,6 +2,19 @@
 
 Update this file at the end of every GitHub development session. Keep entries concise: current branch/PR, changed behavior, validation, known caveats, and the next step.
 
+## 2026-10-12 — Artwork loading reliability fix (in review)
+
+- **Branch:** `fix/artwork-loading-retries`.
+- **Manual-test regression discovered:** user reported that no artwork loaded when testing the PR. The frontend reused a shared artist+album promise cache for both `/api/album-year` and `/api/artwork`; when the year request populated the key first, artwork received the year-only response and never assigned an image URL.
+- **Fix:** isolate year lookups in `albumYearRequests`, leaving `artworkRequests` dedicated to `/api/artwork`. Added `tests/test_artwork_cache_isolation.py` to guard the separation.
+- **Status:** fix and regression guard committed to this PR branch; CI and user retest are pending. Do not merge/deploy until verified.
+- **Root cause:** `/api/artwork` swallowed provider exceptions and cached them as a normal negative result for five minutes. The browser marked a card requested and unobserved it on the first attempt, so a transient Deezer outage could leave artwork blank for the rest of the page session.
+- **Change:** provider exceptions now return a retryable marker and are not cached; browser retries up to three times with bounded backoff. Ordinary no-match responses remain cached as before.
+- **Regression coverage:** `tests/test_artwork_retry.py` tests that provider timeouts are retryable and not negative-cached.
+- **Validation:** GitHub Actions passed Python compilation and the full unittest suite (run #110) and Docker packaging validation (run #17) on code commit `fabcd1fb6563ef9cd65aa12005f2f77f3f90e07d`. Manual UI behavior remains unverified.
+- **Status:** open PR #16; not merged or deployed. The local checkout on `fix/artwork-size-and-artist-bios` was not modified.
+- **Next:** create/check the PR, run the full automated suite and CI, and manually verify artwork on Discoveries and Artist Deep Dives against the deployed app.
+
 ## 2026-10-12 — Successful server installation and baseline smoke tests reported
 
 - **User-reported deployment:** Librarian is installed on the server; the Docker package has been made public.
