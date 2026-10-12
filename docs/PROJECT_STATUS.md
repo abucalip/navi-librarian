@@ -1,3 +1,12 @@
+## Latest session — 2026-10-13 (Hi-Res FLAC priority and acquisition diagnostics in progress)
+
+- **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; not merged or deployed.
+- **Scope:** add a reorderable FLAC Hi-Res quality tier, recognize common resolution labels including `[24-44.1]`, preserve prior quality ordering when migrating four- or five-tier settings, and expose candidate summaries when matching candidates fail eligibility checks or queue attempts fail.
+- **Regression coverage:** added tests for the reported Tinariwen folder-name variants, explicit 16/44 metadata, 24/44.1 filename labels, high-resolution metadata, and settings migration/order preservation.
+- **Root-cause boundary:** the reported folder variants appear to satisfy the current token-based album matcher in a fixture, and quality tiers do not themselves exclude candidates from matching. The live failure stage is not yet established because no persisted acquisition status/attempt details were supplied. New diagnostics are intended to reveal whether a live failure is matching, eligibility, or queue/start-state related; do not claim the underlying production failure is fixed until retested.
+- **Verification:** code/tests/docs committed to this branch; CI and full test suite are pending. No local test runner was available through the connected read-only Git checkout, and no live slskd request was made.
+- **Next:** review CI on the PR head, then test in the existing `prox-mcp-pr17-test` environment with the Tinariwen acquisition (or another known result). If it still fails, capture the returned status, `candidate_diagnostics`, and `attempts` before changing the queue logic.
+
 ## Latest session — 2026-10-13 (PR #20 merged; five-tier quality priority verified)
 
 - **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), squash-merged into `main` at merge commit `a9218bb5cb5c663b7ef26dc5f42cd69bbeadba45`.
