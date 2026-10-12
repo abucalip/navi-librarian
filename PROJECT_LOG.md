@@ -1,7 +1,7 @@
 ## 2026-10-13 — Hi-Res FLAC priority and acquisition failure diagnostics (in review)
 
 - **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; PR/CI pending at implementation time.
-- **Changes:** added a sixth sortable quality tier for FLAC Hi-Res (24-bit or sample rate above 44.1 kHz); recognized paired filename resolution labels including `[24-44.1]`; preserved user ordering when migrating four- and five-tier settings; exposed bounded candidate summaries in `no_matches` eligibility failures and `queue_failed` results/status details.
+- **Changes:** added a sixth sortable quality tier for FLAC Hi-Res (24-bit or sample rate above 44.1 kHz); recognized paired filename resolution labels including `[24-44.1]`; preserved user ordering when migrating four- and five-tier settings; exposed bounded candidate summaries in eligibility/queue failures and path/artist match signals when no source folders are recognized.
 - **Regression coverage:** exact Tinariwen `Idrache (Traces of the Past)` folder variants, candidate completeness, 16/44 metadata classification, Hi-Res filename/metadata classification, and legacy quality-priority migrations.
 - **Diagnosis boundary:** the example paths should pass the existing album-token matcher in isolation; the reported live failure stage is not proven without the actual acquisition status and queue-attempt details. Do not treat the added diagnostics or Hi-Res tier as proof that all such failures are fixed.
 - **Validation:** automated tests and CI not yet run in this session; no production deployment or live slskd calls performed.
