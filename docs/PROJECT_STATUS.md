@@ -1,3 +1,12 @@
+## Latest session — 2026-10-13 (five-tier quality priority in progress)
+
+- **Objective:** add FLAC 16-bit/44.1 kHz as the fifth slskd quality tier and replace per-tier dropdowns with a reorderable list.
+- **Branch:** `feature/flac-16-44-drag-sort-priority`, based on GitHub `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
+- **Implemented so far:** five quality options; legacy four-tier settings preserve their existing order and append FLAC 16/44; server-side validation requires each tier exactly once; FLAC 16/44 classification uses explicit sample-rate/bit-depth metadata or a filename label and does not infer 16/44 from the extension alone; Settings uses native drag-and-drop with Move up/Move down alternatives and a live announcement; regression tests and test-plan/requirements updates added.
+- **Verification:** automated tests and CI are pending. UI drag/drop and save/reload behavior have not been manually smoke-tested.
+- **Merge/deployment:** not merged or deployed.
+- **Next:** run the full unittest suite and CI on the exact PR head, review the final diff, then ask the user to test the Settings interaction locally.
+
 ## Latest session — 2026-10-12 (PR #17 merged; workflow documentation merged)
 
 - **PR #17:** squash-merged at `9f4ff509d6a336823912c49d8c049eeea8761b8f`. User reports completed downloads now appear imported; acquisitions failing due to unavailable sources are expected. No import-safety checks were weakened.
@@ -98,6 +107,7 @@ Use the following meanings consistently:
 | Web UI and API | Deployed; user reports successful installation/use | Record exact deployed image tag/digest and commit when convenient |
 | First-run account creation and login | User reports working successfully on the server | Preserve as a regression-smoke-test baseline |
 | Settings and service credentials | User reports entering credentials through Settings works | Keep secret-handling and persistence tests in the automated suite |
+| Audio quality priorities | Five supported tiers and sortable Settings list implemented on feature branch | Verify migration, order persistence, CI, and manual drag/drop behavior |
 | Recommendation/discovery logic | Existing logic is in `navidrome_server.py` | Test representative outputs against the real library |
 | Discovery lists, feedback, refresh | API routes exist | Verify list persistence, dismiss/save behavior, and refresh |
 | slskd downloads/acquisition | User reports downloads work as intended | Continue regression coverage for matching, queueing, status, and safe cleanup |
