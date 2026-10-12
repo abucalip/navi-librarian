@@ -28,6 +28,9 @@ def load_helpers():
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
         "_slskd_album_path_match",
+        "_slskd_quality_tier",
+        "_slskd_track_identity",
+        "_slskd_extract_candidates",
         "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
@@ -155,6 +158,43 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
         matcher = HELPERS["_slskd_album_path_match"]
         self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
         self.assertFalse(matcher("AM", "Sam"))
+
+
+    def test_tinariwen_idrache_source_folder_variants_are_clear_candidates(self):
+        extract = HELPERS["_slskd_extract_candidates"]
+        priority = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"]
+        tracks = [
+            "Soixante Trois", "Assuf Ag Assuf", "Amoss Idjraw", "Azaman Amikankanen",
+            "Adounia Nissan", "Amidinin War Hi Toyed", "Imidiwan Ma Tennam",
+            "Alkhar Dessouf", "Tenere Maloulat", "Tenhert", "Adounia Ti Chidjret",
+            "Tenere Dafeo Nikchan",
+        ]
+        folders = [
+            r"Tinariwen\2024 - Idrache Traces of the Past",
+            r"Music\Tinariwen\Tinariwen - Idrache (Traces Of The Past) - 2024",
+            r"Tinariwen\2024 - Idrache (Traces Of The Past) [24-44.1]",
+            r"Tinariwen\2024 - Idrache (Traces Of The Past)",
+        ]
+        responses = []
+        for index, folder in enumerate(folders):
+            files = []
+            for track_number, title in enumerate(tracks, 1):
+                item = {"filename": f"{folder}\\{track_number:02d} - {title}.flac", "size": 5000000}
+                if index == 0:
+                    item.update({"sampleRate": 44100, "bitDepth": 16})
+                files.append(item)
+            responses.append({"username": f"peer-{index}", "files": files})
+
+        candidates = extract(
+            responses, "Tinariwen", "Idrache (Traces of the past)", priority,
+            expected_track_count=12,
+        )
+        self.assertEqual(len(candidates), 4)
+        self.assertTrue(all(item["clear_match"] for item in candidates))
+        self.assertTrue(all(item["unique_track_count"] == 12 for item in candidates))
+        all_tiers = [tier for item in candidates for tier in item["quality_summary"]]
+        self.assertIn("flac_16_44", all_tiers)
+        self.assertIn("flac_hires", all_tiers)
 
 
 class CompletedAlbumMatchingTests(unittest.TestCase):
