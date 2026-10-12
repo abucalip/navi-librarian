@@ -3187,6 +3187,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "mp3_193_319",
         "mp3_192",
         "flac_cd",
+        "flac_16_44",
     ],
     "auto_acquire_for_me": True,
     "slskd_downloads_path": str(Path(
@@ -3233,6 +3234,17 @@ def _discovery_settings_read():
         candidate_music_path = Path(configured_music_path).expanduser()
         if candidate_music_path.is_absolute():
             MUSIC_DIR = candidate_music_path
+
+    # Existing installations have four saved quality tiers. Append the new
+    # fifth tier without disturbing the user's established priority order.
+    legacy_quality_tiers = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
+    saved_quality = settings.get("quality_priority")
+    if (
+        isinstance(saved_quality, list)
+        and len(saved_quality) == 4
+        and set(saved_quality) == legacy_quality_tiers
+    ):
+        settings["quality_priority"] = [*saved_quality, "flac_16_44"]
 
     # Migrate the former downloads-root defaults to slskd's actual completed
     # directory when that directory is available on the current host. This
@@ -3457,6 +3469,7 @@ def discovery_get_slskd_settings() -> str:
             "mp3_193_319": "MP3 193–319 kbps",
             "mp3_192": "MP3 192 kbps",
             "flac_cd": "FLAC (CD quality preferred; metadata may not verify this)",
+            "flac_16_44": "FLAC 16-bit / 44.1 kHz",
         },
     }, ensure_ascii=False, indent=2)
 
@@ -3465,7 +3478,7 @@ def discovery_get_slskd_settings() -> str:
 def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
-    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd"]',
+    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44"]',
     auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
     music_library_path: str | None = None,
@@ -3480,8 +3493,8 @@ def discovery_set_slskd_settings(
         quality = json.loads(quality_priority_json)
     except (ValueError, TypeError):
         return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
-    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
-    if not isinstance(quality, list) or len(quality) != 4 or set(quality) != allowed:
+    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"}
+    if not isinstance(quality, list) or len(quality) != 5 or set(quality) != allowed:
         return json.dumps({
             "ok": False,
             "error": "Quality priority must contain each supported tier exactly once.",
@@ -3561,7 +3574,35 @@ def _slskd_quality_tier(file_record, filename, priority):
     import re
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if extension == "flac":
-        tier = "flac_cd"
+        sample_rate_value = next((
+            file_record.get(key) for key in ("sampleRate", "sample_rate", "sample_rate_hz", "sampleRateHz")
+            if file_record.get(key) not in (None, "")
+        ), None)
+        bit_depth_value = next((
+            file_record.get(key) for key in ("bitDepth", "bit_depth", "bitsPerSample", "bits_per_sample")
+            if file_record.get(key) not in (None, "")
+        ), None)
+        try:
+            sample_rate_text = str(sample_rate_value or "").strip().lower().replace("khz", "").replace("hz", "").strip()
+            sample_rate = float(sample_rate_text)
+            if sample_rate < 1000:
+                sample_rate *= 1000
+        except (TypeError, ValueError):
+            sample_rate = None
+        try:
+            bit_depth = int(bit_depth_value)
+        except (TypeError, ValueError):
+            bit_depth = None
+        filename_16_44 = bool(
+            re.search(r"(?<!\\d)16[\\s_-]*bit", filename, re.I)
+            and re.search(r"(?<!\\d)44(?:[.,]1)?[\\s_-]*k(?:hz)?", filename, re.I)
+        )
+        if (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
+            tier = "flac_16_44"
+        else:
+            # Keep the existing FLAC fallback for peers that don't expose
+            # bit-depth/sample-rate metadata; do not infer 16/44 from extension alone.
+            tier = "flac_cd"
     elif extension == "mp3":
         bitrate = file_record.get("bitRate") or file_record.get("bitrate")
         try:
