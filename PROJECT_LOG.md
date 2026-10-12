@@ -1,3 +1,12 @@
+## 2026-10-13 — Hi-Res FLAC priority and acquisition failure diagnostics (in review)
+
+- **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; PR/CI pending at implementation time.
+- **Changes:** added a sixth sortable quality tier for FLAC Hi-Res (24-bit or sample rate above 44.1 kHz); recognized paired filename resolution labels including `[24-44.1]`; preserved user ordering when migrating four- and five-tier settings; exposed bounded candidate summaries in `no_matches` eligibility failures and `queue_failed` results/status details.
+- **Regression coverage:** exact Tinariwen `Idrache (Traces of the Past)` folder variants, candidate completeness, 16/44 metadata classification, Hi-Res filename/metadata classification, and legacy quality-priority migrations.
+- **Diagnosis boundary:** the example paths should pass the existing album-token matcher in isolation; the reported live failure stage is not proven without the actual acquisition status and queue-attempt details. Do not treat the added diagnostics or Hi-Res tier as proof that all such failures are fixed.
+- **Validation:** automated tests and CI not yet run in this session; no production deployment or live slskd calls performed.
+- **Next:** review the PR diff and CI, test the reported album in `prox-mcp-pr17-test`, then use `candidate_diagnostics` and `attempts` to identify the remaining stage if it still fails.
+
 ## 2026-10-13 — PR #20 merged: FLAC 16/44 and sortable quality priorities
 
 - **PR:** [#20 — Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), squash-merged into `main`.
