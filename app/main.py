@@ -734,7 +734,7 @@ def set_slskd_settings(payload: dict):
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
     if quality is None:
-        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd"]
+        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"]
     try:
         result = parse_result(librarian.discovery_set_slskd_settings(
             slskd_url=url,
