@@ -54,16 +54,13 @@ def health():
         )
 
 
-# Cache successful listening profiles for five minutes.
-_PROFILE_CACHE_TTL = 300
-_profile_cache = {}
-
 # Artist biographies are cached for a day. Wikidata identifies the intended
 # musical entity first; Wikipedia is only used when its page points back to
 # that exact Wikidata item. This prevents name collisions (e.g. Rainbow the band
 # versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
+
 _ARTIST_DESCRIPTION_RE = __import__("re").compile(
     r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
     r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
@@ -180,6 +177,8 @@ def dashboard_picks(count: int = 10):
                 continue
             artist = str(item.get("artist") or item.get("album_artist") or "").strip()
             album = str(item.get("album") or item.get("title") or "").strip()
+            if not librarian._discovery_is_album_candidate(item):
+                continue
             identity = (artist.casefold(), album.casefold())
             if not artist or not album or identity in seen:
                 continue
@@ -210,40 +209,6 @@ def dashboard_picks(count: int = 10):
     return {"items": random_picks[:count], "count": min(count, len(random_picks)), "pool_size": len(combined)}
 
 
-@app.get("/api/profile")
-def listening_profile(days: int = 30):
-    if not 1 <= days <= 365:
-        raise HTTPException(
-            status_code=400,
-            detail="days must be between 1 and 365",
-        )
-
-    now = monotonic()
-    cached = _profile_cache.get(days)
-
-    if cached and now - cached["time"] < _PROFILE_CACHE_TTL:
-        return cached["data"]
-
-    try:
-        data = parse_result(
-            librarian.recent_listening_profile(days=days)
-        )
-
-        # Do not cache error responses returned by the MCP function.
-        if not (isinstance(data, dict) and data.get("error")):
-            _profile_cache[days] = {
-                "time": monotonic(),
-                "data": data,
-            }
-
-        return data
-    except Exception:
-        raise HTTPException(
-            status_code=502,
-            detail="Could not retrieve the listening profile.",
-        )
-
-
 @app.get("/api/recommendations")
 def recommendations(count: int = 10):
     if not 1 <= count <= 30:
@@ -253,9 +218,15 @@ def recommendations(count: int = 10):
         )
 
     try:
-        return parse_result(
-            librarian.recommend_new_music(count=count)
-        )
+        data = parse_result(librarian.recommend_new_music(count=count))
+        if isinstance(data, dict):
+            for key in ("recommendations", "items"):
+                if isinstance(data.get(key), list):
+                    data[key] = [
+                        item for item in data[key]
+                        if librarian._discovery_is_album_candidate(item)
+                    ]
+        return data
     except Exception:
         raise HTTPException(
             status_code=502,
@@ -266,7 +237,7 @@ def recommendations(count: int = 10):
 
 @app.get("/api/discovery/{list_name}")
 def discovery_list(list_name: str, count: int = 30):
-    allowed = {"personal", "for_me", "classics", "artist_deep_dive"}
+    allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
     if list_name not in allowed:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     if not 1 <= count <= 150:
@@ -281,7 +252,7 @@ def discovery_list(list_name: str, count: int = 30):
 
 @app.post("/api/discovery/{list_name}/refresh")
 def refresh_discovery_list(list_name: str, payload: dict | None = None):
-    if list_name not in {"personal", "classics", "artist_deep_dive", "all"}:
+    if list_name not in {"personal", "classics", "artist_deep_dive", "new_releases", "all"}:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     payload = payload or {}
     try:
@@ -689,6 +660,8 @@ nav {
 nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: var(--subtle); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; }
 nav button { position: relative; width: 100%; padding: 10px 12px 10px 15px; text-align: left; color: #b7b8ae; background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
 nav button:hover { color: var(--text); background: var(--surface-raised); }
+.nav-count { float: right; min-width: 20px; margin-left: 8px; padding: 1px 5px; border-radius: 10px; color: #191a1a; background: var(--yellow); font: 500 10px/1.6 var(--mono); text-align: center; }
+.nav-count[hidden] { display: none; }
 nav button.active { color: var(--text); background: #2b2d29; box-shadow: inset 3px 0 var(--yellow); }
 nav button.active::after { content: ""; position: absolute; top: 9px; right: 10px; width: 5px; height: 5px; background: var(--red); border-radius: 50%; }
 .panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
@@ -805,11 +778,11 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   <nav>
     <button class="active" data-page="dashboard">Dashboard</button>
     <button data-page="recommendations">Recommendations</button>
-    <button data-page="profile">Listening profile</button>
-        <button data-page="personalDiscoveries">Personal Discoveries</button>
+    <button data-page="newReleases">New releases</button>
+    <button data-page="personalDiscoveries">Personal Discoveries</button>
     <button data-page="classics">Add to your collection</button>
     <button data-page="artistDeepDive">Artist Deep Dives</button>
-    <button data-page="acquisitions">Acquisitions</button>
+    <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
     <button data-page="settings">Settings</button>
   </nav>
 
@@ -869,19 +842,16 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
     </div>
   </section>
 
-  <section id="profile" class="page hidden">
+  <section id="newReleases" class="page hidden">
     <div class="panel">
-      <h2>Recent listening profile</h2>
+      <h2>New releases</h2>
+      <p>Recent full albums by artists who already have a full album in your library.</p>
       <div class="controls">
-        <label for="days">Period</label>
-        <select id="days">
-          <option value="7">7 days</option>
-          <option value="30" selected>30 days</option>
-          <option value="90">90 days</option>
-        </select>
-        <button id="loadProfile">Load profile</button>
+        <button data-load-discovery="new_releases">Load new releases</button>
+        <button data-refresh-discovery="new_releases">Refresh in background</button>
       </div>
-      <pre id="profileResult" class="muted"></pre>
+      <p id="newReleasesStatus" aria-live="polite"></p>
+      <div id="newReleasesCards" class="cards"></div>
     </div>
   </section>
 
@@ -978,6 +948,21 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 <script>
 const $ = id => document.getElementById(id);
 
+function isAlbumRecommendation(item) {
+  if (!item || typeof item !== 'object') return false;
+  const title = String(item.album || item.title || item.name || '').trim();
+  if (!title) return false;
+  const primary = String(item.primary_type || item['primary-type'] || item.album_type || item.release_type || '').trim().toLowerCase();
+  if (primary && !['album', 'full length album'].includes(primary)) return false;
+  const secondary = item.secondary_types || item['secondary-types'] || item.secondary_type || [];
+  const types = (Array.isArray(secondary) ? secondary : String(secondary).split(/[,;/|]/))
+    .map(value => String(value).toLowerCase().replace(/[^a-z]+/g, ' ').trim());
+  if (types.some(value => ['compilation', 'soundtrack', 'live', 'remix', 'dj mix', 'mixtape', 'ep', 'single', 'karaoke', 'tribute'].includes(value))) return false;
+  const normalized = title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return ![/\bcompilations?\b/, /\bremixes?\b/, /\bremixed\b/, /\bdj\s*mix(?:es)?\b/, /\bmixtapes?\b/, /\bsoundtracks?\b/, /\bkaraoke\b/, /\btribute\b/, /\bgreatest hits\b/, /\bbest of\b/, /\banthology\b/, /\bsamplers?\b/, /\blive\b/]
+    .some(pattern => pattern.test(normalized));
+}
+
 function showPage(name) {
   document.querySelectorAll('.page').forEach(el =>
     el.classList.toggle('hidden', el.id !== name));
@@ -991,7 +976,7 @@ function initializePage(name) {
   if (initializedPages.has(name)) return;
   initializedPages.add(name);
   if (name === 'recommendations') $('loadRecommendations').click();
-  else if (name === 'profile') $('loadProfile').click();
+  else if (name === 'newReleases') loadDiscovery('new_releases');
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
@@ -1056,6 +1041,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
   try {
     target.replaceChildren();
     const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
+    updateActiveDownloadBadge(data);
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
     status.textContent = jobs.length
       ? `${jobs.length} acquisition record(s).`
@@ -1068,8 +1054,10 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       card.className = 'card';
       addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
-      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const details = job.details || {};
+      const metadata = details.metadata || {};
+      applyAlbumYear(card, metadata.year || metadata.release_year || metadata.first_release_year || details.year);
+      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
@@ -1225,6 +1213,30 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
   }
 }
 
+const ACTIVE_DOWNLOAD_STATUSES = new Set([
+  'searching', 'requested', 'queued', 'downloading',
+  'download_complete_waiting_for_folder', 'importing',
+  'queue_uncertain', 'recovery_started', 'monitoring',
+]);
+
+function updateActiveDownloadBadge(data) {
+  const badge = $('activeDownloadBadge');
+  if (!badge) return;
+  const jobs = Array.isArray(data && data.acquisitions) ? data.acquisitions : [];
+  const count = jobs.filter(job => ACTIVE_DOWNLOAD_STATUSES.has(String(job.status || '').toLowerCase())).length;
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+  badge.setAttribute('aria-label', count + ' active download' + (count === 1 ? '' : 's'));
+}
+
+async function refreshActiveDownloadBadge() {
+  try {
+    updateActiveDownloadBadge(await requestJSON('/api/acquisitions'));
+  } catch (_) {
+    // The navigation badge is advisory; do not surface transient polling errors.
+  }
+}
+
 async function loadAcquisitions() {
   $('acquisitionsStatus').textContent = 'Connecting to acquisition status…';
   try {
@@ -1233,6 +1245,9 @@ async function loadAcquisitions() {
     $('acquisitionsStatus').textContent = error.message;
   }
 }
+
+refreshActiveDownloadBadge();
+setInterval(refreshActiveDownloadBadge, 30000);
 
 let acquisitionStream = null;
 function startAcquisitionStream() {
@@ -1335,7 +1350,7 @@ async function loadDashboardPicks() {
   status.textContent = 'Picking ten albums across your discovery lists…';
   try {
     const data = await requestJSON('/api/dashboard-picks?count=10&nonce=' + Date.now());
-    const items = data.items || [];
+    const items = (data.items || []).filter(isAlbumRecommendation);
     for (const item of items) {
       const artist = item.artist || item.album_artist || 'Unknown artist';
       const album = item.album || item.title || 'Untitled album';
@@ -1413,7 +1428,7 @@ let recommendationData = null;
 
 function renderRecommendations(data) {
   recommendationData = data;
-  allRecommendations = getRecommendations(data);
+  allRecommendations = getRecommendations(data).filter(isAlbumRecommendation);
   $('recommendationDebug').textContent = pretty(data);
   applyRecommendationFilters();
 }
@@ -1598,23 +1613,11 @@ $('loadRecommendations').addEventListener('click', async () => {
   }
 });
 
-$('loadProfile').addEventListener('click', async () => {
-  const output = $('profileResult');
-  output.textContent = 'Loading listening profile…';
-  try {
-    const data = await requestJSON(
-      '/api/profile?days=' + encodeURIComponent($('days').value));
-    output.textContent = pretty(data);
-  } catch (error) {
-    output.textContent = error.message;
-  }
-});
-
-
 const discoveryViews = {
   personal: ['personalCards','personalStatus'],
   classics: ['classicsCards','classicsStatus'],
-  artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus']
+  artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus'],
+  new_releases: ['newReleasesCards','newReleasesStatus']
 };
 
 const qualityOptions = [
@@ -1685,6 +1688,7 @@ async function loadDiscovery(name, options = {}) {
     const poolCount = name === 'artist_deep_dive' ? 150 : name === 'classics' ? 100 : 30;
     const data = await requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`);
     let items = data.items || data.recommendations || [];
+    if (name !== 'for_me') items = items.filter(isAlbumRecommendation);
     if ((name === 'classics' || name === 'artist_deep_dive') && options.rotate) {
       items = [...items].sort(() => Math.random() - 0.5);
     }
@@ -1713,9 +1717,17 @@ async function loadDiscovery(name, options = {}) {
 
     if (name === 'artist_deep_dive') {
       const grouped = new Map();
+      const artistsByGenre = new Map();
       for (const item of items) {
         const key = deepDiveGenre(item);
-        if (!grouped.has(key)) grouped.set(key, []);
+        const artistKey = String(item.artist || item.album_artist || '').trim().toLocaleLowerCase();
+        if (!grouped.has(key)) {
+          grouped.set(key, []);
+          artistsByGenre.set(key, new Set());
+        }
+        const seenArtists = artistsByGenre.get(key);
+        if (seenArtists.has(artistKey)) continue;
+        seenArtists.add(artistKey);
         grouped.get(key).push(item);
       }
       // Show no more than 15 albums per genre row. Randomize the larger
