@@ -1,3 +1,14 @@
+## 2026-10-13 — PR #20 merged: FLAC 16/44 and sortable quality priorities
+
+- **PR:** [#20 — Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), squash-merged into `main`.
+- **Merge commit:** `a9218bb5cb5c663b7ef26dc5f42cd69bbeadba45`.
+- **Behavior:** added FLAC 16-bit/44.1 kHz as the fifth quality tier; existing four-tier settings retain their order and append the new tier. Replaced quality dropdowns with a draggable priority list plus Move up/Move down controls; ordering persists through the existing Settings API. Classification requires explicit FLAC sample-rate/bit-depth metadata or an explicit filename label.
+- **Regression coverage:** added `tests/test_quality_priority.py`; updated requirements, test plan, v0.2 quality notes, and syntax CI coverage.
+- **CI:** Python syntax/full unittest workflow #141 and Docker packaging workflow #48 passed on PR head `ac43126efdea9a6ac5cbe36d81b26b11c23da509`. Docker packaging included the full unit suite and image build.
+- **Manual test:** user tested PR20 in the existing `prox-mcp-pr17-test` environment and reports all is good, including the UI interaction. Credentials/configuration were preserved by reusing that environment.
+- **Deployment:** no image publication or production deployment was performed in this session.
+- **Next:** continue from GitHub `main`; if release is requested, publish/deploy separately and verify the running image digest.
+
 ## 2026-10-13 — PR #20 quality priority implementation and CI
 
 - **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), branch `feature/flac-16-44-drag-sort-priority`.
