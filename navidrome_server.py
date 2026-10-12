@@ -3717,6 +3717,19 @@ def _slskd_album_path_match(album, text):
     return overlap >= max(2, math.ceil(len(unique_tokens) * 0.6))
 
 
+def _slskd_search_response_items(payload):
+    """Normalize slskd search results across list and wrapped API payloads."""
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        items = payload.get("responses")
+        if not isinstance(items, list):
+            items = payload.get("items")
+    else:
+        items = []
+    return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+
+
 def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
     """Return bounded evidence explaining why visible audio paths did not match."""
     import re
@@ -5735,6 +5748,9 @@ def _discovery_acquire_album_impl(
         )
         response.raise_for_status()
         deadline = time.monotonic() + 18
+        completed_without_payload_since = None
+        reported_response_count = 0
+        reported_file_count = 0
         payload_by_peer = {}
         while time.monotonic() < deadline:
             search_state = {}
@@ -5749,14 +5765,17 @@ def _discovery_acquire_album_impl(
                 state_data = state_response.json()
                 if isinstance(state_data, dict):
                     search_state = state_data
-                    state_payload = state_data.get("responses")
-                    if isinstance(state_payload, list):
-                        for entry in state_payload:
-                            identity = (
-                                entry.get("username") or entry.get("user") or "",
-                                json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
-                            )
-                            payload_by_peer[identity] = entry
+                    try:
+                        reported_response_count = max(reported_response_count, int(state_data.get("responseCount") or state_data.get("response_count") or 0))
+                        reported_file_count = max(reported_file_count, int(state_data.get("fileCount") or state_data.get("file_count") or 0))
+                    except (TypeError, ValueError):
+                        pass
+                    for entry in _slskd_search_response_items(state_data):
+                        identity = (
+                            entry.get("username") or entry.get("user") or "",
+                            json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
+                        )
+                        payload_by_peer[identity] = entry
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code not in (404, 405):
                     raise
@@ -5768,21 +5787,27 @@ def _discovery_acquire_album_impl(
             if response_poll.status_code not in (404, 405):
                 response_poll.raise_for_status()
                 data = response_poll.json()
-                response_items = (
-                    data if isinstance(data, list)
-                    else data.get("responses") or data.get("items") or []
-                    if isinstance(data, dict) else []
-                )
-                for entry in response_items if isinstance(response_items, list) else []:
+                response_items = _slskd_search_response_items(data)
+                for entry in response_items:
                     identity = (
                         entry.get("username") or entry.get("user") or "",
                         json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
                     )
                     payload_by_peer[identity] = entry
             state_text = str(search_state.get("state") or "").lower()
-            if search_state.get("isComplete") is True or (
+            is_complete = search_state.get("isComplete") is True or (
                 state_text and ("complete" in state_text or "timedout" in state_text)
-            ):
+            )
+            if is_complete:
+                if payload_by_peer:
+                    break
+                if reported_response_count > 0:
+                    if completed_without_payload_since is None:
+                        completed_without_payload_since = time.monotonic()
+                    elif time.monotonic() - completed_without_payload_since >= 3:
+                        break
+                    time.sleep(0.5)
+                    continue
                 break
             time.sleep(0.75)
         expected_track_count = _discovery_expected_track_count(metadata)
@@ -5825,6 +5850,8 @@ def _discovery_acquire_album_impl(
                 {
                     "message": message, "search_id": search_id, "metadata": metadata,
                     "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                    "slskd_reported_response_count": reported_response_count,
+                    "slskd_reported_file_count": reported_file_count,
                     "path_diagnostics": path_diagnostics,
                 },
             )
@@ -5832,6 +5859,8 @@ def _discovery_acquire_album_impl(
                 "ok": True, "status": "no_matches", "artist": artist, "album": album,
                 "search_id": search_id, "message": message,
                 "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                "slskd_reported_response_count": reported_response_count,
+                "slskd_reported_file_count": reported_file_count,
                 "path_diagnostics": path_diagnostics,
             }, ensure_ascii=False)
         clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
