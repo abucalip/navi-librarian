@@ -5,6 +5,7 @@ import random
 import secrets
 import sqlite3
 import time
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -3496,9 +3497,14 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     return False
 
 
+def _unicode_name_key(value):
+    """Canonical, case-insensitive key for names from any writing system."""
+    return unicodedata.normalize("NFC", str(value or "")).casefold()
+
+
 def _discovery_safe_folder_name(value):
-    value = str(value or "").replace("\\", "/").split("/")[-1]
-    value = "".join(character for character in value if character not in "\\0")
+    value = unicodedata.normalize("NFC", str(value or "")).replace("\\", "/").split("/")[-1]
+    value = "".join(character for character in value if character != "\0")
     value = value.strip().strip(".")
     return value or "Unknown"
 
@@ -3820,7 +3826,7 @@ def _discovery_match_completed_album_files(folder, candidate):
         name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
         if not name:
             continue
-        key = name.casefold()
+        key = _unicode_name_key(name)
         try:
             size = int(item.get("size"))
         except (TypeError, ValueError):
@@ -3839,14 +3845,15 @@ def _discovery_match_completed_album_files(folder, candidate):
     for key, (expected_name, expected_size) in expected_by_name.items():
         exact = [
             p for p in files
-            if p.name.casefold() == key
+            if _unicode_name_key(p.name) == key
             and p not in used
             and (expected_size <= 0 or p.stat().st_size == expected_size)
         ]
         selected = exact[0] if len(exact) == 1 else None
 
         if selected is None and expected_size > 0:
-            stem, suffix = Path(expected_name).stem, Path(expected_name).suffix
+            normalized_expected = unicodedata.normalize("NFC", expected_name)
+            stem, suffix = Path(normalized_expected).stem, Path(normalized_expected).suffix
             pattern = re.compile(
                 r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
                 re.IGNORECASE,
@@ -3854,7 +3861,7 @@ def _discovery_match_completed_album_files(folder, candidate):
             alternatives = [
                 p for p in files
                 if p not in used
-                and pattern.match(p.name)
+                and pattern.match(unicodedata.normalize("NFC", p.name))
                 and p.stat().st_size == expected_size
             ]
             if len(alternatives) == 1:
@@ -3902,7 +3909,7 @@ def _discovery_locate_completed_album(download_root, candidate):
 
     named_matches = [
         path for path in matches
-        if path.name.casefold() == str(wanted_folder or "").casefold()
+        if _unicode_name_key(path.name) == _unicode_name_key(wanted_folder)
     ]
     # Matching track names and sizes do not prove source-folder ownership.
     # If the expected folder name is absent or ambiguous, refuse to import.
@@ -3932,7 +3939,7 @@ def _discovery_import_matched_album_files(source, destination, candidate, expect
         raise OSError("Import destination parent is not a real directory")
 
     manifest_name = ".navidrome-import.json"
-    if any(name.casefold() == manifest_name.casefold() for name in matched):
+    if any(_unicode_name_key(name) == _unicode_name_key(manifest_name) for name in matched):
         raise OSError("A track name conflicts with the reserved import manifest")
 
     def assert_music_storage_identity():
