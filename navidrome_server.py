@@ -5672,6 +5672,21 @@ def _discovery_queue_candidate_unless_dismissed(
         return response
 
 
+def _slskd_queue_failure_action(exc):
+    """Classify queue errors without risking duplicate downloads."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    if status in {400, 404, 422}:
+        # slskd explicitly rejected this source's queue request; it is safe to
+        # try another prevalidated peer.
+        return "retry_source"
+    if status in {401, 403}:
+        # Authentication/permission failures are global, not peer-specific.
+        return "fatal"
+    # Transport errors and server/timeout responses may happen after enqueue.
+    # Keep monitoring this peer rather than risking a duplicate download.
+    return "uncertain"
+
+
 def _discovery_acquire_album_impl(
     artist: str,
     album: str,
@@ -5860,6 +5875,32 @@ def _discovery_acquire_album_impl(
                         "message": "This acquisition was dismissed before a source could be queued.",
                     }, ensure_ascii=False)
             except httpx.HTTPError as exc:
+                queue_error_action = _slskd_queue_failure_action(exc)
+                status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                if queue_error_action == "retry_source":
+                    failures.append({
+                        "username": candidate["username"],
+                        "folder": candidate["folder"],
+                        "http_status": status_code,
+                        "error": "source_rejected",
+                        "detail": str(exc)[:200],
+                    })
+                    continue
+                if queue_error_action == "fatal":
+                    message = (
+                        f"slskd rejected the queue request with HTTP {status_code}; "
+                        "check the API key and its permissions."
+                    )
+                    _discovery_update_acquisition_status(
+                        artist, album, "slskd_error",
+                        {"message": message, "http_status": status_code,
+                         "metadata": metadata, "attempts": failures},
+                    )
+                    return json.dumps({
+                        "ok": False, "status": "slskd_error", "artist": artist,
+                        "album": album, "http_status": status_code,
+                        "attempts": failures, "message": message,
+                    }, ensure_ascii=False)
                 # A timeout or server error can happen after slskd accepted
                 # the queue request. Monitor this peer before considering a
                 # fallback, otherwise two sources could download the album.
