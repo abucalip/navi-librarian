@@ -27,6 +27,9 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - Missing or unavailable external metadata does not break discovery.
 
 ### Acquisition and filesystem safety
+- Completed-transfer folder diagnosis distinguishes unavailable download root, absent expected folder, incomplete/mismatched tracks, track-matching folders with a different basename, and ambiguous matches.
+- A complete album is still selected only when both the strict track matcher and unique expected-folder-name check pass; diagnostic output must not authorize import by itself.
+- Folder diagnostics are bounded and include only a small number of candidate folders and filename mismatches.
 
 - Search matching handles punctuation, edition suffixes, and Unicode normalization.
 - Candidates from different remote folders are not incorrectly merged.
