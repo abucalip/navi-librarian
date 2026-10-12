@@ -1384,6 +1384,14 @@ function addTextElement(parent, tag, className, text) {
   if (className) el.className = className;
   el.textContent = text ?? '';
   parent.append(el);
+  // Some renderers know the year before creating the title. Preserve that
+  // year in data-release-year, then attach the badge as soon as the h3 exists.
+  if (String(tag).toLowerCase() === 'h3' && parent.dataset && parent.dataset.releaseYear) {
+    const year = Number(parent.dataset.releaseYear);
+    if (year >= 1900 && year <= 2100 && !el.querySelector('.album-year')) {
+      addTextElement(el, 'span', 'album-year', String(year));
+    }
+  }
   return el;
 }
 
