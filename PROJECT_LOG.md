@@ -35,3 +35,12 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Fix:** all card types now default to a year lookup when metadata has no year. The shared `addTextElement` helper now checks for a saved `data-release-year` when an `h3` is created and adds the year badge at that point. This handles both asynchronous lookup results and years available before the title exists. Dashboard cards keep their existing explicit year rendering.
 - **Popup platform buttons:** added ListenBrainz, Apple Music, Spotify, Qobuz, and Bandcamp buttons directly beneath the popup artwork. They open targeted artist+album searches in each service in a new tab (the app does not yet have authenticated/platform-specific album IDs to promise a canonical album URL).
 - **Validation:** Python syntax CI, local full unit suite, and UI smoke test for card-year coverage and platform links remain to be checked. PR #12 stays draft, unmerged, and undeployed.
+
+
+## 2026-10-12 — Rework year lookup, platform icons, and Various Artists exclusion
+
+- **Year lookup:** separated year retrieval from artwork loading. Cards call a dedicated `/api/album-year` endpoint. MusicBrainz release groups are primary; only exact normalized album titles and exact credited artist names qualify. Deezer is a fallback only for an exact artist-and-album match. Positive results cache for 180 days; misses cache for six hours.
+- **Year display:** added a shared badge-enforcement helper after title creation, including renderers that create headings manually instead of using `addTextElement`.
+- **Platform links:** replaced text panels with compact, fixed-size logo icon buttons beneath the artwork; links keep accessible labels.
+- **New Releases:** exclude Various Artists pseudo-artist entries before querying and again during candidate filtering; regression tests cover common aliases.
+- **Validation:** automated syntax/unit tests and visual browser smoke tests have not yet been run against this update. PR #12 remains draft and is not merged or deployed.
