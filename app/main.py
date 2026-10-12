@@ -1487,7 +1487,7 @@ const artworkObserver = 'IntersectionObserver' in window
 function parseReleaseYear(value) {
   if (value === null || value === undefined || value === '') return null;
   const text = String(value).trim();
-  const match = text.match(/^(\\d{4})/);
+  const match = text.match(/^(\d{4})/);
   const year = Number(match ? match[1] : value);
   return Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null;
 }
