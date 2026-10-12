@@ -257,7 +257,7 @@ LOGIN_PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · Navidrome Librarian</title>
-<link rel="icon" type="image/jpeg" href="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg">
+<link rel="icon" type="image/jpeg" href="https://images.vexels.com/media/users/3/270787/isolated/preview/c2b289d29af9a7e39c56b7bb26e638af-rainbow-cassette-icon.png">
 <style>
 :root{color-scheme:dark;--bg:#171918;--panel:#202321;--text:#f0f0e8;--muted:#b5b8ad;--accent:#e8d34a;--border:#3a3d39}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}
@@ -270,7 +270,7 @@ button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);bo
 </style>
 </head>
 <body><main>
-<img class="brand-icon" src="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg" alt="Vintage cassette tape icon">
+<img class="brand-icon" src="https://images.vexels.com/media/users/3/270787/isolated/preview/c2b289d29af9a7e39c56b7bb26e638af-rainbow-cassette-icon.png" alt="Vintage cassette tape icon">
 <h1>Navidrome Librarian</h1><p id="intro">Checking app authentication…</p>
 <form id="authForm" hidden>
 <label for="username">Username</label><input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username">
@@ -1084,7 +1084,7 @@ PAGE = r"""
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navidrome Librarian</title>
-<link rel="icon" type="image/jpeg" href="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg">
+<link rel="icon" type="image/jpeg" href="https://images.vexels.com/media/users/3/270787/isolated/preview/c2b289d29af9a7e39c56b7bb26e638af-rainbow-cassette-icon.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 :root {
@@ -1112,7 +1112,7 @@ header {
 header h1 { display: flex; align-items: center; gap: 12px; margin: 0; font: 700 29px/.95 var(--display); letter-spacing: .025em; text-transform: uppercase; }
 header h1::before {
   content: ""; display: block; flex: 0 0 42px; width: 42px; height: 42px;
-  background: center / contain no-repeat url("https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg");
+  background: center / contain no-repeat url("https://images.vexels.com/media/users/3/270787/isolated/preview/c2b289d29af9a7e39c56b7bb26e638af-rainbow-cassette-icon.png");
 }
 header p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .025em; text-align: right; }
 main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
