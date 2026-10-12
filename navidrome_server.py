@@ -3188,6 +3188,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "mp3_192",
         "flac_cd",
         "flac_16_44",
+        "flac_hires",
     ],
     "auto_acquire_for_me": True,
     "slskd_downloads_path": str(Path(
@@ -3235,16 +3236,18 @@ def _discovery_settings_read():
         if candidate_music_path.is_absolute():
             MUSIC_DIR = candidate_music_path
 
-    # Existing installations have four saved quality tiers. Append the new
-    # fifth tier without disturbing the user's established priority order.
+    # Migrate older settings by appending new tiers without disturbing the
+    # user's established priority order.
     legacy_quality_tiers = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
     saved_quality = settings.get("quality_priority")
-    if (
-        isinstance(saved_quality, list)
-        and len(saved_quality) == 4
-        and set(saved_quality) == legacy_quality_tiers
-    ):
-        settings["quality_priority"] = [*saved_quality, "flac_16_44"]
+    if isinstance(saved_quality, list):
+        if len(saved_quality) == 4 and set(saved_quality) == legacy_quality_tiers:
+            settings["quality_priority"] = [*saved_quality, "flac_16_44", "flac_hires"]
+        elif (
+            len(saved_quality) == 5
+            and set(saved_quality) == legacy_quality_tiers | {"flac_16_44"}
+        ):
+            settings["quality_priority"] = [*saved_quality, "flac_hires"]
 
     # Migrate the former downloads-root defaults to slskd's actual completed
     # directory when that directory is available on the current host. This
@@ -3470,6 +3473,7 @@ def discovery_get_slskd_settings() -> str:
             "mp3_192": "MP3 192 kbps",
             "flac_cd": "FLAC (CD quality preferred; metadata may not verify this)",
             "flac_16_44": "FLAC 16-bit / 44.1 kHz",
+            "flac_hires": "FLAC Hi-Res (24-bit or above 44.1 kHz)",
         },
     }, ensure_ascii=False, indent=2)
 
@@ -3478,7 +3482,7 @@ def discovery_get_slskd_settings() -> str:
 def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
-    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44"]',
+    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
     auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
     music_library_path: str | None = None,
@@ -3493,8 +3497,8 @@ def discovery_set_slskd_settings(
         quality = json.loads(quality_priority_json)
     except (ValueError, TypeError):
         return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
-    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"}
-    if not isinstance(quality, list) or len(quality) != 5 or set(quality) != allowed:
+    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"}
+    if not isinstance(quality, list) or len(quality) != 6 or set(quality) != allowed:
         return json.dumps({
             "ok": False,
             "error": "Quality priority must contain each supported tier exactly once.",
@@ -3593,15 +3597,37 @@ def _slskd_quality_tier(file_record, filename, priority):
             bit_depth = int(bit_depth_value)
         except (TypeError, ValueError):
             bit_depth = None
+        # Soulseek filenames commonly encode FLAC resolution as [24-44.1],
+        # [24bit-96kHz], or [16-bit 44.1 kHz]. Parse paired bit-depth/rate
+        # labels instead of relying on one spelling of "16-bit" and "kHz".
+        filename_spec = re.search(
+            r"(?<!\d)(16|24|32)\s*(?:bit)?\s*[-_/x ]\s*"
+            r"(44(?:[.,]1)?|48|88(?:[.,]2)?|96|176(?:[.,]4)?|192)"
+            r"(?:\s*k(?:hz)?)?",
+            filename,
+            re.I,
+        )
+        filename_bit_depth = int(filename_spec.group(1)) if filename_spec else None
+        filename_rate = float(filename_spec.group(2).replace(",", ".")) if filename_spec else None
+        if filename_rate is not None and filename_rate < 1000:
+            filename_rate *= 1000
+        if filename_spec:
+            bit_depth = bit_depth if bit_depth is not None else filename_bit_depth
+            sample_rate = sample_rate if sample_rate is not None else filename_rate
         filename_16_44 = bool(
             re.search(r"(?<!\d)16[\s_-]*bit", filename, re.I)
             and re.search(r"(?<!\d)44(?:[.,]1)?[\s_-]*k(?:hz)?", filename, re.I)
-        )
-        if (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
+        ) or (filename_bit_depth == 16 and filename_rate == 44100)
+        if (
+            (bit_depth is not None and bit_depth >= 24)
+            or (sample_rate is not None and sample_rate > 44100)
+        ):
+            tier = "flac_hires"
+        elif (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
             tier = "flac_16_44"
         else:
-            # Keep the existing FLAC fallback for peers that don't expose
-            # bit-depth/sample-rate metadata; do not infer 16/44 from extension alone.
+            # Unknown FLAC remains accepted as the existing fallback tier;
+            # never reject a source solely because slskd omitted audio metadata.
             tier = "flac_cd"
     elif extension == "mp3":
         bitrate = file_record.get("bitRate") or file_record.get("bitrate")
@@ -5713,6 +5739,19 @@ def _discovery_acquire_album_impl(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
         )
+        candidate_diagnostics = [
+            {
+                "username": item.get("username"),
+                "folder": item.get("folder"),
+                "file_count": item.get("file_count"),
+                "unique_track_count": item.get("unique_track_count"),
+                "expected_track_count": item.get("expected_track_count"),
+                "quality_summary": list(item.get("quality_summary") or []),
+                "clear_match": bool(item.get("clear_match")),
+                "eligibility_reason": item.get("eligibility_reason"),
+            }
+            for item in candidates[:10]
+        ]
         if not candidates:
             audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
             response_count = len(payload_by_peer)
@@ -5753,11 +5792,13 @@ def _discovery_acquire_album_impl(
                 artist, album, "no_matches",
                 {"message": message, "search_id": search_id, "metadata": metadata,
                  "candidate_count": len(candidates),
-                 "best_candidate_reason": best.get("eligibility_reason")},
+                 "best_candidate_reason": best.get("eligibility_reason"),
+                 "candidate_diagnostics": candidate_diagnostics},
             )
             return json.dumps({
                 "ok": True, "status": "no_matches", "artist": artist, "album": album,
                 "search_id": search_id, "candidate_count": len(candidates),
+                "candidate_diagnostics": candidate_diagnostics,
                 "message": message,
             }, ensure_ascii=False)
 
@@ -5910,11 +5951,13 @@ def _discovery_acquire_album_impl(
         message = "None of the matching sources started a download. Check slskd/peer availability and try again."
         _discovery_update_acquisition_status(
             artist, album, "queue_failed",
-            {"message": message, "attempts": failures, "metadata": metadata},
+            {"message": message, "attempts": failures, "metadata": metadata,
+             "candidate_diagnostics": candidate_diagnostics},
         )
         return json.dumps({
             "ok": False, "status": "queue_failed", "artist": artist, "album": album,
-            "attempts": failures, "message": message,
+            "attempts": failures, "candidate_diagnostics": candidate_diagnostics,
+            "message": message,
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         message = f"slskd request failed: {type(exc).__name__}"
