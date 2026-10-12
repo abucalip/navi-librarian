@@ -2649,8 +2649,23 @@ def _build_new_releases_list():
             }
             if not _discovery_is_album_candidate(candidate):
                 continue
-            credit_phrase = str(group.get("artist-credit-phrase") or "").strip()
-            if credit_phrase and artist_key not in _music_key(credit_phrase):
+            # MusicBrainz text search can return similarly named artists (e.g.
+            # "Queen Tribute") for an exact-looking artist query. Require an
+            # exact artist-credit name rather than a substring match.
+            artist_credit = group.get("artist-credit")
+            if not isinstance(artist_credit, list):
+                continue
+            credited_names = []
+            for credit_part in artist_credit:
+                if not isinstance(credit_part, dict):
+                    continue
+                credit_artist = credit_part.get("artist") or {}
+                credit_name = str(
+                    credit_artist.get("name") or credit_part.get("name") or ""
+                ).strip()
+                if credit_name:
+                    credited_names.append(credit_name)
+            if not any(_music_key(name) == artist_key for name in credited_names):
                 continue
             identity = (_music_key(artist), _music_key(title))
             if identity in owned:
