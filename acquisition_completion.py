@@ -1,0 +1,140 @@
+"""Inspectable evidence for locating completed slskd album folders.
+
+This module deliberately does not decide that a transfer is complete. It only
+examines the local download tree after the watcher has established transfer
+completion, and explains why a completed folder could not safely be selected.
+The existing track matcher remains the authority for filename/size validation.
+"""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Callable, Any
+
+
+def inspect_completed_album(
+    download_root: str | Path,
+    candidate: dict[str, Any],
+    *,
+    safe_folder_name: Callable[[Any], str],
+    filename_key: Callable[[Any], str],
+    match_files: Callable[[str | Path, dict[str, Any]], dict[str, Path] | None],
+) -> dict[str, Any]:
+    """Return the uniquely verified folder, or bounded actionable diagnostics.
+
+    The tree is walked once. A folder is eligible only when the existing strict
+    matcher confirms all expected files and its basename matches the advertised
+    slskd folder name. Diagnostics never relax those safety requirements.
+    """
+    root = Path(download_root).expanduser()
+    expected_folder = safe_folder_name(candidate.get("folder"))
+    expected_key = filename_key(expected_folder)
+    expected_by_name: dict[str, tuple[str, int]] = {}
+
+    for item in candidate.get("files") or []:
+        raw_name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+        if not raw_name:
+            continue
+        try:
+            size = int(item.get("size"))
+        except (TypeError, ValueError):
+            size = 0
+        expected_by_name.setdefault(filename_key(raw_name), (raw_name, size))
+
+    base_diagnostics = {
+        "expected_folder": expected_folder,
+        "expected_files": len(expected_by_name),
+        "diagnostic_candidates": [],
+    }
+    if not root.is_dir():
+        return {
+            "path": None,
+            "diagnostics": {
+                **base_diagnostics,
+                "folder_diagnostic": "downloads_root_unavailable",
+                "downloads_path_available": False,
+            },
+        }
+
+    matching_named: list[Path] = []
+    track_matches_other_names: list[Path] = []
+    diagnostics: list[dict[str, Any]] = []
+    named_folder_seen = False
+
+    for current, directories, _filenames in os.walk(root, followlinks=False):
+        directories[:] = [
+            name for name in directories
+            if not name.startswith(".") and not (Path(current) / name).is_symlink()
+        ]
+        folder = Path(current)
+        if folder.resolve() == root.resolve():
+            continue
+
+        folder_name_matches = filename_key(folder.name) == expected_key
+        named_folder_seen = named_folder_seen or folder_name_matches
+        try:
+            matched = match_files(folder, candidate)
+        except (OSError, ValueError, RuntimeError):
+            matched = None
+
+        if matched:
+            if folder_name_matches:
+                matching_named.append(folder)
+            else:
+                track_matches_other_names.append(folder)
+
+        if folder_name_matches or matched:
+            actual_files = [
+                path for path in folder.iterdir()
+                if path.is_file() and not path.is_symlink()
+            ]
+            actual_by_key = {filename_key(path.name): path for path in actual_files}
+            missing = []
+            size_mismatches = []
+            for key, (expected_name, expected_size) in expected_by_name.items():
+                actual = actual_by_key.get(key)
+                if actual is None:
+                    missing.append(expected_name)
+                elif expected_size > 0 and actual.stat().st_size != expected_size:
+                    size_mismatches.append(expected_name)
+
+            reason = (
+                "track_files_match"
+                if matched
+                else "expected_folder_tracks_mismatch"
+                if folder_name_matches
+                else "tracks_match_but_folder_name_differs"
+            )
+            diagnostics.append({
+                "folder_name": folder.name,
+                "folder_name_matches": folder_name_matches,
+                "track_files_match": bool(matched),
+                "matched_expected_tracks": len(matched or {}),
+                "expected_tracks": len(expected_by_name),
+                "reason": reason,
+                "missing_expected_files": sorted(missing)[:10],
+                "size_mismatches": sorted(size_mismatches)[:10],
+            })
+
+    diagnostics.sort(
+        key=lambda item: (
+            not item["folder_name_matches"],
+            not item["track_files_match"],
+            item["folder_name"].casefold(),
+        )
+    )
+    summary = {
+        **base_diagnostics,
+        "downloads_path_available": True,
+        "diagnostic_candidates": diagnostics[:5],
+    }
+
+    if len(matching_named) == 1:
+        return {"path": matching_named[0], "diagnostics": {**summary, "folder_diagnostic": "matched"}}
+    if len(matching_named) > 1:
+        return {"path": None, "diagnostics": {**summary, "folder_diagnostic": "ambiguous_named_folder_matches"}}
+    if track_matches_other_names:
+        return {"path": None, "diagnostics": {**summary, "folder_diagnostic": "tracks_match_but_folder_name_differs"}}
+    if named_folder_seen:
+        return {"path": None, "diagnostics": {**summary, "folder_diagnostic": "expected_folder_tracks_mismatch"}}
+    return {"path": None, "diagnostics": {**summary, "folder_diagnostic": "expected_folder_not_found"}}
