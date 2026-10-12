@@ -1,3 +1,12 @@
+## 2026-10-13 — PR #20 quality priority implementation and CI
+
+- **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), branch `feature/flac-16-44-drag-sort-priority`.
+- **Implementation:** added `flac_16_44` as the fifth tier; migrated legacy four-tier settings by appending the new tier; added metadata/filename-based FLAC 16/44 classification; replaced dropdowns with drag-sortable settings plus Move up/Move down alternatives.
+- **Regression tests:** `tests/test_quality_priority.py` covers FLAC classification, legacy migration, order persistence, strict five-tier validation, and sortable UI hooks.
+- **Verification on code/test head `9cbb5b054dbe52921df9ed044ddb763e0dcf0b76`:** Python syntax/full unittest workflow #140 passed; Docker packaging workflow #47 passed, including full unit tests and image build.
+- **Documentation:** updated requirements, test plan, v0.2 quality backlog, project status, and CI compile list.
+- **Remaining:** manual UI drag/drop and save/reload verification. PR is open and not merged; no image publication or deployment performed.
+
 ## 2026-10-13 — Five-tier quality priority and drag-sort Settings (in progress)
 
 - **Branch:** `feature/flac-16-44-drag-sort-priority`, based on GitHub `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
