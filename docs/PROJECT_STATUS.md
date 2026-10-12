@@ -1,3 +1,15 @@
+## Latest session — 2026-10-12 (v0.2 P0: completed-folder diagnostics in progress)
+
+- **Objective:** diagnose why a transfer reported complete remains in `download_complete_waiting_for_folder`, without weakening folder identity or track-completeness checks.
+- **Branch:** `fix/v02-acquisition-completion-diagnostics`, based on GitHub `main`; this is separate from the user's local-only testing baseline `main` at `90e1d97`. Do not assume the two baselines are identical.
+- **Implementation in progress:** added `acquisition_completion.py` to inspect completed-download folders and return a bounded set of actionable reasons; integrated those diagnostics into the watcher status details; added focused tests in `tests/test_acquisition_completion.py`.
+- **Safety invariant:** only a unique folder with the expected basename and all expected files accepted by the existing strict matcher can be imported. Diagnostics do not relax matching.
+- **Verification state:** not yet tested by CI or locally. The new tests cover valid matches, folder-name mismatch, missing tracks, size mismatch, unavailable download root, and ambiguous matches. The folder-name mismatch is a diagnostic fixture, not proof that it is the production failure's actual cause.
+- **Next:** inspect the full diff, run syntax and full unit tests in CI, address failures, then use the emitted diagnostics to establish the real-world root cause before deciding whether a matching behavior change is justified.
+- **Deployment:** not merged, published, or deployed.
+
+---
+
 ## Latest session — 2026-10-12 (local main consolidated for testing)
 
 - **Local merge:** the user merged `fix/artwork-size-and-artist-bios` into local `main`; the local merge commit is `90e1d97` (`Merge local artwork and acquisition fixes`). Local branch listing confirms this commit is the head of `main`.
