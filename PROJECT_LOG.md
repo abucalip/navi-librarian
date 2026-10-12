@@ -1,3 +1,11 @@
+## 2026-10-12 — PR #19 merged; PR #18 superseded after merge conflict
+
+- **PR #17:** merged at `9f4ff509d6a336823912c49d8c049eeea8761b8f`; user manually reports completed downloads appear imported. No-source acquisition failures are expected.
+- **PR #18:** original documentation branch conflicted with the PR #17 update to `docs/PROJECT_STATUS.md`; closed without merging so no existing handoff content was overwritten.
+- **Replacement PR #19:** [docs: reconcile GitHub-first workflow and project handoff](https://github.com/abucalip/navi-librarian/pull/19), squash-merged at `fe60dd3aaf323bd6f3489f89b13ee9946ba7f382`. Added `docs/DEVELOPMENT_WORKFLOW.md`, decision D-009, and the session handoff updates in `docs/PROJECT_STATUS.md` and this log.
+- **CI:** Python syntax/acquisition-safety workflow #136 and Docker packaging workflow #43 passed on PR head `bca1b143f45b870492f99c86ecdc5ef9ed9d6ec7`; Docker build and unit tests passed. No application code changed in PR #19.
+- **Deployment:** not performed. No new image publication or production container verification is claimed.
+
 ## 2026-10-12 — PR #17 merged; acquisition completion manually verified
 
 - **PR:** [#17 — Diagnose acquisition completion and handle missing slskd transfers](https://github.com/abucalip/navi-librarian/pull/17), squash-merged into `main` at `9f4ff509d6a336823912c49d8c049eeea8761b8f`.
