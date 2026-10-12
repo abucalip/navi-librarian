@@ -1,3 +1,14 @@
+## Latest session — 2026-10-13 (PR #20: five-tier quality priority)
+
+- **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), branch `feature/flac-16-44-drag-sort-priority`, based on `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
+- **Implemented:** added FLAC 16-bit/44.1 kHz as the fifth tier; legacy four-tier settings append the new tier without reordering the existing four; the server validates five distinct supported tiers and preserves order; explicit FLAC sample-rate/bit-depth metadata or a filename label is required to classify FLAC 16/44, with unknown FLAC retaining the existing fallback.
+- **Settings UI:** replaced four dropdowns with a drag-sortable five-row list, visible Move up/Move down alternatives, updated position numbering and a screen-reader live announcement. The selected order is saved through the existing Settings API.
+- **Regression coverage/docs:** added `tests/test_quality_priority.py`; updated `docs/REQUIREMENTS.md`, `docs/TEST_PLAN.md`, the v0.2 quality backlog, and the CI compile list.
+- **CI on code/test head `9cbb5b054dbe52921df9ed044ddb763e0dcf0b76`:** Python syntax/full unittest workflow #140 passed; Docker packaging workflow #47 passed, including dependency installation, compilation, full unit tests, and Docker image build.
+- **Still pending:** manual UI drag/drop and save/reload smoke test. A docs-only handoff update follows these successful checks, so CI for that newer documentation commit may still be running.
+- **Merge/deployment:** PR remains open; not merged, published, or deployed.
+- **Next:** user smoke-tests the PR in Settings, then report any UI issue for a focused follow-up.
+
 ## Latest session — 2026-10-13 (five-tier quality priority in progress)
 
 - **Objective:** add FLAC 16-bit/44.1 kHz as the fifth slskd quality tier and replace per-tier dropdowns with a reorderable list.
@@ -107,7 +118,7 @@ Use the following meanings consistently:
 | Web UI and API | Deployed; user reports successful installation/use | Record exact deployed image tag/digest and commit when convenient |
 | First-run account creation and login | User reports working successfully on the server | Preserve as a regression-smoke-test baseline |
 | Settings and service credentials | User reports entering credentials through Settings works | Keep secret-handling and persistence tests in the automated suite |
-| Audio quality priorities | Five supported tiers and sortable Settings list implemented on feature branch | Verify migration, order persistence, CI, and manual drag/drop behavior |
+| Audio quality priorities | Implemented and automated tests/CI passed on PR #20 code head | Manual Settings drag/drop and save/reload smoke test; merge/deployment remain pending |
 | Recommendation/discovery logic | Existing logic is in `navidrome_server.py` | Test representative outputs against the real library |
 | Discovery lists, feedback, refresh | API routes exist | Verify list persistence, dismiss/save behavior, and refresh |
 | slskd downloads/acquisition | User reports downloads work as intended | Continue regression coverage for matching, queueing, status, and safe cleanup |
