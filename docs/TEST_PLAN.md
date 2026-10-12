@@ -53,6 +53,7 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - When candidate checks reject sources or queue attempts fail, acquisition status exposes bounded candidate diagnostics (folder, track counts, quality tiers, and eligibility reason).
 - Explicit slskd queue rejection statuses 400/404/422 allow safe source failover; 401/403 stop as global credential/permission errors; timeouts and 5xx responses remain monitored as uncertain to prevent duplicate downloads.
 - When no folder candidate is recognized, status includes a bounded sample of source paths and the album/artist match signals used by the matcher.
+- Normalize slskd search results whether returned as a list or a `responses`/`items` wrapper; if search state reports peers but response payloads are temporarily absent, retry briefly before reporting no matches.
 - First-run setup creates the owner account.
 - Invalid login is rejected; rate limiting and session expiry behave as designed.
 - Restarting the container preserves authentication and application data.
