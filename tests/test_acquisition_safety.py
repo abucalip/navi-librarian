@@ -22,6 +22,8 @@ def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
         "_discovery_match_completed_album_files",
+        "_discovery_is_album_candidate",
+        "_slskd_album_path_match",
         "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
@@ -95,6 +97,37 @@ def load_helpers():
 
 
 HELPERS = load_helpers()
+
+
+class RecommendationEligibilityTests(unittest.TestCase):
+    def test_rejects_compilations_remixes_and_non_album_types(self):
+        is_album = HELPERS["_discovery_is_album_candidate"]
+        for item in (
+            {"album": "Greatest Hits"},
+            {"album": "The Remixes"},
+            {"album": "Live at Wembley"},
+            {"album": "An Ordinary Title", "primary_type": "EP"},
+            {"album": "An Ordinary Title", "secondary_types": ["Compilation"]},
+        ):
+            with self.subTest(item=item):
+                self.assertFalse(is_album(item))
+
+    def test_accepts_regular_full_album(self):
+        self.assertTrue(HELPERS["_discovery_is_album_candidate"]({
+            "album": "Back to Black", "primary_type": "Album",
+        }))
+
+
+class SlskdAlbumPathMatchingTests(unittest.TestCase):
+    def test_matches_edition_suffix_and_partial_album_wording(self):
+        matcher = HELPERS["_slskd_album_path_match"]
+        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/A Moon Shaped Pool (FLAC Deluxe Edition)"))
+        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/Moon Shaped Pool"))
+
+    def test_rejects_unrelated_album_folder(self):
+        self.assertFalse(HELPERS["_slskd_album_path_match"](
+            "Moon River", "Radiohead/Moonlight River"
+        ))
 
 
 class CompletedAlbumMatchingTests(unittest.TestCase):
