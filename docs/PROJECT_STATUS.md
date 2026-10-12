@@ -59,6 +59,15 @@ Use the following meanings consistently:
 - **CI:** GitHub Actions reported both Python syntax check and Docker packaging validation successful for PR head `3e1f005e413a5522ec2866f30baebf1914cc4868`. This was documentation-only; application tests and UI smoke tests were not run.
 - **Local checkout:** previously recorded as preserved on `fix/artwork-size-and-artist-bios`; inspect its current state before any Git operations.
 
+## Latest session — 2026-10-12 (artwork loading reliability fix in review)
+
+- **Branch:** `fix/artwork-loading-retries`; application change and regression test committed, not merged or deployed.
+- **Observed failure mode in code:** artwork provider exceptions were converted into a normal no-artwork response and negative-cached for five minutes. The browser's one-shot IntersectionObserver unobserved the card immediately and marked it requested permanently, so transient provider outages left cards blank for the rest of the page session.
+- **Change:** distinguish transient provider failures with a `retryable` response, do not negative-cache those failures, and retry in the browser up to three times with bounded backoff. Genuine no-match responses retain the existing negative cache and placeholder behavior.
+- **Regression test:** added `tests/test_artwork_retry.py` to verify a provider timeout is marked retryable and does not populate the negative cache.
+- **Validation:** changes are committed to the feature branch. Automated tests, CI, and live UI behavior have not yet been run/verified in this session; do not treat the fix as tested, merged, or deployed.
+- **Next:** open/check the PR, run the full test plan and CI, then manually load Discoveries and Artist Deep Dives and confirm covers appear and that provider outages do not block browsing.
+
 ## Session start checklist
 
 1. Read this file and [REQUIREMENTS.md](REQUIREMENTS.md).
