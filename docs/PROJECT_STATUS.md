@@ -1,7 +1,7 @@
 ## Latest session — 2026-10-13 (Hi-Res FLAC priority and acquisition diagnostics in progress)
 
 - **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; not merged or deployed.
-- **Scope:** add a reorderable FLAC Hi-Res quality tier, recognize common resolution labels including `[24-44.1]`, preserve prior quality ordering when migrating four- or five-tier settings, and expose candidate summaries when matching candidates fail eligibility checks or queue attempts fail.
+- **Scope:** add a reorderable FLAC Hi-Res quality tier, recognize common resolution labels including `[24-44.1]`, preserve prior quality ordering when migrating four- or five-tier settings, and expose bounded candidate summaries plus path/artist match signals when no source folders are recognized.
 - **Regression coverage:** added tests for the reported Tinariwen folder-name variants, explicit 16/44 metadata, 24/44.1 filename labels, high-resolution metadata, and settings migration/order preservation.
 - **Root-cause boundary:** the reported folder variants appear to satisfy the current token-based album matcher in a fixture, and quality tiers do not themselves exclude candidates from matching. The live failure stage is not yet established because no persisted acquisition status/attempt details were supplied. New diagnostics are intended to reveal whether a live failure is matching, eligibility, or queue/start-state related; do not claim the underlying production failure is fixed until retested.
 - **Verification:** code/tests/docs committed to this branch; CI and full test suite are pending. No local test runner was available through the connected read-only Git checkout, and no live slskd request was made.
