@@ -111,7 +111,7 @@ class QualityPriorityTests(unittest.TestCase):
         )
         self.assertEqual(tier, "flac_cd")
 
-    def test_legacy_four_tier_settings_append_fifth_tier_without_reordering(self):
+    def test_legacy_four_tier_settings_append_new_flac_tiers_without_reordering(self):
         old_order = ["mp3_192", "mp3_320", "flac_cd", "mp3_193_319"]
         self.ns["_discovery_settings_write"]({"quality_priority": old_order})
         settings = self.ns["_discovery_settings_read"]()
@@ -123,7 +123,7 @@ class QualityPriorityTests(unittest.TestCase):
         settings = self.ns["_discovery_settings_read"]()
         self.assertEqual(settings["quality_priority"], old_order + ["flac_hires"])
 
-    def test_saving_five_tiers_preserves_user_order(self):
+    def test_saving_six_tiers_preserves_user_order(self):
         order = ["flac_hires", "flac_16_44", "mp3_192", "flac_cd", "mp3_320", "mp3_193_319"]
         result = json.loads(self.ns["discovery_set_slskd_settings"](
             slskd_url="http://localhost:5030",
