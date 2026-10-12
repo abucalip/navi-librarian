@@ -81,3 +81,11 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Replaced the previous cassette image URL in the favicon, app header, and login/setup page with the user-provided Vexels rainbow cassette image.
 - **Local asset still pending:** the image is viewable through web browsing, but direct download from this runtime fails due to unavailable DNS/network access. The app still references the remote image; do not treat the icon as fully bundled for Docker yet. To complete the local-copy requirement, provide the PNG as a chat attachment or place it in the repository worktree, then update the page to reference the bundled static asset.
 - No merge or deployment performed.
+
+
+## 2026-10-12 — Bundle rainbow cassette icon locally
+
+- Confirmed `cassette.png` is present at the repository root on PR #12's branch (31,390 bytes).
+- Updated the favicon, login/setup image, and app header CSS to use the local `/assets/cassette.png` endpoint instead of the external Vexels URL.
+- Added a FastAPI endpoint serving the repository-root PNG as `image/png`; this avoids external-host dependency. Docker packaging must include the root-level `cassette.png` file alongside the app source.
+- No merge or deployment performed. Runtime/browser smoke test and CI for this change are still pending.
