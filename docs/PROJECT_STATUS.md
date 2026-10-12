@@ -1,3 +1,16 @@
+## Latest session — 2026-10-12 (slskd monitor-error follow-up; fix in progress)
+
+- **User-reported failure:** several acquisitions entered `monitor_error`. Their persisted details showed `HTTPStatusError: 404 Not Found` from `GET /api/v0/transfers/downloads/{username}` for multiple peers.
+- **Root cause:** the watcher treated a missing per-peer transfer-list entry as an exception even though slskd may no longer expose a peer under that endpoint after its transfer records disappear. This caused an ordinary “no current transfer records” condition to surface as a monitor failure.
+- **Fix committed on the existing PR #17 branch:** `_slskd_download_transfer_files` now returns an empty list for HTTP 404. The watcher continues its filesystem checks on each polling cycle; all other HTTP errors still raise and remain diagnosable. No import or folder-matching safety checks were relaxed.
+- **Regression test added:** `tests/test_slskd_transfer_lookup.py` covers the 404 case, a non-404 HTTP error, and successful transfer parsing.
+- **Commits:** fix `4ced0a22b980325dde58609087700d0926b65bde`; test `e946d460acc11fb675bd25c1358ef3d243c32dd5`; test-plan documentation `4ee60d4151899ad5406da979c00d7995e7e8f768`.
+- **Verification:** user previously reported 47 tests passed on the earlier PR #17 revision (`17a2bdc)). The new 404 regression test and updated branch have **not yet been run locally or through CI**. Do not claim this fix is verified.
+- **State:** PR #17 remains open; this branch is not merged or deployed. The current task is to run the full test suite and CI on the new head, then have the user retest acquisitions. If monitor errors persist, capture the new status details rather than assuming this is the only possible failure.
+- **Next:** verify the updated branch with syntax checks, the full unittest suite, and CI; inspect the final diff before merging.
+
+---
+
 ## Latest session — 2026-10-12 (v0.2 P0: completed-folder diagnostics in progress)
 
 - **Objective:** diagnose why a transfer reported complete remains in `download_complete_waiting_for_folder`, without weakening folder identity or track-completeness checks.
