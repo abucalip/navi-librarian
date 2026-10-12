@@ -1,4 +1,5 @@
 """Focused tests for completed-download folder evidence and diagnostics."""
+import ast
 import tempfile
 import unicodedata
 import unittest
@@ -6,53 +7,43 @@ from pathlib import Path
 
 from acquisition_completion import inspect_completed_album
 
+SOURCE = Path(__file__).resolve().parents[1] / "navidrome_server.py"
+
+
+def load_production_helpers():
+    tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
+    wanted = {
+        "_discovery_filename_key",
+        "_discovery_match_completed_album_files",
+        "_discovery_safe_folder_name",
+    }
+    selected = [
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name in wanted
+    ]
+    found = {node.name for node in selected}
+    if found != wanted:
+        raise AssertionError(f"Missing production helpers: {sorted(wanted - found)}")
+    namespace = {"Path": Path, "unicodedata": unicodedata}
+    module = ast.Module(body=selected, type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), str(SOURCE), "exec"), namespace)
+    return namespace
+
+
+PRODUCTION = load_production_helpers()
+
 
 def filename_key(value):
     return unicodedata.normalize("NFC", str(value or "")).casefold()
-
-
-def safe_folder_name(value):
-    return str(value or "").replace("\\", "/").split("/")[-1].strip(". ") or "Unknown"
-
-
-def match_files(folder, candidate):
-    """Small strict matcher contract: every advertised basename and size must match."""
-    folder = Path(folder)
-    actual = [
-        path for path in folder.iterdir()
-        if path.is_file() and not path.is_symlink()
-    ]
-    matched = {}
-    used = set()
-    for item in candidate.get("files") or []:
-        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
-        if not name:
-            return None
-        try:
-            size = int(item.get("size"))
-        except (TypeError, ValueError):
-            return None
-        options = [
-            path for path in actual
-            if filename_key(path.name) == filename_key(name)
-            and path not in used
-            and size > 0
-            and path.stat().st_size == size
-        ]
-        if len(options) != 1:
-            return None
-        matched[name] = options[0]
-        used.add(options[0])
-    return matched or None
 
 
 def inspect(root, candidate):
     return inspect_completed_album(
         root,
         candidate,
-        safe_folder_name=safe_folder_name,
-        filename_key=filename_key,
-        match_files=match_files,
+        safe_folder_name=PRODUCTION["_discovery_safe_folder_name"],
+        filename_key=PRODUCTION["_discovery_filename_key"],
+        match_files=PRODUCTION["_discovery_match_completed_album_files"],
     )
 
 
