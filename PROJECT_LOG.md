@@ -1,3 +1,11 @@
+## 2026-10-13 — Five-tier quality priority and drag-sort Settings (in progress)
+
+- **Branch:** `feature/flac-16-44-drag-sort-priority`, based on GitHub `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
+- **Changes:** added `flac_16_44`; existing four-tier persisted settings append it without reordering existing priorities; quality validation requires five distinct supported tiers; FLAC 16/44 classification requires explicit metadata or a filename label; Settings now provides drag-and-drop order plus Move up/Move down alternatives.
+- **Regression coverage:** added `tests/test_quality_priority.py` for FLAC classification, legacy settings migration, five-tier persistence/validation, and presence of the sortable accessible UI.
+- **Docs/CI:** updated `docs/REQUIREMENTS.md`, `docs/TEST_PLAN.md`, the v0.2 quality backlog, and Python CI's compile list.
+- **Status:** implementation committed to the feature branch; tests, CI, PR review, and UI smoke test pending. Not merged, published, or deployed.
+
 ## 2026-10-12 — PR #19 merged; PR #18 superseded after merge conflict
 
 - **PR #17:** merged at `9f4ff509d6a336823912c49d8c049eeea8761b8f`; user manually reports completed downloads appear imported. No-source acquisition failures are expected.
