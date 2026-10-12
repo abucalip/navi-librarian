@@ -46,10 +46,11 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 
 ### Authentication and settings
 
-- The slskd quality-priority list contains all five supported tiers exactly once and saves the displayed order.
-- Existing four-tier settings gain FLAC 16-bit/44.1 kHz at the end without reordering prior choices.
-- FLAC 16/44 is classified only when sample-rate/bit-depth metadata or an explicit filename label supports it; unverified FLAC retains the existing fallback.
+- The slskd quality-priority list contains all six supported tiers exactly once and saves the displayed order.
+- Existing four-tier settings append FLAC 16/44 and FLAC Hi-Res; existing five-tier settings append FLAC Hi-Res, without reordering prior choices.
+- FLAC 16/44 and Hi-Res are classified from metadata or explicit resolution labels such as `[24-44.1]`; unverified FLAC remains accepted in the fallback tier.
 - The Settings quality list can be reordered by drag-and-drop and by Move up/Move down controls; save/reload preserves the order.
+- When candidate checks reject sources or queue attempts fail, acquisition status exposes bounded candidate diagnostics (folder, track counts, quality tiers, and eligibility reason).
 - First-run setup creates the owner account.
 - Invalid login is rejected; rate limiting and session expiry behave as designed.
 - Restarting the container preserves authentication and application data.
