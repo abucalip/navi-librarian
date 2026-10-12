@@ -72,9 +72,6 @@ def _metadata_cache_set(key, value):
         pass
 
 # Environment variables provide first-run defaults; service settings are persistent.
-BASE_URL = os.environ.get("NAVIDROME_URL", "").rstrip("/")
-USERNAME = os.environ.get("NAVIDROME_USER", "")
-PASSWORD = os.environ.get("NAVIDROME_PASSWORD", "")
 
 def _default_music_dir():
     """Choose an explicit override or the native mount path for this host."""
