@@ -1543,7 +1543,7 @@ async function loadDashboardPicks() {
       addTextElement(card, 'p', 'card-category', item.dashboard_category || 'Discovery');
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || 0);
+      const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
       if (year >= 1900 && year <= 2100) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       addTextElement(card, 'p', 'card-artist', artist);
