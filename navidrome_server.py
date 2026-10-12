@@ -2587,8 +2587,11 @@ def _build_new_releases_list():
         if artist.get("name") and _music_key(artist["name"]) in full_album_artist_keys
     ]
     qualified_artists.sort(key=lambda item: int(item.get("album_count") or 0), reverse=True)
-    current_year = time.gmtime().tm_year
-    earliest_year = current_year - 2
+    from datetime import date, timedelta
+    today = date.today()
+    cutoff_date = (today - timedelta(days=730)).isoformat()
+    current_year = today.year
+    earliest_year = int(cutoff_date[:4])
     candidates = {}
     errors = []
     artist_batch = qualified_artists[:120]
@@ -2632,7 +2635,7 @@ def _build_new_releases_list():
             if not title or not year_text.isdigit():
                 continue
             year = int(year_text)
-            if year < earliest_year or year > current_year:
+            if release_date < cutoff_date or year > current_year:
                 continue
             candidate = {
                 "artist": artist, "album": title, "year": year,
@@ -2667,12 +2670,13 @@ def _build_new_releases_list():
     )
     return {
         "list": "new_releases", "source": "MusicBrainz release groups matched against the Navidrome library",
-        "generated_at": time.time(), "year_from": earliest_year,
+        "generated_at": time.time(), "year_from": earliest_year, "date_from": cutoff_date,
         "qualified_library_artists": len(qualified_artists),
         "artists_scanned": len(artist_batch), "items": items_out[:200],
         "lookup_errors": errors[:20],
         "limitations": [
             "Only artists with at least one library album containing six or more tracks qualify.",
+            "The release window is the previous 730 days.",
             "MusicBrainz release-group coverage and release dates may be incomplete.",
             "The initial refresh is bounded to the 120 library artists with the largest album counts.",
         ],
@@ -3429,17 +3433,19 @@ def _slskd_album_path_match(album, text):
     path_text = str(text or "").strip()
     if not album_text or not path_text:
         return False
-    album_key = _music_key(album_text)
-    path_key = _music_key(path_text)
-    if album_key and album_key in path_key:
-        return True
     tokens = re.findall(r"[a-z0-9]+", album_text.casefold())
+    path_tokens_list = re.findall(r"[a-z0-9]+", path_text.casefold())
+    if tokens and any(
+        path_tokens_list[index:index + len(tokens)] == tokens
+        for index in range(len(path_tokens_list) - len(tokens) + 1)
+    ):
+        return True
     stopwords = {"a", "an", "and", "of", "the", "to", "in", "on", "for"}
     meaningful = [token for token in tokens if token not in stopwords] or tokens
     if not meaningful:
         return False
     unique_tokens = set(meaningful)
-    path_tokens = set(re.findall(r"[a-z0-9]+", path_text.casefold()))
+    path_tokens = set(path_tokens_list)
     overlap = sum(1 for token in unique_tokens if token in path_tokens)
     if len(unique_tokens) == 1:
         return overlap == 1
