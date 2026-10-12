@@ -99,6 +99,15 @@ class CompletedFolderEvidenceTests(unittest.TestCase):
         evidence = result["diagnostics"]["diagnostic_candidates"][0]
         self.assertEqual(evidence["missing_expected_files"], ["02 - Song.flac"])
 
+    def test_collision_suffixed_track_is_not_reported_missing(self):
+        folder = self.make_album()
+        original = folder / "01 - Intro.flac"
+        original.rename(folder / "01 - Intro_1.flac")
+        result = inspect(self.root, self.candidate)
+        self.assertEqual(result["path"], folder)
+        evidence = result["diagnostics"]["diagnostic_candidates"][0]
+        self.assertEqual(evidence["missing_expected_files"], [])
+
     def test_expected_folder_with_wrong_size_reports_size_mismatch(self):
         folder = self.root / "Reality Awaits"
         folder.mkdir()
