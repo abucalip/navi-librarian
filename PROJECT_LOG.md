@@ -8,7 +8,8 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Root cause:** `/api/artwork` swallowed provider exceptions and cached them as a normal negative result for five minutes. The browser marked a card requested and unobserved it on the first attempt, so a transient Deezer outage could leave artwork blank for the rest of the page session.
 - **Change:** provider exceptions now return a retryable marker and are not cached; browser retries up to three times with bounded backoff. Ordinary no-match responses remain cached as before.
 - **Regression coverage:** `tests/test_artwork_retry.py` tests that provider timeouts are retryable and not negative-cached.
-- **Status:** committed to feature branch; not yet tested, CI-verified, merged, or deployed. The local checkout on `fix/artwork-size-and-artist-bios` was not modified.
+- **Validation:** GitHub Actions passed Python compilation and the full unittest suite (run #110) and Docker packaging validation (run #17) on code commit `fabcd1fb6563ef9cd65aa12005f2f77f3f90e07d`. Manual UI behavior remains unverified.
+- **Status:** open PR #16; not merged or deployed. The local checkout on `fix/artwork-size-and-artist-bios` was not modified.
 - **Next:** create/check the PR, run the full automated suite and CI, and manually verify artwork on Discoveries and Artist Deep Dives against the deployed app.
 
 ## 2026-10-12 — Successful server installation and baseline smoke tests reported
