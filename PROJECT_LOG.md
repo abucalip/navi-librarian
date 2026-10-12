@@ -2,6 +2,17 @@
 
 Update this file at the end of every GitHub development session. Keep entries concise: current branch/PR, changed behavior, validation, known caveats, and the next step.
 
+## 2026-10-12 — v0.2 planning from DroppedNeedle review
+
+- **Branch/PR:** `docs/v0.2-droppedneedle-lessons`, [PR #15](https://github.com/abucalip/navi-librarian/pull/15), open and not merged. Original documentation commit: `affef7fb2a0f28f7f013f81462b49a876d40c431`; this session-end update adds the project handoff and log.
+- **Document:** added `docs/V0.2_DROPPEDNEEDLE_LESSONS.md` with prioritized v0.2 proposals based on selected DroppedNeedle files: acquisition completion evidence/diagnostics, explicit lifecycle and cleanup boundaries, consistent quality evaluation, recommendation pipeline clarity, cache audit, and regression/performance guardrails.
+- **User constraints captured:** DroppedNeedle has been slow and buggy in the user's experience; smoothness and stability must not be sacrificed. Modular Python files are a likely direction, but refactoring should be incremental and responsibility-driven. Keep Librarian focused on bridging Navidrome and slskd and recommending music based on the user's library and taste.
+- **Licensing:** DroppedNeedle is AGPL-3.0; the document advises against copying code without a licensing review.
+- **Validation:** documentation-only; planning file fetched/read back successfully. No application tests or UI smoke tests run. No commit status checks were reported for the original PR head at the time of the handoff update. No merge, deployment, or runtime verification performed.
+- **Working tree preservation:** local checkout remains on `fix/artwork-size-and-artist-bios`, clean and six commits ahead of its recorded origin. It was not changed.
+- **Outstanding blockers:** PR #15 remains unmerged; production deployment remains unverified and the previously reported GHCR `unauthorized` pull issue is unresolved.
+- **Next:** review/merge the documentation PR when ready; before implementing v0.2, inspect current repository state and start with acquisition completion reliability plus focused regression tests.
+
 ## 2026-10-12 — New releases and recommendation quality
 
 - **Branch:** `feature/new-releases-and-recommendation-quality` (based on `main`).
