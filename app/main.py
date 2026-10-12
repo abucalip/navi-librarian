@@ -1484,6 +1484,22 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
+function parseReleaseYear(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const text = String(value).trim();
+  const match = text.match(/^(\\d{4})/);
+  const year = Number(match ? match[1] : value);
+  return Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null;
+}
+
+function firstReleaseYear(...values) {
+  for (const value of values) {
+    const year = parseReleaseYear(value);
+    if (year !== null) return year;
+  }
+  return null;
+}
+
 function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear = true) {
   card.dataset.albumArtist = String(artist || '');
   card.dataset.albumTitle = String(album || '');
@@ -1492,9 +1508,11 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   card.setAttribute('role', 'button');
   card.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);
   const nested = metadata && typeof metadata.metadata === 'object' ? metadata.metadata : {};
-  const year = metadata.year || metadata.release_year || metadata.first_release_year ||
-    nested.year || nested.release_year || nested.first_release_year;
-  if (year) applyAlbumYear(card, year);
+  const year = firstReleaseYear(
+    metadata.year, metadata.release_year, metadata.first_release_year,
+    nested.year, nested.release_year, nested.first_release_year
+  );
+  if (year !== null) applyAlbumYear(card, year);
   else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
     const query = new URLSearchParams({artist: String(artist), album: String(album)});
@@ -1513,8 +1531,8 @@ function ensureAlbumYearBadge(card) {
 }
 
 function applyAlbumYear(card, value) {
-  const year = Number(value || 0);
-  if (!(year >= 1900 && year <= 2100)) return;
+  const year = parseReleaseYear(value);
+  if (year === null) return;
   card.dataset.releaseYear = String(year);
   ensureAlbumYearBadge(card);
   const modalYear = $('albumModalYear');
@@ -1571,7 +1589,7 @@ async function openAlbumModal(card) {
   activeAlbumModal = {card, artist, album, metadata};
   $('albumModalTitle').textContent = album;
   $('albumModalArtist').textContent = artist;
-  $('albumModalYear').textContent = String(metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear || '');
+  $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
   setAlbumPlatformLinks(artist, album);
   $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
   tracklist.replaceChildren();
@@ -1655,8 +1673,8 @@ async function loadDashboardPicks() {
       addTextElement(card, 'p', 'card-category', item.dashboard_category || 'Discovery');
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
-      if (year >= 1900 && year <= 2100) addTextElement(title, 'span', 'album-year', String(year));
+      const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+      if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
@@ -1816,11 +1834,10 @@ function applyRecommendationFilters() {
 
     const title = document.createElement('h3');
     title.append(document.createTextNode(item.album || item.title || item.name || 'Untitled album'));
-    const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
-    if (year >= 1900 && year <= 2100) {
-      addTextElement(title, 'span', 'album-year', String(year));
-    }
+    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+    if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
     card.append(title);
+    ensureAlbumYearBadge(card);
 
     addTextElement(
       card, 'p', 'card-artist',
@@ -2082,10 +2099,8 @@ async function loadDiscovery(name, options = {}) {
         (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
       const title = document.createElement('h3');
       title.append(document.createTextNode(album));
-      const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
-      if (year >= 1900 && year <= 2100) {
-        addTextElement(title, 'span', 'album-year', String(year));
-      }
+      const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+      if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
