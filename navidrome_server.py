@@ -15,8 +15,15 @@ from mutagen import File
 from mcp.server.mcpserver import MCPServer
 load_dotenv(Path(__file__).with_name(".env"))
 
-# Persistent MusicBrainz metadata cache, stored beside this script.
-METADATA_CACHE_DB = Path(__file__).with_name("navidrome_metadata_cache.sqlite3")
+# Mutable application state lives outside the source tree when configured (e.g. Docker /data).
+DATA_DIR = Path(
+    os.environ.get("NAVIDROME_LIBRARIAN_DATA_DIR")
+    or Path(__file__).resolve().parent
+).expanduser()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Persistent MusicBrainz metadata cache.
+METADATA_CACHE_DB = DATA_DIR / "navidrome_metadata_cache.sqlite3"
 
 
 def _metadata_cache_get(key, ttl_seconds):
@@ -64,9 +71,10 @@ def _metadata_cache_set(key, value):
     except (sqlite3.Error, TypeError, ValueError):
         pass
 
-BASE_URL = os.environ["NAVIDROME_URL"].rstrip("/")
-USERNAME = os.environ["NAVIDROME_USER"]
-PASSWORD = os.environ["NAVIDROME_PASSWORD"]
+# Environment variables provide first-run defaults; service settings are persistent.
+BASE_URL = os.environ.get("NAVIDROME_URL", "").rstrip("/")
+USERNAME = os.environ.get("NAVIDROME_USER", "")
+PASSWORD = os.environ.get("NAVIDROME_PASSWORD", "")
 
 def _default_music_dir():
     """Choose an explicit override or the native mount path for this host."""
@@ -86,24 +94,19 @@ def _default_music_dir():
 
 MUSIC_DIR = _default_music_dir()
 
-parsed_url = urlparse(BASE_URL)
-if parsed_url.scheme not in ("http", "https"):
-    raise RuntimeError("NAVIDROME_URL must use HTTP or HTTPS")
-if not parsed_url.hostname:
-    raise RuntimeError("Invalid NAVIDROME_URL")
-
 mcp = MCPServer("navidrome-librarian")
 
 
 def api_call(method, **params):
-    """Call the Subsonic-compatible API using token authentication."""
+    """Call the Subsonic-compatible API using configured token authentication."""
+    base_url, username, password = _navidrome_config()
     salt = secrets.token_hex(12)
     token = hashlib.md5(
-        (PASSWORD + salt).encode("utf-8")
+        (password + salt).encode("utf-8")
     ).hexdigest()
 
     query = {
-        "u": USERNAME,
+        "u": username,
         "t": token,
         "s": salt,
         "v": "1.16.1",
@@ -114,7 +117,7 @@ def api_call(method, **params):
 
     with httpx.Client(timeout=30, follow_redirects=False) as client:
         response = client.get(
-            f"{BASE_URL}/rest/{method}.view",
+            f"{base_url}/rest/{method}.view",
             params=query,
         )
         response.raise_for_status()
@@ -429,7 +432,7 @@ def _listenbrainz_recent(days=30, page_limit=3):
                 params["max_ts"] = max_ts
 
             response = client.get(
-                "https://api.listenbrainz.org/1/user/copi35/listens",
+                f"https://api.listenbrainz.org/1/user/{_listenbrainz_username()}/listens",
                 params=params,
                 headers=headers,
             )
@@ -515,7 +518,7 @@ LASTFM_LAST_ERROR = None
 def _lastfm_album_popularity(artist, album):
     """Return cached Last.fm album listeners/playcount, or None if unavailable."""
     global LASTFM_LAST_ERROR
-    api_key = os.environ.get("LASTFM_API_KEY")
+    api_key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
     if not api_key or not artist or not album:
         return None
 
@@ -619,7 +622,7 @@ def recent_listening_profile(days: int = 30) -> str:
 
     return json.dumps({
         "source": "ListenBrainz",
-        "username": "copi35",
+        "username": _listenbrainz_username(),
         "period_days": days,
         "listens_retrieved": len(listens),
         "distinct_artists": len(artists),
@@ -679,7 +682,7 @@ def recommend_new_music(count: int = 10) -> str:
     try:
         response = httpx.get(
             "https://api.listenbrainz.org/1/"
-            "cf/recommendation/user/copi35/recording",
+            f"cf/recommendation/user/{_listenbrainz_username()}/recording",
             params={"count": 100},
             headers={"User-Agent": "NavidromeLibrarian/1.0"},
             timeout=30,
@@ -1461,7 +1464,7 @@ def recommend_new_music(count: int = 10) -> str:
     # Last.fm popularity is a small confidence signal, not a replacement for
     # personalized relevance. Query a bounded top slice and cache for 30 days.
     lastfm_checked = 0
-    lastfm_available = bool(os.environ.get("LASTFM_API_KEY"))
+    lastfm_available = bool(_discovery_settings_read().get("lastfm_api_key"))
     for candidate in sorted(
         albums.values(),
         key=lambda album: album["discovery_score"],
@@ -2067,8 +2070,8 @@ def recommend_new_music(count: int = 10) -> str:
     }, ensure_ascii=False, indent=2)
 
 
-# Persistent discovery state. Kept beside this server, separate from the music library.
-DISCOVERY_DB = Path(__file__).with_name("navidrome_discovery.sqlite3")
+# Persistent discovery state and settings live in the configurable data directory.
+DISCOVERY_DB = DATA_DIR / "navidrome_discovery.sqlite3"
 _DISCOVERY_REFRESH_LOCK = __import__("threading").Lock()
 
 
@@ -2346,7 +2349,7 @@ _LASTFM_LAST_REQUEST_AT = 0.0
 
 def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
     global _LASTFM_LAST_REQUEST_AT
-    api_key = os.environ.get("LASTFM_API_KEY", "").strip()
+    api_key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
     if not api_key:
         return None
     cache_identity = json.dumps(
@@ -3174,8 +3177,13 @@ _NEW_RELEASES_REFRESH_LOCK = __import__("threading").Lock()
 
 
 _DISCOVERY_SETTINGS_DEFAULTS = {
+    "navidrome_url": os.environ.get("NAVIDROME_URL", "http://192.168.1.12:4533").rstrip("/"),
+    "navidrome_user": os.environ.get("NAVIDROME_USER", ""),
+    "navidrome_password": os.environ.get("NAVIDROME_PASSWORD", ""),
+    "lastfm_api_key": os.environ.get("LASTFM_API_KEY", ""),
+    "listenbrainz_username": os.environ.get("LISTENBRAINZ_USERNAME", "copi35"),
     "music_library_path": str(MUSIC_DIR),
-    "slskd_url": "http://192.168.1.12:5030",
+    "slskd_url": os.environ.get("SLSKD_URL", "http://192.168.1.12:5030"),
     "quality_priority": [
         "mp3_320",
         "mp3_193_319",
@@ -3265,6 +3273,158 @@ def _discovery_settings_write(values):
 
 # Load persisted directory overrides before any library operation runs.
 _discovery_settings_read()
+
+
+def _navidrome_config():
+    """Return validated Navidrome connection settings without exposing secrets."""
+    settings = _discovery_settings_read()
+    base_url = str(settings.get("navidrome_url") or "").strip().rstrip("/")
+    username = str(settings.get("navidrome_user") or "").strip()
+    password = str(settings.get("navidrome_password") or "")
+    parsed = urlparse(base_url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("Enter a valid HTTP or HTTPS Navidrome URL in Settings.")
+    if not username or not password:
+        raise ValueError("Configure the Navidrome username and password in Settings.")
+    return base_url, username, password
+
+
+def _listenbrainz_username():
+    """Return the configured public ListenBrainz username."""
+    username = str(_discovery_settings_read().get("listenbrainz_username") or "").strip()
+    if not username or not __import__("re").fullmatch(r"[A-Za-z0-9_.-]{1,80}", username):
+        raise ValueError("Configure a valid ListenBrainz username in Settings.")
+    return username
+
+
+@mcp.tool()
+def discovery_get_navidrome_settings() -> str:
+    """Return Navidrome settings without exposing the saved password."""
+    settings = _discovery_settings_read()
+    return json.dumps({
+        "navidrome_url": settings.get("navidrome_url", ""),
+        "username": settings.get("navidrome_user", ""),
+        "password_configured": bool(settings.get("navidrome_password")),
+        "music_library_path": settings.get("music_library_path", str(MUSIC_DIR)),
+    }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_set_navidrome_settings(
+    navidrome_url: str,
+    username: str,
+    password: str = "",
+    music_library_path: str | None = None,
+) -> str:
+    """Save Navidrome connection settings; a blank password preserves the saved password."""
+    url = (navidrome_url or "").strip().rstrip("/")
+    parsed = urlparse(url)
+    user = (username or "").strip()
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return json.dumps({"ok": False, "error": "Enter a valid HTTP or HTTPS Navidrome URL."})
+    if not user:
+        return json.dumps({"ok": False, "error": "Enter a Navidrome username."})
+    current = _discovery_settings_read()
+    saved_password = str(password or "") or str(current.get("navidrome_password") or "")
+    if not saved_password:
+        return json.dumps({"ok": False, "error": "Enter a Navidrome password."})
+    values = {"navidrome_url": url, "navidrome_user": user, "navidrome_password": saved_password}
+    if music_library_path is not None:
+        music_path = str(Path(music_library_path).expanduser())
+        if not Path(music_path).is_absolute() or not Path(music_path).is_dir():
+            return json.dumps({"ok": False, "error": "The music library path must be an existing absolute directory visible to this app."})
+        values["music_library_path"] = music_path
+    _discovery_settings_write(values)
+    global MUSIC_DIR
+    if music_library_path is not None:
+        MUSIC_DIR = Path(values["music_library_path"])
+    return json.dumps({
+        "ok": True, "navidrome_url": url, "username": user,
+        "password_configured": True, "music_library_path": str(MUSIC_DIR),
+        "message": "Navidrome settings saved. The password is never returned.",
+    }, ensure_ascii=False)
+
+
+@mcp.tool()
+def discovery_test_navidrome_connection() -> str:
+    """Test the configured Navidrome credentials without exposing them."""
+    try:
+        api_call("ping")
+        return json.dumps({"ok": True, "status": "connected", "message": "Navidrome connection succeeded."})
+    except Exception as exc:
+        return json.dumps({
+            "ok": False, "status": "connection_failed",
+            "message": str(exc) if isinstance(exc, ValueError) else "Navidrome is unavailable or authentication failed.",
+        })
+
+
+@mcp.tool()
+def discovery_get_lastfm_settings() -> str:
+    """Return Last.fm configuration status without exposing the API key."""
+    settings = _discovery_settings_read()
+    return json.dumps({"api_key_configured": bool(settings.get("lastfm_api_key"))})
+
+
+@mcp.tool()
+def discovery_set_lastfm_settings(api_key: str = "") -> str:
+    """Save a Last.fm API key; a blank key preserves the saved key."""
+    current = _discovery_settings_read()
+    key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
+    _discovery_settings_write({"lastfm_api_key": key})
+    return json.dumps({"ok": True, "api_key_configured": bool(key), "message": "Last.fm settings saved; the API key is never returned."})
+
+
+@mcp.tool()
+def discovery_test_lastfm_connection() -> str:
+    """Test the configured Last.fm API key without exposing it."""
+    key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
+    if not key:
+        return json.dumps({"ok": False, "status": "not_configured", "message": "Add a Last.fm API key first."})
+    try:
+        response = httpx.get(
+            "https://ws.audioscrobbler.com/2.0/",
+            params={"method": "chart.getTopArtists", "api_key": key, "format": "json", "limit": 1},
+            headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+        )
+        response.raise_for_status()
+        if response.json().get("error"):
+            return json.dumps({"ok": False, "status": "authentication_failed", "message": "Last.fm rejected the API key. Check the key in Settings."})
+        return json.dumps({"ok": True, "status": "connected", "message": "Last.fm API connection succeeded."})
+    except Exception:
+        return json.dumps({"ok": False, "status": "connection_failed", "message": "Could not reach Last.fm or validate the API key."})
+
+
+@mcp.tool()
+def discovery_get_listenbrainz_settings() -> str:
+    """Return the configured ListenBrainz username."""
+    return json.dumps({"username": _listenbrainz_username()})
+
+
+@mcp.tool()
+def discovery_set_listenbrainz_settings(username: str) -> str:
+    """Save a ListenBrainz username."""
+    value = str(username or "").strip()
+    if not value or not __import__("re").fullmatch(r"[A-Za-z0-9_.-]{1,80}", value):
+        return json.dumps({"ok": False, "error": "Enter a valid ListenBrainz username (letters, numbers, dot, underscore or hyphen)."})
+    _discovery_settings_write({"listenbrainz_username": value})
+    return json.dumps({"ok": True, "username": value, "message": "ListenBrainz settings saved."})
+
+
+@mcp.tool()
+def discovery_test_listenbrainz_connection() -> str:
+    """Test whether the configured public ListenBrainz profile can be read."""
+    try:
+        username = _listenbrainz_username()
+        response = httpx.get(
+            f"https://api.listenbrainz.org/1/user/{username}/listens",
+            params={"count": 1}, headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+        )
+        if response.status_code == 404:
+            return json.dumps({"ok": False, "status": "not_found", "message": "ListenBrainz user was not found."})
+        response.raise_for_status()
+        return json.dumps({"ok": True, "status": "connected", "message": "ListenBrainz profile is reachable."})
+    except Exception:
+        return json.dumps({"ok": False, "status": "connection_failed", "message": "Could not reach ListenBrainz or validate the username."})
 
 
 def _slskd_config():
