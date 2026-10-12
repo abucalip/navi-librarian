@@ -1420,6 +1420,18 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}) {
   card.setAttribute('tabindex', '0');
   card.setAttribute('role', 'button');
   card.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);
+  const nested = metadata && typeof metadata.metadata === 'object' ? metadata.metadata : {};
+  const year = metadata.year || metadata.release_year || metadata.first_release_year ||
+    nested.year || nested.release_year || nested.first_release_year;
+  if (year) {
+    applyAlbumYear(card, year);
+  } else if (artist && album) {
+    const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
+    const query = new URLSearchParams({artist: String(artist), album: String(album)});
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
+      .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
+      .catch(() => {});
+  }
 }
 
 function applyAlbumYear(card, value) {
