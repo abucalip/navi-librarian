@@ -19,14 +19,14 @@ These are environment-specific examples. Confirm live paths, Compose network mem
 
 The image name is `ghcr.io/abucalip/navi-librarian`. The GitHub Actions workflow is intended to publish `linux/amd64` and `linux/arm64` images on pushes to `main` and version tags.
 
-**Known blocker:** a pull on the Debian VM returned `unauthorized`. Do not keep retrying tags or digests as a workaround: authorization must be fixed first.
+**Current status (2026-10-12):** the user reports the Docker package has been made public and Librarian has been installed on the server and tested successfully. This supersedes the earlier `unauthorized` report as an active blocker. The exact deployed tag/digest and host-side pull/log evidence were not captured in this documentation update.
 
-1. Open the package page: [GHCR package](https://github.com/abucalip/navi-librarian/pkgs/container/navi-librarian).
-2. Confirm whether the package is public. If it should remain private, authenticate Docker on the deployment host using a least-privilege token with package-read access.
-3. Confirm the publish workflow completed successfully for the intended commit/tag.
-4. Pull the intended tag. For reproducible deployment, record and use the resolved image digest where practical.
+1. Package page: [GHCR package](https://github.com/abucalip/navi-librarian/pkgs/container/navi-librarian).
+2. Confirm the publish workflow completed successfully for the intended commit/tag when preparing a future update.
+3. Pull the intended tag. For reproducible deployment, record and use the resolved image digest where practical.
+4. If a future pull returns `unauthorized`, re-check package visibility and host authentication rather than trying different tags as a workaround.
 
-A Git commit SHA tag (for example, `sha-<commit>`) is a tag convention. An immutable registry digest is written as `ghcr.io/abucalip/navi-librarian@sha256:<full-digest>`. Neither bypasses access control.
+A Git commit SHA tag (for example, `sha-<commit>`) is a tag convention. An immutable registry digest is written as `ghcr.io/abucalip/navi-librarian@sha256:<full-digest>`.
 
 ## Add the service safely
 
@@ -74,6 +74,10 @@ docker compose logs --tail=100 navidrome-librarian
 If using a source checkout instead of a registry image, follow [DOCKER.md](../DOCKER.md); do not mix source-build and registry-image procedures without checking the Compose configuration.
 
 ## Post-deployment verification
+
+The user reports the current server installation was tested successfully, including first-run account creation, entering service credentials through Settings, downloads, and imports. Treat these as manually verified baseline workflows; this document update did not independently access the host or repeat the tests.
+
+For a future deployment/update:
 
 1. Confirm the container is running and logs contain no startup/configuration errors.
 2. Open `http://<media-host>:8689` from the LAN.
