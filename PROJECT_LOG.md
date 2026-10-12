@@ -89,3 +89,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Updated the favicon, login/setup image, and app header CSS to use the local `/assets/cassette.png` endpoint instead of the external Vexels URL.
 - Added a FastAPI endpoint serving the repository-root PNG as `image/png`; this avoids external-host dependency. Docker packaging must include the root-level `cassette.png` file alongside the app source.
 - No merge or deployment performed. Runtime/browser smoke test and CI for this change are still pending.
+
+
+## 2026-10-12 — Project handoff documentation merged
+
+- **PR:** [#14](https://github.com/abucalip/navi-librarian/pull/14), `docs: add project handoff and engineering runbooks`, merged into `main` via squash merge.
+- **Merge commit:** `74264b29062504fce3bf6f7a65121fa43b9f8ec5`.
+- **Files added:** `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT.md`, `docs/DECISIONS.md`, and `docs/TEST_PLAN.md`.
+- **CI:** GitHub reported Python syntax check and Docker packaging validation passed for PR head `97e887fa8295fff55f05ac72101907bf08819a99`. This was documentation-only; no application tests or deployment were performed during the merge session.
+- **Deployment:** still unverified. The previously reported GHCR `unauthorized` pull remains unresolved; do not treat merge/CI as deployment evidence.
+- **Next:** review current PRs and local branches/worktrees before choosing the next implementation task; prioritize required regression testing and resolve GHCR package visibility/authentication before a registry-based deployment.
