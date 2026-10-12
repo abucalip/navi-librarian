@@ -451,71 +451,115 @@ _musicbrainz_last_request = 0.0
 
 
 def _musicbrainz_album_year(artist: str, album: str):
-    """Find an album's first release year when the artwork catalogue omits it."""
+    """Resolve a release year from an exact MusicBrainz release-group match."""
+    import re
     global _musicbrainz_last_request
-    key = (artist.casefold().strip(), album.casefold().strip())
-    cached = _musicbrainz_year_cache.get(key)
-    now = monotonic()
-    if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
-        return cached["year"]
+
+    def norm(value):
+        return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
+
+    artist = str(artist or "").strip()
+    album = str(album or "").strip()
     if not artist or not album:
         return None
+    key = (norm(artist), norm(album))
+    now = monotonic()
+    cached = _musicbrainz_year_cache.get(key)
+    if cached:
+        ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
+        if now - cached["time"] < ttl:
+            return cached["year"]
 
     year = None
     try:
-        # Serialize lookups and respect MusicBrainz's public API rate limit.
         with _musicbrainz_year_lock:
             cached = _musicbrainz_year_cache.get(key)
             now = monotonic()
-            if cached and now - cached["time"] < _MUSICBRAINZ_YEAR_CACHE_TTL:
-                return cached["year"]
+            if cached:
+                ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
+                if now - cached["time"] < ttl:
+                    return cached["year"]
             wait = 1.1 - (now - _musicbrainz_last_request)
             if wait > 0:
                 sleep(wait)
+            escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
+            escaped_album = album.replace("\\", "\\\\").replace('"', '\\"')
             query = urlencode({
-                "query": f'artist:"{artist}" AND releasegroup:"{album}"',
+                "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
                 "fmt": "json",
-                "limit": 5,
+                "limit": 25,
             })
             request = __import__("urllib.request", fromlist=["Request"]).Request(
                 "https://musicbrainz.org/ws/2/release-group/?" + query,
                 headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
             )
             _musicbrainz_last_request = monotonic()
-            with urlopen(request, timeout=6) as response:
+            with urlopen(request, timeout=8) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-            groups = payload.get("release-groups") or []
-            artist_key = artist.casefold()
-            album_key = album.casefold()
-            best = None
-            for group in groups:
-                title = str(group.get("title") or "").casefold()
-                credits = " ".join(
-                    str(
-                        (part.get("artist") or {}).get("name")
-                        or part.get("name")
-                        or ""
-                    )
-                    for part in (group.get("artist-credit") or [])
-                    if isinstance(part, dict)
-                ).casefold()
-                title_match = title == album_key or title in album_key or album_key in title
-                artist_match = artist_key in credits or credits in artist_key
-                score = int(group.get("score") or 0)
-                if title_match and artist_match and score >= 70:
-                    best = group
-                    break
-            if best:
-                date_text = str(best.get("first-release-date") or "")
-                year_text = date_text[:4]
-                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
-                    year = int(year_text)
+
+        exact_dates = []
+        for group in payload.get("release-groups") or []:
+            if norm(group.get("title")) != norm(album):
+                continue
+            credits = []
+            for part in group.get("artist-credit") or []:
+                if not isinstance(part, dict):
+                    continue
+                credit_name = (part.get("artist") or {}).get("name") or part.get("name")
+                if credit_name:
+                    credits.append(str(credit_name))
+            # Accept an exact artist credit or an exact credited member of a
+            # collaboration, never a substring such as "Queen Tribute".
+            if norm(artist) not in {norm(name) for name in credits} and norm("".join(credits)) != norm(artist):
+                continue
+            date_text = str(group.get("first-release-date") or "")
+            year_text = date_text[:4]
+            if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
+                exact_dates.append((date_text or year_text, int(year_text)))
+        if exact_dates:
+            year = min(exact_dates, key=lambda entry: entry[0])[1]
     except Exception:
-        # Year metadata is best-effort and must never break artwork rendering.
+        # The UI can still show artwork; an unavailable catalog is not fatal.
         pass
 
     _musicbrainz_year_cache[key] = {"time": monotonic(), "year": year}
     return year
+
+
+@app.get("/api/album-year")
+def album_year(artist: str = "", album: str = ""):
+    """Return a year only when an authoritative catalog has an exact album match."""
+    artist = str(artist or "").strip()[:180]
+    album = str(album or "").strip()[:180]
+    if not artist or not album:
+        raise HTTPException(status_code=400, detail="artist and album are required")
+
+    year = _musicbrainz_album_year(artist, album)
+    source = "MusicBrainz" if year else None
+
+    # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
+    # artist AND album match; fuzzy or artist-only results are never trusted.
+    if not year:
+        def norm(value):
+            return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
+        try:
+            query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
+            response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
+            response.raise_for_status()
+            for item in response.json().get("data") or []:
+                if norm((item.get("artist") or {}).get("name")) != norm(artist):
+                    continue
+                if norm(item.get("title")) != norm(album):
+                    continue
+                year_text = str(item.get("release_date") or "")[:4]
+                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
+                    year = int(year_text)
+                    source = "Deezer"
+                    break
+        except Exception:
+            pass
+
+    return {"artist": artist, "album": album, "year": year, "source": source}
 
 
 @app.get("/api/album-details")
@@ -769,11 +813,12 @@ p { line-height: 1.55; }
 .album-modal-art-column { min-width: 0; align-self: start; }
 .album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: #30322e; border: 1px solid var(--border); }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.album-platform-links { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; margin-top: 12px; }
-.album-platform-links a { display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 8px; border: 1px solid #55574e; border-radius: 3px; color: var(--text); background: #292b28; text-decoration: none; text-align: center; font: 500 10px/1.2 var(--mono); transition: border-color .15s, background .15s, color .15s; }
-.album-platform-links a:hover { border-color: var(--yellow); background: #36372f; color: var(--yellow); }
-.album-platform-links a:last-child { grid-column: 1 / -1; }
-.album-platform-links a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: 6px; width: 100%; max-width: 100%; min-width: 0; margin: 8px 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 30px; align-items: center; justify-content: center; width: 30px; min-width: 30px; max-width: 30px; height: 30px; min-height: 30px; max-height: 30px; padding: 5px; overflow: hidden; border: 1px solid #55574e; border-radius: 5px; color: var(--text); background: #292b28; text-decoration: none; transition: border-color .15s, background .15s; }
+.album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 18px; width: 18px; min-width: 18px; max-width: 18px; height: 18px; object-fit: contain; }
+.album-modal-art-column .album-platform-links a:hover { border-color: var(--yellow); background: #36372f; }
+.album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.album-modal-art-column .album-platform-links .platform-icon-fallback { font: 700 10px/1 var(--mono); }
 .album-modal-art .get-album { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; border-radius: 50%; background: var(--yellow); color: #191a1a; border: 2px solid #f6e8a8; font: 700 12px/1 var(--mono); text-transform: uppercase; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
 .album-modal-copy h2 { margin: 0 0 7px; font: 600 34px/1.05 var(--display); overflow-wrap: anywhere; }
 .album-modal-artist { margin: 0 0 20px; color: var(--muted); }
@@ -1453,9 +1498,17 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
     const query = new URLSearchParams({artist: String(artist), album: String(album)});
-    cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/album-year?' + query.toString())
       .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
       .catch(() => {});
+  }
+}
+
+function ensureAlbumYearBadge(card) {
+  const year = Number(card && card.dataset ? card.dataset.releaseYear : 0);
+  const title = card && card.querySelector('h3');
+  if (title && year >= 1900 && year <= 2100 && !title.querySelector('.album-year')) {
+    addTextElement(title, 'span', 'album-year', String(year));
   }
 }
 
@@ -1463,8 +1516,7 @@ function applyAlbumYear(card, value) {
   const year = Number(value || 0);
   if (!(year >= 1900 && year <= 2100)) return;
   card.dataset.releaseYear = String(year);
-  const title = card.querySelector('h3');
-  if (title && !title.querySelector('.album-year')) addTextElement(title, 'span', 'album-year', String(year));
+  ensureAlbumYearBadge(card);
   const modalYear = $('albumModalYear');
   if (activeAlbumModal && activeAlbumModal.card === card && modalYear) modalYear.textContent = String(year);
 }
@@ -1473,25 +1525,36 @@ function setAlbumPlatformLinks(artist, album) {
   const query = [artist, album].filter(Boolean).join(' ').trim();
   const encoded = encodeURIComponent(query);
   const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded],
-    ['Apple Music', 'https://music.apple.com/search?term=' + encoded],
-    ['Spotify', 'https://open.spotify.com/search/' + encoded],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded],
-    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded]
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://cdn.simpleicons.org/listenbrainz/EB743B'],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, 'https://cdn.simpleicons.org/applemusic/FA243C'],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded, 'https://cdn.simpleicons.org/spotify/1DB954'],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://cdn.simpleicons.org/qobuz/FFFFFF'],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, 'https://cdn.simpleicons.org/bandcamp/1DA0C3']
   ];
   const nav = $('albumModalPlatformLinks');
   nav.replaceChildren();
-  for (const [label, href] of links) {
+  for (const [label, href, iconUrl] of links) {
     const link = document.createElement('a');
-    link.textContent = label;
     link.href = href;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
+    link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
     link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
+    const icon = document.createElement('img');
+    icon.src = iconUrl;
+    icon.alt = '';
+    icon.loading = 'lazy';
+    icon.width = 18;
+    icon.height = 18;
+    icon.onerror = () => {
+      icon.remove();
+      link.textContent = label.slice(0, 2);
+      link.classList.add('platform-icon-fallback');
+    };
+    link.append(icon);
     nav.append(link);
   }
 }
-
 function closeAlbumModal() {
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
@@ -1595,6 +1658,7 @@ async function loadDashboardPicks() {
       const year = Number(item.year || item.release_year || item.first_release_year || card.dataset.releaseYear || 0);
       if (year >= 1900 && year <= 2100) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
+      ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
       const art = card.querySelector('.card-art');
       const get = document.createElement('button');
@@ -2023,6 +2087,7 @@ async function loadDiscovery(name, options = {}) {
         addTextElement(title, 'span', 'album-year', String(year));
       }
       card.append(title);
+      ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
 
       const needsBio = isDeepDive ||
