@@ -21,6 +21,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile Python sources
-        run: python -m py_compile navidrome_server.py acquisition_completion.py app/main.py tests/test_acquisition_safety.py tests/test_acquisition_completion.py tests/test_service_settings.py tests/test_app_auth.py
+        run: python -m py_compile navidrome_server.py acquisition_completion.py app/main.py tests/test_acquisition_safety.py tests/test_acquisition_completion.py tests/test_service_settings.py tests/test_app_auth.py tests/test_quality_priority.py
       - name: Run acquisition safety regressions
         run: python -m unittest discover -s tests -v
