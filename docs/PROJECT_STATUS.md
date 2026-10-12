@@ -1,22 +1,12 @@
-## Latest session — 2026-10-13 (PR #20: five-tier quality priority)
+## Latest session — 2026-10-13 (PR #20 merged; five-tier quality priority verified)
 
-- **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), branch `feature/flac-16-44-drag-sort-priority`, based on `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
-- **Implemented:** added FLAC 16-bit/44.1 kHz as the fifth tier; legacy four-tier settings append the new tier without reordering the existing four; the server validates five distinct supported tiers and preserves order; explicit FLAC sample-rate/bit-depth metadata or a filename label is required to classify FLAC 16/44, with unknown FLAC retaining the existing fallback.
-- **Settings UI:** replaced four dropdowns with a drag-sortable five-row list, visible Move up/Move down alternatives, updated position numbering and a screen-reader live announcement. The selected order is saved through the existing Settings API.
-- **Regression coverage/docs:** added `tests/test_quality_priority.py`; updated `docs/REQUIREMENTS.md`, `docs/TEST_PLAN.md`, the v0.2 quality backlog, and the CI compile list.
-- **CI on code/test head `9cbb5b054dbe52921df9ed044ddb763e0dcf0b76`:** Python syntax/full unittest workflow #140 passed; Docker packaging workflow #47 passed, including dependency installation, compilation, full unit tests, and Docker image build.
-- **Still pending:** manual UI drag/drop and save/reload smoke test. A docs-only handoff update follows these successful checks, so CI for that newer documentation commit may still be running.
-- **Merge/deployment:** PR remains open; not merged, published, or deployed.
-- **Next:** user smoke-tests the PR in Settings, then report any UI issue for a focused follow-up.
-
-## Latest session — 2026-10-13 (five-tier quality priority in progress)
-
-- **Objective:** add FLAC 16-bit/44.1 kHz as the fifth slskd quality tier and replace per-tier dropdowns with a reorderable list.
-- **Branch:** `feature/flac-16-44-drag-sort-priority`, based on GitHub `main` at `7dfe5e620ff5c9941f9aa359b4c0f3fe2bec9d1e`.
-- **Implemented so far:** five quality options; legacy four-tier settings preserve their existing order and append FLAC 16/44; server-side validation requires each tier exactly once; FLAC 16/44 classification uses explicit sample-rate/bit-depth metadata or a filename label and does not infer 16/44 from the extension alone; Settings uses native drag-and-drop with Move up/Move down alternatives and a live announcement; regression tests and test-plan/requirements updates added.
-- **Verification:** automated tests and CI are pending. UI drag/drop and save/reload behavior have not been manually smoke-tested.
-- **Merge/deployment:** not merged or deployed.
-- **Next:** run the full unittest suite and CI on the exact PR head, review the final diff, then ask the user to test the Settings interaction locally.
+- **PR #20:** [Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), squash-merged into `main` at merge commit `a9218bb5cb5c663b7ef26dc5f42cd69bbeadba45`.
+- **Implemented:** added FLAC 16-bit/44.1 kHz as a fifth acquisition quality tier. Existing four-tier settings migrate by appending the new tier without changing the prior order; quality priority remains five unique supported tiers and persists in the existing Settings API.
+- **Settings UI:** replaced the per-tier dropdowns with a draggable ordered list and accessible Move up/Move down controls. FLAC 16/44 classification requires explicit sample-rate/bit-depth metadata or a filename label; unknown FLAC retains the existing fallback.
+- **Automated verification:** on exact PR head `ac43126efdea9a6ac5cbe36d81b26b11c23da509`, Python syntax/full unittest workflow #141 and Docker packaging workflow #48 both passed. The Docker workflow included dependency installation, compilation, full unit tests, and image build.
+- **Manual verification:** user tested the PR20 build in the existing `prox-mcp-pr17-test` environment and reports all is good, including Settings behavior. This is user-reported UI verification.
+- **Deployment:** PR merge is complete. No image publication or production deployment was performed as part of this session; do not infer the server is running this commit.
+- **Next:** continue from GitHub `main`. Publish/deploy separately if requested, then record the exact image digest and verify the running service.
 
 ## Latest session — 2026-10-12 (PR #17 merged; workflow documentation merged)
 
@@ -85,7 +75,7 @@
 
 # Project status and handoff
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Source of truth
 
@@ -118,7 +108,7 @@ Use the following meanings consistently:
 | Web UI and API | Deployed; user reports successful installation/use | Record exact deployed image tag/digest and commit when convenient |
 | First-run account creation and login | User reports working successfully on the server | Preserve as a regression-smoke-test baseline |
 | Settings and service credentials | User reports entering credentials through Settings works | Keep secret-handling and persistence tests in the automated suite |
-| Audio quality priorities | Implemented and automated tests/CI passed on PR #20 code head | Manual Settings drag/drop and save/reload smoke test; merge/deployment remain pending |
+| Audio quality priorities | PR #20 merged; automated CI and user manual Settings drag/drop/save/reload testing passed | Deployment of the merged commit is separate and not verified here |
 | Recommendation/discovery logic | Existing logic is in `navidrome_server.py` | Test representative outputs against the real library |
 | Discovery lists, feedback, refresh | API routes exist | Verify list persistence, dismiss/save behavior, and refresh |
 | slskd downloads/acquisition | User reports downloads work as intended | Continue regression coverage for matching, queueing, status, and safe cleanup |
