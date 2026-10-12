@@ -3777,6 +3777,12 @@ def _slskd_download_transfer_files(base_url, headers, username):
         headers=headers,
         timeout=8,
     )
+    # slskd can remove a peer's transfer entry after the transfers finish or
+    # disappear. A 404 therefore means there are no currently tracked files for
+    # this peer, not that the watcher itself failed. The caller still checks the
+    # completed-download filesystem before and on every subsequent poll.
+    if response.status_code == 404:
+        return []
     response.raise_for_status()
     payload = response.json()
 
