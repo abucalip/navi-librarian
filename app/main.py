@@ -1838,6 +1838,7 @@ function addTextElement(parent, tag, className, text) {
 const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
+const albumYearRequests = new Map();
 const artistBioRequests = new Map();
 const albumCardMetadata = new WeakMap();
 let activeAlbumModal = null;
@@ -1911,7 +1912,7 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
     const query = new URLSearchParams({artist: String(artist), album: String(album)});
-    cachedJSONRequest(artworkRequests, cacheKey, '/api/album-year?' + query.toString())
+    cachedJSONRequest(albumYearRequests, cacheKey, '/api/album-year?' + query.toString())
       .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
       .catch(() => {});
   }
