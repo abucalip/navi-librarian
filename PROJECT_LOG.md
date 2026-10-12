@@ -68,3 +68,9 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Tests:** added `tests/test_app_auth.py` for username/password policy, salted password hashing, signed session integrity, expiry, and username binding. GitHub Actions run #83 passed compilation and the full unittest suite, including the new authentication tests. Browser testing remains pending.
 - **Operational note:** back up the persistent data directory, including `app_auth.key`; losing that key invalidates active sessions. The app account is separate from Navidrome credentials. Do not merge/deploy until CI and unauthenticated/login/setup/logout smoke tests pass.
 - **Next:** run syntax compilation and all unit tests in the isolated test worktree, then verify first-run setup, rejected unauthenticated API access, successful login, refresh persistence, and logout before proceeding to Docker packaging. Use HTTPS (for example, the existing Tailscale HTTPS endpoint) when signing in over a network; plain HTTP does not protect passwords in transit.
+
+## 2026-10-12 — Cassette app icon
+
+- Used the user-provided vintage cassette image as the browser favicon and the app's header brand icon; also added it to the login/setup page.
+- Current implementation references the provided Vecteezy-hosted image URL directly. Before final Docker packaging, preferably bundle a local copy under the app's static assets so the icon does not depend on external hosting. The image could not be fetched into the repository through the available runtime, so the URL remains external for now.
+- No merge or deployment performed.
