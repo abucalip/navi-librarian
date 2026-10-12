@@ -257,10 +257,12 @@ LOGIN_PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · Navidrome Librarian</title>
+<link rel="icon" type="image/jpeg" href="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg">
 <style>
 :root{color-scheme:dark;--bg:#171918;--panel:#202321;--text:#f0f0e8;--muted:#b5b8ad;--accent:#e8d34a;--border:#3a3d39}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}
 main{width:min(100%,420px);padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+.brand-icon{display:block;width:76px;height:76px;object-fit:contain;margin-bottom:14px;border-radius:8px}
 h1{margin:0 0 6px;font-size:25px}p{color:var(--muted)}label{display:block;margin:16px 0 5px;color:var(--muted);font-size:13px}
 input{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;background:#171918;color:var(--text);font:inherit}
 button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#191a1a;font-weight:700;cursor:pointer}
@@ -268,6 +270,7 @@ button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);bo
 </style>
 </head>
 <body><main>
+<img class="brand-icon" src="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg" alt="Vintage cassette tape icon">
 <h1>Navidrome Librarian</h1><p id="intro">Checking app authentication…</p>
 <form id="authForm" hidden>
 <label for="username">Username</label><input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username">
@@ -1081,6 +1084,7 @@ PAGE = r"""
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navidrome Librarian</title>
+<link rel="icon" type="image/jpeg" href="https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 :root {
@@ -1107,9 +1111,8 @@ header {
 }
 header h1 { display: flex; align-items: center; gap: 12px; margin: 0; font: 700 29px/.95 var(--display); letter-spacing: .025em; text-transform: uppercase; }
 header h1::before {
-  content: "NL"; display: grid; place-items: center; width: 37px; height: 37px;
-  color: #191a1a; background: var(--yellow); border-bottom: 4px solid var(--red);
-  font: 700 16px/1 var(--mono); letter-spacing: -.08em;
+  content: ""; display: block; flex: 0 0 42px; width: 42px; height: 42px;
+  background: center / contain no-repeat url("https://static.vecteezy.com/system/resources/previews/013/321/639/non_2x/vintage-retro-cassette-tape-icon-illustration-vector.jpg");
 }
 header p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .025em; text-align: right; }
 main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
@@ -1254,7 +1257,7 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 @media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
 @media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
 @media (max-width: 620px) {
-  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { width: 32px; height: 32px; font-size: 14px; } header p { display: none; }
+  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); }
   nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; } nav button.active { box-shadow: inset 0 -3px var(--yellow); } nav button.active::after { display: none; }
   main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
