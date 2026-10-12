@@ -766,8 +766,14 @@ p { line-height: 1.55; }
 .album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: #202221; border: 1px solid #55574e; border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
 .album-modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 38px; height: 38px; padding: 0; font-size: 23px; }
 .album-modal-layout { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: 26px; clear: both; }
-.album-modal-art { position: relative; align-self: start; overflow: hidden; aspect-ratio: 1; background: #30322e; border: 1px solid var(--border); }
+.album-modal-art-column { min-width: 0; align-self: start; }
+.album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: #30322e; border: 1px solid var(--border); }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.album-platform-links { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; margin-top: 12px; }
+.album-platform-links a { display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 8px; border: 1px solid #55574e; border-radius: 3px; color: var(--text); background: #292b28; text-decoration: none; text-align: center; font: 500 10px/1.2 var(--mono); transition: border-color .15s, background .15s, color .15s; }
+.album-platform-links a:hover { border-color: var(--yellow); background: #36372f; color: var(--yellow); }
+.album-platform-links a:last-child { grid-column: 1 / -1; }
+.album-platform-links a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 .album-modal-art .get-album { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; border-radius: 50%; background: var(--yellow); color: #191a1a; border: 2px solid #f6e8a8; font: 700 12px/1 var(--mono); text-transform: uppercase; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
 .album-modal-copy h2 { margin: 0 0 7px; font: 600 34px/1.05 var(--display); overflow-wrap: anywhere; }
 .album-modal-artist { margin: 0 0 20px; color: var(--muted); }
@@ -776,7 +782,7 @@ p { line-height: 1.55; }
 .album-modal-tracklist li { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid #333531; font-size: 13px; }
 .album-modal-tracklist .track-number, .album-modal-tracklist .track-duration { color: var(--subtle); font: 11px/1.4 var(--mono); }
 .album-modal-status { color: var(--muted); font-size: 12px; }
-@media (max-width: 650px) { .album-modal-backdrop { padding: 8px; } .album-modal { padding: 14px; max-height: 96vh; } .album-modal-layout { grid-template-columns: minmax(0,1fr); gap: 18px; } .album-modal-art { width: min(100%, 300px); margin: 0 auto; } .album-modal-copy h2 { font-size: 28px; } }
+@media (max-width: 650px) { .album-modal-backdrop { padding: 8px; } .album-modal { padding: 14px; max-height: 96vh; } .album-modal-layout { grid-template-columns: minmax(0,1fr); gap: 18px; } .album-modal-art-column { width: min(100%, 300px); margin: 0 auto; } .album-modal-copy h2 { font-size: 28px; } }
 .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .card .artist-bio { margin-top: 7px; color: var(--muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
@@ -1026,7 +1032,10 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
   <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
     <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
     <div class="album-modal-layout">
-      <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+      <div class="album-modal-art-column">
+        <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+        <nav id="albumModalPlatformLinks" class="album-platform-links" aria-label="Find this album on music services"></nav>
+      </div>
       <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
     </div>
   </section>
@@ -1422,7 +1431,7 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
-function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear = false) {
+function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear = true) {
   card.dataset.albumArtist = String(artist || '');
   card.dataset.albumTitle = String(album || '');
   albumCardMetadata.set(card, metadata && typeof metadata === 'object' ? metadata : {});
@@ -1452,6 +1461,29 @@ function applyAlbumYear(card, value) {
   if (activeAlbumModal && activeAlbumModal.card === card && modalYear) modalYear.textContent = String(year);
 }
 
+function setAlbumPlatformLinks(artist, album) {
+  const query = [artist, album].filter(Boolean).join(' ').trim();
+  const encoded = encodeURIComponent(query);
+  const links = [
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded]
+  ];
+  const nav = $('albumModalPlatformLinks');
+  nav.replaceChildren();
+  for (const [label, href] of links) {
+    const link = document.createElement('a');
+    link.textContent = label;
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
+    nav.append(link);
+  }
+}
+
 function closeAlbumModal() {
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
@@ -1469,6 +1501,7 @@ async function openAlbumModal(card) {
   $('albumModalTitle').textContent = album;
   $('albumModalArtist').textContent = artist;
   $('albumModalYear').textContent = String(metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear || '');
+  setAlbumPlatformLinks(artist, album);
   $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
   tracklist.replaceChildren();
   artwork.removeAttribute('src');
