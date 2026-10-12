@@ -25,6 +25,7 @@ def load_helpers():
         "_discovery_filename_key",
         "_discovery_match_completed_album_files",
         "_discovery_is_album_candidate",
+        "_discovery_exact_artist_credit_matches",
         "_slskd_album_path_match",
         "_discovery_reconcile_interrupted_import",
         "_discovery_import_matched_album_files",
@@ -119,6 +120,15 @@ class RecommendationEligibilityTests(unittest.TestCase):
         self.assertTrue(HELPERS["_discovery_is_album_candidate"]({
             "album": "Back to Black", "primary_type": "Album",
         }))
+
+
+class NewReleasesArtistCreditTests(unittest.TestCase):
+    def test_requires_exact_artist_credit_name(self):
+        matches = HELPERS["_discovery_exact_artist_credit_matches"]
+        self.assertTrue(matches([{"artist": {"name": "Queen"}}], "Queen"))
+        self.assertFalse(matches([{"artist": {"name": "Queen Tribute"}}], "Queen"))
+        self.assertFalse(matches([{"artist": {"name": "The Queens"}}], "Queen"))
+        self.assertFalse(matches([], "Queen"))
 
 
 class SlskdAlbumPathMatchingTests(unittest.TestCase):
