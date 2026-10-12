@@ -1,3 +1,28 @@
+## Latest session — 2026-10-12 (slskd monitor-error follow-up; fix in progress)
+
+- **User-reported failure:** several acquisitions entered `monitor_error`. Their persisted details showed `HTTPStatusError: 404 Not Found` from `GET /api/v0/transfers/downloads/{username}` for multiple peers.
+- **Root cause:** the watcher treated a missing per-peer transfer-list entry as an exception even though slskd may no longer expose a peer under that endpoint after its transfer records disappear. This caused an ordinary “no current transfer records” condition to surface as a monitor failure.
+- **Fix committed on the existing PR #17 branch:** `_slskd_download_transfer_files` now returns an empty list for HTTP 404. The watcher continues its filesystem checks on each polling cycle; all other HTTP errors still raise and remain diagnosable. No import or folder-matching safety checks were relaxed.
+- **Regression test added:** `tests/test_slskd_transfer_lookup.py` covers the 404 case, a non-404 HTTP error, and successful transfer parsing.
+- **Commits:** fix `4ced0a22b980325dde58609087700d0926b65bde`; test `e946d460acc11fb675bd25c1358ef3d243c32dd5`; test-plan documentation `4ee60d4151899ad5406da979c00d7995e7e8f768`.
+- **Verification:** user previously reported 47 tests passed on the earlier PR #17 revision (`17a2bdc`). On code commit `9bfa12c42a4cf73f4eafd627be90949f7dd11bbd`, GitHub Actions Python syntax/test workflow #131 passed (compile plus full `unittest discover`) and Docker packaging workflow #38 passed (dependency install, compile, unit tests, Docker build). Subsequent commit `221dcaca3fe23f44dc69e68e3a5eef694a8754d8` changed only `PROJECT_LOG.md`; no local test run or manual acquisition retest has occurred.
+- **State:** PR #17 remains open; this branch is not merged or deployed. The current task is to run the full test suite and CI on the new head, then have the user retest acquisitions. If monitor errors persist, capture the new status details rather than assuming this is the only possible failure.
+- **Next:** verify the updated branch with syntax checks, the full unittest suite, and CI; inspect the final diff before merging.
+
+---
+
+## Latest session — 2026-10-12 (v0.2 P0: completed-folder diagnostics in progress)
+
+- **Objective:** diagnose why a transfer reported complete remains in `download_complete_waiting_for_folder`, without weakening folder identity or track-completeness checks.
+- **Branch:** `fix/v02-acquisition-completion-diagnostics`, based on GitHub `main`; this is separate from the user's local-only testing baseline `main` at `90e1d97`. Do not assume the two baselines are identical.
+- **Implementation in progress:** added `acquisition_completion.py` to inspect completed-download folders and return a bounded set of actionable reasons; integrated those diagnostics into the watcher status details; added focused tests in `tests/test_acquisition_completion.py`.
+- **Safety invariant:** only a unique folder with the expected basename and all expected files accepted by the existing strict matcher can be imported. Diagnostics do not relax matching.
+- **Verification state:** GitHub Actions Python syntax/test workflow #123 passed on code commit `53309559c4e910779575fee3fc9941a596f78ac1`, including the full unittest discovery run. Docker packaging workflow #30 also passed, including Docker image build. This verifies packaging only, not deployment. No local test run was performed. The folder-name mismatch is a diagnostic fixture, not proof that it is the production failure's actual cause.
+- **Next:** inspect the full diff, run syntax and full unit tests in CI, address failures, then use the emitted diagnostics to establish the real-world root cause before deciding whether a matching behavior change is justified.
+- **Deployment:** not merged, published, or deployed.
+
+---
+
 ## Latest session — 2026-10-12 (local main consolidated for testing)
 
 - **Local merge:** the user merged `fix/artwork-size-and-artist-bios` into local `main`; the local merge commit is `90e1d97` (`Merge local artwork and acquisition fixes`). Local branch listing confirms this commit is the head of `main`.

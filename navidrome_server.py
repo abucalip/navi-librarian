@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import time
 import unicodedata
+from acquisition_completion import inspect_completed_album
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -3776,6 +3777,12 @@ def _slskd_download_transfer_files(base_url, headers, username):
         headers=headers,
         timeout=8,
     )
+    # slskd can remove a peer's transfer entry after the transfers finish or
+    # disappear. A 404 therefore means there are no currently tracked files for
+    # this peer, not that the watcher itself failed. The caller still checks the
+    # completed-download filesystem before and on every subsequent poll.
+    if response.status_code == 404:
+        return []
     response.raise_for_status()
     payload = response.json()
 
@@ -4283,49 +4290,20 @@ def _discovery_match_completed_album_files(folder, candidate):
 
     return matched or None
 
+def _discovery_inspect_completed_album(download_root, candidate):
+    """Return strict folder-match evidence and diagnostics for a completed transfer."""
+    return inspect_completed_album(
+        download_root,
+        candidate,
+        safe_folder_name=_discovery_safe_folder_name,
+        filename_key=_discovery_filename_key,
+        match_files=_discovery_match_completed_album_files,
+    )
+
+
 def _discovery_locate_completed_album(download_root, candidate):
-    """Find a unique completed folder whose expected tracks match names and sizes.
-
-    slskd may append a numeric suffix to a filename to avoid collisions. Such
-    files are accepted only when both the original basename and expected size
-    match, and the caller imports only the matched files—not the whole folder.
-    """
-    import os
-
-    root = Path(download_root).expanduser()
-    if not root.is_dir():
-        return None
-
-    wanted_folder = _discovery_safe_folder_name(candidate.get("folder"))
-    matches = []
-    for current, directories, _filenames in os.walk(root, followlinks=False):
-        directories[:] = [name for name in directories if not name.startswith(".")]
-        current_path = Path(current)
-        # Never treat the completed-download root itself as an album folder:
-        # moving it would move every completed download into the music library.
-        if current_path.resolve() == root.resolve():
-            continue
-        try:
-            matched_files = _discovery_match_completed_album_files(current_path, candidate)
-        except OSError:
-            matched_files = None
-        if matched_files:
-            matches.append(current_path)
-
-    if not matches:
-        return None
-
-    wanted_folder_key = _discovery_filename_key(wanted_folder)
-    named_matches = [
-        path for path in matches
-        if _discovery_filename_key(path.name) == wanted_folder_key
-    ]
-    # Matching track names and sizes do not prove source-folder ownership.
-    # If the expected folder name is absent or ambiguous, refuse to import.
-    if len(named_matches) == 1:
-        return named_matches[0]
-    return None
-
+    """Return a uniquely verified folder; never relax track or folder identity checks."""
+    return _discovery_inspect_completed_album(download_root, candidate)["path"]
 
 def _discovery_import_matched_album_files(source, destination, candidate, expected_music_root=None, expected_device=None):
     """Stage only the verified expected tracks, leaving unrelated files behind."""
@@ -5481,7 +5459,8 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
             )
             if all_transfers_complete:
                 completed_at = completed_at or time.monotonic()
-                source = _discovery_locate_completed_album(download_root, candidate)
+                folder_inspection = _discovery_inspect_completed_album(download_root, candidate)
+                source = folder_inspection["path"]
                 if source is None:
                     _discovery_update_acquisition_status(artist, album, "download_complete_waiting_for_folder", {
                         "source_username": candidate["username"],
@@ -5492,6 +5471,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
                         "matched_transfer_records": len(matching_by_name),
                         "transfer_states": sorted(states),
                         "completion_evidence": "transfer byte counters or terminal states",
+                        **folder_inspection["diagnostics"],
                     })
                 else:
                     result = _discovery_import_completed_source(
