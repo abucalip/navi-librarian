@@ -1129,7 +1129,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const card = document.createElement('article');
       card.className = 'card';
-      makeAlbumCardInteractive(card, job.artist || 'Unknown artist', job.album || 'Unknown album', job.details || {});
+      makeAlbumCardInteractive(card, job.artist || 'Unknown artist', job.album || 'Unknown album', job.details || {}, true);
       addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
       const details = job.details || {};
@@ -1413,7 +1413,7 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
-function makeAlbumCardInteractive(card, artist, album, metadata = {}) {
+function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear = false) {
   card.dataset.albumArtist = String(artist || '');
   card.dataset.albumTitle = String(album || '');
   albumCardMetadata.set(card, metadata && typeof metadata === 'object' ? metadata : {});
@@ -1423,9 +1423,8 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}) {
   const nested = metadata && typeof metadata.metadata === 'object' ? metadata.metadata : {};
   const year = metadata.year || metadata.release_year || metadata.first_release_year ||
     nested.year || nested.release_year || nested.first_release_year;
-  if (year) {
-    applyAlbumYear(card, year);
-  } else if (artist && album) {
+  if (year) applyAlbumYear(card, year);
+  else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
     const query = new URLSearchParams({artist: String(artist), album: String(album)});
     cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
