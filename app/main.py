@@ -700,6 +700,23 @@ p { line-height: 1.55; }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
+.card.editorial-card, #acquisitionCards > .card, #recommendationCards > .card { cursor: pointer; }
+.album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.78); backdrop-filter: blur(5px); }
+.album-modal-backdrop[hidden] { display: none; }
+.album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: #202221; border: 1px solid #55574e; border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
+.album-modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 38px; height: 38px; padding: 0; font-size: 23px; }
+.album-modal-layout { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: 26px; clear: both; }
+.album-modal-art { position: relative; align-self: start; overflow: hidden; aspect-ratio: 1; background: #30322e; border: 1px solid var(--border); }
+.album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.album-modal-art .get-album { position: absolute; right: 12px; bottom: 12px; width: 58px; height: 58px; border-radius: 50%; background: var(--yellow); color: #191a1a; border: 2px solid #f6e8a8; font: 700 12px/1 var(--mono); text-transform: uppercase; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
+.album-modal-copy h2 { margin: 0 0 7px; font: 600 34px/1.05 var(--display); overflow-wrap: anywhere; }
+.album-modal-artist { margin: 0 0 20px; color: var(--muted); }
+.album-modal-year { color: var(--yellow); font: 500 12px/1.4 var(--mono); }
+.album-modal-tracklist { margin: 20px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.album-modal-tracklist li { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid #333531; font-size: 13px; }
+.album-modal-tracklist .track-number, .album-modal-tracklist .track-duration { color: var(--subtle); font: 11px/1.4 var(--mono); }
+.album-modal-status { color: var(--muted); font-size: 12px; }
+@media (max-width: 650px) { .album-modal-backdrop { padding: 8px; } .album-modal { padding: 14px; max-height: 96vh; } .album-modal-layout { grid-template-columns: minmax(0,1fr); gap: 18px; } .album-modal-art { width: min(100%, 300px); margin: 0 auto; } .album-modal-copy h2 { font-size: 28px; } }
 .card h3 .album-year { margin-left: 5px; color: var(--muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .card .artist-bio { margin-top: 7px; color: var(--muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 2px solid #f6e8a8; color: #191a1a; box-shadow: 0 3px 12px rgba(0,0,0,.55); font: 700 11px/1 var(--mono); text-transform: uppercase; }
@@ -1052,11 +1069,12 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
       const card = document.createElement('article');
       card.className = 'card';
+      makeAlbumCardInteractive(card, job.artist || 'Unknown artist', job.album || 'Unknown album', job.details || {});
       addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
       addTextElement(card, 'h3', '', job.album || 'Unknown album');
       const details = job.details || {};
       const metadata = details.metadata || {};
-      applyAlbumYear(card, metadata.year || metadata.release_year || metadata.first_release_year || details.year);
+      applyAlbumYear(card, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
       addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
@@ -1295,6 +1313,8 @@ const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
 const artistBioRequests = new Map();
+const albumCardMetadata = new WeakMap();
+let activeAlbumModal = null;
 
 function cachedJSONRequest(cache, key, url) {
   if (!cache.has(key)) {
@@ -1333,15 +1353,105 @@ const artworkObserver = 'IntersectionObserver' in window
     }, {rootMargin: '220px'})
   : null;
 
+function makeAlbumCardInteractive(card, artist, album, metadata = {}) {
+  card.dataset.albumArtist = String(artist || '');
+  card.dataset.albumTitle = String(album || '');
+  albumCardMetadata.set(card, metadata && typeof metadata === 'object' ? metadata : {});
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);
+}
+
 function applyAlbumYear(card, value) {
   const year = Number(value || 0);
   if (!(year >= 1900 && year <= 2100)) return;
   card.dataset.releaseYear = String(year);
   const title = card.querySelector('h3');
-  if (title && !title.querySelector('.album-year')) {
-    addTextElement(title, 'span', 'album-year', String(year));
+  if (title && !title.querySelector('.album-year')) addTextElement(title, 'span', 'album-year', String(year));
+  const modalYear = $('albumModalYear');
+  if (activeAlbumModal && activeAlbumModal.card === card && modalYear) modalYear.textContent = String(year);
+}
+
+function closeAlbumModal() {
+  $('albumModalBackdrop').hidden = true;
+  activeAlbumModal = null;
+}
+
+async function openAlbumModal(card) {
+  const artist = card.dataset.albumArtist || 'Unknown artist';
+  const album = card.dataset.albumTitle || 'Unknown album';
+  const metadata = albumCardMetadata.get(card) || {};
+  const backdrop = $('albumModalBackdrop');
+  const artwork = $('albumModalArtwork');
+  const tracklist = $('albumModalTracklist');
+  const get = $('albumModalGet');
+  activeAlbumModal = {card, artist, album, metadata};
+  $('albumModalTitle').textContent = album;
+  $('albumModalArtist').textContent = artist;
+  $('albumModalYear').textContent = String(metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear || '');
+  $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
+  tracklist.replaceChildren();
+  artwork.removeAttribute('src');
+  get.disabled = false;
+  get.classList.remove('requested');
+  get.textContent = 'get';
+  get.onclick = () => searchAlbum(artist, album, metadata, get);
+  backdrop.hidden = false;
+  $('albumModalClose').focus();
+  try {
+    const query = new URLSearchParams({artist, album});
+    const [details, art] = await Promise.all([
+      requestJSON('/api/album-details?' + query.toString()),
+      requestJSON('/api/artwork?' + query.toString()).catch(() => null)
+    ]);
+    if (!activeAlbumModal || activeAlbumModal.card !== card) return;
+    const artworkUrl = details.artwork_url || (art && art.artwork_url);
+    if (artworkUrl) artwork.src = artworkUrl;
+    const year = details.year || (art && art.year) || metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear;
+    if (year) {
+      $('albumModalYear').textContent = String(year);
+      applyAlbumYear(card, year);
+    }
+    const tracks = Array.isArray(details.tracks) ? details.tracks : [];
+    if (tracks.length) {
+      tracks.forEach((track, index) => {
+        const row = document.createElement('li');
+        const number = document.createElement('span');
+        number.className = 'track-number';
+        number.textContent = String(track.track_number || index + 1).padStart(2, '0');
+        const title = document.createElement('span');
+        title.textContent = track.title || 'Untitled track';
+        const duration = document.createElement('span');
+        duration.className = 'track-duration';
+        const seconds = Number(track.duration_seconds);
+        duration.textContent = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds / 60) + ':' + String(Math.floor(seconds % 60)).padStart(2, '0') : '';
+        row.append(number, title, duration);
+        tracklist.append(row);
+      });
+      $('albumModalStatus').textContent = tracks.length + ' tracks';
+    } else {
+      $('albumModalStatus').textContent = details.message || 'Tracklist unavailable for this release.';
+    }
+  } catch (error) {
+    if (activeAlbumModal && activeAlbumModal.card === card) $('albumModalStatus').textContent = 'Could not load tracklist: ' + error.message;
   }
 }
+
+document.addEventListener('click', event => {
+  const card = event.target.closest && event.target.closest('.card[data-album-title]');
+  if (!card || event.target.closest('button, a, input, select, textarea')) return;
+  openAlbumModal(card);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('albumModalBackdrop').hidden) closeAlbumModal();
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title]')) {
+    event.preventDefault(); openAlbumModal(event.target);
+  }
+});
+$('albumModalClose').addEventListener('click', closeAlbumModal);
+$('albumModalBackdrop').addEventListener('click', event => {
+  if (event.target === $('albumModalBackdrop')) closeAlbumModal();
+});
 
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
@@ -1356,6 +1466,7 @@ async function loadDashboardPicks() {
       const album = item.album || item.title || 'Untitled album';
       const card = document.createElement('article');
       card.className = 'card editorial-card';
+      makeAlbumCardInteractive(card, artist, album, item);
       attachArtwork(card, artist, album);
       addTextElement(card, 'p', 'card-category', item.dashboard_category || 'Discovery');
       const title = document.createElement('h3');
@@ -1489,6 +1600,7 @@ function applyRecommendationFilters() {
     card.className = 'card editorial-card';
     const artist = item.artist || item.album_artist || '';
     const album = item.album || item.title || item.name || '';
+    makeAlbumCardInteractive(card, artist, album, item);
     attachArtwork(card, artist, album);
     const artContainer = card.querySelector('.card-art');
     const getButton = document.createElement('button');
@@ -1778,6 +1890,7 @@ async function loadDiscovery(name, options = {}) {
       const isDeepDive = name === 'artist_deep_dive';
       const card = document.createElement('article');
       card.className = 'card editorial-card';
+      makeAlbumCardInteractive(card, artist, album, item);
       attachArtwork(card, artist, album);
 
       addTextElement(card, 'p', 'card-category',
@@ -2036,6 +2149,15 @@ $('testSlskd').addEventListener('click', async () => {
 // so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
 </script>
+<div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
+  <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
+    <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
+    <div class="album-modal-layout">
+      <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
+    </div>
+  </section>
+</div>
 </body>
 </html>
 """
