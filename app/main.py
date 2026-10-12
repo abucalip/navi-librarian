@@ -734,7 +734,7 @@ def set_slskd_settings(payload: dict):
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
     if quality is None:
-        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd"]
+        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"]
     try:
         result = parse_result(librarian.discovery_set_slskd_settings(
             slskd_url=url,
@@ -1263,6 +1263,17 @@ summary { color: var(--muted); cursor: pointer; font-size: 12px; }
 pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: #c6c7bd; font: 11px/1.6 var(--mono); }
 #settings label { display: block; margin: 14px 0; color: #c8c8bd; font-size: 12px; }
 #settings input, #settings select { display: block; width: 100%; max-width: 520px; margin-top: 6px; }
+.quality-priority-list { display: grid; gap: 8px; max-width: 620px; margin: 12px 0 18px; padding: 0; list-style: none; }
+.quality-priority-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+.quality-priority-item.dragging { opacity: .45; border-color: var(--yellow); }
+.quality-priority-item.drop-target { border-color: var(--yellow); box-shadow: inset 0 2px var(--yellow); }
+.quality-priority-grip { color: var(--yellow); font: 18px/1 var(--mono); cursor: grab; user-select: none; }
+.quality-priority-position { flex: 0 0 24px; color: var(--yellow); font: 11px/1 var(--mono); }
+.quality-priority-label { flex: 1; min-width: 0; font-size: 13px; }
+.quality-priority-moves { display: flex; gap: 4px; }
+.quality-priority-moves button { margin: 0; padding: 5px 8px; font-size: 11px; }
+.quality-priority-moves button:disabled { cursor: not-allowed; opacity: .35; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
 footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--subtle); font: 10px/1.6 var(--mono); }
 @media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
@@ -1430,10 +1441,9 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
       <label>slskd completed-download directory visible to the Librarian backend <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete"></label>
       <p class="muted">Use an absolute path on the machine/container running the Librarian backend. The directory must be mounted into the container when using Docker.</p>
       <h3>Audio quality priority</h3>
-      <label>First choice <select class="quality-priority"></select></label>
-      <label>Second choice <select class="quality-priority"></select></label>
-      <label>Third choice <select class="quality-priority"></select></label>
-      <label>Fourth choice <select class="quality-priority"></select></label>
+      <p class="muted">Drag rows to set your preferred order. You can also use the Move up / Move down buttons.</p>
+      <ol id="qualityPriorityList" class="quality-priority-list" aria-label="Audio quality priority order"></ol>
+      <p id="qualityPriorityAnnouncement" class="sr-only" aria-live="polite"></p>
       <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
       <p id="slskdStatus" aria-live="polite"></p>
     </div>
@@ -1597,6 +1607,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
+        flac_16_44: 'FLAC 16-bit / 44.1 kHz',
       };
       const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
       addTextElement(card, 'p', 'card-meta',
@@ -2349,7 +2360,8 @@ const qualityOptions = [
   ['mp3_320','MP3 320 kbps'],
   ['mp3_193_319','MP3 193–319 kbps'],
   ['mp3_192','MP3 192 kbps'],
-  ['flac_cd','FLAC (CD quality preferred)']
+  ['flac_cd','FLAC (CD quality preferred)'],
+  ['flac_16_44','FLAC 16-bit / 44.1 kHz']
 ];
 
 async function sendJSON(url, method='POST', body={}) {
@@ -2785,16 +2797,7 @@ async function loadSlskdSettings() {
     $('slskdUrl').value = data.slskd_url || '';
     $('slskdDownloadsPath').value = data.slskd_downloads_path || '';
 
-    document.querySelectorAll('.quality-priority').forEach((select, index) => {
-      select.replaceChildren();
-      for (const [value, label] of qualityOptions) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        select.append(option);
-      }
-      select.value = (data.quality_priority || qualityOptions.map(x=>x[0]))[index];
-    });
+    renderQualityPriority(data.quality_priority);
 
     $('slskdStatus').textContent =
       `API key ${data.api_key_configured ? 'configured' : 'not configured'}.`;
@@ -2803,10 +2806,122 @@ async function loadSlskdSettings() {
   }
 }
 
+function qualityPriorityValues() {
+  return [...$('qualityPriorityList').querySelectorAll('.quality-priority-item')]
+    .map(item => item.dataset.quality);
+}
+
+function updateQualityPriorityPositions() {
+  const items = [...$('qualityPriorityList').querySelectorAll('.quality-priority-item')];
+  items.forEach((item, index) => {
+    item.querySelector('.quality-priority-position').textContent = String(index + 1).padStart(2, '0');
+    item.querySelector('[data-quality-move="up"]').disabled = index === 0;
+    item.querySelector('[data-quality-move="down"]').disabled = index === items.length - 1;
+  });
+}
+
+function announceQualityPriority(item, index) {
+  const label = qualityOptions.find(([value]) => value === item.dataset.quality)?.[1] || item.dataset.quality;
+  $('qualityPriorityAnnouncement').textContent = `${label} moved to priority ${index + 1} of ${$('qualityPriorityList').children.length}.`;
+}
+
+function moveQualityPriority(item, destination) {
+  const list = $('qualityPriorityList');
+  const items = [...list.querySelectorAll('.quality-priority-item')];
+  const current = items.indexOf(item);
+  if (current < 0 || destination < 0 || destination >= items.length || current === destination) return;
+  const reference = items[destination];
+  if (destination < current) list.insertBefore(item, reference);
+  else list.insertBefore(item, reference.nextSibling);
+  updateQualityPriorityPositions();
+  announceQualityPriority(item, destination);
+}
+
+function renderQualityPriority(savedValues) {
+  const supported = new Set(qualityOptions.map(([value]) => value));
+  const saved = Array.isArray(savedValues) ? savedValues.filter(value => supported.has(value)) : [];
+  const priorities = [...new Set(saved)];
+  for (const [value] of qualityOptions) if (!priorities.includes(value)) priorities.push(value);
+  const list = $('qualityPriorityList');
+  list.replaceChildren();
+  for (const value of priorities) {
+    const [, label] = qualityOptions.find(([optionValue]) => optionValue === value);
+    const item = document.createElement('li');
+    item.className = 'quality-priority-item';
+    item.draggable = true;
+    item.dataset.quality = value;
+    const grip = document.createElement('span');
+    grip.className = 'quality-priority-grip';
+    grip.setAttribute('aria-hidden', 'true');
+    grip.textContent = '⠿';
+    const position = document.createElement('span');
+    position.className = 'quality-priority-position';
+    position.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span');
+    name.className = 'quality-priority-label';
+    name.textContent = label;
+    const moves = document.createElement('div');
+    moves.className = 'quality-priority-moves';
+    for (const [direction, text] of [['up', '↑'], ['down', '↓']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.qualityMove = direction;
+      button.setAttribute('aria-label', `Move ${label} ${direction}`);
+      button.textContent = text;
+      button.addEventListener('click', () => {
+        const current = [...list.children].indexOf(item);
+        moveQualityPriority(item, current + (direction === 'up' ? -1 : 1));
+      });
+      moves.append(button);
+    }
+    item.append(grip, position, name, moves);
+    list.append(item);
+  }
+  updateQualityPriorityPositions();
+}
+
+const qualityPriorityList = $('qualityPriorityList');
+let draggedQualityItem = null;
+qualityPriorityList.addEventListener('dragstart', event => {
+  const item = event.target.closest('.quality-priority-item');
+  if (!item) return;
+  draggedQualityItem = item;
+  item.classList.add('dragging');
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', item.dataset.quality);
+  }
+});
+qualityPriorityList.addEventListener('dragover', event => {
+  event.preventDefault();
+  const target = event.target.closest('.quality-priority-item');
+  if (!draggedQualityItem || !target || target === draggedQualityItem) return;
+  const bounds = target.getBoundingClientRect();
+  const insertAfter = event.clientY > bounds.top + bounds.height / 2;
+  qualityPriorityList.querySelectorAll('.drop-target').forEach(item => item.classList.remove('drop-target'));
+  target.classList.add('drop-target');
+  qualityPriorityList.insertBefore(draggedQualityItem, insertAfter ? target.nextSibling : target);
+});
+qualityPriorityList.addEventListener('drop', event => {
+  event.preventDefault();
+  if (draggedQualityItem) {
+    const index = [...qualityPriorityList.children].indexOf(draggedQualityItem);
+    updateQualityPriorityPositions();
+    announceQualityPriority(draggedQualityItem, index);
+  }
+});
+qualityPriorityList.addEventListener('dragend', () => {
+  qualityPriorityList.querySelectorAll('.dragging, .drop-target').forEach(item => {
+    item.classList.remove('dragging', 'drop-target');
+  });
+  draggedQualityItem = null;
+  updateQualityPriorityPositions();
+});
+
 $('saveSlskd').addEventListener('click', async () => {
-  const priorities = [...document.querySelectorAll('.quality-priority')].map(s=>s.value);
-  if (new Set(priorities).size !== 4) {
-    $('slskdStatus').textContent = 'Choose four different quality preferences.';
+  const priorities = qualityPriorityValues();
+  if (priorities.length !== qualityOptions.length || new Set(priorities).size !== qualityOptions.length) {
+    $('slskdStatus').textContent = 'Each of the five quality preferences must appear exactly once.';
     return;
   }
 
