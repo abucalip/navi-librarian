@@ -2570,6 +2570,23 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
         return None
 
 
+def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
+    """Match the credited artist by exact normalized name, never substring."""
+    if not isinstance(artist_credit, list) or not str(artist_name or "").strip():
+        return False
+    target = _music_key(artist_name)
+    for credit_part in artist_credit:
+        if not isinstance(credit_part, dict):
+            continue
+        credit_artist = credit_part.get("artist") or {}
+        credit_name = str(
+            credit_artist.get("name") or credit_part.get("name") or ""
+        ).strip()
+        if credit_name and _music_key(credit_name) == target:
+            return True
+    return False
+
+
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
     snapshot = _discovery_library_snapshot()
@@ -2653,19 +2670,7 @@ def _build_new_releases_list():
             # "Queen Tribute") for an exact-looking artist query. Require an
             # exact artist-credit name rather than a substring match.
             artist_credit = group.get("artist-credit")
-            if not isinstance(artist_credit, list):
-                continue
-            credited_names = []
-            for credit_part in artist_credit:
-                if not isinstance(credit_part, dict):
-                    continue
-                credit_artist = credit_part.get("artist") or {}
-                credit_name = str(
-                    credit_artist.get("name") or credit_part.get("name") or ""
-                ).strip()
-                if credit_name:
-                    credited_names.append(credit_name)
-            if not any(_music_key(name) == artist_key for name in credited_names):
+            if not _discovery_exact_artist_credit_matches(artist_credit, artist):
                 continue
             identity = (_music_key(artist), _music_key(title))
             if identity in owned:
