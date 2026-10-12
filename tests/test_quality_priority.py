@@ -1,4 +1,4 @@
-"""Regression tests for five-tier acquisition quality priorities and reordering UI."""
+"""Regression tests for six-tier acquisition quality priorities and reordering UI."""
 import ast
 import json
 import os
@@ -51,7 +51,7 @@ def load_quality_helpers(db_path, music_dir):
             "music_library_path": str(music_dir),
             "slskd_url": "http://localhost:5030",
             "quality_priority": [
-                "mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"
+                "mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"
             ],
             "auto_acquire_for_me": True,
             "slskd_downloads_path": str(Path(music_dir) / "downloads" / "slskd" / "complete"),
@@ -77,7 +77,7 @@ class QualityPriorityTests(unittest.TestCase):
         rank, tier = self.ns["_slskd_quality_tier"](
             {"sampleRate": 44100, "bitDepth": 16},
             "Album/01 - Track.flac",
-            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"],
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
         )
         self.assertEqual(tier, "flac_16_44")
         self.assertEqual(rank, 4)
@@ -85,14 +85,29 @@ class QualityPriorityTests(unittest.TestCase):
     def test_flac_filename_can_identify_16_44_when_peer_omits_metadata(self):
         _, tier = self.ns["_slskd_quality_tier"](
             {}, "Album/01 Track [16-bit 44.1 kHz].flac",
-            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"],
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
         )
         self.assertEqual(tier, "flac_16_44")
+
+    def test_filename_resolution_label_24_44_1_is_recognized_as_hires(self):
+        _, tier = self.ns["_slskd_quality_tier"](
+            {}, r"Tinariwen\\2024 - Idrache (Traces Of The Past) [24-44.1]\\01.flac",
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
+        )
+        self.assertEqual(tier, "flac_hires")
+
+    def test_high_resolution_metadata_is_recognized(self):
+        rank, tier = self.ns["_slskd_quality_tier"](
+            {"sampleRate": 44100, "bitDepth": 24}, "Album/01.flac",
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
+        )
+        self.assertEqual(tier, "flac_hires")
+        self.assertEqual(rank, 5)
 
     def test_unverified_flac_keeps_existing_fallback_tier(self):
         _, tier = self.ns["_slskd_quality_tier"](
             {}, "Album/01 - Track.flac",
-            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"],
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
         )
         self.assertEqual(tier, "flac_cd")
 
@@ -100,10 +115,16 @@ class QualityPriorityTests(unittest.TestCase):
         old_order = ["mp3_192", "mp3_320", "flac_cd", "mp3_193_319"]
         self.ns["_discovery_settings_write"]({"quality_priority": old_order})
         settings = self.ns["_discovery_settings_read"]()
-        self.assertEqual(settings["quality_priority"], old_order + ["flac_16_44"])
+        self.assertEqual(settings["quality_priority"], old_order + ["flac_16_44", "flac_hires"])
+
+    def test_legacy_five_tier_settings_append_hires_without_reordering(self):
+        old_order = ["flac_16_44", "mp3_192", "flac_cd", "mp3_320", "mp3_193_319"]
+        self.ns["_discovery_settings_write"]({"quality_priority": old_order})
+        settings = self.ns["_discovery_settings_read"]()
+        self.assertEqual(settings["quality_priority"], old_order + ["flac_hires"])
 
     def test_saving_five_tiers_preserves_user_order(self):
-        order = ["flac_16_44", "mp3_192", "flac_cd", "mp3_320", "mp3_193_319"]
+        order = ["flac_hires", "flac_16_44", "mp3_192", "flac_cd", "mp3_320", "mp3_193_319"]
         result = json.loads(self.ns["discovery_set_slskd_settings"](
             slskd_url="http://localhost:5030",
             quality_priority_json=json.dumps(order),
@@ -116,6 +137,7 @@ class QualityPriorityTests(unittest.TestCase):
         invalid_orders = [
             ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd"],
             ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_cd"],
+            ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"],
         ]
         for order in invalid_orders:
             with self.subTest(order=order):
@@ -134,6 +156,7 @@ class QualityPriorityTests(unittest.TestCase):
         self.assertIn("Move up / Move down buttons", source)
         self.assertNotIn('class="quality-priority"></select>', source)
         self.assertIn("FLAC 16-bit / 44.1 kHz", source)
+        self.assertIn("FLAC Hi-Res (24-bit or above 44.1 kHz)", source)
 
 
 if __name__ == "__main__":
