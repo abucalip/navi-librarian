@@ -1,3 +1,12 @@
+## Latest session — 2026-10-12 (GitHub-first workflow clarified)
+
+- **User-confirmed workflow:** the assistant alone modifies project code and commits. GitHub is the single source of truth. The user's local repository is a testing checkout only; local-only commits are not candidates to merge back into GitHub.
+- **Documentation:** added [`docs/DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md) and decision D-009 in [`docs/DECISIONS.md`](DECISIONS.md). Future changes should be developed on GitHub branches based on GitHub refs, committed and tested by the assistant, reviewed through PRs, then tested locally by the user against the exact branch/commit.
+- **PR #17:** remains an open diagnostic-instrumentation PR based on GitHub `main`; it is not a confirmed root-cause fix and has not been merged or deployed.
+- **Local baseline:** local `main` was previously reported at `90e1d97`, which differs from GitHub `main`. Do not merge local `main` into PR #17 or push local-only commits. For testing, fetch PR #17 into a separate worktree or disposable test branch so the existing local checkout remains untouched.
+- **This session:** documentation change only; no application code, local checkout, or production deployment changed. CI for this documentation branch has not yet been checked.
+- **Next:** create an isolated local testing worktree from PR #17's exact GitHub head, run the documented tests and exercise the diagnostic behavior, then report results. Any code fix remains an assistant-authored GitHub commit.
+
 ## Latest session — 2026-10-12 (local main consolidated for testing)
 
 - **Local merge:** the user merged `fix/artwork-size-and-artist-bios` into local `main`; the local merge commit is `90e1d97` (`Merge local artwork and acquisition fixes`). Local branch listing confirms this commit is the head of `main`.
