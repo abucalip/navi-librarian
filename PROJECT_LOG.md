@@ -58,3 +58,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Configuration:** added persistent Navidrome URL/username/password settings, optional Last.fm API key settings, and a configurable ListenBrainz username. Blank secret fields preserve existing credentials; settings APIs never return saved secrets. Navidrome credentials are resolved dynamically, so updates take effect without a process restart.
 - **Persistence groundwork:** added `NAVIDROME_LIBRARIAN_DATA_DIR` for application SQLite state, preparing for a Docker-mounted `/data` volume. The discovery settings database remains permission-restricted.
 - **Validation:** GitHub Actions passed Python compilation, acquisition safety regressions, and the new service-settings regression tests on commit `3c25182`. Browser UI/API smoke testing remains pending. Docker packaging is intentionally deferred.
+
+## 2026-10-12 — First-run app account and login protection
+
+- **Branch/PR:** `feature/new-releases-and-recommendation-quality`, PR #12 remains open and unmerged.
+- **First-run setup:** a fresh installation prompts the owner to create a username and password; setup is disabled after the first account is saved. Username is validated and passwords must be at least 12 characters.
+- **Authentication:** app routes and APIs are protected by a signed, HTTP-only, SameSite=Strict cookie with a 12-hour expiry. Passwords are stored only as PBKDF2-HMAC-SHA256 hashes with per-account random salts; the signing key is created in the persistent data directory with restrictive file permissions. Login attempts are rate-limited per client IP.
+- **Session UX:** successful setup/login signs in immediately; a Log out button clears the browser cookie. Auth is required for API calls, acquisition actions, settings, and the web interface.
+- **Tests:** added `tests/test_app_auth.py` for username/password policy, salted password hashing, signed session integrity, expiry, and username binding. CI and browser testing for this authentication change are still pending.
+- **Operational note:** back up the persistent data directory, including `app_auth.key`; losing that key invalidates active sessions. The app account is separate from Navidrome credentials. Do not merge/deploy until CI and unauthenticated/login/setup/logout smoke tests pass.
+- **Next:** run syntax compilation and all unit tests in the isolated test worktree, then verify first-run setup, rejected unauthenticated API access, successful login, refresh persistence, and logout before proceeding to Docker packaging.
