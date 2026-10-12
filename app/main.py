@@ -1022,6 +1022,15 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 
 </main>
 
+<div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
+  <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
+    <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
+    <div class="album-modal-layout">
+      <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
+    </div>
+  </section>
+</div>
 <script>
 const $ = id => document.getElementById(id);
 
@@ -2220,15 +2229,6 @@ $('testSlskd').addEventListener('click', async () => {
 // so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
 </script>
-<div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
-  <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
-    <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
-    <div class="album-modal-layout">
-      <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
-      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
-    </div>
-  </section>
-</div>
 </body>
 </html>
 """
