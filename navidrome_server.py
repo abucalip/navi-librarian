@@ -3594,8 +3594,8 @@ def _slskd_quality_tier(file_record, filename, priority):
         except (TypeError, ValueError):
             bit_depth = None
         filename_16_44 = bool(
-            re.search(r"(?<!\\d)16[\\s_-]*bit", filename, re.I)
-            and re.search(r"(?<!\\d)44(?:[.,]1)?[\\s_-]*k(?:hz)?", filename, re.I)
+            re.search(r"(?<!\d)16[\s_-]*bit", filename, re.I)
+            and re.search(r"(?<!\d)44(?:[.,]1)?[\s_-]*k(?:hz)?", filename, re.I)
         )
         if (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
             tier = "flac_16_44"
