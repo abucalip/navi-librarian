@@ -2453,11 +2453,17 @@ $('saveListenbrainz').addEventListener('click', async () => {
 });
 
 async function testServiceConnection(endpoint, statusId) {
-  $(statusId).textContent = 'Testing connection…';
+  const status = $(statusId);
+  status.textContent = 'Testing connection…';
+  status.className = 'status';
   try {
     const data = await sendJSON(endpoint, 'POST');
-    $(statusId).textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
-  } catch (error) { $(statusId).textContent = error.message; }
+    status.textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
+    status.className = data.ok ? 'status ok' : 'status error';
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = 'status error';
+  }
 }
 $('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
 $('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
