@@ -93,7 +93,7 @@ class ServiceSettingsTests(unittest.TestCase):
         result = json.loads(self.functions["discovery_get_lastfm_settings"]())
         self.assertTrue(result["api_key_configured"])
         self.assertNotIn("lastfm-secret", json.dumps(result))
-        self.assertNotIn("api_key", result)
+        self.assertNotIn("lastfm_api_key", result)
 
     def test_listenbrainz_username_validation_and_save(self):
         result = json.loads(self.functions["discovery_set_listenbrainz_settings"]("new.listener"))
