@@ -1005,6 +1005,7 @@ def album_artwork(artist: str = "", album: str = ""):
             return cached["data"]
 
     result = {"artwork_url": None, "image_kind": "album", "source": "Deezer"}
+    lookup_failed = False
     try:
         if artist and album:
             query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 8})
@@ -1072,10 +1073,13 @@ def album_artwork(artist: str = "", album: str = ""):
                         "year": result.get("year"),
                     }
     except Exception:
-        # A catalog outage must never break discovery or recommendation results.
-        pass
+        # A provider outage must not poison the negative cache for five minutes.
+        # Tell the browser this result is transient so it can retry with backoff.
+        lookup_failed = True
+        result["retryable"] = True
 
-    _artwork_cache[key] = {"time": monotonic(), "data": result}
+    if not lookup_failed:
+        _artwork_cache[key] = {"time": monotonic(), "data": result}
     return result
 
 
@@ -2112,6 +2116,18 @@ function attachArtwork(card, artist, album) {
     const cacheKey = (artist || '').trim().toLocaleLowerCase() + '::' + (album || '').trim().toLocaleLowerCase();
     cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query.toString())
       .then(data => {
+        if (data && data.retryable) {
+          const retries = Number(art.dataset.artworkRetries || 0);
+          if (retries < 3) {
+            art.dataset.artworkRetries = String(retries + 1);
+            // Provider outages are transient. Clear the in-page promise cache and
+            // retry with backoff instead of permanently leaving this card blank.
+            artworkRequests.delete(cacheKey);
+            art.dataset.requested = '';
+            setTimeout(loadArtwork, [2000, 5000, 10000][retries]);
+          }
+          return;
+        }
         if (!data) return;
         if (data.year) applyAlbumYear(card, data.year);
         if (!data.artwork_url) return;
