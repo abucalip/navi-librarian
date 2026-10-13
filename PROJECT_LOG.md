@@ -1,7 +1,7 @@
 ## 2026-10-13 — M2 slskd extraction session closeout
 
 - **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25) remains draft/open, unmerged and undeployed. Branch `refactor/slskd-search-quality-modules`; final head `e8a4256aaf34956ab1c4ca15b0b302c107689736`; base `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`.
-- **Verification confirmed at closeout:** final head passed Python syntax workflow #211 and Docker packaging workflow #118. The Docker workflow included the full unit-test suite and image build. No local test run, live slskd test, manual UI test, image publication, merge, or deployment was performed.
+- **Verification confirmed:** application-code head `e8a4256aaf34956ab1c4ca15b0b302c107689736` passed Python syntax workflow #211 and Docker packaging workflow #118; the Docker workflow included the full unit-test suite and image build. The documentation closeout commits triggered workflows #213 and #120, both in progress at the last check. No local test run, live slskd test, manual UI test, image publication, merge, or deployment was performed.
 - **Failure lesson:** first CI caught two stale private helper references in extracted callback paths. They were replaced with injected callbacks; the corrected code commit passed both workflows, and final-head workflows also passed.
 - **Working tree safety:** the connected local checkout on `test/pr17-reconciliation` was left untouched.
 - **Next:** inspect the complete PR #25 diff for behavioral equivalence and review readiness. Only then undraft/request review; do not merge without explicit authorization. Keep PR #23 separate/open.
