@@ -1,11 +1,12 @@
-## 2026-10-13 — First acquisition-completion module extraction (PR #24 open; review prioritized)
+## 2026-10-13 — First acquisition-completion module extraction (PR #24 merged)
 
 - **PR/branch:** [PR #24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #23's roadmap branch remains separate and unmerged; PR #24 does not contain that roadmap.
 - **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into root-level `acquisition_completion.py`; `navidrome_server.py` retains compatibility wrappers.
 - **Tests:** matching tests now import production helpers directly instead of AST-extracting them. Added regressions for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization.
 - **Verification:** code-bearing head `a969ec4df6db2c5d45943c091401a5b26f9566d0` passed Python syntax/full-unit-test workflow #190 and Docker packaging workflow #97, including compilation, full unit tests, and image build. Subsequent branch commits only update documentation; the workflow lookup returned no PR-triggered runs for those docs-only commits. No local test run, manual UI test, merge, publication, or deployment.
 - **Lessons learned:** GitHub API file-by-file edits caused avoidable iteration and 14 commits for a narrow extraction; context-based replacements caused intermediate source/test-fixture mistakes; status notes lagged behind the final head. Prefer a verified checkout/worktree and one coherent patch/test/review loop where available, inspect the entire diff before committing, and update status only after confirming final SHA and CI. Make branch dependencies explicit when parallel PRs are intentionally independent.
-- **Priority next:** review PR #24's complete diff, wrapper behavior, regression cases, and CI against the relocation-only scope before merging or beginning the next extraction. Keep merge and deployment as separate decisions.
+- **Merge result:** PR #24 squash-merged to `main` at `225add7405bfd72b3254af23745d0dd9a84b621c` from final head `b826ae14d917431d07aacf97200990d57133cba0`. Final-head Python syntax workflow #202 and Docker packaging workflow #109 passed; the latter includes the full unit suite and Docker image build. GitHub PR metadata and `main` commit search confirmed the merge commit is the current tip at verification time. No deployment or manual UI test was performed.
+- **Priority next:** begin M2 — extract slskd search and quality evaluation into focused modules, preserving query fallback, delayed-response polling, timeout budgets, and quality ordering with regression tests.
 
 ---
 
