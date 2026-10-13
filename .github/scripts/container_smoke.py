@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Smoke-test the built container's HTTP, owner setup, and persistent /data behavior."""
 
-import http.cookiejar
 import json
 import os
 import subprocess
