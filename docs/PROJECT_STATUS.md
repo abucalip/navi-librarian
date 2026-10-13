@@ -82,6 +82,15 @@
 - **Deployment distinction:** image is published, but this session did not have access to the media VM's Docker/Compose shell and did not pull/recreate the production container. Host deployment is pending; follow `docs/DEPLOYMENT.md` and record the running image digest after the host update.
 - **Next:** pull and recreate only `navidrome-librarian` on the media VM, then verify container health and artwork in the deployed UI. Sync local Git without overwriting unrelated local changes.
 
+## Latest session — 2026-10-13 (broaden zero-response slskd searches in progress)
+
+- **Objective:** resolve acquisitions that stop at no_matches because Librarian's exact artist+album query yields no usable peer payloads, as reported for Tinariwen — Idrache (Traces of the Past).
+- **Change committed to PR #21 branch** fix/flac-hires-acquisition-diagnostics: search exact title first, then retry with punctuation-normalized text, then with the primary album title (parenthetical subtitle removed) only when the preceding query yielded no usable peer file payloads. Artist+album candidate matching, quality checks, and import/queue safety remain unchanged.
+- **Diagnostics:** record each query attempted, its search ID/state, slskd-reported peer/file counts, and collected peer payload count. The no-match message distinguishes collected responses from slskd-reported counts rather than blaming album-folder matching when no payload was collected.
+- **DroppedNeedle review:** its modular search/acquisition service design reinforces keeping the query plan bounded and matching/safety checks separate. No code copied; the existing Librarian/slskd integration remains in place.
+- **Verification:** regression tests for query ordering and blank inputs are committed. CI and live test in prox-mcp-pr17-test are pending. Do not merge PR #21/#22 or deploy until the new CI and Tinariwen retest are complete.
+- **Next:** run full syntax and unittest CI, then retest the exact Tinariwen acquisition in the existing test environment and inspect search_queries_attempted if it still fails.
+
 # Project status and handoff
 
 Last updated: 2026-10-13
