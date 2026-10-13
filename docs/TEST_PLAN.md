@@ -1,10 +1,9 @@
-## Current manual UI and container verification gates — 2026-10-14
+## Current verification state — PR #32/#33 merged; PR #31 documentation follow-up
 
-- For UI-facing changes, run the complete browser checklist after automated CI passes on the exact tested source SHA. Record Pass/Fail/Skip; skipped items are not passes. The previously unrecorded performance observation and distinct error/recovery exercise are deferred to the next UI-facing PR and must be explicitly recorded there.
-- For non-UI docs, infrastructure, or API refactors, run exact-head syntax, unit, packaging, and relevant integration checks. Do not require a full visual checklist solely because the SHA changed; run focused UI smoke only when the API contract or user-visible behavior makes it relevant.
-- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture build. Publishing remains disabled.
-- The container smoke test uses disposable storage and read-only temporary music/download mounts. It checks startup, unauthenticated root redirects to /login before/after setup, public login/setup, protected API denial, owner setup/login, auth-key file mode 0600, and account persistence after restart using the same /data volume.
-- The local helper's account persisted across a server restart in the tested environment. Treat persistence across a different PR source SHA as a separate claim requiring an explicit repeated-run test.
+- PR #32 and PR #33 are merged. Their exact-head checks passed, including syntax, full unittest discovery/Docker packaging, container runtime smoke, and validation-only multi-architecture build. See the top of docs/PROJECT_STATUS.md and PROJECT_LOG.md for exact commit/run references.
+- PR #31's operator guide is reconciled against current main; its updated head must pass syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only build before its PR is considered merge-ready.
+- Manual browser checks remain a gate for UI-facing changes after exact-head CI. The performance observation and distinct error/recovery scenario not recorded in the October 13 report are deferred to the next UI-facing PR. Do not repeat the full visual checklist solely because a non-UI PR changes SHA.
+- GHCR publishing stays disabled until the modularization roadmap is complete and release is explicitly authorized.
 
 ## Discovery refresh coordination extraction — merged PR #30
 

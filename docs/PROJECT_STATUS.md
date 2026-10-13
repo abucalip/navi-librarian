@@ -1,10 +1,10 @@
-## 2026-10-14 — PR #32 merged; manual UI gate policy reconciled
+## 2026-10-14 — PR #32 and #33 merged; PR #31 documentation reconciliation
 
-- PR #32 was merged at commit 8cce5a147060fa1ccc5a69eadb91e9b090c016f4 after its exact reconciled head passed Python syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture build.
-- Runtime smoke passed on exact PR head 155e7d3b18a23b919eb60098d50c639bd2962c99. The container build includes all required modularized modules. The smoke verifies readiness, login/setup boundaries, unauthenticated API rejection, private auth-key mode 0600, login, and persistent account behavior across restart.
-- GHCR publication remains paused. The merged workflow runs smoke before linux/amd64 and linux/arm64 validation with push: false; provenance/SBOM generation does not publish an image. No deployment or production runtime verification is claimed.
-- PR #31's operator guide is reconciled here: run the full manual browser checklist after exact-head CI for UI-facing changes. The previously unrecorded performance observation and distinct error/recovery exercise remain deferred to the next UI-facing change, not a blocker for non-UI infrastructure/docs/API refactors by default.
-- Local test account persistence across a server restart was observed; do not generalize that result to persistence across a different PR source SHA unless that scenario was explicitly tested. No local helper file is stored in this repository.
+- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
+- PR #33 is merged at 25cd40eca0f20824173d7aefce76b753ef57360c from exact head 97154f6f7c482633b0cf0f71cebc2bd0afd0f558. Python syntax #313, container smoke #30, Docker packaging/full-unit-test #220, and validation-only multi-architecture #74 passed.
+- PR #31's documentation branch has been reconciled against this resulting main and includes docs/LOCAL_UI_TESTING.md. Its updated exact-head CI is pending; the PR remains open/unmerged.
+- Manual browser checks are required after exact-head CI for UI-facing changes. The outstanding performance observation and distinct error/recovery check are deferred to the next UI-facing PR; they do not block non-UI API/infrastructure changes by default.
+- GHCR publication remains paused. No image publication, deployment, or production runtime verification is claimed.
 
 ## Latest verification closeout — 2026-10-13 (PRs #31–#33)
 

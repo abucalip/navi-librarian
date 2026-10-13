@@ -1,10 +1,17 @@
-## 2026-10-14 — PR #32 merged; PR #31 UI gate documentation reconciled
+## 2026-10-14 — PR #31 documentation reconciled after PR #32 and #33 merges
 
-- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4 after final reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax workflow #310, Docker packaging/full-unit-test workflow #217, container runtime smoke workflow #27, and validation-only multi-architecture workflow #71.
-- The runtime smoke test and validation-only build are preserved on main. The workflow validates linux/amd64 and linux/arm64 with push: false, provenance/SBOM enabled, and no registry login, tags, image publication, or deployment.
-- Reconciled PR #31's local UI operator guide with current main. Manual browser testing is a gate for UI-facing changes after exact-head CI; the unrecorded performance and distinct error/recovery checks are deferred to the next UI-facing PR. Do not block non-UI PRs on rerunning the full visual checklist by default.
-- A local test account survived a server restart; this proves that tested instance's persistence only, not necessarily same-PR data reuse across different source SHAs. Keep the helper external to repository scope unless added to GitHub deliberately.
-- No deployment, image publication, or production runtime verification occurred. Next: verify PR #33's exact updated head, CI, and mergeability before deciding to merge.
+- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4; its exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
+- PR #33 merged at 25cd40eca0f20824173d7aefce76b753ef57360c from exact reconciled head 97154f6f7c482633b0cf0f71cebc2bd0afd0f558. Syntax/full-unit-test #313, container smoke #30, Docker packaging #220, and validation-only multi-architecture #74 all passed.
+- PR #31's local UI operator guide is reconciled against the resulting main and remains open on its updated branch. The report for application SHA 96b253c5f3ec2f858e02afc034365a22bac0773e recorded eight checks passing; the performance observation and distinct error/recovery scenario remain deferred to the next UI-facing PR.
+- The local test account survived a server restart in the tested environment. This does not alone prove data reuse across a different PR source SHA. The local helper remains outside the repository.
+- No image publication, deployment, or production runtime verification occurred. GHCR publication remains paused until modularization is complete and separately authorized.
+
+## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
+
+- Reconciled PR #32's runtime-verification and validation-only publishing safeguards against current main without replacing the newer PR #31–#33 closeout or local test-kit persistence notes.
+- Required smoke assertions: startup/readiness, root redirects to /login before and after setup, public login/setup page, protected API returns 401, owner setup and login, private auth-key mode 0600, and account persistence across a container restart using the same named /data volume.
+- Release gate remains validation-only: runtime smoke precedes the linux/amd64 and linux/arm64 build, push: false, provenance/SBOM generation, and no registry credentials/tags/publication. No deployment or production runtime verification is claimed.
+- Merge/CI state is pending re-verification on the reconciled exact head. Outstanding manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
 
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
