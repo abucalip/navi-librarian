@@ -43,7 +43,8 @@ Use the UI while the server is running, then return to Terminal and press Enter.
 6. Get/request changes to the expected requested state and prevents duplicate requests; do not start a real download.
 7. Acquisition cards/status render correctly for whatever safe fixture/state is available. Skip behaviors that require an unavailable test fixture rather than using live data.
 8. Error/recovery states are understandable and leave the UI usable.
-9. No unexpected browser-console or server-log errors occur during the tested flow.
+9. Performance: dashboard and discovery content load without obvious stalls; record approximate timings and any slow interaction in the notes.
+10. No unexpected browser-console or server-log errors occur during the tested flow.
 
 The automated regression/safety tests remain responsible for destructive filesystem guarantees such as path traversal rejection, symlink containment, no-overwrite behavior, rollback, and preservation of unrelated files. Do not use the browser smoke test as a substitute for those tests.
 
