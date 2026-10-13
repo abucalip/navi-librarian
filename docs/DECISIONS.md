@@ -93,3 +93,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Discovery list storage can be regression-tested independently without importing the MCP server or initializing external services.
 
 **Consequence:** The module owns only the `discovery_lists` table's read/write behavior. Feedback, acquisition state, settings, refresh locks, list building, and provider calls remain in the server for later focused extractions. Do not change payload shape, timestamp semantics, or cache/error behavior during relocation.
+
+
+## D-012 — Separate discovery refresh coordination from list construction
+
+**Decision:** Put the lock/dispatch/error/response coordination for cached discovery-list refreshes in directly importable `discovery_refresh.py`. Keep legacy `_discovery_refresh_personal` and `_discovery_refresh_other` entry points in `navidrome_server.py` as thin adapters.
+
+**Reason:** Refresh control flow can be tested independently without importing MCP initialization or calling providers, while list-building and persistence remain distinct responsibilities.
+
+**Consequence:** Inject existing locks, recommendation/list-builder callables, and the persistence wrapper. Preserve lock acquisition and release, list identifiers, response shapes, count fields, JSON-error handling, and error reporting. Do not move provider logic or alter list payload semantics in this extraction.
