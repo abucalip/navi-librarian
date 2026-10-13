@@ -1,12 +1,12 @@
-## Latest session — 2026-10-13 (zero-response slskd search fallback implemented; verification pending)
+## Latest session — 2026-10-13 (zero-response slskd search fallback implemented; automated verification passed)
 
 - **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked on this branch. Neither PR is merged or deployed.
-- **User clarification:** the Tinariwen Idrache (Traces of the Past) search inspected in slskd was launched automatically by Librarian; it was not a separate manual search.
-- **Implementation:** when a search returns no usable peer file payloads, Librarian now tries up to three ordered queries: exact artist+album, punctuation-normalized artist+album, then artist+primary title with a parenthetical subtitle removed. It stops as soon as one query yields usable file payloads. Existing artist/album candidate checks and queue/import safety are unchanged.
-- **Diagnostics:** no-match state records each attempted query, search ID/state, slskd-reported response/file counts, and collected peer payload counts. Message text distinguishes peer payloads collected from results reported by slskd.
-- **DroppedNeedle review:** adopted only the principle of bounded query planning and keeping retrieval separate from candidate validation; no code copied.
-- **Regression tests:** query order, deduplication, and blank-input handling are covered. Python syntax CI passed on commit 3c7ae2c176d9229d51cf58a54611bb5a35ef318a; Docker packaging/full unittest workflow was still running at the last check. No local full-suite run or live slskd retest has been performed.
-- **Next:** confirm Docker workflow result, then retest Tinariwen in prox-mcp-pr17-test. If it still fails, inspect search_queries_attempted before further changes. Do not merge or deploy before verification.
+- **User clarification:** the Tinariwen Idrache (Traces of the Past) search inspected in slskd was launched automatically by Librarian, not separately initiated.
+- **Implementation:** when a query returns no usable peer file payloads, try up to three ordered queries: exact artist+album, punctuation-normalized artist+album, then artist+primary title with a parenthetical subtitle removed. Stop at the first usable file payload set. The total search budget is capped at 30 seconds; fallback attempts use shorter slskd timeouts. Candidate matching and queue/import safety remain unchanged.
+- **Diagnostics:** no-match state records each attempted query, search ID/state, slskd-reported response/file counts, and collected peer payload counts. Messaging distinguishes collected payloads from slskd-reported counts.
+- **DroppedNeedle review:** adapted the bounded-query-plan principle and separation between retrieval and candidate validation; no code copied.
+- **Automated verification:** Python syntax/acquisition-safety workflow #166 passed and Docker packaging/full unittest/image-build workflow #73 passed on code/test commit 40e29bf93a661e4724674e2e9297b60549b21c9e. Regression coverage includes mocked exact-query-empty → broader-query-response fallback, query order, blank inputs, and shorter fallback timeouts.
+- **Remaining verification:** no live slskd retest or production deployment has occurred. Retest Tinariwen in prox-mcp-pr17-test before merging. If it still fails, inspect search_queries_attempted to distinguish query recall from response-payload collection.
 
 ## Latest session — 2026-10-13 (Hi-Res FLAC priority and acquisition diagnostics in progress)
 
