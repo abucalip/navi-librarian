@@ -1,3 +1,14 @@
+## Session closeout — 2026-10-13 (M4 discovery/recommendation rules extraction)
+
+- **Branch:** `refactor/discovery-recommendation-rules`, based on `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
+- **Scope:** extracted pure discovery eligibility and ranking rules into `discovery_recommendations.py`; network/cache/inventory orchestration remains in `navidrome_server.py` behind compatibility wrappers.
+- **Behavior intended to remain unchanged:** normalized name keys, MusicBrainz artist identity, album eligibility, exact artist-credit matching, Various Artists exclusion, genre-family mapping, scoring weights/jitter, and classic-list artist/genre diversity caps.
+- **Regression coverage:** direct-import tests in `tests/test_discovery_recommendations.py`.
+- **Verification:** Local_Git returned 404/429, so no local checkout was changed and tests have not run. CI must verify the exact PR head. No live discovery refresh, UI test, image publication, or deployment occurred.
+- **Next:** inspect the complete diff and CI, fix any failures, and only then consider merge.
+
+---
+
 ## In progress — M3 acquisition import filesystem extraction (2026-10-13)
 
 - **Objective:** isolate the staged album-file import transaction from the monolithic server while preserving its compatibility wrapper and exact safety behavior.
