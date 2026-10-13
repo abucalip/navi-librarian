@@ -1,3 +1,14 @@
+## 2026-10-14 — PR #34 merged: acquisition API router
+
+- PR #34 was squash-merged to `main` at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1` from exact PR head `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`.
+- Exact-head workflows all passed: Python syntax #330 (run `38485830330`), Docker packaging/full unit tests #237 (run `38485830207`), container runtime smoke #47 (run `38485830231`), and validation-only multi-architecture #91 (run `38485830245`). The multi-architecture job completed successfully; publishing remained disabled.
+- Changes: extracted six `/api/acquire*` and `/api/acquisitions*` endpoints to `app/api/acquisitions.py`; added direct-import regression coverage in `tests/test_acquisition_routes.py`; reconciled architecture, roadmap, test plan, status, and log.
+- Review state before merge: PR open, mergeable, no submitted reviews or inline review threads. This API-only extraction has no intended UI contract change; no manual browser test was required.
+- No local test execution, image publication, deployment, or production runtime verification is claimed. CI runtime smoke is the workflow's container test, not proof of deployment.
+- Next roadmap task: extract discovery API routes from `app/main.py` into a focused router with regression tests, preserving ownership filtering and refresh/feedback semantics.
+
+---
+
 ## 2026-10-14 — Acquisition API route extraction started
 
 - Branch: `refactor/acquisition-api-router` (based on GitHub `main` at branch creation).
