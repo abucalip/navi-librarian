@@ -1,3 +1,14 @@
+## Session closeout — M4 PR #28 reconciliation and final-head CI (2026-10-13)
+
+- **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) remains draft/open, unmerged and undeployed.
+- **Final PR head:** `63bfbff79d6a0f50264bf5b6859cbe3ce0ab1158`; branch `refactor/discovery-recommendation-rules`. Reconciled with latest `main` `15497d9149b80971414df26bf1b4acfbe02863cc`; GitHub comparison reports 16 commits ahead, 0 behind, mergeable.
+- **Review:** inspected the complete seven-file diff. The extraction isolates pure discovery eligibility, normalization, genre-family, scoring and diversity rules in `discovery_recommendations.py`; compatibility helpers remain in `navidrome_server.py`, and owned-album filtering remains in server orchestration.
+- **Final-head CI:** Python syntax/acquisition-safety workflow #230 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432040318)). Docker packaging workflow #134 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432040385)), including Python compilation, the full unit-test suite, and Docker image build. The focused discovery regression tests are included in full unittest discovery; they were not separately invoked locally because the connected Local_Git service returned 404/429.
+- **Not performed:** no local test run, live discovery refresh, manual UI smoke test, image publication, deployment, or merge. CI does not establish runtime behavior.
+- **Next:** complete any remaining review and decide separately whether to undraft/merge. Do not treat this PR as deployed.
+
+---
+
 ## Session closeout — 2026-10-13 (PR #27 merged: M3 acquisition import extraction)
 
 - **Merge:** [PR #27 — Isolate acquisition import filesystem operations](https://github.com/abucalip/navi-librarian/pull/27) was squash-merged. Merge commit on `main`: `bf6c044ab332148e537b6888b06078c5d75f059c`; PR head: `51c8ebd8736807f35deb9045b5ea92e38d874bed`.

@@ -465,55 +465,14 @@ def _listenbrainz_recent(days=30, page_limit=3):
 
 
 def _artist_identity(candidate):
-    """Return a stable artist key, preferring MusicBrainz artist ID."""
-    artist_id = candidate.get("artist_mbid")
-    if artist_id:
-        return f"mbid:{artist_id}"
-    return f"name:{_music_key(candidate.get('primary_artist', ''))}"
-
-
+    from discovery_recommendations import artist_identity
+    return artist_identity(candidate)
 def _music_key(value):
-    """Normalize names for conservative, accent-insensitive comparisons."""
-    import unicodedata
-    import re
-
-    value = unicodedata.normalize("NFKD", str(value or ""))
-    value = "".join(c for c in value if not unicodedata.combining(c))
-    return "".join(c.casefold() for c in value if c.isalnum())
-
-
+    from discovery_recommendations import music_key
+    return music_key(value)
 def _discovery_is_album_candidate(item):
-    """Reject non-album releases and common compilation/remix variants."""
-    import re
-    if not isinstance(item, dict):
-        return False
-    title = str(item.get("album") or item.get("title") or item.get("name") or "").strip()
-    if not title:
-        return False
-    primary = (item.get("primary_type") or item.get("primary-type")
-               or item.get("album_type") or item.get("release_type"))
-    if primary:
-        normalized_primary = re.sub(r"[^a-z]+", " ", str(primary).casefold()).strip()
-        if normalized_primary not in {"album", "full length album"}:
-            return False
-    secondary = item.get("secondary_types") or item.get("secondary-types") or item.get("secondary_type") or []
-    if isinstance(secondary, str):
-        secondary = re.split(r"[,;/|]", secondary)
-    excluded = {"compilation", "soundtrack", "live", "remix", "dj mix",
-                "dj-mix", "mixtape", "ep", "single", "karaoke", "tribute"}
-    normalized_excluded = {re.sub(r"[^a-z]+", " ", value).strip() for value in excluded}
-    for value in secondary:
-        if re.sub(r"[^a-z]+", " ", str(value).casefold()).strip() in normalized_excluded:
-            return False
-    normalized_title = re.sub(r"[^a-z0-9]+", " ", title.casefold()).strip()
-    patterns = (
-        r"\bcompilations?\b", r"\bremixes?\b", r"\bremixed\b",
-        r"\bdj\s*mix(?:es)?\b", r"\bmixtapes?\b",
-        r"\bsoundtracks?\b", r"\bkaraoke\b", r"\btribute\b",
-        r"\bgreatest hits\b", r"\bbest of\b", r"\banthology\b",
-        r"\bsamplers?\b", r"\blive\b",
-    )
-    return not any(re.search(pattern, normalized_title) for pattern in patterns)
+    from discovery_recommendations import is_album_candidate
+    return is_album_candidate(item)
 
 
 LASTFM_LAST_ERROR = None
@@ -2497,30 +2456,8 @@ def _lastfm_artist_genres(artist):
 
 
 def _deep_dive_genre_families(tags):
-    text = " ".join(str(tag).casefold() for tag in tags)
-    rules = [
-        ("jazz", ("jazz", "bebop", "swing")),
-        ("african", ("african", "afrobeat", "afrobeats", "afropop", "highlife",
-                     "soukous", "malian", "tuareg", "desert blues", "ethiopian",
-                     "mbalax", "senegalese")),
-        ("alternative", ("alternative", "indie rock", "post-punk", "art rock",
-                         "garage rock", "shoegaze")),
-        ("brazilian", ("brazilian", "samba", "bossa nova", "mpb", "tropicalia",
-                       "tropicália")),
-        ("hip-hop", ("hip hop", "hip-hop", "rap")),
-        ("rnb-soul", ("r&b", "rnb", "neo-soul", "soul")),
-        ("electronic", ("electronic", "electronica", "house", "techno", "trip hop",
-                        "trip-hop", "downtempo", "idm")),
-        ("funk", ("funk",)),
-        ("north-african-middle-eastern", ("arabic", "raï", "rai", "maghreb",
-            "north african", "algerian", "moroccan", "tunisian", "gnawa",
-            "gnaoua", "chaabi", "middle eastern", "andalusi", "malouf")),
-        ("rock", ("rock", "punk", "metal", "grunge")),
-        ("pop", ("pop",)),
-    ]
-    return [family for family, terms in rules if any(term in text for term in terms)]
-
-
+    from discovery_recommendations import deep_dive_genre_families
+    return deep_dive_genre_families(tags)
 def _lastfm_similar_artists(artist, limit=8):
     payload = _lastfm_cached_call(
         "artist.getSimilar", ttl_seconds=60 * 24 * 60 * 60,
@@ -2578,31 +2515,11 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
 
 
 def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
-    """Match the credited artist by exact normalized name, never substring."""
-    if not isinstance(artist_credit, list) or not str(artist_name or "").strip():
-        return False
-    target = _music_key(artist_name)
-    for credit_part in artist_credit:
-        if not isinstance(credit_part, dict):
-            continue
-        credit_artist = credit_part.get("artist") or {}
-        credit_name = str(
-            credit_artist.get("name") or credit_part.get("name") or ""
-        ).strip()
-        if credit_name and _music_key(credit_name) == target:
-            return True
-    return False
-
-
-
+    from discovery_recommendations import exact_artist_credit_matches
+    return exact_artist_credit_matches(artist_credit, artist_name)
 def _discovery_is_various_artists(value):
-    """Identify compilation pseudo-artists without excluding real individual artists."""
-    import re
-    normalized = re.sub(r"[^a-z]+", " ", str(value or "").casefold()).strip()
-    return normalized in {"various artists", "various artist", "various", "v a"}
-
-
-
+    from discovery_recommendations import is_various_artists
+    return is_various_artists(value)
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
     snapshot = _discovery_library_snapshot()
@@ -2785,25 +2702,8 @@ def _build_classics_list():
     # Build a broad candidate pool before choosing the visible collection list.
     # Popularity is only a weak tie-breaker; critical recognition and rotating
     # exploration have much more influence than Last.fm listener totals.
-    import math
-    for item in candidates.values():
-        rating = item.get("musicbrainz_rating")
-        votes = int(item.get("musicbrainz_rating_votes") or 0)
-        critical = (float(rating) / 5.0) if rating is not None and votes else 0.0
-        listeners = max(0, int(item.get("lastfm_listeners") or 0))
-        plays = max(0, int(item.get("lastfm_playcount") or 0))
-        popularity_magnitude = math.log10(listeners + 1)
-        play_magnitude = math.log10(plays + 1)
-        item["critical_recognition_available"] = bool(rating is not None and votes)
-        # Unrated and less-heard albums get room to surface; popularity alone
-        # should not beat a diverse candidate pool.
-        exploration_credit = 0.9 if not (rating is not None and votes) else 0.0
-        item["discovery_score"] = round(
-            critical * 1.6 - popularity_magnitude * 0.55
-            - play_magnitude * 0.10 + exploration_credit,
-            4,
-        )
-        item["exploration_score"] = item["discovery_score"] + random.uniform(-1.4, 1.4)
+    from discovery_recommendations import score_classic_candidates
+    score_classic_candidates(candidates.values(), random.uniform)
 
     ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
 
@@ -2824,38 +2724,12 @@ def _build_classics_list():
 
     # Re-sort after enriching the broader pool; add fresh jitter so a manual
     # refresh can rotate recommendations even when upstream API caches are warm.
-    for item in ranked:
-        item["exploration_score"] = round(
-            item["discovery_score"] + random.uniform(-1.4, 1.4), 4
-        )
+    from discovery_recommendations import refresh_exploration_scores
+    refresh_exploration_scores(ranked, random.uniform)
     ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
 
-    diversified = []
-    artist_counts = {}
-    family_counts = {}
-    deferred = []
-    for item in ranked:
-        artist_key = _music_key(item.get("artist", ""))
-        families = item.get("genre_families") or ["other"]
-        family = next((value for value in families if family_counts.get(value, 0) < 8), families[0])
-        if artist_counts.get(artist_key, 0) >= 2 or family_counts.get(family, 0) >= 8:
-            deferred.append(item)
-            continue
-        item["primary_genre_family"] = family
-        diversified.append(item)
-        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
-        family_counts[family] = family_counts.get(family, 0) + 1
-        if len(diversified) >= 100:
-            break
-    if len(diversified) < 100:
-        for item in deferred:
-            artist_key = _music_key(item.get("artist", ""))
-            if artist_counts.get(artist_key, 0) >= 2:
-                continue
-            diversified.append(item)
-            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
-            if len(diversified) >= 100:
-                break
+    from discovery_recommendations import diversify_classic_candidates
+    diversified = diversify_classic_candidates(ranked, limit=100, per_artist=2, per_family=8)
     return {
         "list": "classics",
         "source": "Exploration-weighted candidates with MusicBrainz ratings and genre/artist diversity",
