@@ -28,6 +28,7 @@ def load_helpers():
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
         "_slskd_album_path_match",
+        "_slskd_search_queries",
         "_slskd_search_response_items",
         "_slskd_path_match_diagnostics",
         "_slskd_queue_failure_action",
@@ -40,6 +41,7 @@ def load_helpers():
         "_discovery_queue_candidate_unless_dismissed",
         "_discovery_switch_to_next_source_locked",
         "_discovery_import_completed_source",
+        "_discovery_acquire_album_impl",
         "discovery_acquire_album",
     }
     selected = [
@@ -75,6 +77,8 @@ def load_helpers():
         ),
         "_slskd_download_transfer_files": lambda *_args, **_kwargs: [],
         "_slskd_config": lambda: ("http://slskd", None, {}),
+        "_DISCOVERY_SETTINGS_DEFAULTS": {"quality_priority": ["mp3_320", "flac_cd"]},
+        "_discovery_expected_track_count": lambda _metadata: None,
         "_discovery_cancel_and_clean_source": lambda *_args, **_kwargs: True,
         "_discovery_reactivate_dismissed_acquisition": lambda *_args, **_kwargs: False,
         "_discovery_safe_folder_name": lambda value: str(value).replace("/", "_"),
@@ -150,6 +154,163 @@ class VariousArtistsNewReleasesTests(unittest.TestCase):
         is_various = HELPERS["_discovery_is_various_artists"]
         self.assertFalse(is_various("Queen"))
         self.assertFalse(is_various("The Various"))
+
+
+class SlskdSearchQueryTests(unittest.TestCase):
+    def test_zero_response_fallback_queries_broaden_without_dropping_artist_immediately(self):
+        build = HELPERS["_slskd_search_queries"]
+        queries = build("Tinariwen", "Idrache (Traces of the Past)")
+        self.assertEqual(queries[0], "Tinariwen Idrache (Traces of the Past)")
+        self.assertEqual(queries[1], "Tinariwen Idrache Traces of the Past")
+        self.assertEqual(queries[2], "Tinariwen Idrache")
+        self.assertEqual(len({query.casefold() for query in queries}), len(queries))
+
+    def test_acquisition_retries_broader_query_when_exact_search_has_no_payload(self):
+        posted_queries = []
+        posted_timeouts = []
+        other_peer = {
+            "username": "peer",
+            "files": [{"filename": "Other Artist/Other Album/01 - Track.flac", "size": 1000}],
+        }
+
+        def fake_response(payload=None, status_code=200):
+            return SimpleNamespace(
+                status_code=status_code,
+                json=lambda: payload,
+                raise_for_status=lambda: None,
+            )
+
+        def fake_post(_url, headers=None, json=None, timeout=None):
+            posted_queries.append(json["searchText"])
+            posted_timeouts.append(json["searchTimeout"])
+            return fake_response({})
+
+        def fake_get(url, params=None, headers=None, timeout=None):
+            if url.endswith("/responses"):
+                return fake_response([])
+            search_id = url.rsplit("/", 1)[-1]
+            query_index = len(posted_queries) - 1
+            state = {"isComplete": True, "responseCount": 0, "fileCount": 0}
+            if query_index == 1:
+                state = {
+                    "isComplete": True,
+                    "responseCount": 1,
+                    "fileCount": 1,
+                    "responses": [other_peer],
+                }
+            return fake_response(state)
+
+        client = HELPERS["httpx"]
+        original_post = client.post
+        original_get = getattr(client, "get", None)
+        original_status_error = getattr(client, "HTTPStatusError", None)
+        client.post = fake_post
+        client.get = fake_get
+        client.HTTPStatusError = FakeHTTPError
+        try:
+            result = json.loads(HELPERS["_discovery_acquire_album_impl"](
+                "Tinariwen", "Idrache (Traces of the Past)"
+            ))
+        finally:
+            client.post = original_post
+            if original_get is None:
+                delattr(client, "get")
+            else:
+                client.get = original_get
+            if original_status_error is None:
+                delattr(client, "HTTPStatusError")
+            else:
+                client.HTTPStatusError = original_status_error
+
+        self.assertEqual(posted_queries, [
+            "Tinariwen Idrache (Traces of the Past)",
+            "Tinariwen Idrache Traces of the Past",
+        ])
+        self.assertEqual(posted_timeouts, [15000, 6000])
+        self.assertEqual(
+            [item["query"] for item in result["search_queries_attempted"]],
+            posted_queries,
+        )
+        self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 0)
+        self.assertEqual(result["search_queries_attempted"][1]["collected_peer_response_count"], 1)
+        self.assertIn("Queries tried: Tinariwen Idrache (Traces of the Past)", result["message"])
+        self.assertIn("Tinariwen Idrache Traces of the Past", result["message"])
+
+    def test_waits_for_peer_payload_when_slskd_reports_responses(self):
+        posted_queries = []
+        state_calls = [0]
+        clock = [0.0]
+        peer = {
+            "username": "peer",
+            "files": [{
+                "filename": "Other Artist/Other Album/01 - Track.flac",
+                "size": 1000,
+            }],
+        }
+
+        def fake_response(payload=None, status_code=200):
+            return SimpleNamespace(
+                status_code=status_code,
+                json=lambda: payload,
+                raise_for_status=lambda: None,
+            )
+
+        def fake_post(_url, headers=None, json=None, timeout=None):
+            posted_queries.append(json["searchText"])
+            return fake_response({})
+
+        def fake_get(url, params=None, headers=None, timeout=None):
+            if url.endswith("/responses"):
+                return fake_response([])
+            state_calls[0] += 1
+            if state_calls[0] <= 26:
+                return fake_response({
+                    "isComplete": False,
+                    "state": "InProgress",
+                    "responseCount": 26,
+                    "fileCount": 362,
+                    "responses": [],
+                })
+            return fake_response({
+                "isComplete": True,
+                "state": "Completed, TimedOut",
+                "responseCount": 26,
+                "fileCount": 362,
+                "responses": [peer],
+            })
+
+        client = HELPERS["httpx"]
+        original_post = client.post
+        original_get = getattr(client, "get", None)
+        original_time = HELPERS["time"]
+        client.post = fake_post
+        client.get = fake_get
+        HELPERS["time"] = SimpleNamespace(
+            monotonic=lambda: clock[0],
+            sleep=lambda seconds: clock.__setitem__(0, clock[0] + seconds),
+            time=lambda: 123.0,
+        )
+        try:
+            result = json.loads(HELPERS["_discovery_acquire_album_impl"](
+                "Tinariwen", "Idrache (Traces of the Past)"
+            ))
+        finally:
+            client.post = original_post
+            if original_get is None:
+                delattr(client, "get")
+            else:
+                client.get = original_get
+            HELPERS["time"] = original_time
+
+        self.assertGreater(state_calls[0], 24)
+        self.assertEqual(len(posted_queries), 1)
+        self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 1)
+        self.assertEqual(result["search_queries_attempted"][0]["state"], "completed, timedout")
+
+    def test_search_queries_reject_blank_artist_or_album(self):
+        build = HELPERS["_slskd_search_queries"]
+        self.assertEqual(build("", "Album"), [])
+        self.assertEqual(build("Artist", "  "), [])
 
 
 class SlskdAlbumPathMatchingTests(unittest.TestCase):

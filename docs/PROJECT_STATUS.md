@@ -1,10 +1,21 @@
-## Latest session — 2026-10-13 (retry after Dismiss; implementation in progress)
+## Latest session — 2026-10-13 (wait for slskd peer payloads before query fallback)
 
-- **Branch:** `fix/retry-dismissed-acquisitions`, based on `fix/flac-hires-acquisition-diagnostics`; not merged or deployed.
-- **Observed cause:** user confirmed the albums that would not create a new acquisition card had previously been dismissed. The current acquisition entry point rejects every dismissed record, so Get cannot restart it.
-- **Change:** a fresh Get now attempts to reopen a dismissed record only after Dismiss had successfully completed its safety cleanup. The stale candidate and settings are cleared before a new search; if the guarded status update fails, the retry remains blocked. Added lifecycle regression tests for successful reactivation and refusal when reactivation fails.
-- **Verification:** implementation and regression tests are committed, but CI and local test results for this new branch are pending. User's earlier unittest run was on local branch `pr21-test` and predates this change; it does not validate this patch. PR #21's response-normalization changes remain part of the base branch.
-- **Next:** check syntax/full unittest CI on this branch, then test a previously dismissed album in `prox-mcp-pr17-test`. Do not merge/deploy until verified.
+- **Branch:** `fix/slskd-search-payload-wait`, created from PR #21's latest observed head `2876098ed222cc8803f292c55aa8e3474331e3e5`. Not yet opened as a PR, merged, or deployed. PR #21 and stacked PR #22 remain unchanged.
+- **Root cause evidence:** the user's three slskd search IDs returned HTTP 200 from both state-with-responses and the dedicated `/responses` endpoint. Once completed, they exposed 26–33 peer records and hundreds of files. During Librarian's bounded search window, the card had recorded zero collected peer payloads while each search was still `inprogress`. This points to premature fallback/termination while slskd was still exposing results, not a payload-shape mismatch.
+- **Implementation:** increased the overall search budget from 30 to 45 seconds. Once slskd reports at least one peer but no file payload has yet been collected, continue polling the same search through the overall deadline instead of immediately spending the remaining time on fallback queries. Search timeout values and album/quality matching rules are unchanged.
+- **Regression test:** added a mocked delayed-payload scenario where slskd reports 26 peers for more than the initial 18-second query window and only later returns peer records. The test asserts Librarian keeps polling the same query and collects the payload.
+- **Verification:** on code/test commit `1aad9fc90d2ceeb1659473131d4f4a867f739b63`, Python syntax/acquisition-safety workflow #177 passed, including the delayed-payload regression, and Docker packaging workflow #84 passed compilation, the full unit suite, and Docker image build. The two documentation-only follow-up commits do not change application behavior. No local test run or live slskd retest has occurred. Do not merge until the Tinariwen live retest passes.
+- **Next:** run CI on this branch and test Tinariwen in the existing `prox-mcp-pr17-test` data environment using the isolated port-8089 checkout. Keep the port-8088 app untouched and do not run two instances against the same SQLite data simultaneously.
+
+## Latest session — 2026-10-13 (zero-response slskd search fallback implemented; automated verification passed)
+
+- **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked on this branch. Neither PR is merged or deployed.
+- **User clarification:** the Tinariwen Idrache (Traces of the Past) search inspected in slskd was launched automatically by Librarian, not separately initiated.
+- **Implementation:** when a query returns no usable peer file payloads, try up to three ordered queries: exact artist+album, punctuation-normalized artist+album, then artist+primary title with a parenthetical subtitle removed. Stop at the first usable file payload set. The total search budget is capped at 30 seconds; fallback attempts use shorter slskd timeouts. Candidate matching and queue/import safety remain unchanged.
+- **Diagnostics:** no-match state records each attempted query, search ID/state, slskd-reported response/file counts, and collected peer payload counts. The acquisition card message also shows the attempted query sequence, distinguishing collected payloads from slskd-reported counts.
+- **DroppedNeedle review:** adapted the bounded-query-plan principle and separation between retrieval and candidate validation; no code copied.
+- **Automated verification:** on code/test commit dd22005da57225ec788e6e8290501b15b7f0a602, Python syntax/acquisition-safety workflow #172 passed and Docker workflow #79 passed compilation, the full unittest suite, and Docker image build. On the later docs-only head 9f4e82721a330826a1d5f91c6027428cd01362f6, Python syntax/acquisition-safety workflow #175 passed; Docker workflow #82 passed compilation and the full unittest suite, with image build still in progress at the last check. Regression coverage includes mocked exact-query-empty → broader-query-response fallback, visible query diagnostics, query order, blank inputs, and shorter fallback timeouts.
+- **Remaining verification:** no live slskd retest or production deployment has occurred. Retest Tinariwen in prox-mcp-pr17-test before merging. If it still fails, inspect search_queries_attempted to distinguish query recall from response-payload collection.
 
 ## Latest session — 2026-10-13 (Hi-Res FLAC priority and acquisition diagnostics in progress)
 
@@ -89,6 +100,15 @@
 - **UI verification:** user tested the PR build and reports album artwork now loads very fast.
 - **Deployment distinction:** image is published, but this session did not have access to the media VM's Docker/Compose shell and did not pull/recreate the production container. Host deployment is pending; follow `docs/DEPLOYMENT.md` and record the running image digest after the host update.
 - **Next:** pull and recreate only `navidrome-librarian` on the media VM, then verify container health and artwork in the deployed UI. Sync local Git without overwriting unrelated local changes.
+
+## Latest session — 2026-10-13 (broaden zero-response slskd searches in progress)
+
+- **Objective:** resolve acquisitions that stop at no_matches because Librarian's exact artist+album query yields no usable peer payloads, as reported for Tinariwen — Idrache (Traces of the Past).
+- **Change committed to PR #21 branch** fix/flac-hires-acquisition-diagnostics: search exact title first, then retry with punctuation-normalized text, then with the primary album title (parenthetical subtitle removed) only when the preceding query yielded no usable peer file payloads. Artist+album candidate matching, quality checks, and import/queue safety remain unchanged.
+- **Diagnostics:** record each query attempted, its search ID/state, slskd-reported peer/file counts, and collected peer payload count. The no-match message distinguishes collected responses from slskd-reported counts rather than blaming album-folder matching when no payload was collected.
+- **DroppedNeedle review:** its modular search/acquisition service design reinforces keeping the query plan bounded and matching/safety checks separate. No code copied; the existing Librarian/slskd integration remains in place.
+- **Verification:** regression tests for query ordering and blank inputs are committed. CI and live test in prox-mcp-pr17-test are pending. Do not merge PR #21/#22 or deploy until the new CI and Tinariwen retest are complete.
+- **Next:** run full syntax and unittest CI, then retest the exact Tinariwen acquisition in the existing test environment and inspect search_queries_attempted if it still fails.
 
 # Project status and handoff
 

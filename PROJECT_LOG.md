@@ -1,3 +1,22 @@
+## 2026-10-13 — Wait for delayed slskd peer payloads
+
+- **Branch:** `fix/slskd-search-payload-wait`, based on PR #21 head `2876098ed222cc8803f292c55aa8e3474331e3e5`; not yet a PR, merged, or deployed.
+- **Evidence:** for all three reported Tinariwen searches, the user's read-only diagnostic found the expected response shape from both slskd endpoints after the searches completed (26–33 peer records, hundreds of files). The acquisition result was generated while the searches were still reported as `inprogress` and had zero collected payloads. The evidence supports premature polling/fallback, not a response-shape mismatch.
+- **Change:** extend the overall search budget from 30 to 45 seconds and, after slskd reports peers but has not yet exposed their file payloads, continue polling that same query rather than immediately moving to broader queries. Keep timeout values, candidate matching, quality ranking, queue behavior, and import safety unchanged.
+- **Regression coverage:** mocked search reports peers for longer than the initial 18-second window, then returns payloads. Test expects a single query and successful payload collection.
+- **Verification:** on code/test commit `1aad9fc90d2ceeb1659473131d4f4a867f739b63`, Python syntax/acquisition-safety workflow #177 passed, including the delayed-payload regression; Docker packaging workflow #84 passed compilation, full unit tests, and image build. Documentation-only commits followed. Local test execution and live slskd retest remain pending. No deployment or acquisition/import was performed.
+- **Next:** check CI on this branch, then retest Tinariwen in the established port-8089 test checkout. If the fix passes, reconcile it into PR #21 before merging PR #22.
+
+## 2026-10-13 — Broaden zero-response slskd acquisition searches
+
+- **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked and unmerged.
+- **User clarification:** the Tinariwen Idrache (Traces of the Past) query inspected in slskd was automatically launched by Librarian.
+- **Fix:** if a query yields no usable peer file payloads, try exact artist+album, punctuation-normalized artist+album, then artist+primary title with a parenthetical subtitle removed. Stop at the first usable payload set. Total search budget is capped at 30 seconds, with shorter timeouts on fallback attempts. Candidate matching and queue/import safeguards remain unchanged.
+- **Diagnostics:** per-query records include query text, search ID/state, slskd-reported response/file counts, and collected response count. The no-match card message also prints the attempted query sequence and distinguishes reported counts from collected payloads.
+- **DroppedNeedle:** adapted the bounded-search principle and separation between retrieval and candidate validation. No code copied.
+- **Automated verification:** Python syntax/acquisition-safety workflow #166 and Docker packaging/full unittest/image-build workflow #73 passed on code/test commit 40e29bf93a661e4724674e2e9297b60549b21c9e. Later code/test commits add the visible query-sequence message and assertion; CI for the latest revision is pending. The mocked regression confirms the exact query gets zero usable payloads, the punctuation-normalized fallback is tried, and search stops after a usable payload is collected.
+- **Remaining:** live Tinariwen retest in prox-mcp-pr17-test is pending. No merge or deployment.
+
 ## 2026-10-13 — Hi-Res FLAC priority and acquisition failure diagnostics (in review)
 
 - **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; PR/CI pending at implementation time.
@@ -220,13 +239,3 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **CI:** GitHub reported Python syntax check and Docker packaging validation passed for PR head `97e887fa8295fff55f05ac72101907bf08819a99`. This was documentation-only; no application tests or deployment were performed during the merge session.
 - **Deployment:** still unverified. The previously reported GHCR `unauthorized` pull remains unresolved; do not treat merge/CI as deployment evidence.
 - **Next:** review current PRs and local branches/worktrees before choosing the next implementation task; prioritize required regression testing and resolve GHCR package visibility/authentication before a registry-based deployment.
-
-
-## 2026-10-13 — Allow retrying dismissed acquisitions
-
-- **Branch:** `fix/retry-dismissed-acquisitions`, based on `fix/flac-hires-acquisition-diagnostics`.
-- **Cause:** `discovery_acquire_album` rejected any record with status `dismissed`, so pressing Get after a previous Dismiss could not create a fresh acquisition card.
-- **Change:** a new explicit Get reopens the dismissed row only if the row is still in the dismissed state and the guarded update succeeds. It clears the old source candidate/settings before starting another search. The existing Dismiss operation only records `dismissed` after safe cancellation/cleanup, so failed cleanup remains blocked rather than being silently retried.
-- **Regression tests:** cover successful reactivation with stale source data cleared and refusal when reactivation fails.
-- **Verification:** CI and local tests for this branch are pending. Not merged or deployed.
-- **Next:** wait for CI, then test Get on an album previously dismissed in `prox-mcp-pr17-test`.
