@@ -1,40 +1,9 @@
-## 2026-10-13 — Session closeout: UI checks deferred; test-kit credential persistence
+## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
 
-- **Manual UI schedule:** the uploaded eight-item report remains tied to application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance timing and a distinct error/recovery exercise were not separately recorded. Defer those two checks until the next UI-facing change; do not repeat the full visual checklist for a non-UI change solely because its SHA changes.
-- **Credential-loop root cause:** documented isolation had application data per PR/SHA. A new SHA can therefore trigger first-run owner setup again. Required behavior is stable app data per PR across SHAs, isolated between PR numbers, with venv reuse when Python and dependency inputs remain unchanged. Fresh setup tests must explicitly opt into fresh data.
-- **Implementation boundary:** the installed helper `~/navi-librarian-test/test-pr.sh` lives outside the repository and cannot be edited through the available GitHub source-of-truth tools. This session updated repository docs to define the correct behavior but did not modify or test the local helper. The repeated credential prompt is still an open item, not a claimed fix. Next session should patch the helper and run the same PR twice to confirm owner setup/settings persist.
-- **CI evidence before these documentation commits:** PR #32 code/test head `6dd1f1dabcd59fab3336a9efff62f89800017d5c` passed compile, full test/build, container smoke, and validation-only multi-architecture checks. Documentation commits trigger new runs; verify all checks on the final current head before considering merge.
-- **Other state:** PR #31 docs, PR #32 runtime/provenance, and PR #33 settings-route extraction remain unmerged. PR #33's previously reported CI passed on `22ee23d406284d59c37334f99883bb9e848bd929`; its auth middleware matches main, but container smoke has not been run against a PR #33-built image.
-- **Release:** no publication or deployment; image publishing remains paused until modularization is complete and release is explicitly authorized.
-
-## 2026-10-13 — Authentication boundary checks passed on PR #32 head
-
-- **User observation clarified:** the local test displayed the create-account/sign-in page. That is the intentionally public first-run/login screen; the report did not establish dashboard access or an authentication bypass.
-- **Verification gap and fix:** the smoke harness previously checked an unauthenticated API path and an authenticated root, but not the unauthenticated root. Default urllib redirect-following could conceal a 303 to the public login page. The updated harness disables redirects for root checks and asserts HTTP 303 with `Location: /login` before and after account setup. It separately checks the public login page, API 401, authenticated root, malformed cookies, and a correctly signed but expired session cookie (both UI and API denial).
-- **Prior exact PR #32 head:** `16664d5f74d207b6496771213f23402a1489d3cc` passed compile, validation-only container build, full test/build, and container smoke. The latest addition extends runtime coverage to invalid and expired sessions; final-head CI is pending and will be recorded only after it completes.
-- **PR #33:** exact head `22ee23d406284d59c37334f99883bb9e848bd929`; its four reported check runs all succeeded. Source comparison found its auth middleware unchanged from `main`. The container smoke workflow has not been run against a container built from PR #33, so this is not reported as runtime verification of that revision.
-- **Release boundary:** PRs #32 and #33 remain open and unmerged. No registry publication, deployment, or production runtime verification. Image publication stays disabled until modularization is complete and separately authorized.
-- **Next:** continue the test-plan audit, including manual UI checklist items not covered by the uploaded eight-item report. Do not merge either PR until the agreed testing gate is complete.
-
-## 2026-10-13 — Strengthen unauthenticated UI integration coverage
-
-- **PR/branch:** #32, `ci/container-runtime-smoke-release-provenance`.
-- **Root cause of verification gap:** the container smoke helper tested an unauthenticated API route and an authenticated root page, but did not assert the unauthenticated root response. Python's default `urllib` redirect behavior could also conceal a 303 redirect by following it to the public login page.
-- **Change:** add a no-redirect request mode and assert `GET /` without a session returns HTTP 303 to `/login` both before and after first-run account setup. Confirm the public login/setup page remains reachable. Preserve existing API 401, authenticated UI, key-permission, login, and persistence checks.
-- **Documentation:** record that seeing the public login/setup screen is expected and is not equivalent to dashboard access; the user's observation remains unclassified until exact-revision verification distinguishes the two.
-- **Verification:** pending CI on the resulting PR head. No test is claimed as passed by this change; no local test, merge, publication, or deployment is claimed.
-- **Next:** confirm the updated PR #32 container smoke workflow, then use the validated boundary checks against PR #33 before considering either PR for merge.
-
-## 2026-10-13 — Container runtime and artifact provenance gates verified on code head
-
-- **PR:** [#32](https://github.com/abucalip/navi-librarian/pull/32), branch `ci/container-runtime-smoke-release-provenance`.
-- **Root cause/fix:** Dockerfile omitted six imported domain modules; added all six to the image to prevent startup import failures after modularization.
-- **Automated container integration:** the shared harness builds and starts the image with disposable storage, verifies auth/setup and private auth-key permissions, restarts the container, then verifies the owner account persists and login still works. Music/download mounts are temporary and read-only; no external service or production data is used.
-- **Code-bearing SHA tested:** `9b801d10c4ab1c460fccd4bf057e9486405ef642`.
-- **CI:** Python syntax workflow #272 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023710)); container runtime smoke workflow #7 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023831)); Docker packaging workflow #179 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023729)), including full unit-test discovery and Docker image build.
-- **Release workflow:** per user direction, publication is paused until the modularization roadmap is complete. The workflow is validation-only (runtime smoke plus linux/amd64 and linux/arm64 build validation with push disabled); it no longer logs into GHCR or creates published tags/digests. Re-enable publication only in a later reviewed, explicitly authorized change.
-- **Not performed:** no GHCR publication from this PR, no deployment, and no production runtime verification. These remain separate release states.
-- **Next:** recheck CI on the latest PR head after documentation updates; then review/merge through the agreed process. Verify publication and deployment separately when authorized.
+- Reconciled PR #32's runtime-verification and validation-only publishing safeguards against current main without replacing the newer PR #31–#33 closeout or local test-kit persistence notes.
+- Required smoke assertions: startup/readiness, root redirects to /login before and after setup, public login/setup page, protected API returns 401, owner setup and login, private auth-key mode 0600, and account persistence across a container restart using the same named /data volume.
+- Release gate remains validation-only: runtime smoke precedes the linux/amd64 and linux/arm64 build, push: false, provenance/SBOM generation, and no registry credentials/tags/publication. No deployment or production runtime verification is claimed.
+- Merge/CI state is pending re-verification on the reconciled exact head. Outstanding manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
 
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
@@ -433,3 +402,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Documentation commits:** `docs/PROJECT_STATUS.md` closeout commit `7fe6cbb746fbeaae4addb35478f4cae54f451879`; this `PROJECT_LOG.md` entry is committed separately immediately afterward. The code merge and both documentation updates are on `main`.
 - **Verification boundary:** final PR-head Python syntax workflow #202 and Docker packaging workflow #109 passed, including the full unit suite and image build. GitHub verified the merge and extracted module on `main`. No local test execution, manual UI verification, image publication, or deployment was performed.
 - **Outstanding roadmap:** PR #23 (`docs/modularization-web-only-roadmap`) remains open/unmerged and separate from PR #24. Next implementation priority is M2: extract slskd search and quality evaluation into focused modules with regression tests, preserving fallback order, delayed-response polling, timeout budgets, and quality priority ordering.
+
+
+## 2026-10-13 — PR #31–#33 verification and manual UI gate closeout
+
+- **PR #31:** exact head `572d98d18e051bcbed7f3e74242abe1df6d0540c`; Python syntax and Docker packaging workflows passed. The uploaded manual UI report recorded eight items passing on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance observation and a distinct error/recovery scenario were not separately recorded and remain deferred to the next UI-facing PR.
+- **PR #32:** exact head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; Python syntax, container runtime smoke, Docker packaging, and validation-only multi-architecture workflows passed. This infrastructure/runtime-verification change does not require an additional manual browser run. Registry publishing remains paused.
+- **PR #33:** exact head `22ee23d406284d59c37334f99883bb9e848bd929`; Python syntax and Docker packaging/full-unit-test workflows passed. Settings routes were extracted behind regression tests without intended UI contract changes, so no manual browser test is required for this PR. The local test helper's PR 33 account was confirmed to persist after a server restart; this is local-test evidence only.
+- **Merge recommendation:** PR #33 is CI-ready but should follow PR #32, whose Docker image-content/runtime fix addresses a correctness gap on the base. Integrate PR #31's testing-gate documentation as part of this closeout. No PR was merged in this session; verify the exact head and checks again immediately before each merge.
+- **Not performed:** no image publication, deployment, or production runtime verification. Do not treat local app persistence or CI as production verification.
+- **Next:** reconcile/merge PR #32 and PR #31, then merge PR #33 if its head and checks remain valid. Run the complete manual checklist on the next UI-facing PR, explicitly recording performance and error/recovery results.

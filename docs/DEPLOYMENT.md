@@ -17,7 +17,7 @@ These are environment-specific examples. Confirm live paths, Compose network mem
 
 ## Registry prerequisite
 
-The image name is `ghcr.io/abucalip/navi-librarian`. The GitHub Actions workflow currently validates `linux/amd64` and `linux/arm64` builds but does not publish. Registry publication is intentionally paused until the modularization roadmap is complete and the user explicitly authorizes release.
+The image name is `ghcr.io/abucalip/navi-librarian`. The GitHub Actions workflow is intended to publish `linux/amd64` and `linux/arm64` images on pushes to `main` and version tags.
 
 **Current status (2026-10-12):** the user reports the Docker package has been made public and Librarian has been installed on the server and tested successfully. This supersedes the earlier `unauthorized` report as an active blocker. The exact deployed tag/digest and host-side pull/log evidence were not captured in this documentation update.
 
@@ -94,15 +94,9 @@ For a future deployment/update:
 - Do not delete `librarian_data` during rollback; it contains persistent application state and authentication material.
 - If an upgrade changes the database schema, confirm backward compatibility before reverting the image.
 
-## Artifact identity and container-runtime gate
 
-The PR CI container smoke workflow starts the built image against disposable storage and checks HTTP readiness, authentication boundaries, first-run setup, private auth-key permissions, and persistence of the owner account across a container restart. It does not connect to live Navidrome/slskd services and is not a production deployment check.
+## Container runtime gate and publishing pause
 
-**Publication is intentionally paused until the modularization roadmap is complete and the user explicitly authorizes release.** The current workflow is validation-only: it runs the isolated container smoke harness and validates multi-architecture builds without logging in to GHCR or pushing an image. When publishing is deliberately re-enabled in a later reviewed change, use the Actions summary to record:
+The PR CI smoke test exercises the built container against disposable storage and temporary read-only music/download mounts. It verifies readiness, authentication/setup boundaries, private auth-key permissions, and owner-account persistence across a container restart using the same persistent /data volume. It does not connect to production services and is not production runtime verification.
 
-- source commit SHA and trigger ref;
-- immutable reference ghcr.io/abucalip/navi-librarian@sha256:<digest>;
-- published tags and supported architectures (linux/amd64, linux/arm64);
-- build provenance and SBOM status.
-
-Before deploying, confirm the digest belongs to the intended commit and keep the previous known-good digest as the rollback reference. After deployment, independently confirm the running container's resolved image digest, persistent /data volume, service connectivity, logs, and required smoke tests. CI and a published image alone do not mark a release deployed or verified.
+The GitHub Actions Docker workflow is validation-only: smoke first, then multi-architecture validation for linux/amd64 and linux/arm64 with push: false, provenance and SBOM enabled. No GHCR login, registry tags, image publication, or deployment occurs. Publication remains paused until the modularization roadmap is complete and the user separately authorizes release.

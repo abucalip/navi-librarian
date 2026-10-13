@@ -1,17 +1,9 @@
-## Local test-kit repeatability and UI-test scheduling
+## Container runtime smoke and release safety gate — PR #32
 
-- For ordinary reruns, the local helper must reuse an existing virtual environment when Python/dependency inputs are unchanged and reuse a stable application-data directory per PR across source SHAs. A new commit of the same PR must not implicitly recreate the owner account or discard settings. Keep app data isolated between PR numbers; reset only for an explicit fresh-state test.
-- The current helper is installed outside the repository at `~/navi-librarian-test/test-pr.sh`. Repository docs define the expected behavior, but do not claim the installed helper is fixed until that script is updated and a repeated-run check confirms the setup/account persists. Do not inspect or rely on the dismissed outdated local Git checkout.
-- Run the full manual browser checklist for UI-facing changes after exact-head CI. The two items not separately recorded in the October 13 report—performance observations and a distinct error/recovery exercise—are deferred until the next UI-facing change. Non-UI PRs continue to require relevant automated/API/integration tests, not a repeated full visual checklist by default.
-
-## Authentication boundary integration — PR #32 exact-head verification
-
-- PR #32 head `16664d5f74d207b6496771213f23402a1489d3cc` passed all required checks: compile, validation-only container build, full test/build, and container smoke.
-- The smoke harness explicitly avoids redirect-following for unauthenticated `GET /`; it requires HTTP 303 and `Location: /login` before and after first-run setup. It separately checks public `/login` returns 200, unauthenticated API access returns 401, authenticated root returns 200, auth-key mode is 0600, and account/login persistence survives container restart.
-- The latest harness addition constructs malformed and correctly signed-but-expired session cookies inside the disposable test container, then asserts each is denied at both the UI root (303 to `/login`) and API boundary (401). The auth helper unit test also covers session expiration. Final-head CI for this addition must pass before it is considered verified.
-- The user-confirmed create-account/sign-in page is expected public behavior; it is not itself a dashboard/authentication bypass.
-- PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929` has passing reported compile/test-build checks and its auth middleware matches `main`. However, container runtime smoke has not been executed against a container built from PR #33; keep that distinction explicit.
-- PRs #32 and #33 remain unmerged pending the broader testing-gap review. No image publication or deployment.
+- On the exact PR head, run the container smoke workflow and both syntax and Docker packaging/full-unit-test workflows.
+- Smoke must use disposable storage and read-only temporary music/download mounts; assert readiness, root redirect to /login before and after setup, public /login, unauthenticated API HTTP 401, first-run owner creation, successful login, authentication-key file mode 0600, and account persistence after restarting the container with the same persistent /data volume.
+- The validation-only Docker workflow must run the smoke test before Buildx, validate linux/amd64 and linux/arm64, keep push: false, enable provenance and SBOM, and never log into GHCR or create registry tags/artifacts. Image publication remains paused until modularization is complete and separately authorized.
+- CI results on the original PR head do not establish that the reconciled head passes. Recheck the exact updated head and all applicable workflows before merge.
 
 ## Discovery refresh coordination extraction — merged PR #30
 
@@ -26,19 +18,6 @@
 # Test plan
 
 Last updated: 2026-10-13
-
-## Authentication boundary integration check
-
-The container smoke harness must verify the HTTP boundary, not just authentication helper functions:
-
-- With a fresh data directory, `GET /` without a session cookie returns HTTP 303 with `Location: /login`; the first-run login/setup page itself is public.
-- The same root redirect is required after the owner account exists when no valid session cookie is sent.
-- Unauthenticated `/api/*` requests return HTTP 401, including unknown API paths.
-- After setup/login, the authenticated root returns HTTP 200; invalid or expired cookies must not authorize the application.
-- Disable automatic HTTP redirect following in the unauthenticated root checks. Otherwise a test client may follow the redirect to `/login` and report a misleading HTTP 200, masking the actual redirect boundary.
-
-Run the integration test with `bash .github/scripts/run_container_smoke.sh`; it uses disposable storage and temporary read-only music/download mounts. Do not interpret visibility of the login/setup screen as access to the protected dashboard.
-
 
 ## Discovery store extraction — merged PR #29
 
@@ -138,6 +117,10 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 
 ## Manual UI smoke test
 
+**When manual browser testing is required:** run this checklist after automated CI passes on the exact head of a UI-facing PR or release candidate. Documentation-only, API-only refactors with no UI contract changes, and infrastructure changes covered by a successful automated container runtime smoke test do not independently require a manual browser run. Record the exact application SHA for every manual run.
+
+**Deferred checks:** the PR #31 report recorded eight items as passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`, but did not separately record performance observation or a distinct error/recovery scenario. Do not mark those as passed retroactively; include both in the next UI-facing PR's manual run.
+
 After the automated suite passes:
 
 1. Log in and navigate between the main pages.
@@ -217,12 +200,3 @@ python -m unittest discover -s tests -v
 ```
 
 The store owns only SQLite persistence for cached discovery-list payloads. The server compatibility wrappers retain `_discovery_init()` so existing schema initialization and callers are unchanged. Cover missing rows, malformed JSON, Unicode payload round-trips, timestamp preservation, and per-list replacement/isolation. CI must pass on the exact PR head, including Docker packaging; unit tests do not establish live refresh/UI behavior.
-
-## Container runtime and release-artifact verification — 2026-10-13
-
-- .github/workflows/container-smoke.yml builds the Docker image on pull requests, pushes to main, and manual dispatch, then starts it with disposable /data, /music, and /downloads storage. The smoke script verifies readiness, unauthenticated API denial, first-run owner setup, authentication-key file mode, authenticated UI access, account persistence across a container restart, and login after restart.
-- The smoke job never connects to Navidrome or slskd and uses no real library/download paths. Its music/download mounts are read-only. It is a container/API integration check, not a full browser test or destructive acquisition test.
-- .github/workflows/docker-publish.yml is intentionally in validation-only mode while the modularization roadmap is in progress. It runs the isolated container runtime smoke test and validates linux/amd64 plus linux/arm64 builds with push disabled. It does not log in to GHCR, publish tags, or create a registry digest. Re-enable publishing only after modularization is complete and explicitly approved.
-- For a release/main publication, confirm the publish job succeeded and retain the full image digest from the run summary. Confirm the digest is associated with the intended source SHA and includes both linux/amd64 and linux/arm64.
-- A successful image build or publish does not verify that a deployment host pulled or runs that digest. Host deployment, persistent-volume preservation, logs, connectivity, rollback readiness, and application smoke tests remain separate, authorization-gated checks.
-- Required CI must pass on the exact PR head. Re-check the final head after changes and inspect the container-smoke job in addition to syntax, full unit-test/Docker packaging, and acquisition-safety workflows.
