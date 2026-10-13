@@ -1,3 +1,13 @@
+## 2026-10-13 — M4 discovery/recommendation rules extraction
+
+- **Branch/base:** `refactor/discovery-recommendation-rules` from `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
+- **Implementation:** `discovery_recommendations.py` owns pure normalization, artist identity, album eligibility, exact artist-credit checks, Various Artists detection, genre-family mapping, scoring, jitter refresh, and classic-list diversity. Compatibility helpers remain in `navidrome_server.py`; network/cache/library/persistence behavior stays in the server.
+- **Tests/docs:** direct-import regression tests added; test plan and architecture updated; status and this log record verification boundaries.
+- **Verification:** no local tests or manual UI/live discovery refresh have run because Local_Git endpoint returned 404/429. CI must verify the exact PR head. No deployment or image publication.
+- **Next:** inspect the complete diff and exact-head CI, then fix any regressions before merge.
+
+---
+
 ## 2026-10-13 — M3 acquisition import filesystem extraction started
 
 - **Branch:** `refactor/acquisition-import-module`, based on the current GitHub `main` following M2 merge `84fa2f82dba562fd221a1d588e761d2cb4907749`. The connected local checkout remains on `test/pr17-reconciliation` and was not changed.
