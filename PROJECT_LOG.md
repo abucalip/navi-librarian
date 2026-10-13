@@ -1,3 +1,13 @@
+## 2026-10-13 — Broaden zero-response slskd acquisition searches
+
+- **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked and unmerged.
+- **User clarification:** the Tinariwen Idrache (Traces of the Past) query inspected in slskd was automatically launched by Librarian, not separately initiated by the user.
+- **Fix:** if a query yields no usable peer file payloads, try a bounded sequence: exact artist+album, punctuation-normalized artist+album, and artist+primary album title with parenthetical subtitle removed. The sequence stops on the first usable payload set. Candidate matching, quality checks, and queue/import safeguards remain unchanged.
+- **Diagnostics:** per-query records include query text, search ID/state, slskd-reported peer/file counts, and collected response count. No-match messaging no longer implies folder matching failed when no payload was collected.
+- **DroppedNeedle:** reviewed its matching/search-service design; adapted the bounded-search principle only. No code copied.
+- **Tests/CI:** query-order and blank-input tests were added. Python syntax workflow #161 passed on commit 3c7ae2c176d9229d51cf58a54611bb5a35ef318a; Docker packaging/full unit-test workflow #68 was still in progress at last check. No live slskd retest yet.
+- **Next:** confirm full unittest/Docker CI, retest the Tinariwen acquisition in prox-mcp-pr17-test, and use the query diagnostics to identify any remaining search/payload issue. Not merged or deployed.
+
 ## 2026-10-13 — Hi-Res FLAC priority and acquisition failure diagnostics (in review)
 
 - **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; PR/CI pending at implementation time.
