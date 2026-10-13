@@ -189,3 +189,12 @@ python -m unittest discover -s tests -v
 ```
 
 The store owns only SQLite persistence for cached discovery-list payloads. The server compatibility wrappers retain `_discovery_init()` so existing schema initialization and callers are unchanged. Cover missing rows, malformed JSON, Unicode payload round-trips, timestamp preservation, and per-list replacement/isolation. CI must pass on the exact PR head, including Docker packaging; unit tests do not establish live refresh/UI behavior.
+
+## Container runtime and release-artifact verification — 2026-10-13
+
+- .github/workflows/container-smoke.yml builds the Docker image on pull requests, pushes to main, and manual dispatch, then starts it with disposable /data, /music, and /downloads storage. The smoke script verifies readiness, unauthenticated API denial, first-run owner setup, authentication-key file mode, authenticated UI access, account persistence across a container restart, and login after restart.
+- The smoke job never connects to Navidrome or slskd and uses no real library/download paths. Its music/download mounts are read-only. It is a container/API integration check, not a full browser test or destructive acquisition test.
+- .github/workflows/docker-publish.yml records source SHA, trigger ref, published tags, multi-architecture targets, immutable GHCR digest, and provenance/SBOM generation status in the GitHub Actions run summary.
+- For a release/main publication, confirm the publish job succeeded and retain the full image digest from the run summary. Confirm the digest is associated with the intended source SHA and includes both linux/amd64 and linux/arm64.
+- A successful image build or publish does not verify that a deployment host pulled or runs that digest. Host deployment, persistent-volume preservation, logs, connectivity, rollback readiness, and application smoke tests remain separate, authorization-gated checks.
+- Required CI must pass on the exact PR head. Re-check the final head after changes and inspect the container-smoke job in addition to syntax, full unit-test/Docker packaging, and acquisition-safety workflows.
