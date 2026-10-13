@@ -93,3 +93,10 @@ For a future deployment/update:
 - Revert the service image to that exact known-good version, then run `docker compose up -d navidrome-librarian`.
 - Do not delete `librarian_data` during rollback; it contains persistent application state and authentication material.
 - If an upgrade changes the database schema, confirm backward compatibility before reverting the image.
+
+
+## Container runtime gate and publishing pause
+
+The PR CI smoke test exercises the built container against disposable storage and temporary read-only music/download mounts. It verifies readiness, authentication/setup boundaries, private auth-key permissions, and owner-account persistence across a container restart using the same persistent /data volume. It does not connect to production services and is not production runtime verification.
+
+The GitHub Actions Docker workflow is validation-only: smoke first, then multi-architecture validation for linux/amd64 and linux/arm64 with push: false, provenance and SBOM enabled. No GHCR login, registry tags, image publication, or deployment occurs. Publication remains paused until the modularization roadmap is complete and the user separately authorizes release.

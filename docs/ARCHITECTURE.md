@@ -30,8 +30,6 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 ## Main components
 
 - **`app/main.py`** — FastAPI routes and the web UI. It adapts existing librarian functions for browser/API use.
-- **`app/api/settings.py`** — settings route group for Navidrome, Last.fm, ListenBrainz and slskd; delegates to existing librarian settings/connection functions.
-- **`app/api/utils.py`** — shared response adapter used by route modules; `app.main.parse_result` remains available as an imported compatibility name.
 - **`navidrome_server.py`** — discovery orchestration, Navidrome/slskd integration, acquisition lifecycle, settings, persistence, and legacy MCP tools.
 - **`acquisition_completion.py`** — strict completed-track matching, filename identity, and completed-folder inspection.
 - **`slskd_search.py` / `slskd_quality.py`** — importable slskd query/candidate helpers and audio-quality classification.
@@ -69,8 +67,6 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 - Acquisition imports and dismiss cleanup are write/destructive operations. Limit them to configured roots and retain tests for traversal, ambiguous paths, incomplete albums, and unrelated files.
 - Do not expose the web port directly to the public internet. Prefer LAN access or a trusted private overlay/VPN.
 
-The settings routes are registered by `app.main` through an `APIRouter`; authentication middleware remains in the app assembly layer and still protects these routes. Further route extraction should follow the same behavior-preserving pattern and add direct tests.
-
 ## Architecture change rules
 
 1. Reuse existing domain logic instead of duplicating recommendation/acquisition behavior in the UI layer.
@@ -78,3 +74,8 @@ The settings routes are registered by `app.main` through an `APIRouter`; authent
 3. Add tests at the domain/safety boundary and API boundary for behavior changes.
 4. Preserve MCP behavior when refactoring code shared with the web app.
 5. Do not modify unrelated services or replace the host's whole Compose file for a one-service change.
+
+
+## Settings route boundary — PR #33
+
+The settings endpoints for Navidrome, Last.fm, ListenBrainz, and slskd are grouped in app/api/settings.py. The route module adapts HTTP payloads and delegates behavior to existing librarian domain functions. app/api/utils.py owns the shared parse_result adapter; app.main imports that symbol to preserve callers while registering the router. Authentication middleware, URL paths, methods, and response/error contracts are intended to remain unchanged.

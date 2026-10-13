@@ -1,10 +1,9 @@
-## Settings API router extraction — current PR
+## Settings API route extraction — PR #33 reconciliation
 
-- The Navidrome, Last.fm, ListenBrainz and slskd settings routes moved to app/api/settings.py; app.main registers the router and continues exposing the imported parse_result name for compatibility.
-- New direct-import regression tests in tests/test_settings_routes.py cover JSON response parsing, the exact 12 endpoint/method pairs, Navidrome payload mapping, ListenBrainz validation errors, slskd quality defaults/path trimming, and sanitized connection failures.
-- Run focused tests: python -m unittest tests.test_settings_routes -v.
-- Run full suite: python -m unittest discover -s tests -v; syntax: python -m py_compile app/main.py app/api/settings.py app/api/utils.py.
-- Final-head GitHub CI passed on b0a9df868b1b0fd4a9222198ad052d773e12740a: Python syntax/full unittest workflow #285 and Docker packaging/full suite/build workflow #192; 115 tests passed. No local tests are claimed. Recheck CI if code changes before merge.
+- Recheck the exact reconciled PR #33 head after merging current main into its branch. Run Python syntax, the full unittest suite including tests/test_settings_routes.py, Docker packaging/image build, container runtime smoke, and validation-only multi-architecture build.
+- Settings route regression tests must preserve all 12 endpoint/method pairs, payload mapping/defaults, ListenBrainz validation, slskd quality/path defaults, sanitized errors, and parse_result compatibility in app.main.
+- PR #32's container/runtime baseline is merged. GHCR publication remains paused; all image build workflows must keep push: false.
+- This API/module extraction does not require a full manual browser checklist by itself. Defer the unrecorded performance observation and distinct error/recovery scenario to the next UI-facing change; perform focused UI smoke only if an API contract change makes it relevant.
 
 ## Discovery refresh coordination extraction — merged PR #30
 
@@ -117,6 +116,10 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - Confirm albums already importing/imported and active downloads remain protected from duplicate acquisition requests.
 
 ## Manual UI smoke test
+
+**When manual browser testing is required:** run this checklist after automated CI passes on the exact head of a UI-facing PR or release candidate. Documentation-only, API-only refactors with no UI contract changes, and infrastructure changes covered by a successful automated container runtime smoke test do not independently require a manual browser run. Record the exact application SHA for every manual run.
+
+**Deferred checks:** the PR #31 report recorded eight items as passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`, but did not separately record performance observation or a distinct error/recovery scenario. Do not mark those as passed retroactively; include both in the next UI-facing PR's manual run.
 
 After the automated suite passes:
 

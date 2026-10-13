@@ -1,12 +1,16 @@
-## 2026-10-13 — Begin FastAPI route separation with settings routes
+## 2026-10-14 — PR #33 reconciled with merged runtime-verification baseline
 
-- Branch: refactor/settings-api-router, based on GitHub main.
-- Scope: extracted settings API handlers to app/api/settings.py; shared parse_result lives in app/api/utils.py, and app.main still exposes the imported symbol and registers the router. Existing endpoint paths, methods, payload defaults, service calls and error handling are preserved.
-- Regression tests: added tests/test_settings_routes.py for response parsing, Navidrome payload mapping, ListenBrainz validation failures, slskd defaults/path normalization, and sanitized upstream errors.
-- Documentation: updated the modularization roadmap to record merged PRs #24–#30 and identify remaining route groups and later MCP retirement. Architecture and test plan updated.
-- **Final-head CI:** Python syntax/full unittest workflow #285 passed and Docker packaging/full suite/build workflow #192 passed on exact PR head b0a9df868b1b0fd4a9222198ad052d773e12740a. The full suite ran 115 tests, including all six settings-route regression tests. No local tests are claimed. PR remains open; no merge, publication or deployment occurred.
-- Release policy: registry publishing stays disabled until modularization is complete and release is explicitly authorized.
-- Next: inspect the full diff, verify focused/full CI on the exact final PR head, then continue with acquisition routes.
+- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4; its reconciled PR head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture CI.
+- Reconciled PR #33's settings-route extraction against the new main baseline while preserving app/API code, route regression tests, and the Python workflow dependency-install fix. Exact-head CI is pending on the reconciled commit; no merge is claimed until all checks pass.
+- PR #31's documentation branch has also been reconciled with PR #32, but remains open/unmerged pending its own exact-head CI and review. Manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
+- No image publication, deployment, or production runtime verification occurred.
+
+## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
+
+- Reconciled PR #32's runtime-verification and validation-only publishing safeguards against current main without replacing the newer PR #31–#33 closeout or local test-kit persistence notes.
+- Required smoke assertions: startup/readiness, root redirects to /login before and after setup, public login/setup page, protected API returns 401, owner setup and login, private auth-key mode 0600, and account persistence across a container restart using the same named /data volume.
+- Release gate remains validation-only: runtime smoke precedes the linux/amd64 and linux/arm64 build, push: false, provenance/SBOM generation, and no registry credentials/tags/publication. No deployment or production runtime verification is claimed.
+- Merge/CI state is pending re-verification on the reconciled exact head. Outstanding manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
 
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
@@ -405,3 +409,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Documentation commits:** `docs/PROJECT_STATUS.md` closeout commit `7fe6cbb746fbeaae4addb35478f4cae54f451879`; this `PROJECT_LOG.md` entry is committed separately immediately afterward. The code merge and both documentation updates are on `main`.
 - **Verification boundary:** final PR-head Python syntax workflow #202 and Docker packaging workflow #109 passed, including the full unit suite and image build. GitHub verified the merge and extracted module on `main`. No local test execution, manual UI verification, image publication, or deployment was performed.
 - **Outstanding roadmap:** PR #23 (`docs/modularization-web-only-roadmap`) remains open/unmerged and separate from PR #24. Next implementation priority is M2: extract slskd search and quality evaluation into focused modules with regression tests, preserving fallback order, delayed-response polling, timeout budgets, and quality priority ordering.
+
+
+## 2026-10-13 — PR #31–#33 verification and manual UI gate closeout
+
+- **PR #31:** exact head `572d98d18e051bcbed7f3e74242abe1df6d0540c`; Python syntax and Docker packaging workflows passed. The uploaded manual UI report recorded eight items passing on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance observation and a distinct error/recovery scenario were not separately recorded and remain deferred to the next UI-facing PR.
+- **PR #32:** exact head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; Python syntax, container runtime smoke, Docker packaging, and validation-only multi-architecture workflows passed. This infrastructure/runtime-verification change does not require an additional manual browser run. Registry publishing remains paused.
+- **PR #33:** exact head `22ee23d406284d59c37334f99883bb9e848bd929`; Python syntax and Docker packaging/full-unit-test workflows passed. Settings routes were extracted behind regression tests without intended UI contract changes, so no manual browser test is required for this PR. The local test helper's PR 33 account was confirmed to persist after a server restart; this is local-test evidence only.
+- **Merge recommendation:** PR #33 is CI-ready but should follow PR #32, whose Docker image-content/runtime fix addresses a correctness gap on the base. Integrate PR #31's testing-gate documentation as part of this closeout. No PR was merged in this session; verify the exact head and checks again immediately before each merge.
+- **Not performed:** no image publication, deployment, or production runtime verification. Do not treat local app persistence or CI as production verification.
+- **Next:** reconcile/merge PR #32 and PR #31, then merge PR #33 if its head and checks remain valid. Run the complete manual checklist on the next UI-facing PR, explicitly recording performance and error/recovery results.

@@ -42,3 +42,8 @@ Docker runtime smoke and multi-architecture build validation remain enabled. GHC
 ## Current status
 
 Domain extractions through PR #30 are merged. The next roadmap stage is FastAPI route separation, beginning with settings routes in branch refactor/settings-api-router. MCP retirement and frontend asset extraction remain future work.
+
+
+## Stage 7 — FastAPI route separation: settings routes
+
+PR #33 extracts settings handlers to app/api/settings.py and the shared response adapter to app/api/utils.py. The app.main.parse_result symbol remains available as an imported compatibility name. Regression coverage in tests/test_settings_routes.py checks all 12 endpoint/method pairs, payload mapping, defaults, validation failures, and sanitized errors. Remaining route groups and later MCP retirement stay separate roadmap items; do not remove the legacy server until callers and compatibility are verified.
