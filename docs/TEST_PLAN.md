@@ -16,7 +16,7 @@ A skipped, unavailable, or unobserved check is not a pass. Report it explicitly 
 
 ### Local UI smoke-test environment — available
 
-**Completed manual run (PR #31):** the user reports all eight items in `docs/LOCAL_UI_TESTING.md` passed on SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`; the Markdown report was uploaded as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713). The run used macOS 26.2 arm64, Python 3.12.14, port 8090, sandbox music/download paths, and slskd disabled. Treat this as evidence for that exact application source SHA, not as proof of the broader acquisition lifecycle or production behavior.
+**Completed manual run (PR #31):** the user reports that all eight items recorded in the uploaded report passed on SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`; the report is available as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713). The run used macOS 26.2 arm64, Python 3.12.14, port 8090, sandbox music/download paths, and slskd disabled. The report does not separately record the performance-observation check or an explicit error/recovery exercise from the fuller operator checklist. Treat it as evidence for the recorded checks on that exact application source SHA, not as proof of the broader acquisition lifecycle or production behavior.
 
 - Run `~/navi-librarian-test/test-pr.sh <PR-number>` after the candidate PR's exact-head CI passes. Optional port: `~/navi-librarian-test/test-pr.sh <PR-number> 8090`.
 - The helper reads the open PR's current head SHA from GitHub and fetches that exact source. It creates a separate venv and application-data directory for each PR/SHA and starts FastAPI on localhost (default port 8089).
