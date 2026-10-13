@@ -127,3 +127,17 @@ python -m unittest discover -s tests -v
 ```
 
 The new tests cover MP3/FLAC classification, user-configured tier ordering, bounded fallback query generation, slskd response-shape normalization, album-path/track identity matching, candidate track deduplication and ranking, and bounded diagnostics. The legacy acquisition-safety suite remains a compatibility guard because existing callers still use wrappers in `navidrome_server.py`. Confirm the Docker packaging workflow passes on the exact PR head before merge. No live slskd or UI behavior should be inferred from unit tests alone.
+
+
+## M3 — acquisition import filesystem module
+
+For changes touching `acquisition_import.py`, run the direct-import tests first:
+
+```sh
+python -m unittest tests.test_acquisition_import -v
+python -m unittest tests.test_acquisition_safety -v
+python -m py_compile acquisition_import.py navidrome_server.py
+python -m unittest discover -s tests -v
+```
+
+The module owns staging/move/rollback mechanics only. Acquisition orchestration remains in `navidrome_server.py`; its compatibility wrapper injects the existing strict completion matcher. Preserve the existing checks for verified expected tracks, reserved manifest names, existing destinations (including broken symlinks), real destination parents, mount/device identity, rollback, and recovery manifests. Do not treat a successful unit suite as proof of a live import or deployment.
