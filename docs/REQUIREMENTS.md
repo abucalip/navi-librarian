@@ -7,7 +7,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 ## Product goals
 
 - Help the user discover albums that are not already in their Navidrome library.
-- Provide a web UI while preserving the existing MCP entry point and discovery logic.
+- Provide a complete web UI as the delivered product; MCP is prototype-era functionality and is not a product requirement. Retire MCP runtime/tools after shared domain logic has been separated safely.
 - Support acquisition through an existing slskd service with explicit controls and safeguards.
 - Make state and settings survive container restarts and upgrades.
 - Prefer small, testable changes and preserve working behavior when extending the UI.
@@ -38,7 +38,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | DATA-01 | Persist app database and authentication key under the configured data directory, mounted as persistent storage in Docker. | Implemented; verify restart/upgrade |
 | API-01 | Validate API input and return useful HTTP errors rather than exposing internal exceptions or credentials. | Ongoing quality requirement |
 | OPS-01 | Build a reproducible Docker image for `linux/amd64` and `linux/arm64`, with automated tests and GHCR publishing. | Packaging merged; verify workflow and registry |
-| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service or the MCP server. | Current deployment design |
+| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start duplicate instances. The delivered application should not run an MCP server. | Target architecture; MCP retirement is not implemented yet |
 
 ## Safety rules for acquisition and deletion
 
@@ -57,3 +57,13 @@ For every requirement changed:
 3. Run the full test suite, not only the new test.
 4. Manually smoke-test affected UI behavior.
 5. Mark status accurately in [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+
+## Architecture and modularization requirements
+
+- **ARCH-01 — Web-only delivered product:** the shipped application must provide its supported behavior through the authenticated web UI/API and must not require an MCP server or MCP tool registration. **Status: Planned; not implemented.**
+- **ARCH-02 — Separate domain logic from entry points:** recommendation, discovery, and acquisition behavior must be importable independently of FastAPI route registration and MCP runtime initialization. Keep behavior and response contracts stable during extraction. **Status: Planned.**
+- **ARCH-03 — Directly testable modules:** new domain modules must be tested through normal imports, not AST extraction from a monolithic entry-point file. Retire AST-based helper loading as the corresponding behavior is migrated and coverage is preserved. **Status: Planned.**
+- **ARCH-04 — Incremental refactoring:** each extraction must have focused regression coverage, pass the full test suite and relevant build checks, and avoid unrelated behavior changes. Preserve destructive-operation safeguards and persistent data.
+
+MCP removal is a planned architecture change, not authorization to remove domain functions that the web application currently imports. First identify and break those dependencies; only then remove MCP server/tool registration, MCP-specific dependencies, entry-point documentation and obsolete tests. Do not delete code or dependencies merely because they appear MCP-related until their usage is confirmed.
