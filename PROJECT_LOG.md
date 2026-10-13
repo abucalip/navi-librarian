@@ -1,3 +1,13 @@
+## 2026-10-13 — M2 slskd extraction session closeout
+
+- **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25) remains draft/open, unmerged and undeployed. Branch `refactor/slskd-search-quality-modules`; final head `e8a4256aaf34956ab1c4ca15b0b302c107689736`; base `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`.
+- **Verification confirmed at closeout:** final head passed Python syntax workflow #211 and Docker packaging workflow #118. The Docker workflow included the full unit-test suite and image build. No local test run, live slskd test, manual UI test, image publication, merge, or deployment was performed.
+- **Failure lesson:** first CI caught two stale private helper references in extracted callback paths. They were replaced with injected callbacks; the corrected code commit passed both workflows, and final-head workflows also passed.
+- **Working tree safety:** the connected local checkout on `test/pr17-reconciliation` was left untouched.
+- **Next:** inspect the complete PR #25 diff for behavioral equivalence and review readiness. Only then undraft/request review; do not merge without explicit authorization. Keep PR #23 separate/open.
+
+---
+
 ## 2026-10-13 — M2 slskd search and quality extraction (PR #25 draft)
 
 - **Branch/base:** `refactor/slskd-search-quality-modules` from GitHub `main` SHA `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; PR #25 is open as a draft. Local checkout `test/pr17-reconciliation` and its existing work were left untouched.
@@ -14,8 +24,7 @@
 - **Branch:** `refactor/slskd-search-quality-modules`, based on current GitHub `main` SHA `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; the local working checkout was left untouched because it is on `test/pr17-reconciliation` and contains unrelated work.
 - **Files:** added `slskd_quality.py`, `slskd_search.py`, and direct-import tests in `tests/test_slskd_search_modules.py`; converted seven legacy slskd helper definitions in `navidrome_server.py` to compatibility wrappers.
 - **Scope:** relocated quality classification, query construction, response parsing, album path matching, track identity, bounded path diagnostics, and candidate grouping/ranking. Search orchestration and its 45-second overall budget, delayed-payload polling, candidate acceptance thresholds, settings schema/order, and acquisition queue/import lifecycle remain in place.
-- **Test status:** tests and syntax checks have not yet been executed. Do not claim the extraction is verified until focused tests, full unittest discovery, syntax checks, Docker packaging, and exact-head CI are inspected.
-- **Next:** validate the branch diff and CI, then address failures before merge. No deployment performed.
+- **Superseded implementation-stage status:** final-head Python syntax workflow #211 and Docker packaging workflow #118 subsequently passed on `e8a4256aaf34956ab1c4ca15b0b302c107689736`. See the session closeout at the top of this log for the final verification boundary and next step.
 
 ---
 
