@@ -235,6 +235,77 @@ class SlskdSearchQueryTests(unittest.TestCase):
         self.assertIn("Queries tried: Tinariwen Idrache (Traces of the Past)", result["message"])
         self.assertIn("Tinariwen Idrache Traces of the Past", result["message"])
 
+    def test_waits_for_peer_payload_when_slskd_reports_responses(self):
+        posted_queries = []
+        state_calls = [0]
+        clock = [0.0]
+        peer = {
+            "username": "peer",
+            "files": [{
+                "filename": "Tinariwen/Idrache (Traces of the Past)/01 - Track.flac",
+                "size": 1000,
+            }],
+        }
+
+        def fake_response(payload=None, status_code=200):
+            return SimpleNamespace(
+                status_code=status_code,
+                json=lambda: payload,
+                raise_for_status=lambda: None,
+            )
+
+        def fake_post(_url, headers=None, json=None, timeout=None):
+            posted_queries.append(json["searchText"])
+            return fake_response({})
+
+        def fake_get(url, params=None, headers=None, timeout=None):
+            if url.endswith("/responses"):
+                return fake_response([])
+            state_calls[0] += 1
+            if state_calls[0] <= 26:
+                return fake_response({
+                    "isComplete": False,
+                    "state": "InProgress",
+                    "responseCount": 26,
+                    "fileCount": 362,
+                    "responses": [],
+                })
+            return fake_response({
+                "isComplete": True,
+                "state": "Completed, TimedOut",
+                "responseCount": 26,
+                "fileCount": 362,
+                "responses": [peer],
+            })
+
+        client = HELPERS["httpx"]
+        original_post = client.post
+        original_get = getattr(client, "get", None)
+        original_time = HELPERS["time"]
+        client.post = fake_post
+        client.get = fake_get
+        HELPERS["time"] = SimpleNamespace(
+            monotonic=lambda: clock[0],
+            sleep=lambda seconds: clock.__setitem__(0, clock[0] + seconds),
+            time=lambda: 123.0,
+        )
+        try:
+            result = json.loads(HELPERS["_discovery_acquire_album_impl"](
+                "Tinariwen", "Idrache (Traces of the Past)"
+            ))
+        finally:
+            client.post = original_post
+            if original_get is None:
+                delattr(client, "get")
+            else:
+                client.get = original_get
+            HELPERS["time"] = original_time
+
+        self.assertGreater(state_calls[0], 24)
+        self.assertEqual(len(posted_queries), 1)
+        self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 1)
+        self.assertEqual(result["search_queries_attempted"][0]["state"], "completed, timedout")
+
     def test_search_queries_reject_blank_artist_or_album(self):
         build = HELPERS["_slskd_search_queries"]
         self.assertEqual(build("", "Album"), [])
