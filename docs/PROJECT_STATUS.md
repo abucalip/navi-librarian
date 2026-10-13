@@ -1,3 +1,12 @@
+## M4 update — PR #28 opened, merge-base and CI need follow-up
+
+- PR [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) is open as a draft, not merged or deployed. Latest observed head: `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
+- Comparison against current `main` reports the branch is 8 commits ahead and 2 behind; GitHub currently reports `mergeable: false`. Reconcile with the latest `main` before review/merge, preserving the focused change.
+- No CI workflow runs or commit status checks were returned for the exact head at the time of inspection. Local test execution was not possible through the connected Local_Git tool (404/429 errors).
+- **Next action:** resolve branch divergence, then verify focused test, Python syntax, and full Docker/unit-test CI on the resulting exact PR head. Do not merge until CI passes.
+
+---
+
 ## Session closeout — 2026-10-13 (M4 discovery/recommendation rules extraction)
 
 - **Branch:** `refactor/discovery-recommendation-rules`, based on `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
