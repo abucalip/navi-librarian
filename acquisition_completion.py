@@ -12,6 +12,90 @@ from pathlib import Path
 from typing import Callable, Any
 
 
+def safe_folder_name(value: Any) -> str:
+    """Return a safe final path component for the advertised remote folder."""
+    value = str(value or "").replace("\\\\", "/").split("/")[-1]
+    value = "".join(character for character in value if character != "\\0")
+    value = value.strip().strip(".")
+    return value or "Unknown"
+
+
+def filename_key(value: Any) -> str:
+    """Normalize filename identity across Unicode forms and case-sensitive filesystems."""
+    import unicodedata
+
+    return unicodedata.normalize("NFC", str(value or "")).casefold()
+
+
+def match_completed_album_files(
+    folder: str | Path,
+    candidate: dict[str, Any],
+) -> dict[str, Path] | None:
+    """Match every unique expected basename to one safe local file by name and size.
+
+    Numeric collision suffixes such as Track_1.flac are accepted only when
+    exactly one candidate has the advertised size. Unknown/non-positive sizes
+    and conflicting duplicate remote basenames fail closed.
+    """
+    import re
+    import unicodedata
+
+    folder = Path(folder)
+    files = [path for path in folder.iterdir() if path.is_file() and not path.is_symlink()]
+    used: set[Path] = set()
+    matched: dict[str, Path] = {}
+    expected_by_name: dict[str, tuple[str, int]] = {}
+
+    for item in candidate.get("files", []):
+        name = str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1]
+        if not name:
+            continue
+        key = filename_key(name)
+        try:
+            size = int(item.get("size"))
+        except (TypeError, ValueError):
+            return None
+        # A missing/zero size could mistake a partial transfer for a completed track.
+        if size <= 0:
+            return None
+        if key in expected_by_name and expected_by_name[key][1] != size:
+            return None
+        expected_by_name.setdefault(key, (name, size))
+
+    for key, (expected_name, expected_size) in expected_by_name.items():
+        exact = [
+            path for path in files
+            if filename_key(path.name) == key
+            and path not in used
+            and path.stat().st_size == expected_size
+        ]
+        selected = exact[0] if len(exact) == 1 else None
+
+        if selected is None:
+            normalized_expected = unicodedata.normalize("NFC", expected_name)
+            stem, suffix = Path(normalized_expected).stem, Path(normalized_expected).suffix
+            pattern = re.compile(
+                r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
+                re.IGNORECASE,
+            )
+            alternatives = [
+                path for path in files
+                if path not in used
+                and pattern.match(unicodedata.normalize("NFC", path.name))
+                and path.stat().st_size == expected_size
+            ]
+            if len(alternatives) == 1:
+                selected = alternatives[0]
+
+        if selected is None:
+            return None
+
+        matched[expected_name] = selected
+        used.add(selected)
+
+    return matched or None
+
+
 def inspect_completed_album(
     download_root: str | Path,
     candidate: dict[str, Any],
