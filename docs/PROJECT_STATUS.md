@@ -1,3 +1,14 @@
+## Latest verification closeout — 2026-10-13 (PRs #31–#33)
+
+- **PR #31 — testing workflow documentation:** exact head `572d98d18e051bcbed7f3e74242abe1df6d0540c`; Python syntax and Docker packaging workflows both passed. The uploaded manual UI report recorded all eight tested items as passing on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance observation and a distinct error/recovery scenario were not separately recorded; defer these to the next UI-facing PR's manual test rather than treating them as passed.
+- **PR #32 — container runtime verification and paused publishing:** exact head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; Python syntax, container runtime smoke, Docker packaging, and validation-only multi-architecture workflows all passed. The smoke test covers startup, auth/setup, authenticated UI response, and account/data persistence across a container restart. No manual browser test is required for this infrastructure-only PR. Publishing remains paused until modularization is complete and separately authorized.
+- **PR #33 — settings API route extraction:** exact head `22ee23d406284d59c37334f99883bb9e848bd929`; Python syntax and Docker packaging/full-unit-test workflows passed. This is an API/module refactor with regression tests and no intended UI contract change, so no manual browser test is required for this PR.
+- **Merge recommendation:** PR #33 is ready for merge from the observed CI/test perspective, but merge PR #32 first because it fixes missing modules in the Docker image and adds runtime verification; integrate PR #31's testing-gate documentation as part of the same closeout. No PR was merged in this session.
+- **Runtime/release boundary:** local PR #33 app account setup was verified to persist across a server restart in `~/navi-librarian-test/environments/pr-33/data`. This verifies that local test instance only, not production. No image publication, deployment, or production runtime verification occurred.
+- **Next:** merge/reconcile PR #32 and PR #31, then merge PR #33 after checking its final head/CI remains valid; run the full manual browser checklist on the next UI-facing change, including performance and distinct error/recovery checks.
+
+---
+
 ## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
