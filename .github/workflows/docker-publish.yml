@@ -17,6 +17,9 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Gate publication on container runtime smoke test
+        run: bash .github/scripts/run_container_smoke.sh navi-librarian:prepublish librarian-prepublish-smoke
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
