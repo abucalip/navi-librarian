@@ -1,3 +1,10 @@
+## Container runtime smoke and release safety gate — PR #32
+
+- On the exact PR head, run the container smoke workflow and both syntax and Docker packaging/full-unit-test workflows.
+- Smoke must use disposable storage and read-only temporary music/download mounts; assert readiness, root redirect to /login before and after setup, public /login, unauthenticated API HTTP 401, first-run owner creation, successful login, authentication-key file mode 0600, and account persistence after restarting the container with the same persistent /data volume.
+- The validation-only Docker workflow must run the smoke test before Buildx, validate linux/amd64 and linux/arm64, keep push: false, enable provenance and SBOM, and never log into GHCR or create registry tags/artifacts. Image publication remains paused until modularization is complete and separately authorized.
+- CI results on the original PR head do not establish that the reconciled head passes. Recheck the exact updated head and all applicable workflows before merge.
+
 ## Discovery refresh coordination extraction — merged PR #30
 
 - PR #30 was merged into `main` at `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head was `f9256060d162ed92be0bbacc66a877c2675a5174`.

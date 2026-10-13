@@ -1,3 +1,10 @@
+## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
+
+- Reconciled PR #32's runtime-verification and validation-only publishing safeguards against current main without replacing the newer PR #31–#33 closeout or local test-kit persistence notes.
+- Required smoke assertions: startup/readiness, root redirects to /login before and after setup, public login/setup page, protected API returns 401, owner setup and login, private auth-key mode 0600, and account persistence across a container restart using the same named /data volume.
+- Release gate remains validation-only: runtime smoke precedes the linux/amd64 and linux/arm64 build, push: false, provenance/SBOM generation, and no registry credentials/tags/publication. No deployment or production runtime verification is claimed.
+- Merge/CI state is pending re-verification on the reconciled exact head. Outstanding manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
+
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.

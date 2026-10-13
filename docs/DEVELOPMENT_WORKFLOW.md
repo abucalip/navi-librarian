@@ -40,3 +40,9 @@ For each meaningful handoff, report:
 - unresolved questions and the next concrete action.
 
 Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/DECISIONS.md`, and this file. Never record credentials or other secrets.
+
+
+## Container and release verification
+
+- Verify runtime behavior, not only image compilation: run the isolated container smoke test on the exact PR head and retain checks for readiness, authentication/setup boundaries, auth-key permissions, and persistence across restart.
+- The Docker workflow is validation-only while modularization is underway: run smoke before the multi-architecture build, use push: false, and do not add registry login, tags, or publication without separate authorization after the roadmap is complete.
