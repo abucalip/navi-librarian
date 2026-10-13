@@ -5757,12 +5757,16 @@ def _discovery_acquire_album_impl(
     headers = {"X-API-KEY": api_key}
     search_id = str(uuid.uuid4())
     search_queries = _slskd_search_queries(artist, album)
+    search_deadline = time.monotonic() + 30
     search_attempts = []
     reported_response_count = 0
     reported_file_count = 0
     payload_by_peer = {}
     try:
-        for query in search_queries:
+        for query_index, query in enumerate(search_queries):
+            if time.monotonic() >= search_deadline:
+                break
+            search_timeout_ms = 15000 if query_index == 0 else 6000
             search_id = str(uuid.uuid4())
             response = httpx.post(
                 base_url + "/api/v0/searches",
@@ -5776,12 +5780,15 @@ def _discovery_acquire_album_impl(
                     "minimumResponseFileCount": 1,
                     "minimumPeerUploadSpeed": 0,
                     "responseLimit": 100,
-                    "searchTimeout": 15000,
+                    "searchTimeout": search_timeout_ms,
                 },
                 timeout=10,
             )
             response.raise_for_status()
-            deadline = time.monotonic() + 18
+            deadline = min(
+                time.monotonic() + (18 if query_index == 0 else 8),
+                search_deadline,
+            )
             completed_without_payload_since = None
             attempt_reported_response_count = 0
             attempt_reported_file_count = 0
