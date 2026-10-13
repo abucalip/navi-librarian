@@ -1,3 +1,10 @@
+## 2026-10-14 — PR #33 reconciled with merged runtime-verification baseline
+
+- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4; its reconciled PR head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture CI.
+- Reconciled PR #33's settings-route extraction against the new main baseline while preserving app/API code, route regression tests, and the Python workflow dependency-install fix. Exact-head CI is pending on the reconciled commit; no merge is claimed until all checks pass.
+- PR #31's documentation branch has also been reconciled with PR #32, but remains open/unmerged pending its own exact-head CI and review. Manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
+- No image publication, deployment, or production runtime verification occurred.
+
 ## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
 
 - Reconciled PR #32's runtime-verification and validation-only publishing safeguards against current main without replacing the newer PR #31–#33 closeout or local test-kit persistence notes.

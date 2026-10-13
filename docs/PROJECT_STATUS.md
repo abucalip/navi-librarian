@@ -1,9 +1,8 @@
-## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
+## 2026-10-14 — PR #33 settings API extraction reconciled with merged PR #32
 
-- PR #32 is being reconciled with current main commit ca42c084ed549adfae8189113973e860c73f9237 so its runtime checks and publishing pause coexist with the latest testing-gate documentation. Merge/CI status must be confirmed against the resulting exact head before merging.
-- Container smoke coverage must retain readiness, unauthenticated app-root redirect before and after setup, public login/setup page, protected API denial, owner setup/login, auth-key file mode 0600, and account persistence after restarting the container with the same persistent /data volume.
-- The Docker validation workflow must run smoke before multi-architecture build, use push: false for linux/amd64 and linux/arm64, and generate provenance/SBOM without registry login, tags, publication, or deployment. Publishing stays paused until modularization is complete and separately authorized.
-- No production runtime or deployment verification is implied by CI. The next UI-facing PR must record the outstanding performance observation and distinct error/recovery check from the manual UI checklist.
+- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Its runtime smoke and validation-only publishing safeguards are on main; registry publication remains disabled.
+- PR #33 is being reconciled against that main so the settings-route extraction retains all route/method and payload behavior while current release and test documentation stays intact. Final head, CI, and mergeability must be checked after this reconciliation.
+- The settings route extraction is not a UI redesign. No full manual browser checklist is required solely for this API/module refactor; its direct-route regression tests, full suite, syntax check, and Docker packaging checks are required. The remaining performance and distinct error/recovery UI checks are deferred to the next UI-facing PR.
 
 ## Latest verification closeout — 2026-10-13 (PRs #31–#33)
 

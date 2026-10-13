@@ -1,9 +1,9 @@
-## Container runtime smoke and release safety gate — PR #32
+## Settings API route extraction — PR #33 reconciliation
 
-- On the exact PR head, run the container smoke workflow and both syntax and Docker packaging/full-unit-test workflows.
-- Smoke must use disposable storage and read-only temporary music/download mounts; assert readiness, root redirect to /login before and after setup, public /login, unauthenticated API HTTP 401, first-run owner creation, successful login, authentication-key file mode 0600, and account persistence after restarting the container with the same persistent /data volume.
-- The validation-only Docker workflow must run the smoke test before Buildx, validate linux/amd64 and linux/arm64, keep push: false, enable provenance and SBOM, and never log into GHCR or create registry tags/artifacts. Image publication remains paused until modularization is complete and separately authorized.
-- CI results on the original PR head do not establish that the reconciled head passes. Recheck the exact updated head and all applicable workflows before merge.
+- Recheck the exact reconciled PR #33 head after merging current main into its branch. Run Python syntax, the full unittest suite including tests/test_settings_routes.py, Docker packaging/image build, container runtime smoke, and validation-only multi-architecture build.
+- Settings route regression tests must preserve all 12 endpoint/method pairs, payload mapping/defaults, ListenBrainz validation, slskd quality/path defaults, sanitized errors, and parse_result compatibility in app.main.
+- PR #32's container/runtime baseline is merged. GHCR publication remains paused; all image build workflows must keep push: false.
+- This API/module extraction does not require a full manual browser checklist by itself. Defer the unrecorded performance observation and distinct error/recovery scenario to the next UI-facing change; perform focused UI smoke only if an API contract change makes it relevant.
 
 ## Discovery refresh coordination extraction — merged PR #30
 

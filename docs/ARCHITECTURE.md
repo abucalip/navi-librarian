@@ -74,3 +74,8 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 3. Add tests at the domain/safety boundary and API boundary for behavior changes.
 4. Preserve MCP behavior when refactoring code shared with the web app.
 5. Do not modify unrelated services or replace the host's whole Compose file for a one-service change.
+
+
+## Settings route boundary — PR #33
+
+The settings endpoints for Navidrome, Last.fm, ListenBrainz, and slskd are grouped in app/api/settings.py. The route module adapts HTTP payloads and delegates behavior to existing librarian domain functions. app/api/utils.py owns the shared parse_result adapter; app.main imports that symbol to preserve callers while registering the router. Authentication middleware, URL paths, methods, and response/error contracts are intended to remain unchanged.
