@@ -3,8 +3,8 @@
 - **Branch:** `refactor/acquisition-completion-matching`, based on GitHub `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46` (the base SHA recorded by PR #23). Implementation PR and CI results pending at the time of this entry.
 - **Objective:** move filename identity, safe folder-name normalization, and strict completed-track matching into the existing importable `acquisition_completion.py` module without changing matching or import-safety behavior.
 - **Implemented on branch:** extracted `safe_folder_name`, `filename_key`, and `match_completed_album_files`; kept `navidrome_server.py` compatibility wrappers; converted completed-folder tests from AST-extracted production functions to direct module imports and added matcher regression cases.
-- **Verification:** on code/test head `4d4cb24702295c60a2139336274bc9c107a1fd23`, Python syntax/full-unit-test workflow #188 passed; Docker workflow #95 passed compilation, the full unit suite, and Docker image build. The workflow was finishing its post-job cleanup at the last check. No live UI test or deployment was performed.
-- **Next:** confirm the workflow's final conclusion on the latest PR head, inspect the final diff, and only then consider merging.
+- **Verification:** on final PR head `21e2f38c3468f564df8ff76b7dd28aeb747824fb`, Python syntax/full-unit-test workflow #189 passed; Docker packaging workflow #96 passed compilation, the full unit suite, and Docker image build. No live UI test or deployment was performed.
+- **Next:** PR #24 is ready for review/merge consideration; keep merge and deployment as separate decisions.
 
 ---
 
