@@ -1,3 +1,9 @@
+## Local test-kit repeatability and UI-test scheduling
+
+- For ordinary reruns, the local helper must reuse an existing virtual environment when Python/dependency inputs are unchanged and reuse a stable application-data directory per PR across source SHAs. A new commit of the same PR must not implicitly recreate the owner account or discard settings. Keep app data isolated between PR numbers; reset only for an explicit fresh-state test.
+- The current helper is installed outside the repository at `~/navi-librarian-test/test-pr.sh`. Repository docs define the expected behavior, but do not claim the installed helper is fixed until that script is updated and a repeated-run check confirms the setup/account persists. Do not inspect or rely on the dismissed outdated local Git checkout.
+- Run the full manual browser checklist for UI-facing changes after exact-head CI. The two items not separately recorded in the October 13 report—performance observations and a distinct error/recovery exercise—are deferred until the next UI-facing change. Non-UI PRs continue to require relevant automated/API/integration tests, not a repeated full visual checklist by default.
+
 ## Authentication boundary integration — PR #32 exact-head verification
 
 - PR #32 head `16664d5f74d207b6496771213f23402a1489d3cc` passed all required checks: compile, validation-only container build, full test/build, and container smoke.
