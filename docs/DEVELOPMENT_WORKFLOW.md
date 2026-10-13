@@ -6,9 +6,25 @@ Last updated: 2026-10-13
 
 - **GitHub is the only source of truth** for project code, commits, branches, pull requests, documentation, and release history.
 - **Do not use the outdated Local_Git integration or checkout.** It is dismissed for this project and must not be queried for repository status, branches, diffs, edits, tests, or verification. Do not attempt to reconcile its state with GitHub.
-- **The new local environment, when created, is for testing only.** Base it on an exact GitHub branch/commit. Local-only edits/commits and testing merges are not authoritative and must never be pushed or merged as project changes.
+- **The persistent local environment is for testing only.** The manual UI harness runs from `~/navi-librarian-test/test-pr.sh <PR-number>` and fetches the exact current GitHub PR head. Local-only edits/commits and testing merges are not authoritative and must never be pushed or merged as project changes.
 - The assistant makes authoritative changes through GitHub feature/fix branches and pull requests, then records what was actually tested.
 - **Production is separate.** A merge or passing CI does not mean an image is published, deployed, or verified on the server.
+
+## Manual UI smoke-test gate
+
+For UI-facing changes and release candidates, run the local PR tester after exact-head CI is green:
+
+```sh
+~/navi-librarian-test/test-pr.sh <PR-number>
+```
+
+- The helper reads the current PR head SHA from GitHub, downloads that exact source archive, and uses a per-PR/per-SHA virtual environment and app-data directory. It serves the app only on `127.0.0.1:8089` by default.
+- Music and download paths are redirected to the private test sandbox. slskd is disabled by default; keep it disabled for ordinary UI smoke tests. Do not change paths to real media/download directories or perform destructive live-acquisition tests without explicit authorization.
+- Complete the terminal Pass/Fail/Skip checklist after using the browser UI. The Markdown report records the tested SHA and CI run state, is saved under `~/navi-librarian-test/reports/`, and can be posted to the PR through the helper's `gh` confirmation prompt.
+- A UI startup confirms only that the app starts. Each checklist item must be recorded separately; skipped/unattempted checks are not passes. If the PR head changes after testing, rerun against the new head or clearly explain why the tested SHA remains applicable.
+- This manual check supplements, and never replaces, automated regression tests, full unit-test discovery, exact-head CI, or separate deployment/runtime verification.
+
+See [`docs/LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md) for the operator checklist and report semantics.
 
 ## Normal change cycle
 
