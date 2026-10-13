@@ -4,8 +4,9 @@
 - **Base:** `main` at `2a3680e5bd1311785c8176e9655f04283f9a54ee`. Implementation commit `959667b886ddbf5cbfc6c7f3106dc71223b32014`; exact CI-tested commit before documentation closeout `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`.
 - **Implemented:** added `discovery_store.py` for cached-list SQLite reads/writes, preserved `_discovery_read_list` and `_discovery_write_list` wrappers and their `_discovery_init()` call, and added direct-import tests for missing rows, malformed JSON, Unicode payloads, timestamp preservation, and list replacement/isolation.
 - **CI on code/test head:** Python syntax workflow #237 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087436)); Docker packaging workflow #144 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087855)), including Python compilation, full unit-test discovery, and Docker image build.
-- **Verification boundary:** Local_Git was unavailable (429/404), so no local test execution occurred. No live discovery refresh, UI test, image publication, deployment, or merge occurred. CI above is for the code/test head; check workflows again after documentation-only commits.
-- **Next:** verify CI on the final documentation-updated PR head and review before merging.
+- **Final-head CI:** after documentation updates, Python syntax workflow #239 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251390)) and Docker packaging workflow #146 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251445)) on head `0996b08c879ec2f39db326cb1c4b08a5bb487e30`. Docker validation includes Python compilation, full unit-test discovery, and image build.
+- **Verification boundary:** Local_Git was unavailable (429/404), so no local test execution occurred. No live discovery refresh, UI test, image publication, deployment, or merge occurred.
+- **Next:** review the complete PR diff before merge; PR #29 remains open and unmerged.
 
 ---
 
