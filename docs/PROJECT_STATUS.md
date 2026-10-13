@@ -3,9 +3,9 @@
 - Branch: `refactor/acquisition-api-router` (based on GitHub `main` at branch creation).
 - Objective: move `/api/acquire*` and `/api/acquisitions*` handlers out of `app/main.py` into `app/api/acquisitions.py` without changing URLs, methods, payload adaptation, response/status behavior, or the existing domain implementation.
 - Added `tests/test_acquisition_routes.py` for route registration, payload/default mapping, invalid inputs, skip/dismiss status translation, streaming headers, and sanitized failures.
-- Code/documentation commits are on the feature branch; exact final head SHA, test results, and CI are pending. No tests are claimed passed in this status entry.
+- Exact-head CI on `5b60975d690b619e2b32fdc3835bdc9feb38af8d` passed: Python syntax workflow #326 (run 38485095323), Docker packaging/full unit tests #233 (run 38485095296), container runtime smoke #43 (run 38485095246), and validation-only multi-architecture #87 (run 38485095805).
 - This is an API/module extraction with no intended visual change; manual browser testing is not planned unless CI/review reveals a UI contract change. The deferred performance and distinct error/recovery checks remain for the next UI-facing PR.
-- No image publication, deployment, or production runtime verification. Publishing remains disabled pending roadmap completion and separate authorization.
+- PR #34 is open pending final PR-state/diff review and merge. No image publication, deployment, or production runtime verification. Publishing remains disabled pending roadmap completion and separate authorization.
 
 ---
 
