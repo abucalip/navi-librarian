@@ -22,6 +22,7 @@ The user has confirmed that the local app UI now starts successfully on macOS us
 - The helper reads the open PR's current head SHA from GitHub and fetches that exact source. It creates a separate venv and application-data directory for each PR/SHA and starts FastAPI on localhost (default port 8089).
 - The test harness directs music and download paths to `~/navi-librarian-test/sandbox/`. Keep slskd set to `http://127.0.0.1:9` with an empty key for normal UI checks. Never use live media/download paths for destructive tests without explicit authorization.
 - Use the browser to exercise the app, return to Terminal, press Enter, and record Pass/Fail/Skip for each checklist item. Add concise reproduction notes for failures. The helper writes a Markdown report to `~/navi-librarian-test/reports/` and offers to post it as a PR comment using GitHub CLI.
+- Include a lightweight performance observation: note approximate dashboard/discovery load times and any obvious stalls or slow interactions. This is a repeatable smoke observation, not a formal benchmark.
 - Reports must identify the exact tested SHA, environment/runtime, CI state, checklist outcomes, skipped checks, and failures. If the PR head changes after testing, do not imply the report covers the new SHA; rerun or state the limitation.
 - Keep credentials in the private local `config.env` only. Never include secrets in report notes or PR comments.
 - The manual UI gate is complementary to automated tests and CI; it does not prove production deployment or runtime state.
