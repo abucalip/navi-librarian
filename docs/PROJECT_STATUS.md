@@ -1,3 +1,11 @@
+## 2026-10-14 — PR #31 merged after exact-head CI completed
+
+- PR #31 (testing workflow documentation) was squash-merged to `main`; merge commit: `87e5816c4273e720352931402a223f0b61ecbf27`. Final PR head verified for merge: `135b719bfecf9ad698862d41034d927083426f99`.
+- All four workflows completed successfully on that exact head: Python syntax #318 (run 38483634023), container runtime smoke #35 (run 38483633957), Docker packaging/full-unit-test #225 (run 38483633973), and validation-only multi-architecture #79 (run 38483633974). The merge was guarded by the expected head SHA.
+- Manual UI report remains scoped to application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`: eight recorded items passed, zero failures. Performance observation and a distinct error/recovery exercise were not recorded and remain deferred to the next UI-facing PR.
+- `docs/LOCAL_UI_TESTING.md` and testing workflow documentation are now on main. PR #31 was documentation-focused; no new manual browser run was needed for the documentation-only merge.
+- No image publication, deployment, or production runtime verification occurred. GHCR publication remains paused pending completion of modularization and separate authorization.
+
 ## 2026-10-14 — PR #32 and #33 merged; PR #31 documentation reconciliation
 
 - PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
