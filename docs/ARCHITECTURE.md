@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Overview
 
@@ -14,7 +14,8 @@ FastAPI web app (app/main.py) ───────► Navidrome API
   ▼
 navidrome_server.py ─────────────────► slskd API
   │                                    (external service)
-  ├── discovery/recommendation logic
+  ├── discovery orchestration and external-data enrichment
+  │     └── discovery_recommendations.py (pure eligibility/scoring/diversity rules)
   ├── acquisition and import helpers
   ├── settings and persistent state
   └── MCP tool definitions (separate entry point)
