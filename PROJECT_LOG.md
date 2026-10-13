@@ -1,3 +1,13 @@
+## 2026-10-13 — M4 PR opened; branch verification pending
+
+- **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28), draft/open. Latest observed head `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
+- **Diff:** 7 files changed: new pure rules module and direct-import tests; server compatibility wrappers and scoring/diversity delegation; architecture, test-plan, status, and log documentation.
+- **Review caution:** GitHub compare reports 8 commits ahead and 2 behind current `main`; PR metadata reports `mergeable: false`. Reconcile with latest main before review/merge.
+- **Verification:** no CI runs/status checks were returned for the exact head. Local_Git endpoint was unavailable (404/429), so no local syntax or tests ran. No manual UI/live refresh, deployment, or image publication.
+- **Next:** reconcile branch with latest main, inspect full diff, then run focused direct-import tests, syntax checks, and full Docker/unit-test CI before any merge.
+
+---
+
 ## 2026-10-13 — M4 discovery/recommendation rules extraction
 
 - **Branch/base:** `refactor/discovery-recommendation-rules` from `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
