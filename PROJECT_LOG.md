@@ -274,3 +274,11 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Verification:** corrected head `86705c64cbd3d794082528d58d0fd2b49fcbc4c1` passed Python syntax workflow #198 and Docker packaging workflow #105. The Docker job confirms Python compilation, full unit tests, and image build succeeded. No local execution or manual UI verification was performed. No merge, image publication, or deployment is claimed.
 - **Session close:** corrected-head CI passed and the full PR diff was reviewed for this extraction and edge case. The documentation records the verified scope and the boundary of testing. PR #24 remains open/unmerged; PR #23 remains separate/open. No local test run, manual UI verification, image publication, or deployment occurred.
 - **Next priority:** assess PR #24 merge readiness and decide whether to merge; preserve PR #23 as a separate roadmap PR unless the dependency/order is explicitly revisited.
+
+
+## 2026-10-13 — PR #24 merge session closeout
+
+- **Final code merge:** PR #24 squash merge `225add7405bfd72b3254af23745d0dd9a84b621c`, from final PR head `b826ae14d917431d07aacf97200990d57133cba0`.
+- **Documentation commits:** `docs/PROJECT_STATUS.md` closeout commit `7fe6cbb746fbeaae4addb35478f4cae54f451879`; this `PROJECT_LOG.md` entry is committed separately immediately afterward. The code merge and both documentation updates are on `main`.
+- **Verification boundary:** final PR-head Python syntax workflow #202 and Docker packaging workflow #109 passed, including the full unit suite and image build. GitHub verified the merge and extracted module on `main`. No local test execution, manual UI verification, image publication, or deployment was performed.
+- **Outstanding roadmap:** PR #23 (`docs/modularization-web-only-roadmap`) remains open/unmerged and separate from PR #24. Next implementation priority is M2: extract slskd search and quality evaluation into focused modules with regression tests, preserving fallback order, delayed-response polling, timeout budgets, and quality priority ordering.
