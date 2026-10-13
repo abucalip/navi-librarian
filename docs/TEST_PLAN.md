@@ -1,3 +1,12 @@
+## Discovery API route extraction — PR in progress
+
+- Branch: `refactor/discovery-api-router` (based on GitHub `main`).
+- Added `app/api/discovery.py` and `tests/test_discovery_routes.py`; `app.main` registers the router and no longer defines the four discovery/recommendation handlers inline.
+- Focused command: `python -m unittest tests.test_discovery_routes -v`.
+- Baseline commands: `python -m py_compile navidrome_server.py app/main.py app/api/discovery.py` and `python -m unittest discover -s tests -v`.
+- Direct-import tests cover route/method inventory, recommendation count defaults and album-candidate filtering, discovery list validation/defaults, refresh count parsing/defaults, feedback validation and Unicode metadata serialization, domain payload mapping, and sanitized errors.
+- This is an API-only extraction with no intended UI contract change. Manual browser testing is not required unless review/CI reveals a UI behavior change. Do not claim tests/CI passed until actually observed on the exact final PR head.
+
 ## Current verification state — PR #34 merged (2026-10-14)
 
 - PR #34 was squash-merged at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1` from exact PR head `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`.
