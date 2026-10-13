@@ -69,7 +69,11 @@ def match_completed_album_files(
             and path not in used
             and path.stat().st_size == expected_size
         ]
-        selected = exact[0] if len(exact) == 1 else None
+        if len(exact) > 1:
+            # Multiple exact-name/size matches are ambiguous. Never let a
+            # collision-suffixed alternative hide that ambiguity.
+            return None
+        selected = exact[0] if exact else None
 
         if selected is None:
             normalized_expected = unicodedata.normalize("NFC", expected_name)
