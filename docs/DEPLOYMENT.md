@@ -93,3 +93,16 @@ For a future deployment/update:
 - Revert the service image to that exact known-good version, then run `docker compose up -d navidrome-librarian`.
 - Do not delete `librarian_data` during rollback; it contains persistent application state and authentication material.
 - If an upgrade changes the database schema, confirm backward compatibility before reverting the image.
+
+## Artifact identity and container-runtime gate
+
+The PR CI container smoke workflow starts the built image against disposable storage and checks HTTP readiness, authentication boundaries, first-run setup, private auth-key permissions, and persistence of the owner account across a container restart. It does not connect to live Navidrome/slskd services and is not a production deployment check.
+
+For an image publication, use the GitHub Actions run summary from Build and publish Docker image to record:
+
+- source commit SHA and trigger ref;
+- immutable reference ghcr.io/abucalip/navi-librarian@sha256:<digest>;
+- published tags and supported architectures (linux/amd64, linux/arm64);
+- build provenance and SBOM status.
+
+Before deploying, confirm the digest belongs to the intended commit and keep the previous known-good digest as the rollback reference. After deployment, independently confirm the running container's resolved image digest, persistent /data volume, service connectivity, logs, and required smoke tests. CI and a published image alone do not mark a release deployed or verified.
