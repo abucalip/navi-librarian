@@ -1,3 +1,12 @@
+## 2026-10-13 — Strengthen unauthenticated UI integration coverage
+
+- **PR/branch:** #32, `ci/container-runtime-smoke-release-provenance`.
+- **Root cause of verification gap:** the container smoke helper tested an unauthenticated API route and an authenticated root page, but did not assert the unauthenticated root response. Python's default `urllib` redirect behavior could also conceal a 303 redirect by following it to the public login page.
+- **Change:** add a no-redirect request mode and assert `GET /` without a session returns HTTP 303 to `/login` both before and after first-run account setup. Confirm the public login/setup page remains reachable. Preserve existing API 401, authenticated UI, key-permission, login, and persistence checks.
+- **Documentation:** record that seeing the public login/setup screen is expected and is not equivalent to dashboard access; the user's observation remains unclassified until exact-revision verification distinguishes the two.
+- **Verification:** pending CI on the resulting PR head. No test is claimed as passed by this change; no local test, merge, publication, or deployment is claimed.
+- **Next:** confirm the updated PR #32 container smoke workflow, then use the validated boundary checks against PR #33 before considering either PR for merge.
+
 ## 2026-10-13 — Container runtime and artifact provenance gates verified on code head
 
 - **PR:** [#32](https://github.com/abucalip/navi-librarian/pull/32), branch `ci/container-runtime-smoke-release-provenance`.
