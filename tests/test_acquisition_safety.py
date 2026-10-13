@@ -166,6 +166,7 @@ class SlskdSearchQueryTests(unittest.TestCase):
 
     def test_acquisition_retries_broader_query_when_exact_search_has_no_payload(self):
         posted_queries = []
+        posted_timeouts = []
         other_peer = {
             "username": "peer",
             "files": [{"filename": "Other Artist/Other Album/01 - Track.flac", "size": 1000}],
@@ -180,6 +181,7 @@ class SlskdSearchQueryTests(unittest.TestCase):
 
         def fake_post(_url, headers=None, json=None, timeout=None):
             posted_queries.append(json["searchText"])
+            posted_timeouts.append(json["searchTimeout"])
             return fake_response({})
 
         def fake_get(url, params=None, headers=None, timeout=None):
@@ -223,6 +225,7 @@ class SlskdSearchQueryTests(unittest.TestCase):
             "Tinariwen Idrache (Traces of the Past)",
             "Tinariwen Idrache Traces of the Past",
         ])
+        self.assertEqual(posted_timeouts, [15000, 6000])
         self.assertEqual(
             [item["query"] for item in result["search_queries_attempted"]],
             posted_queries,
