@@ -1,10 +1,11 @@
-## Latest session — 2026-10-13 (first acquisition-completion extraction in progress)
+## Latest session — 2026-10-13 (first acquisition-completion extraction; review prioritized)
 
-- **Branch:** `refactor/acquisition-completion-matching`, based on GitHub `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46` (the base SHA recorded by PR #23). Implementation PR and CI results pending at the time of this entry.
-- **Objective:** move filename identity, safe folder-name normalization, and strict completed-track matching into the existing importable `acquisition_completion.py` module without changing matching or import-safety behavior.
-- **Implemented on branch:** extracted `safe_folder_name`, `filename_key`, and `match_completed_album_files`; kept `navidrome_server.py` compatibility wrappers; converted completed-folder tests from AST-extracted production functions to direct module imports and added matcher regression cases.
-- **Verification:** on final PR head `21e2f38c3468f564df8ff76b7dd28aeb747824fb`, Python syntax/full-unit-test workflow #189 passed; Docker packaging workflow #96 passed compilation, the full unit suite, and Docker image build. No live UI test or deployment was performed.
-- **Next:** PR #24 is ready for review/merge consideration; keep merge and deployment as separate decisions.
+- **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), branch `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #24 is open, unmerged, and not deployed.
+- **Objective/implementation:** move filename identity, safe folder-name normalization, and strict completed-track matching into the existing importable `acquisition_completion.py`; retain `navidrome_server.py` compatibility wrappers; switch matching tests to direct imports and add safety regressions.
+- **Current verification:** latest observed head `a969ec4df6db2c5d45943c091401a5b26f9566d0`; Python syntax/full-unit-test workflow #190 and Docker packaging workflow #97 passed. Docker workflow includes compilation, full unit tests, and image build. No local test run, manual UI test, merge, image publication, or deployment occurred.
+- **Process lesson:** earlier status notes became stale as additional documentation commits advanced the PR head. Update status/log only after confirming the final head and CI, and cite the exact SHA/run IDs.
+- **Branch relationship:** PR #23 contains the modularization roadmap but is also open and unmerged; PR #24 is intentionally based on `main` and does not include that roadmap. Review both branch contents explicitly; do not assume PR #24 inherits PR #23 documentation.
+- **Priority next action:** review PR #24's full diff and regression coverage against the relocation-only acceptance criteria before any merge or second extraction. See the execution lessons in `docs/DEVELOPMENT_WORKFLOW.md` on PR #23's branch.
 
 ---
 
