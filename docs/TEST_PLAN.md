@@ -108,3 +108,27 @@ For each release candidate, record:
 - unresolved failures.
 
 Never claim a test passed unless it was run against the stated commit.
+
+
+## Modularization and MCP retirement regression gates
+
+These checks apply during the planned refactor; they do not imply that MCP removal or module extraction has already happened.
+
+1. Before each extraction, identify the current functions, global state, external calls, public callers, and relevant regression tests from the active GitHub branch.
+2. Extract one cohesive responsibility at a time. Test the new module through normal Python imports; do not add new AST-extraction tests for newly modularized code.
+3. Preserve the existing behavior for recommendation eligibility/diversity, quality priorities, bounded slskd search fallback, delayed peer payloads, candidate matching, lifecycle transitions, dismissal/retry, filesystem validation, import rollback, and interrupted-import recovery.
+4. Run focused tests, then `python -m unittest discover -s tests -v`, syntax checks for the changed modules, and the Docker packaging workflow where available. Inspect CI for the exact commit.
+5. During transition, verify web routes use the extracted modules and do not depend on MCP server initialization. Keep temporary wrappers only where needed for compatibility.
+6. Before removing MCP runtime/tool registration or dependencies, search the entire repository for imports, call sites, deployment commands, docs, tests, and dependency references. Confirm all web features work through the web/API path, then remove only genuinely unused MCP-specific pieces.
+7. After MCP retirement, verify Docker build and startup without MCP dependencies, and run the full web/API/auth/acquisition regression suite. Confirm settings and persistent data remain compatible across upgrade/restart.
+8. Do not mark the refactor or MCP retirement complete based on compilation alone; require tests, exact-commit CI, diff review, and applicable UI/API smoke tests.
+
+## Modularization target sequence
+
+- **M0 — Baseline/architecture inventory:** identify module-level state and callers; no behavior change.
+- **M1 — Acquisition completion and matching:** direct tests for normalized filenames, folder ambiguity, completeness, and safe failure.
+- **M2 — slskd search and quality evaluation:** preserve bounded fallback, delayed-payload polling, and quality ordering.
+- **M3 — Safe import and lifecycle:** preserve path/filesystem identity guards, rollback, failover, dismissal, retry, and restart reconciliation.
+- **M4 — Discovery and recommendations:** preserve ranking/diversity and external-provider fallbacks.
+- **M5 — Web/API route separation and frontend assets:** preserve endpoints, authentication, and visible UI behavior.
+- **M6 — MCP retirement:** only after all web callers use domain modules and a repository-wide usage audit proves MCP-only code/dependencies are removable.
