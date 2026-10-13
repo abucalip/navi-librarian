@@ -1,3 +1,11 @@
+## 2026-10-13 — M4 PR #28 final verification and session closeout
+
+- **PR/state:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) remains draft/open, unmerged and undeployed. Final head before this documentation update: `63bfbff79d6a0f50264bf5b6859cbe3ce0ab1158`.
+- **Reconciliation/review:** branch `refactor/discovery-recommendation-rules` incorporates latest `main` `15497d9149b80971414df26bf1b4acfbe02863cc`; compare shows 16 ahead, 0 behind and GitHub reports mergeable. Reviewed the complete seven-file diff. Extraction is limited to pure discovery recommendation rules, with compatibility helpers retained and owned-album filtering left in orchestration.
+- **Final-head CI:** Python syntax/acquisition-safety workflow #230 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432040318)). Docker packaging workflow #134 passed compilation, full unit tests, and image build ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432040385)). Discovery regression tests ran as part of full unittest discovery; a separate local focused run was unavailable because Local_Git returned 404/429.
+- **Boundaries:** no local test execution, live discovery refresh, manual UI smoke test, image publication, deployment, or merge. Passing CI is not evidence of deployment/runtime verification.
+- **Next:** finish any remaining review and decide whether to undraft/merge as a separate authorized step.
+
 ## 2026-10-13 — M4 PR #28 reconciled with latest main; CI verification
 
 - **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28), still draft/open/unmerged/undeployed.
