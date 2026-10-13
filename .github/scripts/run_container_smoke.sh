@@ -7,9 +7,15 @@ VOLUME_NAME="${CONTAINER_NAME}-data"
 TEMP_ROOT="$(mktemp -d)"
 
 cleanup() {
+  status=$?
+  trap - EXIT
+  if [ "$status" -ne 0 ]; then
+    docker logs "$CONTAINER_NAME" 2>&1 || true
+  fi
   docker rm --force "$CONTAINER_NAME" >/dev/null 2>&1 || true
   docker volume rm "$VOLUME_NAME" >/dev/null 2>&1 || true
   rm -rf "$TEMP_ROOT"
+  exit "$status"
 }
 trap cleanup EXIT
 
