@@ -1,3 +1,11 @@
+## Session closeout — 2026-10-13 (local UI test policy and credential persistence)
+
+- Manual UI testing is now explicitly a gate for UI-facing changes after exact-head CI, not a recurring full checklist for non-UI PRs. The unrecorded performance observation and distinct error/recovery exercise are deferred to the next UI-facing change.
+- The local helper must persist application data per PR across source SHAs, while keeping different PRs isolated; it should reuse a venv when Python and dependency inputs are unchanged. This prevents repeated owner-account setup on ordinary reruns.
+- The installed `~/navi-librarian-test/test-pr.sh` is outside the repository. The guide now documents the required behavior, but this docs-only change did not edit the local file or verify persistence. The repeated credential prompt remains open until the helper is patched and a same-PR repeated-run test passes.
+- PR #31's docs changes pass compile and test/build CI on head `60aaf34174e2ad7a7230db883e0dbd5cad44fab8`. PR #32 and #33 remain unmerged; do not treat this documentation update as a code or release verification.
+- No image publication, deployment, or production runtime verification. Next: patch and verify the local helper's per-PR data path; perform the deferred UI checks at the next UI-facing change.
+
 ## Session closeout — 2026-10-13 (testing gap remains the merge gate)
 
 - **Decision:** do not merge PR [#32](https://github.com/abucalip/navi-librarian/pull/32) or [#33](https://github.com/abucalip/navi-librarian/pull/33) yet. The next session must close the remaining testing gap first. This closeout is documentation-only; neither PR was merged or changed by this decision.
