@@ -30,6 +30,8 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 ## Main components
 
 - **`app/main.py`** — FastAPI routes and the web UI. It adapts existing librarian functions for browser/API use.
+- **`app/api/settings.py`** — settings route group for Navidrome, Last.fm, ListenBrainz and slskd; delegates to existing librarian settings/connection functions.
+- **`app/api/utils.py`** — shared response adapter used by route modules; `app.main.parse_result` remains available as an imported compatibility name.
 - **`navidrome_server.py`** — discovery orchestration, Navidrome/slskd integration, acquisition lifecycle, settings, persistence, and legacy MCP tools.
 - **`acquisition_completion.py`** — strict completed-track matching, filename identity, and completed-folder inspection.
 - **`slskd_search.py` / `slskd_quality.py`** — importable slskd query/candidate helpers and audio-quality classification.
@@ -66,6 +68,8 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 - Validate user-provided artist/album/folder data at the API boundary and again where it becomes a filesystem path.
 - Acquisition imports and dismiss cleanup are write/destructive operations. Limit them to configured roots and retain tests for traversal, ambiguous paths, incomplete albums, and unrelated files.
 - Do not expose the web port directly to the public internet. Prefer LAN access or a trusted private overlay/VPN.
+
+The settings routes are registered by `app.main` through an `APIRouter`; authentication middleware remains in the app assembly layer and still protects these routes. Further route extraction should follow the same behavior-preserving pattern and add direct tests.
 
 ## Architecture change rules
 
