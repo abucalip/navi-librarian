@@ -1,3 +1,12 @@
+## 2026-10-14 — PR #31 merged; session closeout
+
+- PR #31 (testing workflow documentation) was squash-merged to `main` at `87e5816c4273e720352931402a223f0b61ecbf27`, from exact PR head `135b719bfecf9ad698862d41034d927083426f99`.
+- All four required workflows passed on that exact PR head: Python syntax #318 (run 38483634023), container runtime smoke #35 (run 38483633957), Docker packaging/full-unit-test #225 (run 38483633973), and validation-only multi-architecture #79 (run 38483633974).
+- The manual UI report for application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` recorded eight passing items and zero failures. Performance observation and a distinct error/recovery exercise were not recorded; defer them to the next UI-facing PR.
+- Updated durable handoff records after merge. These documentation commits are `f18285dbed22675f4ab07febb40e19462265fc82` (`docs/PROJECT_STATUS.md`) and `29d3cacd974de0a9463f1c04dc7c729bb92b11cd` (`PROJECT_LOG.md`). Workflow lookup returned no PR-triggered runs for either documentation commit; do not claim their CI passed.
+- No image publication, deployment, or production runtime verification was performed. Keep publication paused until modularization is complete and separately authorized.
+- Next action: continue from GitHub `main` using `docs/MODULARIZATION_ROADMAP.md`; keep manual UI testing for the next UI-facing change and include the two deferred checks.
+
 ## 2026-10-14 — PR #31 merged after exact-head CI completed
 
 - PR #31 (testing workflow documentation) was squash-merged to `main`; merge commit: `87e5816c4273e720352931402a223f0b61ecbf27`. Final PR head verified for merge: `135b719bfecf9ad698862d41034d927083426f99`.
