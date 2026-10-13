@@ -1,53 +1,10 @@
-## Next-session merge gate — test gap not yet closed (2026-10-13)
+## Current manual UI and container verification gates — 2026-10-14
 
-Do not merge PR #32 or PR #33 until this gate is completed and its evidence is recorded.
-
-1. **Repeatability of local testing:** using the documented tester, fetch and test an exact current GitHub PR SHA. Confirm a second run reuses the intended installed dependencies and behaves as documented for per-PR/per-SHA app data and first-run setup. Explicitly distinguish state that should persist from state intentionally isolated per revision. Do not use or reconcile the dismissed Local_Git checkout.
-2. **Finish the manual checklist gaps:** the uploaded report for application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` passed all eight recorded items, but did not separately record a lightweight performance observation or a distinct error/recovery exercise. Perform and record these on a relevant current exact GitHub SHA; include PR #33's settings-route behavior in the target revision's checks. Never carry results forward to a different SHA without stating the boundary.
-3. **Container integration:** PR #32's container runtime smoke workflow #13 has passed on head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; re-check exact-head CI before merge. Its disposable-storage test covers startup, unauthenticated API rejection, first-run setup, auth-key permissions, authenticated UI, and account/login persistence across restart.
-4. **Exact-head CI and reconciliation:** re-check required workflows for the final PR #32 and #33 heads. Before #33 can be considered merge-ready, reconcile it with the selected updated base after #32 and rerun its required checks on that resulting head. Passing checks on old heads are not sufficient.
-5. **Review and report:** record exact SHA, environment, Pass/Fail/Skip, failure reproduction details, and PR report link. Review complete diffs and keep Implemented, Tested, Merged, Published, Deployed, and Runtime Verified as separate states.
-
-**Current verified CI snapshot (2026-10-13):** PR #31 head `572d98d18e051bcbed7f3e74242abe1df6d0540c`: Python #265 and Docker #172 passed. PR #32 head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`: Python #278, runtime smoke #13, Docker #185, and validation-only multiarch #54 passed. PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929`: Python #288 and Docker/full suite/build #195 passed; 115 tests ran. All three PRs remain open/unmerged. No image publication or deployment is authorized before modularization is complete.
-
----
-
-## Test-gap closure and complete delivery workflow — next priority (2026-10-13)
-
-This section defines the remaining release-gate work. The user has completed and uploaded the local browser smoke checklist for PR #31 at application source SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` ([report comment](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713)). All eight recorded checklist items passed with zero failures. This completes the documented manual smoke checklist for that SHA, but does not satisfy every integration, safety, post-merge, release, or runtime gate below.
-
-### Required verification stages
-
-1. **Exact candidate:** record the GitHub branch and full commit SHA under test.
-2. **Automated checks:** focused regression tests, full unittest discovery, Python compilation/syntax, dependency/install checks, and Docker build. Validate Compose configuration where deployment Compose is available.
-3. **Safety tests:** path traversal, symlink escapes, ambiguous folder resolution, no-overwrite, rollback, and preservation of unrelated files. Use temporary/disposable directories.
-4. **Integration/UI checks:** first-run setup/login; discovery loading/refresh; Get/requested state, duplicate prevention and error recovery; acquisition progress/completion/dismiss/retry; settings save/reload; restart persistence; external-service failure handling.
-5. **Post-merge:** verify the exact resulting `main` SHA and inspect the applicable GitHub Actions runs for that commit. Do not infer merge-commit CI from PR-head CI.
-6. **Artifact/release:** when publishing is authorized, record architecture, image tag and digest, and confirm the registry artifact corresponds to the intended commit.
-7. **Deployment/runtime:** only when authorized, record deployed image digest, host/configuration, health/log checks, smoke-test results, persistent-data check, and rollback reference.
-
-A skipped, unavailable, or unobserved check is not a pass. Report it explicitly and do not mark the release Verified while a required gate is outstanding. Keep Implemented, Tested, Merged, Published, Deployed, and Verified as distinct states.
-
-### Local UI smoke-test environment — available
-
-**Completed manual run (PR #31):** the user reports that all eight items recorded in the uploaded report passed on SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`; the report is available as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713). The run used macOS 26.2 arm64, Python 3.12.14, port 8090, sandbox music/download paths, and slskd disabled. The report does not separately record the performance-observation check or an explicit error/recovery exercise from the fuller operator checklist. Treat it as evidence for the recorded checks on that exact application source SHA, not as proof of the broader acquisition lifecycle or production behavior.
-
-- Run `~/navi-librarian-test/test-pr.sh <PR-number>` after the candidate PR's exact-head CI passes. Optional port: `~/navi-librarian-test/test-pr.sh <PR-number> 8090`.
-- The helper reads the open PR's current head SHA from GitHub and fetches that exact source. It creates a separate venv and application-data directory for each PR/SHA and starts FastAPI on localhost (default port 8089).
-- The test harness directs music and download paths to `~/navi-librarian-test/sandbox/`. Keep slskd set to `http://127.0.0.1:9` with an empty key for normal UI checks. Never use live media/download paths for destructive tests without explicit authorization.
-- Use the browser to exercise the app, return to Terminal, press Enter, and record Pass/Fail/Skip for each checklist item. Add concise reproduction notes for failures. The helper writes a Markdown report to `~/navi-librarian-test/reports/` and offers to post it as a PR comment using GitHub CLI.
-- Include a lightweight performance observation: note approximate dashboard/discovery load times and any obvious stalls or slow interactions. This is a repeatable smoke observation, not a formal benchmark.
-- Reports must identify the exact tested SHA, environment/runtime, CI state, checklist outcomes, skipped checks, and failures. If the PR head changes after testing, do not imply the report covers the new SHA; rerun or state the limitation.
-- Keep credentials in the private local `config.env` only. Never include secrets in report notes or PR comments.
-- The manual UI gate is complementary to automated tests and CI; it does not prove production deployment or runtime state.
-
-See [`docs/LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md) for the detailed operator procedure and checklist.
-
-### Current known gap
-
-PR #30 code-head CI passed Python syntax/acquisition-safety and Docker packaging/full unit tests/image build. The closeout records a subsequent documentation-triggered Docker workflow whose final status was not confirmed. Recheck latest-head and post-merge CI directly on GitHub before claiming the gate is closed. No live UI/deployment verification is implied.
-
----
+- For UI-facing changes, run the complete browser checklist after automated CI passes on the exact tested source SHA. Record Pass/Fail/Skip; skipped items are not passes. The previously unrecorded performance observation and distinct error/recovery exercise are deferred to the next UI-facing PR and must be explicitly recorded there.
+- For non-UI docs, infrastructure, or API refactors, run exact-head syntax, unit, packaging, and relevant integration checks. Do not require a full visual checklist solely because the SHA changed; run focused UI smoke only when the API contract or user-visible behavior makes it relevant.
+- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture build. Publishing remains disabled.
+- The container smoke test uses disposable storage and read-only temporary music/download mounts. It checks startup, unauthenticated root redirects to /login before/after setup, public login/setup, protected API denial, owner setup/login, auth-key file mode 0600, and account persistence after restart using the same /data volume.
+- The local helper's account persisted across a server restart in the tested environment. Treat persistence across a different PR source SHA as a separate claim requiring an explicit repeated-run test.
 
 ## Discovery refresh coordination extraction — merged PR #30
 
@@ -160,6 +117,10 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - Confirm albums already importing/imported and active downloads remain protected from duplicate acquisition requests.
 
 ## Manual UI smoke test
+
+**When manual browser testing is required:** run this checklist after automated CI passes on the exact head of a UI-facing PR or release candidate. Documentation-only, API-only refactors with no UI contract changes, and infrastructure changes covered by a successful automated container runtime smoke test do not independently require a manual browser run. Record the exact application SHA for every manual run.
+
+**Deferred checks:** the PR #31 report recorded eight items as passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`, but did not separately record performance observation or a distinct error/recovery scenario. Do not mark those as passed retroactively; include both in the next UI-facing PR's manual run.
 
 After the automated suite passes:
 

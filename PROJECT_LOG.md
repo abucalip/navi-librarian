@@ -1,56 +1,10 @@
-## 2026-10-13 — Local test persistence requirement and UI-check deferral
+## 2026-10-14 — PR #32 merged; PR #31 UI gate documentation reconciled
 
-- Updated `docs/LOCAL_UI_TESTING.md` to defer performance observation and a distinct error/recovery exercise to the next UI-facing change; non-UI PRs do not require repeating the full visual checklist by default.
-- Documented the intended local test-kit behavior: app data stable per PR across source SHAs, separate data for different PRs, and virtual-environment reuse when Python/dependency inputs are unchanged.
-- The helper at `~/navi-librarian-test/test-pr.sh` is outside the repository. This session updated the repository contract but did not modify the local file. The recurring first-run credential prompt remains unresolved until that script's app-data path is changed and a repeated-run test confirms account/settings persistence.
-- PR #31 exact documentation head `60aaf34174e2ad7a7230db883e0dbd5cad44fab8` passed compile and test/build checks. No UI test was rerun because no UI code changed. No merge, publication, deployment, or production verification occurred.
-
-## 2026-10-13 — Defer PR #32 and #33 merges until testing gap is closed
-
-- **User decision:** finish the testing gap in the next session before merging PR #32 or PR #33. Both remain open and unmerged; no merge was performed.
-- **Current exact-head CI snapshot:** PR #31 head `572d98d18e051bcbed7f3e74242abe1df6d0540c`: Python workflow #265 and Docker workflow #172 passed. PR #32 head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`: Python #278, container runtime smoke #13, Docker #185, and validation-only multiarch #54 passed. PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929`: Python #288 and Docker/full-suite/build #195 passed; the full suite ran 115 tests.
-- **Manual UI evidence:** all eight items in the user-uploaded report passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` (report: [PR #31 comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713)). The fuller checklist's performance observation and a distinct error/recovery exercise were not separately recorded.
-- **Next-session work:** validate repeatability of the local exact-SHA tester, including dependency reuse and intended setup/data persistence; finish and report the outstanding performance and error/recovery checks on a relevant exact SHA; recheck final-head CI; reconcile/retest PR #33 against the chosen updated base after PR #32; review diffs before any merge decision.
-- **Publication:** no image publication or deployment until modularization is complete and release is explicitly authorized. PR #32's publishing pause is not yet on `main`; do not trigger the current publishing workflow or release-tag path.
-- **Boundaries:** documentation only. No tests were run by the assistant, and no merge, publication, deployment, or production runtime verification occurred.
-
----
-
-## 2026-10-13 — Local UI checklist completed and report uploaded
-
-- **PR/tested SHA:** PR #31, application source `96b253c5f3ec2f858e02afc034365a22bac0773e`, branch `docs/testing-release-workflow-priority`.
-- **Manual report:** user completed the browser checklist and uploaded the Markdown report as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713).
-- **Result:** all eight recorded checklist items passed with zero failures: first-run setup/login, dashboard/artwork, discovery results, navigation/album details, settings save/secrecy, safe Get/request interaction, acquisition card/status, and no unexpected browser/server errors.
-- **Environment/safety:** macOS 26.2 arm64, Python 3.12.14, port 8090; sandbox music/download paths; slskd disabled by default.
-- **Automated CI:** Python syntax check #262 and Docker packaging #169 succeeded on the same SHA. Docker workflow includes Python compilation, full unittest discovery, and image build. These CI results are not represented as tests run locally by the assistant.
-- **Limitations:** the report does not establish completion of every integration/safety/release gate, and does not verify merge, image publication, deployment, or production runtime. The evidence remains tied to its recorded SHA.
-- **Next priority:** continue closing remaining test and delivery gaps from GitHub and keep all release states distinct.
-
----
-
-## 2026-10-13 — Integrate local UI smoke testing into the PR workflow
-
-- User confirmed the local FastAPI UI now starts on the Mac through the isolated PR tester. This is a startup confirmation only; no full checklist result or PR report publication is claimed.
-- Updated `docs/DEVELOPMENT_WORKFLOW.md` to add manual UI smoke testing for UI-facing PRs/release candidates after exact-head CI, with exact-SHA reporting, sandbox isolation, disabled slskd defaults, and a PR-comment report.
-- Updated `docs/TEST_PLAN.md` to replace the planned-environment item with the now-available operator procedure, report semantics, safety boundaries, and explicit remaining acceptance criteria; added `docs/LOCAL_UI_TESTING.md` as the operator guide.
-- Prior PR #31 head `534518b6c87c8e6cbd0d21a4de1bb9be79369611` had passing Python syntax workflow #257 and Docker packaging workflow #164. These results predate the documentation changes; final-head CI must be rechecked.
-- No app code changed; no application tests run by the assistant, no completed checklist/report publication confirmed, no merge, image publication, deployment, or production verification.
-
----
-
-## 2026-10-13 — Set next priority: close test gap and complete delivery workflow
-
-- **Decision:** prioritize reliable verification from candidate PR through merged commit, published image, authorized deployment, and runtime smoke tests before routine further modularization.
-- **Git authority:** GitHub is the sole source of truth. The outdated Local_Git integration/local checkout is dismissed; do not query it, inspect it, use it as a code source, or reconcile its history. The planned new local environment is strictly for testing exact GitHub revisions.
-- **Known gap:** PR #30's code-bearing head passed Python syntax/acquisition-safety and Docker packaging workflows, including full unittest discovery and image build. A later docs-only change triggered Docker workflow #157, whose terminal status was not confirmed in the previous closeout. Latest-head/merge-commit CI must be checked on GitHub; merge is not deployment.
-- **Workflow completion criteria:** exact-head required CI; complete diff review and regression tests; post-merge commit/CI evidence; artifact provenance (tag and digest); authorized deployment; smoke tests for auth, discovery, Get/requested/error recovery, acquisition lifecycle/dismiss/retry, settings and persistence; rollback reference; explicit remaining gaps.
-- **Planned test environment:** create separately from current GitHub main or exact PR SHA; do not push testing-only commits or merge local test history into GitHub. Record tested SHA, environment, commands, skipped checks, and actual results.
-- **Safety:** destructive acquisition dismissal tests use isolated disposable fixtures only unless the user explicitly authorizes a live test.
-- **Roadmap note:** PR #23 was observed open in GitHub search; reconcile its current state and merge accepted roadmap docs into main before relying on them as authoritative.
-- **Session status:** documentation-only plan; no tests, publishing, deployment, or runtime verification performed.
-- **Next:** establish the new local test environment from GitHub and use it to execute the existing test plan, then implement the smallest focused CI/integration/release-gate improvements supported by findings.
-
----
+- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4 after final reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax workflow #310, Docker packaging/full-unit-test workflow #217, container runtime smoke workflow #27, and validation-only multi-architecture workflow #71.
+- The runtime smoke test and validation-only build are preserved on main. The workflow validates linux/amd64 and linux/arm64 with push: false, provenance/SBOM enabled, and no registry login, tags, image publication, or deployment.
+- Reconciled PR #31's local UI operator guide with current main. Manual browser testing is a gate for UI-facing changes after exact-head CI; the unrecorded performance and distinct error/recovery checks are deferred to the next UI-facing PR. Do not block non-UI PRs on rerunning the full visual checklist by default.
+- A local test account survived a server restart; this proves that tested instance's persistence only, not necessarily same-PR data reuse across different source SHAs. Keep the helper external to repository scope unless added to GitHub deliberately.
+- No deployment, image publication, or production runtime verification occurred. Next: verify PR #33's exact updated head, CI, and mergeability before deciding to merge.
 
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
@@ -449,3 +403,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Documentation commits:** `docs/PROJECT_STATUS.md` closeout commit `7fe6cbb746fbeaae4addb35478f4cae54f451879`; this `PROJECT_LOG.md` entry is committed separately immediately afterward. The code merge and both documentation updates are on `main`.
 - **Verification boundary:** final PR-head Python syntax workflow #202 and Docker packaging workflow #109 passed, including the full unit suite and image build. GitHub verified the merge and extracted module on `main`. No local test execution, manual UI verification, image publication, or deployment was performed.
 - **Outstanding roadmap:** PR #23 (`docs/modularization-web-only-roadmap`) remains open/unmerged and separate from PR #24. Next implementation priority is M2: extract slskd search and quality evaluation into focused modules with regression tests, preserving fallback order, delayed-response polling, timeout budgets, and quality priority ordering.
+
+
+## 2026-10-13 — PR #31–#33 verification and manual UI gate closeout
+
+- **PR #31:** exact head `572d98d18e051bcbed7f3e74242abe1df6d0540c`; Python syntax and Docker packaging workflows passed. The uploaded manual UI report recorded eight items passing on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance observation and a distinct error/recovery scenario were not separately recorded and remain deferred to the next UI-facing PR.
+- **PR #32:** exact head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; Python syntax, container runtime smoke, Docker packaging, and validation-only multi-architecture workflows passed. This infrastructure/runtime-verification change does not require an additional manual browser run. Registry publishing remains paused.
+- **PR #33:** exact head `22ee23d406284d59c37334f99883bb9e848bd929`; Python syntax and Docker packaging/full-unit-test workflows passed. Settings routes were extracted behind regression tests without intended UI contract changes, so no manual browser test is required for this PR. The local test helper's PR 33 account was confirmed to persist after a server restart; this is local-test evidence only.
+- **Merge recommendation:** PR #33 is CI-ready but should follow PR #32, whose Docker image-content/runtime fix addresses a correctness gap on the base. Integrate PR #31's testing-gate documentation as part of this closeout. No PR was merged in this session; verify the exact head and checks again immediately before each merge.
+- **Not performed:** no image publication, deployment, or production runtime verification. Do not treat local app persistence or CI as production verification.
+- **Next:** reconcile/merge PR #32 and PR #31, then merge PR #33 if its head and checks remain valid. Run the complete manual checklist on the next UI-facing PR, explicitly recording performance and error/recovery results.

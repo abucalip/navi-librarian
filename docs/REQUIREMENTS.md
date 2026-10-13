@@ -37,7 +37,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | AUTH-01 | Protect the web UI with a first-run owner account and session-based authentication. | Tests exist; validate fresh-install and restart behavior |
 | DATA-01 | Persist app database and authentication key under the configured data directory, mounted as persistent storage in Docker. | Implemented; verify restart/upgrade |
 | API-01 | Validate API input and return useful HTTP errors rather than exposing internal exceptions or credentials. | Ongoing quality requirement |
-| OPS-01 | Build a reproducible Docker image for `linux/amd64` and `linux/arm64`, with automated tests and GHCR publishing. | Packaging merged; verify workflow and registry |
+| OPS-01 | Validate reproducible Docker builds for `linux/amd64` and `linux/arm64`; publish to GHCR only after the modularization roadmap is complete and release is explicitly authorized. | Runtime/build validation automated; GHCR publication intentionally paused |
 | OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service or the MCP server. | Current deployment design |
 
 ## Safety rules for acquisition and deletion

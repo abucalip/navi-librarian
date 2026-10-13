@@ -1,6 +1,6 @@
 # Deployment runbook
 
-Last updated: 2026-10-13
+Last updated: 2026-10-12
 
 ## Target environment
 
@@ -17,9 +17,7 @@ These are environment-specific examples. Confirm live paths, Compose network mem
 
 ## Registry prerequisite
 
-**Current release gate (2026-10-13): image publication is paused by project decision.** Do not manually trigger image publication or push release tags until the modularization roadmap is complete and the user explicitly authorizes release. PR #32 proposes changing the publishing workflow to validation-only mode, but it remains open and unmerged; therefore the safeguard is not yet on `main`. Do not assume the default-branch workflow is already disabled.
-
-The intended image name is `ghcr.io/abucalip/navi-librarian`; when publication is authorized, the intended architectures are `linux/amd64` and `linux/arm64`.
+**Current release gate (2026-10-14): image publication is paused by project decision and PR #32 is merged.** Do not manually trigger image publication or push release tags until the modularization roadmap is complete and the user explicitly authorizes release. The default-branch workflow now validates only, with push disabled; it does not log into GHCR or publish an image.
 
 **Current status (2026-10-12):** the user reports the Docker package has been made public and Librarian has been installed on the server and tested successfully. This supersedes the earlier `unauthorized` report as an active blocker. The exact deployed tag/digest and host-side pull/log evidence were not captured in this documentation update.
 
@@ -95,3 +93,10 @@ For a future deployment/update:
 - Revert the service image to that exact known-good version, then run `docker compose up -d navidrome-librarian`.
 - Do not delete `librarian_data` during rollback; it contains persistent application state and authentication material.
 - If an upgrade changes the database schema, confirm backward compatibility before reverting the image.
+
+
+## Container runtime gate and publishing pause
+
+The PR CI smoke test exercises the built container against disposable storage and temporary read-only music/download mounts. It verifies readiness, authentication/setup boundaries, private auth-key permissions, and owner-account persistence across a container restart using the same persistent /data volume. It does not connect to production services and is not production runtime verification.
+
+The GitHub Actions Docker workflow is validation-only: smoke first, then multi-architecture validation for linux/amd64 and linux/arm64 with push: false, provenance and SBOM enabled. No GHCR login, registry tags, image publication, or deployment occurs. Publication remains paused until the modularization roadmap is complete and the user separately authorizes release.
