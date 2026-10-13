@@ -30,6 +30,13 @@ Prefer a separate worktree or disposable local branch based on the exact GitHub 
 
 Before any local Git operation, inspect status and existing worktrees. Never reset, clean, force-push, overwrite uncommitted work, or delete a branch/worktree without explicit authorization.
 
+## Local test-kit and manual UI gates
+
+- The local PR test helper at `~/navi-librarian-test/test-pr.sh` is a testing utility, not an authoritative source of project code. Keep its source in GitHub if it becomes part of the maintained project workflow; never use the dismissed outdated local Git checkout as the source of truth.
+- Ordinary reruns should reuse the virtual environment when Python/dependency inputs are unchanged. Keep application data stable per PR across source SHAs, while isolating data between PR numbers. This preserves owner-account setup and settings when a PR receives a new commit. Reset data only for an explicitly requested fresh-state test.
+- Run the full manual browser checklist for UI-facing code changes after required CI passes on the exact tested SHA. A new SHA or non-UI PR does not, by itself, require repeating the full visual checklist. The performance observation and distinct error/recovery exercise not separately recorded in the October 13 report are deferred to the next UI-facing change.
+- The local helper is installed outside the repository. Documentation states the required persistence contract but does not prove the installed script implements it; verify the actual helper and run a repeated-same-PR test before claiming credential/setup persistence is fixed.
+
 ## Reporting requirements
 
 For each meaningful handoff, report:
