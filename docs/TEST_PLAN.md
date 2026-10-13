@@ -110,6 +110,10 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 
 ## Manual UI smoke test
 
+**When manual browser testing is required:** run this checklist after automated CI passes on the exact head of a UI-facing PR or release candidate. Documentation-only, API-only refactors with no UI contract changes, and infrastructure changes covered by a successful automated container runtime smoke test do not independently require a manual browser run. Record the exact application SHA for every manual run.
+
+**Deferred checks:** the PR #31 report recorded eight items as passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`, but did not separately record performance observation or a distinct error/recovery scenario. Do not mark those as passed retroactively; include both in the next UI-facing PR's manual run.
+
 After the automated suite passes:
 
 1. Log in and navigate between the main pages.
