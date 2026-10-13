@@ -1,3 +1,15 @@
+## Session closeout — 2026-10-13 (PR #25 merged: M2 slskd extraction)
+
+- **Merge:** [PR #25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25) was squash-merged. Resulting merge commit on `main`: `84fa2f82dba562fd221a1d588e761d2cb4907749`; PR head: `39ecdc98aee5ca0ab1c096a242b700e165837e92`.
+- **Implemented:** `slskd_quality.py` owns MP3/FLAC quality classification; `slskd_search.py` owns bounded query generation, response normalization, album-path matching, track identity, bounded diagnostics, and candidate grouping/ranking. Seven existing helper names remain as compatibility wrappers in `navidrome_server.py`. Search polling/orchestration, the 45-second overall budget, thresholds, priority order, and acquisition lifecycle remain in the server.
+- **Regression coverage:** added `tests/test_slskd_search_modules.py`; `docs/TEST_PLAN.md` documents focused and full test commands and the compatibility-safety boundary.
+- **CI evidence:** exact PR head `39ecdc98aee5ca0ab1c096a242b700e165837e92` passed Python syntax workflow #215 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38420456388)) and Docker packaging workflow #122 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38420456324)); the Docker workflow includes the full unit suite and image build. No workflow runs were returned for the resulting merge commit at closeout; do not represent merge-commit CI as separately verified.
+- **Review/merge state:** no submitted reviews, inline review threads, or PR conversation comments were recorded at merge time. The merge was explicitly authorized by the user.
+- **Working tree and runtime boundary:** connected local checkout remains on `test/pr17-reconciliation` and was not changed. No local test run, live slskd acquisition, manual UI test, image publication, or deployment was performed. Merge/CI does not prove production is running this code.
+- **Roadmap:** PR #23 remains separate/open. Continue from the merged `main` baseline and follow the remaining modularization priorities in project documentation; keep subsequent work focused and regression-tested.
+
+---
+
 ## Session closeout — 2026-10-13 (M2 extraction; PR #25 ready for next review step)
 
 - **Current state:** PR [#25](https://github.com/abucalip/navi-librarian/pull/25) is open, draft, unmerged, and not deployed. Branch `refactor/slskd-search-quality-modules`; base `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; application-code head `e8a4256aaf34956ab1c4ca15b0b302c107689736`; subsequent commits update documentation only.
