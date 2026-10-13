@@ -4,8 +4,8 @@
 - **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into the existing root-level `acquisition_completion.py` module. `navidrome_server.py` retains thin compatibility wrappers.
 - **Tests:** `tests/test_acquisition_completion.py` now imports production helpers directly rather than AST-extracting them. Added regression cases for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization. The existing acquisition safety harness injects the directly imported matcher into its stub namespace while retaining lifecycle coverage.
 - **Behavior/safety:** intended as relocation only. Positive advertised sizes remain mandatory; conflicting expected basenames, unmatched/ambiguous tracks, and symlinked files still fail closed. No MCP removal or user-facing behavior changes in this step.
-- **Verification:** on code/test head `4d4cb24702295c60a2139336274bc9c107a1fd23`, Python syntax/full-unit-test workflow #188 passed; Docker packaging workflow #95 passed compilation, the full unit suite, and image build steps. The Docker workflow was finishing post-job cleanup at the last check. Source and tests were read back from GitHub and the diff reviewed. No manual UI verification, merge, image publication, or deployment.
-- **Next:** confirm final workflow conclusion on the latest PR head, then decide whether to merge.
+- **Verification:** on PR head `21e2f38c3468f564df8ff76b7dd28aeb747824fb`, Python syntax/full-unit-test workflow #189 passed; Docker packaging workflow #96 passed compilation, the full unit suite, and Docker image build. Source and tests were read back from GitHub and the diff reviewed. No manual UI verification, merge, image publication, or deployment.
+- **Next:** PR #24 is ready for review/merge consideration. Do not infer deployment from CI.
 
 ---
 
