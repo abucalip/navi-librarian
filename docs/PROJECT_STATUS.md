@@ -1,3 +1,11 @@
+## Latest session update — 2026-10-13 (unauthenticated UI boundary coverage)
+
+- **Finding:** `app/main.py` intentionally leaves `/login` and auth endpoints public so first-run owner setup and sign-in can work. The middleware is intended to redirect requests for `/` without a valid session to `/login`; protected API requests should return HTTP 401. Seeing the login/setup page alone is not evidence that the dashboard is accessible.
+- **Verification gap:** the existing container smoke helper checked an unauthenticated API path but did not request `/` without following redirects. Its successful authenticated-root check therefore did not prove the unauthenticated UI boundary.
+- **Change in progress:** PR #32 smoke coverage now asserts HTTP 303 `Location: /login` for unauthenticated `/` both before and after owner setup, confirms `/login` is reachable, and keeps the protected API/authenticated-root checks. The redirect checks explicitly disable automatic redirect following.
+- **Evidence status:** this is a regression-test gap, not yet a confirmed authentication bypass. The user's observation is taken seriously; whether the displayed page was the login/setup screen or the protected dashboard is not yet independently established. No real credentials or services should be entered into the test instance until this exact-head check passes.
+- **Next:** verify CI on the updated PR #32 head and then retest PR #33's exact revision using the updated smoke harness. Keep both PRs unmerged until the boundary is proven. No image publication or deployment.
+
 ## Current session — container runtime and release provenance gates (2026-10-13)
 
 - **PR:** [#32 — Verify container startup, persistence, and image provenance](https://github.com/abucalip/navi-librarian/pull/32), branch `ci/container-runtime-smoke-release-provenance`.
