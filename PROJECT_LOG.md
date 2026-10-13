@@ -4,7 +4,7 @@
 - **Evidence:** for all three reported Tinariwen searches, the user's read-only diagnostic found the expected response shape from both slskd endpoints after the searches completed (26–33 peer records, hundreds of files). The acquisition result was generated while the searches were still reported as `inprogress` and had zero collected payloads. The evidence supports premature polling/fallback, not a response-shape mismatch.
 - **Change:** extend the overall search budget from 30 to 45 seconds and, after slskd reports peers but has not yet exposed their file payloads, continue polling that same query rather than immediately moving to broader queries. Keep timeout values, candidate matching, quality ranking, queue behavior, and import safety unchanged.
 - **Regression coverage:** mocked search reports peers for longer than the initial 18-second window, then returns payloads. Test expects a single query and successful payload collection.
-- **Verification status:** CI, local test execution, and live slskd retest are pending. No deployment or acquisition/import was performed.
+- **Verification:** on code/test commit `1aad9fc90d2ceeb1659473131d4f4a867f739b63`, Python syntax/acquisition-safety workflow #177 passed, including the delayed-payload regression; Docker packaging workflow #84 passed compilation, full unit tests, and image build. Documentation-only commits followed. Local test execution and live slskd retest remain pending. No deployment or acquisition/import was performed.
 - **Next:** check CI on this branch, then retest Tinariwen in the established port-8089 test checkout. If the fix passes, reconcile it into PR #21 before merging PR #22.
 
 ## 2026-10-13 — Broaden zero-response slskd acquisition searches
