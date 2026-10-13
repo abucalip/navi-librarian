@@ -1,7 +1,7 @@
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
-- **Merge commit:** `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b); final PR head `f9256060d162ed92be0bbacc66a877c2675a5174`.
+- **Merge commit:** `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head `f9256060d162ed92be0bbacc66a877c2675a5174`.
 - **Change:** added `discovery_refresh.py` for personal and named-list refresh coordination while keeping compatibility adapters in `navidrome_server.py`. Added direct-import regression tests and updated architecture, decision D-012, test plan, and status docs.
 - **Review:** complete diff reviewed with no blocking correctness issue found.
 - **CI evidence:** Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156 passed on code head `46444e3c24dc78008e3c13dfb441059e73279814`; Docker CI included full unittest discovery and image build. A documentation-only commit triggered Docker workflow #157, but its terminal result was not available in the merge check. Do not infer latest-head or merge-commit CI success.
