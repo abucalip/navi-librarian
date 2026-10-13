@@ -9,6 +9,7 @@
 - **Branch relationship:** PR #23 contains the modularization roadmap but remains separate/open; PR #24 is based on `main` and does not include that roadmap.
 - **Session close:** PR #24 is merged and the resulting `main` commit was verified through GitHub PR metadata, commit retrieval, recent-commit search, and file reads. PR #23 remains a separate roadmap PR. No local test run, manual UI test, image publication, or deployment occurred.
 - **Next priority:** proceed with M2 on the verified baseline: extract slskd search and quality evaluation into focused modules with regression tests. Keep PR #23 separate unless its dependency/order is explicitly revisited.
+- **Documentation closeout:** the session's status and log updates are committed to `main`; latest documentation commit is recorded in `PROJECT_LOG.md`. PR #23 remains open and unmerged. No additional code change, local test run, manual UI test, image publication, or deployment occurred during closeout.
 ---
 
 ## Latest session — 2026-10-13 (PR #21 and #22 merged; acquisition fixes verified)
