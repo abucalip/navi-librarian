@@ -1,3 +1,11 @@
+## Latest session — 2026-10-13 (retry after Dismiss; implementation in progress)
+
+- **Branch:** `fix/retry-dismissed-acquisitions`, based on `fix/flac-hires-acquisition-diagnostics`; not merged or deployed.
+- **Observed cause:** user confirmed the albums that would not create a new acquisition card had previously been dismissed. The current acquisition entry point rejects every dismissed record, so Get cannot restart it.
+- **Change:** a fresh Get now attempts to reopen a dismissed record only after Dismiss had successfully completed its safety cleanup. The stale candidate and settings are cleared before a new search; if the guarded status update fails, the retry remains blocked. Added lifecycle regression tests for successful reactivation and refusal when reactivation fails.
+- **Verification:** implementation and regression tests are committed, but CI and local test results for this new branch are pending. User's earlier unittest run was on local branch `pr21-test` and predates this change; it does not validate this patch. PR #21's response-normalization changes remain part of the base branch.
+- **Next:** check syntax/full unittest CI on this branch, then test a previously dismissed album in `prox-mcp-pr17-test`. Do not merge/deploy until verified.
+
 ## Latest session — 2026-10-13 (Hi-Res FLAC priority and acquisition diagnostics in progress)
 
 - **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; not merged or deployed.
