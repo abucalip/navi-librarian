@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+import discovery_refresh
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
     filename_key as _acquisition_filename_key,
@@ -2205,25 +2206,12 @@ def _discovery_auto_acquire_for_me(artist, album):
 
 
 def _discovery_refresh_personal(count=20):
-    if not _DISCOVERY_REFRESH_LOCK.acquire(blocking=False):
-        return {"ok": False, "status": "already_running", "list": "personal"}
-    try:
-        raw = recommend_new_music(count=count)
-        try:
-            payload = json.loads(raw) if isinstance(raw, str) else raw
-        except (ValueError, TypeError):
-            payload = {"error": "Recommendation engine returned invalid JSON."}
-        if not isinstance(payload, dict) or payload.get("error"):
-            return {"ok": False, "status": "error", "details": payload}
-        _discovery_write_list("personal", payload)
-        return {
-            "ok": True,
-            "list": "personal",
-            "generated_at": time.time(),
-            "recommendations": len(payload.get("recommendations", [])),
-        }
-    finally:
-        _DISCOVERY_REFRESH_LOCK.release()
+    return discovery_refresh.refresh_personal(
+        _DISCOVERY_REFRESH_LOCK,
+        recommend_new_music,
+        _discovery_write_list,
+        count=count,
+    )
 
 
 @mcp.tool()
@@ -3006,34 +2994,20 @@ def _build_artist_deep_dive_list():
 
 
 def _discovery_refresh_other(list_name):
-    locks = {
-        "classics": _CLASSICS_REFRESH_LOCK,
-        "artist_deep_dive": _DEEP_DIVE_REFRESH_LOCK,
-        "new_releases": _NEW_RELEASES_REFRESH_LOCK,
-    }
-    lock = locks.get(list_name)
-    if lock is None:
-        return {"ok": False, "error": "Unknown discovery list"}
-    if not lock.acquire(blocking=False):
-        return {"ok": False, "status": "already_running", "list": list_name}
-    try:
-        if list_name == "classics":
-            payload = _build_classics_list()
-        elif list_name == "artist_deep_dive":
-            payload = _build_artist_deep_dive_list()
-        elif list_name == "new_releases":
-            payload = _build_new_releases_list()
-        else:
-            return {"ok": False, "error": "Unknown discovery list"}
-        _discovery_write_list(list_name, payload)
-        return {
-            "ok": True, "list": list_name, "generated_at": time.time(),
-            "items": len(payload.get("items", [])),
-        }
-    except Exception as exc:
-        return {"ok": False, "list": list_name, "error": str(exc)}
-    finally:
-        lock.release()
+    return discovery_refresh.refresh_other(
+        list_name,
+        {
+            "classics": _CLASSICS_REFRESH_LOCK,
+            "artist_deep_dive": _DEEP_DIVE_REFRESH_LOCK,
+            "new_releases": _NEW_RELEASES_REFRESH_LOCK,
+        },
+        {
+            "classics": _build_classics_list,
+            "artist_deep_dive": _build_artist_deep_dive_list,
+            "new_releases": _build_new_releases_list,
+        },
+        _discovery_write_list,
+    )
 
 
 _CLASSICS_REFRESH_LOCK = __import__("threading").Lock()

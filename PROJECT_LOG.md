@@ -1,3 +1,12 @@
+## 2026-10-13 — Discovery refresh coordination extraction started
+
+- **Branch:** `refactor/discovery-refresh-coordination`, based on `main` at `0a3dbdc4fc09712f2c63e581244c4119ec0eda2d`.
+- **Change:** added `discovery_refresh.py` for non-blocking lock coordination, personal recommendation payload validation, named-list dispatch, persistence callback invocation, response counts, and error translation. Existing server functions remain compatibility adapters and supply all external dependencies.
+- **Regression coverage:** added `tests/test_discovery_refresh.py` for successful personal/other refreshes, malformed JSON, already-running locks, unknown lists, builder exceptions, and lock release.
+- **Documentation:** updating architecture, decision D-012, test plan, project status, and this log as part of the PR.
+- **Verification:** PR head `46444e3c24dc78008e3c13dfb441059e73279814` passed Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156. Docker CI ran full unittest discovery and built the image. Local_Git was unavailable (HTTP 429/404), so no local checkout test run is claimed. No live discovery refresh, UI verification, image publication, or deployment.
+- **Review:** complete eight-file PR diff reviewed; no blocking correctness issue found. Both CI workflows passed on the reviewed head. Merge remains pending.
+
 ## 2026-10-13 — PR #29 merged; discovery list persistence extraction complete
 
 - [PR #29](https://github.com/abucalip/navi-librarian/pull/29) was squash-merged into `main` at `001f3a7e76979d82adc62edd888d8490565b2ef3`; final PR head `518505f6dd8e233bc6aaec4b90ec42b0669f70d5`.

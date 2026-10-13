@@ -1,3 +1,11 @@
+## Discovery refresh coordination extraction — PR in progress
+
+- Run focused regression tests: `python -m unittest tests.test_discovery_refresh -v`.
+- Run syntax checks: `python -m py_compile navidrome_server.py discovery_refresh.py`.
+- Run the full suite: `python -m unittest discover -s tests -v`.
+- Direct-import tests cover personal-list JSON parsing and write behavior, invalid JSON, non-blocking lock behavior, named-list success/counting, unknown-list handling, builder exceptions, and lock release. Confirm Python syntax and Docker packaging workflows on the exact final PR head before merge.
+- No local test run or live/UI verification is claimed for the initial implementation session.
+
 # Test plan
 
 Last updated: 2026-10-13
