@@ -1,3 +1,32 @@
+## Test-gap closure and complete delivery workflow — next priority (2026-10-13)
+
+This section defines the next priority; it is a plan, not evidence that these checks have run.
+
+### Required verification stages
+
+1. **Exact candidate:** record the GitHub branch and full commit SHA under test.
+2. **Automated checks:** focused regression tests, full unittest discovery, Python compilation/syntax, dependency/install checks, and Docker build. Validate Compose configuration where deployment Compose is available.
+3. **Safety tests:** path traversal, symlink escapes, ambiguous folder resolution, no-overwrite, rollback, and preservation of unrelated files. Use temporary/disposable directories.
+4. **Integration/UI checks:** first-run setup/login; discovery loading/refresh; Get/requested state, duplicate prevention and error recovery; acquisition progress/completion/dismiss/retry; settings save/reload; restart persistence; external-service failure handling.
+5. **Post-merge:** verify the exact resulting `main` SHA and inspect the applicable GitHub Actions runs for that commit. Do not infer merge-commit CI from PR-head CI.
+6. **Artifact/release:** when publishing is authorized, record architecture, image tag and digest, and confirm the registry artifact corresponds to the intended commit.
+7. **Deployment/runtime:** only when authorized, record deployed image digest, host/configuration, health/log checks, smoke-test results, persistent-data check, and rollback reference.
+
+A skipped, unavailable, or unobserved check is not a pass. Report it explicitly and do not mark the release Verified while a required gate is outstanding. Keep Implemented, Tested, Merged, Published, Deployed, and Verified as distinct states.
+
+### Planned new local test environment
+
+- Create a fresh isolated environment from the exact GitHub `main` SHA or PR head being tested.
+- The environment is for running tests and observing behavior only. GitHub remains the only source of truth; do not push test-only commits or local merge history.
+- Record runtime versions, tested SHA, commands, results, skipped tests, and deviations from the proposed GitHub tree.
+- Do not use the dismissed/outdated Local_Git integration or checkout for repository inspection or verification.
+
+### Current known gap
+
+PR #30 code-head CI passed Python syntax/acquisition-safety and Docker packaging/full unit tests/image build. The closeout records a subsequent documentation-triggered Docker workflow whose final status was not confirmed. Recheck latest-head and post-merge CI directly on GitHub before claiming the gate is closed. No live UI/deployment verification is implied.
+
+---
+
 ## Discovery refresh coordination extraction — merged PR #30
 
 - PR #30 was merged into `main` at `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head was `f9256060d162ed92be0bbacc66a877c2675a5174`.
