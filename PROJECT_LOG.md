@@ -1,3 +1,15 @@
+## 2026-10-13 — Local UI checklist completed and report uploaded
+
+- **PR/tested SHA:** PR #31, application source `96b253c5f3ec2f858e02afc034365a22bac0773e`, branch `docs/testing-release-workflow-priority`.
+- **Manual report:** user completed the browser checklist and uploaded the Markdown report as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713).
+- **Result:** all eight recorded checklist items passed with zero failures: first-run setup/login, dashboard/artwork, discovery results, navigation/album details, settings save/secrecy, safe Get/request interaction, acquisition card/status, and no unexpected browser/server errors.
+- **Environment/safety:** macOS 26.2 arm64, Python 3.12.14, port 8090; sandbox music/download paths; slskd disabled by default.
+- **Automated CI:** Python syntax check #262 and Docker packaging #169 succeeded on the same SHA. Docker workflow includes Python compilation, full unittest discovery, and image build. These CI results are not represented as tests run locally by the assistant.
+- **Limitations:** the report does not establish completion of every integration/safety/release gate, and does not verify merge, image publication, deployment, or production runtime. The evidence remains tied to its recorded SHA.
+- **Next priority:** continue closing remaining test and delivery gaps from GitHub and keep all release states distinct.
+
+---
+
 ## 2026-10-13 — Integrate local UI smoke testing into the PR workflow
 
 - User confirmed the local FastAPI UI now starts on the Mac through the isolated PR tester. This is a startup confirmation only; no full checklist result or PR report publication is claimed.
