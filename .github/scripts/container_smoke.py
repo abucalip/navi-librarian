@@ -14,14 +14,20 @@ USERNAME = "ci-smoke-owner"
 PASSWORD = "CI-smoke-password-2026!"
 
 
-def request(path, payload=None, cookie=None, timeout=3):
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def request(path, payload=None, cookie=None, timeout=3, follow_redirects=True):
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"} if data is not None else {}
     if cookie:
         headers["Cookie"] = cookie
     req = urllib.request.Request(BASE_URL + path, data=data, headers=headers)
+    opener = urllib.request.build_opener() if follow_redirects else urllib.request.build_opener(NoRedirectHandler)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as response:
+        with opener.open(req, timeout=timeout) as response:
             return response.status, response.read(), response.headers
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read(), exc.headers
@@ -57,6 +63,17 @@ def expect(status, expected, label, body=b""):
 
 wait_for_app()
 
+# The login/setup page is intentionally public, but the app root must never
+# serve the dashboard to a request without a valid session cookie. Disable
+# urllib redirect-following so a 303 cannot be mistaken for an unauthenticated
+# page load that returned HTTP 200.
+status, body, headers = request("/", follow_redirects=False)
+expect(status, 303, "Unauthenticated app-root redirect", body)
+if headers.get("Location") != "/login":
+    raise AssertionError("Unauthenticated app root should redirect to /login")
+status, body, _ = request("/login")
+expect(status, 200, "Public first-run login/setup page", body)
+
 status, body, _ = request("/api/not-a-real-route")
 expect(status, 401, "Unauthenticated API protection", body)
 
@@ -72,6 +89,11 @@ expect(status, 200, "First-run owner setup", body)
 cookie = session_cookie(headers)
 if json.loads(body).get("ok") is not True:
     raise AssertionError(f"Owner setup did not report success: {body!r}")
+
+status, body, headers = request("/", follow_redirects=False)
+expect(status, 303, "Unauthenticated app-root redirect after owner setup", body)
+if headers.get("Location") != "/login":
+    raise AssertionError("Unauthenticated app root after setup should redirect to /login")
 
 # The auth key must be private inside the running container.
 mode = subprocess.check_output(
@@ -107,4 +129,4 @@ cookie = session_cookie(headers)
 status, body, _ = request("/", cookie=cookie)
 expect(status, 200, "Authenticated UI after container restart", body)
 
-print("PASS: container HTTP readiness, auth boundary, first-run setup, private auth-key permissions, login, and /data persistence across restart.")
+print("PASS: container readiness, unauthenticated app-root redirects before/after setup, public login/setup page, protected API, private auth-key permissions, login, and /data persistence across restart.")
