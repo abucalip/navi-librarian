@@ -16,7 +16,7 @@
 - Added `tests/test_acquisition_routes.py` for route registration, payload/default mapping, invalid inputs, skip/dismiss status translation, streaming headers, and sanitized failures.
 - Exact-head CI on `5b60975d690b619e2b32fdc3835bdc9feb38af8d` passed: Python syntax workflow #326 (run 38485095323), Docker packaging/full unit tests #233 (run 38485095296), container runtime smoke #43 (run 38485095246), and validation-only multi-architecture #87 (run 38485095805).
 - This is an API/module extraction with no intended visual change; manual browser testing is not planned unless CI/review reveals a UI contract change. The deferred performance and distinct error/recovery checks remain for the next UI-facing PR.
-- PR #34 is open pending final PR-state/diff review and merge. No image publication, deployment, or production runtime verification. Publishing remains disabled pending roadmap completion and separate authorization.
+- Superseded by the merged-PR #34 closeout at the top of this file: final-head checks passed and the PR was merged at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`. No image publication, deployment, or production runtime verification occurred. Publishing remains disabled pending roadmap completion and separate authorization.
 
 ---
 
