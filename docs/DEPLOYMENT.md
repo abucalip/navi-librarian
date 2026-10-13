@@ -98,7 +98,7 @@ For a future deployment/update:
 
 The PR CI container smoke workflow starts the built image against disposable storage and checks HTTP readiness, authentication boundaries, first-run setup, private auth-key permissions, and persistence of the owner account across a container restart. It does not connect to live Navidrome/slskd services and is not a production deployment check.
 
-The Build and publish Docker image workflow runs the same isolated container smoke harness before publishing; if that check fails, the publication job stops. For a successful publication, use the GitHub Actions run summary to record:
+**Publication is intentionally paused until the modularization roadmap is complete and the user explicitly authorizes release.** The current workflow is validation-only: it runs the isolated container smoke harness and validates multi-architecture builds without logging in to GHCR or pushing an image. When publishing is deliberately re-enabled in a later reviewed change, use the Actions summary to record:
 
 - source commit SHA and trigger ref;
 - immutable reference ghcr.io/abucalip/navi-librarian@sha256:<digest>;
