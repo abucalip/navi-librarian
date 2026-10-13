@@ -129,6 +129,18 @@ python -m unittest discover -s tests -v
 The new tests cover MP3/FLAC classification, user-configured tier ordering, bounded fallback query generation, slskd response-shape normalization, album-path/track identity matching, candidate track deduplication and ranking, and bounded diagnostics. The legacy acquisition-safety suite remains a compatibility guard because existing callers still use wrappers in `navidrome_server.py`. Confirm the Docker packaging workflow passes on the exact PR head before merge. No live slskd or UI behavior should be inferred from unit tests alone.
 
 
+## M4 — discovery eligibility and recommendation scoring
+
+Run the direct-import regression tests and full suite for changes to `discovery_recommendations.py`:
+
+```sh
+python -m unittest tests.test_discovery_recommendations -v
+python -m py_compile navidrome_server.py discovery_recommendations.py
+python -m unittest discover -s tests -v
+```
+
+Network calls, cache access, Navidrome inventory, metadata enrichment, and persistence remain in `navidrome_server.py`. Preserve exact artist-credit matching, owned-album exclusions, score weights, jitter range, and two-per-artist/eight-per-family diversity caps.
+
 ## M3 — acquisition import filesystem module
 
 For changes touching `acquisition_import.py`, run the direct-import tests first:
