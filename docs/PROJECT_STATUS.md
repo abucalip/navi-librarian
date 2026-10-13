@@ -1,3 +1,12 @@
+## Latest session — 2026-10-13 (wait for slskd peer payloads before query fallback)
+
+- **Branch:** `fix/slskd-search-payload-wait`, created from PR #21's latest observed head `2876098ed222cc8803f292c55aa8e3474331e3e5`. Not yet opened as a PR, merged, or deployed. PR #21 and stacked PR #22 remain unchanged.
+- **Root cause evidence:** the user's three slskd search IDs returned HTTP 200 from both state-with-responses and the dedicated `/responses` endpoint. Once completed, they exposed 26–33 peer records and hundreds of files. During Librarian's bounded search window, the card had recorded zero collected peer payloads while each search was still `inprogress`. This points to premature fallback/termination while slskd was still exposing results, not a payload-shape mismatch.
+- **Implementation:** increased the overall search budget from 30 to 45 seconds. Once slskd reports at least one peer but no file payload has yet been collected, continue polling the same search through the overall deadline instead of immediately spending the remaining time on fallback queries. Search timeout values and album/quality matching rules are unchanged.
+- **Regression test:** added a mocked delayed-payload scenario where slskd reports 26 peers for more than the initial 18-second query window and only later returns peer records. The test asserts Librarian keeps polling the same query and collects the payload.
+- **Verification:** source and test changes committed to the branch through GitHub's file API. CI has not yet been checked for this branch; no local test run or live slskd retest has occurred. Do not merge until CI and the Tinariwen live retest pass.
+- **Next:** run CI on this branch and test Tinariwen in the existing `prox-mcp-pr17-test` data environment using the isolated port-8089 checkout. Keep the port-8088 app untouched and do not run two instances against the same SQLite data simultaneously.
+
 ## Latest session — 2026-10-13 (zero-response slskd search fallback implemented; automated verification passed)
 
 - **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked on this branch. Neither PR is merged or deployed.
