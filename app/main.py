@@ -19,6 +19,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 from app.api.settings import router as settings_router
+from app.api.acquisitions import router as acquisitions_router
 from app.api.utils import parse_result
 
 import navidrome_server as librarian
@@ -561,110 +562,8 @@ def discovery_feedback(payload: dict):
         raise HTTPException(status_code=502, detail="Could not save discovery feedback.")
 
 
-@app.get("/api/acquisitions")
-def acquisition_status():
-    try:
-        return parse_result(librarian.discovery_get_acquisition_status())
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not retrieve acquisition status.")
-
-
-@app.post("/api/acquisitions/skip")
-def skip_acquisition_source(payload: dict):
-    artist = str(payload.get("artist") or "").strip()
-    album = str(payload.get("album") or "").strip()
-    if not artist or not album:
-        raise HTTPException(status_code=400, detail="artist and album are required")
-    try:
-        result = parse_result(librarian.discovery_skip_acquisition_source(
-            artist=artist, album=album,
-        ))
-        if isinstance(result, dict) and not result.get("ok"):
-            raise HTTPException(status_code=409, detail=result.get("error", "Could not skip source."))
-        return result
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not request a source switch.")
-
-
-@app.post("/api/acquisitions/dismiss")
-def dismiss_acquisition(payload: dict):
-    artist = str(payload.get("artist") or "").strip()
-    album = str(payload.get("album") or "").strip()
-    if not artist or not album:
-        raise HTTPException(status_code=400, detail="artist and album are required")
-    try:
-        result = parse_result(librarian.discovery_dismiss_acquisition(artist=artist, album=album))
-        if isinstance(result, dict) and not result.get("ok"):
-            message = result.get("error", "Could not dismiss acquisition.")
-            status_code = 404 if message == "Acquisition not found." else 409
-            raise HTTPException(status_code=status_code, detail=message)
-        return result
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not dismiss acquisition.")
-
-
-@app.get("/api/acquisitions/stream")
-def acquisition_status_stream():
-    def events():
-        while True:
-            try:
-                payload = parse_result(librarian.discovery_get_acquisition_status())
-                yield "data: " + json.dumps(payload, ensure_ascii=False) + "\n\n"
-            except Exception:
-                yield "event: error\ndata: {}\n\n"
-            sleep(1)
-
-    return StreamingResponse(
-        events(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
 app.include_router(settings_router)
-
-
-@app.post("/api/acquire")
-def acquire_album(payload: dict):
-    artist = str(payload.get("artist") or "").strip()
-    album = str(payload.get("album") or "").strip()
-    if not artist or not album:
-        raise HTTPException(status_code=400, detail="artist and album are required")
-    try:
-        return parse_result(librarian.discovery_acquire_album(
-            artist=artist,
-            album=album,
-            metadata_json=json.dumps(payload.get("metadata") or {}, ensure_ascii=False),
-            auto_queue=bool(payload.get("auto_queue", True)),
-        ))
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not search slskd for this album.")
-
-
-@app.post("/api/acquire/queue")
-def queue_reviewed_candidate(payload: dict):
-    username = str(payload.get("username") or "").strip()
-    artist = str(payload.get("artist") or "").strip()
-    album = str(payload.get("album") or "").strip()
-    folder = str(payload.get("folder") or "").strip()
-    files = payload.get("files")
-    if not username or not isinstance(files, list) or not files:
-        raise HTTPException(status_code=400, detail="username and a non-empty files list are required")
-    try:
-        return parse_result(librarian.discovery_queue_slskd_candidate(
-            username=username,
-            files_json=json.dumps(files, ensure_ascii=False),
-            artist=artist,
-            album=album,
-            folder=folder,
-            quality_summary_json=json.dumps(payload.get("quality_summary") or [], ensure_ascii=False),
-        ))
-    except Exception:
-        raise HTTPException(status_code=502, detail="Could not queue the selected candidate.")
+app.include_router(acquisitions_router)
 
 
 # Artwork is optional presentation metadata; discovery works without it.

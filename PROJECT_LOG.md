@@ -1,3 +1,13 @@
+## 2026-10-14 — Acquisition API route extraction started
+
+- Started branch `refactor/acquisition-api-router` from GitHub `main` after reviewing the project instructions, roadmap, requirements, architecture, workflow, test plan, project status, and open-PR search results. The connector's PR search did not return a reliable current open-PR inventory, so this entry does not infer PR state from that search.
+- Extracted the six `/api/acquire*` and `/api/acquisitions*` route handlers into `app/api/acquisitions.py`; `app/main.py` registers the router with the settings router. The route module delegates to the existing `navidrome_server` functions, preserving domain ownership and destructive-operation safeguards.
+- Added direct-import tests in `tests/test_acquisition_routes.py` for endpoint/method inventory, payload mapping and defaults, input validation, skip/dismiss status mapping, streaming headers, and sanitized errors.
+- Updated `docs/MODULARIZATION_ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md` to mark the stage in progress. CI, full-suite execution, exact final diff review, and PR creation remain pending; no test is claimed passed.
+- No UI presentation change is intended, so manual browser testing is not expected unless the contract review shows otherwise. GHCR publication, deployment, and production runtime verification remain out of scope and unauthorized.
+
+---
+
 ## 2026-10-14 — PR #31 merged; session closeout
 
 - PR #31 (testing workflow documentation) was squash-merged to `main` at `87e5816c4273e720352931402a223f0b61ecbf27`, from exact PR head `135b719bfecf9ad698862d41034d927083426f99`.
