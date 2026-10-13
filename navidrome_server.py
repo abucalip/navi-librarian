@@ -6,7 +6,12 @@ import secrets
 import sqlite3
 import time
 import unicodedata
-from acquisition_completion import inspect_completed_album
+from acquisition_completion import (
+    filename_key as _acquisition_filename_key,
+    inspect_completed_album,
+    match_completed_album_files as _acquisition_match_completed_album_files,
+    safe_folder_name as _acquisition_safe_folder_name,
+)
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -4054,10 +4059,8 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
 
 
 def _discovery_safe_folder_name(value):
-    value = str(value or "").replace("\\", "/").split("/")[-1]
-    value = "".join(character for character in value if character != "\0")
-    value = value.strip().strip(".")
-    return value or "Unknown"
+    """Compatibility wrapper; implementation lives in acquisition_completion."""
+    return _acquisition_safe_folder_name(value)
 
 
 _DISCOVERY_IMPORT_LOCK = __import__("threading").Lock()
@@ -4360,78 +4363,15 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
 
 
 def _discovery_filename_key(value):
-    """Normalize names for case-insensitive matching across macOS filesystems."""
-    return unicodedata.normalize("NFC", str(value or "")).casefold()
+    """Compatibility wrapper; implementation lives in acquisition_completion."""
+    return _acquisition_filename_key(value)
 
 
 def _discovery_match_completed_album_files(folder, candidate):
-    """Match each unique expected basename to a local file.
+    """Compatibility wrapper for strict completion-file matching."""
+    return _acquisition_match_completed_album_files(folder, candidate)
 
-    Collision-suffixed filenames are accepted only when their numeric suffix
-    and advertised file size establish a unique match. Unicode normalization
-    handles filenames returned in different forms by macOS filesystems and
-    remote transfer metadata.
-    """
-    import re
 
-    folder = Path(folder)
-    files = [p for p in folder.iterdir() if p.is_file() and not p.is_symlink()]
-    used = set()
-    matched = {}
-
-    expected_by_name = {}
-    for item in candidate.get("files", []):
-        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
-        if not name:
-            continue
-        key = _discovery_filename_key(name)
-        try:
-            size = int(item.get("size"))
-        except (TypeError, ValueError):
-            return None
-        # Album tracks must have a known, positive advertised size. Treating a
-        # missing/zero size as a wildcard could mistake a partial transfer for
-        # a completed track during import or restart reconciliation.
-        if size <= 0:
-            return None
-
-        # Identical basenames with conflicting advertised sizes are ambiguous.
-        if key in expected_by_name and expected_by_name[key][1] != size:
-            return None
-        expected_by_name.setdefault(key, (name, size))
-
-    for key, (expected_name, expected_size) in expected_by_name.items():
-        exact = [
-            p for p in files
-            if _discovery_filename_key(p.name) == key
-            and p not in used
-            and (expected_size <= 0 or p.stat().st_size == expected_size)
-        ]
-        selected = exact[0] if len(exact) == 1 else None
-
-        if selected is None and expected_size > 0:
-            normalized_expected = unicodedata.normalize("NFC", expected_name)
-            stem, suffix = Path(normalized_expected).stem, Path(normalized_expected).suffix
-            pattern = re.compile(
-                r"^" + re.escape(stem) + r"_\d+" + re.escape(suffix) + r"$",
-                re.IGNORECASE,
-            )
-            alternatives = [
-                p for p in files
-                if p not in used
-                and pattern.match(unicodedata.normalize("NFC", p.name))
-                and p.stat().st_size == expected_size
-            ]
-            if len(alternatives) == 1:
-                selected = alternatives[0]
-
-        if selected is None:
-            return None
-
-        matched[expected_name] = selected
-        used.add(selected)
-
-    return matched or None
 
 def _discovery_inspect_completed_album(download_root, candidate):
     """Return strict folder-match evidence and diagnostics for a completed transfer."""
