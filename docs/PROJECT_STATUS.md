@@ -1,12 +1,13 @@
-## Latest session — 2026-10-13 (first acquisition-completion extraction; review prioritized)
+## Latest session — 2026-10-13 (PR #24 ambiguity edge case corrected; CI pending)
 
-- **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), branch `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #24 is open, unmerged, and not deployed.
-- **Objective/implementation:** move filename identity, safe folder-name normalization, and strict completed-track matching into the existing importable `acquisition_completion.py`; retain `navidrome_server.py` compatibility wrappers; switch matching tests to direct imports and add safety regressions.
-- **Verification:** code-bearing head `a969ec4df6db2c5d45943c091401a5b26f9566d0` passed Python syntax/full-unit-test workflow #190 and Docker packaging workflow #97, including compilation, full unit tests, and image build. Subsequent branch commits only update documentation; the workflow lookup returned no PR-triggered runs for those docs-only commits. No local test run, manual UI test, merge, image publication, or deployment occurred.
-- **Process lesson:** earlier status notes became stale as additional documentation commits advanced the PR head. Update status/log only after confirming the final head and CI, and cite the exact SHA/run IDs.
-- **Branch relationship:** PR #23 contains the modularization roadmap but is also open and unmerged; PR #24 is intentionally based on `main` and does not include that roadmap. Review both branch contents explicitly; do not assume PR #24 inherits PR #23 documentation.
-- **Priority next action:** review PR #24's full diff and regression coverage against the relocation-only acceptance criteria before any merge or second extraction. See the execution lessons in `docs/DEVELOPMENT_WORKFLOW.md` on PR #23's branch.
-
+- **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), branch `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. Open, unmerged, not deployed.
+- **Extraction:** filename identity, safe folder-name normalization, and strict completed-track matching live in importable `acquisition_completion.py`; compatibility wrappers remain in `navidrome_server.py`; direct-import tests replace AST extraction for the migrated matcher.
+- **Review correction:** when multiple local files match the expected basename identity and advertised size, the matcher now returns `None` immediately. Collision-suffix fallback is allowed only when no exact match exists, preventing an alternative filename from masking an ambiguous exact match.
+- **Regression test:** added a case-variant exact-name pair plus a same-size `Track_1.flac` alternative; the matcher must fail closed. The test skips on filesystems that cannot represent distinct case-variant names.
+- **Current code/test commits:** source fix `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; regression test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`. Documentation updates are being recorded on the same PR branch.
+- **Verification status:** CI on the prior head passed Python syntax/full-unit-test workflow #195 and Docker packaging workflow #102. These results predate the new regression; CI for the corrected head is pending. No local test run or manual UI test was performed. Do not merge until corrected-head CI passes and the complete diff is reviewed.
+- **Branch relationship:** PR #23 contains the modularization roadmap but remains separate/open; PR #24 is based on `main` and does not include that roadmap.
+- **Next:** confirm syntax/full suite and Docker build on the final corrected head, review the final diff, then decide merge readiness. No image publication or deployment has occurred.
 ---
 
 ## Latest session — 2026-10-13 (PR #21 and #22 merged; acquisition fixes verified)
