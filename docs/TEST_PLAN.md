@@ -54,6 +54,7 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - Explicit slskd queue rejection statuses 400/404/422 allow safe source failover; 401/403 stop as global credential/permission errors; timeouts and 5xx responses remain monitored as uncertain to prevent duplicate downloads.
 - When no folder candidate is recognized, status includes a bounded sample of source paths and the album/artist match signals used by the matcher.
 - Normalize slskd search results whether returned as a list or a `responses`/`items` wrapper; if search state reports peers but response payloads are temporarily absent, retry briefly before reporting no matches.
+- If an exact slskd query returns no usable peer file payloads, retry a bounded broader-query sequence; verify query order, duplicate elimination, blank-input handling, unchanged candidate matching, and diagnostics separating reported counts from collected payloads.
 - First-run setup creates the owner account.
 - Invalid login is rejected; rate limiting and session expiry behave as designed.
 - Restarting the container preserves authentication and application data.
