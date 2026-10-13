@@ -1,6 +1,6 @@
 # Product requirements
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 This is the user-facing behavior ledger. If implementation and this document disagree, do not silently assume either is correct: clarify the intended behavior, update this ledger, and add a regression test.
 
@@ -30,7 +30,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | ACQ-04 | Dismissing an acquisition removes its acquisition entry and deletes the files in that album's associated folder, as requested by the user. The implementation must resolve the correct folder, stay within configured roots, and reject ambiguous/unsafe paths. | Destructive behavior; require explicit safety tests before release |
 | ACQ-05 | slskd candidates are grouped by their actual remote folder/path; punctuation, edition suffixes, and Unicode normalization should be handled without merging unrelated candidates. | Implemented in development history; preserve regression tests |
 | ACQ-06 | Acquisition/import must not overwrite or delete unrelated library content. Validate file completeness and paths before any destructive or import operation. | Safety-critical requirement |
-| ACQ-07 | If an exact slskd artist+album query returns no usable peer file payloads, try a small bounded set of broader query variants. Keep album/artist candidate checks unchanged and report each query plus slskd-reported and collected response counts. | Implemented on PR #21 branch; CI and live regression retest pending |
+| ACQ-07 | If an exact slskd artist+album query returns no usable peer file payloads, try a small bounded set of broader query variants. Keep album/artist candidate checks unchanged and report each query plus slskd-reported and collected response counts. | Implemented on PR #21 branch; automated CI passed, live regression retest pending |
 | SET-01 | Provide configuration for Navidrome, slskd, Last.fm, and ListenBrainz as applicable to the current UI. | Implemented in development history; verify secrets are not returned to clients |
 | SET-02 | A blank secret submitted while editing settings must not accidentally erase an existing secret unless the user explicitly requests clearing it. | Verify with tests |
 | SET-03 | slskd audio-quality preferences contain MP3 320, MP3 193–319, MP3 192, FLAC CD/unverified, FLAC 16-bit/44.1 kHz, and FLAC Hi-Res (24-bit or above 44.1 kHz) exactly once; the user can reorder them by dragging, with move buttons as a non-drag alternative, and the order persists. Existing four- and five-tier settings append newly supported FLAC tiers without changing the saved order. | Implemented on fix branch; automated CI and UI smoke test pending |
