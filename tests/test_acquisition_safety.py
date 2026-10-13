@@ -76,6 +76,7 @@ def load_helpers():
         "_slskd_download_transfer_files": lambda *_args, **_kwargs: [],
         "_slskd_config": lambda: ("http://slskd", None, {}),
         "_discovery_cancel_and_clean_source": lambda *_args, **_kwargs: True,
+        "_discovery_reactivate_dismissed_acquisition": lambda *_args, **_kwargs: False,
         "_discovery_safe_folder_name": lambda value: str(value).replace("/", "_"),
         "_discovery_import_matched_album_files": lambda *_args, **_kwargs: None,
         "saved_jobs": [],
@@ -698,6 +699,47 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(kwargs["candidate"]["username"], "peer-one")
         self.assertEqual(args[3]["queue_error"], "FakeHTTPError")
         self.assertEqual(kwargs["candidate"]["fallback_candidates"], [second_fallback])
+
+    def test_explicit_get_reactivates_safely_dismissed_job(self):
+        job = {
+            "artist": "Artist",
+            "album": "Album",
+            "artist_key": "artist",
+            "album_key": "album",
+            "status": "dismissed",
+            "candidate": {"username": "old-peer", "files": [{"filename": "old/01.flac"}]},
+            "settings": {"slskd_downloads_path": "/old"},
+        }
+        self.ns["jobs"].append(job)
+        calls = []
+
+        def reactivate(artist, album, metadata):
+            calls.append((artist, album, metadata))
+            job.update(status="retry_requested", candidate={}, settings={})
+            return True
+
+        self.ns["_discovery_reactivate_dismissed_acquisition"] = reactivate
+        result = json.loads(self.ns["discovery_acquire_album"](
+            "Artist", "Album", json.dumps({"mbid": "release-id"})
+        ))
+
+        self.assertEqual(result["status"], "implementation_called")
+        self.assertEqual(calls, [("Artist", "Album", {"mbid": "release-id"})])
+        self.assertEqual(job["status"], "retry_requested")
+        self.assertEqual(job["candidate"], {})
+        self.assertEqual(job["settings"], {})
+
+    def test_dismissed_job_stays_blocked_if_reactivation_fails(self):
+        self.ns["jobs"].append({
+            "artist": "Artist", "album": "Album",
+            "artist_key": "artist", "album_key": "album",
+            "status": "dismissed",
+        })
+        self.ns["_discovery_reactivate_dismissed_acquisition"] = lambda *_args, **_kwargs: False
+        result = json.loads(self.ns["discovery_acquire_album"]("Artist", "Album"))
+
+        self.assertEqual(result["status"], "dismissed")
+        self.assertEqual(result["ok"], False)
 
     def test_stale_downloading_job_recovers_watcher_without_requeueing(self):
         self.ns["jobs"].append({
