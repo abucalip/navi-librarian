@@ -1,13 +1,15 @@
-## Latest session — 2026-10-13 (discovery refresh coordination extraction in PR)
+## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
-- **Branch:** `refactor/discovery-refresh-coordination`, based on `main` at `0a3dbdc4fc09712f2c63e581244c4119ec0eda2d` before branch creation.
-- **Change:** added `discovery_refresh.py` for coordination of personal-list and named-list refreshes. `navidrome_server.py` retains the existing private entry points and injects the current locks, builders, recommendation function, and persistence wrapper.
-- **Preserved behavior:** non-blocking per-list locks; personal recommendation JSON parsing and error shape; list names and payloads; generated-at response values; item/recommendation counts; exception response for other lists; lock release in all paths. List building, provider calls, feedback and SQLite persistence remain outside the module.
-- **Regression tests:** added `tests/test_discovery_refresh.py` for successful refresh/write/count, invalid JSON, already-running lock, unknown list, builder failure, and lock release.
-- **Verification:** on PR head `46444e3c24dc78008e3c13dfb441059e73279814`, Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156 both completed successfully. Docker CI ran `python -m unittest discover -s tests -v` and built the image. The connected Local_Git service was unavailable (HTTP 429/404), so no local checkout test run is claimed. No live discovery refresh, UI test, image publication, deployment, or runtime verification has occurred.
-- **Status:** implemented; both required CI workflows passed on the reviewed PR head; review complete, merge pending.
-- **Review outcome:** complete diff reviewed; no blocking correctness issue found. CI confirms syntax/safety regressions, full unit-test discovery, and Docker build pass. The focused test invocation documented below is optional; CI uses full discovery.
-- **Next:** merge PR #30 when approved, then continue the next modularization boundary.
+- **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
+- **Merge commit:** `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head: `f9256060d162ed92be0bbacc66a877c2675a5174`.
+- **Implemented:** added `discovery_refresh.py` to coordinate personal and named cached-list refreshes. `navidrome_server.py` retains compatibility entry points and injects existing locks, builders, recommendation calls, and persistence.
+- **Regression tests:** `tests/test_discovery_refresh.py` covers personal success and malformed JSON, lock contention, named-list success/counting, unknown lists, builder errors, and lock release.
+- **Review:** complete eight-file diff reviewed; no blocking correctness issue found.
+- **CI:** Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156 passed on the reviewed code head `46444e3c24dc78008e3c13dfb441059e73279814`. Docker CI ran full unittest discovery and built the image. A documentation-only update subsequently triggered Docker workflow #157; its final status was not available in the checks used during merge. Do not claim latest-head CI or merge-commit CI passed without confirming the run.
+- **Limits:** connected Local_Git was unavailable (HTTP 429/404), so no local tests are claimed. No live discovery refresh, manual UI verification, image publication, deployment, or runtime verification was performed.
+- **Status:** implemented and merged; deployment/runtime verification remains outstanding.
+- **Next:** continue the next focused modularization boundary from merged `main`, using `docs/MODULARIZATION_ROADMAP.md` and the test plan.
+
 
 ## Session closeout — 2026-10-13 (PR #29 merged: discovery list persistence)
 
