@@ -18,38 +18,5 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Build the application image
-        run: docker build --tag navi-librarian:ci-smoke .
-
-      - name: Start isolated container with disposable storage
-        env:
-          RUNNER_TEMP: ${{ runner.temp }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/librarian-smoke/music" "$RUNNER_TEMP/librarian-smoke/downloads"
-          docker volume create librarian-smoke-data
-          docker run --detach \
-            --name librarian-smoke \
-            --publish 127.0.0.1:18080:8080 \
-            --mount type=volume,src=librarian-smoke-data,dst=/data \
-            --mount "type=bind,src=$RUNNER_TEMP/librarian-smoke/music,dst=/music,readonly" \
-            --mount "type=bind,src=$RUNNER_TEMP/librarian-smoke/downloads,dst=/downloads,readonly" \
-            --env NAVIDROME_LIBRARIAN_DATA_DIR=/data \
-            --env NAVIDROME_MUSIC_DIR=/music \
-            --env SLSKD_DOWNLOADS_DIR=/downloads \
-            navi-librarian:ci-smoke
-
-      - name: Verify setup, authentication, and persistent data
-        env:
-          SMOKE_BASE_URL: http://127.0.0.1:18080
-          SMOKE_CONTAINER: librarian-smoke
-        run: python .github/scripts/container_smoke.py
-
-      - name: Print container logs on failure
-        if: failure()
-        run: docker logs librarian-smoke || true
-
-      - name: Remove disposable container and volume
-        if: always()
-        run: |
-          docker rm --force librarian-smoke 2>/dev/null || true
-          docker volume rm librarian-smoke-data 2>/dev/null || true
+      - name: Build and exercise isolated container
+        run: bash .github/scripts/run_container_smoke.sh
