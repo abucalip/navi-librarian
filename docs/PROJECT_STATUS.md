@@ -28,14 +28,18 @@
 
 ---
 
-## In progress — M3 acquisition import filesystem extraction (2026-10-13)
+---
 
-- **Objective:** isolate the staged album-file import transaction from the monolithic server while preserving its compatibility wrapper and exact safety behavior.
-- **Branch/base:** `refactor/acquisition-import-module`, created from GitHub `main` after M2 merge `84fa2f82dba562fd221a1d588e761d2cb4907749`. The separate local checkout remains on `test/pr17-reconciliation` and has not been changed.
-- **Changes staged on branch:** new `acquisition_import.py`; `navidrome_server.py` delegates the existing helper to it and injects the strict completion matcher; the acquisition safety harness points its AST-loaded compatibility wrapper at the extracted implementation; added direct-import tests for successful selective import, no-overwrite, rollback, storage-device mismatch, and reserved-manifest rejection. Updated architecture, decision, and test-plan documentation.
-- **Safety boundary:** this is a relocation, not a lifecycle redesign. Candidate selection, status transitions, locking, dismissal/retry, failover, and interrupted-import reconciliation remain in `navidrome_server.py`. No files were deleted or deployed.
-- **Verification:** code-bearing head `f0e5650ff2c4197ccc074608c6450e7920d00050` passed Python syntax workflow #221 and Docker packaging workflow #128; the Docker workflow completed Python compilation, the full unit suite, and image build. The final diff was inspected for the extraction boundary and safety guards. The subsequent docs-updated head `00f342ebe91d3bb4606db8e8ef897fd2036a850e` also passed Python syntax workflow #223 and Docker packaging workflow #130 (full unit suite and image build). This status/log update is documentation-only; verify CI on the resulting latest head before treating the PR as ready. No local test runner, live import, manual UI test, image publication, or deployment has been performed.
-- **Next:** inspect the exact branch diff and CI, fix any regression, then open a focused PR. Do not merge or deploy without the normal review/authorization step.
+## Session closeout — 2026-10-13 (PR #27 merged: M3 acquisition import extraction)
+
+- **Merge:** [PR #27 — Isolate acquisition import filesystem operations](https://github.com/abucalip/navi-librarian/pull/27) was squash-merged. Merge commit on `main`: `bf6c044ab332148e537b6888b06078c5d75f059c`; PR head: `51c8ebd8736807f35deb9045b5ea92e38d874bed`.
+- **Implemented:** added `acquisition_import.py` for staged movement of verified expected tracks, destination no-overwrite checks, storage-device identity checks, rollback, and recovery manifest handling. `navidrome_server.py` retains the compatibility wrapper and injects the existing strict completion matcher.
+- **Regression coverage:** added `tests/test_acquisition_import.py` for selective import/unrelated-file preservation, no-overwrite, partial-move rollback, storage identity mismatch, and reserved-manifest rejection. The existing acquisition safety harness now runs the extracted helper through the compatibility wrapper.
+- **CI:** on the exact PR head, Python syntax workflow #225 passed and Docker packaging workflow #132 completed successfully, including the full unit suite and image build. No workflow runs were returned for the resulting squash merge commit at closeout; do not infer merge-commit CI from PR-head CI.
+- **Review/merge state:** the complete nine-file diff was reviewed; no submitted reviews or inline review threads were present. PR #27 is merged.
+- **Safety boundary:** lifecycle/status transitions, locking, dismissal/retry, failover, and interrupted-import reconciliation remain in `navidrome_server.py`. No behavioral redesign was intended.
+- **Working tree/runtime boundary:** connected local checkout remains untouched on `test/pr17-reconciliation`. No local tests, live import, manual UI test, image publication, or deployment occurred.
+- **Next priority:** M4 — extract discovery/recommendation scoring and eligibility behind direct-import regression tests, preserving owned-album exclusions, ranking, and diversity behavior. Keep it as a separate focused PR.
 
 ---
 

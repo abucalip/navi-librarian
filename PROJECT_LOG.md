@@ -27,14 +27,18 @@
 
 ---
 
-## 2026-10-13 — M3 acquisition import filesystem extraction started
+---
 
-- **Branch:** `refactor/acquisition-import-module`, based on the current GitHub `main` following M2 merge `84fa2f82dba562fd221a1d588e761d2cb4907749`. The connected local checkout remains on `test/pr17-reconciliation` and was not changed.
-- **Scope:** moved the staged album-file import transaction into importable `acquisition_import.py`; retained `_discovery_import_matched_album_files` as a compatibility wrapper injecting the existing strict completion matcher. Acquisition orchestration, lifecycle states, dismissal synchronization, failover, and interrupted-import reconciliation remain in the server.
-- **Regression coverage:** added `tests/test_acquisition_import.py` for selective expected-track movement, unrelated-file preservation, no-overwrite, partial-move rollback, storage-device mismatch, and reserved manifest-name rejection. Updated the existing acquisition safety harness to execute the extracted implementation through the wrapper.
-- **Documentation:** updated `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md`.
-- **Verification:** code-bearing head `f0e5650ff2c4197ccc074608c6450e7920d00050` passed Python syntax workflow #221 and Docker packaging workflow #128 (compilation, full unit suite, and image build). The complete PR diff was inspected; no behavioral redesign was intended. The subsequent docs-updated head `00f342ebe91d3bb4606db8e8ef897fd2036a850e` also passed Python syntax workflow #223 and Docker packaging workflow #130 (full unit suite and image build). This final log update is documentation-only; check CI on the resulting latest head before calling the PR ready. No local tests, live import, manual UI test, image publication, or deployment were performed.
-- **Next:** review exact diff and CI, then open a focused PR if verification passes. Preserve all path, symlink, no-overwrite, mount-identity, rollback, and recovery-manifest safeguards.
+## 2026-10-13 — PR #27 merged; M3 acquisition import extraction complete
+
+- **PR:** [#27 — Isolate acquisition import filesystem operations](https://github.com/abucalip/navi-librarian/pull/27), squash-merged. Merge commit on `main`: `bf6c044ab332148e537b6888b06078c5d75f059c`; final PR head `51c8ebd8736807f35deb9045b5ea92e38d874bed`.
+- **Implementation:** extracted staged import of verified expected tracks, no-overwrite destination checks, storage-device identity guards, rollback, and recovery manifest handling to `acquisition_import.py`. The legacy `_discovery_import_matched_album_files` helper remains a compatibility wrapper injecting the strict matcher from `acquisition_completion.py`.
+- **Regression coverage:** added direct-import tests for selective import/unrelated-file preservation, existing destination refusal, partial-move rollback, storage-device mismatch, and reserved manifest-name rejection. Updated the AST-based acquisition safety harness to exercise the extracted implementation through the wrapper.
+- **Documentation:** updated architecture, decision D-010, and test plan; project status now records merge and verification state.
+- **CI:** exact PR head passed Python syntax workflow #225 and Docker packaging workflow #132; Docker job completed the full unit suite and image build. GitHub returned no workflow runs for the squash merge commit at closeout, so merge-commit CI is not independently claimed.
+- **Review/merge:** reviewed all nine changed files; no submitted reviews or inline review threads were present. User explicitly authorized merge.
+- **Verification boundary:** connected local checkout remains untouched on `test/pr17-reconciliation`. No local test run, live import, manual UI test, image publication, or deployment was performed.
+- **Next priority:** M4 — isolate discovery/recommendation scoring and eligibility behind direct-import regression tests while preserving owned-album exclusions, ranking, and diversity. Keep it as a focused PR.
 
 ---
 
