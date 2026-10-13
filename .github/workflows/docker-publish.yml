@@ -64,10 +64,10 @@ jobs:
           {
             echo "## Published container artifact"
             echo
-            echo "- Source commit: `$SOURCE_SHA`"
-            echo "- Trigger ref: `$SOURCE_REF`"
-            echo "- Immutable image: `ghcr.io/abucalip/navi-librarian@$IMAGE_DIGEST`"
-            echo "- Platforms: `linux/amd64`, `linux/arm64`"
+            echo "- Source commit: $SOURCE_SHA"
+            echo "- Trigger ref: $SOURCE_REF"
+            echo "- Immutable image: ghcr.io/abucalip/navi-librarian@$IMAGE_DIGEST"
+            echo "- Platforms: linux/amd64, linux/arm64"
             echo "- Build provenance: enabled"
             echo "- SBOM: enabled"
             echo "- Published tags:"
