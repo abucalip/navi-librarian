@@ -1,7 +1,7 @@
 ## Settings API router extraction — current PR
 
 - The Navidrome, Last.fm, ListenBrainz and slskd settings routes moved to app/api/settings.py; app.main registers the router and continues exposing the imported parse_result name for compatibility.
-- New direct-import regression tests in tests/test_settings_routes.py cover JSON response parsing, Navidrome payload mapping, ListenBrainz validation errors, slskd quality defaults/path trimming, and sanitized connection failures.
+- New direct-import regression tests in tests/test_settings_routes.py cover JSON response parsing, the exact 12 endpoint/method pairs, Navidrome payload mapping, ListenBrainz validation errors, slskd quality defaults/path trimming, and sanitized connection failures.
 - Run focused tests: python -m unittest tests.test_settings_routes -v.
 - Run full suite: python -m unittest discover -s tests -v; syntax: python -m py_compile app/main.py app/api/settings.py app/api/utils.py.
 - No tests are claimed locally; final-head GitHub CI is required before merge.
