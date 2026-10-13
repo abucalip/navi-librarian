@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Smoke-test the built container's HTTP, owner setup, and persistent /data behavior."""
 
+import base64
+import hashlib
+import hmac
 import json
 import os
 import subprocess
@@ -56,6 +59,22 @@ def session_cookie(headers):
     raise AssertionError("Successful setup/login did not set the navil_session cookie")
 
 
+def expired_session_cookie(username):
+    # Build a correctly signed but expired token using the disposable
+    # container's test-only auth key. Never print or persist the key/token.
+    secret = subprocess.check_output(
+        ["docker", "exec", CONTAINER, "cat", "/data/app_auth.key"],
+    )
+    payload = json.dumps(
+        {"u": username, "exp": int(time.time()) - 1},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
+    signature = hmac.new(secret, encoded.encode("ascii"), hashlib.sha256).digest()
+    signed = base64.urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
+    return f"navil_session={encoded}.{signed}"
+
+
 def expect(status, expected, label, body=b""):
     if status != expected:
         raise AssertionError(f"{label}: expected HTTP {expected}, got {status}: {body[:500]!r}")
@@ -94,6 +113,18 @@ status, body, headers = request("/", follow_redirects=False)
 expect(status, 303, "Unauthenticated app-root redirect after owner setup", body)
 if headers.get("Location") != "/login":
     raise AssertionError("Unauthenticated app root after setup should redirect to /login")
+
+# Malformed and correctly signed-but-expired cookies must not authorize UI or API.
+for label, bad_cookie in (
+    ("invalid", "navil_session=not-a-valid-token"),
+    ("expired", expired_session_cookie(USERNAME)),
+):
+    status, body, headers = request("/", cookie=bad_cookie, follow_redirects=False)
+    expect(status, 303, f"{label.capitalize()} session app-root redirect", body)
+    if headers.get("Location") != "/login":
+        raise AssertionError(f"{label.capitalize()} session should redirect to /login")
+    status, body, _ = request("/api/not-a-real-route", cookie=bad_cookie)
+    expect(status, 401, f"{label.capitalize()} session API protection", body)
 
 # The auth key must be private inside the running container.
 mode = subprocess.check_output(
