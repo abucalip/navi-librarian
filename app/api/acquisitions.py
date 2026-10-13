@@ -1,7 +1,8 @@
 """Acquisition API routes.
 
 HTTP adapters only: acquisition lifecycle, slskd interaction, and filesystem safety
-remain owned by the existing librarian domain functions.
+remain owned by the existing librarian domain functions. Keep this module free of
+filesystem mutations and provider orchestration.
 """
 import json
 from time import sleep
