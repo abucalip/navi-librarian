@@ -38,12 +38,35 @@ jobs:
             type=sha
 
       - name: Build and publish
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          provenance: true
+          sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Record immutable artifact identity
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref }}
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "## Published container artifact"
+            echo
+            echo "- Source commit: `$SOURCE_SHA`"
+            echo "- Trigger ref: `$SOURCE_REF`"
+            echo "- Immutable image: `ghcr.io/abucalip/navi-librarian@$IMAGE_DIGEST`"
+            echo "- Platforms: `linux/amd64`, `linux/arm64`"
+            echo "- Build provenance: enabled"
+            echo "- SBOM: enabled"
+            echo "- Published tags:"
+            printf '%s\\n' "$IMAGE_TAGS" | sed 's/^/- `&`/'
+          } >> "$GITHUB_STEP_SUMMARY"
