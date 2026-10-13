@@ -1,4 +1,4 @@
-## Latest session — 2026-10-13 (PR #24 ambiguity edge case corrected; CI pending)
+## Latest session — 2026-10-13 (PR #24 ambiguity edge case corrected; code/test CI passed)
 
 - **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), branch `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. Open, unmerged, not deployed.
 - **Extraction:** filename identity, safe folder-name normalization, and strict completed-track matching live in importable `acquisition_completion.py`; compatibility wrappers remain in `navidrome_server.py`; direct-import tests replace AST extraction for the migrated matcher.
@@ -7,7 +7,7 @@
 - **Current code/test commits:** source fix `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; regression test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`. Documentation updates are being recorded on the same PR branch.
 - **Verification status:** corrected head `86705c64cbd3d794082528d58d0fd2b49fcbc4c1` passed Python syntax workflow #198 and Docker packaging workflow #105. Docker job steps confirm Python compilation, full unit tests, and image build all succeeded. No local test run or manual UI test was performed. Full diff review is complete for the reported edge case; no merge, image publication, or deployment has occurred.
 - **Branch relationship:** PR #23 contains the modularization roadmap but remains separate/open; PR #24 is based on `main` and does not include that roadmap.
-- **Next:** confirm syntax/full suite and Docker build on the final corrected head, review the final diff, then decide merge readiness. No image publication or deployment has occurred.
+- **Next:** PR #24's code/test head passed CI and the reported edge case is fixed; decide whether to merge PR #24. PR #23's roadmap remains a separate open PR. No image publication or deployment has occurred.
 ---
 
 ## Latest session — 2026-10-13 (PR #21 and #22 merged; acquisition fixes verified)
