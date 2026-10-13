@@ -880,6 +880,9 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             return True
 
         self.ns["_discovery_reactivate_dismissed_acquisition"] = reactivate
+        self.ns["_discovery_acquire_album_impl"] = lambda *args: json.dumps({
+            "ok": True, "status": "implementation_called"
+        })
         result = json.loads(self.ns["discovery_acquire_album"](
             "Artist", "Album", json.dumps({"mbid": "release-id"})
         ))
