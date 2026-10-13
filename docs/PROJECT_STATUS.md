@@ -1,3 +1,13 @@
+## Latest session — 2026-10-13 (discovery refresh coordination extraction in PR)
+
+- **Branch:** `refactor/discovery-refresh-coordination`, based on `main` at `0a3dbdc4fc09712f2c63e581244c4119ec0eda2d` before branch creation.
+- **Change:** added `discovery_refresh.py` for coordination of personal-list and named-list refreshes. `navidrome_server.py` retains the existing private entry points and injects the current locks, builders, recommendation function, and persistence wrapper.
+- **Preserved behavior:** non-blocking per-list locks; personal recommendation JSON parsing and error shape; list names and payloads; generated-at response values; item/recommendation counts; exception response for other lists; lock release in all paths. List building, provider calls, feedback and SQLite persistence remain outside the module.
+- **Regression tests:** added `tests/test_discovery_refresh.py` for successful refresh/write/count, invalid JSON, already-running lock, unknown list, builder failure, and lock release.
+- **Verification boundary:** connected Local_Git was unavailable earlier (HTTP 429/404). No local tests or syntax checks are claimed. CI must run on the final PR head before merge; no live discovery refresh, UI test, image publication, deployment, or runtime verification has occurred.
+- **Status:** implemented on branch; CI/review/merge pending.
+- **Next:** verify the complete diff and focused/full test CI, then continue the next modularization boundary only after this extraction is reviewed.
+
 ## Session closeout — 2026-10-13 (PR #29 merged: discovery list persistence)
 
 - **Merge:** [PR #29 — Isolate discovery list persistence](https://github.com/abucalip/navi-librarian/pull/29) was squash-merged to `main`. Merge commit: `001f3a7e76979d82adc62edd888d8490565b2ef3`; final PR head: `518505f6dd8e233bc6aaec4b90ec42b0669f70d5`.
