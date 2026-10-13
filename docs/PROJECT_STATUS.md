@@ -1,3 +1,11 @@
+## 2026-10-14 — Discovery API router extraction in progress
+
+- Branch: `refactor/discovery-api-router`, created from GitHub `main` after PR #34 merged at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`.
+- Objective: move `/api/recommendations`, `/api/discovery/{list_name}`, `/api/discovery/{list_name}/refresh`, and `/api/discovery/feedback` from `app/main.py` to `app/api/discovery.py`, preserving route contracts and delegation to existing domain functions.
+- Added direct-import regression tests in `tests/test_discovery_routes.py` for route inventory, defaults, validation, filtering, feedback serialization, payload mapping, and sanitized errors.
+- Status at documentation update: implementation committed to the feature branch; final diff review and exact-head CI/PR creation still pending. No tests are claimed as run locally. No UI behavior change intended.
+- Publishing remains disabled until the modularization roadmap is complete and separately authorized. No image publication, deployment, or production runtime verification.
+
 ## 2026-10-14 — PR #34 merged: acquisition API router
 
 - PR #34 was squash-merged to `main` at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1` from exact PR head `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`.
