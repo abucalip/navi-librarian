@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Overview
 
@@ -79,3 +79,8 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 ## Settings route boundary — PR #33
 
 The settings endpoints for Navidrome, Last.fm, ListenBrainz, and slskd are grouped in app/api/settings.py. The route module adapts HTTP payloads and delegates behavior to existing librarian domain functions. app/api/utils.py owns the shared parse_result adapter; app.main imports that symbol to preserve callers while registering the router. Authentication middleware, URL paths, methods, and response/error contracts are intended to remain unchanged.
+
+
+## Acquisition route boundary — in progress
+
+The acquisition endpoints (`/api/acquisitions*` and `/api/acquire*`) are being moved to `app/api/acquisitions.py`. The router delegates to existing `navidrome_server` acquisition functions; it does not duplicate lifecycle, slskd, streaming state, or filesystem safety logic. `app.main` registers the router alongside settings routes. This is a behavior-preserving route extraction; completion depends on direct-import regression tests and exact-head CI.
