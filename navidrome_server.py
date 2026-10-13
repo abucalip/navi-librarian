@@ -3721,13 +3721,13 @@ def _slskd_search_queries(artist, album):
     """Return a small, ordered set of progressively broader Soulseek queries."""
     import re
 
-    artist = re.sub(r"\\s+", " ", str(artist or "")).strip()
-    album = re.sub(r"\\s+", " ", str(album or "")).strip()
+    artist = re.sub(r"\s+", " ", str(artist or "")).strip()
+    album = re.sub(r"\s+", " ", str(album or "")).strip()
     if not artist or not album:
         return []
 
-    punctuation_normalized = re.sub(r"[^\\w\\s]", " ", album)
-    primary_title = re.sub(r"\\s*\\([^)]*\\)", " ", album)
+    punctuation_normalized = re.sub(r"[^\w\s]", " ", album)
+    primary_title = re.sub(r"\s*\([^)]*\)", " ", album)
     variants = [
         f"{artist} {album}",
         f"{artist} {punctuation_normalized}",
@@ -3736,7 +3736,7 @@ def _slskd_search_queries(artist, album):
     queries = []
     seen = set()
     for query in variants:
-        query = re.sub(r"\\s+", " ", query).strip()
+        query = re.sub(r"\s+", " ", query).strip()
         key = query.casefold()
         if query and key not in seen:
             queries.append(query)
