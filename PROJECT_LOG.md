@@ -1,3 +1,17 @@
+## 2026-10-13 — Set next priority: close test gap and complete delivery workflow
+
+- **Decision:** prioritize reliable verification from candidate PR through merged commit, published image, authorized deployment, and runtime smoke tests before routine further modularization.
+- **Git authority:** GitHub is the sole source of truth. The outdated Local_Git integration/local checkout is dismissed; do not query it, inspect it, use it as a code source, or reconcile its history. The planned new local environment is strictly for testing exact GitHub revisions.
+- **Known gap:** PR #30's code-bearing head passed Python syntax/acquisition-safety and Docker packaging workflows, including full unittest discovery and image build. A later docs-only change triggered Docker workflow #157, whose terminal status was not confirmed in the previous closeout. Latest-head/merge-commit CI must be checked on GitHub; merge is not deployment.
+- **Workflow completion criteria:** exact-head required CI; complete diff review and regression tests; post-merge commit/CI evidence; artifact provenance (tag and digest); authorized deployment; smoke tests for auth, discovery, Get/requested/error recovery, acquisition lifecycle/dismiss/retry, settings and persistence; rollback reference; explicit remaining gaps.
+- **Planned test environment:** create separately from current GitHub main or exact PR SHA; do not push testing-only commits or merge local test history into GitHub. Record tested SHA, environment, commands, skipped checks, and actual results.
+- **Safety:** destructive acquisition dismissal tests use isolated disposable fixtures only unless the user explicitly authorizes a live test.
+- **Roadmap note:** PR #23 was observed open in GitHub search; reconcile its current state and merge accepted roadmap docs into main before relying on them as authoritative.
+- **Session status:** documentation-only plan; no tests, publishing, deployment, or runtime verification performed.
+- **Next:** establish the new local test environment from GitHub and use it to execute the existing test plan, then implement the smallest focused CI/integration/release-gate improvements supported by findings.
+
+---
+
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
