@@ -1,3 +1,13 @@
+## Session update — 2026-10-13 (discovery list persistence extraction in progress)
+
+- **Branch:** `refactor/discovery-list-store`, based on `main` at `2a3680e5bd1311785c8176e9655f04283f9a54ee`.
+- **Objective:** isolate SQLite persistence for cached discovery-list payloads in `discovery_store.py`, while retaining `_discovery_read_list` / `_discovery_write_list` compatibility wrappers and the existing `_discovery_init()` side effect.
+- **Changes on branch:** added the storage module and direct-import tests for missing rows/schema initialization, malformed JSON, Unicode round-trips, timestamps, and list isolation/replacement.
+- **Verification:** pending exact-head CI. Local_Git calls were unavailable (429/404); no local tests have been run. No merge, image publication, deployment, live refresh, or UI verification has occurred.
+- **Next:** review the complete diff and run focused tests, full unit discovery, syntax checks, and Docker CI on the final PR head before deciding readiness.
+
+---
+
 ## Session closeout — 2026-10-13 (PR #28 merged: M4 discovery recommendation extraction)
 
 - **Merge:** [PR #28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) was squash-merged into `main`. Merge commit: `686fb393a178fe27f3806ecd5ce2138b026291cc`; final PR head: `9ab8afeaed6562424b9212f2492d34f3ed9a69ee`.
