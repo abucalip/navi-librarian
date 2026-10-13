@@ -4,7 +4,7 @@
 - Root cause found: the Dockerfile omitted six imported modules now used by navidrome_server.py. Docker build/compilation alone did not detect this, so the published image could fail at application startup.
 - Fix: copy acquisition_import.py, discovery_store.py, discovery_refresh.py, discovery_recommendations.py, slskd_search.py, and slskd_quality.py into the image.
 - Automated integration check: added .github/workflows/container-smoke.yml and .github/scripts/container_smoke.py. It starts the built image with isolated storage and verifies HTTP readiness, unauthenticated API protection, first-run setup, auth-key mode 0600, authenticated UI response, account persistence after container restart, and subsequent login. Music/download mounts are temporary and read-only; external services are not configured.
-- Artifact provenance: the publish workflow now enables build provenance/SBOM and writes source SHA, ref, tags, architectures, and immutable image digest to the GitHub Actions summary.
+- Artifact provenance: the publish workflow now runs the same container smoke harness before publishing, enables build provenance/SBOM, and writes source SHA, ref, tags, architectures, and immutable image digest to the GitHub Actions summary.
 - Tests/CI at entry: no tests were run by the assistant locally. The new workflow and Dockerfile change have not yet been executed by CI at the time of this log entry; report only observed run results later.
 - State: implementation in progress; no merge, image publication, deployment, or production runtime verification claimed.
 - Next: inspect CI on the exact final PR head, correct failures, and review the entire diff before merge consideration.
