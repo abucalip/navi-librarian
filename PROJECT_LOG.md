@@ -1,3 +1,11 @@
+## 2026-10-14 — Discovery API route extraction started
+
+- Branch: `refactor/discovery-api-router`, based on GitHub `main` following merged PR #34.
+- Objective: extract recommendation, discovery-list, refresh, and feedback handlers into `app/api/discovery.py` without changing routes, defaults, validation/status behavior, ownership filtering, refresh coordination, or feedback semantics.
+- Added `tests/test_discovery_routes.py` with direct-import checks for route inventory, candidate filtering, input validation, defaults, feedback JSON serialization, domain payload mapping, and sanitized failures.
+- At this entry's creation, exact-head CI and final PR review were pending. No local test run is claimed. No manual browser test is planned for this API-only extraction unless a UI contract change is identified.
+- Publishing remains disabled; no image publication, deployment, or production runtime verification occurred.
+
 ## 2026-10-14 — PR #34 merged after exact-head validation completed
 
 - PR #34 — Extract acquisition API routes — was squash-merged to `main` at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`; exact PR head: `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`.
