@@ -1,3 +1,12 @@
+## 2026-10-13 — M4 session closeout documentation
+
+- Updated the architecture diagram to distinguish pure recommendation rules in `discovery_recommendations.py` from server-side discovery orchestration.
+- Updated the test plan with the focused regression command and the behaviors that must remain stable.
+- PR #28 remains draft/unmerged/undeployed; branch divergence and absent verified CI remain blockers. Local test execution was unavailable, so no tests are claimed as passing.
+- No application code or deployment state changed in this closeout.
+
+---
+
 ## 2026-10-13 — M4 PR opened; branch verification pending
 
 - **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28), draft/open. Latest observed head `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
