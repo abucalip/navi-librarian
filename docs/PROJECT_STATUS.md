@@ -4,10 +4,11 @@
 - **Extraction:** filename identity, safe folder-name normalization, and strict completed-track matching live in importable `acquisition_completion.py`; compatibility wrappers remain in `navidrome_server.py`; direct-import tests replace AST extraction for the migrated matcher.
 - **Review correction:** when multiple local files match the expected basename identity and advertised size, the matcher now returns `None` immediately. Collision-suffix fallback is allowed only when no exact match exists, preventing an alternative filename from masking an ambiguous exact match.
 - **Regression test:** added a case-variant exact-name pair plus a same-size `Track_1.flac` alternative; the matcher must fail closed. The test skips on filesystems that cannot represent distinct case-variant names.
-- **Current code/test commits:** source fix `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; regression test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`. Documentation updates are being recorded on the same PR branch.
+- **Current code/test commits:** source fix `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; regression test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`. Documentation is updated on this PR branch, including the test plan, this status record, and `PROJECT_LOG.md`.
 - **Verification status:** corrected head `86705c64cbd3d794082528d58d0fd2b49fcbc4c1` passed Python syntax workflow #198 and Docker packaging workflow #105. Docker job steps confirm Python compilation, full unit tests, and image build all succeeded. No local test run or manual UI test was performed. Full diff review is complete for the reported edge case; no merge, image publication, or deployment has occurred.
 - **Branch relationship:** PR #23 contains the modularization roadmap but remains separate/open; PR #24 is based on `main` and does not include that roadmap.
-- **Next:** PR #24's code/test head passed CI and the reported edge case is fixed; decide whether to merge PR #24. PR #23's roadmap remains a separate open PR. No image publication or deployment has occurred.
+- **Session close:** the full PR #24 diff has been reviewed for the extraction and the reported ambiguity edge case; the edge case is fixed and corrected code/test CI passed. PR #24 remains open/unmerged, and PR #23 remains a separate open roadmap PR. No local test run, manual UI test, image publication, or deployment occurred.
+- **Next priority:** review PR #24's merge readiness and decide whether to merge it; keep PR #23 separate unless its dependency/order is explicitly revisited. After any merge, update status and verify the exact merged commit independently.
 ---
 
 ## Latest session — 2026-10-13 (PR #21 and #22 merged; acquisition fixes verified)
