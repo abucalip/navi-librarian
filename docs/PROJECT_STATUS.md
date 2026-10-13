@@ -1,3 +1,13 @@
+## Latest session — 2026-10-13 (M2 slskd search/quality extraction in review)
+
+- **Branch/base:** `refactor/slskd-search-quality-modules`, created from current GitHub `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`. The connected local checkout remains on `test/pr17-reconciliation` with pre-existing work; it was not switched or modified.
+- **Implementation:** added importable `slskd_quality.py` for MP3/FLAC tier classification and `slskd_search.py` for query generation, response normalization, album-path matching, track identity, bounded path diagnostics, and candidate grouping/ranking. Existing private helper names remain as compatibility wrappers in `navidrome_server.py`; the search deadline, polling loop, candidate thresholds, quality order, and queue/import orchestration were not intentionally changed.
+- **Regression coverage:** added `tests/test_slskd_search_modules.py` using direct imports for quality tier/priority behavior, query order/deduplication, response shapes, path/track normalization, candidate deduplication/ranking, and bounded diagnostics. Existing acquisition lifecycle tests remain in place.
+- **Verification:** code and tests have been committed to the feature branch through GitHub's file API. Automated tests, syntax checks, and Docker build have **not yet been run**. The branch is not yet merged or deployed. Review the branch diff and run focused tests plus the full CI suite before treating this extraction as tested.
+- **Next:** verify the generated module code and compatibility tests, update any failing cases, then open/inspect the focused PR and check CI on its exact head. PR #23 remains separate/open.
+
+---
+
 ## Latest session — 2026-10-13 (PR #24 merged; resulting main commit verified)
 
 - **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), squash-merged from `refactor/acquisition-completion-matching` at head `b826ae14d917431d07aacf97200990d57133cba0`. Merge commit: `225add7405bfd72b3254af23745d0dd9a84b621c`.
