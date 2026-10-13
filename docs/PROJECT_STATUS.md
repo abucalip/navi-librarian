@@ -1,3 +1,12 @@
+## Current session — settings API route extraction (2026-10-13)
+
+- Branch: refactor/settings-api-router, based on GitHub main.
+- Objective: begin roadmap stage 7 (FastAPI route separation) with a behavior-preserving extraction of settings handlers.
+- Changes: moved Navidrome, Last.fm, ListenBrainz and slskd settings endpoints into app/api/settings.py; moved parse_result implementation into app/api/utils.py while retaining app.main.parse_result as an imported compatibility symbol; added direct route tests for payload mapping, defaults, validation and sanitized errors.
+- Verification: not yet run by CI at this status update; do not claim tests passed until exact-head workflows complete. No local checkout or local test runner used.
+- Release policy: GHCR publication remains disabled until the modularization roadmap is complete and release is explicitly authorized.
+- Next: review the complete diff and run focused/full unit, syntax, Docker build and container runtime CI on the exact PR head. If clean, proceed to acquisition route separation.
+
 ## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
