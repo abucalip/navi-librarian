@@ -1,3 +1,14 @@
+## Latest session closeout — local UI test workflow integrated (2026-10-13)
+
+- **User-confirmed milestone:** the local FastAPI UI now starts and is accessible on the Mac through the isolated PR-testing helper. This confirms startup only; a completed Pass/Fail/Skip checklist and published manual report have not been confirmed.
+- **Tested source at the time of the report:** PR #31 head `534518b6c87c8e6cbd0d21a4de1bb9be79369611`. The helper records exact SHA and warns if the PR head changes. The documentation updates in this session will create a new head, so rerun the helper against the updated head before treating the report as current for PR #31.
+- **Workflow change:** added a mandatory manual UI smoke-test step for UI-facing PRs/release candidates after exact-head CI passes; documented the isolated per-SHA environment, sandbox paths, slskd-disabled default, report location, and optional PR-comment publication.
+- **CI baseline before this documentation update:** Python syntax workflow #257 and Docker packaging workflow #164 both completed successfully on the prior PR head. New commits require fresh CI confirmation.
+- **Not claimed:** no full manual checklist completion, report publication, application unit-test run by the assistant, merge, image publication, deployment, or production runtime verification.
+- **Next:** review the complete updated documentation diff, verify CI on the final PR head, then use the helper to record the manual UI results for that exact head.
+
+---
+
 ## Latest session closeout — 2026-10-13 (test-gap and complete-workflow priority)
 
 - **Decision:** the next project priority is to close the automated/integration/UI test gap and establish a complete, evidence-based development-to-release workflow before continuing routine modularization.
