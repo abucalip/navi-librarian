@@ -1,3 +1,14 @@
+## Session closeout — 2026-10-13 (testing gap remains the merge gate)
+
+- **Decision:** do not merge PR [#32](https://github.com/abucalip/navi-librarian/pull/32) or [#33](https://github.com/abucalip/navi-librarian/pull/33) yet. The next session must close the remaining testing gap first. This closeout is documentation-only; neither PR was merged or changed by this decision.
+- **Current GitHub state:** PR #31 documentation branch head before this closeout was `572d98d18e051bcbed7f3e74242abe1df6d0540c`; Python syntax workflow #265 and Docker packaging workflow #172 passed on that head. PR #32 head `46db021db1367ef1e1f5e53dffdbd78bc09a880a` has Python workflow #278, container runtime smoke #13, Docker packaging #185, and validation-only multi-architecture workflow #54 all passed. PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929` has Python workflow #288 and Docker packaging/full-suite/build #195 passed (115 tests). PRs #31, #32, and #33 remain open and unmerged.
+- **Completed manual evidence:** the browser checklist report remains available in [PR #31 comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713), tied to application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. All eight recorded checks passed. The fuller operator checklist's performance observation and distinct error/recovery exercise were not separately recorded; do not claim they passed.
+- **Next-session acceptance gate before either merge:** (1) confirm the local exact-SHA test environment can be rerun without unexpected dependency reinstall/setup loss and document what state is intentionally persistent or isolated; (2) run the remaining performance and error/recovery checks against the relevant current GitHub revision, especially PR #33's settings-route extraction, and upload a report tied to the exact SHA; (3) re-check all required CI on exact final PR heads; (4) reconcile/retest PR #33 after PR #32's changes are available on the chosen base; (5) review the resulting diffs and only then decide on merges.
+- **Publication policy:** no image publication or deployment until the modularization roadmap is complete and release is explicitly authorized. PR #32's publishing safeguard is still unmerged, so do not trigger publishing or release-tag workflows in the meantime.
+- **Not done:** no local test commands were run by the assistant in this session; no merge, publication, deployment, or production runtime verification occurred.
+
+---
+
 ## Latest session closeout — local UI smoke checklist completed (2026-10-13)
 
 - **Manual UI result:** user completed and uploaded the browser checklist for PR #31. The report is published as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713).
