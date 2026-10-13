@@ -9,6 +9,27 @@ from app.api import settings
 
 
 class SettingsRoutesTests(unittest.TestCase):
+    def test_router_preserves_all_settings_endpoint_paths_and_methods(self):
+        actual = {
+            (route.path, method)
+            for route in settings.router.routes
+            for method in getattr(route, "methods", set())
+        }
+        expected = {
+            ("/api/settings/navidrome", "GET"),
+            ("/api/settings/navidrome", "PUT"),
+            ("/api/settings/navidrome/test", "POST"),
+            ("/api/settings/lastfm", "GET"),
+            ("/api/settings/lastfm", "PUT"),
+            ("/api/settings/lastfm/test", "POST"),
+            ("/api/settings/listenbrainz", "GET"),
+            ("/api/settings/listenbrainz", "PUT"),
+            ("/api/settings/listenbrainz/test", "POST"),
+            ("/api/settings/slskd", "GET"),
+            ("/api/settings/slskd", "PUT"),
+            ("/api/settings/slskd/test", "POST"),
+        }
+        self.assertEqual(actual, expected)
     def test_get_navidrome_settings_parses_json_string(self):
         with patch.object(settings.librarian, "discovery_get_navidrome_settings", return_value='{"ok": true}') as call:
             self.assertEqual(settings.get_navidrome_settings(), {"ok": True})
