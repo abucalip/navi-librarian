@@ -84,3 +84,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The filesystem transaction is safety-critical and benefits from deterministic temporary-directory tests independent of MCP/server initialization.
 
 **Consequence:** Keep the legacy server helper as a compatibility wrapper that injects the existing strict completion matcher. Direct-import tests must exercise the module implementation; retain the broader lifecycle safety tests until orchestration is extracted separately. Do not change import semantics as part of this relocation.
+
+
+## D-011 — Isolate cached discovery-list persistence
+
+**Decision:** Put the SQLite read/write mechanics for cached discovery-list payloads in the directly importable `discovery_store.py`. Keep `_discovery_read_list` and `_discovery_write_list` as compatibility wrappers in `navidrome_server.py`, including the existing `_discovery_init()` call.
+
+**Reason:** Discovery list storage can be regression-tested independently without importing the MCP server or initializing external services.
+
+**Consequence:** The module owns only the `discovery_lists` table's read/write behavior. Feedback, acquisition state, settings, refresh locks, list building, and provider calls remain in the server for later focused extractions. Do not change payload shape, timestamp semantics, or cache/error behavior during relocation.

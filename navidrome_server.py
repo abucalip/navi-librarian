@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import time
 import unicodedata
+import discovery_store
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
     filename_key as _acquisition_filename_key,
@@ -2080,29 +2081,15 @@ def _discovery_init():
 
 
 def _discovery_read_list(name):
+    # Keep schema initialization here for existing callers; persistence mechanics
+    # are independently importable and tested in discovery_store.py.
     _discovery_init()
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        row = db.execute(
-            "SELECT payload_json, generated_at FROM discovery_lists WHERE name = ?",
-            (name,),
-        ).fetchone()
-    if not row:
-        return None
-    try:
-        payload = json.loads(row[0])
-    except (ValueError, TypeError):
-        return None
-    return {"payload": payload, "generated_at": row[1]}
+    return discovery_store.read_list(DISCOVERY_DB, name)
 
 
 def _discovery_write_list(name, payload):
     _discovery_init()
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        db.execute(
-            "INSERT OR REPLACE INTO discovery_lists (name, payload_json, generated_at) VALUES (?, ?, ?)",
-            (name, json.dumps(payload, ensure_ascii=False), time.time()),
-        )
-        db.commit()
+    discovery_store.write_list(DISCOVERY_DB, name, payload)
 
 
 def _discovery_feedback_rows():

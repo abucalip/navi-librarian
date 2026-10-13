@@ -2,6 +2,11 @@
 
 Last updated: 2026-10-13
 
+## Discovery store extraction CI evidence — PR #29
+
+- Code/test head `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: Python syntax workflow #237 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087436)); Docker packaging workflow #144 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087855)), including Python compilation, full unit-test discovery, and Docker image build.
+- After the first documentation-only closeout, head `0996b08c879ec2f39db326cb1c4b08a5bb487e30` passed Python syntax workflow #239 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251390)) and Docker packaging workflow #146 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251445)); the latter completed full unit-test discovery and Docker image build. No runs were returned for the latest subsequent documentation-only commits; source and tests were unchanged.
+
 ## Latest CI evidence — PR #28
 
 - PR #28 final head `9ab8afeaed6562424b9212f2492d34f3ed9a69ee`: Python syntax workflow #232 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390630)); Docker packaging workflow #139 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390704)), including Python compilation, full unit-test discovery, and image build.
@@ -154,3 +159,16 @@ python -m unittest discover -s tests -v
 ```
 
 The module owns staging/move/rollback mechanics only. Acquisition orchestration remains in `navidrome_server.py`; its compatibility wrapper injects the existing strict completion matcher. Preserve the existing checks for verified expected tracks, reserved manifest names, existing destinations (including broken symlinks), real destination parents, mount/device identity, rollback, and recovery manifests. Do not treat a successful unit suite as proof of a live import or deployment.
+
+
+## Discovery list persistence extraction
+
+For changes touching `discovery_store.py`, run the direct-import tests first:
+
+```sh
+python -m unittest tests.test_discovery_store -v
+python -m py_compile navidrome_server.py discovery_store.py
+python -m unittest discover -s tests -v
+```
+
+The store owns only SQLite persistence for cached discovery-list payloads. The server compatibility wrappers retain `_discovery_init()` so existing schema initialization and callers are unchanged. Cover missing rows, malformed JSON, Unicode payload round-trips, timestamp preservation, and per-list replacement/isolation. CI must pass on the exact PR head, including Docker packaging; unit tests do not establish live refresh/UI behavior.
