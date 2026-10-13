@@ -4147,6 +4147,8 @@ def _discovery_import_matched_album_files(source, destination, candidate, expect
         expected_device=expected_device,
         match_files=_discovery_match_completed_album_files,
     )
+
+
 def _discovery_is_dismissed(artist, album):
     return any(
         job["artist_key"] == _music_key(artist)
