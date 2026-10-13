@@ -1,11 +1,11 @@
-## 2026-10-13 — First acquisition-completion module extraction (in progress)
+## 2026-10-13 — First acquisition-completion module extraction (PR #24 open; review prioritized)
 
-- **Branch:** `refactor/acquisition-completion-matching`, created from GitHub `main`; code PR and CI results pending at the time of this entry.
-- **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into the existing root-level `acquisition_completion.py` module. `navidrome_server.py` retains thin compatibility wrappers.
-- **Tests:** `tests/test_acquisition_completion.py` now imports production helpers directly rather than AST-extracting them. Added regression cases for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization. The existing acquisition safety harness injects the directly imported matcher into its stub namespace while retaining lifecycle coverage.
-- **Behavior/safety:** intended as relocation only. Positive advertised sizes remain mandatory; conflicting expected basenames, unmatched/ambiguous tracks, and symlinked files still fail closed. No MCP removal or user-facing behavior changes in this step.
-- **Verification:** on PR head `21e2f38c3468f564df8ff76b7dd28aeb747824fb`, Python syntax/full-unit-test workflow #189 passed; Docker packaging workflow #96 passed compilation, the full unit suite, and Docker image build. Source and tests were read back from GitHub and the diff reviewed. No manual UI verification, merge, image publication, or deployment.
-- **Next:** PR #24 is ready for review/merge consideration. Do not infer deployment from CI.
+- **PR/branch:** [PR #24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #23's roadmap branch remains separate and unmerged; PR #24 does not contain that roadmap.
+- **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into root-level `acquisition_completion.py`; `navidrome_server.py` retains compatibility wrappers.
+- **Tests:** matching tests now import production helpers directly instead of AST-extracting them. Added regressions for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization.
+- **Verification:** latest observed head `a969ec4df6db2c5d45943c091401a5b26f9566d0`; Python syntax/full-unit-test workflow #190 and Docker packaging workflow #97 passed, including compilation, full unit tests, and image build. No local test run, manual UI test, merge, publication, or deployment.
+- **Lessons learned:** GitHub API file-by-file edits caused avoidable iteration and 14 commits for a narrow extraction; context-based replacements caused intermediate source/test-fixture mistakes; status notes lagged behind the final head. Prefer a verified checkout/worktree and one coherent patch/test/review loop where available, inspect the entire diff before committing, and update status only after confirming final SHA and CI. Make branch dependencies explicit when parallel PRs are intentionally independent.
+- **Priority next:** review PR #24's complete diff, wrapper behavior, regression cases, and CI against the relocation-only scope before merging or beginning the next extraction. Keep merge and deployment as separate decisions.
 
 ---
 
