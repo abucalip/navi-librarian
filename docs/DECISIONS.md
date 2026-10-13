@@ -75,3 +75,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Keep a single auditable history and avoid divergence between a local testing baseline and the shared repository.
 
 **Consequence:** Base authoritative work on GitHub refs. Use focused GitHub branches and PRs; report exact commit SHAs and actual CI results. The user tests a specific GitHub branch/commit locally and reports results; the assistant makes any required fix on GitHub. Do not merge local-only commits back into GitHub or merge local `main` into a PR simply to reconcile histories. For testing against a divergent local baseline, use a temporary/disposable branch or worktree and never push that test-only combination. Local changes must be inspected and preserved, not reset or discarded without explicit authorization. Merge, image publication, deployment, and production verification remain separate states.
+
+
+## D-010 — Separate album import filesystem mechanics from acquisition orchestration
+
+**Decision:** Put staging, verified-track movement, storage-identity checks, no-overwrite behavior, rollback, and import-manifest handling in the directly importable `acquisition_import.py` module. Keep acquisition status transitions, dismissal synchronization, candidate selection, and retry/failover orchestration in `navidrome_server.py`.
+
+**Reason:** The filesystem transaction is safety-critical and benefits from deterministic temporary-directory tests independent of MCP/server initialization.
+
+**Consequence:** Keep the legacy server helper as a compatibility wrapper that injects the existing strict completion matcher. Direct-import tests must exercise the module implementation; retain the broader lifecycle safety tests until orchestration is extracted separately. Do not change import semantics as part of this relocation.

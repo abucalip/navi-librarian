@@ -9,6 +9,7 @@ import tempfile
 import threading
 import unicodedata
 
+from acquisition_import import import_matched_album_files as _module_import_matched_album_files
 from acquisition_completion import (
     filename_key as _module_filename_key,
     match_completed_album_files as _module_match_completed_album_files,
@@ -64,6 +65,7 @@ def load_helpers():
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
         "_discovery_match_completed_album_files": _module_match_completed_album_files,
+        "_acquisition_import_matched_album_files": _module_import_matched_album_files,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),

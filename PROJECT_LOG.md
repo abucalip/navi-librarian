@@ -1,3 +1,14 @@
+## 2026-10-13 — M3 acquisition import filesystem extraction started
+
+- **Branch:** `refactor/acquisition-import-module`, based on the current GitHub `main` following M2 merge `84fa2f82dba562fd221a1d588e761d2cb4907749`. The connected local checkout remains on `test/pr17-reconciliation` and was not changed.
+- **Scope:** moved the staged album-file import transaction into importable `acquisition_import.py`; retained `_discovery_import_matched_album_files` as a compatibility wrapper injecting the existing strict completion matcher. Acquisition orchestration, lifecycle states, dismissal synchronization, failover, and interrupted-import reconciliation remain in the server.
+- **Regression coverage:** added `tests/test_acquisition_import.py` for selective expected-track movement, unrelated-file preservation, no-overwrite, partial-move rollback, storage-device mismatch, and reserved manifest-name rejection. Updated the existing acquisition safety harness to execute the extracted implementation through the wrapper.
+- **Documentation:** updated `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md`.
+- **Verification:** code-bearing head `f0e5650ff2c4197ccc074608c6450e7920d00050` passed Python syntax workflow #221 and Docker packaging workflow #128 (compilation, full unit suite, and image build). The complete PR diff was inspected; no behavioral redesign was intended. The subsequent docs-updated head `00f342ebe91d3bb4606db8e8ef897fd2036a850e` also passed Python syntax workflow #223 and Docker packaging workflow #130 (full unit suite and image build). This final log update is documentation-only; check CI on the resulting latest head before calling the PR ready. No local tests, live import, manual UI test, image publication, or deployment were performed.
+- **Next:** review exact diff and CI, then open a focused PR if verification passes. Preserve all path, symlink, no-overwrite, mount-identity, rollback, and recovery-manifest safeguards.
+
+---
+
 ## 2026-10-13 — PR #25 merged; M2 slskd search/quality extraction complete
 
 - **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25), squash-merged. Merge commit on `main`: `84fa2f82dba562fd221a1d588e761d2cb4907749`; final PR head `39ecdc98aee5ca0ab1c096a242b700e165837e92`.

@@ -1,3 +1,14 @@
+## In progress — M3 acquisition import filesystem extraction (2026-10-13)
+
+- **Objective:** isolate the staged album-file import transaction from the monolithic server while preserving its compatibility wrapper and exact safety behavior.
+- **Branch/base:** `refactor/acquisition-import-module`, created from GitHub `main` after M2 merge `84fa2f82dba562fd221a1d588e761d2cb4907749`. The separate local checkout remains on `test/pr17-reconciliation` and has not been changed.
+- **Changes staged on branch:** new `acquisition_import.py`; `navidrome_server.py` delegates the existing helper to it and injects the strict completion matcher; the acquisition safety harness points its AST-loaded compatibility wrapper at the extracted implementation; added direct-import tests for successful selective import, no-overwrite, rollback, storage-device mismatch, and reserved-manifest rejection. Updated architecture, decision, and test-plan documentation.
+- **Safety boundary:** this is a relocation, not a lifecycle redesign. Candidate selection, status transitions, locking, dismissal/retry, failover, and interrupted-import reconciliation remain in `navidrome_server.py`. No files were deleted or deployed.
+- **Verification:** code-bearing head `f0e5650ff2c4197ccc074608c6450e7920d00050` passed Python syntax workflow #221 and Docker packaging workflow #128; the Docker workflow completed Python compilation, the full unit suite, and image build. The final diff was inspected for the extraction boundary and safety guards. The subsequent docs-updated head `00f342ebe91d3bb4606db8e8ef897fd2036a850e` also passed Python syntax workflow #223 and Docker packaging workflow #130 (full unit suite and image build). This status/log update is documentation-only; verify CI on the resulting latest head before treating the PR as ready. No local test runner, live import, manual UI test, image publication, or deployment has been performed.
+- **Next:** inspect the exact branch diff and CI, fix any regression, then open a focused PR. Do not merge or deploy without the normal review/authorization step.
+
+---
+
 ## Session closeout — 2026-10-13 (PR #25 merged: M2 slskd extraction)
 
 - **Merge:** [PR #25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25) was squash-merged. Resulting merge commit on `main`: `84fa2f82dba562fd221a1d588e761d2cb4907749`; PR head: `39ecdc98aee5ca0ab1c096a242b700e165837e92`.
