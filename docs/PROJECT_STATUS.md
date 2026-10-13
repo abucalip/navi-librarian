@@ -1,3 +1,16 @@
+## Latest session closeout — 2026-10-13 (test-gap and complete-workflow priority)
+
+- **Decision:** the next project priority is to close the automated/integration/UI test gap and establish a complete, evidence-based development-to-release workflow before continuing routine modularization.
+- **Source of truth:** GitHub is the only authoritative source for repository state, code, branches, PRs, documentation, and release history. The outdated local Git integration/checkout is dismissed and must not be queried or used for status, edits, reconciliation, or verification. A new local testing environment will be created separately; it is for testing exact GitHub revisions only, never an alternate source of code.
+- **Current known baseline:** PR #30 is merged at `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`. Its code-head CI passed, but the closeout records Docker workflow #157 after a docs-only update as unconfirmed. Therefore latest-head/merge-commit CI and runtime deployment remain unverified until checked directly on GitHub.
+- **Workflow acceptance criteria:** (1) required checks pass on the exact candidate head; (2) complete diff/review and regression coverage are recorded; (3) post-merge main commit and applicable CI are checked; (4) image tag/digest is tied to a known commit; (5) deployment is separately authorized and verified; (6) smoke tests cover authentication, discovery, Get/requested/error recovery, acquisition completion/dismiss/retry, settings persistence, and restart persistence; (7) rollback and unresolved failures are recorded.
+- **Safety:** dismissal/deletion tests must use isolated temporary/disposable data and prove unrelated files remain untouched. Never run destructive smoke tests against the live music/download folders without explicit authorization.
+- **Roadmap reconciliation:** PR #23 (modularization roadmap) was observed open in the GitHub PR search. Confirm its current status and ensure accepted roadmap guidance is incorporated into `main`; do not treat an open PR's docs as merged policy.
+- **Not done in this session:** no tests executed, no image published, no deployment, and no runtime/UI verification. This is a documentation/workflow handoff only.
+- **Next action:** prepare a fresh, isolated local testing environment based on the exact current GitHub main/PR SHA, then execute the documented test plan and close gaps in CI/integration/release verification. Continue modularization only when it supports this priority.
+
+---
+
 ## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
