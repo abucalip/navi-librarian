@@ -40,3 +40,10 @@ For each meaningful handoff, report:
 - unresolved questions and the next concrete action.
 
 Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/DECISIONS.md`, and this file. Never record credentials or other secrets.
+
+
+## Modularization and entry-point retirement
+
+For the planned module refactor, define the extraction boundary and acceptance criteria before editing. Trace imports, shared module-level state, public callers, tests, and configuration before moving functions. Prefer direct imports and explicit dependencies over AST extraction or hidden global dependencies. Keep each PR focused on one layer and avoid changing behavior while relocating it.
+
+The delivered product is intended to be web-only. MCP retirement is a later stage, not the first refactor: the current web layer calls functions in `navidrome_server.py`. Extract shared domain logic and redirect/test web callers first; then perform a repository-wide usage audit before removing MCP registration, runtime dependencies, documentation, and tests. Preserve the web API, UI, settings, persistent data, and all acquisition safety checks. Verify the exact PR commit with focused tests, the full suite, syntax/build checks, and UI/API tests where applicable.
