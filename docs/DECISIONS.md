@@ -75,3 +75,20 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Keep a single auditable history and avoid divergence between a local testing baseline and the shared repository.
 
 **Consequence:** Base authoritative work on GitHub refs. Use focused GitHub branches and PRs; report exact commit SHAs and actual CI results. The user tests a specific GitHub branch/commit locally and reports results; the assistant makes any required fix on GitHub. Do not merge local-only commits back into GitHub or merge local `main` into a PR simply to reconcile histories. For testing against a divergent local baseline, use a temporary/disposable branch or worktree and never push that test-only combination. Local changes must be inspected and preserved, not reset or discarded without explicit authorization. Merge, image publication, deployment, and production verification remain separate states.
+
+
+## D-010 — The delivered product is web-only; retire the MCP prototype
+
+**Decision:** Treat MCP functionality as an artifact of the original prototype, not a product requirement. The target delivered application exposes supported behavior through the authenticated web UI/API and does not run or ship an MCP server/tool surface.
+
+**Reason:** The user confirms the delivered app does not need MCP functionality. Keeping it adds entry-point complexity and maintenance burden.
+
+**Consequence:** Do not remove MCP code prematurely: the web application currently calls functions in `navidrome_server.py`. First extract shared discovery, recommendation, settings, and acquisition logic into importable domain/service modules; redirect the web layer to those modules; add direct regression tests; then remove MCP registration/runtime/dependencies and obsolete MCP-only tools/tests after confirming no remaining consumers. Preserve the public web API, UI behavior, acquisition safety, settings, and persistent data. Status: planned, not implemented.
+
+## D-011 — Modularize by behavior boundaries, not by line count
+
+**Decision:** Refactor in small, reviewable steps. Start with acquisition completion/matching and direct unit tests; next extract slskd search/quality evaluation, import safety, and acquisition lifecycle orchestration; then separate discovery/recommendations; finally split FastAPI routes and frontend assets.
+
+**Reason:** Acquisition has the most consequential failure modes and the current 930-line safety test module relies on AST-based function extraction from the 6,741-line server module. Clear seams will improve debugging and deterministic testing.
+
+**Consequence:** Keep `navidrome_server.py` as a temporary compatibility wrapper during migration. Avoid a broad rewrite, unnecessary repository/framework abstractions, circular imports, and simultaneous changes to domain behavior. Extract a module only when its responsibility and dependencies are clear. Verify each stage with focused tests, the full suite, syntax/build checks, and final diff review. Status: recommended roadmap; no refactor implemented.
