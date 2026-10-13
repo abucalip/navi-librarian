@@ -4,9 +4,10 @@
 - **Change:** added `discovery_refresh.py` for coordination of personal-list and named-list refreshes. `navidrome_server.py` retains the existing private entry points and injects the current locks, builders, recommendation function, and persistence wrapper.
 - **Preserved behavior:** non-blocking per-list locks; personal recommendation JSON parsing and error shape; list names and payloads; generated-at response values; item/recommendation counts; exception response for other lists; lock release in all paths. List building, provider calls, feedback and SQLite persistence remain outside the module.
 - **Regression tests:** added `tests/test_discovery_refresh.py` for successful refresh/write/count, invalid JSON, already-running lock, unknown list, builder failure, and lock release.
-- **Verification boundary:** connected Local_Git was unavailable earlier (HTTP 429/404). No local tests or syntax checks are claimed. CI must run on the final PR head before merge; no live discovery refresh, UI test, image publication, deployment, or runtime verification has occurred.
-- **Status:** implemented on branch; CI/review/merge pending.
-- **Next:** verify the complete diff and focused/full test CI, then continue the next modularization boundary only after this extraction is reviewed.
+- **Verification:** on PR head `46444e3c24dc78008e3c13dfb441059e73279814`, Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156 both completed successfully. Docker CI ran `python -m unittest discover -s tests -v` and built the image. The connected Local_Git service was unavailable (HTTP 429/404), so no local checkout test run is claimed. No live discovery refresh, UI test, image publication, deployment, or runtime verification has occurred.
+- **Status:** implemented; both required CI workflows passed on the reviewed PR head; review complete, merge pending.
+- **Review outcome:** complete diff reviewed; no blocking correctness issue found. CI confirms syntax/safety regressions, full unit-test discovery, and Docker build pass. The focused test invocation documented below is optional; CI uses full discovery.
+- **Next:** merge PR #30 when approved, then continue the next modularization boundary.
 
 ## Session closeout — 2026-10-13 (PR #29 merged: discovery list persistence)
 
