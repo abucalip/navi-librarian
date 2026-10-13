@@ -22,7 +22,7 @@ These extractions are merged to main. They do not mean the monolithic server or 
 ## Current route-separation stage
 
 1. Settings routes (merged in PR #33): move the Navidrome, Last.fm, ListenBrainz and slskd settings handlers to app/api/settings.py; preserve URLs, methods, payload defaults, error codes/messages and calls into existing domain functions. Keep parse_result importable from app.main while moving its implementation to app/api/utils.py.
-2. Acquisition routes: extract /api/acquire* and /api/acquisitions* with safety and streaming tests. Keep destructive logic in domain services. **PR #34 (`refactor/acquisition-api-router`):** implementation and direct-import regression tests are complete. Syntax, Docker packaging/full unit tests, runtime smoke, and validation-only multi-architecture checks passed on commit `5b60975d690b619e2b32fdc3835bdc9feb38af8d`. PR review and merge state must be rechecked before closing this stage.
+2. Acquisition routes: extract /api/acquire* and /api/acquisitions* with safety and streaming tests. Keep destructive logic in domain services. **PR #34 (`refactor/acquisition-api-router`):** merged at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1` from exact head `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`. Syntax, Docker packaging/full unit tests, runtime smoke, and validation-only multi-architecture checks all passed on that exact head.
 3. Discovery routes: extract recommendations, discovery lists, refresh and feedback routes. Preserve ownership filtering and refresh/feedback semantics.
 4. Metadata routes/services: separate artist bio, artwork, album details/year and external HTTP/cache helpers where dependencies permit. Do not mix provider behavior changes into a relocation-only PR.
 5. Authentication and app assembly: only split auth after explicit dependencies for persistent settings, session signing and middleware have been identified and covered. Keep middleware/public-path behavior unchanged.
@@ -41,7 +41,7 @@ Docker runtime smoke and multi-architecture build validation remain enabled. GHC
 
 ## Current status
 
-Domain extractions through PR #30 are merged. Settings route separation is complete on `main` via PR #33. Acquisition route separation is implemented in PR #34 (`refactor/acquisition-api-router`); its code checks passed on the implementation commit, and the final documentation-updated PR head still needs exact-head CI confirmation and merge review. Discovery routes, metadata routes/services, auth/app assembly, frontend assets, and MCP retirement remain future work.
+Domain extractions through PR #30 are merged. Settings route separation is complete on `main` via PR #33. Acquisition route separation is merged via PR #34; all four required workflows passed on the exact final PR head. Discovery routes, metadata routes/services, auth/app assembly, frontend assets, and MCP retirement remain future work.
 
 
 ## Stage 7 — FastAPI route separation: settings routes
