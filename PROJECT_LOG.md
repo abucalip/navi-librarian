@@ -1,3 +1,15 @@
+## Latest session — 2026-10-13 (modularization roadmap; web-only product direction)
+
+- **Objective:** plan a safer split of the monolithic Python implementation and assess retiring the original MCP prototype from the delivered application.
+- **Review findings:** GitHub `main` source retrieved for this review contains approximately 6,741 lines in `navidrome_server.py`, 2,969 lines in `app/main.py`, and 930 lines in `tests/test_acquisition_safety.py`. Acquisition tests currently extract functions through AST/stub setup, coupling tests to the monolith.
+- **Recommendation:** modularize incrementally, beginning with acquisition completion/matching and direct importable unit tests; then slskd search/quality evaluation, import safety and lifecycle orchestration; then discovery/recommendations; then FastAPI route groups and frontend assets.
+- **Product direction:** treat the delivered product as web-only. Plan to remove MCP server/tool registration and MCP-specific runtime/dependencies once the web application no longer imports domain logic from the MCP entry point. Do not remove it prematurely: current web routes depend on functions in `navidrome_server.py`, so first extract reusable domain logic behind explicit module interfaces and preserve current API/UI behavior.
+- **Documentation:** updated requirements, architecture decisions, test plan, development workflow, DroppedNeedle backlog, project status and log on a focused documentation branch.
+- **Implementation state:** planning/documentation only. No application code changed; no tests run for a code change; no PR merged, image published, or deployment performed.
+- **Next priority:** inspect the current completion/matching functions and tests on current GitHub `main`; implement the smallest extraction with regression tests, retaining the existing MCP wrapper temporarily as a compatibility shell until it is safe to retire.
+
+---
+
 ## 2026-10-13 — Wait for delayed slskd peer payloads
 
 - **Branch:** `fix/slskd-search-payload-wait`, based on PR #21 head `2876098ed222cc8803f292c55aa8e3474331e3e5`; not yet a PR, merged, or deployed.
