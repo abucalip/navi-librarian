@@ -242,7 +242,7 @@ class SlskdSearchQueryTests(unittest.TestCase):
         peer = {
             "username": "peer",
             "files": [{
-                "filename": "Tinariwen/Idrache (Traces of the Past)/01 - Track.flac",
+                "filename": "Other Artist/Other Album/01 - Track.flac",
                 "size": 1000,
             }],
         }
