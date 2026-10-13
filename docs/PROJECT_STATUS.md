@@ -1,32 +1,11 @@
-## Session closeout — M4 documentation pass (2026-10-13)
+## Session update — M4 PR #28 reconciled and implementation CI passed (2026-10-13)
 
-- PR #28 remains a draft and is not merged or deployed.
-- The branch has known divergence from `main` and was reported non-mergeable on the last inspection; reconcile before review.
-- The architecture and test plan now explicitly identify `discovery_recommendations.py` and the focused test command.
-- Tests have **not** been executed locally and no passing CI run was confirmed. Do not describe M4 as verified until the exact PR head passes focused tests, syntax checks, the full suite, and Docker build CI.
-- No code changes, deployment, or image publication were made in this documentation-only closeout.
-
----
-
-## M4 update — PR #28 opened, merge-base and CI need follow-up
-
-- PR [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) is open as a draft, not merged or deployed. Latest observed head: `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
-- Comparison against current `main` reports the branch is 8 commits ahead and 2 behind; GitHub currently reports `mergeable: false`. Reconcile with the latest `main` before review/merge, preserving the focused change.
-- No CI workflow runs or commit status checks were returned for the exact head at the time of inspection. Local test execution was not possible through the connected Local_Git tool (404/429 errors).
-- **Next action:** resolve branch divergence, then verify focused test, Python syntax, and full Docker/unit-test CI on the resulting exact PR head. Do not merge until CI passes.
-
----
-
-## Session closeout — 2026-10-13 (M4 discovery/recommendation rules extraction)
-
-- **Branch:** `refactor/discovery-recommendation-rules`, based on `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
-- **Scope:** extracted pure discovery eligibility and ranking rules into `discovery_recommendations.py`; network/cache/inventory orchestration remains in `navidrome_server.py` behind compatibility wrappers.
-- **Behavior intended to remain unchanged:** normalized name keys, MusicBrainz artist identity, album eligibility, exact artist-credit matching, Various Artists exclusion, genre-family mapping, scoring weights/jitter, and classic-list artist/genre diversity caps.
-- **Regression coverage:** direct-import tests in `tests/test_discovery_recommendations.py`.
-- **Verification:** Local_Git returned 404/429, so no local checkout was changed and tests have not run. CI must verify the exact PR head. No live discovery refresh, UI test, image publication, or deployment occurred.
-- **Next:** inspect the complete diff and CI, fix any failures, and only then consider merge.
-
----
+- **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) remains draft/open, unmerged and undeployed.
+- **Branch:** `refactor/discovery-recommendation-rules`; reconciled merge commit `a713d476458bd55841f57b39f92041273fe49372`, incorporating latest `main` `15497d9149b80971414df26bf1b4acfbe02863cc`. Comparison reports 15 commits ahead, 0 behind; GitHub reports mergeable.
+- **Review:** complete seven-file diff inspected. Pure rule extraction and compatibility wrappers remain scoped; owned-album filtering stays in the server orchestration layer.
+- **CI:** Python syntax workflow #229 passed. Docker packaging workflow #133 passed the compile step, full unit suite, and image build on the reconciled code-bearing commit. The direct-import discovery tests are part of full unittest discovery. No local run was possible because the connected Local_Git service returned 404/429.
+- **Not performed:** live discovery refresh, manual UI smoke test, image publication, deployment, or merge.
+- **Next:** confirm checks on the documentation closeout head and complete review before considering undrafting/merge.
 
 ---
 

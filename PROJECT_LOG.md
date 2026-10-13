@@ -1,31 +1,11 @@
-## 2026-10-13 — M4 session closeout documentation
+## 2026-10-13 — M4 PR #28 reconciled with latest main; CI verification
 
-- Updated the architecture diagram to distinguish pure recommendation rules in `discovery_recommendations.py` from server-side discovery orchestration.
-- Updated the test plan with the focused regression command and the behaviors that must remain stable.
-- PR #28 remains draft/unmerged/undeployed; branch divergence and absent verified CI remain blockers. Local test execution was unavailable, so no tests are claimed as passing.
-- No application code or deployment state changed in this closeout.
-
----
-
-## 2026-10-13 — M4 PR opened; branch verification pending
-
-- **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28), draft/open. Latest observed head `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
-- **Diff:** 7 files changed: new pure rules module and direct-import tests; server compatibility wrappers and scoring/diversity delegation; architecture, test-plan, status, and log documentation.
-- **Review caution:** GitHub compare reports 8 commits ahead and 2 behind current `main`; PR metadata reports `mergeable: false`. Reconcile with latest main before review/merge.
-- **Verification:** no CI runs/status checks were returned for the exact head. Local_Git endpoint was unavailable (404/429), so no local syntax or tests ran. No manual UI/live refresh, deployment, or image publication.
-- **Next:** reconcile branch with latest main, inspect full diff, then run focused direct-import tests, syntax checks, and full Docker/unit-test CI before any merge.
-
----
-
-## 2026-10-13 — M4 discovery/recommendation rules extraction
-
-- **Branch/base:** `refactor/discovery-recommendation-rules` from `main` at `bf6c044ab332148e537b6888b06078c5d75f059c`.
-- **Implementation:** `discovery_recommendations.py` owns pure normalization, artist identity, album eligibility, exact artist-credit checks, Various Artists detection, genre-family mapping, scoring, jitter refresh, and classic-list diversity. Compatibility helpers remain in `navidrome_server.py`; network/cache/library/persistence behavior stays in the server.
-- **Tests/docs:** direct-import regression tests added; test plan and architecture updated; status and this log record verification boundaries.
-- **Verification:** no local tests or manual UI/live discovery refresh have run because Local_Git endpoint returned 404/429. CI must verify the exact PR head. No deployment or image publication.
-- **Next:** inspect the complete diff and exact-head CI, then fix any regressions before merge.
-
----
+- **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28), still draft/open/unmerged/undeployed.
+- **Reconciliation:** merged latest `main` commit `15497d9149b80971414df26bf1b4acfbe02863cc` into `refactor/discovery-recommendation-rules` at merge commit `a713d476458bd55841f57b39f92041273fe49372`. The branch is now 15 commits ahead, 0 behind; GitHub reports it mergeable. Latest main's project log/status updates were retained alongside M4 notes.
+- **Diff review:** inspected all seven changed files. Scope remains the pure discovery rules module, compatibility wrappers/server delegation, direct-import regression tests, and architecture/test/status documentation. Owned-album exclusion remains in server orchestration.
+- **CI on code-bearing reconciled head:** [Python syntax check #229](https://github.com/abucalip/navi-librarian/actions/runs/38431779543) passed. [Docker packaging #133](https://github.com/abucalip/navi-librarian/actions/runs/38431779368) passed, including Python compilation, the full unit-test suite, and Docker image build. The focused discovery tests are included in full unittest discovery; no separate local run was possible because Local_Git returned 404/429.
+- **Limitations:** no live discovery refresh, manual UI smoke test, image publication, or deployment. This does not authorize merge.
+- **Next:** inspect CI on the documentation closeout head, then finish review and decide whether to mark PR ready; do not merge without the normal review/authorization step.
 
 ---
 
