@@ -2,7 +2,7 @@
 
 - PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
 - PR #33 is merged at 25cd40eca0f20824173d7aefce76b753ef57360c from exact head 97154f6f7c482633b0cf0f71cebc2bd0afd0f558. Python syntax #313, container smoke #30, Docker packaging/full-unit-test #220, and validation-only multi-architecture #74 passed.
-- PR #31's documentation branch is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c` and includes `docs/LOCAL_UI_TESTING.md`. Exact head `37e0afb3753ceda326ac6472ddd406ab6f2ea17a` passed Python syntax workflow #315, container runtime smoke #32, Docker packaging/full-unit-test #222, and validation-only multi-architecture #76. PR #31 remains open/unmerged pending final review/decision.
+- PR #31's documentation branch is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c` and includes `docs/LOCAL_UI_TESTING.md`. Exact final head `3eb3ec6726e0bbe03ef0df9f3d5022796feb7a0c` passed Python syntax workflow #316, container runtime smoke #33, Docker packaging/full-unit-test #223, and validation-only multi-architecture #77. PR #31 remains open/unmerged pending merge decision.
 - Manual browser checks are required after exact-head CI for UI-facing changes. The outstanding performance observation and distinct error/recovery check are deferred to the next UI-facing PR; they do not block non-UI API/infrastructure changes by default.
 - GHCR publication remains paused. No image publication, deployment, or production runtime verification is claimed.
 
