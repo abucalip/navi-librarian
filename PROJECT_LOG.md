@@ -1,3 +1,14 @@
+## 2026-10-13 — First acquisition-completion module extraction (in progress)
+
+- **Branch:** `refactor/acquisition-completion-matching`, created from GitHub `main`; code PR and CI results pending at the time of this entry.
+- **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into the existing root-level `acquisition_completion.py` module. `navidrome_server.py` retains thin compatibility wrappers.
+- **Tests:** `tests/test_acquisition_completion.py` now imports production helpers directly rather than AST-extracting them. Added regression cases for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization. The existing acquisition safety harness injects the directly imported matcher into its stub namespace while retaining lifecycle coverage.
+- **Behavior/safety:** intended as relocation only. Positive advertised sizes remain mandatory; conflicting expected basenames, unmatched/ambiguous tracks, and symlinked files still fail closed. No MCP removal or user-facing behavior changes in this step.
+- **Verification boundary:** source files were read back from GitHub after editing. Unit tests, syntax checks, Docker build, and CI are not yet confirmed; no merge or deployment.
+- **Next:** inspect the exact diff and wait for CI on the implementation PR; fix failures before merging.
+
+---
+
 ## 2026-10-13 — Wait for delayed slskd peer payloads
 
 - **Branch:** `fix/slskd-search-payload-wait`, based on PR #21 head `2876098ed222cc8803f292c55aa8e3474331e3e5`; not yet a PR, merged, or deployed.
