@@ -12,6 +12,19 @@
 
 Last updated: 2026-10-13
 
+## Authentication boundary integration check
+
+The container smoke harness must verify the HTTP boundary, not just authentication helper functions:
+
+- With a fresh data directory, `GET /` without a session cookie returns HTTP 303 with `Location: /login`; the first-run login/setup page itself is public.
+- The same root redirect is required after the owner account exists when no valid session cookie is sent.
+- Unauthenticated `/api/*` requests return HTTP 401, including unknown API paths.
+- After setup/login, the authenticated root returns HTTP 200; invalid or expired cookies must not authorize the application.
+- Disable automatic HTTP redirect following in the unauthenticated root checks. Otherwise a test client may follow the redirect to `/login` and report a misleading HTTP 200, masking the actual redirect boundary.
+
+Run the integration test with `bash .github/scripts/run_container_smoke.sh`; it uses disposable storage and temporary read-only music/download mounts. Do not interpret visibility of the login/setup screen as access to the protected dashboard.
+
+
 ## Discovery store extraction — merged PR #29
 
 - PR #29 was squash-merged to `main` at `001f3a7e76979d82adc62edd888d8490565b2ef3`. The final PR head `518505f6dd8e233bc6aaec4b90ec42b0669f70d5` passed Python syntax workflow #243 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434507492)) and Docker packaging workflow #150 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434507399)); the latter ran Python compilation, the full unit-test suite, and Docker image build.
