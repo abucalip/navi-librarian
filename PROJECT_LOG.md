@@ -1,3 +1,13 @@
+## 2026-10-13 — M2 slskd search and quality extraction started
+
+- **Branch:** `refactor/slskd-search-quality-modules`, based on current GitHub `main` SHA `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; the local working checkout was left untouched because it is on `test/pr17-reconciliation` and contains unrelated work.
+- **Files:** added `slskd_quality.py`, `slskd_search.py`, and direct-import tests in `tests/test_slskd_search_modules.py`; converted seven legacy slskd helper definitions in `navidrome_server.py` to compatibility wrappers.
+- **Scope:** relocated quality classification, query construction, response parsing, album path matching, track identity, bounded path diagnostics, and candidate grouping/ranking. Search orchestration and its 45-second overall budget, delayed-payload polling, candidate acceptance thresholds, settings schema/order, and acquisition queue/import lifecycle remain in place.
+- **Test status:** tests and syntax checks have not yet been executed. Do not claim the extraction is verified until focused tests, full unittest discovery, syntax checks, Docker packaging, and exact-head CI are inspected.
+- **Next:** validate the branch diff and CI, then address failures before merge. No deployment performed.
+
+---
+
 ## 2026-10-13 — First acquisition-completion module extraction (PR #24 merged)
 
 - **PR/branch:** [PR #24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #23's roadmap branch remains separate and unmerged; PR #24 does not contain that roadmap.
