@@ -2,6 +2,11 @@
 
 Last updated: 2026-10-13
 
+## Discovery store extraction CI evidence — PR #29
+
+- Code/test head `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: Python syntax workflow #237 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087436)); Docker packaging workflow #144 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087855)), including Python compilation, full unit-test discovery, and Docker image build.
+- These results are for the code/test head, not subsequent documentation-only commits. Verify final-head workflows before merge.
+
 ## Latest CI evidence — PR #28
 
 - PR #28 final head `9ab8afeaed6562424b9212f2492d34f3ed9a69ee`: Python syntax workflow #232 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390630)); Docker packaging workflow #139 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390704)), including Python compilation, full unit-test discovery, and image build.
