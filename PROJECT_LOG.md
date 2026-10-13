@@ -1,3 +1,14 @@
+## 2026-10-13 — Defer PR #32 and #33 merges until testing gap is closed
+
+- **User decision:** finish the testing gap in the next session before merging PR #32 or PR #33. Both remain open and unmerged; no merge was performed.
+- **Current exact-head CI snapshot:** PR #31 head `572d98d18e051bcbed7f3e74242abe1df6d0540c`: Python workflow #265 and Docker workflow #172 passed. PR #32 head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`: Python #278, container runtime smoke #13, Docker #185, and validation-only multiarch #54 passed. PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929`: Python #288 and Docker/full-suite/build #195 passed; the full suite ran 115 tests.
+- **Manual UI evidence:** all eight items in the user-uploaded report passed on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` (report: [PR #31 comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713)). The fuller checklist's performance observation and a distinct error/recovery exercise were not separately recorded.
+- **Next-session work:** validate repeatability of the local exact-SHA tester, including dependency reuse and intended setup/data persistence; finish and report the outstanding performance and error/recovery checks on a relevant exact SHA; recheck final-head CI; reconcile/retest PR #33 against the chosen updated base after PR #32; review diffs before any merge decision.
+- **Publication:** no image publication or deployment until modularization is complete and release is explicitly authorized. PR #32's publishing pause is not yet on `main`; do not trigger the current publishing workflow or release-tag path.
+- **Boundaries:** documentation only. No tests were run by the assistant, and no merge, publication, deployment, or production runtime verification occurred.
+
+---
+
 ## 2026-10-13 — Local UI checklist completed and report uploaded
 
 - **PR/tested SHA:** PR #31, application source `96b253c5f3ec2f858e02afc034365a22bac0773e`, branch `docs/testing-release-workflow-priority`.
