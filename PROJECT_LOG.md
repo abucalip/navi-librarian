@@ -1,3 +1,10 @@
+## 2026-10-13 — Local test persistence requirement and UI-check deferral
+
+- Updated `docs/LOCAL_UI_TESTING.md` to defer performance observation and a distinct error/recovery exercise to the next UI-facing change; non-UI PRs do not require repeating the full visual checklist by default.
+- Documented the intended local test-kit behavior: app data stable per PR across source SHAs, separate data for different PRs, and virtual-environment reuse when Python/dependency inputs are unchanged.
+- The helper at `~/navi-librarian-test/test-pr.sh` is outside the repository. This session updated the repository contract but did not modify the local file. The recurring first-run credential prompt remains unresolved until that script's app-data path is changed and a repeated-run test confirms account/settings persistence.
+- PR #31 exact documentation head `60aaf34174e2ad7a7230db883e0dbd5cad44fab8` passed compile and test/build checks. No UI test was rerun because no UI code changed. No merge, publication, deployment, or production verification occurred.
+
 ## 2026-10-13 — Defer PR #32 and #33 merges until testing gap is closed
 
 - **User decision:** finish the testing gap in the next session before merging PR #32 or PR #33. Both remain open and unmerged; no merge was performed.
