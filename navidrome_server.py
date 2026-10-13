@@ -3726,10 +3726,12 @@ def _slskd_search_queries(artist, album):
     if not artist or not album:
         return []
 
+    punctuation_normalized = re.sub(r"[^\\w\\s]", " ", album)
+    primary_title = re.sub(r"\\s*\\([^)]*\\)", " ", album)
     variants = [
         f"{artist} {album}",
-        f"{artist} {re.sub(r'[^\\w\\s]', ' ', album)}",
-        f"{artist} {re.sub(r'\\s*\\([^)]*\\)', ' ', album)}",
+        f"{artist} {punctuation_normalized}",
+        f"{artist} {primary_title}",
     ]
     queries = []
     seen = set()
