@@ -1,10 +1,12 @@
-## Discovery refresh coordination extraction — PR in progress
+## Discovery refresh coordination extraction — merged PR #30
 
-- Run focused regression tests: `python -m unittest tests.test_discovery_refresh -v`.
-- Run syntax checks: `python -m py_compile navidrome_server.py discovery_refresh.py`.
-- Run the full suite: `python -m unittest discover -s tests -v`.
-- Direct-import tests cover personal-list JSON parsing and write behavior, invalid JSON, non-blocking lock behavior, named-list success/counting, unknown-list handling, builder exceptions, and lock release. Confirm Python syntax and Docker packaging workflows on the exact final PR head before merge.
-- No local test run or live/UI verification is claimed for the initial implementation session.
+- PR #30 was merged into `main` at `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head was `f9256060d162ed92be0bbacc66a877c2675a5174`.
+- Focused regression command: `python -m unittest tests.test_discovery_refresh -v`.
+- Syntax check: `python -m py_compile navidrome_server.py discovery_refresh.py`.
+- Full suite: `python -m unittest discover -s tests -v`.
+- CI passed for code head `46444e3c24dc78008e3c13dfb441059e73279814` (Python syntax/acquisition-safety workflow #249 and Docker packaging workflow #156; Docker job included full unittest discovery and image build). A docs-only commit triggered Docker workflow #157; its terminal result was not confirmed at merge time. No local test run or live/UI verification is claimed.
+- Refresh coordination tests cover personal payload parsing/write behavior, malformed JSON, non-blocking lock behavior, named-list success/counting, unknown-list handling, builder exceptions, and lock release.
+
 
 # Test plan
 
