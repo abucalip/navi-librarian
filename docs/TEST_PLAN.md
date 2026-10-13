@@ -1,3 +1,17 @@
+## Next-session merge gate — test gap not yet closed (2026-10-13)
+
+Do not merge PR #32 or PR #33 until this gate is completed and its evidence is recorded.
+
+1. **Repeatability of local testing:** using the documented tester, fetch and test an exact current GitHub PR SHA. Confirm a second run reuses the intended installed dependencies and behaves as documented for per-PR/per-SHA app data and first-run setup. Explicitly distinguish state that should persist from state intentionally isolated per revision. Do not use or reconcile the dismissed Local_Git checkout.
+2. **Finish the manual checklist gaps:** the uploaded report for application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` passed all eight recorded items, but did not separately record a lightweight performance observation or a distinct error/recovery exercise. Perform and record these on a relevant current exact GitHub SHA; include PR #33's settings-route behavior in the target revision's checks. Never carry results forward to a different SHA without stating the boundary.
+3. **Container integration:** PR #32's container runtime smoke workflow #13 has passed on head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`; re-check exact-head CI before merge. Its disposable-storage test covers startup, unauthenticated API rejection, first-run setup, auth-key permissions, authenticated UI, and account/login persistence across restart.
+4. **Exact-head CI and reconciliation:** re-check required workflows for the final PR #32 and #33 heads. Before #33 can be considered merge-ready, reconcile it with the selected updated base after #32 and rerun its required checks on that resulting head. Passing checks on old heads are not sufficient.
+5. **Review and report:** record exact SHA, environment, Pass/Fail/Skip, failure reproduction details, and PR report link. Review complete diffs and keep Implemented, Tested, Merged, Published, Deployed, and Runtime Verified as separate states.
+
+**Current verified CI snapshot (2026-10-13):** PR #31 head `572d98d18e051bcbed7f3e74242abe1df6d0540c`: Python #265 and Docker #172 passed. PR #32 head `46db021db1367ef1e1f5e53dffdbd78bc09a880a`: Python #278, runtime smoke #13, Docker #185, and validation-only multiarch #54 passed. PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929`: Python #288 and Docker/full suite/build #195 passed; 115 tests ran. All three PRs remain open/unmerged. No image publication or deployment is authorized before modularization is complete.
+
+---
+
 ## Test-gap closure and complete delivery workflow — next priority (2026-10-13)
 
 This section defines the remaining release-gate work. The user has completed and uploaded the local browser smoke checklist for PR #31 at application source SHA `96b253c5f3ec2f858e02afc034365a22bac0773e` ([report comment](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713)). All eight recorded checklist items passed with zero failures. This completes the documented manual smoke checklist for that SHA, but does not satisfy every integration, safety, post-merge, release, or runtime gate below.
