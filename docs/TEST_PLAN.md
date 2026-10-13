@@ -4,7 +4,7 @@
 - New direct-import regression tests in tests/test_settings_routes.py cover JSON response parsing, the exact 12 endpoint/method pairs, Navidrome payload mapping, ListenBrainz validation errors, slskd quality defaults/path trimming, and sanitized connection failures.
 - Run focused tests: python -m unittest tests.test_settings_routes -v.
 - Run full suite: python -m unittest discover -s tests -v; syntax: python -m py_compile app/main.py app/api/settings.py app/api/utils.py.
-- No tests are claimed locally; final-head GitHub CI is required before merge.
+- Final-head GitHub CI passed on b0a9df868b1b0fd4a9222198ad052d773e12740a: Python syntax/full unittest workflow #285 and Docker packaging/full suite/build workflow #192; 115 tests passed. No local tests are claimed. Recheck CI if code changes before merge.
 
 ## Discovery refresh coordination extraction — merged PR #30
 
