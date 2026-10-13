@@ -1,11 +1,11 @@
-## 2026-10-13 — Discovery list persistence extraction (PR #29)
+## 2026-10-13 — PR #29 merged; discovery list persistence extraction complete
 
-- PR [#29](https://github.com/abucalip/navi-librarian/pull/29), branch `refactor/discovery-list-store`, based on `main` at `2a3680e5bd1311785c8176e9655f04283f9a54ee`.
-- Added `discovery_store.py` for cached discovery-list SQLite reads/writes and retained the server compatibility wrappers, including `_discovery_init()` to preserve the existing schema initialization side effect.
-- Added `tests/test_discovery_store.py` for absent entries, malformed JSON, Unicode payloads, timestamps, and list replacement/isolation. Updated `docs/TEST_PLAN.md`, `docs/DECISIONS.md`, and `docs/PROJECT_STATUS.md`.
-- Python syntax workflow #237 passed on code/test commit `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: https://github.com/abucalip/navi-librarian/actions/runs/38434087436 . Docker packaging workflow #144 passed on the same commit, including the full unit suite and image build: https://github.com/abucalip/navi-librarian/actions/runs/38434087855 .
-- After the first documentation closeout, Python syntax workflow #239 and Docker packaging workflow #146 passed on `0996b08c879ec2f39db326cb1c4b08a5bb487e30` (https://github.com/abucalip/navi-librarian/actions/runs/38434251390 and https://github.com/abucalip/navi-librarian/actions/runs/38434251445); Docker validation includes the full unit suite and image build. No workflow runs were returned for the latest subsequent documentation-only commits; application code/tests did not change after that passing run.
-- Local_Git returned 429/404, so no local tests were run. No live discovery refresh, UI test, merge, image publication, or deployment. PR #29 remains open and unmerged.
+- [PR #29](https://github.com/abucalip/navi-librarian/pull/29) was squash-merged into `main` at `001f3a7e76979d82adc62edd888d8490565b2ef3`; final PR head `518505f6dd8e233bc6aaec4b90ec42b0669f70d5`.
+- Added `discovery_store.py` for cached discovery-list SQLite reads/writes and preserved the `navidrome_server.py` compatibility wrappers and schema initialization side effect.
+- Added direct-import regression tests for absent/malformed rows, Unicode payloads, generation timestamps, and list replacement/isolation. Updated `docs/TEST_PLAN.md`, `docs/DECISIONS.md`, and project status.
+- Final PR head passed Python syntax workflow #243 and Docker packaging workflow #150, including compilation, full unit-test discovery, and Docker image build: https://github.com/abucalip/navi-librarian/actions/runs/38434507492 and https://github.com/abucalip/navi-librarian/actions/runs/38434507399 . No workflow runs were returned for the squash merge commit at closeout.
+- Local_Git returned 429/404; no local tests, live discovery refresh, UI test, image publication, or deployment. This change is merged, not deployed or runtime-verified.
+- **Next:** extract discovery list construction/refresh coordination in a separate, regression-tested increment.
 
 ---
 
