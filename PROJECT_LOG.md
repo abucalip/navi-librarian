@@ -1,3 +1,13 @@
+## 2026-10-13 — Begin FastAPI route separation with settings routes
+
+- Branch: refactor/settings-api-router, based on GitHub main.
+- Scope: extracted settings API handlers to app/api/settings.py; shared parse_result lives in app/api/utils.py, and app.main still exposes the imported symbol and registers the router. Existing endpoint paths, methods, payload defaults, service calls and error handling are preserved.
+- Regression tests: added tests/test_settings_routes.py for response parsing, Navidrome payload mapping, ListenBrainz validation failures, slskd defaults/path normalization, and sanitized upstream errors.
+- Documentation: updated the modularization roadmap to record merged PRs #24–#30 and identify remaining route groups and later MCP retirement. Architecture and test plan updated.
+- Verification status: CI not yet observed for this branch at this log entry; no local tests are claimed. No merge, publication or deployment occurred.
+- Release policy: registry publishing stays disabled until modularization is complete and release is explicitly authorized.
+- Next: inspect the full diff, verify focused/full CI on the exact final PR head, then continue with acquisition routes.
+
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
