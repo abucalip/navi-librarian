@@ -5908,12 +5908,16 @@ def _discovery_acquire_album_impl(
             path_diagnostics = _slskd_path_match_diagnostics(
                 list(payload_by_peer.values()), artist, album
             )
+            attempted_queries = " -> ".join(
+                item["query"] for item in search_attempts
+            )
             message = (
                 f"No matching album folders were found among {response_count} collected peer responses "
                 f"({audio_file_count} audio files). slskd reported up to {reported_response_count} "
                 f"responses and {reported_file_count} files across the search attempts. "
                 "If the counts are zero, no peers answered the attempted queries; otherwise "
-                "the response payloads may not have been available to Librarian."
+                "the response payloads may not have been available to Librarian. "
+                f"Queries tried: {attempted_queries}."
             )
             _discovery_update_acquisition_status(
                 artist, album, "no_matches",
