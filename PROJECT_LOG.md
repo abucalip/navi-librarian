@@ -1,13 +1,13 @@
-## 2026-10-13 — Add container runtime and artifact provenance gates
+## 2026-10-13 — Container runtime and artifact provenance gates verified on code head
 
-- Branch: ci/container-runtime-smoke-release-provenance, based on GitHub main.
-- Root cause found: the Dockerfile omitted six imported modules now used by navidrome_server.py. Docker build/compilation alone did not detect this, so the published image could fail at application startup.
-- Fix: copy acquisition_import.py, discovery_store.py, discovery_refresh.py, discovery_recommendations.py, slskd_search.py, and slskd_quality.py into the image.
-- Automated integration check: added .github/workflows/container-smoke.yml and .github/scripts/container_smoke.py. It starts the built image with isolated storage and verifies HTTP readiness, unauthenticated API protection, first-run setup, auth-key mode 0600, authenticated UI response, account persistence after container restart, and subsequent login. Music/download mounts are temporary and read-only; external services are not configured.
-- Artifact provenance: the publish workflow now runs the same container smoke harness before publishing, enables build provenance/SBOM, and writes source SHA, ref, tags, architectures, and immutable image digest to the GitHub Actions summary.
-- Tests/CI at entry: no tests were run by the assistant locally. The new workflow and Dockerfile change have not yet been executed by CI at the time of this log entry; report only observed run results later.
-- State: implementation in progress; no merge, image publication, deployment, or production runtime verification claimed.
-- Next: inspect CI on the exact final PR head, correct failures, and review the entire diff before merge consideration.
+- **PR:** [#32](https://github.com/abucalip/navi-librarian/pull/32), branch `ci/container-runtime-smoke-release-provenance`.
+- **Root cause/fix:** Dockerfile omitted six imported domain modules; added all six to the image to prevent startup import failures after modularization.
+- **Automated container integration:** the shared harness builds and starts the image with disposable storage, verifies auth/setup and private auth-key permissions, restarts the container, then verifies the owner account persists and login still works. Music/download mounts are temporary and read-only; no external service or production data is used.
+- **Code-bearing SHA tested:** `9b801d10c4ab1c460fccd4bf057e9486405ef642`.
+- **CI:** Python syntax workflow #272 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023710)); container runtime smoke workflow #7 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023831)); Docker packaging workflow #179 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023729)), including full unit-test discovery and Docker image build.
+- **Publication safeguards:** GHCR publishing is now gated on the same container smoke test. The publish workflow enables provenance/SBOM and records the source ref/SHA, tags, architectures, and immutable digest in the Actions summary.
+- **Not performed:** no GHCR publication from this PR, no deployment, and no production runtime verification. These remain separate release states.
+- **Next:** recheck CI on the latest PR head after documentation updates; then review/merge through the agreed process. Verify publication and deployment separately when authorized.
 
 ## 2026-10-13 — PR #30 merged: discovery refresh coordination
 
