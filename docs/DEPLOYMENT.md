@@ -1,6 +1,6 @@
 # Deployment runbook
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Target environment
 
@@ -17,7 +17,9 @@ These are environment-specific examples. Confirm live paths, Compose network mem
 
 ## Registry prerequisite
 
-The image name is `ghcr.io/abucalip/navi-librarian`. The GitHub Actions workflow is intended to publish `linux/amd64` and `linux/arm64` images on pushes to `main` and version tags.
+**Current release gate (2026-10-13): image publication is paused by project decision.** Do not manually trigger image publication or push release tags until the modularization roadmap is complete and the user explicitly authorizes release. PR #32 proposes changing the publishing workflow to validation-only mode, but it remains open and unmerged; therefore the safeguard is not yet on `main`. Do not assume the default-branch workflow is already disabled.
+
+The intended image name is `ghcr.io/abucalip/navi-librarian`; when publication is authorized, the intended architectures are `linux/amd64` and `linux/arm64`.
 
 **Current status (2026-10-12):** the user reports the Docker package has been made public and Librarian has been installed on the server and tested successfully. This supersedes the earlier `unauthorized` report as an active blocker. The exact deployed tag/digest and host-side pull/log evidence were not captured in this documentation update.
 
