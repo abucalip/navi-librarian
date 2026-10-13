@@ -261,3 +261,14 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **PR #22 CI:** Python syntax/full unittest workflow #182 and Docker packaging workflow #89 passed on head `04a11671862e1e3544ac878760f2223a42058ed9`. The first CI attempt found the test fixture was invoking the real acquisition implementation; the fixture was corrected and final CI passed.
 - **Verification boundary:** the live Tinariwen test is user-confirmed. No separate live retest of a previously dismissed acquisition was reported. No image publication or production deployment was performed.
 - **Next:** session complete. Treat publishing/deploying the merged code as a separate task, and record the image digest plus running-app verification if requested.
+
+
+## 2026-10-13 — PR #24 ambiguous exact-match fallback fixed
+
+- **PR/branch:** [#24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`; open and unmerged.
+- **Finding:** the matcher previously attempted collision-suffix fallback both when no exact file matched and when multiple exact files matched. The latter could allow a suffix alternative to conceal an ambiguous exact-name/size match.
+- **Fix:** return `None` immediately when more than one exact match exists; only attempt collision suffixes when there are zero exact matches. Existing size validation and symlink exclusion remain unchanged.
+- **Regression:** add case-variant exact-name files and a same-size suffixed alternative, asserting fail-closed behavior; skip only where the filesystem cannot represent distinct case variants. Add the scenario to `docs/TEST_PLAN.md`.
+- **Commits:** code `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`; documentation commits follow on the PR branch.
+- **Verification:** previous-head Python/full-unit-test workflow #195 and Docker packaging workflow #102 passed before this correction. Corrected-head CI and final diff review are pending. No local execution, manual UI verification, merge, image publication, or deployment is claimed.
+- **Next:** wait for corrected-head CI, review the complete diff, and only then assess merge readiness.
