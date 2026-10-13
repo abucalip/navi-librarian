@@ -1,3 +1,13 @@
+## 2026-10-13 — Integrate local UI smoke testing into the PR workflow
+
+- User confirmed the local FastAPI UI now starts on the Mac through the isolated PR tester. This is a startup confirmation only; no full checklist result or PR report publication is claimed.
+- Updated `docs/DEVELOPMENT_WORKFLOW.md` to add manual UI smoke testing for UI-facing PRs/release candidates after exact-head CI, with exact-SHA reporting, sandbox isolation, disabled slskd defaults, and a PR-comment report.
+- Updated `docs/TEST_PLAN.md` to replace the planned-environment item with the now-available operator procedure, report semantics, safety boundaries, and explicit remaining acceptance criteria; added `docs/LOCAL_UI_TESTING.md` as the operator guide.
+- Prior PR #31 head `534518b6c87c8e6cbd0d21a4de1bb9be79369611` had passing Python syntax workflow #257 and Docker packaging workflow #164. These results predate the documentation changes; final-head CI must be rechecked.
+- No app code changed; no application tests run by the assistant, no completed checklist/report publication confirmed, no merge, image publication, deployment, or production verification.
+
+---
+
 ## 2026-10-13 — Set next priority: close test gap and complete delivery workflow
 
 - **Decision:** prioritize reliable verification from candidate PR through merged commit, published image, authorized deployment, and runtime smoke tests before routine further modularization.
