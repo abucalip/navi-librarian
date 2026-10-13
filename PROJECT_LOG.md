@@ -1,3 +1,15 @@
+## 2026-10-13 — PR #25 merged; M2 slskd search/quality extraction complete
+
+- **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25), squash-merged. Merge commit on `main`: `84fa2f82dba562fd221a1d588e761d2cb4907749`; final PR head `39ecdc98aee5ca0ab1c096a242b700e165837e92`.
+- **Implementation:** extracted quality classification to `slskd_quality.py` and query/response/path/track/candidate helpers to `slskd_search.py`; retained seven compatibility wrappers in `navidrome_server.py`. Search polling, 45-second overall budget, candidate thresholds, quality ordering, and acquisition lifecycle were kept in place.
+- **Tests/docs:** added direct-import tests in `tests/test_slskd_search_modules.py` and updated `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, and this log.
+- **CI:** exact PR head passed Python syntax workflow #215 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38420456388)) and Docker packaging workflow #122 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38420456324), including full unit tests and image build). No workflow runs were returned for the merge commit at closeout.
+- **Review:** no submitted reviews, inline review threads, or conversation comments were present at merge time. User authorized merge.
+- **Verification boundary:** local checkout `test/pr17-reconciliation` was left untouched. No local tests, live slskd test, manual UI test, image publication, or deployment occurred.
+- **Next:** continue with the next focused modularization priority documented by the project; PR #23 remains separate/open. Verify CI on subsequent exact heads and do not infer deployment from a merge.
+
+---
+
 ## 2026-10-13 — M2 slskd extraction session closeout
 
 - **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25) remains draft/open, unmerged and undeployed. Branch `refactor/slskd-search-quality-modules`; application-code head `e8a4256aaf34956ab1c4ca15b0b302c107689736` (later commits are documentation-only); base `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`.
