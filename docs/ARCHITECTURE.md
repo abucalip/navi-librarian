@@ -32,6 +32,7 @@ The diagram is logical, not a promise that every helper uses only those mount pa
 - **`navidrome_server.py`** — discovery orchestration, Navidrome/slskd integration, acquisition lifecycle, settings, persistence, and legacy MCP tools.
 - **`acquisition_completion.py`** — strict completed-track matching, filename identity, and completed-folder inspection.
 - **`slskd_search.py` / `slskd_quality.py`** — importable slskd query/candidate helpers and audio-quality classification.
+- **`discovery_recommendations.py`** — pure discovery eligibility, normalization, scoring, and diversity helpers with direct-import tests.
 - **`acquisition_import.py`** — staged filesystem import of verified album tracks, no-overwrite checks, storage-identity guards, and rollback; acquisition status/orchestration remains in `navidrome_server.py`.
 - **`server.py`** — MCP/server entry point; inspect it before changing how the MCP integration is launched.
 - **`tests/`** — automated tests, including acquisition safety, authentication, and service settings.
