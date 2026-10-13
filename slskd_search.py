@@ -109,8 +109,8 @@ def path_match_diagnostics(payload, artist, album, limit=10, *, music_key, album
                 "username": str(username)[:80],
                 "filename": filename[:240],
                 "album_path_match": album_path_match(album, parent_text),
-                "album_filename_match": _slskd_album_path_match(album, leaf_name),
-                "artist_path_match": music_key(artist) in _music_key(parent_text),
+                "album_filename_match": album_path_match(album, leaf_name),
+                "artist_path_match": music_key(artist) in music_key(parent_text),
             })
             if len(samples) >= limit:
                 return samples
@@ -145,7 +145,7 @@ def extract_candidates(payload, artist, album, priority, expected_track_count=No
             # Require a useful album-level match; filenames alone are weak evidence.
             album_in_path = album_path_match(album, path_text)
             artist_in_path = norm(artist) in norm(path_text)
-            title_match = _slskd_album_path_match(album, file_text)
+            title_match = album_path_match(album, file_text)
             artist_match = norm(artist) in norm(path_text + " " + file_text)
             if not (album_in_path or title_match):
                 continue
@@ -187,9 +187,9 @@ def extract_candidates(payload, artist, album, priority, expected_track_count=No
         artist_evidence = any(item["artist_match"] or item["artist_in_path"] for item in files)
         album_evidence = any(item["album_match"] for item in files)
         unique_tracks = {
-            _slskd_track_identity(item["filename"])
+            track_identity(item["filename"])
             for item in files
-            if _slskd_track_identity(item["filename"])
+            if track_identity(item["filename"])
         }
         unique_track_count = len(unique_tracks)
         # Allow modest search/catalog mismatch: require at least 70% of an expected
