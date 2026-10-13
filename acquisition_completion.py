@@ -116,7 +116,7 @@ def inspect_completed_album(
     expected_by_name: dict[str, tuple[str, int]] = {}
 
     for item in candidate.get("files") or []:
-        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+        raw_name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
         if not raw_name:
             continue
         try:
