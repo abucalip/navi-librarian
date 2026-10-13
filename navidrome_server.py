@@ -5757,7 +5757,9 @@ def _discovery_acquire_album_impl(
     headers = {"X-API-KEY": api_key}
     search_id = str(uuid.uuid4())
     search_queries = _slskd_search_queries(artist, album)
-    search_deadline = time.monotonic() + 30
+    # Give a search that has already found peers time to expose their file payloads.
+    # Do not start broader queries while slskd is still collecting known responses.
+    search_deadline = time.monotonic() + 45
     search_attempts = []
     reported_response_count = 0
     reported_file_count = 0
@@ -5863,6 +5865,13 @@ def _discovery_acquire_album_impl(
                         time.sleep(0.5)
                         continue
                     break
+
+                # slskd can publish response/file counts before the peer file lists
+                # are exposed. Once it has reported peers, keep polling this search
+                # rather than spending the remaining budget on fallback queries.
+                if attempt_reported_response_count > 0 and not attempt_payload_by_peer:
+                    deadline = search_deadline
+
                 time.sleep(0.75)
 
             reported_response_count = max(reported_response_count, attempt_reported_response_count)
