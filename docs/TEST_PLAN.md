@@ -131,15 +131,10 @@ The new tests cover MP3/FLAC classification, user-configured tier ordering, boun
 
 ## M4 — discovery eligibility and recommendation scoring
 
-Run the direct-import regression tests and full suite for changes to `discovery_recommendations.py`:
-
-```sh
-python -m unittest tests.test_discovery_recommendations -v
-python -m py_compile navidrome_server.py discovery_recommendations.py
-python -m unittest discover -s tests -v
-```
-
-Network calls, cache access, Navidrome inventory, metadata enrichment, and persistence remain in `navidrome_server.py`. Preserve exact artist-credit matching, owned-album exclusions, score weights, jitter range, and two-per-artist/eight-per-family diversity caps.
+- `discovery_recommendations.py` contains pure name/artist/release eligibility, genre-family classification, exploration scoring, and classic-list diversity rules.
+- Run focused regression coverage with `python -m unittest tests.test_discovery_recommendations -v`, then syntax checks and the full unit suite below.
+- Review score weights, jitter bounds, exact artist-credit matching, compilation/non-album exclusions, and the two-per-artist/eight-per-family caps when changing these helpers.
+- Network calls, cache access, Navidrome inventory, metadata enrichment, and persistence remain in `navidrome_server.py`.
 
 ## M3 — acquisition import filesystem module
 
