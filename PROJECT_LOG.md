@@ -1,9 +1,10 @@
-## 2026-10-14 — PR #33 reconciled with merged runtime-verification baseline
+## 2026-10-14 — PR #31 documentation reconciled after PR #32 and #33 merges
 
-- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4; its reconciled PR head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only multi-architecture CI.
-- Reconciled PR #33's settings-route extraction against the new main baseline while preserving app/API code, route regression tests, and the Python workflow dependency-install fix. Exact-head CI is pending on the reconciled commit; no merge is claimed until all checks pass.
-- PR #31's documentation branch has also been reconciled with PR #32, but remains open/unmerged pending its own exact-head CI and review. Manual UI performance and distinct error/recovery checks remain scheduled for the next UI-facing PR.
-- No image publication, deployment, or production runtime verification occurred.
+- PR #32 merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4; its exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
+- PR #33 merged at 25cd40eca0f20824173d7aefce76b753ef57360c from exact reconciled head 97154f6f7c482633b0cf0f71cebc2bd0afd0f558. Syntax/full-unit-test #313, container smoke #30, Docker packaging #220, and validation-only multi-architecture #74 all passed.
+- PR #31's documentation branch is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c`. Head `3eb3ec6726e0bbe03ef0df9f3d5022796feb7a0c` passed Python syntax workflow #316 (run 38482953860), container runtime smoke #33 (run 38482953883), Docker packaging/full-unit-test #223 (run 38482953864), and validation-only multi-architecture #77 (run 38482953840). A docs-only follow-up commit `2993273b633b865219818789c47160b8e2429a6f` records these results; its own exact-head reruns were in progress at closeout. PR remains open/unmerged; no merge is claimed. The report for application SHA 96b253c5f3ec2f858e02afc034365a22bac0773e recorded eight checks passing; performance observation and distinct error/recovery remain deferred to the next UI-facing PR.
+- The local test account survived a server restart in the tested environment. This does not alone prove data reuse across a different PR source SHA. The local helper remains outside the repository.
+- No image publication, deployment, or production runtime verification occurred. GHCR publication remains paused until modularization is complete and separately authorized.
 
 ## 2026-10-14 — PR #32 runtime smoke and publishing safeguard reconciliation
 

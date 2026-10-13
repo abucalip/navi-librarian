@@ -1,8 +1,10 @@
-## 2026-10-14 — PR #33 settings API extraction reconciled with merged PR #32
+## 2026-10-14 — PR #32 and #33 merged; PR #31 documentation reconciliation
 
-- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Its runtime smoke and validation-only publishing safeguards are on main; registry publication remains disabled.
-- PR #33 is being reconciled against that main so the settings-route extraction retains all route/method and payload behavior while current release and test documentation stays intact. Final head, CI, and mergeability must be checked after this reconciliation.
-- The settings route extraction is not a UI redesign. No full manual browser checklist is required solely for this API/module refactor; its direct-route regression tests, full suite, syntax check, and Docker packaging checks are required. The remaining performance and distinct error/recovery UI checks are deferred to the next UI-facing PR.
+- PR #32 is merged at 8cce5a147060fa1ccc5a69eadb91e9b090c016f4. Exact reconciled head 155e7d3b18a23b919eb60098d50c639bd2962c99 passed Python syntax #310, Docker packaging/full-unit-test #217, container smoke #27, and validation-only multi-architecture #71.
+- PR #33 is merged at 25cd40eca0f20824173d7aefce76b753ef57360c from exact head 97154f6f7c482633b0cf0f71cebc2bd0afd0f558. Python syntax #313, container smoke #30, Docker packaging/full-unit-test #220, and validation-only multi-architecture #74 passed.
+- PR #31's documentation branch is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c` and includes `docs/LOCAL_UI_TESTING.md`. Code/documentation head `3eb3ec6726e0bbe03ef0df9f3d5022796feb7a0c` passed Python syntax #316, container runtime smoke #33, Docker packaging/full-unit-test #223, and validation-only multi-architecture #77. A follow-up documentation-only commit `2993273b633b865219818789c47160b8e2429a6f` records those results; its exact-head CI reruns were in progress at closeout. PR #31 remains open/unmerged pending exact-head CI and merge decision.
+- Manual browser checks are required after exact-head CI for UI-facing changes. The outstanding performance observation and distinct error/recovery check are deferred to the next UI-facing PR; they do not block non-UI API/infrastructure changes by default.
+- GHCR publication remains paused. No image publication, deployment, or production runtime verification is claimed.
 
 ## Latest verification closeout — 2026-10-13 (PRs #31–#33)
 

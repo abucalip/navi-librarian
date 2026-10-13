@@ -46,3 +46,9 @@ Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/D
 
 - Verify runtime behavior, not only image compilation: run the isolated container smoke test on the exact PR head and retain checks for readiness, authentication/setup boundaries, auth-key permissions, and persistence across restart.
 - The Docker workflow is validation-only while modularization is underway: run smoke before the multi-architecture build, use push: false, and do not add registry login, tags, or publication without separate authorization after the roadmap is complete.
+
+
+## Manual UI and test-kit gates
+
+- Run the full manual browser checklist for UI-facing changes only after required automated checks pass on the exact tested SHA. The outstanding performance observation and distinct error/recovery exercise are scheduled for the next UI-facing change. Non-UI PRs still require relevant automated/API/integration tests; do not rerun the full visual checklist solely due to a SHA change.
+- Use the documented local helper with sandbox music/download paths and slskd disabled for ordinary checks. Keep application data isolated by PR; verify separately before claiming that it persists across different source SHAs. A server-restart persistence observation does not prove cross-SHA helper reuse.

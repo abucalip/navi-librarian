@@ -1,9 +1,9 @@
-## Settings API route extraction — PR #33 reconciliation
+## Current verification state — PR #32/#33 merged; PR #31 documentation follow-up
 
-- Recheck the exact reconciled PR #33 head after merging current main into its branch. Run Python syntax, the full unittest suite including tests/test_settings_routes.py, Docker packaging/image build, container runtime smoke, and validation-only multi-architecture build.
-- Settings route regression tests must preserve all 12 endpoint/method pairs, payload mapping/defaults, ListenBrainz validation, slskd quality/path defaults, sanitized errors, and parse_result compatibility in app.main.
-- PR #32's container/runtime baseline is merged. GHCR publication remains paused; all image build workflows must keep push: false.
-- This API/module extraction does not require a full manual browser checklist by itself. Defer the unrecorded performance observation and distinct error/recovery scenario to the next UI-facing change; perform focused UI smoke only if an API contract change makes it relevant.
+- PR #32 and PR #33 are merged. Their exact-head checks passed, including syntax, full unittest discovery/Docker packaging, container runtime smoke, and validation-only multi-architecture build. See the top of docs/PROJECT_STATUS.md and PROJECT_LOG.md for exact commit/run references.
+- PR #31's operator guide is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c`. Head `3eb3ec6726e0bbe03ef0df9f3d5022796feb7a0c` passed Python syntax workflow #316, full unit tests/Docker packaging workflow #223, container runtime smoke workflow #33, and validation-only multi-architecture workflow #77. Docs-only follow-up `2993273b633b865219818789c47160b8e2429a6f` triggered new exact-head CI runs; these were still in progress at closeout, so wait for their conclusions before merge.
+- Manual browser checks remain a gate for UI-facing changes after exact-head CI. The performance observation and distinct error/recovery scenario not recorded in the October 13 report are deferred to the next UI-facing PR. Do not repeat the full visual checklist solely because a non-UI PR changes SHA.
+- GHCR publishing stays disabled until the modularization roadmap is complete and release is explicitly authorized.
 
 ## Discovery refresh coordination extraction — merged PR #30
 
