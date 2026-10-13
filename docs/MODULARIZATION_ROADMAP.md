@@ -41,7 +41,7 @@ Docker runtime smoke and multi-architecture build validation remain enabled. GHC
 
 ## Current status
 
-Domain extractions through PR #30 are merged. The next roadmap stage is FastAPI route separation, beginning with settings routes in branch refactor/settings-api-router. MCP retirement and frontend asset extraction remain future work.
+Domain extractions through PR #30 are merged. Settings route separation is complete on `main` via PR #33. Acquisition route separation is the current stage on PR #34 (`refactor/acquisition-api-router`); it remains pending exact-head CI and review. Discovery routes, metadata routes/services, auth/app assembly, frontend assets, and MCP retirement remain future work.
 
 
 ## Stage 7 — FastAPI route separation: settings routes
