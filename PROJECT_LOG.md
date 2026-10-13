@@ -1,3 +1,13 @@
+## 2026-10-14 — PR #34 merged after exact-head validation completed
+
+- PR #34 — Extract acquisition API routes — was squash-merged to `main` at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`; exact PR head: `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`.
+- All four workflows passed on that exact head: Python syntax #330 (run `38485830330`), Docker packaging/full unit tests #237 (run `38485830207`), container runtime smoke #47 (run `38485830231`), and validation-only multi-architecture #91 (run `38485830245`). The multi-architecture validation does not publish an image.
+- Extracted six acquisition API endpoints into `app/api/acquisitions.py`; added `tests/test_acquisition_routes.py`; reviewed the eight-file PR diff. PR metadata reported mergeable/open before merge, and no submitted reviews or inline review threads were present.
+- This is an API-only refactor with no intended UI contract change; manual browser testing was not required. No local tests, image publication, deployment, or production runtime verification are claimed.
+- Next action: continue modularization from current GitHub `main` by extracting discovery API routes with regression tests. Keep publishing disabled until the roadmap is complete and separately authorized.
+
+---
+
 ## 2026-10-14 — Acquisition API route extraction started
 
 - Started branch `refactor/acquisition-api-router` from GitHub `main` after reviewing the project instructions, roadmap, requirements, architecture, workflow, test plan, project status, and open-PR search results. The connector's PR search did not return a reliable current open-PR inventory, so this entry does not infer PR state from that search.
