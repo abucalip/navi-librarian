@@ -239,3 +239,14 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **CI:** GitHub reported Python syntax check and Docker packaging validation passed for PR head `97e887fa8295fff55f05ac72101907bf08819a99`. This was documentation-only; no application tests or deployment were performed during the merge session.
 - **Deployment:** still unverified. The previously reported GHCR `unauthorized` pull remains unresolved; do not treat merge/CI as deployment evidence.
 - **Next:** review current PRs and local branches/worktrees before choosing the next implementation task; prioritize required regression testing and resolve GHCR package visibility/authentication before a registry-based deployment.
+
+
+## 2026-10-13 — PR #21 and PR #22 merged; acquisition fixes verified
+
+- **PR #21:** squash-merged at `049a1e94ea782fa473fc4f394711dda1afec6fbe`. Adds the sixth sortable FLAC Hi-Res priority, preserves saved ordering on settings migration, improves bounded slskd query fallback/diagnostics and source failover, and keeps polling while reported peer payloads are delayed. Search budget is 45 seconds; matching and import-safety rules remain unchanged.
+- **Live test:** user tested the combined PR #21/#22 checkout and reports Tinariwen — `Idrache (Traces of the Past)` started downloading.
+- **PR #21 CI:** Python syntax/acquisition-safety workflow #179 and Docker packaging workflow #86 passed on head `2d617091390f81c05ff6c40d5a8fa140c6217b68`, including the full unit suite and Docker image build.
+- **PR #22:** squash-merged at `7d6094042f0beb4538313011594539a34254fbd9`. Explicit Get now reactivates a safely dismissed record only when the guarded persisted-state update succeeds, clearing stale candidate/settings before searching again. Added successful and failed reactivation regression tests and updated `docs/TEST_PLAN.md`.
+- **PR #22 CI:** Python syntax/full unittest workflow #182 and Docker packaging workflow #89 passed on head `04a11671862e1e3544ac878760f2223a42058ed9`. The first CI attempt found the test fixture was invoking the real acquisition implementation; the fixture was corrected and final CI passed.
+- **Verification boundary:** the live Tinariwen test is user-confirmed. No separate live retest of a previously dismissed acquisition was reported. No image publication or production deployment was performed.
+- **Next:** session complete. Treat publishing/deploying the merged code as a separate task, and record the image digest plus running-app verification if requested.
