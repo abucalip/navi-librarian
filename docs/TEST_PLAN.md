@@ -1,6 +1,6 @@
 # Test plan
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Automated baseline
 
@@ -46,10 +46,15 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 
 ### Authentication and settings
 
-- The slskd quality-priority list contains all five supported tiers exactly once and saves the displayed order.
-- Existing four-tier settings gain FLAC 16-bit/44.1 kHz at the end without reordering prior choices.
-- FLAC 16/44 is classified only when sample-rate/bit-depth metadata or an explicit filename label supports it; unverified FLAC retains the existing fallback.
+- The slskd quality-priority list contains all six supported tiers exactly once and saves the displayed order.
+- Existing four-tier settings append FLAC 16/44 and FLAC Hi-Res; existing five-tier settings append FLAC Hi-Res, without reordering prior choices.
+- FLAC 16/44 and Hi-Res are classified from metadata or explicit resolution labels such as `[24-44.1]`; unverified FLAC remains accepted in the fallback tier.
 - The Settings quality list can be reordered by drag-and-drop and by Move up/Move down controls; save/reload preserves the order.
+- When candidate checks reject sources or queue attempts fail, acquisition status exposes bounded candidate diagnostics (folder, track counts, quality tiers, and eligibility reason).
+- Explicit slskd queue rejection statuses 400/404/422 allow safe source failover; 401/403 stop as global credential/permission errors; timeouts and 5xx responses remain monitored as uncertain to prevent duplicate downloads.
+- When no folder candidate is recognized, status includes a bounded sample of source paths and the album/artist match signals used by the matcher.
+- Normalize slskd search results whether returned as a list or a `responses`/`items` wrapper; if search state reports peers but response payloads are temporarily absent, retry briefly before reporting no matches.
+- If an exact slskd query returns no usable peer file payloads, retry a bounded broader-query sequence (30-second total budget); verify mocked zero-response-to-fallback behavior, query order, duplicate elimination, blank-input handling, shorter fallback timeouts, unchanged candidate matching, and card/API diagnostics showing attempted queries and separating reported counts from collected payloads.
 - First-run setup creates the owner account.
 - Invalid login is rejected; rate limiting and session expiry behave as designed.
 - Restarting the container preserves authentication and application data.

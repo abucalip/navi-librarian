@@ -1,3 +1,31 @@
+## 2026-10-13 — Wait for delayed slskd peer payloads
+
+- **Branch:** `fix/slskd-search-payload-wait`, based on PR #21 head `2876098ed222cc8803f292c55aa8e3474331e3e5`; not yet a PR, merged, or deployed.
+- **Evidence:** for all three reported Tinariwen searches, the user's read-only diagnostic found the expected response shape from both slskd endpoints after the searches completed (26–33 peer records, hundreds of files). The acquisition result was generated while the searches were still reported as `inprogress` and had zero collected payloads. The evidence supports premature polling/fallback, not a response-shape mismatch.
+- **Change:** extend the overall search budget from 30 to 45 seconds and, after slskd reports peers but has not yet exposed their file payloads, continue polling that same query rather than immediately moving to broader queries. Keep timeout values, candidate matching, quality ranking, queue behavior, and import safety unchanged.
+- **Regression coverage:** mocked search reports peers for longer than the initial 18-second window, then returns payloads. Test expects a single query and successful payload collection.
+- **Verification:** on code/test commit `1aad9fc90d2ceeb1659473131d4f4a867f739b63`, Python syntax/acquisition-safety workflow #177 passed, including the delayed-payload regression; Docker packaging workflow #84 passed compilation, full unit tests, and image build. Documentation-only commits followed. Local test execution and live slskd retest remain pending. No deployment or acquisition/import was performed.
+- **Next:** check CI on this branch, then retest Tinariwen in the established port-8089 test checkout. If the fix passes, reconcile it into PR #21 before merging PR #22.
+
+## 2026-10-13 — Broaden zero-response slskd acquisition searches
+
+- **Branch/PR:** fix/flac-hires-acquisition-diagnostics, PR #21; PR #22 remains stacked and unmerged.
+- **User clarification:** the Tinariwen Idrache (Traces of the Past) query inspected in slskd was automatically launched by Librarian.
+- **Fix:** if a query yields no usable peer file payloads, try exact artist+album, punctuation-normalized artist+album, then artist+primary title with a parenthetical subtitle removed. Stop at the first usable payload set. Total search budget is capped at 30 seconds, with shorter timeouts on fallback attempts. Candidate matching and queue/import safeguards remain unchanged.
+- **Diagnostics:** per-query records include query text, search ID/state, slskd-reported response/file counts, and collected response count. The no-match card message also prints the attempted query sequence and distinguishes reported counts from collected payloads.
+- **DroppedNeedle:** adapted the bounded-search principle and separation between retrieval and candidate validation. No code copied.
+- **Automated verification:** Python syntax/acquisition-safety workflow #166 and Docker packaging/full unittest/image-build workflow #73 passed on code/test commit 40e29bf93a661e4724674e2e9297b60549b21c9e. Later code/test commits add the visible query-sequence message and assertion; CI for the latest revision is pending. The mocked regression confirms the exact query gets zero usable payloads, the punctuation-normalized fallback is tried, and search stops after a usable payload is collected.
+- **Remaining:** live Tinariwen retest in prox-mcp-pr17-test is pending. No merge or deployment.
+
+## 2026-10-13 — Hi-Res FLAC priority and acquisition failure diagnostics (in review)
+
+- **Branch:** `fix/flac-hires-acquisition-diagnostics`, based on GitHub `main`; PR/CI pending at implementation time.
+- **Changes:** added a sixth sortable quality tier for FLAC Hi-Res (24-bit or sample rate above 44.1 kHz); recognized paired filename resolution labels including `[24-44.1]`; preserved user ordering when migrating four- and five-tier settings; exposed bounded candidate summaries in eligibility/queue failures and path/artist match signals when no source folders are recognized.
+- **Regression coverage:** exact Tinariwen `Idrache (Traces of the Past)` folder variants, candidate completeness, 16/44 metadata classification, Hi-Res filename/metadata classification, and legacy quality-priority migrations.
+- **Root-cause finding:** the Tinariwen folder variants pass the existing album-token matcher in an isolated fixture. Queue handling now retries on 400/404/422, returns a clear global error for 401/403, and monitors timeouts/5xx conservatively. Follow-up Bombino — Agamgam report showed `no_matches` with zero peer responses despite four sources visible to the user; the branch now normalizes response payload wrappers, briefly retries when slskd reports responses before payloads are visible, and records slskd-reported response/file counts. Live confirmation remains pending.
+- **Validation:** Python syntax/acquisition-safety workflow #150 passed on queue-failover code commit `8df498909ca4ac1e1df6fe1b726e5f018ff749d3`; Docker packaging workflow #57 passed compilation, full unit tests, and Docker image build. A subsequent documentation-only commit records these results. No production deployment or live slskd calls performed.
+- **Next:** review the PR diff and CI, test the reported album in `prox-mcp-pr17-test`, then use `candidate_diagnostics` and `attempts` to identify the remaining stage if it still fails.
+
 ## 2026-10-13 — PR #20 merged: FLAC 16/44 and sortable quality priorities
 
 - **PR:** [#20 — Add FLAC 16/44 and sortable quality priorities](https://github.com/abucalip/navi-librarian/pull/20), squash-merged into `main`.

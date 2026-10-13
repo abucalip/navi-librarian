@@ -734,7 +734,7 @@ def set_slskd_settings(payload: dict):
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
     if quality is None:
-        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"]
+        quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"]
     try:
         result = parse_result(librarian.discovery_set_slskd_settings(
             slskd_url=url,
@@ -2361,7 +2361,8 @@ const qualityOptions = [
   ['mp3_193_319','MP3 193–319 kbps'],
   ['mp3_192','MP3 192 kbps'],
   ['flac_cd','FLAC (CD quality preferred)'],
-  ['flac_16_44','FLAC 16-bit / 44.1 kHz']
+  ['flac_16_44','FLAC 16-bit / 44.1 kHz'],
+  ['flac_hires','FLAC Hi-Res (24-bit or above 44.1 kHz)']
 ];
 
 async function sendJSON(url, method='POST', body={}) {
@@ -2921,7 +2922,7 @@ qualityPriorityList.addEventListener('dragend', () => {
 $('saveSlskd').addEventListener('click', async () => {
   const priorities = qualityPriorityValues();
   if (priorities.length !== qualityOptions.length || new Set(priorities).size !== qualityOptions.length) {
-    $('slskdStatus').textContent = 'Each of the five quality preferences must appear exactly once.';
+    $('slskdStatus').textContent = 'Each of the six quality preferences must appear exactly once.';
     return;
   }
 

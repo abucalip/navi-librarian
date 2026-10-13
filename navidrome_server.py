@@ -3188,6 +3188,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "mp3_192",
         "flac_cd",
         "flac_16_44",
+        "flac_hires",
     ],
     "auto_acquire_for_me": True,
     "slskd_downloads_path": str(Path(
@@ -3235,16 +3236,18 @@ def _discovery_settings_read():
         if candidate_music_path.is_absolute():
             MUSIC_DIR = candidate_music_path
 
-    # Existing installations have four saved quality tiers. Append the new
-    # fifth tier without disturbing the user's established priority order.
+    # Migrate older settings by appending new tiers without disturbing the
+    # user's established priority order.
     legacy_quality_tiers = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
     saved_quality = settings.get("quality_priority")
-    if (
-        isinstance(saved_quality, list)
-        and len(saved_quality) == 4
-        and set(saved_quality) == legacy_quality_tiers
-    ):
-        settings["quality_priority"] = [*saved_quality, "flac_16_44"]
+    if isinstance(saved_quality, list):
+        if len(saved_quality) == 4 and set(saved_quality) == legacy_quality_tiers:
+            settings["quality_priority"] = [*saved_quality, "flac_16_44", "flac_hires"]
+        elif (
+            len(saved_quality) == 5
+            and set(saved_quality) == legacy_quality_tiers | {"flac_16_44"}
+        ):
+            settings["quality_priority"] = [*saved_quality, "flac_hires"]
 
     # Migrate the former downloads-root defaults to slskd's actual completed
     # directory when that directory is available on the current host. This
@@ -3470,6 +3473,7 @@ def discovery_get_slskd_settings() -> str:
             "mp3_192": "MP3 192 kbps",
             "flac_cd": "FLAC (CD quality preferred; metadata may not verify this)",
             "flac_16_44": "FLAC 16-bit / 44.1 kHz",
+            "flac_hires": "FLAC Hi-Res (24-bit or above 44.1 kHz)",
         },
     }, ensure_ascii=False, indent=2)
 
@@ -3478,7 +3482,7 @@ def discovery_get_slskd_settings() -> str:
 def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
-    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44"]',
+    quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
     auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
     music_library_path: str | None = None,
@@ -3493,8 +3497,8 @@ def discovery_set_slskd_settings(
         quality = json.loads(quality_priority_json)
     except (ValueError, TypeError):
         return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
-    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44"}
-    if not isinstance(quality, list) or len(quality) != 5 or set(quality) != allowed:
+    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"}
+    if not isinstance(quality, list) or len(quality) != 6 or set(quality) != allowed:
         return json.dumps({
             "ok": False,
             "error": "Quality priority must contain each supported tier exactly once.",
@@ -3593,15 +3597,37 @@ def _slskd_quality_tier(file_record, filename, priority):
             bit_depth = int(bit_depth_value)
         except (TypeError, ValueError):
             bit_depth = None
+        # Soulseek filenames commonly encode FLAC resolution as [24-44.1],
+        # [24bit-96kHz], or [16-bit 44.1 kHz]. Parse paired bit-depth/rate
+        # labels instead of relying on one spelling of "16-bit" and "kHz".
+        filename_spec = re.search(
+            r"(?<!\d)(16|24|32)\s*(?:bit)?\s*[-_/x ]\s*"
+            r"(44(?:[.,]1)?|48|88(?:[.,]2)?|96|176(?:[.,]4)?|192)"
+            r"(?:\s*k(?:hz)?)?",
+            filename,
+            re.I,
+        )
+        filename_bit_depth = int(filename_spec.group(1)) if filename_spec else None
+        filename_rate = float(filename_spec.group(2).replace(",", ".")) if filename_spec else None
+        if filename_rate is not None and filename_rate < 1000:
+            filename_rate *= 1000
+        if filename_spec:
+            bit_depth = bit_depth if bit_depth is not None else filename_bit_depth
+            sample_rate = sample_rate if sample_rate is not None else filename_rate
         filename_16_44 = bool(
             re.search(r"(?<!\d)16[\s_-]*bit", filename, re.I)
             and re.search(r"(?<!\d)44(?:[.,]1)?[\s_-]*k(?:hz)?", filename, re.I)
-        )
-        if (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
+        ) or (filename_bit_depth == 16 and filename_rate == 44100)
+        if (
+            (bit_depth is not None and bit_depth >= 24)
+            or (sample_rate is not None and sample_rate > 44100)
+        ):
+            tier = "flac_hires"
+        elif (sample_rate == 44100 and bit_depth == 16) or filename_16_44:
             tier = "flac_16_44"
         else:
-            # Keep the existing FLAC fallback for peers that don't expose
-            # bit-depth/sample-rate metadata; do not infer 16/44 from extension alone.
+            # Unknown FLAC remains accepted as the existing fallback tier;
+            # never reject a source solely because slskd omitted audio metadata.
             tier = "flac_cd"
     elif extension == "mp3":
         bitrate = file_record.get("bitRate") or file_record.get("bitrate")
@@ -3689,6 +3715,82 @@ def _slskd_album_path_match(album, text):
     if len(unique_tokens) == 1:
         return overlap == 1
     return overlap >= max(2, math.ceil(len(unique_tokens) * 0.6))
+
+
+def _slskd_search_queries(artist, album):
+    """Return a small, ordered set of progressively broader Soulseek queries."""
+    import re
+
+    artist = re.sub(r"\s+", " ", str(artist or "")).strip()
+    album = re.sub(r"\s+", " ", str(album or "")).strip()
+    if not artist or not album:
+        return []
+
+    punctuation_normalized = re.sub(r"[^\w\s]", " ", album)
+    primary_title = re.sub(r"\s*\([^)]*\)", " ", album)
+    variants = [
+        f"{artist} {album}",
+        f"{artist} {punctuation_normalized}",
+        f"{artist} {primary_title}",
+    ]
+    queries = []
+    seen = set()
+    for query in variants:
+        query = re.sub(r"\s+", " ", query).strip()
+        key = query.casefold()
+        if query and key not in seen:
+            queries.append(query)
+            seen.add(key)
+    return queries
+
+
+def _slskd_search_response_items(payload):
+    """Normalize slskd search results across list and wrapped API payloads."""
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        items = payload.get("responses")
+        if not isinstance(items, list):
+            items = payload.get("items")
+    else:
+        items = []
+    return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+
+
+def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
+    """Return bounded evidence explaining why visible audio paths did not match."""
+    import re
+    audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
+    try:
+        limit = max(1, min(int(limit), 10))
+    except (TypeError, ValueError):
+        limit = 10
+    samples = []
+    for response in payload if isinstance(payload, list) else []:
+        username = response.get("username") or response.get("user") or ""
+        files = response.get("files") or response.get("fileList") or []
+        for item in files if isinstance(files, list) else []:
+            if not isinstance(item, dict):
+                continue
+            filename = str(item.get("filename") or item.get("path") or "")
+            if not filename:
+                continue
+            extension = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            if extension not in audio_exts:
+                continue
+            parts = re.split(r"[/\\]+", filename)
+            parent_text = " ".join(parts[:-1])
+            leaf_name = parts[-1]
+            samples.append({
+                "username": str(username)[:80],
+                "filename": filename[:240],
+                "album_path_match": _slskd_album_path_match(album, parent_text),
+                "album_filename_match": _slskd_album_path_match(album, leaf_name),
+                "artist_path_match": _music_key(artist) in _music_key(parent_text),
+            })
+            if len(samples) >= limit:
+                return samples
+    return samples
 
 
 def _slskd_extract_candidates(payload, artist, album, priority, expected_track_count=None):
@@ -5610,6 +5712,21 @@ def _discovery_queue_candidate_unless_dismissed(
         return response
 
 
+def _slskd_queue_failure_action(exc):
+    """Classify queue errors without risking duplicate downloads."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    if status in {400, 404, 422}:
+        # slskd explicitly rejected this source's queue request; it is safe to
+        # try another prevalidated peer.
+        return "retry_source"
+    if status in {401, 403}:
+        # Authentication/permission failures are global, not peer-specific.
+        return "fatal"
+    # Transport errors and server/timeout responses may happen after enqueue.
+    # Keep monitoring this peer rather than risking a duplicate download.
+    return "uncertain"
+
+
 def _discovery_acquire_album_impl(
     artist: str,
     album: str,
@@ -5639,80 +5756,155 @@ def _discovery_acquire_album_impl(
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
     search_id = str(uuid.uuid4())
+    search_queries = _slskd_search_queries(artist, album)
+    # Give a search that has already found peers time to expose their file payloads.
+    # Do not start broader queries while slskd is still collecting known responses.
+    search_deadline = time.monotonic() + 45
+    search_attempts = []
+    reported_response_count = 0
+    reported_file_count = 0
+    payload_by_peer = {}
     try:
-        response = httpx.post(
-            base_url + "/api/v0/searches",
-            headers=headers,
-            json={
-                "id": search_id,
-                "searchText": f"{artist} {album}",
-                "fileLimit": 1000,
-                "filterResponses": True,
-                "maximumPeerQueueLength": 100,
-                "minimumResponseFileCount": 1,
-                "minimumPeerUploadSpeed": 0,
-                "responseLimit": 100,
-                "searchTimeout": 15000,
-            },
-            timeout=10,
-        )
-        response.raise_for_status()
-        deadline = time.monotonic() + 18
-        payload_by_peer = {}
-        while time.monotonic() < deadline:
-            search_state = {}
-            try:
-                state_response = httpx.get(
-                    f"{base_url}/api/v0/searches/{search_id}",
-                    params={"includeResponses": "true"},
+        for query_index, query in enumerate(search_queries):
+            if time.monotonic() >= search_deadline:
+                break
+            search_timeout_ms = 15000 if query_index == 0 else 6000
+            search_id = str(uuid.uuid4())
+            response = httpx.post(
+                base_url + "/api/v0/searches",
+                headers=headers,
+                json={
+                    "id": search_id,
+                    "searchText": query,
+                    "fileLimit": 1000,
+                    "filterResponses": True,
+                    "maximumPeerQueueLength": 100,
+                    "minimumResponseFileCount": 1,
+                    "minimumPeerUploadSpeed": 0,
+                    "responseLimit": 100,
+                    "searchTimeout": search_timeout_ms,
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            deadline = min(
+                time.monotonic() + (18 if query_index == 0 else 8),
+                search_deadline,
+            )
+            completed_without_payload_since = None
+            attempt_reported_response_count = 0
+            attempt_reported_file_count = 0
+            attempt_payload_by_peer = {}
+            last_state = ""
+            while time.monotonic() < deadline:
+                search_state = {}
+                try:
+                    state_response = httpx.get(
+                        f"{base_url}/api/v0/searches/{search_id}",
+                        params={"includeResponses": "true"},
+                        headers=headers,
+                        timeout=8,
+                    )
+                    state_response.raise_for_status()
+                    state_data = state_response.json()
+                    if isinstance(state_data, dict):
+                        search_state = state_data
+                        try:
+                            attempt_reported_response_count = max(
+                                attempt_reported_response_count,
+                                int(state_data.get("responseCount") or state_data.get("response_count") or 0),
+                            )
+                            attempt_reported_file_count = max(
+                                attempt_reported_file_count,
+                                int(state_data.get("fileCount") or state_data.get("file_count") or 0),
+                            )
+                        except (TypeError, ValueError):
+                            pass
+                        for entry in _slskd_search_response_items(state_data):
+                            files = entry.get("files") or entry.get("fileList") or []
+                            if not isinstance(files, list) or not files:
+                                continue
+                            identity = (
+                                entry.get("username") or entry.get("user") or "",
+                                json.dumps(files, sort_keys=True, ensure_ascii=False),
+                            )
+                            attempt_payload_by_peer[identity] = entry
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code not in (404, 405):
+                        raise
+                response_poll = httpx.get(
+                    f"{base_url}/api/v0/searches/{search_id}/responses",
                     headers=headers,
                     timeout=8,
                 )
-                state_response.raise_for_status()
-                state_data = state_response.json()
-                if isinstance(state_data, dict):
-                    search_state = state_data
-                    state_payload = state_data.get("responses")
-                    if isinstance(state_payload, list):
-                        for entry in state_payload:
-                            identity = (
-                                entry.get("username") or entry.get("user") or "",
-                                json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
-                            )
-                            payload_by_peer[identity] = entry
-            except httpx.HTTPStatusError as exc:
-                if exc.response.status_code not in (404, 405):
-                    raise
-            response_poll = httpx.get(
-                f"{base_url}/api/v0/searches/{search_id}/responses",
-                headers=headers,
-                timeout=8,
-            )
-            if response_poll.status_code not in (404, 405):
-                response_poll.raise_for_status()
-                data = response_poll.json()
-                response_items = (
-                    data if isinstance(data, list)
-                    else data.get("responses") or data.get("items") or []
-                    if isinstance(data, dict) else []
+                if response_poll.status_code not in (404, 405):
+                    response_poll.raise_for_status()
+                    data = response_poll.json()
+                    for entry in _slskd_search_response_items(data):
+                        files = entry.get("files") or entry.get("fileList") or []
+                        if not isinstance(files, list) or not files:
+                            continue
+                        identity = (
+                            entry.get("username") or entry.get("user") or "",
+                            json.dumps(files, sort_keys=True, ensure_ascii=False),
+                        )
+                        attempt_payload_by_peer[identity] = entry
+                state_text = str(search_state.get("state") or "").lower()
+                last_state = state_text or ("complete" if search_state.get("isComplete") is True else last_state)
+                is_complete = search_state.get("isComplete") is True or (
+                    state_text and ("complete" in state_text or "timedout" in state_text)
                 )
-                for entry in response_items if isinstance(response_items, list) else []:
-                    identity = (
-                        entry.get("username") or entry.get("user") or "",
-                        json.dumps(entry.get("files") or [], sort_keys=True, ensure_ascii=False),
-                    )
-                    payload_by_peer[identity] = entry
-            state_text = str(search_state.get("state") or "").lower()
-            if search_state.get("isComplete") is True or (
-                state_text and ("complete" in state_text or "timedout" in state_text)
-            ):
+                if is_complete:
+                    if attempt_payload_by_peer:
+                        break
+                    if attempt_reported_response_count > 0:
+                        if completed_without_payload_since is None:
+                            completed_without_payload_since = time.monotonic()
+                        elif time.monotonic() - completed_without_payload_since >= 3:
+                            break
+                        time.sleep(0.5)
+                        continue
+                    break
+
+                # slskd can publish response/file counts before the peer file lists
+                # are exposed. Once it has reported peers, keep polling this search
+                # rather than spending the remaining budget on fallback queries.
+                if attempt_reported_response_count > 0 and not attempt_payload_by_peer:
+                    deadline = search_deadline
+
+                time.sleep(0.75)
+
+            reported_response_count = max(reported_response_count, attempt_reported_response_count)
+            reported_file_count = max(reported_file_count, attempt_reported_file_count)
+            search_attempts.append({
+                "query": query,
+                "search_id": search_id,
+                "state": last_state or "unknown",
+                "slskd_reported_response_count": attempt_reported_response_count,
+                "slskd_reported_file_count": attempt_reported_file_count,
+                "collected_peer_response_count": len(attempt_payload_by_peer),
+            })
+            if attempt_payload_by_peer:
+                payload_by_peer = attempt_payload_by_peer
                 break
-            time.sleep(0.75)
         expected_track_count = _discovery_expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
         )
+        candidate_diagnostics = [
+            {
+                "username": item.get("username"),
+                "folder": item.get("folder"),
+                "file_count": item.get("file_count"),
+                "unique_track_count": item.get("unique_track_count"),
+                "expected_track_count": item.get("expected_track_count"),
+                "quality_summary": list(item.get("quality_summary") or []),
+                "clear_match": bool(item.get("clear_match")),
+                "eligibility_reason": item.get("eligibility_reason"),
+            }
+            for item in candidates[:10]
+        ]
         if not candidates:
             audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
             response_count = len(payload_by_peer)
@@ -5722,22 +5914,39 @@ def _discovery_acquire_album_impl(
                 if isinstance(item, dict)
                 and Path(str(item.get("filename") or item.get("path") or "")).suffix.casefold() in audio_exts
             )
+            path_diagnostics = _slskd_path_match_diagnostics(
+                list(payload_by_peer.values()), artist, album
+            )
+            attempted_queries = " -> ".join(
+                item["query"] for item in search_attempts
+            )
             message = (
-                f"No matching album folders were found among {response_count} peer responses "
-                f"({audio_file_count} audio files). Folder/title matching may not have "
-                "recognized the release naming; try a closer album title or edition."
+                f"No matching album folders were found among {response_count} collected peer responses "
+                f"({audio_file_count} audio files). slskd reported up to {reported_response_count} "
+                f"responses and {reported_file_count} files across the search attempts. "
+                "If the counts are zero, no peers answered the attempted queries; otherwise "
+                "the response payloads may not have been available to Librarian. "
+                f"Queries tried: {attempted_queries}."
             )
             _discovery_update_acquisition_status(
                 artist, album, "no_matches",
                 {
                     "message": message, "search_id": search_id, "metadata": metadata,
                     "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                    "slskd_reported_response_count": reported_response_count,
+                    "slskd_reported_file_count": reported_file_count,
+                    "search_queries_attempted": search_attempts,
+                    "path_diagnostics": path_diagnostics,
                 },
             )
             return json.dumps({
                 "ok": True, "status": "no_matches", "artist": artist, "album": album,
                 "search_id": search_id, "message": message,
                 "peer_responses_seen": response_count, "audio_files_seen": audio_file_count,
+                "slskd_reported_response_count": reported_response_count,
+                "slskd_reported_file_count": reported_file_count,
+                "search_queries_attempted": search_attempts,
+                "path_diagnostics": path_diagnostics,
             }, ensure_ascii=False)
         clear_candidates = [candidate for candidate in candidates if candidate["clear_match"]]
         if not auto_queue:
@@ -5753,11 +5962,13 @@ def _discovery_acquire_album_impl(
                 artist, album, "no_matches",
                 {"message": message, "search_id": search_id, "metadata": metadata,
                  "candidate_count": len(candidates),
-                 "best_candidate_reason": best.get("eligibility_reason")},
+                 "best_candidate_reason": best.get("eligibility_reason"),
+                 "candidate_diagnostics": candidate_diagnostics},
             )
             return json.dumps({
                 "ok": True, "status": "no_matches", "artist": artist, "album": album,
                 "search_id": search_id, "candidate_count": len(candidates),
+                "candidate_diagnostics": candidate_diagnostics,
                 "message": message,
             }, ensure_ascii=False)
 
@@ -5778,6 +5989,32 @@ def _discovery_acquire_album_impl(
                         "message": "This acquisition was dismissed before a source could be queued.",
                     }, ensure_ascii=False)
             except httpx.HTTPError as exc:
+                queue_error_action = _slskd_queue_failure_action(exc)
+                status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                if queue_error_action == "retry_source":
+                    failures.append({
+                        "username": candidate["username"],
+                        "folder": candidate["folder"],
+                        "http_status": status_code,
+                        "error": "source_rejected",
+                        "detail": str(exc)[:200],
+                    })
+                    continue
+                if queue_error_action == "fatal":
+                    message = (
+                        f"slskd rejected the queue request with HTTP {status_code}; "
+                        "check the API key and its permissions."
+                    )
+                    _discovery_update_acquisition_status(
+                        artist, album, "slskd_error",
+                        {"message": message, "http_status": status_code,
+                         "metadata": metadata, "attempts": failures},
+                    )
+                    return json.dumps({
+                        "ok": False, "status": "slskd_error", "artist": artist,
+                        "album": album, "http_status": status_code,
+                        "attempts": failures, "message": message,
+                    }, ensure_ascii=False)
                 # A timeout or server error can happen after slskd accepted
                 # the queue request. Monitor this peer before considering a
                 # fallback, otherwise two sources could download the album.
@@ -5910,11 +6147,13 @@ def _discovery_acquire_album_impl(
         message = "None of the matching sources started a download. Check slskd/peer availability and try again."
         _discovery_update_acquisition_status(
             artist, album, "queue_failed",
-            {"message": message, "attempts": failures, "metadata": metadata},
+            {"message": message, "attempts": failures, "metadata": metadata,
+             "candidate_diagnostics": candidate_diagnostics},
         )
         return json.dumps({
             "ok": False, "status": "queue_failed", "artist": artist, "album": album,
-            "attempts": failures, "message": message,
+            "attempts": failures, "candidate_diagnostics": candidate_diagnostics,
+            "message": message,
         }, ensure_ascii=False)
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         message = f"slskd request failed: {type(exc).__name__}"
