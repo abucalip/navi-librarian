@@ -74,3 +74,15 @@ For every meaningful handoff, report:
 - unresolved issues, skipped checks, rollback notes, and the next concrete action.
 
 Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/DECISIONS.md`, and this file. Never record credentials or other secrets.
+
+
+## Explicit merge gate for the current testing-gap session
+
+PR #32 (container runtime smoke and publishing pause) and PR #33 (settings API route extraction) must remain unmerged until the remaining test-gap work is completed. Before merging either:
+
+1. Verify the isolated local PR tester can be rerun against an exact GitHub SHA, and document dependency reuse plus which app/setup state is persistent versus isolated.
+2. Complete and report the currently unrecorded lightweight performance observation and distinct error/recovery exercise on a relevant exact SHA. The existing eight-item UI report is valid only for its recorded application SHA.
+3. Recheck CI on the final PR heads. Reconcile PR #33 with the selected updated base after PR #32 and rerun its required checks on that resulting head.
+4. Review the complete diffs and publish the test report to the relevant PR. Do not merge merely because prior-head CI passed.
+
+No image publication or deployment is authorized until the modularization roadmap is complete and the user explicitly authorizes release. PR #32's workflow safeguard is not yet on `main`; do not manually trigger publishing or release-tag workflows while this gate is outstanding.
