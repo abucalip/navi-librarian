@@ -2,10 +2,17 @@
 
 Last updated: 2026-10-13
 
-## Discovery store extraction CI evidence — PR #29
+## Discovery store extraction — merged PR #29
 
-- Code/test head `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: Python syntax workflow #237 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087436)); Docker packaging workflow #144 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434087855)), including Python compilation, full unit-test discovery, and Docker image build.
-- After the first documentation-only closeout, head `0996b08c879ec2f39db326cb1c4b08a5bb487e30` passed Python syntax workflow #239 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251390)) and Docker packaging workflow #146 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434251445)); the latter completed full unit-test discovery and Docker image build. No runs were returned for the latest subsequent documentation-only commits; source and tests were unchanged.
+- PR #29 was squash-merged to `main` at `001f3a7e76979d82adc62edd888d8490565b2ef3`. The final PR head `518505f6dd8e233bc6aaec4b90ec42b0669f70d5` passed Python syntax workflow #243 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434507492)) and Docker packaging workflow #150 ([run](https://github.com/abucalip/navi-librarian/actions/runs/38434507399)); the latter ran Python compilation, the full unit-test suite, and Docker image build.
+- No workflow runs were returned for the squash merge commit at closeout. Do not infer merge-commit CI from PR-head CI. No local test execution or live/UI validation was performed.
+- Focused commands for future changes:
+
+```sh
+python -m unittest tests.test_discovery_store -v
+python -m py_compile navidrome_server.py discovery_store.py
+python -m unittest discover -s tests -v
+```
 
 ## Latest CI evidence — PR #28
 
