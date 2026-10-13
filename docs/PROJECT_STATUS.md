@@ -1,11 +1,13 @@
 ## Current session — container runtime and release provenance gates (2026-10-13)
 
-- Objective: close a critical gap between successful image compilation and proving the container can actually start and preserve state; make published image identity auditable.
-- Finding: the Dockerfile copied navidrome_server.py and acquisition_completion.py but omitted imported modules introduced by the merged extractions (acquisition_import.py, discovery_store.py, discovery_refresh.py, discovery_recommendations.py, slskd_search.py, and slskd_quality.py). A successful Docker build did not catch this runtime import failure.
-- Change in progress: branch ci/container-runtime-smoke-release-provenance adds all six modules to the image, adds a shared isolated Docker runtime smoke harness used by both PR CI and as a pre-publication gate, and makes the publish workflow record the immutable digest, source SHA, tags, architectures, provenance, and SBOM status.
-- Verification status: not yet tested by GitHub Actions on this branch at this closeout. The new runtime workflow is intended to catch missing runtime modules; its actual result must be inspected before this change can be called tested.
-- Safety: the smoke job uses a disposable named volume and temporary, read-only music/download mounts; it does not access real services or media. No deployment or production changes performed.
-- Next: inspect workflow runs on the exact final PR head; fix failures, review the complete diff, and confirm CI. Then separately close PR #31's completed documentation/UI-checklist work according to the agreed review/merge workflow. Do not resume routine modularization until the automated/release gate is verified.
+- **PR:** [#32 — Verify container startup, persistence, and image provenance](https://github.com/abucalip/navi-librarian/pull/32), branch `ci/container-runtime-smoke-release-provenance`.
+- **Root cause:** the Dockerfile omitted six imported modules introduced by merged extractions. Docker build/compilation alone did not detect that the resulting image could fail at application startup.
+- **Fix:** include `acquisition_import.py`, `discovery_store.py`, `discovery_refresh.py`, `discovery_recommendations.py`, `slskd_search.py`, and `slskd_quality.py` in the image.
+- **Runtime test:** shared smoke harness uses a disposable volume and temporary read-only music/download mounts. It passed HTTP readiness, unauthenticated API protection, first-run owner setup, auth-key mode 0600, authenticated UI response, and account/login persistence across a container restart.
+- **CI on code-bearing commit `9b801d10c4ab1c460fccd4bf057e9486405ef642`:** Python syntax check #272 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023710)); container runtime smoke #7 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023831)); Docker packaging #179 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38469023729)), including full unittest discovery and image build.
+- **Release workflow:** publication now runs the same smoke harness before pushing, enables build provenance/SBOM, and records source SHA, tags, architectures, and immutable digest in the Actions summary.
+- **Boundaries:** PR CI does not publish an image or verify production. No image publication, deployment, or live host/runtime verification was performed. No real music/download paths were used.
+- **Next:** verify all required checks again on the latest documentation-updated PR head, review the final diff, and follow the normal PR merge/release authorization process. Keep production deployment and runtime verification separate.
 
 ## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
