@@ -153,6 +153,16 @@ class CompletedTrackMatcherTests(unittest.TestCase):
         matched = match_completed_album_files(self.folder, candidate)
         self.assertEqual(matched["01 - Track.flac"].name, "01 - Track_1.flac")
 
+    def test_ambiguous_exact_matches_do_not_fall_back_to_collision_suffix(self):
+        (self.folder / "01 - Track.flac").write_bytes(b"1234")
+        case_variant = self.folder / "01 - track.flac"
+        case_variant.write_bytes(b"1234")
+        if len(list(self.folder.iterdir())) < 2:
+            self.skipTest("filesystem does not support distinct case-variant filenames")
+        (self.folder / "01 - Track_1.flac").write_bytes(b"1234")
+        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
+        self.assertIsNone(match_completed_album_files(self.folder, candidate))
+
     def test_multiple_collision_candidates_are_ambiguous(self):
         (self.folder / "01 - Track.flac").unlink()
         (self.folder / "01 - Track_1.flac").write_bytes(b"1234")
