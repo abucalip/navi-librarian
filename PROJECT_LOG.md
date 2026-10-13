@@ -4,7 +4,8 @@
 - Added `discovery_store.py` for cached discovery-list SQLite reads/writes and retained the server compatibility wrappers, including `_discovery_init()` to preserve the existing schema initialization side effect.
 - Added `tests/test_discovery_store.py` for absent entries, malformed JSON, Unicode payloads, timestamps, and list replacement/isolation. Updated `docs/TEST_PLAN.md`, `docs/DECISIONS.md`, and `docs/PROJECT_STATUS.md`.
 - Python syntax workflow #237 passed on code/test commit `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: https://github.com/abucalip/navi-librarian/actions/runs/38434087436 . Docker packaging workflow #144 passed on the same commit, including the full unit suite and image build: https://github.com/abucalip/navi-librarian/actions/runs/38434087855 .
-- Local_Git returned 429/404, so no local tests were run. No live discovery refresh, UI test, merge, image publication, or deployment. The PR remains open pending final-head CI and review.
+- After documentation closeout, Python syntax workflow #239 passed on `0996b08c879ec2f39db326cb1c4b08a5bb487e30`: https://github.com/abucalip/navi-librarian/actions/runs/38434251390 . Docker packaging workflow #146 passed on that same final docs-updated head, including the full unit suite and image build: https://github.com/abucalip/navi-librarian/actions/runs/38434251445 .
+- Local_Git returned 429/404, so no local tests were run. No live discovery refresh, UI test, merge, image publication, or deployment. PR #29 remains open and unmerged.
 
 ---
 
