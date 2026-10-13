@@ -473,6 +473,11 @@ def _music_key(value):
 def _discovery_is_album_candidate(item):
     from discovery_recommendations import is_album_candidate
     return is_album_candidate(item)
+
+
+LASTFM_LAST_ERROR = None
+
+
 def _lastfm_album_popularity(artist, album):
     """Return cached Last.fm album listeners/playcount, or None if unavailable."""
     global LASTFM_LAST_ERROR
