@@ -1,3 +1,14 @@
+## 2026-10-13 — First acquisition-completion module extraction (PR #24 open; review prioritized)
+
+- **PR/branch:** [PR #24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`, based on `main` at `f9117811f373fd4b2b9bf1d35c57b667b0612b46`. PR #23's roadmap branch remains separate and unmerged; PR #24 does not contain that roadmap.
+- **Scope:** moved safe remote folder-name normalization, NFC/casefold filename identity, and strict expected-track matching (including size checks and collision-suffix disambiguation) into root-level `acquisition_completion.py`; `navidrome_server.py` retains compatibility wrappers.
+- **Tests:** matching tests now import production helpers directly instead of AST-extracting them. Added regressions for Unicode normalization, Windows-style remote paths, conflicting duplicate basenames, missing/invalid sizes, collision ambiguity, symlink exclusion, and folder-name sanitization.
+- **Verification:** code-bearing head `a969ec4df6db2c5d45943c091401a5b26f9566d0` passed Python syntax/full-unit-test workflow #190 and Docker packaging workflow #97, including compilation, full unit tests, and image build. Subsequent branch commits only update documentation; the workflow lookup returned no PR-triggered runs for those docs-only commits. No local test run, manual UI test, merge, publication, or deployment.
+- **Lessons learned:** GitHub API file-by-file edits caused avoidable iteration and 14 commits for a narrow extraction; context-based replacements caused intermediate source/test-fixture mistakes; status notes lagged behind the final head. Prefer a verified checkout/worktree and one coherent patch/test/review loop where available, inspect the entire diff before committing, and update status only after confirming final SHA and CI. Make branch dependencies explicit when parallel PRs are intentionally independent.
+- **Priority next:** review PR #24's complete diff, wrapper behavior, regression cases, and CI against the relocation-only scope before merging or beginning the next extraction. Keep merge and deployment as separate decisions.
+
+---
+
 ## 2026-10-13 — Wait for delayed slskd peer payloads
 
 - **Branch:** `fix/slskd-search-payload-wait`, based on PR #21 head `2876098ed222cc8803f292c55aa8e3474331e3e5`; not yet a PR, merged, or deployed.
@@ -250,3 +261,15 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **PR #22 CI:** Python syntax/full unittest workflow #182 and Docker packaging workflow #89 passed on head `04a11671862e1e3544ac878760f2223a42058ed9`. The first CI attempt found the test fixture was invoking the real acquisition implementation; the fixture was corrected and final CI passed.
 - **Verification boundary:** the live Tinariwen test is user-confirmed. No separate live retest of a previously dismissed acquisition was reported. No image publication or production deployment was performed.
 - **Next:** session complete. Treat publishing/deploying the merged code as a separate task, and record the image digest plus running-app verification if requested.
+
+
+## 2026-10-13 — PR #24 ambiguous exact-match fallback fixed
+
+- **PR/branch:** [#24](https://github.com/abucalip/navi-librarian/pull/24), `refactor/acquisition-completion-matching`; open and unmerged.
+- **Finding:** the matcher previously attempted collision-suffix fallback both when no exact file matched and when multiple exact files matched. The latter could allow a suffix alternative to conceal an ambiguous exact-name/size match.
+- **Fix:** return `None` immediately when more than one exact match exists; only attempt collision suffixes when there are zero exact matches. Existing size validation and symlink exclusion remain unchanged.
+- **Regression:** add case-variant exact-name files and a same-size suffixed alternative, asserting fail-closed behavior; skip only where the filesystem cannot represent distinct case variants. Add the scenario to `docs/TEST_PLAN.md`.
+- **Commits:** code `b8fad33cfaad87b1ed8d2b4fc3d84166f396b15f`; test `e163a20fe4407491398ce56e1f4c9777f8aa53bf`; documentation commits follow on the PR branch.
+- **Verification:** corrected head `86705c64cbd3d794082528d58d0fd2b49fcbc4c1` passed Python syntax workflow #198 and Docker packaging workflow #105. The Docker job confirms Python compilation, full unit tests, and image build succeeded. No local execution or manual UI verification was performed. No merge, image publication, or deployment is claimed.
+- **Session close:** corrected-head CI passed and the full PR diff was reviewed for this extraction and edge case. The documentation records the verified scope and the boundary of testing. PR #24 remains open/unmerged; PR #23 remains separate/open. No local test run, manual UI verification, image publication, or deployment occurred.
+- **Next priority:** assess PR #24 merge readiness and decide whether to merge; preserve PR #23 as a separate roadmap PR unless the dependency/order is explicitly revisited.

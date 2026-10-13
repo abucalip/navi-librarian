@@ -8,6 +8,11 @@ import json
 import tempfile
 import threading
 import unicodedata
+
+from acquisition_completion import (
+    filename_key as _module_filename_key,
+    match_completed_album_files as _module_match_completed_album_files,
+)
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,8 +27,6 @@ class FakeHTTPError(Exception):
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
-        "_discovery_filename_key",
-        "_discovery_match_completed_album_files",
         "_discovery_is_album_candidate",
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
@@ -59,6 +62,8 @@ def load_helpers():
     namespace = {
         "Path": Path,
         "unicodedata": unicodedata,
+        "_discovery_filename_key": _module_filename_key,
+        "_discovery_match_completed_album_files": _module_match_completed_album_files,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),

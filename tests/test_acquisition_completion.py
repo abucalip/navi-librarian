@@ -1,49 +1,24 @@
-"""Focused tests for completed-download folder evidence and diagnostics."""
-import ast
+"""Direct regression tests for completed-download matching and folder diagnostics."""
 import tempfile
-import unicodedata
 import unittest
+import unicodedata
 from pathlib import Path
 
-from acquisition_completion import inspect_completed_album
-
-SOURCE = Path(__file__).resolve().parents[1] / "navidrome_server.py"
-
-
-def load_production_helpers():
-    tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
-    wanted = {
-        "_discovery_filename_key",
-        "_discovery_match_completed_album_files",
-        "_discovery_safe_folder_name",
-    }
-    selected = [
-        node for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name in wanted
-    ]
-    found = {node.name for node in selected}
-    if found != wanted:
-        raise AssertionError(f"Missing production helpers: {sorted(wanted - found)}")
-    namespace = {"Path": Path, "unicodedata": unicodedata}
-    module = ast.Module(body=selected, type_ignores=[])
-    exec(compile(ast.fix_missing_locations(module), str(SOURCE), "exec"), namespace)
-    return namespace
-
-
-PRODUCTION = load_production_helpers()
-
-
-def filename_key(value):
-    return unicodedata.normalize("NFC", str(value or "")).casefold()
+from acquisition_completion import (
+    filename_key,
+    inspect_completed_album,
+    match_completed_album_files,
+    safe_folder_name,
+)
 
 
 def inspect(root, candidate):
     return inspect_completed_album(
         root,
         candidate,
-        safe_folder_name=PRODUCTION["_discovery_safe_folder_name"],
-        filename_key=PRODUCTION["_discovery_filename_key"],
-        match_files=PRODUCTION["_discovery_match_completed_album_files"],
+        safe_folder_name=safe_folder_name,
+        filename_key=filename_key,
+        match_files=match_completed_album_files,
     )
 
 
@@ -138,6 +113,75 @@ class CompletedFolderEvidenceTests(unittest.TestCase):
             result["diagnostics"]["folder_diagnostic"],
             "ambiguous_named_folder_matches",
         )
+
+
+class CompletedTrackMatcherTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name)
+        (self.folder / "01 - Track.flac").write_bytes(b"1234")
+
+    def test_filename_key_normalizes_unicode_and_case(self):
+        composed = "Beyoncé.flac"
+        decomposed = unicodedata.normalize("NFD", composed)
+        self.assertEqual(filename_key(composed), filename_key(decomposed.upper()))
+
+    def test_windows_remote_path_matches_local_basename(self):
+        candidate = {"files": [{"filename": r"Album\01 - Track.flac", "size": 4}]}
+        matched = match_completed_album_files(self.folder, candidate)
+        self.assertEqual(matched["01 - Track.flac"], self.folder / "01 - Track.flac")
+
+    def test_conflicting_duplicate_remote_basenames_fail_closed(self):
+        candidate = {"files": [
+            {"filename": "A/01.flac", "size": 4},
+            {"filename": "B/01.flac", "size": 8},
+        ]}
+        self.assertIsNone(match_completed_album_files(self.folder, candidate))
+
+    def test_missing_or_non_positive_sizes_fail_closed(self):
+        for size in (None, 0, -1, "unknown"):
+            with self.subTest(size=size):
+                self.assertIsNone(match_completed_album_files(
+                    self.folder, {"files": [{"filename": "01 - Track.flac", "size": size}]}
+                ))
+
+    def test_unique_collision_suffix_requires_advertised_size(self):
+        (self.folder / "01 - Track.flac").unlink()
+        (self.folder / "01 - Track_1.flac").write_bytes(b"1234")
+        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
+        matched = match_completed_album_files(self.folder, candidate)
+        self.assertEqual(matched["01 - Track.flac"].name, "01 - Track_1.flac")
+
+    def test_ambiguous_exact_matches_do_not_fall_back_to_collision_suffix(self):
+        (self.folder / "01 - Track.flac").write_bytes(b"1234")
+        case_variant = self.folder / "01 - track.flac"
+        case_variant.write_bytes(b"1234")
+        if len(list(self.folder.iterdir())) < 2:
+            self.skipTest("filesystem does not support distinct case-variant filenames")
+        (self.folder / "01 - Track_1.flac").write_bytes(b"1234")
+        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
+        self.assertIsNone(match_completed_album_files(self.folder, candidate))
+
+    def test_multiple_collision_candidates_are_ambiguous(self):
+        (self.folder / "01 - Track.flac").unlink()
+        (self.folder / "01 - Track_1.flac").write_bytes(b"1234")
+        (self.folder / "01 - Track_2.flac").write_bytes(b"5678")
+        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
+        self.assertIsNone(match_completed_album_files(self.folder, candidate))
+
+    def test_symlinked_track_is_not_accepted(self):
+        (self.folder / "01 - Track.flac").unlink()
+        target = self.folder / "outside.flac"
+        target.write_bytes(b"1234")
+        (self.folder / "01 - Track.flac").symlink_to(target)
+        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
+        self.assertIsNone(match_completed_album_files(self.folder, candidate))
+
+    def test_folder_name_sanitization_uses_final_component_and_removes_nul(self):
+        self.assertEqual(safe_folder_name("Artist\\Album\0."), "Album")
+
+
 
 
 if __name__ == "__main__":
