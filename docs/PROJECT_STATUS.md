@@ -1,11 +1,13 @@
-## Latest session closeout — local UI test workflow integrated (2026-10-13)
+## Latest session closeout — local UI smoke checklist completed (2026-10-13)
 
-- **User-confirmed milestone:** the local FastAPI UI now starts and is accessible on the Mac through the isolated PR-testing helper. This confirms startup only; a completed Pass/Fail/Skip checklist and published manual report have not been confirmed.
-- **Tested source at the time of the report:** PR #31 head `534518b6c87c8e6cbd0d21a4de1bb9be79369611`. The helper records exact SHA and warns if the PR head changes. The documentation updates in this session will create a new head, so rerun the helper against the updated head before treating the report as current for PR #31.
-- **Workflow change:** added a mandatory manual UI smoke-test step for UI-facing PRs/release candidates after exact-head CI passes; documented the isolated per-SHA environment, sandbox paths, slskd-disabled default, report location, and optional PR-comment publication.
-- **CI baseline before this documentation update:** Python syntax workflow #257 and Docker packaging workflow #164 both completed successfully on the prior PR head. New commits require fresh CI confirmation.
-- **Not claimed:** no full manual checklist completion, report publication, application unit-test run by the assistant, merge, image publication, deployment, or production runtime verification.
-- **Next:** review the complete updated documentation diff, verify CI on the final PR head, then use the helper to record the manual UI results for that exact head.
+- **Manual UI result:** user completed and uploaded the browser checklist for PR #31. The report is published as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713).
+- **Exact application source tested:** PR #31 head `96b253c5f3ec2f858e02afc034365a22bac0773e`, branch `docs/testing-release-workflow-priority`.
+- **Environment:** macOS 26.2 arm64, Python 3.12.14, app port 8090. Report records sandbox music/download paths and slskd disabled by default.
+- **Checklist:** all eight recorded items passed, zero failures: first-run setup/login; dashboard/artwork; discovery results; navigation/album details; settings save/secrecy; Get/request behavior without a real download; acquisition card/status display; and absence of unexpected browser/server errors.
+- **Automated CI for the tested SHA:** Python syntax check #262 and Docker packaging #169 both completed successfully. Docker workflow includes compilation, full unittest discovery, and image build. These are CI results; the assistant did not independently execute the suite locally.
+- **Evidence boundary:** this verifies the listed manual smoke checks on `96b253c5f3ec2f858e02afc034365a22bac0773e`; it does not cover every integration/release-gate item in `docs/TEST_PLAN.md`. Later documentation-only commits do not change the application source tested, but the report must not be described as testing a different SHA.
+- **State:** UI checklist complete and report uploaded; PR #31 remains a documentation PR. No merge, image publication, deployment, or production runtime verification is claimed.
+- **Next:** continue closing the remaining automated/integration/release workflow gaps from GitHub, not routine modularization. Preserve the distinction between PR-head CI, merge, publication, deployment, and runtime verification.
 
 ---
 
