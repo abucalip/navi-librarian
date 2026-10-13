@@ -53,3 +53,14 @@ The automated regression/safety tests remain responsible for destructive filesys
 The helper writes a Markdown report to `~/navi-librarian-test/reports/PR-<number>-<sha>.md`. It records the exact tested SHA, machine/Python information, CI state it could retrieve, checklist results, notes, and failures. Review the report and choose whether to publish it as a PR comment when prompted.
 
 If the PR head changes after testing, rerun against the new head or state explicitly that the prior report covers only its recorded SHA. UI startup alone does not mean the entire checklist passed. Passing a local UI check does not prove that a merge, image publication, deployment, or production runtime verification occurred.
+
+
+## Completed run — PR #31
+
+The user completed the manual checklist and published the report as [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713).
+
+- **Tested application source SHA:** `96b253c5f3ec2f858e02afc034365a22bac0773e` on `docs/testing-release-workflow-priority`.
+- **Environment:** macOS 26.2 arm64; Python 3.12.14; port 8090.
+- **Safety boundary:** music/download paths pointed to the test sandbox and slskd was disabled by default.
+- **Result:** all eight checklist items recorded in the uploaded report passed; zero failures. The report specifically covers setup/login, dashboard/artwork, discovery, navigation/album details, settings, safe Get/request interaction, acquisition card/status display, and unexpected browser/server errors.
+- **Scope:** performance timing and the broader integration/release checklist are not claimed as verified by that report. Do not infer merge, image publication, deployment, or production runtime verification. Keep the report associated with its recorded SHA; documentation-only follow-up commits do not change the tested application source.
