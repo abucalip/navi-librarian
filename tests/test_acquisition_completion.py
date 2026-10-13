@@ -128,7 +128,7 @@ class CompletedTrackMatcherTests(unittest.TestCase):
         self.assertEqual(filename_key(composed), filename_key(decomposed.upper()))
 
     def test_windows_remote_path_matches_local_basename(self):
-        candidate = {"files": [{"filename": r"Album\\01 - Track.flac", "size": 4}]}
+        candidate = {"files": [{"filename": r"Album\01 - Track.flac", "size": 4}]}
         matched = match_completed_album_files(self.folder, candidate)
         self.assertEqual(matched["01 - Track.flac"], self.folder / "01 - Track.flac")
 
@@ -169,7 +169,7 @@ class CompletedTrackMatcherTests(unittest.TestCase):
         self.assertIsNone(match_completed_album_files(self.folder, candidate))
 
     def test_folder_name_sanitization_uses_final_component_and_removes_nul(self):
-        self.assertEqual(safe_folder_name("Artist\\\\Album\\0."), "Album")
+        self.assertEqual(safe_folder_name("Artist\\Album\0."), "Album")
 
 
 
