@@ -1,3 +1,12 @@
+## 2026-10-13 — Session closeout: UI checks deferred; test-kit credential persistence
+
+- **Manual UI schedule:** the uploaded eight-item report remains tied to application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`. Performance timing and a distinct error/recovery exercise were not separately recorded. Defer those two checks until the next UI-facing change; do not repeat the full visual checklist for a non-UI change solely because its SHA changes.
+- **Credential-loop root cause:** documented isolation had application data per PR/SHA. A new SHA can therefore trigger first-run owner setup again. Required behavior is stable app data per PR across SHAs, isolated between PR numbers, with venv reuse when Python and dependency inputs remain unchanged. Fresh setup tests must explicitly opt into fresh data.
+- **Implementation boundary:** the installed helper `~/navi-librarian-test/test-pr.sh` lives outside the repository and cannot be edited through the available GitHub source-of-truth tools. This session updated repository docs to define the correct behavior but did not modify or test the local helper. The repeated credential prompt is still an open item, not a claimed fix. Next session should patch the helper and run the same PR twice to confirm owner setup/settings persist.
+- **CI evidence before these documentation commits:** PR #32 code/test head `6dd1f1dabcd59fab3336a9efff62f89800017d5c` passed compile, full test/build, container smoke, and validation-only multi-architecture checks. Documentation commits trigger new runs; verify all checks on the final current head before considering merge.
+- **Other state:** PR #31 docs, PR #32 runtime/provenance, and PR #33 settings-route extraction remain unmerged. PR #33's previously reported CI passed on `22ee23d406284d59c37334f99883bb9e848bd929`; its auth middleware matches main, but container smoke has not been run against a PR #33-built image.
+- **Release:** no publication or deployment; image publishing remains paused until modularization is complete and release is explicitly authorized.
+
 ## 2026-10-13 — Authentication boundary checks passed on PR #32 head
 
 - **User observation clarified:** the local test displayed the create-account/sign-in page. That is the intentionally public first-run/login screen; the report did not establish dashboard access or an authentication bypass.
