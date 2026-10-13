@@ -1,9 +1,10 @@
-## 2026-10-13 — Discovery list persistence extraction (in progress)
+## 2026-10-13 — Discovery list persistence extraction (PR #29)
 
-- Created branch `refactor/discovery-list-store` from `main` at `2a3680e5bd1311785c8176e9655f04283f9a54ee`.
-- Added `discovery_store.py` for cached discovery-list SQLite reads/writes and kept the existing server helper names as compatibility wrappers. The wrappers still invoke `_discovery_init()` so the feedback/acquisition schema initialization side effect is preserved.
-- Added `tests/test_discovery_store.py` for absent entries, malformed JSON, Unicode payloads, generation timestamps, and replacement/isolation; documented the module boundary and focused/full test commands.
-- Status: implementation on branch; verification pending. No local test run, merge, deployment, live discovery refresh, or UI test. Local_Git service was unavailable during initial inspection.
+- PR [#29](https://github.com/abucalip/navi-librarian/pull/29), branch `refactor/discovery-list-store`, based on `main` at `2a3680e5bd1311785c8176e9655f04283f9a54ee`.
+- Added `discovery_store.py` for cached discovery-list SQLite reads/writes and retained the server compatibility wrappers, including `_discovery_init()` to preserve the existing schema initialization side effect.
+- Added `tests/test_discovery_store.py` for absent entries, malformed JSON, Unicode payloads, timestamps, and list replacement/isolation. Updated `docs/TEST_PLAN.md`, `docs/DECISIONS.md`, and `docs/PROJECT_STATUS.md`.
+- Python syntax workflow #237 passed on code/test commit `ffa3c0062dbd20e863384928a9402c7ba21f6f9c`: https://github.com/abucalip/navi-librarian/actions/runs/38434087436 . Docker packaging workflow #144 passed on the same commit, including the full unit suite and image build: https://github.com/abucalip/navi-librarian/actions/runs/38434087855 .
+- Local_Git returned 429/404, so no local tests were run. No live discovery refresh, UI test, merge, image publication, or deployment. The PR remains open pending final-head CI and review.
 
 ---
 
