@@ -1,7 +1,7 @@
 ## Current verification state — PR #32/#33 merged; PR #31 documentation follow-up
 
 - PR #32 and PR #33 are merged. Their exact-head checks passed, including syntax, full unittest discovery/Docker packaging, container runtime smoke, and validation-only multi-architecture build. See the top of docs/PROJECT_STATUS.md and PROJECT_LOG.md for exact commit/run references.
-- PR #31's operator guide is reconciled against current main; its updated head must pass syntax, full unit tests/Docker packaging, container runtime smoke, and validation-only build before its PR is considered merge-ready.
+- PR #31's operator guide is reconciled against main `25cd40eca0f20824173d7aefce76b753ef57360c`. Exact head `37e0afb3753ceda326ac6472ddd406ab6f2ea17a` passed Python syntax workflow #315, full unit tests/Docker packaging workflow #222, container runtime smoke workflow #32, and validation-only multi-architecture workflow #76. PR is technically CI-green and remains open for review/merge decision.
 - Manual browser checks remain a gate for UI-facing changes after exact-head CI. The performance observation and distinct error/recovery scenario not recorded in the October 13 report are deferred to the next UI-facing PR. Do not repeat the full visual checklist solely because a non-UI PR changes SHA.
 - GHCR publishing stays disabled until the modularization roadmap is complete and release is explicitly authorized.
 
