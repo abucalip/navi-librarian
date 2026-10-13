@@ -1,3 +1,14 @@
+## Session closeout — 2026-10-13 (PR #28 merged: M4 discovery recommendation extraction)
+
+- **Merge:** [PR #28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) was squash-merged into `main`. Merge commit: `686fb393a178fe27f3806ecd5ce2138b026291cc`; final PR head: `9ab8afeaed6562424b9212f2492d34f3ed9a69ee`.
+- **CI on exact PR head:** Python syntax workflow #232 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390630)); Docker packaging workflow #139 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390704)), including Python compilation, full unit-test discovery, and Docker image build. No workflow runs were returned for the squash merge commit at closeout; do not infer merge-commit CI from PR-head CI.
+- **Implemented:** extracted pure discovery eligibility, normalization, genre-family, scoring, and diversity rules to `discovery_recommendations.py`; retained compatibility helpers in `navidrome_server.py`; owned-album filtering remains in orchestration. Direct-import regression tests cover the extracted rules. The complete seven-file PR diff was reviewed.
+- **Review state:** PR was marked ready for review before merging. Merge was explicitly requested by the user.
+- **Not performed:** no local test execution, live discovery refresh, manual UI smoke test, image publication, or deployment. Merge and CI do not prove production is running this version.
+- **Next:** continue with the next priority in `docs/MODULARIZATION_ROADMAP.md`, using merged `main` as the baseline.
+
+---
+
 ## Session closeout — M4 PR #28 reconciliation and final-head CI (2026-10-13)
 
 - **PR:** [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) remains draft/open, unmerged and undeployed.
