@@ -84,3 +84,8 @@ The settings endpoints for Navidrome, Last.fm, ListenBrainz, and slskd are group
 ## Acquisition route boundary — merged PR #34
 
 The acquisition endpoints (`/api/acquisitions*` and `/api/acquire*`) are being moved to `app/api/acquisitions.py`. The router delegates to existing `navidrome_server` acquisition functions; it does not duplicate lifecycle, slskd, streaming state, or filesystem safety logic. `app.main` registers the router alongside settings routes. This behavior-preserving route extraction is merged. Direct-import regression tests cover route inventory, payload/default mapping, input validation, skip/dismiss status translation, streaming headers, and sanitized errors. All required CI workflows passed on exact PR head `b80b7b5178f0e4c2173ac486b97453e3b5d18af5`; merge commit is `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`.
+
+
+## Discovery API route boundary — PR in progress
+
+The recommendations, cached discovery-list, refresh, and feedback HTTP handlers are grouped in `app/api/discovery.py`. The router adapts request parameters and responses while delegating recommendation filtering, ownership behavior, persistence, refresh coordination, and feedback semantics to existing `navidrome_server` functions. `app.main` registers the router alongside settings and acquisition routes. Direct-import route tests cover route inventory, defaults, validation, payload mapping, and sanitized failures. This extraction is intended to preserve existing URLs and behavior; final CI and review are pending.
