@@ -1,3 +1,12 @@
+## Current session — container runtime and release provenance gates (2026-10-13)
+
+- Objective: close a critical gap between successful image compilation and proving the container can actually start and preserve state; make published image identity auditable.
+- Finding: the Dockerfile copied navidrome_server.py and acquisition_completion.py but omitted imported modules introduced by the merged extractions (acquisition_import.py, discovery_store.py, discovery_refresh.py, discovery_recommendations.py, slskd_search.py, and slskd_quality.py). A successful Docker build did not catch this runtime import failure.
+- Change in progress: branch ci/container-runtime-smoke-release-provenance adds all six modules to the image, adds an isolated Docker runtime smoke workflow for auth/setup and persistence across restart, and makes the publish workflow record the immutable digest, source SHA, tags, architectures, provenance, and SBOM status.
+- Verification status: not yet tested by GitHub Actions on this branch at this closeout. The new runtime workflow is intended to catch missing runtime modules; its actual result must be inspected before this change can be called tested.
+- Safety: the smoke job uses a disposable named volume and temporary, read-only music/download mounts; it does not access real services or media. No deployment or production changes performed.
+- Next: inspect workflow runs on the exact final PR head; fix failures, review the complete diff, and confirm CI. Then separately close PR #31's completed documentation/UI-checklist work according to the agreed review/merge workflow. Do not resume routine modularization until the automated/release gate is verified.
+
 ## Latest session closeout — 2026-10-13 (PR #30 merged: discovery refresh coordination)
 
 - **PR:** [#30 — Extract discovery refresh coordination](https://github.com/abucalip/navi-librarian/pull/30) merged into `main`.
