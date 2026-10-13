@@ -1,3 +1,15 @@
+## Latest session — 2026-10-13 (PR #21 and #22 merged; acquisition fixes verified)
+
+- **PR #21:** [Add Hi-Res FLAC priority and acquisition diagnostics](https://github.com/abucalip/navi-librarian/pull/21) squash-merged to `main` at `049a1e94ea782fa473fc4f394711dda1afec6fbe`.
+- **PR #21 behavior:** added the sixth sortable FLAC Hi-Res tier, preserved saved quality order during migration, improved bounded slskd query fallback/diagnostics and safe source failover, and kept polling when slskd reports peers before exposing their file payloads. Overall search budget is 45 seconds; matching and acquisition safety rules were not relaxed.
+- **Live verification:** user tested the combined PR #21/#22 checkout and reports Tinariwen — `Idrache (Traces of the Past)` started downloading. This verifies the delayed slskd peer-payload fix in the tested environment.
+- **PR #21 CI:** Python syntax/acquisition-safety workflow #179 and Docker packaging workflow #86 passed on head `2d617091390f81c05ff6c40d5a8fa140c6217b68`. Docker workflow includes compilation, full unit tests, and image build.
+- **PR #22:** [Allow retrying dismissed acquisitions](https://github.com/abucalip/navi-librarian/pull/22) squash-merged to `main` at `7d6094042f0beb4538313011594539a34254fbd9`.
+- **PR #22 behavior:** an explicit Get can reopen only a persisted `dismissed` acquisition when its guarded update succeeds; the stale source candidate and settings are cleared before a fresh search. Failed reactivation remains blocked. Added regression coverage for successful reactivation and failed reactivation; `docs/TEST_PLAN.md` now includes the retry lifecycle check.
+- **PR #22 CI:** Python syntax/full unittest workflow #182 and Docker packaging workflow #89 passed on head `04a11671862e1e3544ac878760f2223a42058ed9`. The first test attempt exposed a test-fixture issue (the real acquisition implementation ran instead of the stub); the fixture was corrected, and both workflows passed on the final head.
+- **Verification boundary:** the user explicitly confirmed the Tinariwen download. No separate live result for retrying a previously dismissed album was reported, although the regression tests passed. No image publication or production deployment was performed; do not infer the server is running these merges.
+- **Next:** no further action for this session. For a future release, publish/deploy separately and verify the running image digest and application behavior.
+
 ## Latest session — 2026-10-13 (wait for slskd peer payloads before query fallback)
 
 - **Branch:** `fix/slskd-search-payload-wait`, created from PR #21's latest observed head `2876098ed222cc8803f292c55aa8e3474331e3e5`. Not yet opened as a PR, merged, or deployed. PR #21 and stacked PR #22 remain unchanged.
