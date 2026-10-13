@@ -220,3 +220,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **CI:** GitHub reported Python syntax check and Docker packaging validation passed for PR head `97e887fa8295fff55f05ac72101907bf08819a99`. This was documentation-only; no application tests or deployment were performed during the merge session.
 - **Deployment:** still unverified. The previously reported GHCR `unauthorized` pull remains unresolved; do not treat merge/CI as deployment evidence.
 - **Next:** review current PRs and local branches/worktrees before choosing the next implementation task; prioritize required regression testing and resolve GHCR package visibility/authentication before a registry-based deployment.
+
+
+## 2026-10-13 — Allow retrying dismissed acquisitions
+
+- **Branch:** `fix/retry-dismissed-acquisitions`, based on `fix/flac-hires-acquisition-diagnostics`.
+- **Cause:** `discovery_acquire_album` rejected any record with status `dismissed`, so pressing Get after a previous Dismiss could not create a fresh acquisition card.
+- **Change:** a new explicit Get reopens the dismissed row only if the row is still in the dismissed state and the guarded update succeeds. It clears the old source candidate/settings before starting another search. The existing Dismiss operation only records `dismissed` after safe cancellation/cleanup, so failed cleanup remains blocked rather than being silently retried.
+- **Regression tests:** cover successful reactivation with stale source data cleared and refusal when reactivation fails.
+- **Verification:** CI and local tests for this branch are pending. Not merged or deployed.
+- **Next:** wait for CI, then test Get on an album previously dismissed in `prox-mcp-pr17-test`.
