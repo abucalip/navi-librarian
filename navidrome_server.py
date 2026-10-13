@@ -6123,8 +6123,14 @@ def discovery_acquire_album(
             # Dismissal only persists after source cancellation and cleanup succeed.
             # A fresh Get is an explicit request to retry, so clear the stale source
             # inventory before searching again; never reuse the dismissed candidate.
+            try:
+                retry_metadata = json.loads(metadata_json or "{}")
+                if not isinstance(retry_metadata, dict):
+                    retry_metadata = {}
+            except (ValueError, TypeError):
+                retry_metadata = {}
             if not _discovery_reactivate_dismissed_acquisition(
-                artist, album, _safe_json_object(metadata_json)
+                artist, album, retry_metadata
             ):
                 return json.dumps({
                     "ok": False, "status": "dismissed", "artist": artist, "album": album,
