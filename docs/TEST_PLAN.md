@@ -25,7 +25,7 @@
 
 # Test plan
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Discovery store extraction — merged PR #29
 
@@ -208,3 +208,16 @@ python -m unittest discover -s tests -v
 ```
 
 The store owns only SQLite persistence for cached discovery-list payloads. The server compatibility wrappers retain `_discovery_init()` so existing schema initialization and callers are unchanged. Cover missing rows, malformed JSON, Unicode payload round-trips, timestamp preservation, and per-list replacement/isolation. CI must pass on the exact PR head, including Docker packaging; unit tests do not establish live refresh/UI behavior.
+
+
+## Acquisition API router extraction — PR in progress
+
+Focused regression command:
+
+```sh
+python -m unittest tests.test_acquisition_routes -v
+python -m py_compile app/main.py app/api/acquisitions.py
+python -m unittest discover -s tests -v
+```
+
+`tests/test_acquisition_routes.py` checks route/method preservation, acquire and queue payload mapping/defaults, invalid payloads, skip/dismiss status translation, streaming response headers, and sanitized upstream errors. Do not claim these commands passed until executed locally or by CI on the exact final PR head. Docker runtime smoke and validation-only multi-architecture CI remain required; this route-only change is not expected to alter UI presentation, so manual browser testing is not required unless review identifies a UI contract change.
