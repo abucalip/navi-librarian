@@ -4,7 +4,7 @@
 - **Scope:** moved the staged album-file import transaction into importable `acquisition_import.py`; retained `_discovery_import_matched_album_files` as a compatibility wrapper injecting the existing strict completion matcher. Acquisition orchestration, lifecycle states, dismissal synchronization, failover, and interrupted-import reconciliation remain in the server.
 - **Regression coverage:** added `tests/test_acquisition_import.py` for selective expected-track movement, unrelated-file preservation, no-overwrite, partial-move rollback, storage-device mismatch, and reserved manifest-name rejection. Updated the existing acquisition safety harness to execute the extracted implementation through the wrapper.
 - **Documentation:** updated `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md`.
-- **Verification boundary:** CI has not yet been checked for the final branch head. No local tests, live import, manual UI test, image publication, or deployment were performed.
+- **Verification:** code-bearing head `f0e5650ff2c4197ccc074608c6450e7920d00050` passed Python syntax workflow #221 and Docker packaging workflow #128 (compilation, full unit suite, and image build). The complete PR diff was inspected; no behavioral redesign was intended. The subsequent status/log commits are documentation-only, so check CI on the final PR head before calling the PR ready. No local tests, live import, manual UI test, image publication, or deployment were performed.
 - **Next:** review exact diff and CI, then open a focused PR if verification passes. Preserve all path, symlink, no-overwrite, mount-identity, rollback, and recovery-manifest safeguards.
 
 ---
