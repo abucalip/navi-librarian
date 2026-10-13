@@ -4,7 +4,7 @@
 - Scope: extracted settings API handlers to app/api/settings.py; shared parse_result lives in app/api/utils.py, and app.main still exposes the imported symbol and registers the router. Existing endpoint paths, methods, payload defaults, service calls and error handling are preserved.
 - Regression tests: added tests/test_settings_routes.py for response parsing, Navidrome payload mapping, ListenBrainz validation failures, slskd defaults/path normalization, and sanitized upstream errors.
 - Documentation: updated the modularization roadmap to record merged PRs #24–#30 and identify remaining route groups and later MCP retirement. Architecture and test plan updated.
-- Verification status: CI not yet observed for this branch at this log entry; no local tests are claimed. No merge, publication or deployment occurred.
+- Verification on code-bearing head c596825453c5a94abecbff3413273a5938c43f9c: Python syntax/full unittest workflow #281 passed and Docker packaging/full suite/build workflow #188 passed. The full suite ran 115 tests, including all six settings-route regression tests. A documentation-only update followed; verify CI on the final PR head before merge. No local tests are claimed. No merge, publication or deployment occurred.
 - Release policy: registry publishing stays disabled until modularization is complete and release is explicitly authorized.
 - Next: inspect the full diff, verify focused/full CI on the exact final PR head, then continue with acquisition routes.
 
