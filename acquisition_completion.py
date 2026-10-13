@@ -14,8 +14,8 @@ from typing import Callable, Any
 
 def safe_folder_name(value: Any) -> str:
     """Return a safe final path component for the advertised remote folder."""
-    value = str(value or "").replace("\\\\", "/").split("/")[-1]
-    value = "".join(character for character in value if character != "\\0")
+    value = str(value or "").replace("\\", "/").split("/")[-1]
+    value = "".join(character for character in value if character != "\0")
     value = value.strip().strip(".")
     return value or "Unknown"
 
@@ -47,7 +47,7 @@ def match_completed_album_files(
     expected_by_name: dict[str, tuple[str, int]] = {}
 
     for item in candidate.get("files", []):
-        name = str(item.get("filename") or "").replace("\\\\", "/").rsplit("/", 1)[-1]
+        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
         if not name:
             continue
         key = filename_key(name)
@@ -116,7 +116,7 @@ def inspect_completed_album(
     expected_by_name: dict[str, tuple[str, int]] = {}
 
     for item in candidate.get("files") or []:
-        raw_name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
+        name = str(item.get("filename") or "").replace("\\", "/").rsplit("/", 1)[-1]
         if not raw_name:
             continue
         try:
