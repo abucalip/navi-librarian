@@ -2,6 +2,12 @@
 
 Last updated: 2026-10-13
 
+## Latest CI evidence — PR #28
+
+- PR #28 final head `9ab8afeaed6562424b9212f2492d34f3ed9a69ee`: Python syntax workflow #232 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390630)); Docker packaging workflow #139 passed ([run](https://github.com/abucalip/navi-librarian/actions/runs/38432390704)), including Python compilation, full unit-test discovery, and image build.
+- PR #28 was squash-merged to `main` at `686fb393a178fe27f3806ecd5ce2138b026291cc`. No workflow runs were returned for the merge commit at closeout; CI evidence above is for the exact PR head, not the merge commit.
+- No local test execution or live/manual runtime checks were performed during closeout.
+
 ## Automated baseline
 
 Run from the repository root using the project's supported Python environment.
