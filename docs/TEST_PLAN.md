@@ -72,6 +72,13 @@ The Docker CI workflow also installs `requirements.txt`, compiles the Python mod
 - GHCR pull succeeds on the deployment host with the intended visibility/authentication setup.
 - Running UI smoke test passes on the actual host/port.
 
+### Dismissed acquisition retry regression
+
+- Dismiss an acquisition and confirm dismissal succeeds only after its source cleanup completes.
+- Click Get again for that same album. Confirm the dismissed record is reset to a retry-requested state with no stale source candidate/settings, then transitions into a fresh search/acquisition card.
+- Simulate a failed reactivation guard and confirm no new source search is started.
+- Confirm albums already importing/imported and active downloads remain protected from duplicate acquisition requests.
+
 ## Manual UI smoke test
 
 After the automated suite passes:
