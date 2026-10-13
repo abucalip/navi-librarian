@@ -232,6 +232,8 @@ class SlskdSearchQueryTests(unittest.TestCase):
         )
         self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 0)
         self.assertEqual(result["search_queries_attempted"][1]["collected_peer_response_count"], 1)
+        self.assertIn("Queries tried: Tinariwen Idrache (Traces of the Past)", result["message"])
+        self.assertIn("Tinariwen Idrache Traces of the Past", result["message"])
 
     def test_search_queries_reject_blank_artist_or_album(self):
         build = HELPERS["_slskd_search_queries"]
