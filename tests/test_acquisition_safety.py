@@ -28,6 +28,7 @@ def load_helpers():
         "_discovery_exact_artist_credit_matches",
         "_discovery_is_various_artists",
         "_slskd_album_path_match",
+        "_slskd_search_queries",
         "_slskd_search_response_items",
         "_slskd_path_match_diagnostics",
         "_slskd_queue_failure_action",
@@ -149,6 +150,21 @@ class VariousArtistsNewReleasesTests(unittest.TestCase):
         is_various = HELPERS["_discovery_is_various_artists"]
         self.assertFalse(is_various("Queen"))
         self.assertFalse(is_various("The Various"))
+
+
+class SlskdSearchQueryTests(unittest.TestCase):
+    def test_zero_response_fallback_queries_broaden_without_dropping_artist_immediately(self):
+        build = HELPERS["_slskd_search_queries"]
+        queries = build("Tinariwen", "Idrache (Traces of the Past)")
+        self.assertEqual(queries[0], "Tinariwen Idrache (Traces of the Past)")
+        self.assertEqual(queries[1], "Tinariwen Idrache Traces of the Past")
+        self.assertEqual(queries[2], "Tinariwen Idrache")
+        self.assertEqual(len({query.casefold() for query in queries}), len(queries))
+
+    def test_search_queries_reject_blank_artist_or_album(self):
+        build = HELPERS["_slskd_search_queries"]
+        self.assertEqual(build("", "Album"), [])
+        self.assertEqual(build("Artist", "  "), [])
 
 
 class SlskdAlbumPathMatchingTests(unittest.TestCase):
