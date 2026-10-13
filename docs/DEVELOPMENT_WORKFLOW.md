@@ -18,11 +18,14 @@ For UI-facing changes and release candidates, run the local PR tester after exac
 ~/navi-librarian-test/test-pr.sh <PR-number>
 ```
 
-- The helper reads the current PR head SHA from GitHub, downloads that exact source archive, and uses a per-PR/per-SHA virtual environment and app-data directory. It serves the app only on `127.0.0.1:8089` by default.
+- The helper reads the current PR head SHA from GitHub and downloads that exact source archive. It serves the app on localhost (default port `8089`; an alternate port can be supplied). The report must identify the exact SHA and actual environment used; do not assume the tested SHA from a prior run.
 - Music and download paths are redirected to the private test sandbox. slskd is disabled by default; keep it disabled for ordinary UI smoke tests. Do not change paths to real media/download directories or perform destructive live-acquisition tests without explicit authorization.
 - Complete the terminal Pass/Fail/Skip checklist after using the browser UI. The Markdown report records the tested SHA and CI run state, is saved under `~/navi-librarian-test/reports/`, and can be posted to the PR through the helper's `gh` confirmation prompt.
 - A UI startup confirms only that the app starts. Each checklist item must be recorded separately; skipped/unattempted checks are not passes. If the PR head changes after testing, rerun against the new head or clearly explain why the tested SHA remains applicable.
 - This manual check supplements, and never replaces, automated regression tests, full unit-test discovery, exact-head CI, or separate deployment/runtime verification.
+
+
+- **Completed example (2026-10-13):** PR #31's browser checklist passed all eight recorded items on application SHA `96b253c5f3ec2f858e02afc034365a22bac0773e`; the report is published in [PR comment #6155071713](https://github.com/abucalip/navi-librarian/pull/31#issuecomment-6155071713). This is a manual smoke-test result for that SHA only, not a release/deployment sign-off.
 
 See [`docs/LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md) for the operator checklist and report semantics.
 
