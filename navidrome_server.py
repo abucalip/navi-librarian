@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import time
 import unicodedata
+from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
     filename_key as _acquisition_filename_key,
     inspect_completed_album,
@@ -4137,103 +4138,15 @@ def _discovery_locate_completed_album(download_root, candidate):
     return _discovery_inspect_completed_album(download_root, candidate)["path"]
 
 def _discovery_import_matched_album_files(source, destination, candidate, expected_music_root=None, expected_device=None):
-    """Stage only the verified expected tracks, leaving unrelated files behind."""
-    import json
-    import shutil
-    import uuid
-
-    matched = _discovery_match_completed_album_files(source, candidate)
-    if not matched:
-        raise OSError("Expected tracks no longer match files in the completed folder")
-
-    destination = Path(destination)
-    parent = destination.parent
-
-    # Refuse existing destinations, including broken symlinks, before
-    # creating any staging directory.
-    if destination.exists() or destination.is_symlink():
-        raise FileExistsError(str(destination))
-    if parent.is_symlink() or not parent.is_dir():
-        raise OSError("Import destination parent is not a real directory")
-
-    manifest_name = ".navidrome-import.json"
-    if any(name.casefold() == manifest_name.casefold() for name in matched):
-        raise OSError("A track name conflicts with the reserved import manifest")
-
-    def assert_music_storage_identity():
-        # If a mount disappears, the same path can expose the underlying local
-        # directory. Device checks prevent continuing an import on that fallback.
-        if expected_device is None:
-            return
-        root = Path(expected_music_root)
-        if root.stat().st_dev != expected_device or parent.stat().st_dev != expected_device:
-            raise OSError("Music-library filesystem changed during import; refusing further writes")
-
-    assert_music_storage_identity()
-    staging = parent / (".navidrome-import-" + uuid.uuid4().hex)
-    staging.mkdir(parents=True, exist_ok=False)
-    manifest = staging / manifest_name
-    manifest_data = {
-        "source": str(Path(source).resolve()),
-        "destination": str(destination),
-        "tracks": {
-            name: int(path.stat().st_size)
-            for name, path in matched.items()
-        },
-    }
-    moved = []
-    try:
-        manifest.write_text(json.dumps(manifest_data, ensure_ascii=False), encoding="utf-8")
-        for expected_name, actual_path in matched.items():
-            assert_music_storage_identity()
-            expected_size = int(manifest_data["tracks"][expected_name])
-            try:
-                source_stat = actual_path.lstat()
-            except OSError as exc:
-                raise OSError(f"Expected track disappeared before staging: {expected_name}") from exc
-            if not actual_path.is_file() or actual_path.is_symlink() or source_stat.st_size != expected_size:
-                raise OSError(f"Expected track changed before staging: {expected_name}")
-            staged_path = staging / expected_name
-            shutil.move(str(actual_path), str(staged_path))
-            # Record the move before post-move validation so rollback can restore
-            # even a path swapped for a symlink between lstat and move.
-            moved.append((staged_path, actual_path))
-            staged_stat = staged_path.lstat()
-            if staged_path.is_symlink() or not staged_path.is_file() or staged_stat.st_size != expected_size:
-                raise OSError(f"Staged track failed validation: {expected_name}")
-        assert_music_storage_identity()
-        if destination.exists() or destination.is_symlink():
-            raise FileExistsError(str(destination))
-        # Rename first while the recovery manifest is present. If the process
-        # dies immediately afterward, reconciliation can still identify this
-        # complete import and remove the manifest safely.
-        staging.rename(destination)
-        try:
-            (destination / manifest_name).unlink()
-        except OSError:
-            # A completed destination plus its manifest is recoverable on restart.
-            pass
-    except Exception:
-        rollback_complete = True
-        for staged_path, original_path in reversed(moved):
-            if staged_path.exists() and not original_path.exists():
-                try:
-                    assert_music_storage_identity()
-                    shutil.move(str(staged_path), str(original_path))
-                except OSError:
-                    # If the library mount changed, leave staged data and its
-                    # manifest untouched for later/manual recovery.
-                    rollback_complete = False
-            elif staged_path.exists() or not original_path.exists():
-                rollback_complete = False
-        try:
-            if rollback_complete:
-                manifest.unlink(missing_ok=True)
-                staging.rmdir()
-        except OSError:
-            # Keep the manifest and remaining staged tracks for restart recovery.
-            pass
-        raise
+    """Compatibility wrapper; filesystem import implementation lives in acquisition_import."""
+    return _acquisition_import_matched_album_files(
+        source,
+        destination,
+        candidate,
+        expected_music_root=expected_music_root,
+        expected_device=expected_device,
+        match_files=_discovery_match_completed_album_files,
+    )
 def _discovery_is_dismissed(artist, album):
     return any(
         job["artist_key"] == _music_key(artist)
