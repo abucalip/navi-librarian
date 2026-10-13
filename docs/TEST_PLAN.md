@@ -1,3 +1,11 @@
+## Authentication boundary integration — PR #32 exact-head verification
+
+- PR #32 head `16664d5f74d207b6496771213f23402a1489d3cc` passed all required checks: compile, validation-only container build, full test/build, and container smoke.
+- The smoke harness explicitly avoids redirect-following for unauthenticated `GET /`; it requires HTTP 303 and `Location: /login` before and after first-run setup. It separately checks public `/login` returns 200, unauthenticated API access returns 401, authenticated root returns 200, auth-key mode is 0600, and account/login persistence survives container restart.
+- The user-confirmed create-account/sign-in page is expected public behavior; it is not itself a dashboard/authentication bypass.
+- PR #33 head `22ee23d406284d59c37334f99883bb9e848bd929` has passing reported compile/test-build checks and its auth middleware matches `main`. However, container runtime smoke has not been executed against a container built from PR #33; keep that distinction explicit.
+- PRs #32 and #33 remain unmerged pending the broader testing-gap review. No image publication or deployment.
+
 ## Discovery refresh coordination extraction — merged PR #30
 
 - PR #30 was merged into `main` at `a12538e7f7ab2f3ec7417680d6127f5c3a1eaa5b`; final PR head was `f9256060d162ed92be0bbacc66a877c2675a5174`.
