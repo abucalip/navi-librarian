@@ -3,7 +3,7 @@
 - Branch: refactor/settings-api-router, based on GitHub main.
 - Objective: begin roadmap stage 7 (FastAPI route separation) with a behavior-preserving extraction of settings handlers.
 - Changes: moved Navidrome, Last.fm, ListenBrainz and slskd settings endpoints into app/api/settings.py; moved parse_result implementation into app/api/utils.py while retaining app.main.parse_result as an imported compatibility symbol; added direct route tests for payload mapping, defaults, validation and sanitized errors.
-- Verification on code-bearing head c596825453c5a94abecbff3413273a5938c43f9c: Python syntax/full unittest workflow #281 passed; Docker packaging/full suite/build workflow #188 passed. The full suite ran 115 tests, including all six new settings-route tests. Documentation was subsequently updated; confirm CI again on the resulting final PR head before merge. No local checkout or local test runner used.
+- **Final-head CI:** Python syntax/full unittest workflow #285 passed and Docker packaging/full suite/build workflow #192 passed on exact PR head b0a9df868b1b0fd4a9222198ad052d773e12740a. The full suite ran 115 tests, including all six settings-route tests. No local checkout or local test runner used.
 - Release policy: GHCR publication remains disabled until the modularization roadmap is complete and release is explicitly authorized.
 - Next: review the complete diff and run focused/full unit, syntax, Docker build and container runtime CI on the exact PR head. If clean, proceed to acquisition route separation.
 
