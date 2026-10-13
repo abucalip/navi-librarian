@@ -6168,6 +6168,32 @@ def _discovery_acquire_album_impl(
 
 
 @mcp.tool()
+def _discovery_reactivate_dismissed_acquisition(artist, album, metadata=None):
+    """Allow an explicit retry only after dismissal's cleanup completed successfully."""
+    _discovery_init()
+    artist_key, album_key = _music_key(artist), _music_key(album)
+    now = time.time()
+    details = {
+        "status": "retry_requested",
+        "message": "Retry requested; searching for available sources.",
+        "retry_requested_at": now,
+        "metadata": metadata if isinstance(metadata, dict) else {},
+    }
+    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
+        cursor = db.execute(
+            "UPDATE discovery_acquisitions SET status=?, details_json=?, "
+            "candidate_json='{}', settings_json='{}', updated_at=? "
+            "WHERE artist_key=? AND album_key=? AND status='dismissed'",
+            (
+                "retry_requested", json.dumps(details, ensure_ascii=False), now,
+                artist_key, album_key,
+            ),
+        )
+        db.commit()
+        return cursor.rowcount == 1
+
+
+@mcp.tool()
 def discovery_acquire_album(
     artist: str,
     album: str,
@@ -6180,10 +6206,25 @@ def discovery_acquire_album(
     identity = (_music_key(artist), _music_key(album))
     with _DISCOVERY_IMPORT_TRANSITION_LOCK:
         if _discovery_is_dismissed(artist, album):
-            return json.dumps({
-                "ok": False, "status": "dismissed", "artist": artist, "album": album,
-                "message": "This acquisition was dismissed. Undismiss it before retrying.",
-            }, ensure_ascii=False)
+            # Dismissal only persists after source cancellation and cleanup succeed.
+            # A fresh Get is an explicit request to retry, so clear the stale source
+            # inventory before searching again; never reuse the dismissed candidate.
+            try:
+                retry_metadata = json.loads(metadata_json or "{}")
+                if not isinstance(retry_metadata, dict):
+                    retry_metadata = {}
+            except (ValueError, TypeError):
+                retry_metadata = {}
+            if not _discovery_reactivate_dismissed_acquisition(
+                artist, album, retry_metadata
+            ):
+                return json.dumps({
+                    "ok": False, "status": "dismissed", "artist": artist, "album": album,
+                    "message": (
+                        "This acquisition is still dismissed and could not be safely "
+                        "reopened. Refresh Acquisitions and check its status."
+                    ),
+                }, ensure_ascii=False)
         with _DISCOVERY_IMPORT_LOCK:
             watcher_active = identity in _DISCOVERY_IMPORT_ACTIVE
         existing_job = next((
