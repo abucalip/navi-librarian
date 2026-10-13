@@ -1,3 +1,13 @@
+## Session closeout — M4 documentation pass (2026-10-13)
+
+- PR #28 remains a draft and is not merged or deployed.
+- The branch has known divergence from `main` and was reported non-mergeable on the last inspection; reconcile before review.
+- The architecture and test plan now explicitly identify `discovery_recommendations.py` and the focused test command.
+- Tests have **not** been executed locally and no passing CI run was confirmed. Do not describe M4 as verified until the exact PR head passes focused tests, syntax checks, the full suite, and Docker build CI.
+- No code changes, deployment, or image publication were made in this documentation-only closeout.
+
+---
+
 ## M4 update — PR #28 opened, merge-base and CI need follow-up
 
 - PR [#28 — Extract discovery recommendation rules](https://github.com/abucalip/navi-librarian/pull/28) is open as a draft, not merged or deployed. Latest observed head: `9b63a3d48d4fd13903465a429f969d1111cfe3cf`.
