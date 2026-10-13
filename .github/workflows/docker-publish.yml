@@ -68,5 +68,5 @@ jobs:
             echo "- Build provenance: enabled"
             echo "- SBOM: enabled"
             echo "- Published tags:"
-            printf '%s\\n' "$IMAGE_TAGS" | sed 's/^/- `&`/'
+            printf '%s\n' "$IMAGE_TAGS" | sed 's/^/- `&`/'
           } >> "$GITHUB_STEP_SUMMARY"
