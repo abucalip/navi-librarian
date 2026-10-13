@@ -1,6 +1,6 @@
 ## Test-gap closure and complete delivery workflow — next priority (2026-10-13)
 
-This section defines the next priority; it is a plan, not evidence that these checks have run.
+This section defines the remaining release-gate work. The local manual UI harness is now running on the user's Mac; that confirms UI startup only, not completion of the full checklist.
 
 ### Required verification stages
 
@@ -14,12 +14,19 @@ This section defines the next priority; it is a plan, not evidence that these ch
 
 A skipped, unavailable, or unobserved check is not a pass. Report it explicitly and do not mark the release Verified while a required gate is outstanding. Keep Implemented, Tested, Merged, Published, Deployed, and Verified as distinct states.
 
-### Planned new local test environment
+### Local UI smoke-test environment — available
 
-- Create a fresh isolated environment from the exact GitHub `main` SHA or PR head being tested.
-- The environment is for running tests and observing behavior only. GitHub remains the only source of truth; do not push test-only commits or local merge history.
-- Record runtime versions, tested SHA, commands, results, skipped tests, and deviations from the proposed GitHub tree.
-- Do not use the dismissed/outdated Local_Git integration or checkout for repository inspection or verification.
+The user has confirmed that the local app UI now starts successfully on macOS using the isolated PR-testing helper. This is a startup milestone, not a full UI acceptance pass. No completed checklist/report publication has been confirmed yet.
+
+- Run `~/navi-librarian-test/test-pr.sh <PR-number>` after the candidate PR's exact-head CI passes. Optional port: `~/navi-librarian-test/test-pr.sh <PR-number> 8090`.
+- The helper reads the open PR's current head SHA from GitHub and fetches that exact source. It creates a separate venv and application-data directory for each PR/SHA and starts FastAPI on localhost (default port 8089).
+- The test harness directs music and download paths to `~/navi-librarian-test/sandbox/`. Keep slskd set to `http://127.0.0.1:9` with an empty key for normal UI checks. Never use live media/download paths for destructive tests without explicit authorization.
+- Use the browser to exercise the app, return to Terminal, press Enter, and record Pass/Fail/Skip for each checklist item. Add concise reproduction notes for failures. The helper writes a Markdown report to `~/navi-librarian-test/reports/` and offers to post it as a PR comment using GitHub CLI.
+- Reports must identify the exact tested SHA, environment/runtime, CI state, checklist outcomes, skipped checks, and failures. If the PR head changes after testing, do not imply the report covers the new SHA; rerun or state the limitation.
+- Keep credentials in the private local `config.env` only. Never include secrets in report notes or PR comments.
+- The manual UI gate is complementary to automated tests and CI; it does not prove production deployment or runtime state.
+
+See [`docs/LOCAL_UI_TESTING.md`](LOCAL_UI_TESTING.md) for the detailed operator procedure and checklist.
 
 ### Current known gap
 
