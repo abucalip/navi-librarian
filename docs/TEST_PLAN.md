@@ -113,3 +113,17 @@ Never claim a test passed unless it was run against the stated commit.
 ## M1 implementation note — acquisition completion/matching
 
 The first extraction keeps `navidrome_server.py` compatibility wrappers while the implementation lives in `acquisition_completion.py`. `tests/test_acquisition_completion.py` must exercise the production helpers via direct imports. Retain the legacy lifecycle/import safety suite and ensure it uses the same imported matcher rather than a duplicate AST-extracted implementation. Required regression cases include Unicode NFC/casefold identity, Windows-style remote paths, strict positive sizes, conflicting duplicate basenames, collision-suffix uniqueness by size, symlink exclusion, incomplete folders, and ambiguous named folders. Also verify that multiple exact basename/size matches fail closed even when a unique collision-suffixed file is present; collision-suffix fallback is permitted only when there are zero exact matches.
+
+
+## M2 — slskd search and quality module extraction
+
+For changes touching `slskd_quality.py` or `slskd_search.py`, run the focused direct-import tests first:
+
+```sh
+python -m unittest discover -s tests -p 'test_slskd_search_modules.py' -v
+python -m unittest discover -s tests -p 'test_acquisition_safety.py' -v
+python -m py_compile navidrome_server.py slskd_quality.py slskd_search.py
+python -m unittest discover -s tests -v
+```
+
+The new tests cover MP3/FLAC classification, user-configured tier ordering, bounded fallback query generation, slskd response-shape normalization, album-path/track identity matching, candidate track deduplication and ranking, and bounded diagnostics. The legacy acquisition-safety suite remains a compatibility guard because existing callers still use wrappers in `navidrome_server.py`. Confirm the Docker packaging workflow passes on the exact PR head before merge. No live slskd or UI behavior should be inferred from unit tests alone.

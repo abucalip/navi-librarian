@@ -1,3 +1,33 @@
+## Session closeout — 2026-10-13 (M2 extraction; PR #25 ready for next review step)
+
+- **Current state:** PR [#25](https://github.com/abucalip/navi-librarian/pull/25) is open, draft, unmerged, and not deployed. Branch `refactor/slskd-search-quality-modules`; base `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; application-code head `e8a4256aaf34956ab1c4ca15b0b302c107689736`; subsequent commits update documentation only.
+- **Implemented:** extracted quality classification to `slskd_quality.py` and query/response/path/candidate helpers to `slskd_search.py`; retained seven legacy helper names as compatibility wrappers in `navidrome_server.py`; added direct-import regression tests and updated the test plan.
+- **Verification:** final head `e8a4256aaf34956ab1c4ca15b0b302c107689736` passed Python syntax workflow #211 and Docker packaging workflow #118. The Docker workflow includes the full unit suite and image build. Earlier code CI caught stale callback helper references; these were fixed before passing runs. The documentation closeout triggered fresh workflows #213 and #120, which were in progress at the last check. No local test execution, live slskd test, or manual UI test was performed.
+- **Preserved state:** local checkout remains untouched on `test/pr17-reconciliation`; no merge, image publication, or deployment.
+- **Next priority:** inspect the full PR #25 diff and confirm review readiness, then undraft/request review as appropriate. Merge only with explicit authorization. PR #23 remains separate/open.
+
+---
+
+## Latest session — 2026-10-13 (M2 slskd extraction; CI passed, PR #25 draft)
+
+- **PR:** [#25 — Extract slskd search and quality modules](https://github.com/abucalip/navi-librarian/pull/25), draft and unmerged. Branch `refactor/slskd-search-quality-modules`, based on current `main` SHA `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`; latest code commit with passing CI is `50bf72d44073b415ed07a59bc5b7707b76a59a31`.
+- **Implementation:** `slskd_quality.py` contains MP3/FLAC tier classification. `slskd_search.py` contains query generation, response normalization, album-path matching, track identity, bounded path diagnostics, and candidate grouping/ranking. Seven existing helper names in `navidrome_server.py` remain as compatibility wrappers. Search polling/orchestration, the 45-second total budget, delayed-payload handling, thresholds, saved priority order, and queue/import lifecycle remain in the server.
+- **Regression coverage:** added `tests/test_slskd_search_modules.py` using direct imports; the legacy acquisition safety suite still passes through the compatibility wrappers.
+- **CI:** on code commit `50bf72d44073b415ed07a59bc5b7707b76a59a31`, Python syntax/acquisition-safety workflow #209 passed and Docker packaging workflow #116 passed, including the full unit suite and Docker image build. The initial draft CI caught stale helper names left in two extracted callback paths; these were corrected in `50bf72d`, and both workflows passed on that exact code commit. No local test run or live slskd/UI test was performed.
+- **Local checkout/deployment:** local checkout remains untouched on `test/pr17-reconciliation`. Not merged or deployed. PR #23 remains separate/open.
+- **Next:** inspect the final PR diff and check CI on the latest documentation-updated head; then request review/undraft only when ready. Do not merge or deploy without the normal review and merge authorization.
+
+---
+
+## Latest session — 2026-10-13 (M2 slskd search/quality extraction in review)
+
+- **Branch/base:** `refactor/slskd-search-quality-modules`, created from current GitHub `main` at `0529c6912fdd9bea951334abec0f63c9cdbfd1d1`. The connected local checkout remains on `test/pr17-reconciliation` with pre-existing work; it was not switched or modified.
+- **Implementation:** added importable `slskd_quality.py` for MP3/FLAC tier classification and `slskd_search.py` for query generation, response normalization, album-path matching, track identity, bounded path diagnostics, and candidate grouping/ranking. Existing private helper names remain as compatibility wrappers in `navidrome_server.py`; the search deadline, polling loop, candidate thresholds, quality order, and queue/import orchestration were not intentionally changed.
+- **Regression coverage:** added `tests/test_slskd_search_modules.py` using direct imports for quality tier/priority behavior, query order/deduplication, response shapes, path/track normalization, candidate deduplication/ranking, and bounded diagnostics. Existing acquisition lifecycle tests remain in place.
+- **Superseded status:** this implementation-stage note is retained as history; final-head CI subsequently passed on `e8a4256aaf34956ab1c4ca15b0b302c107689736` (Python syntax workflow #211 and Docker packaging workflow #118). See the session closeout above for current verification and next steps.
+
+---
+
 ## Latest session — 2026-10-13 (PR #24 merged; resulting main commit verified)
 
 - **PR:** [#24 — Extract acquisition completion matching helpers](https://github.com/abucalip/navi-librarian/pull/24), squash-merged from `refactor/acquisition-completion-matching` at head `b826ae14d917431d07aacf97200990d57133cba0`. Merge commit: `225add7405bfd72b3254af23745d0dd9a84b621c`.
