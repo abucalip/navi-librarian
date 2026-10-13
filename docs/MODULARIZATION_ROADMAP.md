@@ -41,11 +41,11 @@ Names and locations can be adjusted to fit existing package conventions after th
 1. **Review PR #24 before further extraction:** inspect the complete diff against its stated relocation-only objective, confirm wrapper behavior and regression coverage, and verify CI on the exact head. Resolve any unnecessary churn or behavioral differences before merge. PR #24 is open and unmerged; passing CI is not merge approval.
 2. **Inventory and establish a clean baseline for the next change:** inspect current GitHub `main`, open PRs, shared globals, locks, configuration, callers, tests, and exact behavior. Record the exact base SHA and acceptance criteria before editing.
 3. **Completion and matching:** the first extraction is implemented on PR #24. After review/merge, retain its direct-import regression coverage and address any review findings before starting the next boundary.
-3. **slskd search and quality:** isolate query fallback, delayed response polling, response parsing, candidate matching, and quality classification. Preserve time budgets and saved priority ordering.
-4. **Import safety and lifecycle:** isolate destructive filesystem work from orchestration. Preserve traversal/symlink checks, filesystem identity, no-overwrite, rollback, failover, dismissal/retry, and restart reconciliation.
-5. **Discovery and recommendations:** separate ranking from list-building/refresh/persistence; preserve ownership exclusions and diversity behavior.
-6. **FastAPI routes:** split by feature after domain services have stable interfaces; preserve API contracts, auth, settings and UI behavior.
-7. **MCP retirement:** after the web app no longer depends on MCP initialization, remove MCP server/tool registration, dependencies, obsolete tests/docs and entry-point commands only where a usage audit confirms they are MCP-only.
+4. **slskd search and quality:** isolate query fallback, delayed response polling, response parsing, candidate matching, and quality classification. Preserve time budgets and saved priority ordering.
+5. **Import safety and lifecycle:** isolate destructive filesystem work from orchestration. Preserve traversal/symlink checks, filesystem identity, no-overwrite, rollback, failover, dismissal/retry, and restart reconciliation.
+6. **Discovery and recommendations:** separate ranking from list-building/refresh/persistence; preserve ownership exclusions and diversity behavior.
+7. **FastAPI routes:** split by feature after domain services have stable interfaces; preserve API contracts, auth, settings and UI behavior.
+8. **MCP retirement:** after the web app no longer depends on MCP initialization, remove MCP server/tool registration, dependencies, obsolete tests/docs and entry-point commands only where a usage audit confirms they are MCP-only.
 
 ## Testing strategy
 
