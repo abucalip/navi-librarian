@@ -569,3 +569,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows: Python syntax/acquisition safety `38600688719`, Docker packaging/full unit suite/image build `38600688787`, container runtime smoke `38600688814`, and validation-only multi-architecture image build `38600688667` (publishing paused). Final diff reviewed; GitHub reported mergeable and no review submissions/inline threads. Squash-merged at `982e39122a401b8b68d75e38423dbb93711b4abd`.
 - Verification boundary: no separate local test run, live slskd request, production-folder deletion, publication, deployment, or production runtime verification. HTTP 409 remains deferred because it was not reproduced.
 - Next priority: extract source-switch and interrupted-import orchestration behind injected dependencies with direct-import regression tests, preserving all cleanup/import safety assertions and MCP compatibility.
+
+## 2026-10-14 — Interrupted-import recovery extraction
+
+- Branch `refactor/acquisition-recovery-domain` starts from current main after PR #54.
+- Extracted `_discovery_reconcile_interrupted_import` to `acquisition_recovery.py` with injected dependencies; retained the existing adapter and MCP interface. Docker packaging includes the new module.
+- Moved four recovery regressions from the AST harness to direct-import `tests/test_acquisition_recovery.py` and added a refusal test for dismissed/non-importing jobs. Preserved mount identity, exact destination, manifest, track-size, symlink, and staged-file rollback checks.
+- Exact-head CI pending. No test success, live slskd, or production filesystem recovery is claimed.
+- Next gate: verify the exact final PR head across all four required workflows and review the full diff. If green, extract source-switch orchestration with cleanup failure remaining a hard stop.
