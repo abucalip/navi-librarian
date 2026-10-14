@@ -4282,56 +4282,21 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
     )
 
 def _discovery_start_import_watcher(artist, album, candidate, settings):
-    import threading
-    identity = (_music_key(artist), _music_key(album))
-    details = {
-        "source_username": candidate.get("username"),
-        "folder": candidate.get("folder"),
-        "file_count": len(candidate.get("files") or []),
-        "quality_summary": list(candidate.get("quality_summary") or []),
-        "downloads_path": settings.get("slskd_downloads_path"),
-    }
-    safe_settings = {
-        key: value for key, value in (settings or {}).items()
-        if key not in {"slskd_api_key", "api_key"}
-    }
-    # Reserve the watcher before writing status so duplicate starts cannot
-    # overwrite an existing job's state. Serialize reservation against dismissal.
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if _discovery_is_dismissed(artist, album):
-            return
-        with _DISCOVERY_IMPORT_LOCK:
-            if identity in _DISCOVERY_IMPORT_ACTIVE:
-                return
-            _DISCOVERY_IMPORT_ACTIVE.add(identity)
-        try:
-            _discovery_save_acquisition_job(
-                artist, album, "downloading", details,
-                candidate=candidate, settings=safe_settings,
-            )
-            _discovery_update_acquisition_status(artist, album, "downloading", details)
-        except Exception:
-            with _DISCOVERY_IMPORT_LOCK:
-                _DISCOVERY_IMPORT_ACTIVE.discard(identity)
-            raise
-    watcher = threading.Thread(
-        target=_discovery_import_watcher_entry,
-        args=(artist, album, dict(candidate), dict(settings), identity),
-        name="navidrome-import-" + hashlib.sha1(
-            (_music_key(artist) + "|" + _music_key(album)).encode("utf-8")
-        ).hexdigest()[:10],
-        daemon=True,
+    """Compatibility adapter for dependency-injected watcher startup."""
+    from acquisition_watcher_startup import start_import_watcher
+    return start_import_watcher(
+        artist, album, candidate, settings,
+        services={
+            "music_key": _music_key,
+            "transition_lock": _DISCOVERY_IMPORT_TRANSITION_LOCK,
+            "import_lock": _DISCOVERY_IMPORT_LOCK,
+            "active": _DISCOVERY_IMPORT_ACTIVE,
+            "is_dismissed": _discovery_is_dismissed,
+            "save_job": _discovery_save_acquisition_job,
+            "update_status": _discovery_update_acquisition_status,
+            "watcher_entry": _discovery_import_watcher_entry,
+        },
     )
-    try:
-        watcher.start()
-    except Exception as exc:
-        with _DISCOVERY_IMPORT_LOCK:
-            _DISCOVERY_IMPORT_ACTIVE.discard(identity)
-        _discovery_update_acquisition_status(artist, album, "monitor_error", {
-            "error": type(exc).__name__,
-            "message": "Could not start the acquisition watcher.",
-        })
-        return
 
 
 def _discovery_queue_candidate_unless_dismissed(
