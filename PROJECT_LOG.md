@@ -1,10 +1,12 @@
-## 2026-10-14 — Front-end design guide documentation in progress
+## 2026-10-14 — PR #69 merged: canonical front-end design guide
 
-- Branch `docs/frontend-design-guide` starts from GitHub `main` at `c6911ea1c39af5520e68f3aa62a13eb737cd3b4a`, after PR #66 and its verification closeout.
-- Promoting the standing design instructions from the PR #66 comment into `docs/FRONTEND_DESIGN_GUIDE.md`; making the guide a mandatory read from root `AGENTS.md`; and linking it from development workflow and test-plan docs.
-- The canonical guide preserves the dark-grey/yellow/red identity, Barlow Condensed / IBM Plex Sans / IBM Plex Mono typography, Impeccable-first critique workflow, anti-patterns, accessibility/responsive expectations, front-end ownership boundaries, and a reconciled prioritized backlog. Login alignment remains completed; state craft is next.
-- Documentation-only change; no app behavior, API, auth, acquisition, safety, dependency, or deployment changes. Final PR head and actual verification results to be recorded at closeout. No tests or CI results are claimed at this stage.
-
+- **PR:** https://github.com/abucalip/navi-librarian/pull/69
+- **Branch / tested PR head:** `docs/frontend-design-guide` / `a31997baa65d02b36ea7b85aaf6bab52ddfbeee5`.
+- **Squash merge commit:** `fd9ceb17480e08e84d2e93ab84defb32c7af1b0a`.
+- Added `docs/FRONTEND_DESIGN_GUIDE.md` as the canonical agent-independent design specification and backlog. Root `AGENTS.md` requires front-end agents to read it; development workflow and test plan link to it.
+- The guide preserves the dark-grey/yellow/red identity, Barlow Condensed / IBM Plex Sans / IBM Plex Mono typography, anti-patterns, Impeccable critique workflow, accessibility/responsive expectations, front-end ownership boundaries, and prioritized backlog. Login alignment is complete; state craft is next.
+- All four required workflows passed on the exact PR head: container runtime smoke (run `38644811862`), Python syntax (`38644811890`), Docker image validation with publishing paused (`38644811875`), and Docker packaging (`38644811793`).
+- Documentation-only change; no local tests or manual browser verification were run. No image publication, deployment, or runtime verification is claimed.
 ---
 
 ## 2026-10-14 — Queue failure classification test migration in progress
