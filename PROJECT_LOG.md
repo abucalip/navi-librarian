@@ -1,3 +1,13 @@
+## 2026-10-14 — PR #61 merged: acquisition transition guard
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/61
+- **Branch:** `refactor/acquisition-transition-guard`; exact tested PR head `aa554ff2be2a19e215538ed2e699b8036764dca1`.
+- **Merge commit:** `73172847535d3683facfbe559706c26a8637a3d4` (squash merge).
+- **Diff reviewed:** seven files. Extracted dismissal-serialized source switching into `acquisition_orchestration.py`, preserved the legacy server adapter and shared transition lock, and added direct-import regression tests for critical-section ordering, dismissal refusal, return-value preservation, and exception propagation. Updated roadmap, status, test plan, and project log.
+- **Exact-head CI:** Python syntax/acquisition safety `38617537652`, Docker packaging/full unit suite/build `38617538490`, container runtime smoke `38617537978`, and validation-only multi-architecture build `38617538229` all succeeded on `aa554ff2be2a19e215538ed2e699b8036764dca1`; publishing remains paused.
+- **Safety/verification limits:** no queue, cleanup, persistence, or filesystem algorithm was changed. No separate local test run, live slskd interaction, production filesystem operation, publication, deployment, or production runtime verification is claimed.
+- **Next:** continue the highest-priority acquisition-coordination audit and move remaining AST-coupled safety coverage to direct-import tests without weakening invariants. HTTP 409 investigation remains deferred until recurrence.
+
 ## 2026-10-14 — Acquisition transition guard extraction proposed
 
 - Branch: `refactor/acquisition-transition-guard`, based on current GitHub main after PR #60 merge.
