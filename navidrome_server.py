@@ -8,6 +8,7 @@ import time
 import unicodedata
 import discovery_store
 import acquisition_lifecycle as _acquisition_lifecycle
+import acquisition_orchestration
 import discovery_refresh
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
