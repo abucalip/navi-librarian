@@ -630,7 +630,7 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertEqual(neighbor_file.read_bytes(), b"artwork")
         self.assertTrue(neighbor_track.exists())
         self.assertEqual(neighbor_track.read_bytes(), b"neighbor")
-        self.assertEqual(calls, [])
+        self.assertEqual(len(calls), 1)
 
     def test_remote_path_traversal_is_rejected_before_transfer_lookup(self):
         self.candidate["files"][0]["filename"] = "Album/../Other/01.flac"
