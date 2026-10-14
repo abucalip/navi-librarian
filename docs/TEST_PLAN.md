@@ -108,6 +108,14 @@ python -m unittest discover -s tests -v
 - PR #28 was squash-merged to `main` at `686fb393a178fe27f3806ecd5ce2138b026291cc`. No workflow runs were returned for the merge commit at closeout; CI evidence above is for the exact PR head, not the merge commit.
 - No local test execution or live/manual runtime checks were performed during closeout.
 
+## Acquisition dismissal neighbor-preservation regression — PR #53
+
+- Final PR head `ef6ec7347f69c0be04331d7bd671d9f56f3c137d` passed all four required workflows: Python syntax/acquisition safety `38599666003`, Docker packaging/full unit suite `38599666001`, container runtime smoke `38599665955`, and validation-only multi-architecture image build `38599665933` (publishing paused).
+- PR #53 was squash-merged at `a7c8dd469c76b340706ba65db8b4315aac60e62b`. No workflow runs were returned for the merge commit itself.
+- The new regression proves successful cleanup preserves a sibling artwork file and a separate album folder. Existing cases continue to cover refusal for unrelated entries, traversal, duplicate folders, symlinks, and failed cancellation.
+- Tests use the existing AST harness; migrate them to direct-import tests alongside a tested cleanup implementation extraction, preserving all assertions. The reported HTTP 409 remains deferred because it was not reproduced.
+- No separate local test run, live slskd test, real production-folder deletion, publication, deployment, or production runtime verification is claimed.
+
 ## Automated baseline
 
 Run from the repository root using the project's supported Python environment.
