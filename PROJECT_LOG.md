@@ -1,3 +1,11 @@
+## 2026-10-14 — Authentication security helper extraction started
+
+- Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 merged.
+- Added `app/security/auth.py` for signing-secret persistence, username/password validation, PBKDF2 digest, and signed-session creation/validation. `app/main.py` retains compatibility wrappers and all route/cookie/middleware behavior.
+- Reworked `tests/test_app_auth.py` from AST extraction of `app/main.py` functions to direct unit tests against the isolated primitives, including signing-secret permissions and invalid-secret handling.
+- Focused/full tests, exact-head CI, final diff review, and PR creation remain pending; no local test run is claimed.
+- No image publication, deployment, or production runtime verification. Publishing remains disabled pending roadmap completion and explicit authorization.
+
 ## 2026-10-14 — PR #36 merged; metadata API router closeout
 
 - PR #36 squash-merged to `main` at `15011614649470c9c71734422b95ee048fbf9f3c` from corrected exact head `19d88637d110ecee8fb2c7c8c4ba2053c6b6113c`.
