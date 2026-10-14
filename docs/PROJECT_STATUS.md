@@ -1,3 +1,13 @@
+## 2026-10-14 — Front-end design guide documentation in progress
+
+- Branch: `docs/frontend-design-guide`, based on current GitHub `main` at `c6911ea1c39af5520e68f3aa62a13eb737cd3b4a`.
+- PR #66's standing design instructions and backlog are being promoted from a pull-request comment into canonical `docs/FRONTEND_DESIGN_GUIDE.md`; root `AGENTS.md` will explicitly require all front-end agents to read it.
+- Workflow and test-plan documentation will reference the guide so ZCode and other agents can retrieve the same design principles and priorities from GitHub rather than relying on PR comments or agent-specific memory.
+- Backlog reconciled against PR #66 closeout: login alignment is complete; state craft is the next front-end priority, followed by per-section layouts, Get/request button consolidation, type/token cleanup, and responsive controls.
+- Documentation-only scope. No application behavior, API, authentication, acquisition, or safety behavior is changed. Exact final commit, PR, and checks will be recorded after the branch is complete; no CI pass is claimed yet.
+
+---
+
 ## 2026-10-14 — Queue failure classification test migration in progress
 
 - Branch: `test/migrate-queue-failure-classification`, based on current GitHub `main` at `23798189e058c97a2080c64ae6ad6468b0ce3645`.
