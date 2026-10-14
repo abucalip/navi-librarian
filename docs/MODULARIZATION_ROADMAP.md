@@ -1,9 +1,10 @@
-## 2026-10-15 — Candidate extraction test migration (PR #73 preparation)
+## 2026-10-15 — PR #73 merged: candidate extraction test migration
 
-- Moved the remaining Tinariwen/Idrache candidate-folder grouping/ranking scenario into direct-import coverage for `slskd_search.extract_candidates`, injecting the production music-key, album-path, quality-tier, and track-identity helpers.
-- Acquisition retry/wait and lifecycle coordination tests remain AST-coupled until an extraction seam and direct tests preserve the actual sequencing, shared-lock races, persistence transitions, cancellation, dismissal/reactivation, and watcher recovery.
-- Verification remains pending: focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review.
-- Next after verification: inspect the acquisition coordinator for a small safe seam; do not split coordination state merely to eliminate AST loading.
+- PR #73 squash-merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3` from tested head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
+- Moved the remaining Tinariwen/Idrache candidate-folder grouping/ranking scenario into `tests/test_slskd_candidates.py`, directly exercising `slskd_search.extract_candidates` with production helper functions. Removed the empty AST test class left after migration.
+- All four required workflows passed on the exact tested head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- The first attempt exposed an empty test class after moving its only test; corrected-head CI passed. No publication, deployment, or production runtime verification is claimed.
+- Next: inspect the top-level acquisition coordinator for the smallest safe extraction seam. Preserve shared transition locks, conditional persistence writes, dismissal/import coordination, uncertain queue outcomes, cleanup refusal, and MCP compatibility.
 
 ---
 
