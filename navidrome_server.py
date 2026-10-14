@@ -8,6 +8,7 @@ import time
 import unicodedata
 import discovery_store
 import acquisition_lifecycle as _acquisition_lifecycle
+import acquisition_orchestration
 import discovery_refresh
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
@@ -4067,38 +4068,17 @@ def _discovery_skip_requested(artist, album):
 
 
 def discovery_skip_acquisition_source(artist, album):
-    """Request a safe switch to the next eligible source for a stalled acquisition."""
-    _discovery_init()
-    # Keep the status check and skip request atomic with dismissal in this process.
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        identity = (_music_key(artist), _music_key(album))
-        with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-            row = db.execute(
-                "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?", identity,
-            ).fetchone()
-            if not row:
-                return json.dumps({"ok": False, "error": _acquisition_lifecycle.skip_request_error(None, {})})
-            try:
-                candidate = json.loads(row[2] or "{}")
-                details = json.loads(row[1] or "{}")
-            except (ValueError, TypeError):
-                candidate, details = {}, {}
-            error = _acquisition_lifecycle.skip_request_error(row[0], candidate)
-            if error:
-                return json.dumps({"ok": False, "error": error})
-            details["skip_requested"] = True
-            details["skip_requested_at"] = time.time()
-            cursor = db.execute(
-                "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
-                "WHERE artist_key=? AND album_key=? AND status='downloading'",
-                (json.dumps(details, ensure_ascii=False), time.time(), *identity),
-            )
-            if cursor.rowcount != 1:
-                return json.dumps({"ok": False, "error": "Acquisition state changed; please refresh and try again."})
-            db.commit()
-    return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
-
+    """Compatibility adapter for the importable acquisition lifecycle service."""
+    return json.dumps(acquisition_orchestration.request_skip_acquisition_source(
+        artist, album,
+        initialize=_discovery_init,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        connect=lambda: sqlite3.connect(DISCOVERY_DB, timeout=10),
+        music_key=_music_key,
+        lifecycle=_acquisition_lifecycle,
+        now=time.time,
+        json_module=json,
+    ), ensure_ascii=False)
 
 def _discovery_cancel_and_clean_source(
     download_root, candidate, base_url, headers

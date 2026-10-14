@@ -286,3 +286,8 @@ For changes that move templates, stylesheets, or scripts out of `app/main.py`:
 - Confirm `/static/login.css`, `/static/login.js`, `/static/app.css`, `/static/app.js`, and `/assets/cassette.png` are reachable before first-run setup/login; verify protected application/API routes remain protected.
 - Run syntax checks and all required Docker packaging/full-test, runtime-smoke, and validation-only multi-architecture workflows on the exact final PR head. Publishing remains disabled.
 - After CI succeeds, perform the full manual browser checklist on that exact SHA, including the deferred performance observation and distinct error/recovery scenario. Record results; do not infer them from unit tests.
+
+
+## Persisted acquisition source-skip orchestration — reconstructed PR #48
+
+Run focused regression tests with `python -m unittest tests.test_acquisition_orchestration -v`, then the full `python -m unittest discover -s tests -v` suite and syntax checks. Direct tests must cover successful persistence for a downloading acquisition with eligible fallback candidates and rejection of missing, dismissed, non-downloading, and no-fallback states without mutation. Verify the MCP adapter still serializes the same JSON response shape, the transition remains under the shared lock, and the SQL update is conditional on `status='downloading'`. Run all four required exact-head workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture image validation. Do not publish or deploy.

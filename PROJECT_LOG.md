@@ -1,3 +1,13 @@
+## 2026-10-14 — Reconstruct acquisition orchestration after PR #49
+
+- PR #49 was squash-merged at `c972278566d8ec68f3755f464df1afb5a8a18f56` after Python syntax (run `38586694060`), Docker packaging/full unit suite (`38586693783`), container runtime smoke (`38586693950`), and validation-only multi-architecture image validation (`38586693798`) all succeeded on exact head `f4712aa2703d4f1deae6a0532502f27123b80fc6`.
+- Reconstructed PR #48 from updated `main` on `refactor/acquisition-orchestration-reconstructed` rather than reusing the old branch's pre-squash history.
+- Scope: move the persisted source-skip transition into `acquisition_orchestration.py` behind injected dependencies; preserve the MCP-compatible adapter, shared transition lock, conditional downloading-state update, existing filesystem safety authorities, and direct-import regression coverage. Add Docker packaging and update architecture, roadmap, test plan, status, and log.
+- **Final exact-head CI:** all four required workflows succeeded on final PR #50 head `9185f3c12ace7c82a61ff04c062044ab9c33cdf6`: Python syntax run `38587910860`, Docker packaging/full unit suite `38587910842`, container runtime smoke `38587911440`, and validation-only multi-architecture image validation `38587911187`.
+- Final diff review found only the intended orchestration extraction, direct tests, Docker packaging, and focused documentation. No PR review submissions or inline review threads were present. GitHub reports the PR mergeable and it is ready for review.
+- No separate local test run is claimed. No merge, publication, deployment, or production runtime verification is claimed.
+- **Next action:** merge PR #50 using the verified exact head if the GitHub merge gate remains clear.
+ 
 ## 2026-10-14 — Acquisition lifecycle policy extraction started (PR #47)
 
 - Merged PR #46 at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four workflows succeeded on exact head `5b050abac235d729df01cc04703ce70140398be6`.
