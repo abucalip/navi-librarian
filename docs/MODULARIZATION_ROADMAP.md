@@ -202,3 +202,10 @@ PR #57 was squash-merged at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact 
 - Extracted SQLite save/list mechanics into `acquisition_state.py`; legacy server wrappers remain compatible.
 - Exact PR head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d` passed compile, full test/build, container smoke, and validation-only multi-architecture workflows (`116019930318`, `116019925188`, `116019924747`, `116019926066`); squash merge `730ae16e613f3962c488f87c8de54034db7463dd`.
 - The next task must be selected after reviewing the live open-PR list and current roadmap. Do not assume watcher-startup PR #58 is merged; confirm its current status and exact-head checks.
+
+
+## Front-end quality follow-up — PR #66 merged (2026-10-14)
+
+- Login-page alignment is complete: `static/login.css` now shares the app's design tokens, type system, primary-control treatment, and focus-visible styles. PR #66 merged at `717b1ad08e5de54e2dd8c11c2734976d75ce2e5f` from tested head `d0b13b7411b9b300b78b24a8944348b7e57d4b65`.
+- Exact-head syntax, Docker packaging/full suite, runtime smoke, and validation-only multi-architecture CI all passed. Manual screenshots/report are published on the PR; keyboard-focus modality and first-run setup variant remain explicitly skipped in that report.
+- This visual improvement does not change the backend modularization priority or authorize image publication/deployment. Continue the safety-first acquisition coordination/test migration roadmap.
