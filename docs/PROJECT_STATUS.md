@@ -529,3 +529,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Intended scope: extract only the persisted manual source-skip transition into `acquisition_orchestration.py`, keep the MCP adapter and safety boundaries, add direct-import tests, and package the module in Docker. No cleanup/import implementation or filesystem safety rule is changed.
 - Reconstructed final head `9185f3c12ace7c82a61ff04c062044ab9c33cdf6` passed all four required workflows: Python syntax (`38587910860`), Docker packaging/full unit suite (`38587910842`), container runtime smoke (`38587911440`), and validation-only multi-architecture image validation (`38587911187`). The final diff was reviewed; no PR review submissions or inline review threads were present. PR #50 is open and ready for review; it has not been merged.
 - No separate local test run is claimed. No publication, deployment, or production runtime verification occurred.
+
+
+## 2026-10-14 — PR #50 acquisition orchestration merged
+
+- PR #50 was squash-merged after the complete final diff review and all four required workflows passed on exact PR head `c8610fdc44ea93bcfb55a654598792aee78e7ecb`.
+- **Merge commit:** `a37d29cf11657dce6d5cbc6cb928ca840fe5b206`.
+- CI evidence on the exact PR head: Python syntax (`38589006636`), Docker packaging/full unit suite (`38589006609`), container runtime smoke (`38589006569`), and validation-only multi-architecture image validation (`38589006620`) all succeeded.
+- Scope merged: extracted persisted source-skip transition into `acquisition_orchestration.py`, kept the MCP compatibility adapter and safety boundaries, added direct regression tests, and updated Docker packaging and documentation.
+- No PR reviews or inline review threads were present at merge time. No separate local test run is claimed. No image publication, deployment, or production runtime verification occurred.
+- **Next action:** continue with the next highest-priority roadmap item; do not infer publication or deployment from this merge.
