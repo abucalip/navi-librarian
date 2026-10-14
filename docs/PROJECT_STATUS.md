@@ -512,3 +512,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - **Change:** moved `/api/auth/status`, `/api/auth/setup`, `/api/auth/login`, `/api/auth/logout`, and `/login` route handlers into `app/api/auth.py`. Middleware and session/auth primitives remain in `app/main.py` and `app/security/auth.py`; dependency injection keeps app-owned settings, cookies, and password/session behavior explicit.
 - **State:** implemented and CI-verified on `a78272d`; PR #39 remains open and unmerged. The documentation closeout itself adds a new PR-head commit, so recheck all required workflows against the resulting exact head before merging. No local test run, manual UI test, image publication, deployment, or production runtime verification was performed. Publishing remains paused.
 - **Next:** wait for CI on the documentation-updated PR head, review the final diff and mergeability, then merge only if all required checks pass.
+
+## 2026-10-14 — Acquisition orchestration extraction in progress
+
+- Verified all four required GitHub Actions workflows passed on PR #47 exact head `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture image validation. This resolves the outstanding CI gate for that exact commit only.
+- Started a follow-up stacked branch, `refactor/acquisition-lifecycle-orchestration`, to move the persisted source-skip transition into `acquisition_orchestration.py` behind injected initialization, locking, database, normalization, lifecycle-policy, clock, and JSON dependencies. The legacy MCP function remains a compatibility adapter; direct-import regression tests cover accepted and rejected transitions.
+- Filesystem cleanup/import authorities and protections are unchanged. The watcher, source-switch, cleanup execution, interrupted-import recovery, and top-level acquire coordinator remain future extraction work.
+- Follow-up branch CI and review are pending. No local test execution, merge, publication, deployment, or production runtime verification is claimed.
