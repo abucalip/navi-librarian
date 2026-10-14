@@ -1,3 +1,13 @@
+## 2026-10-14 — PR #44 dismissal diagnostics: local manual report published; 409 not reproduced
+
+- PR #44 remains open as a draft at exact tested head `4c505423afef8c6959063ddea7e5672a0b9894ef`; it is not merged.
+- Published the user's local manual report as a PR conversation comment. Test environment: macOS 26.2 arm64, Python 3.12.14, isolated port 8089, per-commit app data, sandbox music/download paths, and slskd disabled by default.
+- All reported manual checklist items passed: first-run setup/login, dashboard/artwork, discovery, navigation/album details, settings, Get/request without a real download, acquisition cards/status, and no unexpected browser/server errors.
+- Crucially, every Dismiss attempt succeeded; the reported HTTP 409 was not reproduced. This does not identify a cleanup refusal stage or verify a fix for the original failure. The report's final console detail was truncated, so no meaning is inferred from it.
+- PR #44's four required exact-head workflows were already confirmed successful: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only Docker image/multi-architecture (publishing remains paused).
+- **State:** instrumentation implemented; automated CI passed; isolated manual UI checklist passed but original 409 scenario unverified; PR not merged; no image publication, deployment, or production runtime verification.
+- **Next action:** leave PR #44 draft/unmerged until the failure is reproduced with its diagnostic warning, or new evidence supports a focused change. If it recurs, capture the HTTP response body and matching server warning before retrying. Do not relax cleanup safety checks.
+ 
 ## 2026-10-14 — Claude front-end project instructions merged; expanded handoff in progress
 
 - PR #42 defined the initial ownership boundary and was squash-merged to `main` at `b23e0da128d63bee2bef7f47ed3350cf1be2e613` from exact head `663d826f02c12e0dbf9b1832570b60f20864ecbc`.
