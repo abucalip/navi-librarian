@@ -170,5 +170,35 @@ class AcquisitionWatcherStartupTests(unittest.TestCase):
         self.assertEqual(self.status[-1][2], "monitor_error")
 
 
+    def test_concurrent_duplicate_start_reserves_and_starts_exactly_one_watcher(self):
+        import threading
+
+        gate = threading.Barrier(3)
+        results = []
+        failures = []
+
+        def start_concurrently():
+            try:
+                gate.wait(timeout=3)
+                results.append(self.start())
+            except BaseException as exc:
+                failures.append(exc)
+
+        threads = [threading.Thread(target=start_concurrently) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        gate.wait(timeout=3)
+        for thread in threads:
+            thread.join(timeout=3)
+
+        self.assertTrue(all(not thread.is_alive() for thread in threads))
+        self.assertEqual(failures, [])
+        self.assertCountEqual(results, [True, False])
+        self.assertEqual(self.active, {self.identity})
+        self.assertEqual(len(self.saved), 1)
+        self.assertEqual(len(self.threads), 1)
+        self.assertTrue(self.threads[0].started)
+
+
 if __name__ == "__main__":
     unittest.main()
