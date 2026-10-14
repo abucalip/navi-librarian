@@ -11,6 +11,10 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 from app.api.settings import router as settings_router
+from app.api.auth import (
+    AUTH_LOCK, _LOGIN_ATTEMPTS, _LOGIN_MAX_ATTEMPTS,
+    create_auth_router,
+)
 from app.security.auth import (
     AUTH_COOKIE_NAME,
     AUTH_PASSWORD_ITERATIONS,
@@ -46,10 +50,6 @@ def cassette_icon():
 
 
 # Authentication settings remain in the existing persistent settings store.
-AUTH_LOCK = threading.Lock()
-_LOGIN_ATTEMPTS = {}
-_LOGIN_WINDOW_SECONDS = 15 * 60
-_LOGIN_MAX_ATTEMPTS = 8
 
 _AUTH_SECRET = load_auth_secret(librarian.DATA_DIR)
 
@@ -114,83 +114,6 @@ async def require_app_login(request: Request, call_next):
     return RedirectResponse(url="/login", status_code=303)
 
 
-@app.get("/api/auth/status")
-def app_auth_status():
-    configured = _auth_configured()
-    return {"setup_required": not configured}
-
-
-@app.post("/api/auth/setup")
-def app_auth_setup(payload: dict, request: Request):
-    username = str(payload.get("username") or "").strip()
-    password = payload.get("password")
-    confirmation = payload.get("password_confirmation")
-    with AUTH_LOCK:
-        if _auth_configured():
-            raise HTTPException(status_code=409, detail="App account is already configured.")
-        if not _valid_auth_username(username):
-            raise HTTPException(
-                status_code=400,
-                detail="Username must be 3–64 characters using letters, numbers, dot, underscore, or hyphen.",
-            )
-        if not _valid_auth_password(password):
-            raise HTTPException(status_code=400, detail="Password must be at least 12 characters.")
-        if password != confirmation:
-            raise HTTPException(status_code=400, detail="Passwords do not match.")
-        salt = secrets.token_hex(16)
-        password_hash = _password_digest(password, salt)
-        librarian._discovery_settings_write({
-            "app_auth_username": username,
-            "app_auth_salt": salt,
-            "app_auth_hash": password_hash,
-        })
-    response = JSONResponse({"ok": True, "message": "App account created."})
-    _set_auth_cookie(response, request, username)
-    return response
-
-
-@app.post("/api/auth/login")
-def app_auth_login(payload: dict, request: Request):
-    if not _auth_configured():
-        raise HTTPException(status_code=409, detail="Create the app account first.")
-    client_ip = request.client.host if request.client else "unknown"
-    now = time.time()
-    attempts = [stamp for stamp in _LOGIN_ATTEMPTS.get(client_ip, []) if now - stamp < _LOGIN_WINDOW_SECONDS]
-    _LOGIN_ATTEMPTS[client_ip] = attempts
-    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
-        raise HTTPException(status_code=429, detail="Too many login attempts. Try again in 15 minutes.")
-
-    username = str(payload.get("username") or "").strip()
-    password = payload.get("password")
-    settings = _auth_settings()
-    valid = (
-        username == settings.get("app_auth_username")
-        and isinstance(password, str)
-        and 0 < len(password) <= 1024
-        and bool(settings.get("app_auth_salt"))
-        and bool(settings.get("app_auth_hash"))
-        and hmac.compare_digest(
-            _password_digest(password, settings["app_auth_salt"]),
-            settings["app_auth_hash"],
-        )
-    )
-    if not valid:
-        attempts.append(now)
-        _LOGIN_ATTEMPTS[client_ip] = attempts
-        raise HTTPException(status_code=401, detail="Invalid username or password.")
-    _LOGIN_ATTEMPTS.pop(client_ip, None)
-    response = JSONResponse({"ok": True, "message": "Signed in."})
-    _set_auth_cookie(response, request, username)
-    return response
-
-
-@app.post("/api/auth/logout")
-def app_auth_logout():
-    response = JSONResponse({"ok": True})
-    response.delete_cookie(AUTH_COOKIE_NAME, path="/", httponly=True, samesite="strict")
-    return response
-
-
 LOGIN_PAGE = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -226,17 +149,6 @@ async function init(){try{const r=await fetch('/api/auth/status',{cache:'no-stor
 form.addEventListener('submit',async e=>{e.preventDefault();message.textContent='';button.disabled=true;try{const body={username:document.getElementById('username').value.trim(),password:document.getElementById('password').value};if(setup)body.password_confirmation=document.getElementById('confirmation').value;const r=await fetch(setup?'/api/auth/setup':'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Authentication failed.');window.location.replace('/')}catch(err){message.textContent=err.message}finally{button.disabled=false}});
 init();
 </script></body></html>"""
-
-
-@app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
-    if _session_username(request.cookies.get(AUTH_COOKIE_NAME)):
-        return RedirectResponse("/", status_code=303)
-    return HTMLResponse(
-        LOGIN_PAGE,
-        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
-    )
-
 
 
 @app.get("/api/health")
@@ -315,6 +227,18 @@ def dashboard_picks(count: int = 10):
     return {"items": random_picks[:count], "count": min(count, len(random_picks)), "pool_size": len(combined)}
 
 
+app.include_router(create_auth_router(
+    settings_read=_auth_settings,
+    settings_write=librarian._discovery_settings_write,
+    auth_configured=_auth_configured,
+    session_username=lambda token: _session_username(token),
+    set_auth_cookie=_set_auth_cookie,
+    valid_username=_valid_auth_username,
+    valid_password=_valid_auth_password,
+    password_digest=_password_digest,
+    cookie_name=AUTH_COOKIE_NAME,
+    login_page_html=LOGIN_PAGE,
+))
 app.include_router(settings_router)
 app.include_router(acquisitions_router)
 app.include_router(discovery_router)
