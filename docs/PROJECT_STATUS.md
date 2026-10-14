@@ -1,3 +1,12 @@
+## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
+
+- Reconciled the current status against GitHub main at `95a744f8a6f5b4749e5c50de6e095027081a15d5`; PRs #76 and #78 and their documentation closeouts are merged. The latest main commit removes obsolete pending entries for the import guard.
+- This closeout is documentation-only. No application code changed and no new tests were run; retain the exact-head CI evidence recorded in the merged PR entries rather than treating the documentation update as new verification.
+- **Next action:** audit remaining AST-coupled acquisition lifecycle tests for the smallest safe direct-import seam: duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and refusal on failed reactivation, and stale watcher recovery. Keep persistence-transition integration coverage and true lock/race tests unless equivalent direct tests cover the same boundary.
+- No publishing, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — PR #78 merged: dismissal-serialized import guard
 
 - PR #78: https://github.com/abucalip/navi-librarian/pull/78
@@ -22,16 +31,6 @@
 
 ---
 
-## 2026-10-15 — Extract slskd search polling (verification pending)
-
-- Branch: `refactor/slskd-search-polling`, based on current main after PR #74.
-- Moved progressive query submission, polling, count tracking, delayed peer-payload waiting, and per-query diagnostics into `slskd_search_polling.py` behind injected HTTP, clock, sleep, ID, and response-normalization dependencies.
-- Added direct-import tests for fallback-query progression and waiting when slskd reports peers before exposing payloads; retained the existing AST-harness broad-query integration case to continue checking the coordinator's final response.
-- Docker packaging and Python syntax workflow include the new module. Focused/full tests, exact-head four-workflow CI, final diff review, and behavior equivalence review are pending; no test pass is claimed.
-- Next: verify polling state/timeout/error semantics against the pre-extraction implementation, then inspect remaining acquisition lifecycle tests for the next safe seam.
-
----
-
 ## 2026-10-15 — PR #73 merged: candidate extraction direct-import test
 
 - PR #73: https://github.com/abucalip/navi-librarian/pull/73
@@ -40,16 +39,6 @@
 - All four required workflows passed on the exact tested head: Python syntax (run `38652066842`), Docker packaging/full unit suite (run `38652066649`), container runtime smoke (run `38652066755`), and Docker image validation with publishing paused (run `38652066683`).
 - Final diff reviewed: only project status/log/test-plan/roadmap docs and the two test files changed. No live slskd test, image publication, deployment, or production runtime verification is claimed.
 - Next: continue the AST-coupled acquisition-coordination audit; preserve sequencing, lock/race, persistence, cancellation, dismissal/reactivation, and watcher recovery coverage.
-
----
-
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
-
-- Branch: `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
-- Move the Tinariwen/Idrache candidate-grouping and ranking scenario from the AST harness to `tests/test_slskd_candidates.py`, calling `slskd_search.extract_candidates` with the real direct-import quality, path-match, and track-identity helpers.
-- Keep acquisition retry/wait and lifecycle coordination tests in the AST harness because they exercise the integrated coordinator, shared locks, state persistence, dismissal/reactivation, and watcher recovery.
-- Focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review are pending. No test pass is claimed yet.
-- Next: verify this focused migration, then continue the top-level acquisition-coordination audit without weakening safety coverage.
 
 ---
 
