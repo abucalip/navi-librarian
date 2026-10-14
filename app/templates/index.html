@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navidrome Librarian</title>
+<link rel="icon" type="image/jpeg" href="/assets/cassette.png">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header>
+  <h1>Navidrome Librarian</h1>
+  <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
+</header>
+<main>
+  <nav>
+    <button class="active" data-page="dashboard">Dashboard</button>
+    <button data-page="recommendations">Recommendations</button>
+    <button data-page="newReleases">New releases</button>
+    <button data-page="personalDiscoveries">Personal Discoveries</button>
+    <button data-page="classics">Add to your collection</button>
+    <button data-page="artistDeepDive">Artist Deep Dives</button>
+    <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
+    <button data-page="settings">Settings</button>
+    <button id="logoutButton" type="button">Log out</button>
+  </nav>
+
+  <section id="dashboard" class="page">
+    <div class="panel">
+      <div class="dashboard-carousel-heading">
+        <div>
+          <h2>Ten from the collection</h2>
+          <p>A fresh, random mix from every discovery lane.</p>
+        </div>
+        <button id="shuffleDashboard">Shuffle picks ↻</button>
+      </div>
+      <p id="dashboardPicksStatus" class="dashboard-picks-status">Finding something unexpected…</p>
+      <div id="dashboardCarousel" class="dashboard-carousel" aria-label="Random album recommendations"></div>
+    </div>
+  </section>
+
+  <section id="recommendations" class="page hidden">
+    <div class="panel">
+      <h2>Discover music</h2>
+      <div class="controls">
+        <label for="count">Albums</label>
+        <select id="count">
+          <option>5</option><option selected>10</option><option>15</option><option>20</option>
+      </select>
+        <button id="loadRecommendations">Generate recommendations</button>
+      </div>
+      <div class="discovery-controls">
+        <input
+          id="recommendationSearch"
+          type="search"
+          placeholder="Search artist, album, or genre…"
+          aria-label="Search recommendations"
+        >
+        <select id="categoryFilter" aria-label="Filter by discovery category">
+          <option value="all">All categories</option>
+          <option value="adjacent">Adjacent</option>
+          <option value="cross_genre">Cross-genre</option>
+          <option value="adventurous">Adventurous</option>
+          <option value="unclassified">Unclassified</option>
+        </select>
+        <select id="recommendationSort" aria-label="Sort recommendations">
+          <option value="original">Recommended order</option>
+          <option value="popularity">Most popular artists</option>
+          <option value="score">Highest discovery score</option>
+          <option value="artist">Artist A–Z</option>
+        </select>
+      </div>
+      <p id="recommendationCount" class="muted" aria-live="polite">
+        Generate recommendations to get started.
+      </p>
+      <div id="recommendationCards" class="cards"></div>
+      <details>
+        <summary>Recommendation diagnostics</summary>
+        <pre id="recommendationDebug" class="muted"></pre>
+      </details>
+    </div>
+  </section>
+
+  <section id="newReleases" class="page hidden">
+    <div class="panel">
+      <h2>New releases</h2>
+      <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
+      <div class="controls">
+        <button data-load-discovery="new_releases">Load new releases</button>
+        <button data-refresh-discovery="new_releases">Refresh in background</button>
+      </div>
+      <p id="newReleasesStatus" aria-live="polite"></p>
+      <div id="newReleasesCards" class="cards"></div>
+    </div>
+  </section>
+
+  <footer>
+    Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
+  </footer>
+
+<section id="personalDiscoveries" class="page hidden">
+  <div class="panel">
+    <h2>Personal Discoveries</h2>
+    <p>Recommendations based on your listening and musical interests.</p>
+    <button data-load-discovery="personal">Load discoveries</button>
+    <button data-refresh-discovery="personal">Refresh</button>
+    <p id="personalStatus"></p>
+    <div id="personalCards" class="cards"></div>
+  </div>
+</section>
+
+<section id="classics" class="page hidden">
+  <div class="panel">
+    <h2>Add to your collection</h2>
+    <p>Find acclaimed albums and less obvious discoveries to expand your library.</p>
+    <button data-load-discovery="classics">Load albums</button>
+    <button data-refresh-discovery="classics">Refresh</button>
+    <p id="classicsStatus"></p>
+    <div id="classicsCards" class="cards"></div>
+  </div>
+</section>
+
+<section id="artistDeepDive" class="page hidden">
+  <div class="panel">
+    <h2>Artist Deep Dives</h2>
+    <p>Explore missing albums by artists in your library and discover similar artists.</p>
+    <button data-load-discovery="artist_deep_dive">Load albums</button>
+    <button data-refresh-discovery="artist_deep_dive">Refresh</button>
+    <p id="artistDeepDiveStatus"></p>
+    <div id="artistDeepDiveCards" class="cards"></div>
+  </div>
+</section>
+
+<section id="settings" class="page hidden">
+  <div class="panel">
+    <h2>Settings</h2>
+    <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
+    <div class="settings-tabs" role="tablist" aria-label="Service settings">
+      <button type="button" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
+      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
+    </div>
+    <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel">
+      <h3>Navidrome connection</h3>
+      <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://192.168.1.12:4533"></label>
+      <label>Username <input id="navidromeUser" type="text" autocomplete="username"></label>
+      <label>Password <input id="navidromePassword" type="password" placeholder="Leave blank to keep the saved password" autocomplete="new-password"></label>
+      <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
+      <p class="muted">Use the path as seen by the Librarian process/container, not a path inside the Navidrome service.</p>
+      <p id="connection" class="status">Not checked yet.</p>
+      <p><button id="saveNavidrome">Save settings</button> <button id="checkConnection">Test connection</button></p>
+      <p id="navidromeStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>slskd connection</h3>
+      <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
+      <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://192.168.1.12:5030"></label>
+      <label>API key <input id="slskdApiKey" type="password" placeholder="Enter key to set or replace it" autocomplete="new-password"></label>
+      <label>slskd completed-download directory visible to the Librarian backend <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete"></label>
+      <p class="muted">Use an absolute path on the machine/container running the Librarian backend. The directory must be mounted into the container when using Docker.</p>
+      <h3>Audio quality priority</h3>
+      <p class="muted">Drag rows to set your preferred order. You can also use the Move up / Move down buttons.</p>
+      <ol id="qualityPriorityList" class="quality-priority-list" aria-label="Audio quality priority order"></ol>
+      <p id="qualityPriorityAnnouncement" class="sr-only" aria-live="polite"></p>
+      <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
+      <p id="slskdStatus" aria-live="polite"></p>
+    </div>
+    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>Last.fm API</h3>
+      <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
+      <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
+      <p id="lastfmStatus" aria-live="polite"></p>
+      <p><button id="saveLastfm">Save settings</button> <button id="testLastfm">Test connection</button></p>
+    </div>
+    <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" hidden>
+      <h3>ListenBrainz profile</h3>
+      <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
+      <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
+      <p id="listenbrainzStatus" aria-live="polite"></p>
+      <p><button id="saveListenbrainz">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+    </div>
+  </div>
+</section>
+
+<section id="acquisitions" class="page hidden">
+  <div class="panel">
+    <h2>Acquisition status</h2>
+    <p class="muted">Persistent download and import status, including failures. Active jobs are resumed when this page checks in.</p>
+    <p id="acquisitionsStatus"></p>
+    <div id="acquisitionCards" class="cards"></div>
+    <button id="refreshAcquisitions">Refresh status</button>
+  </div>
+</section>
+
+
+
+</main>
+
+<div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
+  <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
+    <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details">×</button>
+    <div class="album-modal-layout">
+      <div class="album-modal-art-column">
+        <div class="album-modal-art"><img id="albumModalArtwork" alt="Album artwork"><button id="albumModalGet" class="get-album" type="button">get</button></div>
+        <nav id="albumModalPlatformLinks" class="album-platform-links" aria-label="Find this album on music services"></nav>
+      </div>
+      <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalStatus" class="album-modal-status" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>
+    </div>
+  </section>
+</div>
+<script src="/static/app.js" defer></script>
+</body>
+</html>

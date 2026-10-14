@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-12
+Last updated: 2026-10-14
 
 ## Authority and responsibilities
 
@@ -52,3 +52,8 @@ Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/D
 
 - Run the full manual browser checklist for UI-facing changes only after required automated checks pass on the exact tested SHA. The outstanding performance observation and distinct error/recovery exercise are scheduled for the next UI-facing change. Non-UI PRs still require relevant automated/API/integration tests; do not rerun the full visual checklist solely due to a SHA change.
 - Use the documented local helper with sandbox music/download paths and slskd disabled for ordinary checks. Keep application data isolated by PR; verify separately before claiming that it persists across different source SHAs. A server-restart persistence observation does not prove cross-SHA helper reuse.
+
+
+## Frontend assets and authentication boundary
+
+When extracting templates/styles/scripts, serve only the dedicated static directory under `/static/` and retain authentication for application pages and APIs. Public static access should be explicitly scoped to `/static/*` and the existing bundled `/assets/cassette.png` endpoint. Add integration tests for asset loading before setup/login and protected-route behavior. UI-facing asset delivery changes require exact-head CI followed by the full manual browser checklist, including the outstanding performance and error/recovery checks.

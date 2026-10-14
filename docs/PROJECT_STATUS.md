@@ -1,3 +1,11 @@
+## 2026-10-14 — Frontend asset extraction (PR pending)
+
+- Base: GitHub `main` at `790db077ee14c2e7ab8f7c64e37b8ea6e3e6233b`; branch: `refactor/frontend-assets`.
+- Moved the login and main-page HTML into `app/templates/login.html` and `app/templates/index.html`; styles and scripts are in `static/login.css`, `static/login.js`, `static/app.css`, and `static/app.js`. `app/main.py` now loads templates from disk and mounts the static directory, substantially reducing the module's inline presentation payload.
+- The authentication middleware explicitly allows `/static/*` and the existing `/assets/cassette.png` endpoint so the unauthenticated login screen can load its required assets. Other routes remain subject to the existing auth middleware.
+- Added integration assertions for login/home external asset references, asset delivery before setup/login, and no inline style/script blocks in the returned page HTML.
+- The first exact-head CI attempt on `480fa466d27ca163a302d01863cc8dc32fba62fd` passed Python compilation but the full suite found two source-location assumptions in existing tests (`test_artwork_cache_isolation.py` and `test_quality_priority.py`). Updated both to inspect the extracted JavaScript and template files directly, preserving their assertions. A subsequent run showed the quality-priority assertion also spans HTML and JavaScript, so it now checks both extracted files. The four required workflows are rerunning on the corrected head; outcomes remain pending. Manual browser testing is required after CI and must include the previously deferred performance observation and a distinct error/recovery exercise. No image publication, deployment, or runtime verification; GHCR publication remains disabled.
+
 ## 2026-10-14 — PR #39 merged: authentication API routes
 
 - PR #39 was squash-merged to `main` at `f08495088b28ca538f90b9ff9edf4410f5e55749` from exact PR head `9187a51380d2a7ed7d27276ce4505827becaed32`.

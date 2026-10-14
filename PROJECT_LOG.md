@@ -1,3 +1,12 @@
+## 2026-10-14 — Frontend asset extraction (PR pending)
+
+- Based on GitHub `main` at `790db077ee14c2e7ab8f7c64e37b8ea6e3e6233b`, branch `refactor/frontend-assets`.
+- Extracted the login and primary application HTML to `app/templates/login.html` and `app/templates/index.html`; extracted CSS and JavaScript to `static/login.css`, `static/login.js`, `static/app.css`, and `static/app.js`. `app/main.py` now reads the templates and mounts the static directory.
+- Explicitly allowed only `/static/*` and `/assets/cassette.png` through the auth middleware so unauthenticated setup/login screens can load assets. Added integration tests for public asset delivery and external-asset page markup.
+- First exact-head CI on `480fa466d27ca163a302d01863cc8dc32fba62fd` compiled Python successfully but found two existing tests coupled to inline UI content in `app/main.py`. Updated `tests/test_artwork_cache_isolation.py` and `tests/test_quality_priority.py` to inspect the extracted JavaScript and template files directly; the underlying cache-isolation and quality-control assertions remain. A second run identified that the quality-priority assertion spans both HTML and JavaScript; it now checks both files. Four required workflows are rerunning on the corrected head; results are pending.
+- No local test execution is claimed. Because this changes UI asset delivery, manual browser checks are required after CI, including the deferred performance and distinct error/recovery checks.
+- Not published, deployed, or runtime-verified. GHCR publication remains disabled.
+
 ## 2026-10-14 — Authentication integration coverage and route extraction (PRs #38–#39 merged)
 
 - PR #38 was squash-merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553` from exact head `1901cc68d1bb689da5257b6a51947af84b87d5ca`. The new FastAPI TestClient integration tests cover first-run setup and validation, login/logout, rate limiting, cookie attributes over HTTP/HTTPS, session reuse/tampering, and public/protected route behavior. Exact-head syntax, Docker packaging/full suite (147 tests), container runtime smoke, and validation-only multi-architecture workflows all passed. An initial test revision failed two redirect assertions; `follow_redirects=False` corrected those expectations.

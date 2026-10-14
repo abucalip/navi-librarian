@@ -117,7 +117,15 @@ class AuthRouteIntegrationTests(unittest.TestCase):
     def test_public_paths_and_protected_page_and_api_rules(self):
         self.setup_account()
         self.client.cookies.clear()
-        self.assertEqual(self.client.get("/login").status_code, 200)
+        login = self.client.get("/login")
+        self.assertEqual(login.status_code, 200)
+        self.assertIn('/static/login.css', login.text)
+        self.assertIn('/static/login.js', login.text)
+        self.assertNotIn('<style>', login.text)
+        self.assertNotIn('<script>', login.text)
+        self.assertEqual(self.client.get("/static/login.css").status_code, 200)
+        self.assertEqual(self.client.get("/static/login.js").status_code, 200)
+        self.assertEqual(self.client.get("/assets/cassette.png").status_code, 200)
         self.assertEqual(self.client.get("/api/auth/status").status_code, 200)
         self.assertEqual(self.client.post("/api/auth/logout").status_code, 200)
         self.assertEqual(self.client.get("/").status_code, 303)
@@ -128,7 +136,23 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.assertEqual(self.client.get("/").status_code, 303)
         self.assertEqual(self.client.get("/api/health").status_code, 401)
         self.assertEqual(self.client.get("/api/auth/status").status_code, 200)
-        self.assertEqual(self.client.get("/login").status_code, 200)
+        login = self.client.get("/login")
+        self.assertEqual(login.status_code, 200)
+        self.assertEqual(self.client.get("/static/login.css").status_code, 200)
+        self.assertEqual(self.client.get("/static/login.js").status_code, 200)
+        self.assertEqual(self.client.get("/assets/cassette.png").status_code, 200)
+        self.assertEqual(self.client.get("/").status_code, 303)
+
+    def test_main_page_references_external_assets(self):
+        self.setup_account()
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('/static/app.css', response.text)
+        self.assertIn('/static/app.js', response.text)
+        self.assertNotIn('<style>', response.text)
+        self.assertNotIn('<script>', response.text)
+        self.assertEqual(self.client.get("/static/app.css").status_code, 200)
+        self.assertEqual(self.client.get("/static/app.js").status_code, 200)
 
 
 if __name__ == "__main__":
