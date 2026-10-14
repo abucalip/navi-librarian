@@ -1,3 +1,8 @@
+## 2026-10-14 — Acquisition safety test migration follow-up
+
+- After PR #62, removed one redundant AST-harness queue-dismissal case and its shim; equivalent dismissal-refusal coverage remains in direct-import tests against `acquisition_orchestration.queue_candidate_unless_dismissed`.
+- This is a test-only migration step. Continue with the next AST-coupled case only when it can be moved to a direct-import test without reducing safety coverage.
+
 ## 2026-10-14 — Queue/dismissal guard extraction merged (PR #62)
 
 - PR #62: https://github.com/abucalip/navi-librarian/pull/62

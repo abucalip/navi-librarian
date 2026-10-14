@@ -9,7 +9,6 @@ import tempfile
 import threading
 import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
-import acquisition_orchestration as _acquisition_orchestration
 
 from acquisition_import import import_matched_album_files as _module_import_matched_album_files
 from acquisition_completion import (
@@ -25,15 +24,6 @@ SOURCE = Path(__file__).resolve().parents[1] / "navidrome_server.py"
 
 class FakeHTTPError(Exception):
     pass
-
-
-def _queue_source(namespace, base_url, headers, username, selected_files):
-    response = namespace["httpx"].post(
-        f"{base_url}/api/v0/transfers/downloads/{username}",
-        headers=headers, json=selected_files, timeout=12,
-    )
-    response.raise_for_status()
-    return response
 
 
 def load_helpers():
@@ -107,12 +97,6 @@ def load_helpers():
         "_slskd_candidate_start_state": lambda *args, **kwargs: True,
         "_music_key": lambda value: str(value or "").strip().casefold(),
     }
-    namespace["_discovery_queue_candidate_unless_dismissed"] = lambda artist, album, base_url, headers, username, selected_files: _acquisition_orchestration.queue_candidate_unless_dismissed(
-        artist, album,
-        transition_lock=namespace["_DISCOVERY_IMPORT_TRANSITION_LOCK"],
-        is_dismissed=lambda a, b: namespace["_discovery_is_dismissed"](a, b),
-        queue_source=lambda: _queue_source(namespace, base_url, headers, username, selected_files),
-    )
     namespace["_discovery_list_acquisition_jobs"] = lambda: namespace["jobs"]
     namespace["_discovery_is_dismissed"] = lambda artist, album: any(
         row.get("artist_key") == namespace["_music_key"](artist)
@@ -596,18 +580,6 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         )
         self.assertIsNone(result)
         self.assertEqual(calls, [])
-
-    def test_dismissed_acquisition_is_not_queued(self):
-        posts = []
-        self.ns["httpx"].post = lambda *args, **kwargs: posts.append(args)
-        self.ns["jobs"].append({
-            "artist_key": "artist", "album_key": "album", "status": "dismissed"
-        })
-        result = self.ns["_discovery_queue_candidate_unless_dismissed"](
-            "Artist", "Album", "http://slskd", {}, "peer", ["Album/01.flac"]
-        )
-        self.assertIsNone(result)
-        self.assertEqual(posts, [])
 
     def test_simultaneous_requests_do_not_run_two_acquisition_searches(self):
         entered_impl = threading.Event()

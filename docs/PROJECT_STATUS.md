@@ -1,3 +1,12 @@
+## 2026-10-14 — Acquisition queue guard test migrated
+
+- Continued the acquisition safety-test migration after PR #62. Removed the AST-harness case for dismissed queue refusal and its injected queue adapter because `tests/test_acquisition_orchestration.py` already tests the actual `queue_candidate_unless_dismissed` implementation directly, including lock ordering, dismissed refusal, return propagation, and exception propagation.
+- Test-harness cleanup only: no production code or safety behavior changed, and equivalent direct-import refusal coverage remains.
+- Exact-head CI and diff review are required before merge. No local test run, live slskd behavior, publication, deployment, or production runtime verification is claimed.
+- Next: migrate AST-coupled orchestration/lifecycle cases only when equivalent direct-import coverage exercises the production implementation.
+
+---
+
 ## 2026-10-14 — Front-end ownership transferred to ZCode
 
 - ZCode is now the designated front-end implementation owner; root instructions live in `AGENTS.md`.
