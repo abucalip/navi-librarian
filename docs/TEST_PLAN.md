@@ -1,9 +1,9 @@
-## 2026-10-15 — Candidate extraction direct-import migration (PR #73 preparation)
+## 2026-10-15 — PR #73 merged: candidate extraction direct-import coverage
 
-- The Tinariwen/Idrache folder-variant candidate grouping/ranking scenario is now a direct-import regression against `slskd_search.extract_candidates`.
-- Preserve assertions for all four folder variants, twelve unique expected tracks, clear-match eligibility, and both FLAC tier classifications.
-- Retain AST-harness coverage for orchestration retry/wait and lifecycle coordination, since this migration does not replace those integration boundaries.
-- Required before merge: focused candidate/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on the exact final PR head. No test pass is claimed before evidence is observed.
+- PR #73 squash merge: `df2f79b3d18df7d13484f7e3b5e7f550a39323d3`; exact tested head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
+- The direct-import candidate regression preserves the four folder variants, twelve expected tracks, clear-match eligibility, unique-track count, and FLAC quality-tier evidence.
+- All four required workflows passed on the exact tested head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- An earlier head failed due to an empty AST test class after its only method was moved; removing the class corrected syntax and full-suite failures. No separate local run or live slskd test is claimed.
 
 ---
 
