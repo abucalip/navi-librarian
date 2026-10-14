@@ -372,3 +372,10 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 
 
 - **Final documentation-updated PR head:** `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture build `38605193820`. All four required workflows succeeded; image publishing remains paused.
+
+
+## Acquisition state persistence extraction
+
+- `tests/test_acquisition_state.py` directly imports the extracted SQLite state store and covers round-trip state, normalized identity, preservation of candidate/settings/quality fields on partial updates, invalid identity rejection, and conservative malformed-JSON decoding.
+- Preserve the legacy transition lock, dismissed-state conditional behavior, secondary feedback projection, and compatibility adapters. These are not moved by this extraction.
+- On corrected code head `29c5e6a460f1f61296680af7b1230fd5561496b4`, CI ran the full suite (`180` tests, passed), compile, container smoke, and validation-only multi-architecture build; all four required workflows passed (runs `116019140196`, `116019144533`, `116019141476`, `116019141889`, respectively; publishing paused). The initial attempt exposed only an incorrect test fixture expectation for JSON `null`; the fixture was corrected and no production behavior changed. Because this closeout updates documentation, rerun all four workflows on the new exact PR head before merge. No separate assistant-local test run is claimed.

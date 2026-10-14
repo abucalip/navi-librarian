@@ -10,6 +10,7 @@ import unicodedata
 import discovery_store
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration
+import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
@@ -3663,43 +3664,16 @@ _DISCOVERY_ACQUIRE_ACTIVE = set()
 
 def _discovery_save_acquisition_job(artist, album, status, details=None,
                                     candidate=None, settings=None):
-    """Persist acquisition state independently of discovery recommendation lists."""
-    _discovery_init()
-    now = time.time()
-    artist_key, album_key = _music_key(artist), _music_key(album)
-    if not artist_key or not album_key:
-        raise ValueError("artist and album are required")
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        if not (details or {}).get("quality_summary"):
-            previous = db.execute(
-                "SELECT details_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?",
-                (artist_key, album_key),
-            ).fetchone()
-            if previous:
-                try:
-                    previous_details = json.loads(previous[0] or "{}")
-                except (ValueError, TypeError):
-                    previous_details = {}
-                previous_quality = previous_details.get("quality_summary")
-                if previous_quality:
-                    details = {**(details or {}), "quality_summary": previous_quality}
-        db.execute(
-            "INSERT INTO discovery_acquisitions "
-            "(artist_key, album_key, artist, album, status, details_json, candidate_json, "
-            "settings_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(artist_key, album_key) DO UPDATE SET "
-            "artist=excluded.artist, album=excluded.album, status=excluded.status, "
-            "details_json=excluded.details_json, "
-            "candidate_json=CASE WHEN excluded.candidate_json='{}' THEN discovery_acquisitions.candidate_json ELSE excluded.candidate_json END, "
-            "settings_json=CASE WHEN excluded.settings_json='{}' THEN discovery_acquisitions.settings_json ELSE excluded.settings_json END, "
-            "updated_at=excluded.updated_at",
-            (artist_key, album_key, artist.strip(), album.strip(), status,
-             json.dumps({"status": status, "updated_at": now, **(details or {})}, ensure_ascii=False),
-             json.dumps(candidate or {}, ensure_ascii=False),
-             json.dumps(settings or {}, ensure_ascii=False), now, now),
-        )
-        db.commit()
+    """Compatibility adapter for the directly importable acquisition state store."""
+    return _acquisition_state.save_job(
+        artist, album, status, details, candidate=candidate, settings=settings,
+        services={
+            "init": _discovery_init,
+            "db_path": DISCOVERY_DB,
+            "music_key": _music_key,
+            "clock": time.time,
+        },
+    )
 
 
 def _discovery_update_acquisition_status(artist, album, status, details=None):
@@ -3740,34 +3714,11 @@ def _discovery_update_acquisition_status(artist, album, status, details=None):
 
 
 def _discovery_list_acquisition_jobs():
-    _discovery_init()
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        rows = db.execute(
-            "SELECT artist_key, album_key, artist, album, status, details_json, "
-            "candidate_json, settings_json, created_at, updated_at "
-            "FROM discovery_acquisitions ORDER BY updated_at DESC"
-        ).fetchall()
-    jobs = []
-    for row in rows:
-        try:
-            details = json.loads(row[5] or "{}")
-        except (ValueError, TypeError):
-            details = {"status": row[4]}
-        try:
-            candidate = json.loads(row[6] or "{}")
-        except (ValueError, TypeError):
-            candidate = {}
-        try:
-            settings = json.loads(row[7] or "{}")
-        except (ValueError, TypeError):
-            settings = {}
-        jobs.append({
-            "artist_key": row[0], "album_key": row[1], "artist": row[2],
-            "album": row[3], "status": row[4], "details": details,
-            "candidate": candidate, "settings": settings,
-            "created_at": row[8], "updated_at": row[9],
-        })
-    return jobs
+    """Compatibility adapter for the directly importable acquisition state store."""
+    return _acquisition_state.list_jobs(services={
+        "init": _discovery_init,
+        "db_path": DISCOVERY_DB,
+    })
 
 
 # Per-process snapshots used to calculate an instantaneous speed from byte deltas.

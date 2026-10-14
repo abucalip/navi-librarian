@@ -1,3 +1,17 @@
+## 2026-10-14 — Acquisition state persistence extraction (verification update)
+
+- PR #59 branch `refactor/acquisition-state-store`; corrected code head `29c5e6a460f1f61296680af7b1230fd5561496b4`.
+- Extracted acquisition-row SQLite save/list mechanics into `acquisition_state.py`; legacy wrappers remain, and transition locking, conditional dismissed-state checks, feedback projection, dismissal/import coordination, and filesystem safety remain in `navidrome_server.py`.
+- Initial CI found one incorrect test expectation for JSON `null`; the fixture was corrected without changing production code. Corrected code head CI passed all four required workflows: full unit suite/build `116019140196` (180 tests passed), compile `116019144533`, container smoke `116019141476`, and validation-only multi-architecture `116019141889` (publishing paused).
+- The docs closeout itself creates a new PR head; final exact-head CI, diff review, merge, publication, deployment, and production runtime verification remain unclaimed until rechecked.
+
+## 2026-10-14 — Acquisition state persistence extraction (in progress)
+
+- Branch `refactor/acquisition-state-store` starts from main `066fff8e7ef88364b1dc9cc909bfb2722118880e`.
+- Extracted acquisition-row SQLite save/list mechanics into `acquisition_state.py` behind injected initialization, DB path, key normalization, and clock; legacy functions remain adapters. Added direct-import tests and Docker packaging.
+- Safety boundary intentionally retained in the server: transition lock, conditional dismissed-state checks, feedback projection, dismissal/import coordination, and filesystem operations. Acceptance requires exact-head CI and diff review before merge.
+- No local tests, CI, merge, publication, deployment, or production verification are claimed at this stage.
+
 ## 2026-10-14 — Acquisition watcher startup extraction (in progress)
 
 - Extracted watcher reservation/persistence/thread startup into acquisition_watcher_startup.py with injected services. The legacy _discovery_start_import_watcher function remains the adapter used by existing MCP/web call paths.
