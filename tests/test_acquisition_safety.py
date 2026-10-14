@@ -8,7 +8,6 @@ import json
 import tempfile
 import threading
 import unicodedata
-import acquisition_lifecycle as _acquisition_lifecycle
 
 from acquisition_import import import_matched_album_files as _module_import_matched_album_files
 from acquisition_completion import (
@@ -63,7 +62,6 @@ def load_helpers():
 
     namespace = {
         "Path": Path,
-        "_acquisition_lifecycle": _acquisition_lifecycle,
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
         "_discovery_match_completed_album_files": _module_match_completed_album_files,
