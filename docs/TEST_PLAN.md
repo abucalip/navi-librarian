@@ -340,3 +340,20 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 - `acquisition_source_switch.py` is exercised by direct-import regression tests for cleanup refusal as a hard stop, no-fallback handling, failed fallback cleanup, and successful fallback persistence. PR #56 exact head `15c0c237585dc4037df1e3e4d1f98b261d0415d9` passed syntax/acquisition safety (`38602255318`), Docker packaging/full unit suite/image build (`38602255282`), container runtime smoke (`38602255326`), and validation-only multi-architecture build (`38602255378`). Merged at `0387b8247d3dbd8d44d64392d9400b42c56e0fda`.
 - For future changes to these modules, run the relevant focused direct-import tests, `python -m py_compile acquisition_cleanup.py acquisition_recovery.py acquisition_source_switch.py navidrome_server.py`, and `python -m unittest discover -s tests -v`, then all four required workflows on the exact final PR head. Keep the legacy adapters/MCP callers and Docker packaging in sync.
 - These CI results do not establish live slskd behavior or production filesystem recovery/deletion. No separate local test run, production cleanup/recovery, image publication, deployment, or production runtime verification is claimed. The reported dismissal HTTP 409 remains deferred because it was not reproduced. GHCR publication remains paused until the roadmap is complete and the user explicitly authorizes release.
+
+
+## Acquisition watcher lifecycle extraction
+
+- Direct-import regression tests in `tests/test_acquisition_watcher.py` exercise dismissal and interrupted-import early exits, strict separation between transfer-completion evidence and verified-folder import, and passing only the folder returned by the existing completion matcher into the existing safe import coordinator.
+- The legacy `_discovery_watch_and_import_album` name remains as an adapter. Watcher state, slskd access, folder matching, import coordination and status updates are injected; existing cleanup, source-switch and import modules remain the safety authorities.
+- Required verification: focused watcher and acquisition safety tests, full `python -m unittest discover -s tests -v`, syntax check including `acquisition_watcher.py`, then all four exact-head CI workflows. Do not infer real slskd or production filesystem behavior from unit tests.
+
+
+### Acquisition watcher extraction — PR #57
+
+- First CI attempt failed one test assertion: status details are passed as the fourth positional argument, not keyword arguments. The test was corrected.
+- Corrected head `6793c339464c9d573c02f5e7dc91d15b5f568348`: syntax/acquisition safety run `38604931720`, Docker packaging/full suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture build `38604932002` all succeeded. Publishing remains paused.
+- Because this test-plan/status/log update creates a new PR head, all four workflows must pass again on the final updated SHA before merge. No separate local test run or live slskd/production filesystem verification is claimed.
+
+
+- **Final documentation-updated PR head:** `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture build `38605193820`. All four required workflows succeeded; image publishing remains paused.

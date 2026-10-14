@@ -109,3 +109,8 @@ PR #49 has been merged to `main` at `c972278566d8ec68f3755f464df1afb5a8a18f56`. 
 ## 2026-10-14 — Persisted acquisition source-skip orchestration merged (PR #50)
 
 PR #50 was squash-merged at `a37d29cf11657dce6d5cbc6cb928ca840fe5b206` from exact PR head `c8610fdc44ea93bcfb55a654598792aee78e7ecb`. All four required workflows passed on that exact head: Python syntax `38589006636`, Docker packaging/full unit suite `38589006609`, container runtime smoke `38589006569`, and validation-only multi-architecture image validation `38589006620`. The extracted module owns only the persisted manual source-skip transition; the MCP adapter, shared transition lock, conditional downloading-state update, and existing filesystem safety authorities remain. Watcher orchestration, source switching, cleanup execution, interrupted-import recovery, and top-level acquisition coordination remain future work. No image publication, deployment, or production runtime verification occurred.
+
+
+## 2026-10-14 — Watcher extraction in review
+
+The watcher loop is now proposed in `acquisition_watcher.py` behind injected services. Preserve the legacy adapter and do not claim verification until focused tests, the full suite, and all four exact-head CI workflows pass.

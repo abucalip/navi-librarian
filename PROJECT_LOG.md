@@ -64,3 +64,15 @@
 - Final exact PR head `15c0c237585dc4037df1e3e4d1f98b261d0415d9` passed syntax/acquisition safety `38602255318`, Docker packaging/full unit suite/image build `38602255282`, runtime smoke `38602255326`, and validation-only multi-architecture build `38602255378` (publishing paused). PR #56 was squash-merged at `0387b8247d3dbd8d44d64392d9400b42c56e0fda` after final diff review; no review submissions or inline threads were present.
 - No live slskd interaction, production cleanup, publication, deployment, or production runtime verification is claimed.
 - Next: extract the watcher loop and top-level lifecycle coordination behind injected dependencies; keep cancellation/cleanup failure a hard stop, uncertain queue outcomes monitored, and import rollback/safety tests intact.
+
+
+## 2026-10-14 — Acquisition watcher lifecycle extraction (PR #57)
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/57
+- **Branch:** `refactor/acquisition-watcher-domain`, based on `main` `09c5c884ffbfba035a6ee698f7192b1e9bbb6282`.
+- **Implementation:** extracted the watcher loop to `acquisition_watcher.py` with injected dependencies; preserved `_discovery_watch_and_import_album` as the compatibility adapter and included the module in Docker packaging.
+- **Regression coverage:** direct tests for dismissal, interrupted-import reconciliation, completed transfer evidence without verified folder (no import), and verified-path handoff to the safe import coordinator.
+- **First CI attempt:** syntax compilation passed, but the full suite failed one new test because it read status details from keyword arguments rather than the existing positional fourth argument. Corrected the test and reran the four required workflows.
+- **Corrected exact-head CI:** `6793c339464c9d573c02f5e7dc91d15b5f568348` passed Python syntax/acquisition safety run `38604931720`, Docker packaging/full unit suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture `38604932002` (publishing paused).
+- **Final-head CI:** after the documentation updates, exact PR head `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed Python syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture `38605193820` (publishing paused).
+- **State:** PR open, not merged. No assistant-local test run, live slskd behavior, production filesystem operation, image publication, deployment, or production runtime verification.
