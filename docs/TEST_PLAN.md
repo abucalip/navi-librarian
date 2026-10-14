@@ -1,7 +1,7 @@
 ## 2026-10-15 — Session closeout: remaining AST-coupled lifecycle coverage
 
-- Baseline reconciled against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`. The latest merged PR entries retain exact-head CI evidence; this documentation-only closeout adds no new test result.
-- During the next audit, compare the remaining AST cases with direct-import coverage for duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and failed-reactivation refusal, and stale watcher recovery.
+- Baseline reconciled against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`; documentation closeout PR #81 is merged. Its exact tested head `5dfa47ed4b3dd2cc234b88a2f18b95ba950425fa` passed all four required workflows. This follow-up adds no new test result.
+- Continue comparing the remaining AST cases with direct-import coverage for duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and failed-reactivation refusal, and stale watcher recovery.
 - Do not remove tests that uniquely verify shared-lock races, conditional persistence before filesystem import, or watcher/coordinator integration. Any migration must preserve the same failure-path assertions and be followed by focused tests, the full suite, syntax checks, final diff review, and all four required workflows on the exact PR head.
 
 ---

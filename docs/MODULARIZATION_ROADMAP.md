@@ -1,6 +1,6 @@
 ## 2026-10-15 — Session closeout and next test-audit boundary
 
-- Reconciled against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`; PR #76 polling extraction and PR #78 dismissal-serialized import guard are merged with their exact-head CI evidence documented above.
+- Reconciled against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`; PR #81 documentation closeout is merged. PR #76 polling extraction and PR #78 dismissal-serialized import guard remain merged with exact-head CI evidence documented below.
 - No implementation or test changes in this closeout. The next step is a test-boundary audit, not an automatic extraction: identify which remaining AST cases are pure helper behavior versus real coordinator integration.
 - Prioritize duplicate-request reservation/concurrency, incomplete persisted candidate details, explicit reactivation and failed-reactivation refusal, and stale watcher recovery. Preserve conditional persistence, shared locks, filesystem safety, and recovery integration checks unless replacement coverage demonstrably exercises the same boundary.
 

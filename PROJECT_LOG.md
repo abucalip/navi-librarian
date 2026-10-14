@@ -1,8 +1,15 @@
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
-- Reconciled documentation against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`. PR #76 (slskd polling) and PR #78 (dismissal-serialized import guard) are merged; exact tested heads, merge SHAs, workflow run IDs, and verification limits remain recorded in their closeout entries.
-- This session closeout is documentation-only: no application code changed, no tests were run, and no additional CI result is claimed. Publishing remains paused; no deployment or production runtime verification is claimed.
-- Next action: audit duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation/refusal, and stale watcher recovery for safe direct-import test seams. Retain unique coordinator, lock/race, persistence-transition, and recovery integration assertions.
+- Reconciled documentation against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. PR #81 is merged; PR #76 (slskd polling) and PR #78 (dismissal-serialized import guard) remain recorded with exact tested heads, merge SHAs, workflow run IDs, and verification limits.
+- Documentation-only closeout: no application code changed and no new tests were run. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Next action: continue the acquisition lifecycle AST-test audit across duplicate-request reservation/concurrency, incomplete persisted candidate details, dismissed-job reactivation/refusal, and stale watcher recovery. Retain unique coordinator, lock/race, persistence-transition, and recovery integration assertions.
+
+## 2026-10-15 — PR #81 merged: acquisition AST-test audit documentation closeout
+
+- PR #81: https://github.com/abucalip/navi-librarian/pull/81
+- Exact tested PR head: `5dfa47ed4b3dd2cc234b88a2f18b95ba950425fa`; squash merge / updated `main`: `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`.
+- All four required workflows passed on the exact tested head (run IDs `38654600997`, `38654600939`, `38654600916`, and `38654600923`). This was documentation-only; the existing lifecycle AST audit remains the next engineering task.
+- Final diff reviewed. No application tests were newly run for this follow-up documentation update; no publication, deployment, or production runtime verification is claimed.
 
 ---
 
