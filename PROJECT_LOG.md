@@ -590,3 +590,13 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Follow-up branch `refactor/acquisition-lifecycle-orchestration` extracts the persisted source-skip transition into `acquisition_orchestration.py`. The implementation receives persistence, lock, normalization, policy, time, and JSON dependencies explicitly; `discovery_skip_acquisition_source` remains the MCP compatibility adapter.
 - Added direct-import regression tests for successful request persistence and missing/dismissed/non-downloading/no-fallback rejection without mutation.
 - Exact-head CI for this follow-up has not yet run; no test pass is claimed for it. No merge, image publication, deployment, or production runtime verification occurred.
+
+
+## 2026-10-14 — Acquisition orchestration session closeout (PR #48)
+
+- Verified PR #47's exact head `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`: all four required GitHub Actions workflows succeeded (syntax, Docker packaging/full unit suite, container runtime smoke, validation-only multi-architecture build).
+- Continued on draft PR #48, `refactor/acquisition-lifecycle-orchestration`, initially at code head `787244fdc702a2ceb4d33b550bb28eb249bdd48d`. Added `acquisition_orchestration.py` for the persisted source-skip transition with injected dependencies; retained the MCP compatibility adapter and transition lock; added direct-import regression tests; included the module in Docker packaging.
+- Updated architecture, roadmap, test plan, status, and this log to document scope and verification limits. The PR #48 workflow/status lookup returned no runs or statuses for its code head, so automated tests and CI remain pending. The documentation commits change the final head and require fresh exact-head verification.
+- Filesystem cleanup/import safety implementations remain unchanged. Watcher/source-switch orchestration, cleanup execution, interrupted-import recovery, and top-level acquisition coordination remain outstanding.
+- No local test execution is claimed. No merge, image publication, deployment, or production runtime verification. Publishing remains paused.
+- **Next action:** verify all required CI workflows on PR #48's final head before any merge or further migration.
