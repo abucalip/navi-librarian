@@ -1,9 +1,12 @@
-## 2026-10-14 — Queue/dismissal guard extraction proposed
+## 2026-10-14 — Queue/dismissal guard extraction merged (PR #62)
 
-- Branch: `refactor/acquisition-queue-guard`, based on current GitHub `main` after PR #61.
-- Extracts the existing queue-candidate dismissal guard into `acquisition_orchestration.py`; the legacy server function remains an adapter and keeps the HTTP request/response behavior unchanged.
-- Direct-import tests cover lock ordering, refusal after dismissal, return-value preservation, and exception propagation. The existing AST safety test is retained but delegates this case to the extracted production function.
-- Required next gates: exact-head four-workflow CI, final diff review, and docs verification. No live slskd or production filesystem test is claimed.
+- PR #62: https://github.com/abucalip/navi-librarian/pull/62
+- Branch: `refactor/acquisition-queue-guard`; exact tested head `4e121eb7977bb1a51ad31f9c87d0d4984497af4d`.
+- Squash merge commit: `d4a16e80f6978a58c3305bf341e370ba9708bb34`.
+- Reviewed the focused eight-file diff. Extracted `queue_candidate_unless_dismissed` into `acquisition_orchestration.py`; preserved the server compatibility adapter, HTTP request construction, shared transition lock, and dismissal predicate. Added direct-import regressions for lock scope, dismissal refusal, return propagation, and exceptions; retained the AST-based safety regression.
+- All four required workflows passed on the exact tested PR head: Python syntax `38619152587`, Docker packaging/full unit suite/build `38619152213`, container runtime smoke `38619152754`, and validation-only multi-architecture image `38619152728`. Image publishing remains paused.
+- No local helper/manual slskd test, production filesystem operation, image publication, deployment, or production runtime verification is claimed.
+- Next: continue the acquisition-coordination audit and migrate remaining AST-coupled safety tests incrementally; keep correctness and verification ahead of routine modularization.
 
 ## 2026-10-14 — Acquisition transition guard merged (PR #61)
 
