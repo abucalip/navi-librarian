@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition transition guard merged (PR #61)
+
+- The dismissal-serialized source-switch guard is now extracted into `acquisition_orchestration.py`; the server function remains a compatibility adapter.
+- PR #61 exact head `aa554ff2be2a19e215538ed2e699b8036764dca1` passed all four required workflows: syntax/acquisition safety `38617537652`, Docker packaging/full suite/build `38617538490`, container runtime smoke `38617537978`, and validation-only multi-architecture build `38617538229`. Squash merge: `73172847535d3683facfbe559706c26a8637a3d4`.
+- Publishing remains paused. CI does not establish live slskd behavior, production filesystem safety, deployment, or production runtime health.
+- Continue acquisition-coordination audit and migrate remaining AST-coupled safety tests to direct-import tests without reducing coverage.
+
 # Roadmap reconciliation — authoritative status as of 2026-10-14
 
 This section supersedes any older “in progress”, “next”, or “pending” statements later in this document when they conflict with the merged-state summary below. Historical entries are retained as a record of what was true at the time they were written.
@@ -12,7 +19,7 @@ This section supersedes any older “in progress”, “next”, or “pending�
 
 ## Remaining roadmap, in order
 
-1. **Acquisition coordination and test migration.** The watcher loop, watcher startup, and SQLite save/list mechanics have been extracted, but top-level acquisition coordination and shared transition responsibilities still need a focused audit/extraction. The dismissal-serialized source-switch guard is now being moved into the importable orchestration module with direct-import tests; this does not move or weaken the shared lock, queue logic, cleanup, or persistence. Preserve the shared transition lock, conditional state writes, dismissal/import coordination, uncertain queue outcomes, cleanup refusal, strict completion matching, filesystem identity checks, and rollback. Continue migrating AST-coupled tests to direct-import tests without reducing safety coverage.
+1. **Acquisition coordination and test migration.** The watcher loop, watcher startup, and SQLite save/list mechanics have been extracted, but top-level acquisition coordination and shared transition responsibilities still need a focused audit/extraction. PR #61 extracted the dismissal-serialized source-switch guard into the importable orchestration module with direct-import tests and was squash-merged after all four required workflows passed; the shared lock, queue logic, cleanup, and persistence were preserved. Preserve the shared transition lock, conditional state writes, dismissal/import coordination, uncertain queue outcomes, cleanup refusal, strict completion matching, filesystem identity checks, and rollback. Continue migrating AST-coupled tests to direct-import tests without reducing safety coverage.
 2. **Settings/configuration/service boundaries.** Move persistent settings and Navidrome, slskd, Last.fm, and ListenBrainz service access behind independently importable interfaces. Preserve secret handling, defaults, validation, data-directory behavior, and errors.
 3. **Discovery orchestration.** Connect existing recommendation, discovery-store, and refresh modules through service boundaries; extract remaining list construction, feedback, provider integration, and inventory access without duplicating domain behavior in FastAPI routes.
 4. **Application assembly.** Remove the remaining `app/main.py` dependency on `navidrome_server.py` for settings/auth persistence, health checks, and dashboard discovery behavior; preserve middleware and public/protected route behavior.
@@ -159,7 +166,7 @@ PR #57 was squash-merged at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact 
 - Extracted reserve → persist → status → start into `acquisition_watcher_startup.py` with injected locks, active set, persistence/status callbacks, and watcher entry point. `navidrome_server.py` retains `_discovery_start_import_watcher` as a compatibility adapter with its existing return contract.
 - Direct-import regressions cover dismissed/duplicate starts, credential filtering in persisted settings, persistence failure releasing the reservation, and thread-start failure recording `monitor_error` and releasing the active marker. Docker packaging and architecture documentation are updated.
 - All four required workflows passed on the exact head: syntax/acquisition safety `38609940832`, Docker packaging/full unit suite/build `38609940860`, container runtime smoke `38609940739`, and validation-only multi-architecture build `38609940737` (publishing paused).
-- State: implementation and CI passed; PR remains open/unmerged. No separate local test run, live slskd test, publication, deployment, or production runtime verification is claimed.
+- State: implementation and CI passed; PR #58 was subsequently merged to main at `066fff8e7ef88364b1dc9cc909bfb2722118880e`. No separate local test run, live slskd test, publication, deployment, or production runtime verification is claimed.
 - Next priority: persistent acquisition-state coordination with direct-import regression coverage, preserving conditional writes, shared transition-lock behavior, and dismissal/import safety.
 
 
