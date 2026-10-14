@@ -1,3 +1,11 @@
+## 2026-10-15 — Session closeout: remaining AST-coupled lifecycle coverage
+
+- Baseline reconciled against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`. The latest merged PR entries retain exact-head CI evidence; this documentation-only closeout adds no new test result.
+- During the next audit, compare the remaining AST cases with direct-import coverage for duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and failed-reactivation refusal, and stale watcher recovery.
+- Do not remove tests that uniquely verify shared-lock races, conditional persistence before filesystem import, or watcher/coordinator integration. Any migration must preserve the same failure-path assertions and be followed by focused tests, the full suite, syntax checks, final diff review, and all four required workflows on the exact PR head.
+
+---
+
 ## 2026-10-15 — PR #78 merged: import dismissal coordination
 
 - PR #78 exact tested head: `e6a609ca7381d0751d529b52f55aeebd56d76661`; squash merge: `5d638c7adf5a42fdac8052cb4fc223236564cd72`.
@@ -18,30 +26,12 @@
 
 ---
 
-## 2026-10-15 — slskd search polling extraction (verification pending)
-
-- Direct-import tests exercise query fallback when a completed exact query has no payload, delayed peer payloads after response/file counts, legacy 404/405 endpoint compatibility, and propagation of unexpected HTTP errors.
-- Keep the AST-harness end-to-end retry case to verify coordinator output/diagnostics; do not remove it solely because the low-level polling module has direct tests.
-- Verify 15s/6s slskd search timeouts, 18s/8s per-query polling budgets, 45s overall deadline, 0.5s completed-without-payload grace, 0.75s polling interval, 404/405 compatibility handling, peer payload deduplication, and error propagation remain unchanged.
-- Required before merge: focused polling/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on exact final PR head. No test pass is claimed before evidence is observed.
-
----
-
 ## 2026-10-15 — PR #73 merged: candidate extraction direct-import regression
 
 - PR #73 exact tested head: `a33772ca1da0b6628da490b69f1dc305b6794de3`; squash merge: `df2f79b3d18df7d13484f7e3b5e7f550a39323d3`.
 - Direct-import regression preserves the four Tinariwen/Idrache folder variants, twelve unique tracks, clear-match eligibility, and FLAC quality-tier assertions against `slskd_search.extract_candidates`.
 - All four required workflows passed on the exact head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
 - Remaining AST tests intentionally retain orchestration retry/wait and lifecycle coordination behavior. No live slskd, publication, deployment, or production runtime verification is claimed.
-
----
-
-## 2026-10-14 — Candidate extraction direct-import migration (PR #73 pending)
-
-- Move the existing source-folder candidate grouping/ranking scenario into `tests/test_slskd_candidates.py` and invoke the real `slskd_search.extract_candidates` implementation directly with real helper functions.
-- Preserve the same four folder variants, 12 expected tracks, clear-match assertions, unique-track count, and FLAC quality-tier evidence.
-- Keep acquisition retry/wait integration and lifecycle/concurrency/persistence transition tests in the AST harness; this change does not replace those tests.
-- Required before merge: focused candidate/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on the exact final PR head. No test pass is claimed before evidence is observed.
 
 ---
 
