@@ -293,3 +293,8 @@ For changes that move templates, stylesheets, or scripts out of `app/main.py`:
 - Direct-import tests must cover the persisted skip transition: eligible downloading state records a request; missing, dismissed, non-downloading, and no-fallback states reject without mutation.
 - For subsequent watcher/source-switch extractions, retain tests for uncertain queue outcomes (never blindly duplicate), safe cleanup refusal, source state persistence, dismiss/skip/import serialization, interrupted-import recovery, and safe rollback.
 - This change's exact-head CI has not yet run at documentation time; do not treat the successful PR #47 workflows as verification of this follow-up branch.
+
+
+## Exact-head CI gate — acquisition orchestration PR #48
+
+PR #47's four required workflows passed on its exact head `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`. This does not verify stacked PR #48. The workflow/status lookup for PR #48 code head `787244fdc702a2ceb4d33b550bb28eb249bdd48d` returned no runs or status entries. Treat all PR #48 automated tests and CI as pending until workflows complete successfully on the final, documentation-updated head. Continue to require direct regression coverage for watcher stalls, uncertain queue outcomes, source switching, safe cleanup refusal, transition races, and interrupted-import recovery.
