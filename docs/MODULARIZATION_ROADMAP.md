@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #76 merged: slskd polling extraction
+
+- PR #76 merged at `a55a9fa7eed1e221f52434b50f44d0c415fd491a` from exact tested head `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`.
+- Extracted progressive query/poll/wait behavior into `slskd_search_polling.py`; direct tests cover fallback, delayed payloads, legacy endpoint compatibility, and unexpected HTTP errors. The AST-based end-to-end retry test remains for coordinator output semantics.
+- All four required workflows passed on the exact head (syntax `38652846800`, packaging/full unit suite `38652846779`, runtime smoke `38652846790`, image validation/publishing paused `38652846819`); 184 tests passed.
+- Next: audit remaining AST lifecycle tests for duplicates versus genuine coordination boundaries: simultaneous requests, conditional importing-state persistence, dismissal/import exclusion, incomplete saved details, dismissed-job reactivation/refusal, and stale watcher recovery. Preserve races, conditional writes, cancellation/cleanup refusal, and recovery behavior.
+
+---
+
 ## 2026-10-15 — slskd polling extraction in progress
 
 - Progressive query submission, search-state/response polling, count aggregation, payload deduplication, delayed payload waiting, and per-attempt diagnostics moved into `slskd_search_polling.py` behind injected external boundaries.
