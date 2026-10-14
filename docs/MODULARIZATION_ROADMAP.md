@@ -4,15 +4,31 @@
 - Acquisition orchestration retry/wait tests and candidate-extraction scenario remain in the harness because they exercise integration behavior rather than only pure helper functions.
 - No production code changed. Verify focused/full tests and all four required workflows on the exact PR head before merging; inspect final diff for accidental coverage loss.
 
+
 ---
 
-## 2026-10-14 — Completed import safety tests migrated to direct imports (PR pending)
+## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)
+
+- Extracted candidate-start path/state validation to `acquisition_candidate_start.py` with injected external boundaries; the server compatibility adapter remains in place.
+- Moved traversal and mixed-directory tests to direct imports; added active-transfer, queued cancellation, and fail-closed uncertainty tests.
+- PR #71 was squash-merged at `b10650aa6a8889610b5734c5a1cf02c3197f1ad0` from tested head `f53e8ceffc8307c7b8dbcbf837e123b51671bbda`.
+- All four required workflows passed on that exact head (syntax, packaging/full unit suite, runtime smoke, and Docker image validation with publishing paused). No standalone local or live slskd tests, publication, deployment, or production runtime verification is claimed.
+- Remaining AST-coupled coordination tests stay in place until equivalent direct-import coverage tests the same races and persistence/transition boundaries.
+
+- Extracted slskd candidate-start path/state checks into `acquisition_candidate_start.py` with injected transfer lookup, HTTP, and timing dependencies. The server keeps its existing helper name as an adapter.
+- Moved the two AST path-validation tests to direct-import coverage; added tests for active transfers and conservative handling of queued-transfer cancellation outcomes.
+- No change intended to safety semantics. Review exact diff and require focused tests, full suite, syntax checks, and all four CI workflows on exact PR head before merge.
+- Remaining AST-coupled coordination tests are intentionally retained where they still exercise races or persistence/transition boundaries.
+
+---
+
+## 2026-10-14 — Completed import safety tests migrated to direct imports (PR #70 merged)
 
 - Removed the redundant `CompletedAlbumMatchingTests` cases from the AST-based `tests/test_acquisition_safety.py` harness. Equivalent or stronger coverage already exercises the production modules directly in `tests/test_acquisition_completion.py` and `tests/test_acquisition_import.py`.
 - The direct-import suites cover strict positive-size matching, Unicode/case and Windows path normalization, duplicate-basename ambiguity, symlink refusal, collision-suffix matching, exact folder diagnostics, unrelated-file preservation, destination no-overwrite, storage identity mismatch, reserved manifest rejection, and rollback after a partial move.
 - The AST harness retains its separate lifecycle coordination tests. Its injected import callback is now a test spy for transition behavior; filesystem import behavior is tested against `acquisition_import.import_matched_album_files` directly.
 - Test-only migration: no production code, queue/cleanup behavior, path validation, rollback implementation, or MCP compatibility changed.
-- Acceptance gates: focused tests, full unit suite, syntax checks, complete diff review, and all four required CI workflows on the exact final PR head. No test/CI result is claimed until observed.
+- PR #70 was squash-merged at `78e7f01dc8bf011e3c77e3d6316f6ee565ca6161` after all four required CI workflows passed on exact tested head `0916a7e9d767808bf4f65d3b034e290e5aba4703`. No standalone local test commands or manual browser tests were run for this test-only migration; no image publication, deployment, or production runtime verification is claimed.
 - Next: audit remaining AST-coupled acquisition safety cases for duplicate coverage; preserve dismissal/import coordination, conditional state transitions, cleanup refusal, uncertain queue outcomes, and rollback protections.
 
 ---

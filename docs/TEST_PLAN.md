@@ -4,15 +4,29 @@
 - Removed six corresponding pure-helper cases from the AST safety harness while retaining acquisition-level retry/wait integration coverage and candidate extraction coverage.
 - Required before merge: focused and full suite, syntax checks, all four required workflows on exact final PR head, and complete diff review. No test success is claimed before evidence is observed.
 
+
 ---
 
-## 2026-10-14 — Completed import safety tests migrated to direct imports (PR pending)
+## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)
+
+- Exact tested PR head: `f53e8ceffc8307c7b8dbcbf837e123b51671bbda`; squash merge: `b10650aa6a8889610b5734c5a1cf02c3197f1ad0`.
+- All four required workflows passed on the exact PR head: Python syntax (`38648719075`), Docker packaging and full unit suite (`38648719066`), container runtime smoke (`38648719107`), and Docker image validation with publishing paused (`38648719074`).
+- Coverage added in `tests/test_acquisition_candidate_start.py`: traversal rejected before lookup, mixed remote directories rejected, active transfer recognized, queued transfer cancelled before safe fallback, and uncertain cancellation/lookup outcomes fail closed.
+- No standalone local test run or live slskd interaction was performed; no image publication, deployment, or production runtime verification is claimed.
+
+- Direct-import tests now target `acquisition_candidate_start.candidate_start_state`; the AST harness no longer owns the traversal and multi-directory tests.
+- Coverage includes pre-lookup traversal rejection, mixed remote directories, active transfer recognition, queued transfer cancellation, and fail-closed handling of uncertain cancellation or transfer lookup.
+- Required before merge: run focused and full test suites, syntax/package checks, inspect the final diff, and verify all four required CI workflows on the exact final PR head. Do not infer test success from a successful build alone.
+
+---
+
+## 2026-10-14 — Completed import safety tests migrated to direct imports (PR #70 merged)
 
 - Removed the redundant `CompletedAlbumMatchingTests` cases from the AST-based `tests/test_acquisition_safety.py` harness. Equivalent or stronger coverage already exercises the production modules directly in `tests/test_acquisition_completion.py` and `tests/test_acquisition_import.py`.
 - The direct-import suites cover strict positive-size matching, Unicode/case and Windows path normalization, duplicate-basename ambiguity, symlink refusal, collision-suffix matching, exact folder diagnostics, unrelated-file preservation, destination no-overwrite, storage identity mismatch, reserved manifest rejection, and rollback after a partial move.
 - The AST harness retains its separate lifecycle coordination tests. Its injected import callback is now a test spy for transition behavior; filesystem import behavior is tested against `acquisition_import.import_matched_album_files` directly.
 - Test-only migration: no production code, queue/cleanup behavior, path validation, rollback implementation, or MCP compatibility changed.
-- Acceptance gates: focused tests, full unit suite, syntax checks, complete diff review, and all four required CI workflows on the exact final PR head. No test/CI result is claimed until observed.
+- PR #70 was squash-merged at `78e7f01dc8bf011e3c77e3d6316f6ee565ca6161` after all four required CI workflows passed on exact tested head `0916a7e9d767808bf4f65d3b034e290e5aba4703`. No standalone local test commands or manual browser tests were run for this test-only migration; no image publication, deployment, or production runtime verification is claimed.
 - Next: audit remaining AST-coupled acquisition safety cases for duplicate coverage; preserve dismissal/import coordination, conditional state transitions, cleanup refusal, uncertain queue outcomes, and rollback protections.
 
 ---
