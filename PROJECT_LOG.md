@@ -541,9 +541,16 @@ Update this file at the end of every GitHub development session. Keep entries co
 - PR #39 is open/unmerged. Documentation updates in this closeout create a new PR head; exact-head CI must be checked again before merge. No local tests, manual browser testing, image publication, deployment, or production runtime verification were performed. Publishing remains disabled.
 - **Next action:** verify all required checks on the documentation-updated PR head and review mergeability before deciding to merge.
 
-## 2026-10-14 — Front-end ownership boundary
+## 2026-10-14 — Claude front-end boundary accepted (PR #42)
 
-- Created branch `docs/frontend-claude-boundary` to document Claude Code as front-end-only contributor for `static/`, `app/templates/`, and scoped UI tests.
-- Backend/domain/security, API contracts, application assembly, CI, Docker, publishing, and deployment remain outside Claude's change authority; the assistant coordinates cross-layer integration and verification.
-- Updated `docs/DEVELOPMENT_WORKFLOW.md` and added root `CLAUDE.md`. Changes are documentation-only; no tests run and no behavior change is claimed.
-- Pending PR creation/review at time of this log entry.
+- PR #42 `docs/frontend-claude-boundary` was squash-merged to `main` at `b23e0da128d63bee2bef7f47ed3350cf1be2e613` from exact PR head `663d826f02c12e0dbf9b1832570b60f20864ecbc`.
+- All four required PR-head workflows succeeded: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only Docker image/multi-architecture checks. No application code changed. Publishing and deployment were not performed.
+
+## 2026-10-14 — Expand Claude project instructions; session closeout
+
+- Branch: `docs/claude-project-instructions`, based on main `b23e0da128d63bee2bef7f47ed3350cf1be2e613`.
+- Expanded root `CLAUDE.md` into an operational front-end-only project guide covering mission/context, files Claude may edit, protected backend/API/security and safety boundaries, UI principles, PR workflow, exact-SHA tests/manual browser gates, and handoff requirements.
+- Updated `docs/PROJECT_STATUS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/DECISIONS.md` to mark PR #42 merged and record the shared-agent ownership boundary. Added decision D-013, which supersedes D-009 only where D-009 stated the assistant alone may edit code; GitHub authority, PR gates, and local testing-only constraints remain in force.
+- Documentation-only changes; no application code or runtime behavior changed. No local tests or manual browser tests were run for this documentation-only follow-up. Required CI must be checked on this follow-up's exact PR head before merge.
+- Publishing/deployment/runtime verification: not performed. Publishing remains paused.
+- **Next action:** verify this PR's exact-head CI and mergeability, then provide Claude a specific UI task and direct it to read `CLAUDE.md` first.
