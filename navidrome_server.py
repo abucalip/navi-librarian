@@ -4013,114 +4013,123 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
 
 def _discovery_import_completed_source(artist, album, source, music_root, candidate):
     """Import a verified source only if dismissal has not won the race."""
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if _discovery_is_dismissed(artist, album):
-            return "dismissed"
+    return _acquisition_orchestration.import_source_unless_dismissed(
+        artist,
+        album,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        is_dismissed=_discovery_is_dismissed,
+        import_source=lambda: _discovery_import_completed_source_locked(
+            artist, album, source, music_root, candidate
+        ),
+    )
 
+
+def _discovery_import_completed_source_locked(artist, album, source, music_root, candidate):
+    """Perform import validation and I/O while the transition lock is held."""
+    try:
+        music_root = Path(music_root).expanduser().resolve(strict=True)
+    except (OSError, RuntimeError, TypeError, ValueError):
+        music_root = None
+
+    if music_root is None or not music_root.is_dir():
+        _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+            "source_folder": str(source),
+            "downloads_path": str(source.parent),
+            "library_path": str(music_root),
+        })
+        return "failed"
+
+    try:
+        music_device = music_root.stat().st_dev
+    except OSError:
+        music_device = None
+    if music_device is None:
+        _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
+            "source_folder": str(source), "library_path": str(music_root),
+        })
+        return "failed"
+
+    artist_dir = music_root / _discovery_safe_folder_name(artist)
+    album_dir = artist_dir / _discovery_safe_folder_name(album)
+
+    # Reject symlinked artist paths and non-directory filesystem objects.
+    if artist_dir.is_symlink() or (
+        artist_dir.exists() and not artist_dir.is_dir()
+    ):
+        _discovery_update_acquisition_status(
+            artist, album, "download_complete_move_failed",
+            {"error": "Unsafe import destination: artist path is a symlink or not a directory."},
+        )
+        return "failed"
+
+    if artist_dir.exists():
         try:
-            music_root = Path(music_root).expanduser().resolve(strict=True)
-        except (OSError, RuntimeError, TypeError, ValueError):
-            music_root = None
+            resolved_artist = artist_dir.resolve(strict=True)
+        except (OSError, RuntimeError):
+            resolved_artist = None
 
-        if music_root is None or not music_root.is_dir():
-            _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
-                "source_folder": str(source),
-                "downloads_path": str(source.parent),
-                "library_path": str(music_root),
-            })
-            return "failed"
-
-        try:
-            music_device = music_root.stat().st_dev
-        except OSError:
-            music_device = None
-        if music_device is None:
-            _discovery_update_acquisition_status(artist, album, "library_mount_unavailable", {
-                "source_folder": str(source), "library_path": str(music_root),
-            })
-            return "failed"
-
-        artist_dir = music_root / _discovery_safe_folder_name(artist)
-        album_dir = artist_dir / _discovery_safe_folder_name(album)
-
-        # Reject symlinked artist paths and non-directory filesystem objects.
-        if artist_dir.is_symlink() or (
-            artist_dir.exists() and not artist_dir.is_dir()
-        ):
+        if resolved_artist is None or resolved_artist.parent != music_root:
             _discovery_update_acquisition_status(
                 artist, album, "download_complete_move_failed",
-                {"error": "Unsafe import destination: artist path is a symlink or not a directory."},
+                {"error": "Unsafe import destination: artist directory is outside the music root."},
             )
             return "failed"
 
-        if artist_dir.exists():
-            try:
-                resolved_artist = artist_dir.resolve(strict=True)
-            except (OSError, RuntimeError):
-                resolved_artist = None
-
-            if resolved_artist is None or resolved_artist.parent != music_root:
-                _discovery_update_acquisition_status(
-                    artist, album, "download_complete_move_failed",
-                    {"error": "Unsafe import destination: artist directory is outside the music root."},
-                )
-                return "failed"
-
-        # exists() alone misses broken symlinks.
-        if album_dir.exists() or album_dir.is_symlink():
-            _discovery_update_acquisition_status(artist, album, "destination_exists", {
-                "source_folder": str(source), "destination": str(album_dir)
-            })
-            return "failed"
-
-        if not _discovery_update_acquisition_status(artist, album, "importing", {
-            "source_folder": str(source), "destination": str(album_dir),
-            "music_root_device": music_device,
-        }):
-            return "failed"
-        try:
-            if music_root.stat().st_dev != music_device:
-                raise OSError("Music-library filesystem changed before import")
-            artist_dir.mkdir(parents=True, exist_ok=True)
-
-            # Revalidate immediately before creating staging files.
-            if artist_dir.is_symlink() or not artist_dir.is_dir():
-                raise OSError("Artist destination is not a real directory")
-
-            resolved_artist = artist_dir.resolve(strict=True)
-            if resolved_artist.parent != music_root:
-                raise OSError("Artist destination resolves outside the music root")
-
-            if album_dir.exists() or album_dir.is_symlink():
-                raise FileExistsError(str(album_dir))
-
-            if music_root.stat().st_dev != music_device or artist_dir.stat().st_dev != music_device:
-                raise OSError("Music-library filesystem changed before import")
-            _discovery_import_matched_album_files(
-                source, album_dir, candidate,
-                expected_music_root=music_root, expected_device=music_device,
-            )
-        except OSError as exc:
-            _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
-                "source_folder": str(source), "destination": str(album_dir),
-                "error": str(exc), "downloads_path": str(source.parent),
-            })
-            return "failed"
-        except Exception as exc:
-            # Do not leave the persistent acquisition stuck in "importing" if
-            # an unexpected import error occurs; retain the completed download.
-            _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
-                "source_folder": str(source), "destination": str(album_dir),
-                "error": f"Unexpected import error ({type(exc).__name__}): {exc}",
-                "downloads_path": str(source.parent),
-            })
-            return "failed"
-
-        _discovery_update_acquisition_status(artist, album, "imported", {
-            "source_folder": str(source), "destination": str(album_dir),
-            "source_username": candidate.get("username"), "imported_at": time.time()
+    # exists() alone misses broken symlinks.
+    if album_dir.exists() or album_dir.is_symlink():
+        _discovery_update_acquisition_status(artist, album, "destination_exists", {
+            "source_folder": str(source), "destination": str(album_dir)
         })
-        return "imported"
+        return "failed"
+
+    if not _discovery_update_acquisition_status(artist, album, "importing", {
+        "source_folder": str(source), "destination": str(album_dir),
+        "music_root_device": music_device,
+    }):
+        return "failed"
+    try:
+        if music_root.stat().st_dev != music_device:
+            raise OSError("Music-library filesystem changed before import")
+        artist_dir.mkdir(parents=True, exist_ok=True)
+
+        # Revalidate immediately before creating staging files.
+        if artist_dir.is_symlink() or not artist_dir.is_dir():
+            raise OSError("Artist destination is not a real directory")
+
+        resolved_artist = artist_dir.resolve(strict=True)
+        if resolved_artist.parent != music_root:
+            raise OSError("Artist destination resolves outside the music root")
+
+        if album_dir.exists() or album_dir.is_symlink():
+            raise FileExistsError(str(album_dir))
+
+        if music_root.stat().st_dev != music_device or artist_dir.stat().st_dev != music_device:
+            raise OSError("Music-library filesystem changed before import")
+        _discovery_import_matched_album_files(
+            source, album_dir, candidate,
+            expected_music_root=music_root, expected_device=music_device,
+        )
+    except OSError as exc:
+        _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+            "source_folder": str(source), "destination": str(album_dir),
+            "error": str(exc), "downloads_path": str(source.parent),
+        })
+        return "failed"
+    except Exception as exc:
+        # Do not leave the persistent acquisition stuck in "importing" if
+        # an unexpected import error occurs; retain the completed download.
+        _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
+            "source_folder": str(source), "destination": str(album_dir),
+            "error": f"Unexpected import error ({type(exc).__name__}): {exc}",
+            "downloads_path": str(source.parent),
+        })
+        return "failed"
+
+    _discovery_update_acquisition_status(artist, album, "imported", {
+        "source_folder": str(source), "destination": str(album_dir),
+        "source_username": candidate.get("username"), "imported_at": time.time()
+    })
+    return "imported"
 
 
 def _discovery_reconcile_interrupted_import(artist, album, candidate):

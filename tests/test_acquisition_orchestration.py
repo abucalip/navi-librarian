@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed
+from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed, import_source_unless_dismissed
 from acquisition_lifecycle import skip_request_error
 
 
@@ -181,6 +181,56 @@ class AcquisitionQueueGuardTests(unittest.TestCase):
             queue_candidate_unless_dismissed(
                 "Artist", "Album", transition_lock=threading.RLock(),
                 is_dismissed=lambda _artist, _album: False, queue_source=fail,
+            )
+
+
+
+class AcquisitionImportGuardTests(unittest.TestCase):
+    def test_dismissal_check_and_import_run_inside_same_transition_lock(self):
+        events = []
+
+        class TrackingLock:
+            def __enter__(self):
+                events.append("lock-enter")
+            def __exit__(self, exc_type, exc, tb):
+                events.append("lock-exit")
+
+        result = import_source_unless_dismissed(
+            "Artist", "Album",
+            transition_lock=TrackingLock(),
+            is_dismissed=lambda artist, album: events.append(("check", artist, album)) or False,
+            import_source=lambda: events.append("import") or "imported",
+        )
+        self.assertEqual(result, "imported")
+        self.assertEqual(events, [
+            "lock-enter", ("check", "Artist", "Album"), "import", "lock-exit",
+        ])
+
+    def test_dismissed_source_never_calls_import_callback(self):
+        calls = []
+        result = import_source_unless_dismissed(
+            "Artist", "Album",
+            transition_lock=threading.RLock(),
+            is_dismissed=lambda _artist, _album: True,
+            import_source=lambda: calls.append("import"),
+        )
+        self.assertEqual(result, "dismissed")
+        self.assertEqual(calls, [])
+
+    def test_import_result_and_exceptions_are_preserved(self):
+        expected = object()
+        self.assertIs(import_source_unless_dismissed(
+            "Artist", "Album", transition_lock=threading.RLock(),
+            is_dismissed=lambda _artist, _album: False,
+            import_source=lambda: expected,
+        ), expected)
+        failure = RuntimeError("import guard callback failed")
+        def fail():
+            raise failure
+        with self.assertRaisesRegex(RuntimeError, "import guard callback failed"):
+            import_source_unless_dismissed(
+                "Artist", "Album", transition_lock=threading.RLock(),
+                is_dismissed=lambda _artist, _album: False, import_source=fail,
             )
 
 

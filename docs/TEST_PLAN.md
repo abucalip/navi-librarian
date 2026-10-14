@@ -1,3 +1,11 @@
+## 2026-10-15 — Import dismissal guard extraction (verification pending)
+
+- Direct tests in `tests/test_acquisition_orchestration.py` cover the dismissal-serialized import callback: the lock spans check and callback, dismissed state prevents callback execution, and results/exceptions propagate unchanged.
+- Keep `test_import_does_not_move_files_if_importing_status_cannot_be_persisted` in the AST integration harness because it verifies the adapter does not begin filesystem import without the required persisted transition.
+- No filesystem validation/import logic was moved. Required before merge: focused/full unit suite, syntax checks, final diff review, and all four required workflows on exact final PR head.
+
+---
+
 ## 2026-10-15 — PR #76 merged: slskd polling regressions
 
 - PR #76 exact tested head: `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`; squash merge: `a55a9fa7eed1e221f52434b50f44d0c415fd491a`.

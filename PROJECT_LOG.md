@@ -1,3 +1,12 @@
+## 2026-10-15 — Import dismissal guard extraction in progress
+
+- Branch `refactor/import-dismissal-guard`, based on main after PR #77.
+- Extracted the dismissal-serialized callback guard to `acquisition_orchestration.py`; the shared transition lock covers both the dismissal predicate and the entire callback. The server keeps its compatibility adapter, while path validation, status persistence, storage-identity checks, and file import remain in the server.
+- Added direct tests for lock ordering, dismissal refusal, return propagation, and exceptions. Removed only the matching dismissal-only AST test; retained import-transition persistence-failure coverage.
+- Focused/full tests, final diff review, and exact-head four-workflow CI remain pending.
+
+---
+
 ## 2026-10-15 — PR #76 merged: slskd search polling extraction
 
 - PR #76 squash-merged at `a55a9fa7eed1e221f52434b50f44d0c415fd491a` from exact tested head `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`.
