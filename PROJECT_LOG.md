@@ -3,7 +3,7 @@
 - Branch: `refactor/acquisition-state-store`, based on GitHub main `066fff8e7ef88364b1dc9cc909bfb2722118880e`.
 - Extracted SQLite save/list mechanics for acquisition rows into `acquisition_state.py`, preserving legacy server functions as adapters and adding direct-import persistence tests. Docker packaging and architecture, roadmap, test plan, and project status documentation updated.
 - Explicitly retained the shared transition lock, dismissed-state conditional checks, secondary feedback projection, dismissal/import coordination, and filesystem safety logic in `navidrome_server.py`.
-- Validation, full diff review, exact-head CI, merge, publication, deployment, and production runtime verification remain pending.
+- Initial CI on `2e7ef60177ff61cb080dfad9fa422773938159ef` caught a test fixture mismatch for JSON `null`; corrected the fixture only on `29c5e6a460f1f61296680af7b1230fd5561496b4`. All four required workflows passed on that corrected code head: test/build `116019140196` (180 tests passed), compile `116019144533`, container smoke `116019141476`, and validation-only multi-architecture `116019141889` (publishing paused). Documentation closeout now requires all four workflows on the new exact PR head, followed by final diff review. No separate local test run, merge, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-14 — Acquisition watcher startup extraction proposed
 
