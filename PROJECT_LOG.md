@@ -155,7 +155,7 @@
 
 ## 2026-10-14 — Front-end ownership transferred to ZCode
 
-- Added root `ZCODE.md` with front-end scope, protected paths, API/security contract, design workflow using Impeccable where available, exact-SHA verification requirements, and an initial focused visual-polish task.
+- Added root `AGENTS.md` with front-end scope, protected paths, API/security contract, design workflow using Impeccable where available, exact-SHA verification requirements, and an initial focused visual-polish task.
 - Updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/PROJECT_STATUS.md`, and historical handoff wording to identify ZCode as the front-end owner. Retired the previous root-specific instruction file so there is one authoritative instruction file.
 - Backend/domain, safety, integration, merge, publishing, deployment, and project-level verification ownership remains with the assistant. The acquisition-coordination roadmap remains the main engineering priority.
 - Documentation-only change. No application tests or UI checks were run; verify required CI on the exact PR head before merge.
