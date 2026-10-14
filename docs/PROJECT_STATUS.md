@@ -1,3 +1,14 @@
+## 2026-10-15 — Candidate extraction test migration (PR #73 preparation)
+
+- Branch: `test/migrate-slskd-candidate-extraction`, based on current main after PR #72.
+- Moved the Tinariwen/Idrache candidate-folder grouping and ranking regression from the AST harness to `tests/test_slskd_candidates.py`, directly exercising `slskd_search.extract_candidates` with the production music-key, path-match, quality-tier, and track-identity helpers.
+- The test keeps four folder variants, twelve expected tracks, candidate eligibility and unique-track assertions, and FLAC tier evidence. Acquisition retry/wait and lifecycle coordination cases remain in the AST harness.
+- Focused/full tests, syntax checks, exact-head four-workflow CI, and final diff review are pending; no test pass is claimed.
+- PR #72 is merged at `6c6157a8238691b18d2209ea2d2e1306385ec9a2`; its four required workflows passed on exact head `17be72e52b39e63cad63391fb2c4e63ea55d3c26`.
+- Next: validate this test migration, then assess coordinator extraction only if direct tests can preserve race, persistence, cancellation, and recovery guarantees.
+
+---
+
 ## 2026-10-14 — PR #73 candidate extraction test migration in progress
 
 - Branch: `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
