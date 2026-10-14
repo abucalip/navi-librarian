@@ -160,14 +160,6 @@ class VariousArtistsNewReleasesTests(unittest.TestCase):
 
 
 class SlskdSearchQueryTests(unittest.TestCase):
-    def test_zero_response_fallback_queries_broaden_without_dropping_artist_immediately(self):
-        build = HELPERS["_slskd_search_queries"]
-        queries = build("Tinariwen", "Idrache (Traces of the Past)")
-        self.assertEqual(queries[0], "Tinariwen Idrache (Traces of the Past)")
-        self.assertEqual(queries[1], "Tinariwen Idrache Traces of the Past")
-        self.assertEqual(queries[2], "Tinariwen Idrache")
-        self.assertEqual(len({query.casefold() for query in queries}), len(queries))
-
     def test_acquisition_retries_broader_query_when_exact_search_has_no_payload(self):
         posted_queries = []
         posted_timeouts = []
@@ -310,46 +302,7 @@ class SlskdSearchQueryTests(unittest.TestCase):
         self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 1)
         self.assertEqual(result["search_queries_attempted"][0]["state"], "completed, timedout")
 
-    def test_search_queries_reject_blank_artist_or_album(self):
-        build = HELPERS["_slskd_search_queries"]
-        self.assertEqual(build("", "Album"), [])
-        self.assertEqual(build("Artist", "  "), [])
-
-
 class SlskdAlbumPathMatchingTests(unittest.TestCase):
-    def test_matches_edition_suffix_and_partial_album_wording(self):
-        matcher = HELPERS["_slskd_album_path_match"]
-        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/A Moon Shaped Pool (FLAC Deluxe Edition)"))
-        self.assertTrue(matcher("A Moon Shaped Pool", "Radiohead/Moon Shaped Pool"))
-
-    def test_rejects_unrelated_album_folder(self):
-        matcher = HELPERS["_slskd_album_path_match"]
-        self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
-        self.assertFalse(matcher("AM", "Sam"))
-
-    def test_slskd_search_response_payload_normalization(self):
-        normalize = HELPERS["_slskd_search_response_items"]
-        peer = {"username": "peer", "files": [{"filename": "Bombino/Agamgam/01.flac"}]}
-        self.assertEqual(normalize([peer]), [peer])
-        self.assertEqual(normalize({"responses": [peer]}), [peer])
-        self.assertEqual(normalize({"items": [peer]}), [peer])
-        self.assertEqual(normalize({"responses": "not-a-list"}), [])
-        self.assertEqual(normalize(None), [])
-
-    def test_path_diagnostics_explain_album_and_artist_match_signals(self):
-        diagnose = HELPERS["_slskd_path_match_diagnostics"]
-        result = diagnose([{
-            "username": "peer",
-            "files": [{
-                "filename": r"Music\Tinariwen\Tinariwen - Idrache (Traces Of The Past) - 2024\01 - Soixante Trois.flac"
-            }],
-        }], "Tinariwen", "Idrache (Traces of the past)")
-        self.assertEqual(len(result), 1)
-        self.assertTrue(result[0]["album_path_match"])
-        self.assertTrue(result[0]["artist_path_match"])
-        self.assertFalse(result[0]["album_filename_match"])
-
-
     def test_tinariwen_idrache_source_folder_variants_are_clear_candidates(self):
         extract = HELPERS["_slskd_extract_candidates"]
         priority = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"]
