@@ -354,3 +354,6 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 - First CI attempt failed one test assertion: status details are passed as the fourth positional argument, not keyword arguments. The test was corrected.
 - Corrected head `6793c339464c9d573c02f5e7dc91d15b5f568348`: syntax/acquisition safety run `38604931720`, Docker packaging/full suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture build `38604932002` all succeeded. Publishing remains paused.
 - Because this test-plan/status/log update creates a new PR head, all four workflows must pass again on the final updated SHA before merge. No separate local test run or live slskd/production filesystem verification is claimed.
+
+
+- **Final documentation-updated PR head:** `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture build `38605193820`. All four required workflows succeeded; image publishing remains paused.
