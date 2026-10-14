@@ -4118,8 +4118,17 @@ def _discovery_cancel_and_clean_source(
     Preflight every local file before changing anything. Refuse cleanup if
     source identity or local file ownership is ambiguous.
     """
+    import logging
     import re
     from urllib.parse import quote
+
+    stage = "remote source inventory is incomplete or ambiguous"
+
+    def reject(reason=None):
+        logging.getLogger(__name__).warning(
+            "Acquisition dismissal cleanup refused at %s", reason or stage
+        )
+        return reject()
 
     def normalized_path(value):
         """Normalize separators without treating different paths as equal."""
@@ -4138,7 +4147,7 @@ def _discovery_cancel_and_clean_source(
     files = candidate.get("files") or []
 
     if not username or not files:
-        return False
+        return reject("remote source identity or file inventory is missing")
 
     # Build an unambiguous expected-track inventory.
     expected_by_name = {}
@@ -4151,15 +4160,15 @@ def _discovery_cancel_and_clean_source(
         try:
             size = int(item.get("size"))
         except (TypeError, ValueError):
-            return False
+            return reject()
 
         # A missing or invalid advertised size makes safe cleanup impossible.
         if not name or size <= 0:
-            return False
+            return reject()
 
         remote_path = normalized_path(filename)
         if remote_path is None or "/" not in remote_path:
-            return False
+            return reject()
 
         remote_directory = remote_path.rsplit("/", 1)[0]
         remote_directories.add(remote_directory)
@@ -4168,7 +4177,7 @@ def _discovery_cancel_and_clean_source(
 
         # Duplicate basenames make local file ownership ambiguous.
         if key in expected_by_name:
-            return False
+            return reject()
 
         expected_by_name[key] = {
             "name": name,
@@ -4177,37 +4186,39 @@ def _discovery_cancel_and_clean_source(
 
     # Every advertised track must belong to one identifiable remote directory.
     if len(remote_directories) != 1:
-        return False
+        return reject()
 
     expected_remote_directory = next(iter(remote_directories))
 
     # Reject a symlink at the configured path before resolving it.
+    stage = "configured download root is missing, symlinked, or invalid"
     try:
         original_root = Path(download_root).expanduser()
         if original_root.is_symlink():
-            return False
+            return reject()
         root = original_root.resolve(strict=True)
     except (OSError, RuntimeError):
-        return False
+        return reject()
 
     if not root.is_dir():
-        return False
+        return reject()
 
+    stage = "album download folder is missing, ambiguous, or unsafe"
     wanted = _discovery_safe_folder_name(candidate.get("folder"))
     if not wanted:
-        return False
+        return reject()
 
     direct = root / wanted
 
     # Do not follow a symlink, even if it points inside the download root.
     if direct.is_symlink():
-        return False
+        return reject()
 
     if direct.is_dir():
         targets = [direct]
     elif direct.exists():
         # A file or other object with the expected folder name is ambiguous.
-        return False
+        return reject()
     else:
         try:
             targets = [
@@ -4218,14 +4229,15 @@ def _discovery_cancel_and_clean_source(
                 and not path.is_symlink()
             ]
         except OSError:
-            return False
+            return reject()
 
     # Never guess which of multiple same-named folders belongs to this job.
     if len(targets) > 1:
-        return False
+        return reject()
 
     target = targets[0] if targets else None
 
+    stage = "album folder contains files that cannot be safely attributed to this acquisition"
     planned_deletions = []
 
     # Preflight the entire local folder. Nothing has been cancelled or
@@ -4239,13 +4251,13 @@ def _discovery_cancel_and_clean_source(
                 or root not in resolved_target.parents
                 or target.is_symlink()
             ):
-                return False
+                return reject()
 
             for actual in target.iterdir():
                 # Never follow symlinks, recurse into directories, or remove
                 # special files.
                 if actual.is_symlink() or not actual.is_file():
-                    return False
+                    return reject()
 
                 actual_name = actual.name
                 key = actual_name.casefold()
@@ -4255,13 +4267,13 @@ def _discovery_cancel_and_clean_source(
                 try:
                     actual_size = actual.stat(follow_symlinks=False).st_size
                 except OSError:
-                    return False
+                    return reject()
 
                 if expected is not None:
                     # Exact-name tracks may be incomplete downloads, but
                     # must not exceed their advertised size.
                     if actual_size > expected["size"]:
-                        return False
+                        return reject()
 
                     planned_deletions.append(actual)
                     continue
@@ -4295,20 +4307,21 @@ def _discovery_cancel_and_clean_source(
                 if len(collision_matches) != 1:
                     # An unrelated or ambiguous file means we cannot
                     # safely claim that cleanup is complete.
-                    return False
+                    return reject()
 
                 planned_deletions.append(actual)
 
         except (OSError, RuntimeError):
-            return False
+            return reject()
 
     # Inspect the peer's current transfers. Do not cancel by basename alone.
+    stage = "slskd transfer inventory could not be verified"
     try:
         tracked = _slskd_download_transfer_files(
             base_url, headers, username
         )
     except Exception:
-        return False
+        return reject()
 
     active_states = {
         "queued",
@@ -4346,14 +4359,14 @@ def _discovery_cancel_and_clean_source(
             normalized_filename = normalized_path(tracked_filename)
 
             if normalized_filename is None or "/" not in normalized_filename:
-                return False
+                return reject()
 
             tracked_directory = normalized_filename.rsplit("/", 1)[0]
 
         normalized_tracked_directory = normalized_path(tracked_directory)
 
         if normalized_tracked_directory is None:
-            return False
+            return reject()
 
         # A known, different directory belongs to a different remote file:
         # leave it alone.
@@ -4365,18 +4378,19 @@ def _discovery_cancel_and_clean_source(
         try:
             tracked_size = int(item.get("size"))
         except (TypeError, ValueError):
-            return False
+            return reject()
 
         if tracked_size != expected["size"]:
-            return False
+            return reject()
 
         file_id = str(item.get("id") or "")
         if not file_id:
-            return False
+            return reject()
 
         transfers_to_cancel.append((file_id, name.casefold()))
 
     # All checks above are read-only. Only now begin cancelling transfers.
+    stage = "one or more matching slskd transfers could not be cancelled"
     for file_id, _name in transfers_to_cancel:
         try:
             response = httpx.delete(
@@ -4388,18 +4402,19 @@ def _discovery_cancel_and_clean_source(
             )
 
             if response.status_code not in (200, 202, 204, 404):
-                return False
+                return reject()
 
         except httpx.HTTPError:
-            return False
+            return reject()
 
     # Verify that no active transfer remains for this exact source directory.
+    stage = "matching slskd transfers are still active or could not be verified as stopped"
     try:
         remaining = _slskd_download_transfer_files(
             base_url, headers, username
         )
     except Exception:
-        return False
+        return reject()
 
     for item in remaining:
         name = basename(item.get("filename"))
@@ -4423,24 +4438,25 @@ def _discovery_cancel_and_clean_source(
             normalized_filename = normalized_path(item.get("filename"))
 
             if normalized_filename is None or "/" not in normalized_filename:
-                return False
+                return reject()
 
             directory = normalized_filename.rsplit("/", 1)[0]
 
         normalized_directory = normalized_path(directory)
 
         if normalized_directory is None:
-            return False
+            return reject()
 
         if normalized_directory == expected_remote_directory:
             # Cancellation is not confirmed; do not delete local files.
-            return False
+            return reject()
 
     # Transfers are now confirmed stopped. Remove only the preflighted files.
+    stage = "a verified download file could not be removed safely"
     try:
         for path in planned_deletions:
             if path.is_symlink() or not path.is_file():
-                return False
+                return reject()
 
             path.unlink()
 
@@ -4451,10 +4467,10 @@ def _discovery_cancel_and_clean_source(
                 target.rmdir()
             except OSError:
                 # Do not report success if anything appeared or remained.
-                return False
+                return reject()
 
     except OSError:
-        return False
+        return reject()
 
     return True
     return True
