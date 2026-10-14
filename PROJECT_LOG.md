@@ -33,3 +33,5 @@
 - Branch `test/acquisition-dismissal-neighbor-preservation` starts from main commit `7f05363c3b9abec29ef7c7d516bad2796813b11e` after PR #52's exact-head CI passed and merge completed.
 - Added a regression proving successful cleanup removes only the selected album folder and preserves a neighboring artwork file plus a different album folder. Existing tests cover refusal before deletion when the selected folder contains an unexpected file.
 - Test-only change; no production cleanup logic altered. Exact-head CI is pending and no test pass is claimed. HTTP 409 remains deferred. No local test execution, live slskd, real production-folder deletion, publication, deployment, or runtime verification.
+
+- CI follow-up: the initial assertion expected one transfer lookup, but the implementation performs two preflight checks. Corrected the test to expect both; exact head `f68ae4bd46523b9a41f298950ce397023a8f19b4` is awaiting CI.
