@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #78 merged: import dismissal coordination
+
+- PR #78 exact tested head: `e6a609ca7381d0751d529b52f55aeebd56d76661`; squash merge: `5d638c7adf5a42fdac8052cb4fc223236564cd72`.
+- Direct tests cover the dismissal-serialized import callback: lock spans the check and callback, dismissed state prevents callback execution, and return values/exceptions propagate.
+- The AST integration test `test_import_does_not_move_files_if_importing_status_cannot_be_persisted` remains to verify the full server adapter does not enter filesystem import before the persisted importing transition succeeds.
+- All four required workflows passed on exact head: syntax `38653493244`, Docker packaging/full unit suite `38653493312`, runtime smoke `38653493285`, and image validation with publishing paused `38653493279`. Full suite: 186 tests passed.
+- No live slskd, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — Import dismissal guard extraction (verification pending)
 
 - Direct tests in `tests/test_acquisition_orchestration.py` cover the dismissal-serialized import callback: the lock spans check and callback, dismissed state prevents callback execution, and results/exceptions propagate unchanged.

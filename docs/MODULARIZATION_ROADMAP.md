@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #78 merged: import dismissal guard extraction
+
+- PR #78 merged at `5d638c7adf5a42fdac8052cb4fc223236564cd72` from tested head `e6a609ca7381d0751d529b52f55aeebd56d76661`.
+- `acquisition_orchestration.import_source_unless_dismissed` now owns the lock/check/callback guard; the shared transition lock spans the entire import callback.
+- Filesystem path/mount identity validation, destination checks, persistent status transition, import staging, and rollback remain in their existing safety owners. Only the dismissal-only AST regression moved to direct tests.
+- All four required workflows passed on exact head (syntax `38653493244`, package/full suite `38653493312`, runtime smoke `38653493285`, image validation/publishing paused `38653493279`); 186 tests passed.
+- Next: audit the remaining AST lifecycle tests for safe direct-import migration, focusing on duplicate-request reservation, dismissed-job reactivation/refusal, incomplete saved candidate details, and stale watcher recovery. Preserve the end-to-end concurrency and persistence tests until equivalent direct tests exercise the same boundaries.
+
+---
+
 ## 2026-10-15 — Import dismissal guard extraction in progress
 
 - Added `acquisition_orchestration.import_source_unless_dismissed` to centralize the existing lock/check/callback guard used before a completed source is imported.
