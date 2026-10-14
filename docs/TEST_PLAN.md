@@ -1,4 +1,9 @@
-## 2026-10-14 — Candidate-start validation extraction (PR pending)
+## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)
+
+- Exact tested PR head: `f53e8ceffc8307c7b8dbcbf837e123b51671bbda`; squash merge: `b10650aa6a8889610b5734c5a1cf02c3197f1ad0`.
+- All four required workflows passed on the exact PR head: Python syntax (`38648719075`), Docker packaging and full unit suite (`38648719066`), container runtime smoke (`38648719107`), and Docker image validation with publishing paused (`38648719074`).
+- Coverage added in `tests/test_acquisition_candidate_start.py`: traversal rejected before lookup, mixed remote directories rejected, active transfer recognized, queued transfer cancelled before safe fallback, and uncertain cancellation/lookup outcomes fail closed.
+- No standalone local test run or live slskd interaction was performed; no image publication, deployment, or production runtime verification is claimed.
 
 - Direct-import tests now target `acquisition_candidate_start.candidate_start_state`; the AST harness no longer owns the traversal and multi-directory tests.
 - Coverage includes pre-lookup traversal rejection, mixed remote directories, active transfer recognition, queued transfer cancellation, and fail-closed handling of uncertain cancellation or transfer lookup.
