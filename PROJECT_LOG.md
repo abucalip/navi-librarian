@@ -1,9 +1,10 @@
-## 2026-10-15 — Candidate extraction test migration in progress
+## 2026-10-15 — PR #73 merged: candidate extraction test migration
 
-- Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
-- Moved the Tinariwen/Idrache candidate grouping/ranking scenario from the AST harness to direct-import coverage in `tests/test_slskd_candidates.py`. It invokes the extracted search implementation with production helper functions; no production implementation was changed.
-- Kept orchestration retry/wait and acquisition lifecycle coordination tests in the AST harness.
-- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending.
+- PR #73 squash-merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3` from tested head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
+- Moved the Tinariwen/Idrache four-folder candidate grouping/ranking scenario from the AST harness to `tests/test_slskd_candidates.py`, using the production `slskd_search.extract_candidates`, music-key, album-path, quality-tier, and track-identity functions. Removed the empty AST class left behind.
+- All four required workflows passed on exact tested head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- An earlier head failed syntax and unit-test import because the now-empty AST class remained after moving its only test. The class was removed; corrected-head CI passed. No local test run, live slskd interaction, publication, deployment, or production runtime verification is claimed.
+- Next: audit the top-level acquisition coordinator for a small extraction seam while retaining integration coverage for retry/wait, persistence transitions, locks, dismissal/reactivation, and watcher recovery.
 
 ---
 
