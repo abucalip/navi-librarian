@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition lifecycle AST audit / watcher reservation race
+
+- Keep the remaining AST coordinator tests for duplicate acquisition-request concurrency, refusal when saved candidate details are incomplete, successful/failed dismissed-job reactivation, stale watcher recovery without requeue, and persistence-before-import. They cover coordinator sequencing/state boundaries rather than pure helper behavior.
+- Added direct-import regression coverage for two concurrent start_import_watcher calls. Acceptance: both callers finish; exactly one returns success; only one job is persisted and one watcher thread starts; the active reservation remains present. Also retain tests for dismissed refusal, duplicate sequential start, persistence failure cleanup, and thread-start failure cleanup.
+- Pending: focused test, full suite, syntax checks, complete diff review, and all four required workflows on the exact final PR head. Do not claim verification before CI evidence is available.
+
+---
+
 ## 2026-10-15 — Session closeout: remaining AST-coupled lifecycle coverage
 
 - Baseline reconciled against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`; PR #82's documentation closeout is merged. Its exact tested head `5fdad1045ba04db84aea05a477a51dce38733f5c` passed all four required workflows; this session adds no new test result.
