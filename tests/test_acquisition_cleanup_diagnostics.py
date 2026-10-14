@@ -61,9 +61,37 @@ class AcquisitionCleanupDiagnosticsTests(unittest.TestCase):
             album_folder.mkdir()
             track = album_folder / "track.mp3"
             track.write_bytes(b"abc")
+            neighboring = root / "keep.txt"
+            neighboring.write_text("unrelated", encoding="utf-8")
             self.assertTrue(cleanup(str(root), candidate, "http://slskd", {}))
             self.assertFalse(track.exists())
             self.assertFalse(album_folder.exists())
+            self.assertEqual(neighboring.read_text(encoding="utf-8"), "unrelated")
+        namespace["httpx"].delete.assert_not_called()
+
+    def test_unexpected_file_aborts_cleanup_before_any_deletion(self):
+        cleanup, namespace = load_cleanup_helper()
+        candidate = {
+            "username": "peer",
+            "folder": "release",
+            "files": [{"filename": "release/track.mp3", "size": 3}],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            album_folder = root / "release"
+            album_folder.mkdir()
+            track = album_folder / "track.mp3"
+            track.write_bytes(b"abc")
+            unrelated = album_folder / "notes.txt"
+            unrelated.write_text("keep", encoding="utf-8")
+            with self.assertLogs(level="WARNING") as captured:
+                result = cleanup(str(root), candidate, "http://slskd", {})
+            self.assertFalse(result)
+            self.assertIn("album folder contains files that cannot be safely attributed",
+                          " ".join(captured.output))
+            self.assertEqual(track.read_bytes(), b"abc")
+            self.assertEqual(unrelated.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(album_folder.is_dir())
         namespace["httpx"].delete.assert_not_called()
 
 
