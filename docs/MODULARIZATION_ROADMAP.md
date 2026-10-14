@@ -1,8 +1,8 @@
-## 2026-10-15 — AST audit finding and watcher-start concurrency coverage
+## 2026-10-15 — Watcher-start concurrency regression verified
 
-- The remaining lifecycle AST cases are integration tests for coordinator locking, persisted state, reactivation, and recovery. Keep them until a replacement exercises the same end-to-end boundary; helper-only policy tests are not equivalent.
-- Added a direct-import race regression for simultaneous watcher-start calls, complementing existing sequential duplicate, dismissal, persistence-failure, and thread-start-failure tests.
-- Pending exact-head validation. Do not infer success from code review or compilation; require focused/full tests and all four required CI workflows before merge.
+- PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed (syntax 38656927551, Docker packaging/full suite 38656927436, runtime smoke 38656927801, multi-architecture validation-only 38656927516).
+- Added direct-import concurrency coverage without production behavior changes. The remaining AST lifecycle cases remain because they cover coordinator races, persistence-before-import, dismissed-job reactivation, incomplete saved state, and stale watcher recovery.
+- Next: merge PR #84 after exact-head status confirmation, then continue identifying genuinely helper-only AST tests for safe migration. Publishing and deployment remain unverified and paused.
 
 ---
 
