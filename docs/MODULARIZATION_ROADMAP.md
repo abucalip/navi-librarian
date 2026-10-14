@@ -8,14 +8,6 @@
 
 ---
 
-## 2026-10-15 — Import dismissal guard extraction in progress
-
-- Added `acquisition_orchestration.import_source_unless_dismissed` to centralize the existing lock/check/callback guard used before a completed source is imported.
-- The shared transition lock still spans the entire import callback. All path, mount-identity, destination, persistence, staging, and rollback behavior stays in the existing server/import safety path.
-- Moved only the dismissal-only guard regression to direct-import tests; retained status-persistence failure and remaining acquisition lifecycle integration tests.
-- Verification pending. Next: inspect remaining AST lifecycle tests for duplicates while preserving concurrency, conditional persistence, dismissal/reactivation, cancellation, and watcher recovery.
-
----
 
 ## 2026-10-15 — PR #76 merged: slskd polling extraction
 
