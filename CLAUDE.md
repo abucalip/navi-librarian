@@ -1,10 +1,18 @@
-# Claude Code instructions — front-end-only ownership
+# Claude Code project instructions — front-end ownership
 
-This repository is **abucalip/navi-librarian**. GitHub is the single source of truth. Work only on a dedicated feature branch and submit a pull request; never commit directly to `main`.
+Repository: `abucalip/navi-librarian`.
 
-## Mission
+**Read this file before making changes.** GitHub is the single source of truth. The app is a FastAPI web application with extracted UI templates/assets; it is not a separately deployed frontend. Your role is front-end implementation only.
 
-Act as the dedicated front-end developer. Improve presentation, accessibility, usability, responsiveness, and client-side behavior while preserving the established API and security behavior. The application is a FastAPI web app; the UI assets are extracted, but the app is not a separately deployed frontend.
+## Mission and product context
+
+Improve the Librarian UI's clarity, speed, accessibility, responsive behavior, and reliability while preserving the established API, authentication, and domain behavior. The product helps a user explore their Navidrome library and listening taste, discover music, and request acquisitions through existing backend services. Keep the interface smooth and stable; do not duplicate discovery, recommendation, acquisition, or import logic in browser code.
+
+Before starting a task:
+1. Read this file and the relevant sections of `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/TEST_PLAN.md`.
+2. Inspect current GitHub `main`, open PRs, recent commits, and checks that affect your work.
+3. Inspect the relevant template, stylesheet, script, API caller, and tests before deciding on an implementation.
+4. Write down a narrow objective and acceptance criteria in your own working notes or PR description.
 
 ## Files you may change
 
@@ -14,52 +22,63 @@ Normal implementation scope:
 - `static/login.css`
 - `static/login.js`
 - `app/templates/*.html`
+- narrowly scoped front-end tests/fixtures under `tests/`
 
-You may add narrowly scoped front-end tests or fixtures under `tests/` when they test presentation/client behavior. Before changing an existing test, understand what it protects; never weaken or delete a regression assertion just to make a UI change pass.
+Do not expand this scope silently. If a task requires a new frontend file outside these paths, explain why in the PR and coordinate first. Reading backend code or tests is allowed to understand behavior; reading a file does not grant permission to edit it.
 
-Read other source files and tests as needed to understand existing API behavior. Reading a file does not grant permission to edit it.
-
-## Files and behaviors outside your ownership
+## Protected ownership boundaries
 
 Do not edit these without explicit approval and coordinated ownership:
-- `app/main.py` (application assembly, middleware, auth boundary, route registration, API behavior)
+- `app/main.py`, including application assembly, middleware, route registration, and authentication boundaries
 - `app/api/**` and `app/security/**`
-- `navidrome_server.py`, acquisition/discovery/import modules, persistence stores, or other domain/backend code
-- `Dockerfile*`, Compose files, `.github/workflows/**`, dependency/lock files, packaging, release or deployment configuration
-- project requirements, architecture, roadmap, or test-gate policy
+- `navidrome_server.py`, domain/service modules, discovery/recommendation logic, acquisition/import lifecycle, persistence, and filesystem operations
+- `Dockerfile*`, Compose files, `.github/workflows/**`, dependencies/lockfiles, packaging, release, or deployment configuration
+- requirements, architecture, roadmap, test-gate, or deployment policy
 
-Do not change endpoint paths or methods, request/response schemas, authentication/session/cookie behavior, public-path rules, authorization assumptions, persistence semantics, acquisition/import/dismiss behavior, or filesystem-safety rules. Do not introduce a new dependency or build system without approval.
-
-If the UI needs a missing endpoint, new field, or backend behavior, do not mock it as if it exists and do not implement the backend yourself. Describe the needed API contract and expected user behavior in the PR; the assistant will implement and review the backend side.
+Do not change endpoint paths/methods, request or response schemas, auth/session/cookie behavior, public-path rules, authorization, persistence semantics, acquisition/Get/Skip/Dismiss behavior, or filesystem-safety guarantees. Do not add dependencies, a build system, analytics, trackers, or external asset dependencies without approval.
 
 ## API and security contract
 
-- Treat the existing API as the contract. Inspect the relevant route and tests before relying on an endpoint.
-- Preserve login/setup/logout flows and keep protected content protected. Only the explicitly intended static assets may be public before login.
-- Never embed credentials, tokens, secrets, private paths, or service configuration in client assets.
-- Render API errors clearly and recover to a usable UI state; do not silently report success on failed requests.
-- Avoid unsafe HTML insertion. Escape or safely construct any UI that displays API or user-controlled text.
-- Keep existing acquisition safeguards intact. A visual control must not imply a destructive operation succeeded before the server confirms it.
-- Do not add external trackers, analytics, or remote asset dependencies without approval.
+- Treat the existing API as authoritative. Inspect its route and regression tests before relying on an endpoint or field.
+- Keep login/setup/logout flows and protected content protected. Public access is limited to the existing explicitly allowed login assets and static resources.
+- Never place credentials, tokens, secrets, private paths, or service configuration in client-side files or rendered markup.
+- Never invent a backend endpoint or field. Do not present mock behavior as working integration.
+- If a new API field, endpoint, or server behavior is needed, stop at a concise proposal in the PR: describe the user need, proposed request/response contract, failure cases, and why the existing contract is insufficient. The assistant owns the backend/API implementation and cross-layer integration.
+- Avoid unsafe HTML insertion. Treat API/user-controlled strings as untrusted; prefer text APIs and safe DOM construction.
+- Show loading, empty, success, and error states accurately. Do not report success until the server confirms it, especially for acquisition or other consequential actions.
+- Preserve existing acquisition and file-safety protections; UI controls must not bypass server-side validation.
+
+## UI implementation principles
+
+- Follow the existing visual system and components before introducing new patterns. Prefer a coherent, professional interface over one-off styling.
+- Preserve the established type, color, spacing, artwork, and navigation patterns unless the task explicitly targets them.
+- Make responsive behavior intentional; avoid overflow, layout shifts, and controls that become inaccessible on narrow screens.
+- Use semantic HTML, accessible names, keyboard-operable controls, visible focus, and sufficient contrast. Do not rely on color alone to communicate state.
+- Keep client behavior predictable: prevent duplicate submissions where appropriate, handle failed/slow requests, and leave the interface usable after errors.
+- Avoid unnecessary full-page reloads or repeated requests when the current architecture supports a smaller update. Do not add premature complexity or duplicate domain state in the browser.
+- Preserve existing behavior outside the requested scope. Keep changes focused and explain material trade-offs in the PR.
 
 ## Git and pull-request workflow
 
-1. Start from the current GitHub `main`; inspect its state and the relevant requirements, workflow, and tests.
-2. Create a focused branch named like `ui/<short-task-name>`.
-3. Keep the diff front-end-only. If a backend/API change appears necessary, stop at the contract proposal and request coordinated work.
-4. Run relevant available tests and checks. At minimum, run the documented UI-related regression tests and full unit suite when feasible; report commands and results accurately.
-5. Inspect the complete diff and changed-file list. Check that no prohibited paths or API/security behavior changed.
-6. Open a PR against `main` with purpose, screenshots or a concise before/after description for visual changes, changed files, tests actually run, and known limitations.
-7. Do not merge the PR, publish images, deploy, alter branch protection, disable CI, or bypass required checks. The assistant owns cross-layer review, integration, release gates, and merge coordination.
-8. If `main` advances, rebase/update the branch safely and rerun the relevant checks. Never force-push or overwrite unrelated work without explicit authorization.
+1. Work from current GitHub `main`, unless a different GitHub base is explicitly justified.
+2. Create a focused feature branch, for example `ui/<short-task-name>`. Never commit directly to `main`.
+3. Keep the diff front-end-only. If backend/API changes are necessary, stop and propose the contract rather than editing protected files.
+4. Add/update focused UI tests where behavior changes. Understand what existing tests protect; never delete or weaken regression assertions merely to make a change pass.
+5. Run relevant available checks. Follow `docs/TEST_PLAN.md`; run focused tests, the full unit suite when feasible, and any relevant syntax checks. Report the exact commands and actual results.
+6. Review the complete diff and changed-file list. Verify no protected files, API contracts, security rules, or domain behavior changed.
+7. Open a PR against `main`. Include purpose, changed files, acceptance criteria, tests actually run, limitations, and screenshots or before/after notes for visual changes.
+8. Do not merge, publish images, deploy, alter branch protection, disable CI, or bypass required checks. The assistant owns cross-layer review, release controls, merge coordination, and project-level verification.
+9. Never force-push, overwrite unrelated work, or delete branches/worktrees without explicit authorization. If `main` advances, update the branch safely and rerun relevant checks.
 
-## Acceptance checklist for UI PRs
+## Testing and acceptance checklist
 
-- The change solves a stated UI problem and preserves existing behavior outside that scope.
-- Responsive layout, keyboard navigation, visible focus, semantic controls, and useful empty/loading/error states are considered.
-- Existing API request shapes and endpoint paths remain unchanged unless the assistant explicitly coordinates a contract update.
-- Tests are added/updated where behavior changes; no tests are weakened.
-- Exact PR-head CI passes before merge. UI-facing changes also require manual browser testing against that exact SHA using `docs/LOCAL_UI_TESTING.md` and the checklist in `docs/TEST_PLAN.md`.
-- The report distinguishes implemented, automated-tested, browser-tested, merged, published, and deployed states. Never infer deployment from a merge or CI pass.
+- UI-facing changes require passing automated checks on the exact PR-head SHA, followed by manual browser testing against that exact SHA using `docs/LOCAL_UI_TESTING.md` and `docs/TEST_PLAN.md`.
+- Use the documented isolated test helper, sandbox music/download paths, and disabled slskd for ordinary UI checks. Never point UI testing at live download folders or perform destructive acquisition actions on real data without explicit authorization.
+- Consider login/setup, navigation, artwork, discovery, album details, settings, Get/request state, acquisition cards, empty/loading/error/recovery states, performance, and browser/server errors as relevant to the change. Record skips as skips, not passes.
+- Add tests for changed client behavior and preserve existing assertions. Server-side safety remains enforced and tested in backend/domain tests; browser checks do not replace those tests.
+- If the PR head changes after manual testing, retest the new SHA or state clearly that the report covers the earlier SHA.
+- Report implemented, automated-tested, browser-tested, merged, published, deployed, and runtime-verified as separate states. A merge or CI pass is not deployment evidence.
 
-When uncertain whether a change crosses this boundary, leave the protected file untouched and describe the proposed change in the PR instead.
+## Handoff format
+
+At completion, provide the PR URL, branch, exact head SHA, files changed, tests/checks actually run, manual UI report if required, known limitations, and the next action. Do not claim a check passed unless its result was observed. If blocked by a missing backend contract or protected-file change, describe the proposal and stop.

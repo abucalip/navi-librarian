@@ -1,6 +1,6 @@
 # Architecture and workflow decisions
 
-Last updated: 2026-10-12
+Last updated: 2026-10-14
 
 Record decisions here when they constrain future implementation. Add new entries rather than silently rewriting history.
 
@@ -102,3 +102,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** Refresh control flow can be tested independently without importing MCP initialization or calling providers, while list-building and persistence remain distinct responsibilities.
 
 **Consequence:** Inject existing locks, recommendation/list-builder callables, and the persistence wrapper. Preserve lock acquisition and release, list identifiers, response shapes, count fields, JSON-error handling, and error reporting. Do not move provider logic or alter list payload semantics in this extraction.
+
+
+## D-013 — Split Claude front-end work from backend integration
+
+**Decision:** Claude may implement UI-only changes in `static/app.css`, `static/app.js`, `static/login.css`, `static/login.js`, `app/templates/*.html`, and narrowly scoped UI tests/fixtures. Backend/domain/security, API contracts, application assembly, persistence, acquisition/import/filesystem safety, CI, packaging, release, and deployment remain outside that role. All work is proposed through GitHub PRs; the assistant owns cross-layer integration, release gates, and merge coordination.
+
+**Reason:** The UI assets are now extracted into dedicated paths, enabling focused frontend iteration without allowing parallel agents to silently change server contracts or safety-critical behavior.
+
+**Consequence:** Root `CLAUDE.md` is the operational instruction source for Claude. This decision supersedes only the single-agent ownership wording in D-009; it does not change GitHub authority, the local-testing-only rule, branch/PR requirements, or the distinction between merge, publication, deployment, and runtime verification.
