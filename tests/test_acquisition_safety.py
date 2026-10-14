@@ -613,6 +613,25 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertTrue(unrelated.exists())
         self.assertEqual(calls, [])
 
+    def test_cleanup_preserves_neighboring_files_and_folders(self):
+        neighbor_file = self.root / "Album Artwork.jpg"
+        neighbor_file.write_bytes(b"artwork")
+        neighbor_folder = self.root / "Other Album"
+        neighbor_folder.mkdir()
+        neighbor_track = neighbor_folder / "01.flac"
+        neighbor_track.write_bytes(b"neighbor")
+
+        result, calls = self.clean([[]])
+
+        self.assertTrue(result)
+        self.assertFalse(self.track.exists())
+        self.assertFalse(self.folder.exists())
+        self.assertTrue(neighbor_file.exists())
+        self.assertEqual(neighbor_file.read_bytes(), b"artwork")
+        self.assertTrue(neighbor_track.exists())
+        self.assertEqual(neighbor_track.read_bytes(), b"neighbor")
+        self.assertEqual(calls, [])
+
     def test_remote_path_traversal_is_rejected_before_transfer_lookup(self):
         self.candidate["files"][0]["filename"] = "Album/../Other/01.flac"
         result, calls = self.clean([[]])
