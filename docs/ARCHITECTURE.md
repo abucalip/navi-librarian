@@ -1,3 +1,10 @@
+## 2026-10-15 — Search polling boundary
+
+- `slskd_search_polling.py` owns the slskd progressive-query/poll/wait algorithm behind injected HTTP, clock, sleep, ID-generation, and response-normalization dependencies. The server coordinator continues to own configuration, candidate interpretation, status reporting, queueing, and acquisition state transitions.
+- The Docker image and Python syntax workflow must include this module. Keep the legacy server adapter and MCP/web return contract unchanged.
+
+---
+
 # Architecture
 
 Last updated: 2026-10-14

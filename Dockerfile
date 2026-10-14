@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=librarian:librarian app/ ./app/
 COPY --chown=librarian:librarian static/ ./static/
-COPY --chown=librarian:librarian navidrome_server.py acquisition_cleanup.py acquisition_recovery.py acquisition_source_switch.py acquisition_lifecycle.py acquisition_orchestration.py acquisition_watcher.py acquisition_watcher_startup.py acquisition_state.py acquisition_completion.py acquisition_import.py acquisition_candidate_start.py discovery_store.py discovery_refresh.py discovery_recommendations.py slskd_search.py slskd_quality.py cassette.png ./
+COPY --chown=librarian:librarian navidrome_server.py acquisition_cleanup.py acquisition_recovery.py acquisition_source_switch.py acquisition_lifecycle.py acquisition_orchestration.py acquisition_watcher.py acquisition_watcher_startup.py acquisition_state.py acquisition_completion.py acquisition_import.py acquisition_candidate_start.py discovery_store.py discovery_refresh.py discovery_recommendations.py slskd_search.py slskd_search_polling.py slskd_quality.py cassette.png ./
 
 USER librarian
 

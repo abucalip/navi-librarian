@@ -1,3 +1,13 @@
+## 2026-10-15 — Extract slskd search polling (verification pending)
+
+- Branch: `refactor/slskd-search-polling`, based on current main after PR #74.
+- Moved progressive query submission, polling, count tracking, delayed peer-payload waiting, and per-query diagnostics into `slskd_search_polling.py` behind injected HTTP, clock, sleep, ID, and response-normalization dependencies.
+- Added direct-import tests for fallback-query progression and waiting when slskd reports peers before exposing payloads; retained the existing AST-harness broad-query integration case to continue checking the coordinator's final response.
+- Docker packaging and Python syntax workflow include the new module. Focused/full tests, exact-head four-workflow CI, final diff review, and behavior equivalence review are pending; no test pass is claimed.
+- Next: verify polling state/timeout/error semantics against the pre-extraction implementation, then inspect remaining acquisition lifecycle tests for the next safe seam.
+
+---
+
 ## 2026-10-15 — PR #73 merged: candidate extraction direct-import test
 
 - PR #73: https://github.com/abucalip/navi-librarian/pull/73
