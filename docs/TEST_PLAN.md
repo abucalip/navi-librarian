@@ -1,10 +1,10 @@
-## Metadata API route extraction — in progress
+## Metadata API route extraction — PR #36 merged (2026-10-14)
 
 - Branch: `refactor/metadata-api-router`, based on the updated GitHub `main` after PR #35 and documentation closeout.
 - Moved `/api/artist-bio`, `/api/album-year`, `/api/album-details`, and `/api/artwork` with provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
 - Added `tests/test_metadata_routes.py` for endpoint/method inventory, artist bio cache and validation, MusicBrainz year preference, exact Deezer album matching and tracklist parsing, and artwork cache/validation.
-- Required verification: `python -m unittest tests.test_metadata_routes -v`; `python -m py_compile navidrome_server.py app/main.py app/api/metadata.py tests/test_metadata_routes.py`; `python -m unittest discover -s tests -v`; Docker packaging/full-unit-test, container runtime smoke, and validation-only multi-architecture workflows on the exact PR head.
-- No intended UI contract change; manual browser testing is not required unless review or CI identifies a UI behavior change. Initial CI exposed the expected AST-test coupling (`test_artwork_retry` searched for `album_artwork` in `app/main.py`); that regression test has been migrated to patch the new metadata module directly. Re-run all checks on the corrected exact head before merge.
+- Verification on corrected exact PR head `19d88637d110ecee8fb2c7c8c4ba2053c6b6113c`: Python syntax/full-unit-test workflow `38488440438` passed; Docker packaging/full-unit-test workflow `38488440512` passed; container runtime smoke `38488440488` passed; validation-only multi-architecture `38488440439` passed. The initial full suite revealed the AST-coupled artwork retry test; after migration to the extracted module, the corrected full suite passed. No local test execution is claimed.
+- No intended UI contract change; manual browser testing was not required. PR #36 was squash-merged at `15011614649470c9c71734422b95ee048fbf9f3c`. No image publication or deployment occurred.
 
 ## Discovery API route extraction — PR #35 merged (2026-10-14)
 
