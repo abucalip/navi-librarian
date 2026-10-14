@@ -39,3 +39,10 @@
 - No local test execution, live slskd test, real production-folder deletion, publication, deployment, or runtime verification. HTTP 409 remains deferred because it was not reproduced.
 
 - Final PR #53 head `ef6ec7347f69c0be04331d7bd671d9f56f3c137d` passed all four required workflows: syntax/acquisition safety `38599666003`, Docker packaging/full unit suite `38599666001`, container runtime smoke `38599665955`, and validation-only multi-architecture image build `38599665933` (publishing paused). Squash-merged at `a7c8dd469c76b340706ba65db8b4315aac60e62b`. No workflow runs were returned for the merge commit itself. No local test run, live slskd, real production-folder deletion, publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-14 — Direct-import acquisition cleanup extraction
+
+- Started `refactor/acquisition-cleanup-domain` from GitHub main `7a81a5dedff8e9e7245309770b4b1fe34b46be9e`.
+- Moved the unchanged cleanup algorithm from `navidrome_server.py` into `acquisition_cleanup.py`, injecting the existing canonical folder sanitizer, slskd transfer listing, and HTTP client. Preserved the old function as an adapter and included the module in Docker packaging.
+- Moved seven cleanup regression cases to `tests/test_acquisition_cleanup.py`, which imports the implementation directly. The previous AST harness no longer extracts the cleanup function; the rest of the safety suite remains intact.
+- CI pending on the final branch head. Do not record test success until the four required workflows pass on that exact SHA. No live slskd request, production-folder deletion, publication, deployment, or runtime verification is claimed. HTTP 409 remains deferred because it was not reproduced.
