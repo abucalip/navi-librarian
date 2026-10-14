@@ -1,3 +1,9 @@
+## Acquisition queue guard test migration — verified (2026-10-14)
+
+- PR #64 merged at `1596161aa525896d43c37c85533e8056a742439b` from exact tested head `3bde365e43acbe1cc95f68d7014d899046e735f6`.
+- The AST-harness queue refusal test and its adapter/HTTP helper were removed; direct-import tests continue to cover the production `queue_candidate_unless_dismissed` guard for dismissed refusal, lock ordering, return propagation, and exception propagation.
+- All four required workflows passed on the exact final head: syntax `38636360130`, full test/build `38636360145`, runtime smoke `38636360164`, and validation-only multi-architecture build `38636360139` (publishing paused). No production behavior changed.
+
 ## Acquisition queue guard test migration (2026-10-14)
 
 - The dismissed-queue-refusal case was removed from the AST-based `tests/test_acquisition_safety.py` harness because `tests/test_acquisition_orchestration.py::AcquisitionQueueGuardTests::test_dismissed_acquisition_does_not_queue` directly tests the extracted production guard.
