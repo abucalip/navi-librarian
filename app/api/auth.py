@@ -4,7 +4,7 @@ import threading
 import time
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 AUTH_LOCK = threading.Lock()
 _LOGIN_ATTEMPTS = {}
@@ -17,13 +17,12 @@ def create_auth_router(
     settings_read,
     settings_write,
     auth_configured,
-    make_session_token,
+    session_username,
     set_auth_cookie,
     valid_username,
     valid_password,
     password_digest,
     cookie_name,
-    session_seconds,
     login_page_html,
 ):
     """Build auth endpoints around app-owned persistence and signing dependencies."""
@@ -42,20 +41,16 @@ def create_auth_router(
             if auth_configured():
                 raise HTTPException(status_code=409, detail="App account is already configured.")
             if not valid_username(username):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Username must be 3–64 characters using letters, numbers, dot, underscore, or hyphen.",
-                )
+                raise HTTPException(status_code=400, detail="Username must be 3–64 characters using letters, numbers, dot, underscore, or hyphen.")
             if not valid_password(password):
                 raise HTTPException(status_code=400, detail="Password must be at least 12 characters.")
             if password != confirmation:
                 raise HTTPException(status_code=400, detail="Passwords do not match.")
             salt = secrets.token_hex(16)
-            password_hash = password_digest(password, salt)
             settings_write({
                 "app_auth_username": username,
                 "app_auth_salt": salt,
-                "app_auth_hash": password_hash,
+                "app_auth_hash": password_digest(password, salt),
             })
         response = JSONResponse({"ok": True, "message": "App account created."})
         set_auth_cookie(response, request, username)
@@ -71,7 +66,6 @@ def create_auth_router(
         _LOGIN_ATTEMPTS[client_ip] = attempts
         if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
             raise HTTPException(status_code=429, detail="Too many login attempts. Try again in 15 minutes.")
-
         username = str(payload.get("username") or "").strip()
         password = payload.get("password")
         settings = settings_read()
@@ -81,7 +75,10 @@ def create_auth_router(
             and 0 < len(password) <= 1024
             and bool(settings.get("app_auth_salt"))
             and bool(settings.get("app_auth_hash"))
-            and password_digest(password, settings["app_auth_salt"]) == settings["app_auth_hash"]
+            and __import__("hmac").compare_digest(
+                password_digest(password, settings["app_auth_salt"]),
+                settings["app_auth_hash"],
+            )
         )
         if not valid:
             attempts.append(now)
@@ -100,16 +97,8 @@ def create_auth_router(
 
     @router.get("/login", response_class=HTMLResponse)
     def login_page(request: Request):
-        if make_session_token is not None and request.cookies.get(cookie_name):
-            # Preserve the existing behavior: redirect only for a valid session.
-            from fastapi.responses import RedirectResponse
-            # Session validation is supplied separately below through the router
-            # factory's attached validator.
-            if session_username(request.cookies.get(cookie_name)):
-                return RedirectResponse("/", status_code=303)
-        return HTMLResponse(
-            login_page_html,
-            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
-        )
+        if session_username(request.cookies.get(cookie_name)):
+            return RedirectResponse("/", status_code=303)
+        return HTMLResponse(login_page_html, headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
 
     return router
