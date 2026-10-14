@@ -109,3 +109,8 @@ Artist biography, album-year, album-details, and artwork endpoints plus their ex
 ## Authentication security primitives — merged PR #37
 
 Pure authentication primitives are being separated into `app/security/auth.py`: persistent signing-secret loading, username/password policy checks, PBKDF2 password digest, and signed-session creation/validation. `app/main.py` retains compatibility wrappers and continues to own persistent-settings access, cookie policy, login/setup/logout routes, rate limiting, and HTTP middleware. The split intentionally avoids changing middleware ordering or public-path behavior. Direct tests cover token signing/expiry, username binding, password hashing, signing-secret persistence, file permissions, and fail-closed handling of an invalid secret; All four required workflows passed on exact PR head `192b084850ecbe0137b64b3dae9d07e0471198b4`; merge commit is `cb6b1d1d17a6ea3b4dc0099a7588b8752b5d84b3`.
+
+
+## Acquisition orchestration seam
+
+The acquisition domain is being split beyond deterministic policy. `acquisition_orchestration.py` owns the persisted source-skip transition behind injected persistence/runtime dependencies; the existing MCP function remains an adapter. Keep database status checks and writes under the shared transition lock so skip/dismiss/import races remain serialized. Destructive cleanup and import remain in their existing safety-focused modules until each is migrated with direct regression tests.
