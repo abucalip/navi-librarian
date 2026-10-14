@@ -1,15 +1,16 @@
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
-- Reconciled documentation against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. PR #81 is merged; PR #76 (slskd polling) and PR #78 (dismissal-serialized import guard) remain recorded with exact tested heads, merge SHAs, workflow run IDs, and verification limits.
-- Documentation-only closeout: no application code changed and no new tests were run. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Reconciled project documentation against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`; PR #82 is merged and the four relevant documents now agree on the next task.
+- PR #82 is documentation-only, with no new application test result. Publishing remains paused; no deployment or production runtime verification is claimed.
 - Next action: continue the acquisition lifecycle AST-test audit across duplicate-request reservation/concurrency, incomplete persisted candidate details, dismissed-job reactivation/refusal, and stale watcher recovery. Retain unique coordinator, lock/race, persistence-transition, and recovery integration assertions.
 
-## 2026-10-15 — PR #81 merged: acquisition AST-test audit documentation closeout
+## 2026-10-15 — PR #82 merged: reconcile acquisition audit closeout
 
-- PR #81: https://github.com/abucalip/navi-librarian/pull/81
-- Exact tested PR head: `5dfa47ed4b3dd2cc234b88a2f18b95ba950425fa`; squash merge / updated `main`: `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`.
-- All four required workflows passed on the exact tested head (run IDs `38654600997`, `38654600939`, `38654600916`, and `38654600923`). This was documentation-only; the existing lifecycle AST audit remains the next engineering task.
-- Final diff reviewed. No application tests were newly run for this follow-up documentation update; no publication, deployment, or production runtime verification is claimed.
+- PR #82: https://github.com/abucalip/navi-librarian/pull/82
+- Exact tested head: `5fdad1045ba04db84aea05a477a51dce38733f5c`; squash merge: `f46b3618eaa8abc98b7f077698439b304a0005b7`.
+- Reconciled `docs/PROJECT_STATUS.md`, `PROJECT_LOG.md`, `docs/TEST_PLAN.md`, and `docs/MODULARIZATION_ROADMAP.md` after PR #81 merged; the next engineering task remains the acquisition lifecycle AST-test audit.
+- All four required workflows passed on the exact tested head: Python syntax `38656400677`, Docker packaging `38656400827`, container runtime smoke `38656400743`, and Docker image validation with publishing paused `38656400766`.
+- Documentation-only; no new application tests were run. No publication, deployment, or production runtime verification is claimed.
 
 ---
 
