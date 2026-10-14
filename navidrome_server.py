@@ -10,6 +10,7 @@ import unicodedata
 import discovery_store
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration
+from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
 import discovery_refresh
@@ -4108,109 +4109,25 @@ def _discovery_switch_to_next_source(artist, album, candidate, settings, downloa
 
 
 def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, download_root, headers, reason):
-    """Switch only among prevalidated complete candidates, cleaning the previous album folder first."""
-    base_url, _, _ = _slskd_config()
-    fallbacks = list(candidate.get("fallback_candidates") or [])
-    if not fallbacks:
-        _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
-            "source_username": candidate.get("username"),
-            "reason": reason,
-            "message": "No other complete eligible source is available.",
-        })
-        return None
-    if not _discovery_cancel_and_clean_source(download_root, candidate, base_url, headers):
-        _discovery_update_acquisition_status(artist, album, "source_switch_failed", {
-            "source_username": candidate.get("username"),
-            "reason": reason,
-            "error": "Could not safely cancel transfers or clean the previous album folder.",
-        })
-        return None
-    for index, next_candidate in enumerate(fallbacks):
-        files = _acquisition_lifecycle.normalized_candidate_files(next_candidate)
-        if not _acquisition_lifecycle.fallback_candidate_is_usable(next_candidate):
-            continue
-        queue_error = None
-        try:
-            response = httpx.post(
-                f"{base_url}/api/v0/transfers/downloads/{next_candidate['username']}",
-                headers=headers, json=files, timeout=12,
-            )
-            response.raise_for_status()
-        except httpx.HTTPError as exc:
-            # The server may have accepted the request before the connection
-            # failed. Inspect the source before considering another peer.
-            queue_error = type(exc).__name__
-        except (ValueError, TypeError):
-            continue
-        monitor_candidate = dict(next_candidate)
-        monitor_candidate["files"] = files
-        monitor_candidate["fallback_candidates"] = fallbacks[index + 1:]
-        start_state = _slskd_candidate_start_state(base_url, headers, monitor_candidate, timeout=8)
-        if start_state is not True:
-            if start_state is None:
-                # The new source may be active. Persist it and keep monitoring rather
-                # than queueing another peer or abandoning a possibly live transfer.
-                details = {
-                    "source_username": next_candidate.get("username"),
-                    "folder": next_candidate.get("folder"),
-                    "file_count": len(files),
-                    "quality_summary": list(next_candidate.get("quality_summary") or []),
-                    "downloads_path": str(download_root),
-                    "previous_source_username": candidate.get("username"),
-                    "source_switch_reason": reason,
-                    "queue_error": queue_error,
-                    "message": (
-                        "The fallback queue outcome is uncertain; monitoring this "
-                        "source to avoid duplicate downloads."
-                        if queue_error else
-                        "The next source was queued but its start could not be confirmed; monitoring it to avoid duplicate downloads."
-                    ),
-                }
-                _discovery_save_acquisition_job(artist, album, "downloading", details,
-                                                candidate=monitor_candidate, settings=settings)
-                return monitor_candidate
-            if not _discovery_cancel_and_clean_source(
-                download_root, monitor_candidate, base_url, headers
-            ):
-                _discovery_update_acquisition_status(artist, album, "source_switch_failed", {
-                    "source_username": next_candidate.get("username"),
-                    "reason": reason,
-                    "error": (
-                        "Fallback source did not start and its transfers/files "
-                        "could not be safely cancelled and cleaned. No further "
-                        "source will be queued."
-                    ),
-                })
-                return None
-            continue
-        previous_details = next(
-            (job.get("details") or {} for job in _discovery_list_acquisition_jobs()
-             if job["artist_key"] == _music_key(artist) and job["album_key"] == _music_key(album)),
-            {},
-        )
-        details = {
-            "source_username": next_candidate.get("username"),
-            "folder": next_candidate.get("folder"),
-            "file_count": len(files),
-            "unique_track_count": next_candidate.get("unique_track_count"),
-            "expected_track_count": next_candidate.get("expected_track_count"),
-            "quality_summary": list(next_candidate.get("quality_summary") or []),
-            "downloads_path": str(download_root),
-            "source_switches": int(previous_details.get("source_switches") or 0) + 1,
-            "previous_source_username": candidate.get("username"),
-            "source_switch_reason": reason,
-            "message": "Previous source stalled; switched to the next complete eligible source.",
-        }
-        _discovery_save_acquisition_job(artist, album, "downloading", details,
-                                        candidate=monitor_candidate, settings=settings)
-        return monitor_candidate
-    _discovery_update_acquisition_status(artist, album, "download_stalled_no_fallback", {
-        "source_username": candidate.get("username"),
-        "reason": reason,
-        "message": "Every remaining eligible source failed to start.",
-    })
-    return None
-
+    """Compatibility adapter for directly tested source-switch orchestration."""
+    return _switch_to_next_source_locked(
+        artist,
+        album,
+        candidate,
+        settings,
+        download_root,
+        headers,
+        reason,
+        get_slskd_config=_slskd_config,
+        lifecycle=_acquisition_lifecycle,
+        cleanup_source=_discovery_cancel_and_clean_source,
+        update_status=_discovery_update_acquisition_status,
+        http_client=httpx,
+        candidate_start_state=_slskd_candidate_start_state,
+        save_job=_discovery_save_acquisition_job,
+        list_jobs=_discovery_list_acquisition_jobs,
+        music_key=_music_key,
+    )
 
 def _discovery_import_completed_source(artist, album, source, music_root, candidate):
     """Import a verified source only if dismissal has not won the race."""
