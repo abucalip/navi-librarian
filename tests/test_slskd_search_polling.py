@@ -45,6 +45,10 @@ class FakeSlskdClient:
     def get(self, url, params=None, headers=None, timeout=None):
         if url.endswith("/responses"):
             return FakeResponse([])
+        if self.mode == "legacy":
+            return FakeResponse([], 405) if url.endswith("/responses") else FakeResponse(None, 404)
+        if self.mode == "error":
+            return FakeResponse(None, 500)
         if self.mode == "wait":
             self.state_calls += 1
             if self.state_calls <= 26:
@@ -103,6 +107,19 @@ class SlskdSearchPollingTests(unittest.TestCase):
         self.assertEqual(result["search_attempts"][1]["collected_peer_response_count"], 1)
         self.assertEqual(result["reported_response_count"], 1)
         self.assertEqual(len(result["payload_by_peer"]), 1)
+
+    def test_legacy_404_405_endpoints_are_tolerated(self):
+        client = FakeSlskdClient("legacy")
+        result = self.run_search(client, ["Exact Artist Album"])
+
+        self.assertEqual(len(client.posted), 1)
+        self.assertEqual(result["search_attempts"][0]["state"], "unknown")
+        self.assertEqual(result["search_attempts"][0]["collected_peer_response_count"], 0)
+
+    def test_unexpected_state_http_error_propagates(self):
+        client = FakeSlskdClient("error")
+        with self.assertRaises(FakeHTTPError):
+            self.run_search(client, ["Exact Artist Album"])
 
     def test_waits_for_peer_payload_when_slskd_reports_responses(self):
         client = FakeSlskdClient("wait")
