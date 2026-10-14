@@ -1,9 +1,17 @@
+## 2026-10-14 — PR #35 merged; discovery API router closeout
+
+- PR #35 was squash-merged to `main` at `d61162b29c6f0cccc97aefe9c779567e671651b2`, from exact PR head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`.
+- Changes: extracted four recommendation/discovery/refresh/feedback handlers to `app/api/discovery.py`, registered the router, added `tests/test_discovery_routes.py`, and reconciled roadmap, architecture, test plan, status, and project log.
+- All four required workflows passed on the exact PR head: Python syntax/full unit tests run `38487647938`, container runtime smoke `38487647898`, Docker packaging `38487647913`, and validation-only multi-architecture `38487647952`.
+- Diff review found no intended UI contract change; manual browser testing was not required. No local test run, image publication, deployment, or production runtime verification is claimed.
+- Next action: begin the metadata routes/services extraction with focused tests and inspect existing callers/providers before changing code. Keep GHCR publishing disabled until the modularization roadmap is complete and explicitly authorized.
+
 ## 2026-10-14 — Discovery API route extraction started
 
 - Branch: `refactor/discovery-api-router`, based on GitHub `main` following merged PR #34.
 - Objective: extract recommendation, discovery-list, refresh, and feedback handlers into `app/api/discovery.py` without changing routes, defaults, validation/status behavior, ownership filtering, refresh coordination, or feedback semantics.
 - Added `tests/test_discovery_routes.py` with direct-import checks for route inventory, candidate filtering, input validation, defaults, feedback JSON serialization, domain payload mapping, and sanitized failures.
-- PR #35 is open against `main`; the complete eight-file diff was reviewed with no intended UI contract change identified. Workflow/status lookup returned no runs or checks for observed head `1700fee4332876fe0478f88a78f65c4f752df5ff`; exact-head automated validation remains unverified and merge is blocked pending evidence. No local test run is claimed. No manual browser test is planned unless a UI contract change is identified.
+- PR #35 was subsequently merged after all four required workflows passed on exact head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`; see the closeout entry above. No local test run is claimed.
 - Publishing remains disabled; no image publication, deployment, or production runtime verification occurred.
 
 ## 2026-10-14 — PR #34 merged after exact-head validation completed
