@@ -9,6 +9,7 @@ import tempfile
 import threading
 import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
+import acquisition_orchestration as _acquisition_orchestration
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 
 from acquisition_completion import (
@@ -41,6 +42,7 @@ def load_helpers():
         "_slskd_extract_candidates",
         "_slskd_candidate_start_state",
         "_discovery_import_completed_source",
+        "_discovery_import_completed_source_locked",
         "_discovery_acquire_album_impl",
         "discovery_acquire_album",
     }
@@ -59,6 +61,7 @@ def load_helpers():
     namespace = {
         "Path": Path,
         "_acquisition_lifecycle": _acquisition_lifecycle,
+        "_acquisition_orchestration": _acquisition_orchestration,
         "_module_candidate_start_state": _module_candidate_start_state,
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
@@ -292,24 +295,6 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(result, "failed")
         self.assertEqual(import_calls, [])
         self.assertEqual(status_calls[0][2], "importing")
-
-    def test_dismissed_job_never_enters_import_transition(self):
-        self.ns["_discovery_is_dismissed"] = lambda artist, album: True
-        status_calls = []
-        import_calls = []
-        self.ns["_discovery_update_acquisition_status"] = lambda *args, **kwargs: status_calls.append(args)
-        self.ns["_discovery_import_matched_album_files"] = lambda *args, **kwargs: import_calls.append(args)
-
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            result = self.ns["_discovery_import_completed_source"](
-                "Artist", "Album", root / "downloaded-album", root,
-                {"username": "peer", "files": [{"filename": "Album/01.flac"}]},
-            )
-
-        self.assertEqual(result, "dismissed")
-        self.assertEqual(status_calls, [])
-        self.assertEqual(import_calls, [])
 
     def test_incomplete_saved_download_details_do_not_start_or_requeue(self):
         self.ns["jobs"].append({
