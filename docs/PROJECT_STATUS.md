@@ -717,3 +717,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Clarified manual testing: no full local-helper browser run is required for backend-only modularization. Performance observation and a distinct error/recovery exercise remain for the next UI-facing change. The HTTP 409 investigation remains deferred until recurrence.
 - Verification boundary: documentation-only change; no application tests were run in this session. No local helper run, live slskd interaction, production filesystem operation, publication, deployment, or runtime verification is claimed.
 - Next action: inspect current callers and tests on GitHub main, then implement the smallest safe acquisition-coordination extraction with direct-import regression coverage.
+
+
+## 2026-10-14 — PR #66 merged: login-page design-system alignment
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/66 — squash-merged to `main` at `717b1ad08e5de54e2dd8c11c2734976d75ce2e5f` from exact tested PR head `d0b13b7411b9b300b78b24a8944348b7e57d4b65`.
+- **Change:** `static/login.css` now uses the app's dark/yellow/red tokens, Barlow Condensed display heading, IBM Plex Sans body, IBM Plex Mono labels, consistent primary-button states, and visible `:focus-visible` styling. No HTML, JavaScript, authentication, API, or data behavior changed.
+- **Automated verification on the exact PR head:** Python syntax run `38639793800`; Docker packaging/full unit suite run `38639793772`; container runtime smoke run `38639793518`; validation-only multi-architecture run `38639793667`. All four succeeded. The PR's reported tests were 15 focused auth/integration tests and 185 full-suite tests with one pre-existing skip.
+- **Manual UI evidence:** report and screenshots are published in PR comments against the exact tested head. Desktop and 375×720 viewport, failed-sign-in layout, and asset/network checks passed. The published checklist marks keyboard focus-modality confirmation and the first-run setup variant as skipped; the stylesheet's focus rule was verified, but those two observations are not represented as fully exercised in the report.
+- **State:** Implemented, automated CI passed, manual UI report published, merged. Image publishing remains paused; no deployment or production runtime verification is claimed.
+- **Next:** continue the highest-priority acquisition-safety test migration/audit; do not infer deployed UI behavior from merge or CI.
