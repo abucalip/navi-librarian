@@ -1,6 +1,6 @@
 ## 2026-10-14 — PR #44 dismissal diagnostics: local manual report published; 409 not reproduced
 
-- PR #44 remains open as a draft at exact tested head `4c505423afef8c6959063ddea7e5672a0b9894ef`; it is not merged.
+- PR #44 remains open as a draft. Its last fully verified head is `4c505423afef8c6959063ddea7e5672a0b9894ef`; later follow-up commits on the branch have not been re-verified on their exact head.
 - Published the user's local manual report as a PR conversation comment. Test environment: macOS 26.2 arm64, Python 3.12.14, isolated port 8089, per-commit app data, sandbox music/download paths, and slskd disabled by default.
 - All reported manual checklist items passed: first-run setup/login, dashboard/artwork, discovery, navigation/album details, settings, Get/request without a real download, acquisition cards/status, and no unexpected browser/server errors.
 - Crucially, every Dismiss attempt succeeded; the reported HTTP 409 was not reproduced. This does not identify a cleanup refusal stage or verify a fix for the original failure. The report's final console detail was truncated, so no meaning is inferred from it.
