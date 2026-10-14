@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
+from acquisition_completion import safe_folder_name
 
 
 class FakeHTTPError(Exception):
@@ -26,7 +27,7 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
             "folder": "Album",
             "files": [{"filename": "Album/01.flac", "size": 4}],
         }
-        self.safe_folder_name = lambda value: str(value).replace("/", "_")
+        self.safe_folder_name = safe_folder_name
         self.http_client = SimpleNamespace(
             HTTPError=FakeHTTPError,
             delete=lambda *args, **kwargs: SimpleNamespace(status_code=204),
