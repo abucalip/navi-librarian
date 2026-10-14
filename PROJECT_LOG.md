@@ -582,3 +582,11 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Documentation-only changes; no application code or runtime behavior changed. No local tests or manual browser tests were run for this documentation-only follow-up. Required CI must be checked on this follow-up's exact PR head before merge.
 - Publishing/deployment/runtime verification: not performed. Publishing remains paused.
 - **Next action:** verify this PR's exact-head CI and mergeability, then provide Claude a specific UI task and direct it to read `CLAUDE.md` first.
+
+
+## 2026-10-14 — Persisted acquisition transition extracted
+
+- PR #47 exact-head CI verification completed: all four required workflows succeeded on `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`.
+- Follow-up branch `refactor/acquisition-lifecycle-orchestration` extracts the persisted source-skip transition into `acquisition_orchestration.py`. The implementation receives persistence, lock, normalization, policy, time, and JSON dependencies explicitly; `discovery_skip_acquisition_source` remains the MCP compatibility adapter.
+- Added direct-import regression tests for successful request persistence and missing/dismissed/non-downloading/no-fallback rejection without mutation.
+- Exact-head CI for this follow-up has not yet run; no test pass is claimed for it. No merge, image publication, deployment, or production runtime verification occurred.
