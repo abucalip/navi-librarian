@@ -1,3 +1,12 @@
+## 2026-10-14 — Acquisition dismissal diagnostics in progress
+
+- Branch: `fix/acquisition-dismiss-diagnostics`, created from GitHub `main` at `4c6764c4c477db6c0c6f004df39891be143c1511`.
+- Investigating reports that dismissing stuck acquisition cards returns HTTP 409. The current domain function intentionally refuses dismissal when source cancellation or safe file ownership cannot be confirmed; the exact live failure condition has not yet been reproduced.
+- Added stage-specific warning logs inside `_discovery_cancel_and_clean_source` while preserving its boolean contract and conservative refusal behavior. Added focused tests for invalid-root diagnostics and successful removal of a fully identified album file without recursive directory deletion.
+- Code commits so far: `f65054f1aed623ff017c04c6d0847b7f6fec9681`, `05f9ced4b9cc297dbbb1f8da39cfbb9163a529a0`, and `0ca8d3bf8868a13c7ea5a84a58e771c86ddc6607`. Documentation and CI closeout are still pending.
+- Tests have not been run locally. No CI result is claimed yet. The change is diagnostic instrumentation, not a confirmed fix for the reported 409; inspect runtime logs from a failing dismissal and make a targeted correction only after the failing stage is established.
+- No PR has been opened, merged, published, or deployed. Next: update the test plan/log, open a PR, and inspect exact-head CI before requesting a controlled reproduction.
+
 ## 2026-10-14 — Claude front-end project instructions merged; expanded handoff in progress
 
 - PR #42 defined the initial ownership boundary and was squash-merged to `main` at `b23e0da128d63bee2bef7f47ed3350cf1be2e613` from exact head `663d826f02c12e0dbf9b1832570b60f20864ecbc`.
