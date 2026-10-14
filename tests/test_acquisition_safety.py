@@ -10,7 +10,6 @@ import threading
 import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
 
-from acquisition_import import import_matched_album_files as _module_import_matched_album_files
 from acquisition_completion import (
     filename_key as _module_filename_key,
     match_completed_album_files as _module_match_completed_album_files,
@@ -39,7 +38,6 @@ def load_helpers():
         "_slskd_quality_tier",
         "_slskd_track_identity",
         "_slskd_extract_candidates",
-        "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
         "_discovery_import_completed_source",
         "_discovery_acquire_album_impl",
@@ -63,7 +61,6 @@ def load_helpers():
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
         "_discovery_match_completed_album_files": _module_match_completed_album_files,
-        "_acquisition_import_matched_album_files": _module_import_matched_album_files,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),
@@ -388,148 +385,6 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
         all_tiers = [tier for item in candidates for tier in item["quality_summary"]]
         self.assertIn("flac_16_44", all_tiers)
         self.assertIn("flac_hires", all_tiers)
-
-
-class CompletedAlbumMatchingTests(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.source = self.root / "downloads"
-        self.source.mkdir()
-        self.destination_parent = self.root / "music"
-        self.destination_parent.mkdir()
-        self.destination = self.destination_parent / "Artist - Album"
-        self.candidate = {
-            "files": [
-                {"filename": "Artist - Album/01 - Track.flac", "size": 4},
-                {"filename": "Artist - Album/02 - Track.flac", "size": 3},
-            ]
-        }
-        (self.source / "01 - Track.flac").write_bytes(b"1234")
-        (self.source / "02 - Track.flac").write_bytes(b"567")
-
-    def test_import_moves_only_expected_tracks_and_leaves_unrelated_files(self):
-        unrelated = self.source / "cover.jpg"
-        unrelated.write_bytes(b"cover")
-        HELPERS["_discovery_import_matched_album_files"](
-            self.source, self.destination, self.candidate
-        )
-        self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
-        self.assertEqual((self.destination / "02 - Track.flac").read_bytes(), b"567")
-        self.assertTrue(unrelated.exists())
-        self.assertFalse((self.destination / ".navidrome-import.json").exists())
-        self.assertFalse(self.source.joinpath("01 - Track.flac").exists())
-
-    def test_unknown_or_zero_advertised_track_size_is_rejected(self):
-        candidate = {
-            "files": [{"filename": "Album/01 - Track.flac", "size": 0}]
-        }
-        self.assertIsNone(
-            HELPERS["_discovery_match_completed_album_files"](self.source, candidate)
-        )
-        with self.assertRaisesRegex(OSError, "Expected tracks no longer match"):
-            HELPERS["_discovery_import_matched_album_files"](
-                self.source, self.destination, candidate
-            )
-        self.assertTrue((self.source / "01 - Track.flac").exists())
-        self.assertFalse(self.destination.exists())
-
-    def test_existing_destination_is_never_overwritten(self):
-        self.destination.mkdir()
-        marker = self.destination / "keep.txt"
-        marker.write_text("preserve", encoding="utf-8")
-        with self.assertRaises(FileExistsError):
-            HELPERS["_discovery_import_matched_album_files"](
-                self.source, self.destination, self.candidate
-            )
-        self.assertEqual(marker.read_text(encoding="utf-8"), "preserve")
-        self.assertTrue((self.source / "01 - Track.flac").exists())
-
-    def test_broken_destination_symlink_is_never_overwritten(self):
-        self.destination.symlink_to(self.root / "missing-target")
-        with self.assertRaises(FileExistsError):
-            HELPERS["_discovery_import_matched_album_files"](
-                self.source, self.destination, self.candidate
-            )
-        self.assertTrue(self.destination.is_symlink())
-        self.assertTrue((self.source / "01 - Track.flac").exists())
-
-    def test_symlinked_destination_parent_is_rejected(self):
-        real_parent = self.root / "real-music"
-        real_parent.mkdir()
-        link_parent = self.root / "linked-music"
-        link_parent.symlink_to(real_parent, target_is_directory=True)
-        with self.assertRaises(OSError):
-            HELPERS["_discovery_import_matched_album_files"](
-                self.source, link_parent / "Artist - Album", self.candidate
-            )
-        self.assertFalse((real_parent / "Artist - Album").exists())
-
-
-    def test_failed_staged_move_rolls_tracks_back_to_source(self):
-        import shutil
-        original_move = shutil.move
-        calls = {"count": 0}
-
-        def fail_on_second_move(src, dst, *args, **kwargs):
-            calls["count"] += 1
-            if calls["count"] == 2:
-                raise OSError("simulated second-track move failure")
-            return original_move(src, dst, *args, **kwargs)
-
-        from unittest.mock import patch
-        with patch("shutil.move", side_effect=fail_on_second_move):
-            with self.assertRaises(OSError):
-                HELPERS["_discovery_import_matched_album_files"](
-                    self.source, self.destination, self.candidate
-                )
-
-        self.assertFalse(self.destination.exists())
-        self.assertTrue((self.source / "01 - Track.flac").exists())
-        self.assertTrue((self.source / "02 - Track.flac").exists())
-        self.assertEqual((self.source / "01 - Track.flac").read_bytes(), b"1234")
-        self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
-        self.assertEqual(list(self.destination_parent.glob(".navidrome-import-*")), [])
-
-    def test_import_aborts_before_writing_if_music_filesystem_identity_changed(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            source = root / "downloads"
-            source.mkdir()
-            (source / "01 - Track.flac").write_bytes(b"1234")
-            (source / "02 - Track.flac").write_bytes(b"567")
-            music = root / "music"
-            music.mkdir()
-            destination = music / "Artist - Album"
-
-            with self.assertRaisesRegex(OSError, "filesystem changed"):
-                HELPERS["_discovery_import_matched_album_files"](
-                    source, destination, self.candidate,
-                    expected_music_root=music, expected_device=music.stat().st_dev + 1,
-                )
-
-            self.assertTrue((source / "01 - Track.flac").exists())
-            self.assertTrue((source / "02 - Track.flac").exists())
-            self.assertFalse(destination.exists())
-            self.assertEqual(list(music.iterdir()), [])
-
-    def test_conflicting_duplicate_remote_basenames_are_ambiguous(self):
-        candidate = {"files": [
-            {"filename": "A/01.flac", "size": 4},
-            {"filename": "B/01.flac", "size": 8},
-        ]}
-        self.assertIsNone(
-            HELPERS["_discovery_match_completed_album_files"](self.source, candidate)
-        )
-
-    def test_unique_collision_suffixed_file_can_be_matched_by_size(self):
-        (self.source / "01 - Track_1.flac").write_bytes(b"1234")
-        (self.source / "01 - Track.flac").unlink()
-        candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
-        matched = HELPERS["_discovery_match_completed_album_files"](self.source, candidate)
-        self.assertEqual(matched["01 - Track.flac"].name, "01 - Track_1.flac")
-
 
 
 class AcquisitionLifecycleTests(unittest.TestCase):

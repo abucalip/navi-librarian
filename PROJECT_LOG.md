@@ -1,3 +1,14 @@
+## 2026-10-14 — Completed import safety tests migrated to direct imports (PR pending)
+
+- Removed the redundant `CompletedAlbumMatchingTests` cases from the AST-based `tests/test_acquisition_safety.py` harness. Equivalent or stronger coverage already exercises the production modules directly in `tests/test_acquisition_completion.py` and `tests/test_acquisition_import.py`.
+- The direct-import suites cover strict positive-size matching, Unicode/case and Windows path normalization, duplicate-basename ambiguity, symlink refusal, collision-suffix matching, exact folder diagnostics, unrelated-file preservation, destination no-overwrite, storage identity mismatch, reserved manifest rejection, and rollback after a partial move.
+- The AST harness retains its separate lifecycle coordination tests. Its injected import callback is now a test spy for transition behavior; filesystem import behavior is tested against `acquisition_import.import_matched_album_files` directly.
+- Test-only migration: no production code, queue/cleanup behavior, path validation, rollback implementation, or MCP compatibility changed.
+- Acceptance gates: focused tests, full unit suite, syntax checks, complete diff review, and all four required CI workflows on the exact final PR head. No test/CI result is claimed until observed.
+- Next: audit remaining AST-coupled acquisition safety cases for duplicate coverage; preserve dismissal/import coordination, conditional state transitions, cleanup refusal, uncertain queue outcomes, and rollback protections.
+
+---
+
 ## 2026-10-14 — PR #69 merged: canonical front-end design guide
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/69
