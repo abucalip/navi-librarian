@@ -1,3 +1,14 @@
+## 2026-10-15 — PR #76 merged: slskd polling extracted
+
+- PR #76: https://github.com/abucalip/navi-librarian/pull/76
+- Exact tested head: `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`; squash merge: `a55a9fa7eed1e221f52434b50f44d0c415fd491a`.
+- Extracted progressive query submission, polling, delayed peer-payload waiting, count aggregation, peer deduplication, and per-attempt diagnostics into `slskd_search_polling.py` with injected HTTP/time/ID/normalization dependencies. Added four direct-import tests; retained the AST end-to-end broad-query regression.
+- All four required workflows passed on the exact tested head: Python syntax (run `38652846800`), Docker packaging/full unit suite (run `38652846779`), runtime smoke (run `38652846790`), and Docker image validation with publishing paused (run `38652846819`). The full suite reported 184 tests passed.
+- Final diff reviewed; Docker packaging and syntax workflow include the new module. No live slskd interaction, publication, deployment, or production runtime verification is claimed.
+- Next: audit remaining AST-coupled acquisition lifecycle tests, keeping true coordination/race/persistence integration cases unless equivalent direct-import coverage tests the same boundary.
+
+---
+
 ## 2026-10-15 — Extract slskd search polling (verification pending)
 
 - Branch: `refactor/slskd-search-polling`, based on current main after PR #74.
