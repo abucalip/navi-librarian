@@ -1,3 +1,12 @@
+## 2026-10-15 — slskd search polling extraction in progress
+
+- Branch `refactor/slskd-search-polling`, based on main after PR #74.
+- Extracted progressive slskd query/poll/wait mechanics into `slskd_search_polling.py` with injected HTTP client, monotonic clock, sleep, search-ID generator, and payload-normalizer dependencies.
+- Added direct-import tests for broad-query fallback and delayed peer payloads. Kept the AST-based end-to-end retry case as coordinator integration coverage.
+- Updated Docker packaging and syntax workflow for the new module. Focused/full tests, final diff review, and exact-head CI remain pending; no tests are claimed passed.
+
+---
+
 ## 2026-10-15 — PR #73 merged: candidate extraction direct-import test
 
 - PR #73 squash-merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3`; exact tested PR head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
