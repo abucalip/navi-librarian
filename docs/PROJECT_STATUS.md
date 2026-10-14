@@ -1,6 +1,6 @@
 ## 2026-10-14 — Front-end ownership transferred to ZCode
 
-- ZCode is now the designated front-end implementation owner; root instructions live in `ZCODE.md`.
+- ZCode is now the designated front-end implementation owner; root instructions live in `AGENTS.md`.
 - ZCode may change only `static/app.css`, `static/app.js`, `static/login.css`, `static/login.js`, `app/templates/*.html`, and narrowly scoped UI tests/fixtures unless the project owner explicitly approves a scope expansion.
 - Backend/domain/security/API behavior, release controls, cross-layer integration, merge decisions, publishing, deployment, and final project-level verification remain assistant-owned.
 - Initial ZCode task: audit the existing UI and deliver one focused visual-quality improvement using Impeccable guidance where available. Preserve product behavior; provide a PR with before/after screenshots and exact-SHA test evidence. No frontend task has been implemented or verified by this documentation update.
@@ -117,9 +117,9 @@
 ## 2026-10-14 — ZCode front-end project instructions merged; expanded handoff in progress
 
 - PR #42 defined the initial ownership boundary and was squash-merged to `main` at `b23e0da128d63bee2bef7f47ed3350cf1be2e613` from exact head `663d826f02c12e0dbf9b1832570b60f20864ecbc`.
-- The root `ZCODE.md` is being expanded into a practical project-instructions document: product context, allowed/protected paths, API/security boundaries, UI conventions, branch/PR workflow, exact-SHA testing, and required handoff reporting.
+- The root `AGENTS.md` is being expanded into a practical project-instructions document: product context, allowed/protected paths, API/security boundaries, UI conventions, branch/PR workflow, exact-SHA testing, and required handoff reporting.
 - This follow-up is documentation-only; no application behavior changes. PR #42's four required workflows passed on its exact head. The current follow-up must pass its own exact-head checks before merge.
-- Publishing and deployment remain paused/not performed. Next: review this documentation PR, verify all required checks and mergeability, then give ZCode the task-specific objective and have it follow `ZCODE.md`.
+- Publishing and deployment remain paused/not performed. Next: review this documentation PR, verify all required checks and mergeability, then give ZCode the task-specific objective and have it follow `AGENTS.md`.
 
 ## 2026-10-14 — PR #41 merged: frontend asset extraction
 
