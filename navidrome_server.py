@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+import acquisition_lifecycle as _acquisition_lifecycle
 import discovery_refresh
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
@@ -3891,16 +3892,12 @@ def _discovery_live_download_progress(job):
 def discovery_get_acquisition_status():
     """Return persistent acquisition state plus best-effort live download progress."""
     jobs = _discovery_list_acquisition_jobs()
-    resumable = {
-        "downloading", "download_complete_waiting_for_folder", "monitor_error",
-        "importing",
-    }
     for job in jobs:
         if job["status"] == "dismissed":
             continue
         identity = (job["artist_key"], job["album_key"])
         candidate, settings = job["candidate"], job["settings"]
-        if job["status"] not in resumable or not candidate.get("files") or not candidate.get("username"):
+        if not _acquisition_lifecycle.should_resume_monitor(job["status"], candidate, False):
             continue
         with _DISCOVERY_IMPORT_LOCK:
             if identity in _DISCOVERY_IMPORT_ACTIVE:
@@ -4016,10 +4013,7 @@ def discovery_dismiss_acquisition(artist, album):
                 details, candidate, saved_settings = {}, {}, {}
 
             files = candidate.get("files") or []
-            cleanup_required = row[0] in {
-                "downloading", "download_complete_waiting_for_folder", "monitor_error",
-                "importing", "imported", "source_switch_failed", "source_switching",
-            } or bool(details.get("source_folder") or details.get("expected_folder"))
+            cleanup_required = _acquisition_lifecycle.cleanup_required(row[0], details)
 
             if files:
                 try:
@@ -4084,18 +4078,15 @@ def discovery_skip_acquisition_source(artist, album):
                 "WHERE artist_key=? AND album_key=?", identity,
             ).fetchone()
             if not row:
-                return json.dumps({"ok": False, "error": "Acquisition not found."})
-            if row[0] == "dismissed":
-                return json.dumps({"ok": False, "error": "This acquisition has been dismissed."})
-            if row[0] != "downloading":
-                return json.dumps({"ok": False, "error": "This acquisition is not downloading."})
+                return json.dumps({"ok": False, "error": _acquisition_lifecycle.skip_request_error(None, {})})
             try:
                 candidate = json.loads(row[2] or "{}")
                 details = json.loads(row[1] or "{}")
             except (ValueError, TypeError):
                 candidate, details = {}, {}
-            if not candidate.get("fallback_candidates"):
-                return json.dumps({"ok": False, "error": "No eligible fallback source remains."})
+            error = _acquisition_lifecycle.skip_request_error(row[0], candidate)
+            if error:
+                return json.dumps({"ok": False, "error": error})
             details["skip_requested"] = True
             details["skip_requested_at"] = time.time()
             cursor = db.execute(
@@ -4488,12 +4479,8 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
         })
         return None
     for index, next_candidate in enumerate(fallbacks):
-        files = [
-            {"filename": item.get("filename"), "size": int(item.get("size") or 0)}
-            for item in next_candidate.get("files", [])
-            if item.get("filename")
-        ]
-        if not files or not next_candidate.get("username"):
+        files = _acquisition_lifecycle.normalized_candidate_files(next_candidate)
+        if not _acquisition_lifecycle.fallback_candidate_is_usable(next_candidate):
             continue
         queue_error = None
         try:
@@ -5152,17 +5139,7 @@ def _discovery_queue_candidate_unless_dismissed(
 
 def _slskd_queue_failure_action(exc):
     """Classify queue errors without risking duplicate downloads."""
-    status = getattr(getattr(exc, "response", None), "status_code", None)
-    if status in {400, 404, 422}:
-        # slskd explicitly rejected this source's queue request; it is safe to
-        # try another prevalidated peer.
-        return "retry_source"
-    if status in {401, 403}:
-        # Authentication/permission failures are global, not peer-specific.
-        return "fatal"
-    # Transport errors and server/timeout responses may happen after enqueue.
-    # Keep monitoring this peer rather than risking a duplicate download.
-    return "uncertain"
+    return _acquisition_lifecycle.queue_failure_action(exc)
 
 
 def _discovery_acquire_album_impl(

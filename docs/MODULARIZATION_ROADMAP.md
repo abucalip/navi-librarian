@@ -19,6 +19,12 @@ The delivered product's target is web-only. MCP retirement is a later step: the 
 
 These extractions are merged to main. They do not mean the monolithic server or web module is fully modularized.
 
+## Acquisition lifecycle extraction — in progress
+
+PR #47 introduces `acquisition_lifecycle.py` as a dependency-light, directly importable owner for monitor-resume eligibility, conservative cleanup classification, skip-request validation, fallback queue payload normalization, and uncertain queue-error classification. Legacy MCP functions remain compatibility adapters and continue to own database/network/filesystem I/O.
+
+This is the first lifecycle seam, not completion of the whole orchestration extraction. The remaining watcher loop, persistent state transitions, cancellation/cleanup execution, source switching, interrupted-import recovery, and top-level acquire coordinator still live in `navidrome_server.py`. Next, extract those orchestration paths behind injected service dependencies and migrate the remaining AST-coupled cases in `tests/test_acquisition_safety.py` to direct-import tests. Keep the existing completion/import safety modules as the filesystem authorities.
+
 ## Current route-separation stage
 
 1. Settings routes (merged in PR #33): move the Navidrome, Last.fm, ListenBrainz and slskd settings handlers to app/api/settings.py; preserve URLs, methods, payload defaults, error codes/messages and calls into existing domain functions. Keep parse_result importable from app.main while moving its implementation to app/api/utils.py.

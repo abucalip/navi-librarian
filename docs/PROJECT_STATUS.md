@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition lifecycle extraction started (PR #47)
+
+- PR #46 was squash-merged to `main` at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four required workflows passed on exact head `5b050abac235d729df01cc04703ce70140398be6`.
+- PR #47 adds a dependency-light `acquisition_lifecycle.py` policy module and direct-import regression tests, then routes selected legacy lifecycle decisions through it while preserving existing MCP function names.
+- Scope intentionally stops short of claiming full orchestration extraction: watcher orchestration, state persistence, cleanup execution, source switching, and interrupted-import recovery still depend on `navidrome_server.py`. Exact code head `581823b96ba6888da4c5ff99c007afb0c633cc36` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture image build. The final documentation-only head still requires its own exact-head CI confirmation.
+- No image publication, deployment, or production runtime verification is performed.
+
 ## 2026-10-14 — Read-only audit: remaining `navidrome_server.py` dependencies
 
 - Audited GitHub `main` at `edc6239c0a01573e1eaa3161a4485ca03a9851da`; the legacy module was approximately 6,179 lines. This was a source/documentation inspection only: no application changes or tests were run.

@@ -45,7 +45,7 @@ Retirement condition: all web-required behavior must have an independent tested 
 - **`slskd_search.py` / `slskd_quality.py`** — importable slskd query/candidate helpers and audio-quality classification.
 - **`discovery_refresh.py`** — refresh coordination for personal and named cached discovery lists; list builders, provider calls, server-owned locks, and persistence are injected.
 - **`discovery_recommendations.py`** — pure discovery eligibility, normalization, scoring, and diversity helpers with direct-import tests.
-- **`acquisition_import.py`** — staged filesystem import of verified album tracks, no-overwrite checks, storage-identity guards, and rollback; acquisition status/orchestration remains in `navidrome_server.py`.
+- **`acquisition_lifecycle.py`** — importable lifecycle policy for monitor recovery, cleanup-required classification, skip validation, fallback payload normalization, and queue-error classification. The legacy server adapts these policies while database/network/filesystem orchestration is extracted incrementally.\n- **`acquisition_import.py`** — staged filesystem import of verified album tracks, no-overwrite checks, storage-identity guards, and rollback; acquisition status/orchestration remains in `navidrome_server.py`.
 - **`server.py`** — MCP/server entry point; inspect it before changing how the MCP integration is launched.
 - **`tests/`** — automated tests, including acquisition safety, authentication, and service settings.
 - **`Dockerfile` / `compose.yaml`** — web-app image and local Compose deployment.
