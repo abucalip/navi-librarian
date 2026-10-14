@@ -1,3 +1,11 @@
+## 2026-10-15 — Search polling extraction merged (PR #76)
+
+- `slskd_search_polling.py` now owns progressive query submission, search-state/response polling, count aggregation, peer payload deduplication, delayed-payload waiting, and per-attempt diagnostics behind injected external dependencies.
+- `navidrome_server.py` remains responsible for configuration, candidate interpretation, acquisition status, queueing, and lifecycle transitions. The legacy MCP/web adapter contract is unchanged.
+- PR #76 exact tested head `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6` passed all four required workflows; squash merge `a55a9fa7eed1e221f52434b50f44d0c415fd491a`.
+
+---
+
 ## 2026-10-15 — Search polling boundary
 
 - `slskd_search_polling.py` owns the slskd progressive-query/poll/wait algorithm behind injected HTTP, clock, sleep, ID-generation, and response-normalization dependencies. The server coordinator continues to own configuration, candidate interpretation, status reporting, queueing, and acquisition state transitions.
