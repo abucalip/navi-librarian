@@ -2,7 +2,7 @@
 
 - Extracted watcher reservation/persistence/thread startup into acquisition_watcher_startup.py with injected services. The legacy _discovery_start_import_watcher function remains the adapter used by existing MCP/web call paths.
 - Added direct-import tests for duplicate/dismissed startup, persisted-settings credential filtering, persistence failure cleanup, and thread-start failure handling. Added the module to Docker packaging.
-- Validation is pending: run focused watcher/startup and acquisition safety tests, full unit suite, syntax checks, then all four required workflows on the exact PR head. No tests or CI are claimed yet; no publication/deployment/runtime verification.
+- Initial CI on earlier head b60fbacabcdd4b76259e525fef20149dcc71ce72: Python syntax, Docker packaging/full unit suite, and container runtime smoke completed successfully; validation-only image/multi-architecture workflow was still in progress at last check. The branch then advanced, so all four workflows must be confirmed on the final PR head. No local test run, publication, deployment, or production runtime verification is claimed.
 - Next: persistent acquisition-state coordination extraction, preserving shared transition-lock and conditional-write semantics.
 
 ## 2026-10-14 — PR #57 merged: acquisition watcher lifecycle
