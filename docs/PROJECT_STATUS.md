@@ -1,3 +1,12 @@
+## 2026-10-15 — Acquisition lifecycle AST audit: preserve integration boundaries
+
+- Audited the remaining AST-harness lifecycle cases on GitHub main. The duplicate-search test is a real coordinator race; the incomplete saved-candidate and dismissed-job cases verify coordinator decisions; stale-watcher recovery verifies the coordinator does not requeue; and the import-status test proves persistence succeeds before filesystem import. None can be safely replaced by policy/helper tests alone, so they remain.
+- Existing direct-import coverage already exercises lifecycle policy, watcher startup reservation/failure handling, and persisted state. Added a direct-import concurrent duplicate watcher-start regression to tests/test_acquisition_watcher.py; it asserts exactly one reservation, persisted job, and thread start across simultaneous callers.
+- Exact-head focused/full tests, syntax checks, final diff review, and all four required workflows are pending on this branch. No test result is claimed until observed. No publication, deployment, or production runtime verification is claimed.
+- Next: verify the new race test on the exact PR head; continue the AST audit only where a test is truly helper-level and equivalent direct-import coverage preserves the safety boundary.
+
+---
+
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
 - Reconciled the project status against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`. PR #82 is merged; it updates the status, log, test plan, and modularization roadmap after PR #81's closeout.
