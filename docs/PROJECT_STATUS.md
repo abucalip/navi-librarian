@@ -1,3 +1,13 @@
+## 2026-10-14 — PR #61 merged: acquisition transition guard
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/61
+- **State:** Implemented, final diff reviewed, all four required workflows passed on exact final PR head, and squash-merged.
+- **Exact tested PR head:** `aa554ff2be2a19e215538ed2e699b8036764dca1`; **merge commit:** `73172847535d3683facfbe559706c26a8637a3d4`.
+- **CI:** Python syntax/acquisition safety run `38617537652`; Docker packaging/full unit suite/build `38617538490`; container runtime smoke `38617537978`; validation-only multi-architecture image `38617538229`. All succeeded on the exact tested head; publishing remains paused.
+- **Change:** moved the dismissal-serialized source-switch guard into `acquisition_orchestration.py`; retained the server compatibility adapter and the existing shared lock; added direct-import regression coverage for lock scope, dismissal refusal, return values, and exception propagation.
+- **Limits:** no separate assistant-local test run, live slskd interaction, production filesystem operation, image publication, deployment, or production runtime verification is claimed.
+- **Next:** continue acquisition-coordination audit and migrate remaining AST-coupled safety tests to direct-import tests without reducing safety coverage.
+
 ## 2026-10-14 — Acquisition transition guard extraction in progress
 
 - PR pending: `refactor/acquisition-transition-guard` extracts the dismissal-serialized source-switch guard into `acquisition_orchestration.py`, with direct-import tests for lock scope, dismissal refusal, return-value preservation, and exception propagation.
