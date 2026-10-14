@@ -15,6 +15,13 @@ PR #51 and PR #53 established refusal and neighbor-preservation coverage for des
 PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four required workflows (syntax `38601516322`, Docker packaging/full unit suite `38601516096`, runtime smoke `38601516565`, multi-architecture validation `38601516203`) and merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`. No live production filesystem recovery is claimed.
 - After this slice, the next task is the source-switch orchestration extraction; preserve cleanup failure as a hard stop and uncertain queue outcomes as monitored, never as an automatic duplicate retry.
 
+## Source-switch orchestration extraction
+
+- Extract the existing `_discovery_switch_to_next_source_locked` implementation into directly importable `acquisition_source_switch.py`, injecting slskd config, lifecycle policy, cleanup, status persistence, HTTP client, candidate-start inspection, acquisition persistence/listing, and identity normalization.
+- Preserve the legacy MCP/web wrapper and caller-owned transition lock. Cleanup failure must stop before queuing; uncertain queue outcomes must be saved and monitored rather than triggering another peer; a fallback that cannot be safely cleaned must stop further attempts.
+- Move the ambiguous-queue regression out of the AST harness and add direct-import tests for initial cleanup refusal, no-fallback status, failed fallback cleanup, and successful fallback state/count preservation.
+- Docker packaging and focused project docs are updated. Exact-head CI is pending; all four workflows and full diff review are required before merge.
+
 ## Goal and guardrails
 
 Reduce coupling in the Python application through small, behavior-preserving extractions. GitHub is the source of truth. Preserve the web API/UI, authentication, settings and persistent state, acquisition safety, and any existing caller until its replacement is verified. New extracted modules should have direct-import regression tests. Do not remove tests simply because their current AST-based setup is awkward.
