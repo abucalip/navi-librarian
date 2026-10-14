@@ -10,15 +10,6 @@
 
 ---
 
-## 2026-10-15 — Import dismissal guard extraction (verification pending)
-
-- Branch: `refactor/import-dismissal-guard`, based on current main after PR #77.
-- Added `acquisition_orchestration.import_source_unless_dismissed`, which holds the shared transition lock across both the dismissal check and the import callback. The server adapter preserves that lock boundary; filesystem validation/import code remains in the server.
-- Added direct tests for lock ordering, dismissal refusal, return propagation, and exceptions. Removed the equivalent dismissal-only AST test; retained the AST test that verifies import is refused when the `importing` status cannot be persisted.
-- Focused/full tests, exact-head four-workflow CI, final diff review, and safety behavior review are pending. No test pass is claimed.
-- Next: continue reviewing remaining AST lifecycle cases for true coordination boundaries; do not move filesystem authorities or weaken transition locking.
-
----
 
 ## 2026-10-15 — PR #76 merged: slskd polling extracted
 
