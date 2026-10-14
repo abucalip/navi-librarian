@@ -1,4 +1,10 @@
-## 2026-10-14 — Candidate-start validation extraction (PR pending)
+## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)
+
+- Extracted candidate-start path/state validation to `acquisition_candidate_start.py` with injected external boundaries; the server compatibility adapter remains in place.
+- Moved traversal and mixed-directory tests to direct imports; added active-transfer, queued cancellation, and fail-closed uncertainty tests.
+- PR #71 was squash-merged at `b10650aa6a8889610b5734c5a1cf02c3197f1ad0` from tested head `f53e8ceffc8307c7b8dbcbf837e123b51671bbda`.
+- All four required workflows passed on that exact head (syntax, packaging/full unit suite, runtime smoke, and Docker image validation with publishing paused). No standalone local or live slskd tests, publication, deployment, or production runtime verification is claimed.
+- Remaining AST-coupled coordination tests stay in place until equivalent direct-import coverage tests the same races and persistence/transition boundaries.
 
 - Extracted slskd candidate-start path/state checks into `acquisition_candidate_start.py` with injected transfer lookup, HTTP, and timing dependencies. The server keeps its existing helper name as an adapter.
 - Moved the two AST path-validation tests to direct-import coverage; added tests for active transfers and conservative handling of queued-transfer cancellation outcomes.
