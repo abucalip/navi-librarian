@@ -1,3 +1,11 @@
+
+
+## Acquisition watcher startup extraction
+
+- acquisition_watcher_startup.py owns the reserve → persist → status → start sequence behind injected locks, active-set, persistence/status callbacks, and watcher entry point. navidrome_server.py retains _discovery_start_import_watcher as a compatibility adapter.
+- Direct-import tests cover dismissed and duplicate starts, credential filtering in persisted settings, persistence failure releasing the reservation, and thread-start failure recording monitor_error and releasing the active marker.
+- Next: extract the remaining persistent acquisition-state coordination with direct-import tests; preserve existing conditional state writes and dismissal/import transition lock.
+- This extraction is not live slskd or production-runtime verification.
 ## PR #57 merged — acquisition watcher lifecycle
 
 - Merged to main at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589; exact tested PR head f4b92a98bae942ac6080316c3f1803d1b6bcff76.
