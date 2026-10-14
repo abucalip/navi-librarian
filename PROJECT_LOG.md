@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition queue guard test migration
+
+- Branch `test/migrate-queue-dismissal-regression` starts from current GitHub `main` after PR #62 and the ZCode ownership handoff.
+- Removed the AST-harness test for dismissed queue refusal and its adapter shim from `tests/test_acquisition_safety.py`. The extracted implementation is already exercised directly in `tests/test_acquisition_orchestration.py`, including dismissed refusal, critical-section ordering, return value, and exception behavior.
+- Test-only change; no production code, deletion/import logic, or safety checks changed. Exact-head CI and final diff review are required before merge. No local test execution, live slskd test, publication, deployment, or production runtime verification is claimed.
+- Next: continue migrating remaining AST-coupled safety cases incrementally where direct-import production-module coverage exists or can be added safely.
+
 ## 2026-10-14 — PR #62 merged: acquisition queue/dismissal guard
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/62
