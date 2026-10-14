@@ -1,3 +1,11 @@
+## 2026-10-14 — Authentication route extraction in review
+
+- PR #38 integration tests were squash-merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553` from exact head `1901cc68d1bb689da5257b6a51947af84b87d5ca`. On that exact head, all four required workflows passed: Python syntax, Docker packaging/full unit tests (147 tests), container runtime smoke, and validation-only multi-architecture build. The initial test commit had two redirect-following failures; the corrected head passed.
+- PR #39 (`refactor/auth-api-router`) extracts authentication status/setup/login/logout and the login page into `app/api/auth.py`. Middleware remains in `app/main.py`; security primitives remain in `app/security/auth.py`. The route factory injects settings/session/cookie dependencies so persistent settings and signing behavior remain app-owned.
+- Exact PR #39 head at documentation update: `5c5ba907748807d453fb397ac01585cede35dff6`. CI status was not yet available when this entry was written. Do not merge until syntax, full unit suite, container smoke, and validation-only multi-architecture checks pass on the final head.
+- No local tests or manual browser tests were run. This is a route-only extraction with no intended UI change; no image publication or deployment occurred. GHCR publishing remains disabled.
+- Next action: inspect PR #39 exact-head CI and fix any regression before merge.
+
 ## 2026-10-14 — Session closeout: modularization handoff after PR #37
 
 - Reviewed the current GitHub documentation and roadmap after PRs #35–#37. The existing entries accurately record their merge commits, exact PR heads, CI results, and verification limits; no new implementation or test run was performed in this closeout.
@@ -447,3 +455,13 @@ Update this file and [PROJECT_LOG.md](../PROJECT_LOG.md) with:
 - unresolved defects and the next concrete action.
 
 Never record credentials, API keys, cookies, or other secrets in documentation.
+
+
+## 2026-10-14 — Authentication route extraction CI closeout (PR #39)
+
+- **PR/branch:** [PR #39 — refactor: extract authentication API routes](https://github.com/abucalip/navi-librarian/pull/39), `refactor/auth-api-router`.
+- **Code base:** merged main `84da7ebfe51199a5caf63f7689fe89df8d61b553`; auth integration contract tests were merged in PR #38 before extraction.
+- **Verified code head:** `a78272da8f82aa83716367aa7fcd7a43729267a7`. All four required GitHub Actions workflows completed successfully on that exact head: Python syntax, Docker packaging (including full unit suite), container runtime smoke, and validation-only multi-architecture build.
+- **Change:** moved `/api/auth/status`, `/api/auth/setup`, `/api/auth/login`, `/api/auth/logout`, and `/login` route handlers into `app/api/auth.py`. Middleware and session/auth primitives remain in `app/main.py` and `app/security/auth.py`; dependency injection keeps app-owned settings, cookies, and password/session behavior explicit.
+- **State:** implemented and CI-verified on `a78272d`; PR #39 remains open and unmerged. The documentation closeout itself adds a new PR-head commit, so recheck all required workflows against the resulting exact head before merging. No local test run, manual UI test, image publication, deployment, or production runtime verification was performed. Publishing remains paused.
+- **Next:** wait for CI on the documentation-updated PR head, review the final diff and mergeability, then merge only if all required checks pass.
