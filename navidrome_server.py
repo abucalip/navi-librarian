@@ -2394,7 +2394,8 @@ def _lastfm_top_albums(artist, limit=8):
     records = items(payload.get("topalbums", {}).get("album"))
     output = []
     for album in records:
-        title = (album.get("name") or "").strip()        if not title or not _discovery_is_album_candidate({"album": title}):
+        title = (album.get("name") or "").strip()
+        if not title or not _discovery_is_album_candidate({"album": title}):
             continue
         stats = album.get("playcount")
         output.append({
