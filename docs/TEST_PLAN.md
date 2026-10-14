@@ -1,3 +1,10 @@
+## Acquisition lifecycle orchestration — PR #48
+
+- Direct-import regression tests in `tests/test_acquisition_orchestration.py` cover successful persistence of a manual source-skip transition and safe rejection of missing, dismissed, non-downloading, and no-fallback states without mutating persisted state.
+- Preserve the existing compatibility adapter, shared transition lock, and conditional update for records whose status is still `downloading`. Keep filesystem cleanup/import guards unchanged; do not broaden this slice's tests into claims that watcher/failover/recovery orchestration has been extracted.
+- Exact PR head `c116a692f59bc0e136c79197965fe60db8b15bdf` passed all four required workflows: Python syntax run `38583921780`, Docker packaging/full unit suite run `38583921958`, container runtime smoke run `38583922449`, and validation-only multi-architecture image validation run `38583922118`. No separate local test run is claimed.
+- PR #48 remains open/draft and currently includes PR #47's changes. Recheck all four workflows on the exact final PR head after resolving the dependency/base relationship. No publication/deployment/runtime verification is implied by CI success.
+
 ## Acquisition lifecycle policy module (PR #47)
 
 - Direct-import tests in `tests/test_acquisition_lifecycle.py` cover monitor-recovery eligibility, conservative cleanup requirements, skip-request rejection states, queue-failure retry classification, and fallback candidate/payload normalization.
