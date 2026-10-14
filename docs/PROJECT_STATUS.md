@@ -1,3 +1,11 @@
+## 2026-10-14 — PR #48 lifecycle orchestration extraction: session closeout
+
+- PR #48, `refactor/acquisition-lifecycle-orchestration`, remains **open and draft** at exact code head `c116a692f59bc0e136c79197965fe60db8b15bdf`. The extraction adds `acquisition_orchestration.py` for the persisted manual source-skip transition, with injected dependencies and direct-import regression tests. The existing `discovery_skip_acquisition_source` MCP adapter remains in place; the shared transition lock and conditional `status='downloading'` update are preserved.
+- Review found malformed joined Python statements introduced during extraction. These were corrected, including restart-helper indentation. The exact final code head passed all four required GitHub Actions workflows: Python syntax (run `38583921780`), Docker packaging/full unit suite (run `38583921958`), container runtime smoke (run `38583922449`), and validation-only multi-architecture image validation (run `38583922118`). The image workflow validates only; publishing is paused.
+- PR #48 currently has `main` as its base and includes the changes from open PR #47. PR #47 is still open at `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`, with its four-workflow verification recorded in its PR description. Keep the dependency/combined diff explicit; do not merge #48 independently of resolving the #47 merge order/base.
+- No local test run, manual UI test, image publication, deployment, or production runtime verification is claimed. The change does not alter filesystem cleanup/import implementation or its safety checks.
+- **Next action:** resolve PR #47 first, then refresh/review PR #48's base and complete diff, rerun all four required workflows on the resulting exact head, and only then consider merge readiness.
+
 ## 2026-10-14 — Acquisition lifecycle extraction started (PR #47)
 
 - PR #46 was squash-merged to `main` at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four required workflows passed on exact head `5b050abac235d729df01cc04703ce70140398be6`.
