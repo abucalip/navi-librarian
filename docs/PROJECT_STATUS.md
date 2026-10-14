@@ -575,5 +575,6 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Branch `refactor/acquisition-recovery-domain` starts from current main after PR #54.
 - Extracted `_discovery_reconcile_interrupted_import` to `acquisition_recovery.py` with injected dependencies; retained the existing adapter and MCP interface. Docker packaging includes the new module.
 - Moved four recovery regressions from the AST harness to direct-import `tests/test_acquisition_recovery.py` and added a refusal test for dismissed/non-importing jobs. Preserved mount identity, exact destination, manifest, track-size, symlink, and staged-file rollback checks.
-- Exact-head CI pending. No test success, live slskd, or production filesystem recovery is claimed.
-- Next gate: verify the exact final PR head across all four required workflows and review the full diff. If green, extract source-switch orchestration with cleanup failure remaining a hard stop.
+- PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four required workflows: syntax/acquisition safety `38601516322`, Docker packaging/full unit suite/image build `38601516096`, runtime smoke `38601516565`, and validation-only multi-architecture image build `38601516203` (publishing paused). Final diff reviewed; GitHub reported mergeable and no review submissions/inline threads. Squash-merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`.
+- Verification boundary: no production filesystem recovery, live service interaction, publication, deployment, or production runtime verification is claimed.
+- Next priority: extract source-switch orchestration behind injected dependencies, preserving cleanup failure as a hard stop and uncertain queue outcomes as monitored rather than retried.
