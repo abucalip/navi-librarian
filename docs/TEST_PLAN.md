@@ -1,9 +1,9 @@
-## ACQ-04/ACQ-06 — dismissal cleanup safety regression coverage (PR in progress)
+## ACQ-04/ACQ-06 — dismissal cleanup safety regression coverage (PR #51 merged)
 
-- Added focused cases around the real `_discovery_cancel_and_clean_source` function using the existing AST harness: success only after transfers are confirmed stopped; refusal when an unrelated file exists; remote `..` traversal rejected before transfer lookup; duplicate same-name folders rejected without touching either; symlinked album folder rejected without touching the target; and failed slskd cancellation preserving local files.
-- The helper is still AST-loaded from `navidrome_server.py`; this change adds missing safety coverage without attempting to diagnose the previously reported HTTP 409, which was not reproduced in the user's isolated manual run.
-- Initial exact-head CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` failed in an existing source-switch test because loading the cleanup helper replaced that test's intentional cleanup stub. The helper now receives a distinct AST namespace name so the tests remain isolated. This correction is on the current PR branch; its exact-head workflows must pass before merge.
-- **Verification state:** tests authored; not run locally by the assistant. Await exact-final-head syntax, full unittest/Docker packaging, container runtime smoke, and validation-only multi-architecture CI. Do not claim the requirement is verified until those results are observed. No live slskd, real download folder, publication, or deployment testing is performed.
+- Six focused cases exercise the actual `_discovery_cancel_and_clean_source` helper via the existing AST harness: successful cleanup only after transfers stop; refusal with unrelated files; remote `..` traversal rejection before transfer lookup; duplicate same-name folders rejected without touching either; symlinked album folder rejected without touching the target; failed transfer cancellation preserving local files.
+- Initial CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` failed because loading the real helper replaced a stub used by an existing source-switch test. The test harness now gives the helper a distinct namespace name; all four workflows passed on final PR head `58021141472c85c9fa33c431cba15cb66792bc1c`.
+- CI runs: syntax/safety `38590192829`; Docker packaging/full unit tests `38590192830`; container runtime smoke `38590192905`; validation-only multi-architecture build, publishing paused, `38590192858`.
+- Merged to `main` at `790d690ca99866878ee6204f9d101dec5f099994`. Assistant did not run tests locally. No live slskd, real download-folder deletion, publication, deployment, or production runtime testing. The HTTP 409 was not reproduced and remains deferred.
 
 ## Acquisition lifecycle policy module (PR #47)
 

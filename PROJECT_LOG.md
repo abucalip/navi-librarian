@@ -17,3 +17,12 @@
 - Added six regression cases around `_discovery_cancel_and_clean_source` for verified cleanup, unrelated files, traversal, ambiguous duplicate folders, symlink targets, and cancellation failure. The change is test-only; no cleanup safeguards were relaxed.
 - Exact test commits: `6f35761504ca86702ec3863cc44d9fd8699d347b`, then `d8bffdf0989c530994a4ac9e01a8ab6a0a46dcdc` to correct the ambiguous-folder fixture.
 - Initial exact-head CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` exposed a test harness collision: loading the real cleanup helper replaced a stub expected by an existing source-switch test. The helper now has a distinct AST namespace name, preserving isolation; corrected-head CI and review remain pending. The reported HTTP 409 remains deferred because it was not reproduced. No merge, publication, deployment, or production runtime verification.
+
+
+## 2026-10-14 — PR #51 merged: acquisition dismissal safety
+
+- PR #51 (`test: cover acquisition dismissal cleanup safety`) was squash-merged to `main` at `790d690ca99866878ee6204f9d101dec5f099994`; tested PR head was `58021141472c85c9fa33c431cba15cb66792bc1c`.
+- Added six regression cases for safe dismissal cleanup and refusal/preservation on unrelated files, traversal, ambiguous folders, symlinked targets, and failed transfer cancellation. Test-only change; no production behavior or safety checks altered.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety `38590192829`, Docker packaging/full unit suite `38590192830`, container runtime smoke `38590192905`, validation-only multi-architecture image build `38590192858` (publishing paused).
+- The first CI attempt failed due to a test-harness namespace collision; the helper was renamed in the AST test namespace and corrected-head CI passed. No separate local test run is claimed.
+- The reported HTTP 409 was not reproduced and remains deferred. No live slskd test, real download-folder deletion, publication, deployment, or production runtime verification was performed.

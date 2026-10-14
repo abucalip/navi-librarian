@@ -1,11 +1,11 @@
-## 2026-10-14 — Safety-first follow-up: acquisition dismissal cleanup tests
+## 2026-10-14 — Acquisition dismissal cleanup safety (PR #51)
 
-- Selected ACQ-04/ACQ-06 as the highest-priority unresolved requirement because Dismiss is destructive and the repository's existing safety test harness did not exercise `_discovery_cancel_and_clean_source` directly.
-- Branch `test/acquisition-dismissal-safety`; test commits: `6f35761504ca86702ec3863cc44d9fd8699d347b` and fixture correction `d8bffdf0989c530994a4ac9e01a8ab6a0a46dcdc`.
-- Added six focused regression cases: safe cleanup after transfer cancellation, unrelated-file refusal, remote traversal refusal, duplicate-folder ambiguity refusal, symlinked target refusal, and failed cancellation preserving the local track. No production code or cleanup policy changed.
-- The tests reuse the existing AST harness; direct-import extraction remains a separate follow-up. The earlier HTTP 409 was not reproduced and remains deferred per user direction; this work does not claim to diagnose it.
-- Initial CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` failed in an existing source-switch test because the extracted helper replaced an intentional stub in the AST namespace. Corrected the test harness to expose the helper under a separate name; all workflows must be checked again on the new exact head.
-- **State:** tests authored; assistant has not run them locally; corrected-head CI pending. No merge, publication, deployment, live slskd test, or real-download-folder deletion.
+- **Implemented and merged:** PR #51 added six regression cases around the actual `_discovery_cancel_and_clean_source` helper: cleanup after transfers stop, unrelated-file refusal, traversal refusal, ambiguous duplicate-folder refusal, symlink-target refusal, and cancellation-failure preservation.
+- **Branch/head:** `test/acquisition-dismissal-safety`, exact tested PR head `58021141472c85c9fa33c431cba15cb66792bc1c`; squash-merged to `main` as `790d690ca99866878ee6204f9d101dec5f099994`.
+- **Exact-head CI:** all four required workflows passed: Python syntax + acquisition safety regressions (run `38590192829`), Docker packaging/full unit tests/image build (`38590192830`), container runtime smoke (`38590192905`), and validation-only multi-architecture build with publishing paused (`38590192858`). The earlier failing attempt exposed a test-harness stub collision; the helper was isolated under a distinct AST namespace name and the corrected head passed all gates.
+- **Review:** final PR diff reviewed; no production code changed. GitHub reported the PR mergeable; no review submissions or inline threads were present.
+- **Remaining limits:** tests were run in CI, not separately by the assistant locally. No live slskd test, real-download-folder deletion, image publication, deployment, or production runtime verification. The previously reported HTTP 409 remains deferred because it was not reproduced.
+- **Next:** continue from the roadmap with correctness/safety/verification priorities; retain these tests when moving the cleanup helper into a directly importable domain module.
 
 ## 2026-10-14 — Acquisition lifecycle extraction started (PR #47)
 
