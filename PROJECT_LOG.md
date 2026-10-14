@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition lifecycle AST audit and watcher-start race test
+
+- Reviewed the remaining AST lifecycle cases against direct-import coverage. Retained all coordinator tests because each checks a distinct integration boundary: duplicate acquisition search race, import persistence before filesystem work, incomplete saved source details, dismissed-job reactivation/refusal, and stale watcher recovery without requeue.
+- Added a threaded regression to tests/test_acquisition_watcher.py that races two calls to start_import_watcher and expects exactly one active reservation, persisted job, and started thread.
+- Branch: test/acquisition-watcher-start-race, based on GitHub main 2264fcd76d2260c858f2bc34211fe7012df69a01. Focused/full test results and four required workflows are pending; no verification is claimed yet. No image publication, deployment, or production runtime verification.
+
+---
+
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
 - Reconciled project documentation against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`; PR #82 is merged and the four relevant documents now agree on the next task.
