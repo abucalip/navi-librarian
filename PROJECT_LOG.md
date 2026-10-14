@@ -1,3 +1,15 @@
+## 2026-10-14 — PR #57 merged: acquisition watcher lifecycle
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/57
+- **Branch:** refactor/acquisition-watcher-domain
+- **Exact tested PR head:** f4b92a98bae942ac6080316c3f1803d1b6bcff76
+- **Merge commit:** ae1e8b8f582c0ca0b882566d883d9a68bb2ca589
+- **Diff review:** eight files. Extracted the watcher loop into acquisition_watcher.py with injected dependencies; preserved the existing _discovery_watch_and_import_album compatibility adapter; packaged the module in Docker; added direct-import regression tests and updated lifecycle docs.
+- **Exact-head CI:** Python syntax/acquisition safety 38605510990, Docker packaging/full unit suite/build 38605510819, container runtime smoke 38605511271, validation-only multi-architecture build 38605510906 (all succeeded; publishing paused).
+- **Failure and correction:** the first CI attempt caught a test assertion looking for status details in keyword arguments rather than the fourth positional argument. The test was corrected and all four workflows passed on the final tested head.
+- **State:** implemented, tested in CI, CI passed, merged. Not published, deployed, or production-runtime-verified. No assistant-local test run, live slskd test, or production filesystem action is claimed.
+- **Next:** extract persistent acquisition-state coordination and watcher startup behind tested interfaces while preserving MCP callers, safe import coordination, and cleanup refusal behavior.
+
 ## 2026-10-14 — PR #50 acquisition orchestration merged
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/50
@@ -75,4 +87,4 @@
 - **First CI attempt:** syntax compilation passed, but the full suite failed one new test because it read status details from keyword arguments rather than the existing positional fourth argument. Corrected the test and reran the four required workflows.
 - **Corrected exact-head CI:** `6793c339464c9d573c02f5e7dc91d15b5f568348` passed Python syntax/acquisition safety run `38604931720`, Docker packaging/full unit suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture `38604932002` (publishing paused).
 - **Final-head CI:** after the documentation updates, exact PR head `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed Python syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture `38605193820` (publishing paused).
-- **State:** PR open, not merged. No assistant-local test run, live slskd behavior, production filesystem operation, image publication, deployment, or production runtime verification.
+- **State:** PR #57 was subsequently squash-merged to main at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589. No assistant-local test run, live slskd behavior, production filesystem operation, image publication, deployment, or production runtime verification.
