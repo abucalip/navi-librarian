@@ -61,6 +61,10 @@ def load_helpers():
     # function body without importing/initializing MCPServer.
     for node in selected:
         node.decorator_list = []
+        # Keep the helper under test separate from the stub used by the other
+        # orchestration tests, which intentionally isolate source switching.
+        if node.name == "_discovery_cancel_and_clean_source":
+            node.name = "_test_discovery_cancel_and_clean_source"
 
     namespace = {
         "Path": Path,
@@ -581,7 +585,7 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
             return batches.pop(0) if batches else []
 
         self.ns["_slskd_download_transfer_files"] = transfers
-        result = self.ns["_discovery_cancel_and_clean_source"](
+        result = self.ns["_test_discovery_cancel_and_clean_source"](
             self.root, self.candidate, "http://slskd", {"X-API-KEY": "test"}
         )
         return result, calls
