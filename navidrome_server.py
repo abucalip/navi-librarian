@@ -4050,13 +4050,15 @@ def _discovery_cancel_and_clean_source(
     )
 
 def _discovery_switch_to_next_source(artist, album, candidate, settings, download_root, headers, reason):
-    """Serialize fallback switching against dismissal so no source is queued afterward."""
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if _discovery_is_dismissed(artist, album):
-            return None
-        return _discovery_switch_to_next_source_locked(
+    """Compatibility adapter for dismissal-serialized fallback switching."""
+    return acquisition_orchestration.switch_source_unless_dismissed(
+        artist, album,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        is_dismissed=_discovery_is_dismissed,
+        switch_source=lambda: _discovery_switch_to_next_source_locked(
             artist, album, candidate, settings, download_root, headers, reason
-        )
+        ),
+    )
 
 
 def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, download_root, headers, reason):

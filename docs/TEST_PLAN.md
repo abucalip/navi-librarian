@@ -387,3 +387,16 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 - For changes to this module, run focused `tests.test_acquisition_state`, syntax checks, the full unit suite, and all four required exact-head workflows (compile/acquisition safety, Docker packaging/full suite/build, container runtime smoke, validation-only multi-architecture).
 - PR #59 exact head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d` passed all four workflows: compile `116019930318`, test/build `116019925188`, smoke `116019924747`, multi-architecture validation `116019926066`. Merge commit: `730ae16e613f3962c488f87c8de54034db7463dd`.
 - Tests do not establish live slskd behavior, production filesystem operations, publication, deployment, or production runtime health.
+
+
+## Acquisition transition guard
+
+For changes to `acquisition_orchestration.py`, run:
+
+```sh
+python -m unittest tests.test_acquisition_orchestration -v
+python -m py_compile acquisition_orchestration.py navidrome_server.py
+python -m unittest discover -s tests -v
+```
+
+The source-switch guard tests must prove the dismissal check and switch callback execute within one transition-lock critical section, dismissed acquisitions never invoke the callback, and callback return values/exceptions pass through unchanged. Keep the shared lock, conditional persistence writes, source cleanup, and MCP adapter contract unchanged. All four required CI workflows must pass on the exact final PR head; this does not establish live slskd or production filesystem behavior.

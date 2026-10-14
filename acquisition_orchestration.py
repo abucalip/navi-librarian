@@ -1,8 +1,8 @@
 """Acquisition lifecycle transitions with injected persistence/runtime dependencies.
 
-This module owns the skip-source state transition. It deliberately does not import
+This module owns small acquisition state transitions and coordination guards. It deliberately does not import
 SQLite, MCP, application configuration, or filesystem code; callers inject those
-boundaries so the transition can be tested directly and reused by MCP/web adapters.
+boundaries so transitions can be tested directly and reused by MCP/web adapters.
 """
 from __future__ import annotations
 
@@ -59,3 +59,22 @@ def request_skip_acquisition_source(
         "status": "skip_requested",
         "message": "Switch requested; cancelling the current source before starting the next one.",
     }
+
+
+def switch_source_unless_dismissed(
+    artist: str,
+    album: str,
+    *,
+    transition_lock: Any,
+    is_dismissed: Callable[[str, str], bool],
+    switch_source: Callable[[], Any],
+) -> Any:
+    """Serialize a source switch with dismissal and refuse to queue after dismissal.
+
+    The lock intentionally covers both the dismissal check and the switch callback,
+    matching the server's existing in-process transition ordering.
+    """
+    with transition_lock:
+        if is_dismissed(artist, album):
+            return None
+        return switch_source()
