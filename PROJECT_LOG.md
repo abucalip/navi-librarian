@@ -1,11 +1,27 @@
-## 2026-10-14 — Pure slskd search helper tests migrated (verification pending)
+## 2026-10-15 — Candidate extraction test migration in progress
 
-- Branch `test/migrate-slskd-search-pure-tests`, based on current main after PR #70.
-- Added direct-import tests for `slskd_search` query generation, payload normalization, album path matching, and bounded path diagnostics; removed six duplicate pure-helper cases from the AST harness.
-- Retained the acquisition-level retry/wait integration cases and candidate extraction scenario. No production code changed.
-- Focused/full tests, exact-head CI, and final diff review are pending; no tests are claimed passed.
+- Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
+- Moved the Tinariwen/Idrache candidate grouping/ranking scenario from the AST harness to direct-import coverage in `tests/test_slskd_candidates.py`. It invokes the extracted search implementation with production helper functions; no production implementation was changed.
+- Kept orchestration retry/wait and acquisition lifecycle coordination tests in the AST harness.
+- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending.
 
+---
 
+## 2026-10-14 — PR #73 candidate extraction test migration in progress
+
+- Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72 merge.
+- Move the Tinariwen/Idrache source-folder candidate grouping/ranking regression from the AST harness to a direct-import test of `slskd_search.extract_candidates`, injecting the real music-key, album-path matcher, quality-tier classifier, and track-identity helpers.
+- This is test-only: the production adapter and implementation are unchanged. Retry/wait and lifecycle-coordination scenarios remain in the AST harness.
+- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending. No test pass is claimed.
+
+---
+
+## 2026-10-14 — PR #72 merged: pure slskd search-helper test migration
+
+- PR #72 squash-merged at `6c6157a8238691b18d2209ea2d2e1306385ec9a2`; exact tested PR head `17be72e52b39e63cad63391fb2c4e63ea55d3c26`.
+- Added direct-import regressions in `tests/test_slskd_search.py` and removed six redundant pure-helper cases from `tests/test_acquisition_safety.py`. Acquisition retry/wait and candidate extraction remained covered at that point.
+- All four required workflows passed on the exact tested head: syntax `38651547240`, Docker packaging/full unit suite `38651547229`, runtime smoke `38651547283`, and Docker image validation with publishing paused `38651547264`.
+- No standalone local tests, live slskd interaction, publication, deployment, or production runtime verification is claimed.
 
 ---
 

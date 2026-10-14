@@ -1,10 +1,27 @@
-## 2026-10-14 — Direct-import slskd search helper coverage (pending verification)
+## 2026-10-15 — Candidate extraction direct-import migration (PR #73 preparation)
 
-- Added `tests/test_slskd_search.py` to test `slskd_search` directly for query progression, blank/whitespace input, response normalization, album path matching, path-match diagnostics, audio filtering, and result bounds.
-- Removed six corresponding pure-helper cases from the AST safety harness while retaining acquisition-level retry/wait integration coverage and candidate extraction coverage.
-- Required before merge: focused and full suite, syntax checks, all four required workflows on exact final PR head, and complete diff review. No test success is claimed before evidence is observed.
+- The Tinariwen/Idrache folder-variant candidate grouping/ranking scenario is now a direct-import regression against `slskd_search.extract_candidates`.
+- Preserve assertions for all four folder variants, twelve unique expected tracks, clear-match eligibility, and both FLAC tier classifications.
+- Retain AST-harness coverage for orchestration retry/wait and lifecycle coordination, since this migration does not replace those integration boundaries.
+- Required before merge: focused candidate/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on the exact final PR head. No test pass is claimed before evidence is observed.
 
+---
 
+## 2026-10-14 — Candidate extraction direct-import migration (PR #73 pending)
+
+- Move the existing source-folder candidate grouping/ranking scenario into `tests/test_slskd_candidates.py` and invoke the real `slskd_search.extract_candidates` implementation directly with real helper functions.
+- Preserve the same four folder variants, 12 expected tracks, clear-match assertions, unique-track count, and FLAC quality-tier evidence.
+- Keep acquisition retry/wait integration and lifecycle/concurrency/persistence transition tests in the AST harness; this change does not replace those tests.
+- Required before merge: focused candidate/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on the exact final PR head. No test pass is claimed before evidence is observed.
+
+---
+
+## 2026-10-14 — PR #72 merged: direct-import slskd search helper coverage
+
+- PR #72 squash merge: `6c6157a8238691b18d2209ea2d2e1306385ec9a2`; tested head `17be72e52b39e63cad63391fb2c4e63ea55d3c26`.
+- Added direct-import tests for query progression, blank/whitespace input, payload normalization, album path matching, path-match diagnostics, audio filtering, and result bounds. Removed six corresponding pure-helper cases from the AST harness.
+- All four required workflows passed on the exact tested head: syntax `38651547240`, Docker packaging/full unit suite `38651547229`, runtime smoke `38651547283`, and Docker image validation with publishing paused `38651547264`.
+- No local standalone test run, live slskd interaction, publication, deployment, or production runtime verification is claimed.
 
 ---
 

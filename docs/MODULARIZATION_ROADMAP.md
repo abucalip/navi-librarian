@@ -1,10 +1,27 @@
-## 2026-10-14 — Pure slskd search helper test migration (pending verification)
+## 2026-10-15 — Candidate extraction test migration (PR #73 preparation)
 
-- Added direct-import tests for pure `slskd_search` helpers and removed six duplicate query/payload/path-helper cases from the AST harness.
-- Acquisition orchestration retry/wait tests and candidate-extraction scenario remain in the harness because they exercise integration behavior rather than only pure helper functions.
-- No production code changed. Verify focused/full tests and all four required workflows on the exact PR head before merging; inspect final diff for accidental coverage loss.
+- Moved the remaining Tinariwen/Idrache candidate-folder grouping/ranking scenario into direct-import coverage for `slskd_search.extract_candidates`, injecting the production music-key, album-path, quality-tier, and track-identity helpers.
+- Acquisition retry/wait and lifecycle coordination tests remain AST-coupled until an extraction seam and direct tests preserve the actual sequencing, shared-lock races, persistence transitions, cancellation, dismissal/reactivation, and watcher recovery.
+- Verification remains pending: focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review.
+- Next after verification: inspect the acquisition coordinator for a small safe seam; do not split coordination state merely to eliminate AST loading.
 
+---
 
+## 2026-10-14 — PR #73 candidate extraction test migration in progress
+
+- The remaining candidate-folder scenario was moved from the AST harness into a direct-import regression against `slskd_search.extract_candidates`, using the production quality, album-path, track-identity, and music-key helpers.
+- Acquisition retry/wait and lifecycle coordination cases remain AST-coupled because they test end-to-end query sequencing, shared locks, state persistence, dismissal/reactivation, and watcher recovery rather than just the extracted candidate algorithm.
+- PR #73 exact-head focused/full tests, syntax checks, complete diff review, and four required workflows remain pending.
+- Next after verification: audit the top-level acquisition coordinator for the smallest safe extraction seam, preserving cancellation/cleanup refusal, conditional persistence transitions, and uncertain queue outcomes.
+
+---
+
+## 2026-10-14 — PR #72 merged: pure slskd search helper test migration
+
+- PR #72 squash-merged at `6c6157a8238691b18d2209ea2d2e1306385ec9a2` from tested head `17be72e52b39e63cad63391fb2c4e63ea55d3c26`.
+- Moved six pure query/payload/path matching/diagnostic cases to `tests/test_slskd_search.py`; retained acquisition retry/wait and candidate extraction coverage in the AST harness at that point.
+- All four required workflows passed on the exact tested head: syntax `38651547240`, Docker packaging/full unit suite `38651547229`, runtime smoke `38651547283`, and Docker image validation with publishing paused `38651547264`.
+- No publication, deployment, or production runtime verification is claimed.
 
 ---
 
