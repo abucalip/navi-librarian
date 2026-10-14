@@ -43,7 +43,6 @@ def load_helpers():
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
         "_discovery_queue_candidate_unless_dismissed",
-        "_discovery_switch_to_next_source_locked",
         "_discovery_import_completed_source",
         "_discovery_acquire_album_impl",
         "discovery_acquire_album",
@@ -88,6 +87,7 @@ def load_helpers():
         "_DISCOVERY_SETTINGS_DEFAULTS": {"quality_priority": ["mp3_320", "flac_cd"]},
         "_discovery_expected_track_count": lambda _metadata: None,
         "_discovery_cancel_and_clean_source": lambda *_args, **_kwargs: True,
+        "_discovery_switch_to_next_source_locked": lambda *_args, **_kwargs: None,
         "_discovery_reactivate_dismissed_acquisition": lambda *_args, **_kwargs: False,
         "_discovery_safe_folder_name": lambda value: str(value).replace("/", "_"),
         "_discovery_import_matched_album_files": lambda *_args, **_kwargs: None,
@@ -687,45 +687,6 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(result["status"], "recovery_unavailable")
         self.assertEqual(impl_calls, [])
         self.assertEqual(watcher_calls, [])
-
-    def test_ambiguous_fallback_queue_is_monitored_without_trying_another_peer(self):
-        posts = []
-
-        def uncertain_post(*args, **kwargs):
-            posts.append((args, kwargs))
-            raise FakeHTTPError("connection dropped after request")
-
-        self.ns["httpx"].post = uncertain_post
-        self.ns["_slskd_candidate_start_state"] = lambda *args, **kwargs: None
-        first_fallback = {
-            "username": "peer-one",
-            "folder": "Album",
-            "files": [{"filename": "Album/01.flac", "size": 4}],
-            "quality_summary": ["FLAC"],
-        }
-        second_fallback = {
-            "username": "peer-two",
-            "folder": "Album",
-            "files": [{"filename": "Album/01.flac", "size": 4}],
-        }
-        current = {
-            "username": "original-peer",
-            "files": [{"filename": "Album/01.flac", "size": 4}],
-            "fallback_candidates": [first_fallback, second_fallback],
-        }
-
-        result = self.ns["_discovery_switch_to_next_source_locked"](
-            "Artist", "Album", current, {}, Path("/downloads"), {}, "stalled"
-        )
-
-        self.assertEqual(result["username"], "peer-one")
-        self.assertEqual(len(posts), 1, "must not queue peer-two after an ambiguous response")
-        self.assertEqual(len(self.ns["saved_jobs"]), 1)
-        args, kwargs = self.ns["saved_jobs"][0]
-        self.assertEqual(args[2], "downloading")
-        self.assertEqual(kwargs["candidate"]["username"], "peer-one")
-        self.assertEqual(args[3]["queue_error"], "FakeHTTPError")
-        self.assertEqual(kwargs["candidate"]["fallback_candidates"], [second_fallback])
 
     def test_explicit_get_reactivates_safely_dismissed_job(self):
         job = {

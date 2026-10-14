@@ -108,6 +108,13 @@ python -m unittest discover -s tests -v
 - PR #28 was squash-merged to `main` at `686fb393a178fe27f3806ecd5ce2138b026291cc`. No workflow runs were returned for the merge commit at closeout; CI evidence above is for the exact PR head, not the merge commit.
 - No local test execution or live/manual runtime checks were performed during closeout.
 
+## Source-switch orchestration extraction — current branch
+
+- Moved the existing locked source-switch implementation into `acquisition_source_switch.py` with injected config, lifecycle, cleanup, HTTP, candidate-start, status, and persistence dependencies. `navidrome_server.py` retains the compatibility wrapper; the caller still owns dismissal/transition locking.
+- Added direct-import tests for uncertain queue outcome (monitor the same peer, never queue another), cleanup refusal before queue, no fallback, failed fallback cleanup stopping the loop, and confirmed fallback persistence.
+- Exact-head CI pending: syntax/acquisition safety, full unit suite and Docker build, runtime smoke, and validation-only multi-architecture build must all pass before merge.
+- No live slskd interaction or production cleanup is claimed.
+
 ## Interrupted-import recovery domain extraction — current branch
 
 - Moved `_discovery_reconcile_interrupted_import` into `acquisition_recovery.py` with injected state, path, matcher, persistence, clock, JSON, and move dependencies. The legacy MCP function remains a compatibility adapter.

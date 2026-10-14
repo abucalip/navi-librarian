@@ -578,3 +578,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four required workflows: syntax/acquisition safety `38601516322`, Docker packaging/full unit suite/image build `38601516096`, runtime smoke `38601516565`, and validation-only multi-architecture image build `38601516203` (publishing paused). Final diff reviewed; GitHub reported mergeable and no review submissions/inline threads. Squash-merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`.
 - Verification boundary: no production filesystem recovery, live service interaction, publication, deployment, or production runtime verification is claimed.
 - Next priority: extract source-switch orchestration behind injected dependencies, preserving cleanup failure as a hard stop and uncertain queue outcomes as monitored rather than retried.
+
+## 2026-10-14 — Source-switch orchestration extraction
+
+- Branch `refactor/acquisition-source-switch-domain` starts from current main after PR #55.
+- Extracted the locked source-switch implementation to `acquisition_source_switch.py` with injected service dependencies. Kept the legacy wrapper and caller-owned transition lock; Docker packaging updated.
+- Migrated the ambiguous-queue regression out of the AST harness and added direct-import tests for cleanup refusal, no fallback, failed fallback cleanup, and successful fallback persistence.
+- Exact-head CI pending. No live slskd or production cleanup is claimed.

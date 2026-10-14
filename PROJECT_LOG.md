@@ -56,3 +56,9 @@
 - Final exact PR head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed syntax/acquisition safety `38601516322`, Docker packaging/full unit suite/image build `38601516096`, runtime smoke `38601516565`, and validation-only multi-architecture build `38601516203` (publishing paused). PR #55 was squash-merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30` after complete diff review; no review submissions or inline threads were present.
 - No production filesystem recovery, live service interaction, publication, deployment, or production runtime verification is claimed.
 - Next: extract source-switch orchestration behind injected dependencies, preserving cleanup failure as a hard stop and uncertain queue outcomes as monitored rather than retried.
+
+## 2026-10-14 — Direct-import source-switch orchestration
+
+- Extracted the source-switch loop into `acquisition_source_switch.py` behind injected config, lifecycle, cleanup, HTTP, candidate-start, status, and persistence dependencies. The legacy wrapper remains.
+- Moved the ambiguous-queue test out of the AST harness and added direct tests for cleanup hard stops, no-fallback status, failed fallback cleanup, and successful fallback persistence. Docker packaging updated.
+- Exact-head CI pending. No live slskd interaction, production cleanup, publication, or deployment is claimed.
