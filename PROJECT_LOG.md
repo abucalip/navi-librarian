@@ -1,3 +1,11 @@
+## 2026-10-14 — Acquisition transition guard extraction proposed
+
+- Branch: `refactor/acquisition-transition-guard`, based on current GitHub main after PR #60 merge.
+- Extracted the dismissal-serialized source-switch guard into `acquisition_orchestration.py`; the legacy server function remains a compatibility adapter.
+- Added direct-import regression tests for critical-section ordering, refusal to switch after dismissal, return-value preservation, and exception propagation.
+- Safety boundary: both the dismissal check and callback remain under the existing shared transition lock. No live queue, cleanup, persistence, or filesystem behavior was changed.
+- Exact-head CI and final review are pending. No local test execution, live slskd test, publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-14 — PR #59 merged: acquisition state persistence
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/59
