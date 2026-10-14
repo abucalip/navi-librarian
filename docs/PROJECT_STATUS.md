@@ -1,6 +1,6 @@
 ## 2026-10-14 — Front-end ownership transferred to ZCode
 
-- ZCode is now the designated front-end implementation owner; root instructions live in `ZCODE.md` (the former `CLAUDE.md` has been retired).
+- ZCode is now the designated front-end implementation owner; root instructions live in `ZCODE.md`.
 - ZCode may change only `static/app.css`, `static/app.js`, `static/login.css`, `static/login.js`, `app/templates/*.html`, and narrowly scoped UI tests/fixtures unless the project owner explicitly approves a scope expansion.
 - Backend/domain/security/API behavior, release controls, cross-layer integration, merge decisions, publishing, deployment, and final project-level verification remain assistant-owned.
 - Initial ZCode task: audit the existing UI and deliver one focused visual-quality improvement using Impeccable guidance where available. Preserve product behavior; provide a PR with before/after screenshots and exact-SHA test evidence. No frontend task has been implemented or verified by this documentation update.
