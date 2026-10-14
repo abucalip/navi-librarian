@@ -26,15 +26,6 @@ class FakeHTTPError(Exception):
     pass
 
 
-def _queue_source(namespace, base_url, headers, username, selected_files):
-    response = namespace["httpx"].post(
-        f"{base_url}/api/v0/transfers/downloads/{username}",
-        headers=headers, json=selected_files, timeout=12,
-    )
-    response.raise_for_status()
-    return response
-
-
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
