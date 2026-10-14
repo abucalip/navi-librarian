@@ -1,6 +1,6 @@
 ## 2026-10-15 — slskd search polling extraction (verification pending)
 
-- Direct-import tests exercise query fallback when a completed exact query has no payload and the wait behavior when response/file counts arrive before peer file lists.
+- Direct-import tests exercise query fallback when a completed exact query has no payload, delayed peer payloads after response/file counts, legacy 404/405 endpoint compatibility, and propagation of unexpected HTTP errors.
 - Keep the AST-harness end-to-end retry case to verify coordinator output/diagnostics; do not remove it solely because the low-level polling module has direct tests.
 - Verify 15s/6s slskd search timeouts, 18s/8s per-query polling budgets, 45s overall deadline, 0.5s completed-without-payload grace, 0.75s polling interval, 404/405 compatibility handling, peer payload deduplication, and error propagation remain unchanged.
 - Required before merge: focused polling/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on exact final PR head. No test pass is claimed before evidence is observed.
