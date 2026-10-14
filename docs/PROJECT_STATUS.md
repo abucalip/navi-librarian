@@ -1,3 +1,14 @@
+## 2026-10-14 — PR #64 merged: queue dismissal test migration
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/64
+- **Tested PR head:** `3bde365e43acbe1cc95f68d7014d899046e735f6`; **squash merge:** `1596161aa525896d43c37c85533e8056a742439b`.
+- Removed the redundant dismissed-queue-refusal case, adapter shim, and now-unused HTTP queue helper from the AST-based safety harness. Equivalent direct-import coverage remains in `tests/test_acquisition_orchestration.py` against `queue_candidate_unless_dismissed`, including dismissal refusal, lock ordering, return propagation, and exception behavior.
+- All four required workflows passed on the exact final PR head: syntax `38636360130`, Docker packaging/full unit suite `38636360145`, container runtime smoke `38636360164`, and validation-only multi-architecture image `38636360139` (publishing paused).
+- Test-only change; no production behavior or safety checks changed. No local test run, live slskd interaction, production filesystem operation, publication, deployment, or production runtime verification is claimed.
+- **Next:** continue the acquisition coordination/test-migration audit, selecting the next AST-coupled case only when direct-import tests can preserve or improve coverage.
+
+---
+
 ## 2026-10-14 — Acquisition queue guard test migrated
 
 - Continued the acquisition safety-test migration after PR #62. Removed the AST-harness case for dismissed queue refusal and its injected queue adapter because `tests/test_acquisition_orchestration.py` already tests the actual `queue_candidate_unless_dismissed` implementation directly, including lock ordering, dismissed refusal, return propagation, and exception propagation.

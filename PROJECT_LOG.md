@@ -1,3 +1,11 @@
+## 2026-10-14 — PR #64 merged: queue dismissal test migration
+
+- PR #64 `test: migrate queue dismissal regression from AST harness` was squash-merged to `main` at `1596161aa525896d43c37c85533e8056a742439b`; exact tested PR head `3bde365e43acbe1cc95f68d7014d899046e735f6`.
+- Removed the redundant AST queue-dismissal case, its adapter shim, and the now-unused HTTP queue helper. Equivalent direct-import coverage remains in `tests/test_acquisition_orchestration.py` for dismissed refusal, shared-lock ordering, return propagation, and exception propagation.
+- All four required workflows passed on the exact final head: syntax `38636360130`, Docker packaging/full unit suite/build `38636360145`, container runtime smoke `38636360164`, and validation-only multi-architecture build `38636360139` (publishing paused).
+- Test-only change; no separate local test run, live slskd, production filesystem operation, publication, deployment, or production runtime verification is claimed.
+- Next: continue the highest-priority acquisition coordination/test migration audit, preserving every safety invariant and direct-import regression.
+
 ## 2026-10-14 — Acquisition queue guard test migration
 
 - Branch `test/migrate-queue-dismissal-regression` starts from current GitHub `main` after PR #62 and the ZCode ownership handoff.
