@@ -5973,7 +5973,8 @@ def restart_server() -> str:
 import os, signal, socket, subprocess, sys, time
 script, pid_text, port_text, log_path = sys.argv[1:]
 pid, port = int(pid_text), int(port_text)
-with open(log_path, "a", buffering=1) as log:    log.write(f"Restart requested for PID {pid} on port {port}\\n")
+with open(log_path, "a", buffering=1) as log:
+    log.write(f"Restart requested for PID {pid} on port {port}\\n")
     time.sleep(2)
     try:
         os.kill(pid, signal.SIGTERM)
