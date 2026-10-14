@@ -1,3 +1,11 @@
+## 2026-10-15 — AST audit finding and watcher-start concurrency coverage
+
+- The remaining lifecycle AST cases are integration tests for coordinator locking, persisted state, reactivation, and recovery. Keep them until a replacement exercises the same end-to-end boundary; helper-only policy tests are not equivalent.
+- Added a direct-import race regression for simultaneous watcher-start calls, complementing existing sequential duplicate, dismissal, persistence-failure, and thread-start-failure tests.
+- Pending exact-head validation. Do not infer success from code review or compilation; require focused/full tests and all four required CI workflows before merge.
+
+---
+
 ## 2026-10-15 — Session closeout and next test-audit boundary
 
 - Reconciled against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`; PR #82's documentation closeout is merged. PR #76 polling extraction and PR #78 dismissal-serialized import guard remain merged with exact-head CI evidence documented below.
