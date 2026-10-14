@@ -1,9 +1,18 @@
-## 2026-10-14 — Discovery API router extraction in progress
+## 2026-10-14 — PR #35 merged: discovery API router
+
+- PR #35 was squash-merged to `main` at `d61162b29c6f0cccc97aefe9c779567e671651b2` from exact PR head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`.
+- Extracted recommendations, discovery-list retrieval, refresh, and feedback routes into `app/api/discovery.py`; added `tests/test_discovery_routes.py`; registered the router from `app/main.py`.
+- All four required exact-head workflows passed: Python syntax/full unit tests (run `38487647938`), container runtime smoke (`38487647898`), Docker packaging (`38487647913`), and validation-only multi-architecture (`38487647952`). No local test run is claimed.
+- This API-only extraction has no intended UI contract change; no manual browser test was required. No image publication, deployment, or production runtime verification occurred.
+- Next roadmap task: separate metadata routes/services (artist bio, artwork, album details/year and external HTTP/cache helpers) in a focused, regression-tested PR.
+- GHCR publishing remains disabled until the modularization roadmap is complete and release is explicitly authorized.
+
+## Historical note — Discovery API router extraction
 
 - Branch: `refactor/discovery-api-router`, created from GitHub `main` after PR #34 merged at `3aac576c42465420b9c2144c2cd2f4377c5e0ff1`.
 - Objective: move `/api/recommendations`, `/api/discovery/{list_name}`, `/api/discovery/{list_name}/refresh`, and `/api/discovery/feedback` from `app/main.py` to `app/api/discovery.py`, preserving route contracts and delegation to existing domain functions.
 - Added direct-import regression tests in `tests/test_discovery_routes.py` for route inventory, defaults, validation, filtering, feedback serialization, payload mapping, and sanitized errors.
-- PR #35 is open against `main`. The complete eight-file diff has been reviewed; no intended UI contract change was found. The GitHub workflow/status lookup returned no runs or checks for the observed head `1700fee4332876fe0478f88a78f65c4f752df5ff`, so automated validation remains unverified and merge is blocked pending exact-head CI evidence. No tests are claimed as run locally.
+- PR #35 has since been merged after all four required workflows passed on exact head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`; see the closeout entry above. No local test run is claimed.
 - Publishing remains disabled until the modularization roadmap is complete and separately authorized. No image publication, deployment, or production runtime verification.
 
 ## 2026-10-14 — PR #34 merged: acquisition API router
