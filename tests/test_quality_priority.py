@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVER_SOURCE = ROOT / "navidrome_server.py"
-APP_SOURCE = ROOT / "app" / "main.py"
+APP_SOURCE = ROOT / "static" / "app.js"
 
 
 def load_quality_helpers(db_path, music_dir):
