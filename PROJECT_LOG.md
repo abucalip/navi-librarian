@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition lifecycle policy extraction started (PR #47)
+
+- Merged PR #46 at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four workflows succeeded on exact head `5b050abac235d729df01cc04703ce70140398be6`.
+- Created `refactor/acquisition-lifecycle-domain` from current GitHub `main`. Added `acquisition_lifecycle.py` with direct tests for resume policy, cleanup classification, skip validation, queue failure classification, and fallback candidate normalization; selected legacy MCP functions delegate to the extracted policy.
+- This is a bounded first extraction, not the complete lifecycle/orchestration migration requested. Watcher, database state, destructive cleanup, source switching, recovery, and top-level acquisition orchestration remain in `navidrome_server.py`; AST-coupled safety tests remain until each real implementation is moved.
+- Verification is pending the branch's exact-head CI. No local test execution, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-14 — Read-only audit: remaining `navidrome_server.py` dependencies
 
 - Audited GitHub `main` at `edc6239c0a01573e1eaa3161a4485ca03a9851da`; the legacy module was approximately 6,179 lines. This was a source/documentation inspection only: no application changes or tests were run.

@@ -1,3 +1,9 @@
+## Acquisition lifecycle policy module (PR #47)
+
+- Direct-import tests in `tests/test_acquisition_lifecycle.py` cover monitor-recovery eligibility, conservative cleanup requirements, skip-request rejection states, queue-failure retry classification, and fallback candidate/payload normalization.
+- Preserve the invariant that ambiguous queue outcomes remain monitored rather than triggering duplicate source retries; only explicit peer-level rejections may retry another source.
+- These tests cover the extracted policy seam only. They do not replace the remaining AST-based orchestration/safety cases; migrate those as the watcher, source-switch, cleanup, and recovery implementations move into domain modules.
+
 ## Legacy-server dependency audit — test implications (2026-10-14)
 
 - The read-only audit found `tests/test_acquisition_safety.py` extracts selected function bodies from `navidrome_server.py` using AST parsing and executes them in a stub namespace after stripping MCP decorators.
