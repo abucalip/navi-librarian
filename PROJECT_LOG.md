@@ -1,8 +1,8 @@
-## 2026-10-15 — Acquisition lifecycle AST audit and watcher-start race test
+## 2026-10-15 — PR #84 verification closeout
 
-- Reviewed the remaining AST lifecycle cases against direct-import coverage. Retained all coordinator tests because each checks a distinct integration boundary: duplicate acquisition search race, import persistence before filesystem work, incomplete saved source details, dismissed-job reactivation/refusal, and stale watcher recovery without requeue.
-- Added a threaded regression to tests/test_acquisition_watcher.py that races two calls to start_import_watcher and expects exactly one active reservation, persisted job, and started thread.
-- Branch: test/acquisition-watcher-start-race, based on GitHub main 2264fcd76d2260c858f2bc34211fe7012df69a01. Focused/full test results and four required workflows are pending; no verification is claimed yet. No image publication, deployment, or production runtime verification.
+- Exact PR head `398486476aacdbbefefeaee5cb79182cc0835fb8` passed all four required workflows: syntax/acquisition safety run 38656927551, Docker packaging/full unit suite run 38656927436, runtime smoke run 38656927801, and validation-only multi-architecture image run 38656927516.
+- Full unit-test and acquisition safety regression steps passed. Diff reviewed: threaded watcher-start race test plus documentation only; no production changes.
+- Merge pending final status confirmation. No image publication, deployment, or production runtime verification.
 
 ---
 
