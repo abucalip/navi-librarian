@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #78 merged: dismissal-serialized import guard
+
+- PR #78 squash-merged at `5d638c7adf5a42fdac8052cb4fc223236564cd72` from exact tested head `e6a609ca7381d0751d529b52f55aeebd56d76661`.
+- Extracted the existing dismissal check + import callback guard into `acquisition_orchestration.import_source_unless_dismissed`, with the transition lock held for the full callback. Filesystem safety and persistent status semantics were not moved or changed.
+- Added direct tests for lock ordering, dismissal refusal, result propagation, and exceptions; retained the status-persistence failure integration test.
+- All four required workflows passed on the exact head: syntax `38653493244`, Docker packaging/full unit suite `38653493312`, runtime smoke `38653493285`, and image validation with publishing paused `38653493279`. Full suite: 186 tests passed.
+- No live slskd, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — Import dismissal guard extraction in progress
 
 - Branch `refactor/import-dismissal-guard`, based on main after PR #77.
