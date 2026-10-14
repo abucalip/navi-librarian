@@ -1,3 +1,12 @@
+## 2026-10-15 — Candidate extraction direct-import migration (PR #73 preparation)
+
+- The Tinariwen/Idrache folder-variant candidate grouping/ranking scenario is now a direct-import regression against `slskd_search.extract_candidates`.
+- Preserve assertions for all four folder variants, twelve unique expected tracks, clear-match eligibility, and both FLAC tier classifications.
+- Retain AST-harness coverage for orchestration retry/wait and lifecycle coordination, since this migration does not replace those integration boundaries.
+- Required before merge: focused candidate/search tests, full unit suite, syntax checks, final diff review, and all four required workflows on the exact final PR head. No test pass is claimed before evidence is observed.
+
+---
+
 ## 2026-10-14 — Candidate extraction direct-import migration (PR #73 pending)
 
 - Move the existing source-folder candidate grouping/ranking scenario into `tests/test_slskd_candidates.py` and invoke the real `slskd_search.extract_candidates` implementation directly with real helper functions.
