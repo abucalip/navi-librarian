@@ -1,9 +1,18 @@
-## 2026-10-14 — Authentication security helper extraction in progress
+## 2026-10-14 — PR #37 merged: authentication security primitives
+
+- PR #37 was squash-merged to `main` at `cb6b1d1d17a6ea3b4dc0099a7588b8752b5d84b3` from exact PR head `192b084850ecbe0137b64b3dae9d07e0471198b4`.
+- Added `app/security/auth.py` for persistent signing-secret loading, username/password validation, PBKDF2 digest, and signed-session creation/validation. `app/main.py` retains compatibility wrappers and keeps routes, cookies, throttling, settings access, and middleware unchanged.
+- Replaced AST-based auth tests with direct tests in `tests/test_app_auth.py`, including signing-secret persistence, permissions, and invalid-secret handling.
+- All four required workflows passed on exact head: syntax/full tests (`38488744726`), Docker packaging/full tests (`38488744684`), runtime smoke (`38488744607`), and validation-only multi-architecture (`38488744643`). No local test run is claimed.
+- Next auth step: map and test setup/login/logout routes, throttling, cookie policy, and middleware/public-path behavior before extracting routes or app assembly.
+- No image publication, deployment, or production runtime verification; GHCR publishing remains disabled pending roadmap completion and explicit authorization.
+
+## Historical note — Authentication security helper extraction
 
 - Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 merged.
 - Objective: separate cryptographic/session primitives and persistent signing-secret file handling into `app/security/auth.py` while leaving HTTP routes, settings persistence access, cookie policy, throttling, and middleware in `app/main.py` unchanged.
 - Replaced AST-based tests in `tests/test_app_auth.py` with direct unit tests for validation, PBKDF2, signed sessions, expiry/tampering/user binding, secret persistence, POSIX permissions, and invalid-secret failure.
-- Exact-head CI, complete diff review, and PR creation pending. No local tests are claimed as run.
+- PR #37 has since been merged after all four required workflows passed on the exact head; see the closeout entry above. No local tests are claimed as run.
 - Publishing remains disabled; no image publication, deployment, or production runtime verification.
 
 ## 2026-10-14 — PR #36 merged: metadata API router
