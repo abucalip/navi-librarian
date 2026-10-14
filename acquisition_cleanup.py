@@ -357,4 +357,3 @@ def clean_acquisition_source(
         return False
 
     return True
-    return True
