@@ -617,13 +617,20 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
     def test_duplicate_named_folders_are_rejected_as_ambiguous(self):
+        self.track.unlink()
+        self.folder.rmdir()
         nested_a = self.root / "one" / "Album"
         nested_b = self.root / "two" / "Album"
         nested_a.mkdir(parents=True)
         nested_b.mkdir(parents=True)
+        track_a = nested_a / "01.flac"
+        track_b = nested_b / "01.flac"
+        track_a.write_bytes(b"1234")
+        track_b.write_bytes(b"1234")
         result, calls = self.clean([[]])
         self.assertFalse(result)
-        self.assertTrue(self.track.exists())
+        self.assertTrue(track_a.exists())
+        self.assertTrue(track_b.exists())
         self.assertEqual(calls, [])
 
     def test_symlinked_album_folder_is_rejected_without_touching_target(self):
