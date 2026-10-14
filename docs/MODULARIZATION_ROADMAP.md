@@ -87,3 +87,10 @@ Domain extractions through PR #30 and the route/frontend stages through PR #41 a
 ## Stage 7 — FastAPI route separation: settings routes
 
 PR #33 extracts settings handlers to app/api/settings.py and the shared response adapter to app/api/utils.py. The app.main.parse_result symbol remains available as an imported compatibility name. Regression coverage in tests/test_settings_routes.py checks all 12 endpoint/method pairs, payload mapping, defaults, validation failures, and sanitized errors. Remaining route groups and later MCP retirement stay separate roadmap items; do not remove the legacy server until callers and compatibility are verified.
+
+
+## Acquisition orchestration — follow-up in progress (stacked on PR #47)
+
+The next extraction adds `acquisition_orchestration.py` as the owner of the persisted manual source-skip transition. It accepts injected initialization, lock, database connection, key normalization, lifecycle policy, clock, and JSON dependencies. `navidrome_server.py` retains the public MCP function as a compatibility adapter. Direct-import tests exercise successful persistence and rejected/missing-state cases without initializing MCP.
+
+This is one bounded orchestration slice, not the full migration. Watcher loops, source switching, safe cleanup execution, interrupted-import reconciliation, and top-level acquire coordination remain to be extracted next. The strict cleanup/import modules remain authoritative; this change does not weaken filesystem protections.
