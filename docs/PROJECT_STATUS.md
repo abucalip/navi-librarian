@@ -1,11 +1,11 @@
-## 2026-10-15 — Candidate extraction test migration (PR #73 preparation)
+## 2026-10-15 — PR #73 merged: candidate extraction test migration
 
-- Branch: `test/migrate-slskd-candidate-extraction`, based on current main after PR #72.
-- Moved the Tinariwen/Idrache candidate-folder grouping and ranking regression from the AST harness to `tests/test_slskd_candidates.py`, directly exercising `slskd_search.extract_candidates` with the production music-key, path-match, quality-tier, and track-identity helpers.
-- The test keeps four folder variants, twelve expected tracks, candidate eligibility and unique-track assertions, and FLAC tier evidence. Acquisition retry/wait and lifecycle coordination cases remain in the AST harness.
-- Focused/full tests, syntax checks, exact-head four-workflow CI, and final diff review are pending; no test pass is claimed.
-- PR #72 is merged at `6c6157a8238691b18d2209ea2d2e1306385ec9a2`; its four required workflows passed on exact head `17be72e52b39e63cad63391fb2c4e63ea55d3c26`.
-- Next: validate this test migration, then assess coordinator extraction only if direct tests can preserve race, persistence, cancellation, and recovery guarantees.
+- PR #73: https://github.com/abucalip/navi-librarian/pull/73
+- Tested PR head: `a33772ca1da0b6628da490b69f1dc305b6794de3`; squash merge commit: `df2f79b3d18df7d13484f7e3b5e7f550a39323d3`.
+- Moved the Tinariwen/Idrache candidate grouping/ranking scenario into `tests/test_slskd_candidates.py`, directly exercising `slskd_search.extract_candidates` with the production music-key, path-match, quality-tier, and track-identity helpers. Removed the now-empty AST test class and retained retry/wait and lifecycle coordination tests.
+- All four required workflows passed on the exact tested head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- Initial CI on an earlier head caught the empty test class left after moving its only test; the class was removed and corrected-head CI passed. No local test run, live slskd interaction, image publication, deployment, or production runtime verification is claimed.
+- Next: inspect the top-level acquisition coordinator for the smallest safe extraction seam, preserving cancellation/cleanup refusal, conditional persistence transitions, shared-lock behavior, and uncertain queue outcomes.
 
 ---
 
