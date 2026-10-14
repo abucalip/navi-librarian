@@ -1,3 +1,11 @@
+## Legacy-server dependency audit — test implications (2026-10-14)
+
+- The read-only audit found `tests/test_acquisition_safety.py` extracts selected function bodies from `navidrome_server.py` using AST parsing and executes them in a stub namespace after stripping MCP decorators.
+- Treat these as real safety/lifecycle regression tests, not disposable test scaffolding. When extracting functions, migrate cases to direct imports of the new domain module and ensure they exercise the actual implementation.
+- Keep coverage for acquisition state transitions, dismissal/cleanup, candidate/source failover, completed-folder matching, safe imports, traversal/symlink rejection, ambiguous targets, no-overwrite behavior, and rollback. Add unsafe-failure cases alongside success cases.
+- Direct-import tests already exist for acquisition completion/import, slskd search/quality, discovery persistence/refresh/recommendation rules, and extracted API routers. Their existence does not prove the remaining orchestration is independent of the legacy server.
+- Audit verification only: GitHub source/docs inspected; no tests were run. No CI pass is claimed for audited main SHA `edc6239c0a01573e1eaa3161a4485ca03a9851da`.
+
 ## PR #44 — acquisition dismissal diagnostics: manual report (2026-10-14)
 
 - Tested exact PR head `4c505423afef8c6959063ddea7e5672a0b9894ef` in the isolated local helper environment on macOS 26.2 arm64, Python 3.12.14, port 8089, per-commit app data, sandbox music/download paths, and slskd disabled by default.
