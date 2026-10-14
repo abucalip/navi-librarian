@@ -6,7 +6,6 @@ import threading
 import unittest
 from pathlib import Path
 
-from acquisition_cleanup import clean_acquisition_source
 from acquisition_completion import match_completed_album_files, safe_folder_name
 from acquisition_recovery import reconcile_interrupted_import
 
