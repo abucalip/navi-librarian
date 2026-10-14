@@ -347,3 +347,10 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 - Direct-import regression tests in `tests/test_acquisition_watcher.py` exercise dismissal and interrupted-import early exits, strict separation between transfer-completion evidence and verified-folder import, and passing only the folder returned by the existing completion matcher into the existing safe import coordinator.
 - The legacy `_discovery_watch_and_import_album` name remains as an adapter. Watcher state, slskd access, folder matching, import coordination and status updates are injected; existing cleanup, source-switch and import modules remain the safety authorities.
 - Required verification: focused watcher and acquisition safety tests, full `python -m unittest discover -s tests -v`, syntax check including `acquisition_watcher.py`, then all four exact-head CI workflows. Do not infer real slskd or production filesystem behavior from unit tests.
+
+
+### Acquisition watcher extraction — PR #57
+
+- First CI attempt failed one test assertion: status details are passed as the fourth positional argument, not keyword arguments. The test was corrected.
+- Corrected head `6793c339464c9d573c02f5e7dc91d15b5f568348`: syntax/acquisition safety run `38604931720`, Docker packaging/full suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture build `38604932002` all succeeded. Publishing remains paused.
+- Because this test-plan/status/log update creates a new PR head, all four workflows must pass again on the final updated SHA before merge. No separate local test run or live slskd/production filesystem verification is claimed.
