@@ -521,3 +521,11 @@ Update this file at the end of every GitHub development session. Keep entries co
 - **Merge recommendation:** PR #33 is CI-ready but should follow PR #32, whose Docker image-content/runtime fix addresses a correctness gap on the base. Integrate PR #31's testing-gate documentation as part of this closeout. No PR was merged in this session; verify the exact head and checks again immediately before each merge.
 - **Not performed:** no image publication, deployment, or production runtime verification. Do not treat local app persistence or CI as production verification.
 - **Next:** reconcile/merge PR #32 and PR #31, then merge PR #33 if its head and checks remain valid. Run the complete manual checklist on the next UI-facing PR, explicitly recording performance and error/recovery results.
+
+
+## 2026-10-14 — Authentication route extraction and CI closeout (PR #39)
+
+- Added integration contract coverage in PR #38 (merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553`) for setup validation, login/logout, throttling, cookie attributes, session persistence/tampering, and public/protected paths.
+- PR #39 extracts auth status/setup/login/logout and the login page into `app/api/auth.py`; middleware and security primitives remain in their existing modules. Exact code head `a78272da8f82aa83716367aa7fcd7a43729267a7` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture build.
+- PR #39 is open/unmerged. Documentation updates in this closeout create a new PR head; exact-head CI must be checked again before merge. No local tests, manual browser testing, image publication, deployment, or production runtime verification were performed. Publishing remains disabled.
+- **Next action:** verify all required checks on the documentation-updated PR head and review mergeability before deciding to merge.
