@@ -1,3 +1,16 @@
+## 2026-10-14 — PR #59 merged: acquisition state persistence
+
+- **State:** Implemented, final diff reviewed, all four required workflows passed on exact final PR head, and squash-merged.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/59
+- **Branch / tested PR head:** `refactor/acquisition-state-store` / `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d`.
+- **Merge commit:** `730ae16e613f3962c488f87c8de54034db7463dd`.
+- **Implementation:** extracted SQLite acquisition-row save/list mechanics into `acquisition_state.py`; legacy server functions remain compatibility adapters. Docker packaging and architecture, roadmap, test plan, project status, and project log were updated.
+- **Regression coverage:** direct-import tests cover save/list round-trip, normalized identity, preservation of candidate/settings/quality metadata on partial updates, invalid identity rejection, and malformed stored JSON.
+- **Safety boundary:** shared transition locking, conditional dismissed-state checks, secondary feedback projection, dismissal/import coordination, and filesystem safety remain in `navidrome_server.py`.
+- **Exact-head CI on `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d`:** compile run `116019930318`, full test/build run `116019925188`, container smoke run `116019924747`, and validation-only multi-architecture run `116019926066` all succeeded. The corrected code head previously ran 180 tests; the docs-updated final head's test/build workflow also succeeded. Publishing remains paused.
+- **Limits:** no separate assistant-local test run, live slskd test, production filesystem action, image publication, deployment, or production runtime verification is claimed.
+- **Next:** inspect current GitHub main, open PRs, and the updated roadmap before selecting the next priority; keep correctness/safety and exact-head verification ahead of routine modularization.
+
 ## 2026-10-14 — Acquisition state persistence extraction (verification update)
 
 - PR #59 branch `refactor/acquisition-state-store`; corrected code head `29c5e6a460f1f61296680af7b1230fd5561496b4`.
