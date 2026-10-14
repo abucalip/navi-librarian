@@ -1,3 +1,11 @@
+## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
+
+- Reconciled documentation against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`. PR #76 (slskd polling) and PR #78 (dismissal-serialized import guard) are merged; exact tested heads, merge SHAs, workflow run IDs, and verification limits remain recorded in their closeout entries.
+- This session closeout is documentation-only: no application code changed, no tests were run, and no additional CI result is claimed. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Next action: audit duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation/refusal, and stale watcher recovery for safe direct-import test seams. Retain unique coordinator, lock/race, persistence-transition, and recovery integration assertions.
+
+---
+
 ## 2026-10-15 — PR #78 merged: dismissal-serialized import guard
 
 - PR #78 squash-merged at `5d638c7adf5a42fdac8052cb4fc223236564cd72` from exact tested head `e6a609ca7381d0751d529b52f55aeebd56d76661`.
@@ -19,30 +27,12 @@
 
 ---
 
-## 2026-10-15 — slskd search polling extraction in progress
-
-- Branch `refactor/slskd-search-polling`, based on main after PR #74.
-- Extracted progressive slskd query/poll/wait mechanics into `slskd_search_polling.py` with injected HTTP client, monotonic clock, sleep, search-ID generator, and payload-normalizer dependencies.
-- Added direct-import tests for broad-query fallback and delayed peer payloads. Kept the AST-based end-to-end retry case as coordinator integration coverage.
-- Updated Docker packaging and syntax workflow for the new module. Focused/full tests, final diff review, and exact-head CI remain pending; no tests are claimed passed.
-
----
-
 ## 2026-10-15 — PR #73 merged: candidate extraction direct-import test
 
 - PR #73 squash-merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3`; exact tested PR head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
 - Migrated the Tinariwen/Idrache folder-variant candidate grouping/ranking scenario from `tests/test_acquisition_safety.py` to `tests/test_slskd_candidates.py`, exercising the extracted search algorithm with production helpers. No production code changed.
 - All four required workflows passed on that exact head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
 - No standalone local test command, live slskd interaction, publication, deployment, or production runtime verification is claimed.
-
----
-
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
-
-- Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72 merge.
-- Move the Tinariwen/Idrache source-folder candidate grouping/ranking regression from the AST harness to a direct-import test of `slskd_search.extract_candidates`, injecting the real music-key, album-path matcher, quality-tier classifier, and track-identity helpers.
-- This is test-only: the production adapter and implementation are unchanged. Retry/wait and lifecycle-coordination scenarios remain in the AST harness.
-- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending. No test pass is claimed.
 
 ---
 
