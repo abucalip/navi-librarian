@@ -9,10 +9,11 @@ Repository: `abucalip/navi-librarian`.
 Improve the Librarian UI's clarity, speed, accessibility, responsive behavior, and reliability while preserving the established API, authentication, and domain behavior. The product helps a user explore their Navidrome library and listening taste, discover music, and request acquisitions through existing backend services. Keep the interface smooth and stable; do not duplicate discovery, recommendation, acquisition, or import logic in browser code.
 
 Before starting a task:
-1. Read this file and the relevant sections of `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/TEST_PLAN.md`.
-2. Inspect current GitHub `main`, open PRs, recent commits, and checks that affect your work.
-3. Inspect the relevant template, stylesheet, script, API caller, and tests before deciding on an implementation.
-4. Write down a narrow objective and acceptance criteria in your own working notes or PR description.
+1. Read this file and **`docs/FRONTEND_DESIGN_GUIDE.md`**, the canonical visual-design and prioritized-backlog reference. Do not rely on PR comments or agent memory as a substitute.
+2. Read the relevant sections of `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/TEST_PLAN.md`.
+3. Inspect current GitHub `main`, open PRs, recent commits, and checks that affect your work.
+4. Inspect the relevant template, stylesheet, script, API caller, and tests before deciding on an implementation.
+5. Write down a narrow objective and acceptance criteria in your own working notes or PR description, and identify the relevant design-backlog item.
 
 ## Files you may change
 

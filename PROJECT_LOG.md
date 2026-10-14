@@ -1,3 +1,12 @@
+## 2026-10-14 — Front-end design guide documentation in progress
+
+- Branch `docs/frontend-design-guide` starts from GitHub `main` at `c6911ea1c39af5520e68f3aa62a13eb737cd3b4a`, after PR #66 and its verification closeout.
+- Promoting the standing design instructions from the PR #66 comment into `docs/FRONTEND_DESIGN_GUIDE.md`; making the guide a mandatory read from root `AGENTS.md`; and linking it from development workflow and test-plan docs.
+- The canonical guide preserves the dark-grey/yellow/red identity, Barlow Condensed / IBM Plex Sans / IBM Plex Mono typography, Impeccable-first critique workflow, anti-patterns, accessibility/responsive expectations, front-end ownership boundaries, and a reconciled prioritized backlog. Login alignment remains completed; state craft is next.
+- Documentation-only change; no app behavior, API, auth, acquisition, safety, dependency, or deployment changes. Final PR head and actual verification results to be recorded at closeout. No tests or CI results are claimed at this stage.
+
+---
+
 ## 2026-10-14 — Queue failure classification test migration in progress
 
 - Branch `test/migrate-queue-failure-classification` starts from GitHub `main` at `23798189e058c97a2080c64ae6ad6468b0ce3645`.

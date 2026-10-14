@@ -1,3 +1,17 @@
+## Front-end design acceptance baseline (2026-10-14)
+
+Use [`FRONTEND_DESIGN_GUIDE.md`](FRONTEND_DESIGN_GUIDE.md) as the canonical visual-design specification and backlog for every UI-facing change. The following are verification gates, not claims that a particular change has passed:
+
+- Automated checks must pass on the exact PR-head SHA before manual browser verification.
+- Inspect the rendered UI on desktop and a narrow viewport with realistic artist/album names and artwork; check for overflow, layout shifts, and inaccessible controls.
+- Verify relevant hover, focus/keyboard, active, disabled, loading, empty, success, error, and recovery states. Record unsupported or unavailable scenarios as skips.
+- Inspect browser console, network requests, and server logs for relevant failures; verify existing login/setup and protected-route boundaries when assets or authentication-related UI are affected.
+- Use the documented isolated helper, sandbox music/download paths, and disabled slskd for ordinary UI checks. Never perform destructive acquisition actions against live user data without explicit authorization.
+- Include before/after screenshots for visual changes, summarize Impeccable guidance applied and rejected, and state the exact tested SHA. If the head changes after manual testing, retest or identify the earlier SHA explicitly.
+- Report implementation, automated testing, manual browser testing, merge, publication, deployment, and runtime verification separately.
+
+---
+
 ## Queue failure classification test migration — in progress (2026-10-14)
 
 - Removed two tests that compiled the thin `_slskd_queue_failure_action` adapter through the AST harness. The adapter delegates to `acquisition_lifecycle.queue_failure_action`.
