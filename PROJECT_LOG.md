@@ -1,3 +1,14 @@
+## 2026-10-14 — PR #44 local manual test report published
+
+- **PR:** [#44 — fix: diagnose acquisition dismissal cleanup refusals](https://github.com/abucalip/navi-librarian/pull/44)
+- **Exact tested head:** `4c505423afef8c6959063ddea7e5672a0b9894ef`.
+- **Environment:** macOS 26.2 arm64, Python 3.12.14, isolated port 8089, per-commit app data, sandbox music/download paths, slskd disabled by default.
+- **Report:** posted to the PR conversation. All listed manual acceptance items passed, including acquisition cards and Dismiss; all Dismiss attempts succeeded and the HTTP 409 did not recur.
+- **Interpretation:** manual UI smoke test passed, but the original failure remains unreproduced. No diagnostic stage was identified; no root-cause fix is confirmed. The report's last console detail was truncated and was not interpreted.
+- **CI:** all four required workflows were already successful on this exact head (syntax, Docker packaging/full unit suite, runtime smoke, validation-only multi-architecture image validation). No claim of a new local automated test run.
+- **Status:** PR remains draft/open and unmerged. Publishing/deployment/runtime verification not performed; publishing remains paused.
+- **Next action:** wait for the 409 to recur and capture its response body plus the matching stage-only server warning before proposing a targeted safety-preserving fix.
+ 
 ## 2026-10-14 — PR #41 merged: frontend asset extraction
 
 - **PR:** [#41 — refactor: extract frontend templates and static assets](https://github.com/abucalip/navi-librarian/pull/41).
