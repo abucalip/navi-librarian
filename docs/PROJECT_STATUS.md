@@ -519,3 +519,14 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Started a follow-up stacked branch, `refactor/acquisition-lifecycle-orchestration`, to move the persisted source-skip transition into `acquisition_orchestration.py` behind injected initialization, locking, database, normalization, lifecycle-policy, clock, and JSON dependencies. The legacy MCP function remains a compatibility adapter; direct-import regression tests cover accepted and rejected transitions.
 - Filesystem cleanup/import authorities and protections are unchanged. The watcher, source-switch, cleanup execution, interrupted-import recovery, and top-level acquire coordinator remain future extraction work.
 - Follow-up branch CI and review are pending. No local test execution, merge, publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-14 — Session closeout: acquisition orchestration follow-up PR #48
+
+- PR #47 exact-head CI is verified: all four required workflows passed on `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd` (syntax, Docker packaging/full unit suite, runtime smoke, and validation-only multi-architecture build).
+- Follow-up PR #48 is open as a draft: [refactor: extract persisted acquisition lifecycle orchestration](https://github.com/abucalip/navi-librarian/pull/48). Latest code head before this documentation update: `787244fdc702a2ceb4d33b550bb28eb249bdd48d`.
+- Extracted the persisted skip-source transition to `acquisition_orchestration.py` with injected persistence/runtime dependencies; preserved the existing MCP adapter and shared transition lock. Added direct-import regression tests and included the module in Docker packaging.
+- PR #48 exact-head workflow lookup returned no runs or status entries. Its CI and tests are therefore **pending/unverified**; do not infer success from PR #47. This documentation update will change the PR head and requires another exact-head CI check.
+- Remaining extraction: watcher loop, source switching and uncertain queue outcomes, cleanup execution, interrupted-import recovery, and top-level acquire coordination. Existing filesystem safety authorities were not changed.
+- No merge, publication, deployment, or production runtime verification. Publishing remains paused.
+- **Next action:** run and verify all required workflows on the final PR #48 head; fix any failures before review/merge or further extraction.
