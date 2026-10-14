@@ -26,7 +26,7 @@ class SlskdCandidateExtractionTests(unittest.TestCase):
         for index, folder in enumerate(folders):
             files = []
             for track_number, title in enumerate(tracks, 1):
-                item = {"filename": f"{folder}\\\\{track_number:02d} - {title}.flac", "size": 5000000}
+                item = {"filename": f"{folder}\\{track_number:02d} - {title}.flac", "size": 5000000}
                 if index == 0:
                     item.update({"sampleRate": 44100, "bitDepth": 16})
                 files.append(item)
