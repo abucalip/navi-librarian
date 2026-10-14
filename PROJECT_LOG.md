@@ -48,3 +48,9 @@
 - Final exact PR head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows: syntax/acquisition safety `38600688719`, Docker packaging/full unit suite/image build `38600688787`, runtime smoke `38600688814`, and validation-only multi-architecture image validation `38600688667` (publishing paused). PR #54 was squash-merged at `982e39122a401b8b68d75e38423dbb93711b4abd` after reviewing the complete diff; GitHub reported mergeable and no review submissions or inline threads.
 - No separate local test run, live slskd request, real production-folder deletion, publication, deployment, or production runtime verification is claimed. HTTP 409 remains deferred because it was not reproduced.
 - Next: extract source-switch/interrupted-import orchestration behind injected dependencies, preserving direct-import tests and every existing filesystem safety invariant.
+
+## 2026-10-14 — Direct-import interrupted-import recovery
+
+- Extracted the existing reconciliation algorithm into `acquisition_recovery.py`; injected the lock, dismissal/state readers, music root, folder sanitizer, strict completion matcher, persistence, clock, JSON, and move operation. Preserved the legacy adapter.
+- Moved four existing recovery cases out of `tests/test_acquisition_safety.py` and added a direct-import test for dismissed/non-importing states. Docker packaging updated.
+- CI on the final PR head is pending. No production filesystem recovery, live service interaction, publication, or deployment is claimed.
