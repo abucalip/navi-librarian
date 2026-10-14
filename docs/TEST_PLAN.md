@@ -1,4 +1,12 @@
-## 2026-10-14 — Completed import safety tests migrated to direct imports (PR pending)
+## 2026-10-14 — Candidate-start validation extraction (PR pending)
+
+- Direct-import tests now target `acquisition_candidate_start.candidate_start_state`; the AST harness no longer owns the traversal and multi-directory tests.
+- Coverage includes pre-lookup traversal rejection, mixed remote directories, active transfer recognition, queued transfer cancellation, and fail-closed handling of uncertain cancellation or transfer lookup.
+- Required before merge: run focused and full test suites, syntax/package checks, inspect the final diff, and verify all four required CI workflows on the exact final PR head. Do not infer test success from a successful build alone.
+
+---
+
+## 2026-10-14 — Completed import safety tests migrated to direct imports (PR #70 merged)
 
 - Removed the redundant `CompletedAlbumMatchingTests` cases from the AST-based `tests/test_acquisition_safety.py` harness. Equivalent or stronger coverage already exercises the production modules directly in `tests/test_acquisition_completion.py` and `tests/test_acquisition_import.py`.
 - The direct-import suites cover strict positive-size matching, Unicode/case and Windows path normalization, duplicate-basename ambiguity, symlink refusal, collision-suffix matching, exact folder diagnostics, unrelated-file preservation, destination no-overwrite, storage identity mismatch, reserved manifest rejection, and rollback after a partial move.
