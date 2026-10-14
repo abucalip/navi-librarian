@@ -6,6 +6,7 @@
 - Focused/full tests, exact-head CI, and final diff review are pending; no tests are claimed passed.
 
 
+
 ---
 
 ## 2026-10-14 — PR #71 merged: candidate-start validation extraction

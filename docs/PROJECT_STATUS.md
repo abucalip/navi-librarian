@@ -7,6 +7,7 @@
 - Next: verify that the new direct-import tests pass and inspect the complete diff before considering further AST migration.
 
 
+
 ---
 
 ## 2026-10-14 — PR #71 merged: candidate-start validation extraction

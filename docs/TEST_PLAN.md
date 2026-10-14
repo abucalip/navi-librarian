@@ -5,6 +5,7 @@
 - Required before merge: focused and full suite, syntax checks, all four required workflows on exact final PR head, and complete diff review. No test success is claimed before evidence is observed.
 
 
+
 ---
 
 ## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)

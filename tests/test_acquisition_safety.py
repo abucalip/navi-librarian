@@ -9,6 +9,7 @@ import tempfile
 import threading
 import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
+from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 
 from acquisition_completion import (
     filename_key as _module_filename_key,
@@ -57,6 +58,7 @@ def load_helpers():
 
     namespace = {
         "Path": Path,
+        "_module_candidate_start_state": _module_candidate_start_state,
         "_acquisition_lifecycle": _acquisition_lifecycle,
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,

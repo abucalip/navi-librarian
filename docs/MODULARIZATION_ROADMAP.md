@@ -5,6 +5,7 @@
 - No production code changed. Verify focused/full tests and all four required workflows on the exact PR head before merging; inspect final diff for accidental coverage loss.
 
 
+
 ---
 
 ## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)

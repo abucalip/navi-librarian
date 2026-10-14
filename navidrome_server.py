@@ -9,6 +9,7 @@ import time
 import unicodedata
 import discovery_store
 import acquisition_lifecycle as _acquisition_lifecycle
+from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 import acquisition_orchestration
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -3567,87 +3568,15 @@ def _slskd_download_transfer_files(base_url, headers, username):
     return found
 
 def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
-    """Wait briefly for a queued candidate to start; cancel a stalled queue before fallback."""
-    from urllib.parse import quote
-    def normalized_remote_path(value):
-        value = str(value or "").replace("\\", "/")
-        parts = [part for part in value.split("/") if part not in ("", ".")]
-        if any(part == ".." for part in parts):
-            return None
-        return "/".join(parts).casefold()
-
-    expected = set()
-    expected_directories = set()
-    for item in candidate.get("files", []):
-        filename = str(item.get("filename") or "").replace("\\", "/")
-        normalized = normalized_remote_path(filename)
-        name = filename.rsplit("/", 1)[-1].casefold()
-        if not name or normalized is None or "/" not in normalized:
-            return None
-        expected.add(name)
-        expected_directories.add(normalized.rsplit("/", 1)[0])
-    if len(expected_directories) != 1:
-        return None
-    expected_directory = next(iter(expected_directories))
-
-    deadline = time.monotonic() + timeout
-    last_files = []
-    while time.monotonic() < deadline:
-        try:
-            tracked = _slskd_download_transfer_files(
-                base_url, headers, candidate["username"]
-            )
-        except (httpx.HTTPError, ValueError, TypeError):
-            return None
-        last_files = []
-        for item in tracked:
-            filename = str(item.get("filename") or "").replace("\\", "/")
-            name = filename.rsplit("/", 1)[-1].casefold()
-            if name not in expected:
-                continue
-            directory = item.get("_transfer_directory")
-            if directory is None:
-                normalized_filename = normalized_remote_path(filename)
-                if normalized_filename is None or "/" not in normalized_filename:
-                    return None
-                directory = normalized_filename.rsplit("/", 1)[0]
-            normalized_directory = normalized_remote_path(directory)
-            if normalized_directory is None:
-                return None
-            if normalized_directory == expected_directory:
-                last_files.append(item)
-        states = {str(item.get("state") or "").replace("_", "").casefold() for item in last_files}
-        if states.intersection({"inprogress", "succeeded", "completed", "transferring", "downloading"}):
-            return True
-        if states and states.issubset({"failed", "errored", "cancelled", "canceled"}):
-            return False
-        time.sleep(1)
-    if not last_files:
-        return False
-    queued = [
-        item for item in last_files
-        if str(item.get("state") or "").replace("_", "").casefold() in {"queued", "initializing", "requested"}
-    ]
-    if not queued:
-        return None
-    # Do not start another source while the first one's files remain queued.
-    # A failed cancellation is treated as uncertain rather than risking duplicate downloads.
-    for item in queued:
-        file_id = str(item.get("id") or item.get("filename") or "")
-        if not file_id:
-            return None
-        try:
-            cancelled = httpx.delete(
-                f"{base_url}/api/v0/transfers/downloads/{quote(str(candidate['username']), safe='')}/{quote(file_id, safe='')}",
-                headers=headers,
-                timeout=6,
-            )
-            if cancelled.status_code not in (200, 202, 204, 404):
-                return None
-        except httpx.HTTPError:
-            return None
-    return False
-
+    """Compatibility adapter for independently tested candidate-start validation."""
+    return _module_candidate_start_state(
+        base_url, headers, candidate, timeout,
+        download_transfer_files=_slskd_download_transfer_files,
+        http_client=httpx,
+        http_error_types=(httpx.HTTPError,),
+        monotonic=time.monotonic,
+        sleep=time.sleep,
+    )
 
 def _discovery_safe_folder_name(value):
     """Compatibility wrapper; implementation lives in acquisition_completion."""
