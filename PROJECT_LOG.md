@@ -1,7 +1,7 @@
 ## 2026-10-14 — Acquisition dismissal 409 investigation started
 
 - Branch: `fix/acquisition-dismiss-diagnostics`, based on GitHub `main` at `4c6764c4c477db6c0c6f004df39891be143c1511`.
-- Added stage-specific warning diagnostics to `_discovery_cancel_and_clean_source`, retaining the existing refusal behavior and boolean return contract. Added `tests/test_acquisition_cleanup_diagnostics.py` with invalid-root diagnostic and successful safe-cleanup coverage.
+- Added stage-specific warning diagnostics to `_discovery_cancel_and_clean_source`, retaining the existing refusal behavior and boolean return contract. Expanded `tests/test_acquisition_cleanup_diagnostics.py` to cover invalid-root diagnostics, safe cleanup without recursive deletion, preservation of a neighboring file, and refusal-before-deletion when an unexpected file is present.
 - Commits before documentation closeout: `f65054f1aed623ff017c04c6d0847b7f6fec9681`, `05f9ced4b9cc297dbbb1f8da39cfbb9163a529a0`, `0ca8d3bf8868a13c7ea5a84a58e771c86ddc6607`.
 - Root cause remains unconfirmed: no live failure was reproduced and the helper's new warning has not yet been observed from a real 409. These changes improve diagnosis but must not be represented as resolving the bug.
 - No local tests were run. PR #44 is open as a draft. On initial PR head `7737b4f437457af1b46187e8479c4589102faea2`, Python syntax (`38549845344`), Docker packaging/full unit suite (`38549845313`), and container runtime smoke (`38549845404`) passed; validation-only multi-architecture run `38549845368` was still in progress at last poll. A documentation follow-up requires checks to be reverified on the resulting exact head. Merge, publication, deployment and production runtime verification have not occurred.
