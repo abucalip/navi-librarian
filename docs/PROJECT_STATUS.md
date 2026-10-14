@@ -6,7 +6,8 @@
 - Crucially, every Dismiss attempt succeeded; the reported HTTP 409 was not reproduced. This does not identify a cleanup refusal stage or verify a fix for the original failure. The report's final console detail was truncated, so no meaning is inferred from it.
 - PR #44's four required exact-head workflows were already confirmed successful: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only Docker image/multi-architecture (publishing remains paused).
 - **State:** instrumentation implemented; automated CI passed; isolated manual UI checklist passed but original 409 scenario unverified; PR not merged; no image publication, deployment, or production runtime verification.
-- **Next action:** leave PR #44 draft/unmerged until the failure is reproduced with its diagnostic warning, or new evidence supports a focused change. If it recurs, capture the HTTP response body and matching server warning before retrying. Do not relax cleanup safety checks.
+- **Disposition (2026-10-14):** user cannot currently reproduce HTTP 409 and has chosen to defer this investigation until it occurs again. Do not spend further work trying to reproduce it without new evidence. If it recurs, capture the HTTP response body and matching stage-only server warning before retrying; do not relax cleanup safety checks. PR #44 remains draft/unmerged and is not a confirmed fix.
+- **Next priority:** perform a read-only audit of web-app imports and entry points to map the remaining `navidrome_server.py` dependency before proposing any MCP retirement or further modularization. Identify callers, tests, compatibility wrappers, and the smallest safe next extraction. No code removal until the dependency audit and regression-test plan are reviewed.
  
 ## 2026-10-14 — Claude front-end project instructions merged; expanded handoff in progress
 
