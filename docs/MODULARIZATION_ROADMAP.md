@@ -2,25 +2,9 @@
 
 Last updated: 2026-10-14
 
-## Priority override — acquisition cleanup safety regression
+## Priority override — acquisition lifecycle correctness and safety
 
-PR #51 and PR #53 established refusal and neighbor-preservation coverage for destructive dismissal cleanup. The next safety-focused slice extracts the existing cleanup implementation into `acquisition_cleanup.py`, injects its folder sanitizer, transfer lookup, and HTTP client, and retains the legacy MCP wrapper in `navidrome_server.py`. The seven cleanup safety cases now live in direct-import `tests/test_acquisition_cleanup.py`, rather than depending on AST extraction of the cleanup function. Docker packaging includes the new module. PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows (syntax `38600688719`, Docker packaging/full unit suite `38600688787`, runtime smoke `38600688814`, multi-architecture validation `38600688667`) and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`. Preserve every refusal/success assertion and the existing filesystem authorities. The HTTP 409 remains deferred because it was not reproduced. No live slskd or production-folder deletion is claimed. After exact-head CI, continue extracting source-switch and interrupted-import orchestration behind injected dependencies while preserving MCP compatibility.
-
-
-## Interrupted-import recovery safety extraction
-
-- Next safety-focused slice: move `_discovery_reconcile_interrupted_import` into directly importable `acquisition_recovery.py`, injecting the transition lock, dismissal/state readers, configured music root, canonical folder sanitizer, strict completion matcher, persistence callback, clock, JSON module, and file-move operation.
-- Keep the existing `navidrome_server.py` compatibility adapter and MCP interface; package the new module in Docker.
-- Migrate all existing interrupted-recovery cases out of the AST harness into `tests/test_acquisition_recovery.py`. Preserve exact destination/mount-device verification, manifest matching, staged-file rollback, symlink refusal, no-overwrite behavior, and refusal for dismissed/non-importing jobs.
-PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four required workflows (syntax `38601516322`, Docker packaging/full unit suite `38601516096`, runtime smoke `38601516565`, multi-architecture validation `38601516203`) and merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`. No live production filesystem recovery is claimed.
-- After this slice, extract the watcher loop and top-level lifecycle coordination behind injected dependencies. Preserve cleanup failure as a hard stop and uncertain queue outcomes as monitored, never as an automatic duplicate retry.
-
-## Source-switch orchestration extraction
-
-- Extract the existing `_discovery_switch_to_next_source_locked` implementation into directly importable `acquisition_source_switch.py`, injecting slskd config, lifecycle policy, cleanup, status persistence, HTTP client, candidate-start inspection, acquisition persistence/listing, and identity normalization.
-- Preserve the legacy MCP/web wrapper and caller-owned transition lock. Cleanup failure must stop before queuing; uncertain queue outcomes must be saved and monitored rather than triggering another peer; a fallback that cannot be safely cleaned must stop further attempts.
-- Move the ambiguous-queue regression out of the AST harness and add direct-import tests for initial cleanup refusal, no-fallback status, failed fallback cleanup, and successful fallback state/count preservation.
-- Docker packaging and focused project docs are updated. Exact-head CI is pending; all four workflows and full diff review are required before merge.
+PR #51 and PR #53 established refusal and neighbor-preservation coverage for destructive dismissal cleanup. PR #54 extracted cleanup to `acquisition_cleanup.py` with direct-import regression tests; exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`. PR #55 extracted interrupted-import recovery to `acquisition_recovery.py`; exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four workflows and merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`. PR #56 extracted source-switch orchestration to `acquisition_source_switch.py`; exact head `15c0c237585dc4037df1e3e4d1f98b261d0415d9` passed all four workflows and merged at `d49d96c91a460346730676c22deceb68c8dbd82c`. All three retain the legacy MCP/web adapters and were added to Docker packaging. The next safety priority is to extract the watcher loop and top-level acquisition coordination with direct-import tests, while preserving cleanup refusal, mount identity, manifest/rollback, and uncertain-queue invariants. The reported HTTP 409 remains deferred because it was not reproduced. No live slskd or production-folder recovery/cleanup is claimed.
 
 ## Goal and guardrails
 
@@ -43,7 +27,7 @@ These extractions are merged to main. They do not mean the monolithic server or 
 
 PR #47 introduces `acquisition_lifecycle.py` as a dependency-light, directly importable owner for monitor-resume eligibility, conservative cleanup classification, skip-request validation, fallback queue payload normalization, and uncertain queue-error classification. Legacy MCP functions remain compatibility adapters and continue to own database/network/filesystem I/O.
 
-This is the first lifecycle seam, not completion of the whole orchestration extraction. The remaining watcher loop, persistent state transitions, cancellation/cleanup execution, source switching, interrupted-import recovery, and top-level acquire coordinator still live in `navidrome_server.py`. Next, extract those orchestration paths behind injected service dependencies and migrate the remaining AST-coupled cases in `tests/test_acquisition_safety.py` to direct-import tests. Keep the existing completion/import safety modules as the filesystem authorities.
+This is the first lifecycle seam, not completion of the whole orchestration extraction. Cleanup, interrupted-import recovery, and source-switching now have directly importable implementations with compatibility adapters. The watcher loop, persistent state coordination, watcher startup, and top-level acquire coordinator still live in `navidrome_server.py`. Next, extract those paths behind injected service dependencies and migrate remaining AST-coupled tests incrementally. Keep the existing completion/import safety modules as the filesystem authorities.
 
 ## Current route-separation stage
 
