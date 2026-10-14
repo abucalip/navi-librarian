@@ -1,3 +1,13 @@
+## 2026-10-14 — Pure slskd search helper test migration (pending verification)
+
+- Added direct-import tests for pure `slskd_search` helpers and removed six duplicate query/payload/path-helper cases from the AST harness.
+- Acquisition orchestration retry/wait tests and candidate-extraction scenario remain in the harness because they exercise integration behavior rather than only pure helper functions.
+- No production code changed. Verify focused/full tests and all four required workflows on the exact PR head before merging; inspect final diff for accidental coverage loss.
+
+
+
+---
+
 ## 2026-10-14 — Candidate-start validation extraction (PR #71 merged)
 
 - Extracted candidate-start path/state validation to `acquisition_candidate_start.py` with injected external boundaries; the server compatibility adapter remains in place.

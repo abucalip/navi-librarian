@@ -1,3 +1,14 @@
+## 2026-10-14 — Pure slskd search helper tests migrated (verification pending)
+
+- Branch `test/migrate-slskd-search-pure-tests`, based on current main after PR #70.
+- Added direct-import tests for `slskd_search` query generation, payload normalization, album path matching, and bounded path diagnostics; removed six duplicate pure-helper cases from the AST harness.
+- Retained the acquisition-level retry/wait integration cases and candidate extraction scenario. No production code changed.
+- Focused/full tests, exact-head CI, and final diff review are pending; no tests are claimed passed.
+
+
+
+---
+
 ## 2026-10-14 — PR #71 merged: candidate-start validation extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/71; branch `refactor/extract-candidate-start-validation`.
