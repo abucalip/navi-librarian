@@ -27,6 +27,16 @@ Host completed downloads ──► /downloads
 
 The diagram is logical, not a promise that every helper uses only those mount paths. Confirm actual path resolution in code before changing mounts or permissions.
 
+## Remaining legacy-server coupling (audit 2026-10-14)
+
+The diagram above shows the logical boundary, but the current implementation still imports `navidrome_server.py` from `app/main.py`, `app/api/settings.py`, `app/api/discovery.py`, and `app/api/acquisitions.py`. Metadata routes have been separated. These imports make the web runtime initialize MCP-related code because the legacy module creates an `MCPServer` and registers tools.
+
+The web application still delegates settings persistence and service checks, discovery generation/list/feedback behavior, and acquisition lifecycle orchestration to the monolith. The Dockerfile copies the legacy module and `requirements.txt` includes MCP. `server.py` is also an MCP-related entry point and needs a caller/usage check before MCP dependencies are removed.
+
+`tests/test_acquisition_safety.py` is coupled to the monolith's source layout through AST extraction. Migrate this coverage incrementally to direct-import tests of extracted domain modules; do not drop safety or lifecycle cases during migration.
+
+Retirement condition: all web-required behavior must have an independent tested domain/service owner, all web callers must use those interfaces, and a repository-wide audit of imports, entry points, dependencies, tests, docs, and compatibility must establish that MCP-specific code can be removed safely.
+
 ## Main components
 
 - **`app/main.py`** — FastAPI routes and the web UI. It adapts existing librarian functions for browser/API use.
