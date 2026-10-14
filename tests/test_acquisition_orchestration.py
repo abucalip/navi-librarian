@@ -37,7 +37,7 @@ class AcquisitionSkipTransitionTests(unittest.TestCase):
                 "(artist_key, album_key, status, details_json, candidate_json, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
                 ("artist", "album", status, json.dumps(details or {}),
-                 json.dumps(candidate or {"fallback_candidates": [{"username": "peer"}]}), 0),
+                 json.dumps({"fallback_candidates": [{"username": "peer"}]} if candidate is None else candidate), 0),
             )
 
     def request(self):
