@@ -1,3 +1,10 @@
+## 2026-10-15 — Dismissal-serialized import guard merged (PR #78)
+
+- `acquisition_orchestration.import_source_unless_dismissed` owns the transition-lock/dismissal/callback guard. `navidrome_server.py` retains the compatibility adapter and the filesystem-safe import coordinator.
+- PR #78 exact tested head `e6a609ca7381d0751d529b52f55aeebd56d76661` passed all four required workflows; squash merge `5d638c7adf5a42fdac8052cb4fc223236564cd72`. No filesystem safety logic was moved.
+
+---
+
 ## 2026-10-15 — Dismissal-serialized import guard (pending verification)
 
 - `acquisition_orchestration.py` now provides `import_source_unless_dismissed`, holding the injected transition lock across the dismissal check and import callback. The server compatibility adapter delegates to this guard.
