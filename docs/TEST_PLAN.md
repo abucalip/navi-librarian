@@ -1,3 +1,11 @@
+## Metadata API route extraction — in progress
+
+- Branch: `refactor/metadata-api-router`, based on the updated GitHub `main` after PR #35 and documentation closeout.
+- Moved `/api/artist-bio`, `/api/album-year`, `/api/album-details`, and `/api/artwork` with provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
+- Added `tests/test_metadata_routes.py` for endpoint/method inventory, artist bio cache and validation, MusicBrainz year preference, exact Deezer album matching and tracklist parsing, and artwork cache/validation.
+- Required verification: `python -m unittest tests.test_metadata_routes -v`; `python -m py_compile navidrome_server.py app/main.py app/api/metadata.py tests/test_metadata_routes.py`; `python -m unittest discover -s tests -v`; Docker packaging/full-unit-test, container runtime smoke, and validation-only multi-architecture workflows on the exact PR head.
+- No intended UI contract change; manual browser testing is not required unless review or CI identifies a UI behavior change. No test/CI result is claimed before observed exact-head results.
+
 ## Discovery API route extraction — PR #35 merged (2026-10-14)
 
 - Branch: `refactor/discovery-api-router` (based on GitHub `main`).
