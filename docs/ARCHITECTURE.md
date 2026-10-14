@@ -5,12 +5,6 @@
 
 ---
 
-## 2026-10-15 — Dismissal-serialized import guard (pending verification)
-
-- `acquisition_orchestration.py` now provides `import_source_unless_dismissed`, holding the injected transition lock across the dismissal check and import callback. The server compatibility adapter delegates to this guard.
-- The extraction does not move filesystem validation, mount identity checks, persistence, import staging, or rollback; those remain under their existing safety authorities.
-
----
 
 ## 2026-10-15 — Search polling extraction merged (PR #76)
 
