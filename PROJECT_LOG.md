@@ -540,3 +540,10 @@ Update this file at the end of every GitHub development session. Keep entries co
 - PR #39 extracts auth status/setup/login/logout and the login page into `app/api/auth.py`; middleware and security primitives remain in their existing modules. Exact code head `a78272da8f82aa83716367aa7fcd7a43729267a7` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture build.
 - PR #39 is open/unmerged. Documentation updates in this closeout create a new PR head; exact-head CI must be checked again before merge. No local tests, manual browser testing, image publication, deployment, or production runtime verification were performed. Publishing remains disabled.
 - **Next action:** verify all required checks on the documentation-updated PR head and review mergeability before deciding to merge.
+
+## 2026-10-14 — Front-end ownership boundary
+
+- Created branch `docs/frontend-claude-boundary` to document Claude Code as front-end-only contributor for `static/`, `app/templates/`, and scoped UI tests.
+- Backend/domain/security, API contracts, application assembly, CI, Docker, publishing, and deployment remain outside Claude's change authority; the assistant coordinates cross-layer integration and verification.
+- Updated `docs/DEVELOPMENT_WORKFLOW.md` and added root `CLAUDE.md`. Changes are documentation-only; no tests run and no behavior change is claimed.
+- Pending PR creation/review at time of this log entry.

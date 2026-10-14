@@ -5,7 +5,8 @@ Last updated: 2026-10-14
 ## Authority and responsibilities
 
 - **GitHub is the single source of truth** for project code, commits, branches, pull requests, documentation, and release history.
-- **The assistant is the only code editor and committer** for this project. The assistant makes changes in GitHub feature/fix branches, commits them, runs available automated checks, reviews the diff, and opens or updates pull requests.
+- **Work is split by ownership boundary.** Claude may implement front-end-only changes within the permitted UI paths defined in the root `CLAUDE.md`. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification. Either agent's code changes must be made on a focused GitHub branch and proposed through a PR; neither should bypass the repository's review, testing, or merge gates.
+- **GitHub remains authoritative regardless of agent.** The assistant coordinates integration and project-level verification. Claude must not independently change backend behavior, merge PRs, publish images, deploy, or alter project-wide safety/release controls. Local-only edits or commits are not authoritative.
 - **The user's local checkout is a testing environment only.** The user may fetch/check out a GitHub branch or commit locally and run the app/tests to verify behavior. Local-only edits or commits are not authoritative and must not be treated as changes to merge back into GitHub.
 - **Production is a separate state.** A GitHub merge or passing CI does not mean the Docker image is published, deployed, or verified on the server.
 
