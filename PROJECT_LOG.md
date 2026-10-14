@@ -1,10 +1,10 @@
-## 2026-10-14 — Authentication integration coverage and route extraction
+## 2026-10-14 — Authentication integration coverage and route extraction (PRs #38–#39 merged)
 
 - PR #38 was squash-merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553` from exact head `1901cc68d1bb689da5257b6a51947af84b87d5ca`. The new FastAPI TestClient integration tests cover first-run setup and validation, login/logout, rate limiting, cookie attributes over HTTP/HTTPS, session reuse/tampering, and public/protected route behavior. Exact-head syntax, Docker packaging/full suite (147 tests), container runtime smoke, and validation-only multi-architecture workflows all passed. An initial test revision failed two redirect assertions; `follow_redirects=False` corrected those expectations.
 - PR #39 (`refactor/auth-api-router`) extracts the authentication status/setup/login/logout endpoints and login page into `app/api/auth.py`; middleware remains in `app/main.py`, and security primitives remain in `app/security/auth.py`. Injected callbacks preserve the existing persistent settings store and runtime auth secret.
-- PR #39 head: `5c5ba907748807d453fb397ac01585cede35dff6` at the time of documentation update. Exact-head CI was not yet available. No local test execution is claimed.
-- No UI changes intended; no manual UI tests, image publication, deployment, or production runtime verification. Keep GHCR publication disabled.
-- Next: check exact-head CI for PR #39; address any failures and merge only after all required gates pass.
+- PR #39 was squash-merged at `f08495088b28ca538f90b9ff9edf4410f5e55749` from exact head `9187a51380d2a7ed7d27276ce4505827becaed32`. All four required workflows passed on that exact head: syntax `38492677728`, Docker packaging/full suite `38492677704`, runtime smoke `38492677708`, and validation-only multi-architecture `38492677825`.
+- No local test run or manual browser test was performed. No image publication, deployment, or production runtime verification occurred; GHCR publication remains disabled.
+- Next: continue with the next roadmap priority after confirming the updated main state.
 
 ## 2026-10-14 — Modularization session closeout after PR #37
 
