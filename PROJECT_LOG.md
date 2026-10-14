@@ -1,3 +1,11 @@
+## 2026-10-14 — Acquisition queue/dismissal guard extraction proposed
+
+- Branch `refactor/acquisition-queue-guard` starts from GitHub `main` after PR #61.
+- Moved the queue-versus-dismissal critical-section guard into `acquisition_orchestration.py`; retained the existing server adapter, HTTP request details, shared transition lock, and dismissal predicate.
+- Added direct-import regressions for lock scope, dismissed refusal, return/exception propagation. The existing safety test remains and delegates this case to the extracted implementation.
+- Exact-head CI, final diff review, and merge remain pending. No separate local test, live slskd interaction, publication, deployment, or production runtime verification is claimed.
+- Next: continue the acquisition-coordination audit and migrate the remaining AST-coupled tests one safety boundary at a time.
+
 ## 2026-10-14 — PR #61 merged: acquisition transition guard
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/61
