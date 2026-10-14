@@ -2,7 +2,7 @@
 
 PR #57 was squash-merged to main at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact tested head f4b92a98bae942ac6080316c3f1803d1b6bcff76. The watcher loop now lives in acquisition_watcher.py behind injected services, with the legacy MCP/web adapter preserved. Direct-import regression tests cover dismissal/recovery exits, completed transfer evidence without a verified folder (no import), and verified-path handoff to the existing safe import coordinator. Docker packaging is updated. All four required workflows passed on that exact head: syntax/acquisition safety 38605510990, Docker packaging/full unit suite/build 38605510819, runtime smoke 38605511271, and validation-only multi-architecture 38605510906 (publishing paused). No separate local test run, live slskd test, production filesystem action, publication, deployment, or production runtime verification is claimed.
 
-**Next priority:** persistent acquisition-state coordination and watcher startup; keep the strict completion matcher, safe import coordinator, cancellation/cleanup refusal behavior, and MCP compatibility unchanged.
+**Next priority:** persistent acquisition-state coordination after extracting watcher startup. Keep the strict completion matcher, safe import coordinator, cancellation/cleanup refusal behavior, and MCP compatibility unchanged.
 
 # Modularization Roadmap
 
@@ -120,3 +120,11 @@ PR #50 was squash-merged at `a37d29cf11657dce6d5cbc6cb928ca840fe5b206` from exac
 ## 2026-10-14 — Watcher extraction merged (PR #57)
 
 PR #57 was squash-merged at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact tested head f4b92a98bae942ac6080316c3f1803d1b6bcff76. The watcher loop now lives in acquisition_watcher.py behind injected services, with the legacy adapter preserved. All four required workflows passed on the exact head. See the merge closeout below for run IDs and verification boundaries.
+
+
+## Acquisition watcher startup extraction
+
+- acquisition_watcher_startup.py owns the reserve → persist → status → start sequence behind injected locks, active-set, persistence/status callbacks, and watcher entry point. navidrome_server.py retains _discovery_start_import_watcher as a compatibility adapter.
+- Direct-import tests cover dismissed and duplicate starts, credential filtering in persisted settings, persistence failure releasing the reservation, and thread-start failure recording monitor_error and releasing the active marker.
+- Next: extract the remaining persistent acquisition-state coordination with direct-import tests; preserve existing conditional state writes and dismissal/import transition lock.
+- This extraction is not live slskd or production-runtime verification.
