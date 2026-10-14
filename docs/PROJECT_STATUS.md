@@ -587,3 +587,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - PR #56 exact head `15c0c237585dc4037df1e3e4d1f98b261d0415d9` passed syntax/acquisition safety `38602255318`, Docker packaging/full unit suite/image build `38602255282`, runtime smoke `38602255326`, and validation-only multi-architecture build `38602255378` (publishing paused). Final diff reviewed; GitHub reported mergeable and no review submissions/inline threads. Squash-merged at `0387b8247d3dbd8d44d64392d9400b42c56e0fda`.
 - No live slskd interaction, production cleanup, publication, deployment, or production runtime verification is claimed.
 - Next priority: extract the acquisition watcher loop and top-level lifecycle coordination behind injected dependencies, migrating direct-import tests while preserving cancellation, import rollback, status persistence, and MCP compatibility.
+
+
+## 2026-10-14 — Acquisition watcher lifecycle extraction proposed
+
+- Branch `refactor/acquisition-watcher-domain`, based on GitHub `main` `09c5c884ffbfba035a6ee698f7192b1e9bbb6282`.
+- Extracted the watcher loop to `acquisition_watcher.py` with injected service dependencies; retained `_discovery_watch_and_import_album` as the compatibility adapter used by current MCP/web callers. Docker packaging includes the new module.
+- Added direct-import tests for dismissal, interrupted-import reconciliation, completed-transfer waiting when no strictly verified folder is available, and routing a verified folder to the existing safe import coordinator.
+- **Verification status:** implementation prepared for PR; tests and all four exact-head workflows remain unverified until run on the final PR head. No live slskd test, production filesystem action, publication, deployment, or runtime verification is claimed.
