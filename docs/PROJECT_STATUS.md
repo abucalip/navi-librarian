@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition transition guard extraction in progress
+
+- PR pending: `refactor/acquisition-transition-guard` extracts the dismissal-serialized source-switch guard into `acquisition_orchestration.py`, with direct-import tests for lock scope, dismissal refusal, return-value preservation, and exception propagation.
+- Safety boundary: the shared transition lock remains authoritative; the dismissal check and source-switch callback remain inside one critical section. No queue, cleanup, persistence, or filesystem behavior is otherwise changed.
+- Verification: implementation is awaiting focused tests and all four exact-head CI workflows. No live slskd interaction, production filesystem operation, publication, deployment, or runtime verification is claimed.
+- Next: review the exact PR diff and merge only after all required gates pass.
+
 ## 2026-10-14 — PR #59 merged: acquisition state persistence
 
 - **State:** Implemented, final diff reviewed, all four required workflows passed on exact final PR head, and squash-merged.
