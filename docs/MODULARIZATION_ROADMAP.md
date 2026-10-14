@@ -1,3 +1,11 @@
+## 2026-10-15 — Session closeout and next test-audit boundary
+
+- Reconciled against GitHub main `95a744f8a6f5b4749e5c50de6e095027081a15d5`; PR #76 polling extraction and PR #78 dismissal-serialized import guard are merged with their exact-head CI evidence documented above.
+- No implementation or test changes in this closeout. The next step is a test-boundary audit, not an automatic extraction: identify which remaining AST cases are pure helper behavior versus real coordinator integration.
+- Prioritize duplicate-request reservation/concurrency, incomplete persisted candidate details, explicit reactivation and failed-reactivation refusal, and stale watcher recovery. Preserve conditional persistence, shared locks, filesystem safety, and recovery integration checks unless replacement coverage demonstrably exercises the same boundary.
+
+---
+
 ## 2026-10-15 — PR #78 merged: import dismissal guard extraction
 
 - PR #78 merged at `5d638c7adf5a42fdac8052cb4fc223236564cd72` from tested head `e6a609ca7381d0751d529b52f55aeebd56d76661`.
@@ -18,30 +26,12 @@
 
 ---
 
-## 2026-10-15 — slskd polling extraction in progress
-
-- Progressive query submission, search-state/response polling, count aggregation, payload deduplication, delayed payload waiting, and per-attempt diagnostics moved into `slskd_search_polling.py` behind injected external boundaries.
-- Direct-import tests cover broader-query fallback and delayed peer payloads. The AST-based end-to-end broad-query test remains intentionally as coordinator integration coverage.
-- Docker packaging and the syntax workflow now include the module. All verification and final diff review are pending.
-- Next after verification: audit the remaining acquisition lifecycle cases; preserve shared-lock races, conditional persistence, cancellation/cleanup refusal, dismissal/reactivation, and watcher recovery.
-
----
-
 ## 2026-10-15 — PR #73 merged: candidate extraction test migration complete
 
 - PR #73 merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3` from tested head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
 - Candidate grouping/ranking scenario now directly exercises `slskd_search.extract_candidates` in `tests/test_slskd_candidates.py`; no production implementation changed.
 - All four required workflows passed on exact head: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
 - Next priority: inspect the remaining acquisition coordinator and AST tests for a small safe extraction seam. Preserve end-to-end query sequencing, shared-lock races, persistence transitions, cancellation outcomes, dismissal/reactivation, and watcher recovery. Do not split coordination state just to remove AST coupling.
-
----
-
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
-
-- The remaining candidate-folder scenario was moved from the AST harness into a direct-import regression against `slskd_search.extract_candidates`, using the production quality, album-path, track-identity, and music-key helpers.
-- Acquisition retry/wait and lifecycle coordination cases remain AST-coupled because they test end-to-end query sequencing, shared locks, state persistence, dismissal/reactivation, and watcher recovery rather than just the extracted candidate algorithm.
-- PR #73 exact-head focused/full tests, syntax checks, complete diff review, and four required workflows remain pending.
-- Next after verification: audit the top-level acquisition coordinator for the smallest safe extraction seam, preserving cancellation/cleanup refusal, conditional persistence transitions, and uncertain queue outcomes.
 
 ---
 
