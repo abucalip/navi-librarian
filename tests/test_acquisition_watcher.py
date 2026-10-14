@@ -67,7 +67,7 @@ class AcquisitionWatcherTests(unittest.TestCase):
         self.assertEqual(self.calls["imports"], [])
         self.assertTrue(any(args[2] == "download_complete_waiting_for_folder"
                             for args, _kwargs in self.calls["status"]))
-        waiting = next(kwargs for args, kwargs in self.calls["status"]
+        waiting = next(args[3] for args, _kwargs in self.calls["status"]
                        if args[2] == "download_complete_waiting_for_folder")
         self.assertEqual(waiting["downloads_path"], str(self.root / "downloads"))
         self.assertEqual(waiting["expected_files"], 1)
