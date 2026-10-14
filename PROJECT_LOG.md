@@ -1,3 +1,13 @@
+## 2026-10-14 — Session closeout: PR #48 lifecycle orchestration extraction
+
+- PR #48: [refactor: extract persisted acquisition lifecycle orchestration](https://github.com/abucalip/navi-librarian/pull/48), branch `refactor/acquisition-lifecycle-orchestration`, exact final code head `c116a692f59bc0e136c79197965fe60db8b15bdf`.
+- Extracted the persisted manual source-skip transition into `acquisition_orchestration.py` with injected initialization, lock, database connection, key normalization, policy, clock, and JSON dependencies. Kept the MCP-compatible adapter, shared transition lock, and conditional downloading-state update. Added direct-import regression tests for successful persistence and rejected missing, dismissed, non-downloading, and no-fallback states without mutation.
+- During review, corrected malformed joined statements in `navidrome_server.py`, including restart-helper indentation. No filesystem cleanup/import implementation or safety guard was changed.
+- **Exact-head CI:** all four workflows succeeded on `c116a692f59bc0e136c79197965fe60db8b15bdf`: Python syntax run `38583921780`; Docker packaging/full unit suite run `38583921958`; container runtime smoke run `38583922449`; validation-only multi-architecture image validation run `38583922118`. These are GitHub Actions results; no separate local test execution is claimed.
+- **State:** PR #48 open/draft, not merged. It currently targets `main` and includes PR #47's changes; PR #47 remains open at `7b8a5f0b5d2562c8e7a51ff481fdf197fe9bd1bd`. Do not merge #48 until the dependency/order and final base/diff are reconciled after #47.
+- No manual UI testing was applicable to this backend-only slice. No image publication, deployment, or production runtime verification occurred; publishing remains paused.
+- **Next action:** resolve PR #47, then rebase/retarget and review PR #48's complete diff, run all four workflows on its exact final head, and reassess mergeability.
+
 ## 2026-10-14 — Acquisition lifecycle policy extraction started (PR #47)
 
 - Merged PR #46 at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four workflows succeeded on exact head `5b050abac235d729df01cc04703ce70140398be6`.
