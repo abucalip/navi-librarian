@@ -1,10 +1,12 @@
-## 2026-10-14 — Acquisition queue/dismissal guard extraction proposed
+## 2026-10-14 — PR #62 merged: acquisition queue/dismissal guard
 
-- Branch `refactor/acquisition-queue-guard` starts from GitHub `main` after PR #61.
-- Moved the queue-versus-dismissal critical-section guard into `acquisition_orchestration.py`; retained the existing server adapter, HTTP request details, shared transition lock, and dismissal predicate.
-- Added direct-import regressions for lock scope, dismissed refusal, return/exception propagation. The existing safety test remains and delegates this case to the extracted implementation.
-- Exact-head CI, final diff review, and merge remain pending. No separate local test, live slskd interaction, publication, deployment, or production runtime verification is claimed.
-- Next: continue the acquisition-coordination audit and migrate the remaining AST-coupled tests one safety boundary at a time.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/62
+- **Branch:** `refactor/acquisition-queue-guard`; exact tested head `4e121eb7977bb1a51ad31f9c87d0d4984497af4d`.
+- **Squash merge commit:** `d4a16e80f6978a58c3305bf341e370ba9708bb34`.
+- **Reviewed diff:** eight files. Extracted queue/dismissal coordination into `acquisition_orchestration.py`; retained the legacy server adapter, HTTP request construction, shared transition lock, and dismissal predicate. Added direct-import regressions for lock scope, dismissal refusal, return propagation, and exception propagation. Retained the AST safety regression. Updated modularization roadmap, test plan, and project status.
+- **Exact-head CI:** Python syntax `38619152587`; Docker packaging/full unit suite/build `38619152213`; container runtime smoke `38619152754`; validation-only multi-architecture image `38619152728`. All four succeeded. Publishing remains paused.
+- **Verification boundaries:** no separate local helper/manual slskd test, production filesystem operation, image publication, deployment, or production runtime verification was performed or claimed.
+- **Next:** continue the acquisition-coordination audit and migrate remaining AST-coupled safety tests incrementally, prioritizing correctness and verification.
 
 ## 2026-10-14 — PR #61 merged: acquisition transition guard
 
