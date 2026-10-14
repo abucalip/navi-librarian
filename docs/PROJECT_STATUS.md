@@ -1,7 +1,7 @@
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
-- Reconciled the project status against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. PR #81 (documentation closeout) is merged; PRs #76 and #78 and their exact-head verification records remain documented below.
-- PR #81's exact tested head was `5dfa47ed4b3dd2cc234b88a2f18b95ba950425fa`; all four required workflows passed on that head. Its squash merge is `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. This follow-up is documentation-only; no application code changed and no new tests were run.
+- Reconciled the project status against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`. PR #82 is merged; it updates the status, log, test plan, and modularization roadmap after PR #81's closeout.
+- PR #82 was documentation-only. Exact tested head: `5fdad1045ba04db84aea05a477a51dce38733f5c`; all four required workflows passed (syntax `38656400677`, Docker packaging/full suite `38656400827`, runtime smoke `38656400743`, image validation with publishing paused `38656400766`). No application tests were newly run specifically for the documentation change.
 - **Next action:** continue the remaining AST-coupled acquisition lifecycle test audit: duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and refusal on failed reactivation, and stale watcher recovery. Keep persistence-transition integration coverage and true lock/race tests unless equivalent direct tests cover the same boundary.
 - Publishing remains paused. No deployment or production runtime verification is claimed.
 
