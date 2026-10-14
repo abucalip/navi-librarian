@@ -1,3 +1,15 @@
+## 2026-10-15 — PR #78 merged: dismissal-serialized import guard
+
+- PR #78: https://github.com/abucalip/navi-librarian/pull/78
+- Exact tested head: `e6a609ca7381d0751d529b52f55aeebd56d76661`; squash merge: `5d638c7adf5a42fdac8052cb4fc223236564cd72`.
+- Extracted the dismissal check plus callback into `acquisition_orchestration.import_source_unless_dismissed`. The shared transition lock still spans the entire callback; filesystem validation, mount identity, persistence, import staging, and rollback remain unchanged.
+- Moved only the dismissal-only AST test to direct-import coverage. Kept the AST integration test proving import does not begin if the `importing` status cannot be persisted.
+- All four required workflows passed on the exact tested head: syntax (run `38653493244`), Docker packaging/full unit suite (run `38653493312`), runtime smoke (run `38653493285`), and Docker image validation with publishing paused (run `38653493279`). The full suite reported 186 tests passed.
+- Final diff reviewed. No live slskd, publication, deployment, or production runtime verification is claimed.
+- Next: continue the AST audit of acquisition request concurrency, reactivation, and watcher-recovery coordination; preserve all state and lock boundaries.
+
+---
+
 ## 2026-10-15 — Import dismissal guard extraction (verification pending)
 
 - Branch: `refactor/import-dismissal-guard`, based on current main after PR #77.
