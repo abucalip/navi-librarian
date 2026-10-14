@@ -1,15 +1,9 @@
-"""HTTP integration contracts for app authentication routes and middleware.
-
-These tests exercise the FastAPI app through TestClient, not AST-extracted handlers.
-"""
+"""HTTP integration contracts for app authentication routes and middleware."""
 import hashlib
 import unittest
 from unittest.mock import patch
-
 from fastapi.testclient import TestClient
-
 from app import main
-
 
 PASSWORD = "correct horse battery staple"
 
@@ -21,15 +15,13 @@ class AuthRouteIntegrationTests(unittest.TestCase):
             patch.object(main.librarian, "_discovery_settings_read", side_effect=lambda: dict(self.settings)),
             patch.object(main.librarian, "_discovery_settings_write", side_effect=self.write_settings),
             patch.object(main, "_AUTH_SECRET", b"integration-test-signing-secret-32"),
-            patch.object(main, "_password_digest", side_effect=lambda password, salt: hashlib.sha256(
-                (salt + password).encode("utf-8")
-            ).hexdigest()),
+            patch.object(main, "_password_digest", side_effect=lambda password, salt: hashlib.sha256((salt + password).encode()).hexdigest()),
         ]
         for item in self.patches:
             item.start()
             self.addCleanup(item.stop)
         main._LOGIN_ATTEMPTS.clear()
-        self.client = TestClient(main.app)
+        self.client = TestClient(main.app, follow_redirects=False)
         self.addCleanup(self.client.close)
 
     def write_settings(self, values):
@@ -37,9 +29,7 @@ class AuthRouteIntegrationTests(unittest.TestCase):
 
     def setup_account(self, client=None):
         return (client or self.client).post("/api/auth/setup", json={
-            "username": "owner",
-            "password": PASSWORD,
-            "password_confirmation": PASSWORD,
+            "username": "owner", "password": PASSWORD, "password_confirmation": PASSWORD,
         })
 
     def test_first_run_setup_creates_account_and_signs_in(self):
@@ -89,13 +79,11 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         for _ in range(main._LOGIN_MAX_ATTEMPTS):
             self.assertEqual(self.client.post("/api/auth/login", json=payload).status_code, 401)
         self.assertEqual(self.client.post("/api/auth/login", json=payload).status_code, 429)
-        other = TestClient(main.app, client=("198.51.100.9", 12345))
+        other = TestClient(main.app, client=("198.51.100.9", 12345), follow_redirects=False)
         self.addCleanup(other.close)
         self.assertEqual(other.post("/api/auth/login", json=payload).status_code, 401)
         main._LOGIN_ATTEMPTS.clear()
-        self.assertEqual(self.client.post("/api/auth/login", json={
-            "username": "owner", "password": PASSWORD,
-        }).status_code, 200)
+        self.assertEqual(self.client.post("/api/auth/login", json={"username": "owner", "password": PASSWORD}).status_code, 200)
         self.assertNotIn("testclient", main._LOGIN_ATTEMPTS)
 
     def test_cookie_policy_http_https_and_expiration_attributes(self):
@@ -107,11 +95,9 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.assertIn(f"max-age={main.AUTH_SESSION_SECONDS}", cookie)
         self.assertNotIn("secure", cookie)
         self.client.cookies.clear()
-        secure_client = TestClient(main.app, base_url="https://testserver")
+        secure_client = TestClient(main.app, base_url="https://testserver", follow_redirects=False)
         self.addCleanup(secure_client.close)
-        secure_response = secure_client.post("/api/auth/login", json={
-            "username": "owner", "password": PASSWORD,
-        })
+        secure_response = secure_client.post("/api/auth/login", json={"username": "owner", "password": PASSWORD})
         self.assertEqual(secure_response.status_code, 200)
         self.assertIn("secure", secure_response.headers["set-cookie"].lower())
 
@@ -119,13 +105,12 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.setup_account()
         token = self.client.cookies.get(main.AUTH_COOKIE_NAME)
         self.assertTrue(token)
-        restarted_client = TestClient(main.app)
+        restarted_client = TestClient(main.app, follow_redirects=False)
         self.addCleanup(restarted_client.close)
         restarted_client.cookies.set(main.AUTH_COOKIE_NAME, token, path="/")
         self.assertEqual(restarted_client.get("/").status_code, 200)
-        # Navidrome is mocked only at the boundary needed to distinguish auth
-        # success (503 upstream) from middleware rejection (401).
-        self.assertEqual(restarted_client.get("/api/health").status_code, 503)
+        with patch.object(main.librarian, "api_call", side_effect=RuntimeError("offline")):
+            self.assertEqual(restarted_client.get("/api/health").status_code, 503)
         restarted_client.cookies.set(main.AUTH_COOKIE_NAME, token + "tampered", path="/")
         self.assertEqual(restarted_client.get("/api/health").status_code, 401)
 
