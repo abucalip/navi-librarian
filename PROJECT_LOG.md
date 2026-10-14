@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition watcher startup extraction proposed
+
+- Branch: refactor/acquisition-watcher-startup from GitHub main.
+- Scope: move watcher reservation, persisted downloading state, safe-settings persistence, and thread-start failure handling into acquisition_watcher_startup.py; keep the legacy function as a compatibility adapter and package the new module in Docker.
+- Regression coverage: direct-import cases cover dismissal/duplicate suppression, credential filtering, persistence failure reservation cleanup, and thread-start failure status cleanup. Focused and full tests, four exact-head workflows, final diff review, and docs verification remain required.
+- Limits: implementation proposed; no tests, CI, merge, publication, deployment, or runtime verification claimed yet.
+
 ## 2026-10-14 — PR #57 merged: acquisition watcher lifecycle
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/57
