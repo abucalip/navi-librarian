@@ -41,6 +41,7 @@ def load_helpers():
         "_slskd_track_identity",
         "_slskd_extract_candidates",
         "_discovery_reconcile_interrupted_import",
+        "_discovery_cancel_and_clean_source",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
         "_discovery_queue_candidate_unless_dismissed",
@@ -60,6 +61,10 @@ def load_helpers():
     # function body without importing/initializing MCPServer.
     for node in selected:
         node.decorator_list = []
+        # Keep the helper under test separate from the stub used by the other
+        # orchestration tests, which intentionally isolate source switching.
+        if node.name == "_discovery_cancel_and_clean_source":
+            node.name = "_test_discovery_cancel_and_clean_source"
 
     namespace = {
         "Path": Path,
@@ -551,6 +556,120 @@ class CompletedAlbumMatchingTests(unittest.TestCase):
         candidate = {"files": [{"filename": "Album/01 - Track.flac", "size": 4}]}
         matched = HELPERS["_discovery_match_completed_album_files"](self.source, candidate)
         self.assertEqual(matched["01 - Track.flac"].name, "01 - Track_1.flac")
+
+
+
+class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "downloads"
+        self.root.mkdir()
+        self.folder = self.root / "Album"
+        self.folder.mkdir()
+        self.track = self.folder / "01.flac"
+        self.track.write_bytes(b"1234")
+        self.candidate = {
+            "username": "peer",
+            "folder": "Album",
+            "files": [{"filename": "Album/01.flac", "size": 4}],
+        }
+        self.ns = load_helpers()
+
+    def clean(self, tracked_batches):
+        calls = []
+        batches = list(tracked_batches)
+
+        def transfers(*args):
+            calls.append(args)
+            return batches.pop(0) if batches else []
+
+        self.ns["_slskd_download_transfer_files"] = transfers
+        result = self.ns["_test_discovery_cancel_and_clean_source"](
+            self.root, self.candidate, "http://slskd", {"X-API-KEY": "test"}
+        )
+        return result, calls
+
+    def test_cleanup_removes_only_verified_album_tracks_after_transfer_stops(self):
+        active = [{
+            "id": "transfer-1",
+            "filename": "Album/01.flac",
+            "_transfer_directory": "Album",
+            "size": 4,
+            "state": "transferring",
+        }]
+        result, calls = self.clean([active, []])
+        self.assertTrue(result)
+        self.assertFalse(self.track.exists())
+        self.assertFalse(self.folder.exists())
+        self.assertEqual(len(calls), 2)
+
+    def test_unrelated_entry_refuses_cleanup_without_deleting_anything(self):
+        unrelated = self.folder / "cover.jpg"
+        unrelated.write_bytes(b"cover")
+        result, calls = self.clean([[]])
+        self.assertFalse(result)
+        self.assertTrue(self.track.exists())
+        self.assertTrue(unrelated.exists())
+        self.assertEqual(calls, [])
+
+    def test_remote_path_traversal_is_rejected_before_transfer_lookup(self):
+        self.candidate["files"][0]["filename"] = "Album/../Other/01.flac"
+        result, calls = self.clean([[]])
+        self.assertFalse(result)
+        self.assertTrue(self.track.exists())
+        self.assertEqual(calls, [])
+
+    def test_duplicate_named_folders_are_rejected_as_ambiguous(self):
+        self.track.unlink()
+        self.folder.rmdir()
+        nested_a = self.root / "one" / "Album"
+        nested_b = self.root / "two" / "Album"
+        nested_a.mkdir(parents=True)
+        nested_b.mkdir(parents=True)
+        track_a = nested_a / "01.flac"
+        track_b = nested_b / "01.flac"
+        track_a.write_bytes(b"1234")
+        track_b.write_bytes(b"1234")
+        result, calls = self.clean([[]])
+        self.assertFalse(result)
+        self.assertTrue(track_a.exists())
+        self.assertTrue(track_b.exists())
+        self.assertEqual(calls, [])
+
+    def test_symlinked_album_folder_is_rejected_without_touching_target(self):
+        outside = Path(self.temp.name) / "outside"
+        outside.mkdir()
+        protected = outside / "01.flac"
+        protected.write_bytes(b"keep")
+        self.track.unlink()
+        self.folder.rmdir()
+        self.folder.symlink_to(outside, target_is_directory=True)
+        result, calls = self.clean([[]])
+        self.assertFalse(result)
+        self.assertTrue(protected.exists())
+        self.assertEqual(protected.read_bytes(), b"keep")
+        self.assertEqual(calls, [])
+
+    def test_failed_transfer_cancellation_preserves_local_files(self):
+        active = [{
+            "id": "transfer-1",
+            "filename": "Album/01.flac",
+            "_transfer_directory": "Album",
+            "size": 4,
+            "state": "queued",
+        }]
+        client = self.ns["httpx"]
+        original_delete = client.delete
+        client.delete = lambda *args, **kwargs: SimpleNamespace(status_code=500)
+        try:
+            result, calls = self.clean([active])
+        finally:
+            client.delete = original_delete
+        self.assertFalse(result)
+        self.assertTrue(self.track.exists())
+        self.assertEqual(self.track.read_bytes(), b"1234")
+        self.assertEqual(len(calls), 1)
 
 
 class AcquisitionLifecycleTests(unittest.TestCase):

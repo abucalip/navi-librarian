@@ -2,6 +2,10 @@
 
 Last updated: 2026-10-14
 
+## Priority override — destructive acquisition cleanup verification
+
+Before continuing routine lifecycle/orchestration extraction, close the higher-risk verification gap in ACQ-04/ACQ-06: directly exercise the actual dismissal cleanup helper against positive and unsafe filesystem fixtures. The reported HTTP 409 remains deferred because the user could not reproduce it; this work does not claim to diagnose or fix that response. The focused branch `test/acquisition-dismissal-safety` adds regression cases for verified deletion after transfer cancellation, refusal with unrelated entries, remote path traversal, ambiguous duplicate folder names, symlinked targets, and failed cancellation preserving local files. These tests still load the legacy helper through the existing AST harness; a future extraction should migrate them to direct-import tests without weakening assertions. Initial CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` exposed a test-harness namespace collision with the existing source-switch stub; the helper-under-test was renamed in the AST namespace to keep those tests isolated. Recheck the corrected exact head. Do not mark the requirement verified until exact-head CI passes; controlled UI testing against real download data is not authorized or required for this test-only change.
+
 ## Goal and guardrails
 
 Reduce coupling in the Python application through small, behavior-preserving extractions. GitHub is the source of truth. Preserve the web API/UI, authentication, settings and persistent state, acquisition safety, and any existing caller until its replacement is verified. New extracted modules should have direct-import regression tests. Do not remove tests simply because their current AST-based setup is awkward.

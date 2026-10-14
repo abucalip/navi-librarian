@@ -1,3 +1,12 @@
+## 2026-10-14 — Safety-first follow-up: acquisition dismissal cleanup tests
+
+- Selected ACQ-04/ACQ-06 as the highest-priority unresolved requirement because Dismiss is destructive and the repository's existing safety test harness did not exercise `_discovery_cancel_and_clean_source` directly.
+- Branch `test/acquisition-dismissal-safety`; test commits: `6f35761504ca86702ec3863cc44d9fd8699d347b` and fixture correction `d8bffdf0989c530994a4ac9e01a8ab6a0a46dcdc`.
+- Added six focused regression cases: safe cleanup after transfer cancellation, unrelated-file refusal, remote traversal refusal, duplicate-folder ambiguity refusal, symlinked target refusal, and failed cancellation preserving the local track. No production code or cleanup policy changed.
+- The tests reuse the existing AST harness; direct-import extraction remains a separate follow-up. The earlier HTTP 409 was not reproduced and remains deferred per user direction; this work does not claim to diagnose it.
+- Initial CI on `b8e1c9a398853851e1a8140a9724600800f42c3b` failed in an existing source-switch test because the extracted helper replaced an intentional stub in the AST namespace. Corrected the test harness to expose the helper under a separate name; all workflows must be checked again on the new exact head.
+- **State:** tests authored; assistant has not run them locally; corrected-head CI pending. No merge, publication, deployment, live slskd test, or real-download-folder deletion.
+
 ## 2026-10-14 — Acquisition lifecycle extraction started (PR #47)
 
 - PR #46 was squash-merged to `main` at `9b6792206cc3e4241fb0bb5e1fec784f49f44d25` after all four required workflows passed on exact head `5b050abac235d729df01cc04703ce70140398be6`.
