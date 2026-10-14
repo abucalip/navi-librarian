@@ -1,3 +1,11 @@
+## 2026-10-14 — Metadata API route extraction started
+
+- Branch: `refactor/metadata-api-router`, based on updated GitHub `main` after PR #35 merged.
+- Moved artist bio, album-year, album-details, and artwork handlers plus their provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
+- Added direct-import tests for route inventory, validation/cache behavior, MusicBrainz year preference, exact Deezer matching, and tracklist parsing.
+- Focused/full tests, exact-head CI, diff review, and PR creation remain pending; no local test run is claimed.
+- No image publication, deployment, or production runtime verification. GHCR publishing remains disabled pending roadmap completion and explicit authorization.
+
 ## 2026-10-14 — PR #35 merged; discovery API router closeout
 
 - PR #35 was squash-merged to `main` at `d61162b29c6f0cccc97aefe9c779567e671651b2`, from exact PR head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`.
