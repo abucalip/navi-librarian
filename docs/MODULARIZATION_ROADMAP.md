@@ -2,9 +2,9 @@
 
 Last updated: 2026-10-14
 
-## Priority override — destructive acquisition cleanup verification
+## Priority override — acquisition cleanup safety regression
 
-Before continuing routine lifecycle/orchestration extraction, close the higher-risk verification gap in ACQ-04/ACQ-06: directly exercise the actual dismissal cleanup helper against positive and unsafe filesystem fixtures. The reported HTTP 409 remains deferred because the user could not reproduce it; this work does not claim to diagnose or fix that response. PR #51 merged at `790d690ca99866878ee6204f9d101dec5f099994`; all four required workflows passed on exact PR head `58021141472c85c9fa33c431cba15cb66792bc1c`. The six tests still load the legacy helper through the AST harness; a future extraction should migrate them to direct-import tests without weakening assertions. Initial CI exposed a test-harness namespace collision with the existing source-switch stub; the helper-under-test was renamed in the AST namespace and corrected-head CI passed. This verifies the regression suite in CI, not live slskd behavior or production-folder deletion. The reported HTTP 409 remains deferred because it was not reproduced.
+PR #51's six dismissal-cleanup safety cases passed all four required workflows on exact head `58021141472c85c9fa33c431cba15cb66792bc1c` and merged at `790d690ca99866878ee6204f9d101dec5f099994`. PR #53 adds coverage that successful cleanup preserves sibling artwork and another album folder, complementing refusal cases for unrelated files, traversal, ambiguous folders, symlinks, and failed cancellation. The earlier tested PR head `6413d7cd94919a9983a381a398787b4301443d1b` passed all four required workflows: syntax `38594465611`, Docker packaging/full unit suite `38594465538`, runtime smoke `38594465673`, and validation-only multi-architecture build `38594465580` (publishing paused). The tests still use the legacy AST harness; migrate them to direct-import tests alongside a tested extraction, preserving every safety assertion. The HTTP 409 remains deferred because it was not reproduced. No live slskd or production-folder deletion is claimed. The next highest-priority step is to migrate cleanup safety tests to a directly importable implementation when extracting the cleanup lifecycle, before routine modularization resumes.
 
 ## Goal and guardrails
 

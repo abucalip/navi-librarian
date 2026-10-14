@@ -26,3 +26,14 @@
 - All four required workflows passed on the exact final PR head: syntax/acquisition safety `38590192829`, Docker packaging/full unit suite `38590192830`, container runtime smoke `38590192905`, validation-only multi-architecture image build `38590192858` (publishing paused).
 - The first CI attempt failed due to a test-harness namespace collision; the helper was renamed in the AST test namespace and corrected-head CI passed. No separate local test run is claimed.
 - The reported HTTP 409 was not reproduced and remains deferred. No live slskd test, real download-folder deletion, publication, deployment, or production runtime verification was performed.
+
+
+## 2026-10-14 — Acquisition dismissal neighbor-preservation regression
+
+- Branch `test/acquisition-dismissal-neighbor-preservation` starts from main commit `7f05363c3b9abec29ef7c7d516bad2796813b11e` after PR #52's exact-head CI passed and merge completed.
+- Added a regression proving successful cleanup removes only the selected album folder and preserves a neighboring artwork file plus a different album folder. Existing tests cover refusal before deletion when the selected folder contains an unexpected file.
+- Test-only change; no production cleanup logic altered. All four required workflows passed on exact head `f220ce3b0296cf9429daa927d9c5bfaae9bea7a7`: syntax `38594117785`, Docker packaging/full unit suite `38594117579`, runtime smoke `38594117489`, and validation-only multi-architecture `38594117597` (publishing paused). HTTP 409 remains deferred. No local test execution, live slskd, real production-folder deletion, publication, deployment, or runtime verification.
+
+- CI follow-up: the initial assertion expected one transfer lookup, but the implementation performs two preflight checks. Corrected the test to expect both; corrected earlier test head `f220ce3b0296cf9429daa927d9c5bfaae9bea7a7` passed all four workflows.
+- Earlier tested PR head `6413d7cd94919a9983a381a398787b4301443d1b` passed all four required workflows: Python syntax run `38594465611`, Docker packaging/full unit suite `38594465538`, container runtime smoke `38594465673`, and validation-only multi-architecture image build `38594465580` (publishing paused).
+- No local test execution, live slskd test, real production-folder deletion, publication, deployment, or runtime verification. HTTP 409 remains deferred because it was not reproduced.
