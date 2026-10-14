@@ -1,6 +1,6 @@
 # Product requirements
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 This is the user-facing behavior ledger. If implementation and this document disagree, do not silently assume either is correct: clarify the intended behavior, update this ledger, and add a regression test.
 
@@ -27,9 +27,9 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | ACQ-01 | The user can request an album without being navigated away from the current discovery page. | Verify on the target branch |
 | ACQ-02 | After Get is clicked, the button should visibly change to a red `requested` state and prevent duplicate requests while the request is pending/successful. On a failed request, restore a usable state and show an error. | Acceptance criterion; verify regression behavior |
 | ACQ-03 | Each acquisition card has a persistent Dismiss control regardless of acquisition state. | Acceptance criterion; verify regression behavior |
-| ACQ-04 | Dismissing an acquisition removes its acquisition entry and deletes the files in that album's associated folder, as requested by the user. The implementation must resolve the correct folder, stay within configured roots, and reject ambiguous/unsafe paths. | Destructive behavior; require explicit safety tests before release |
+| ACQ-04 | Dismissing an acquisition removes its acquisition entry and deletes the files in that album's associated folder, as requested by the user. The implementation must resolve the correct folder, stay within configured roots, and reject ambiguous/unsafe paths. | Highest-priority verification gap: focused cleanup safety regressions added on `test/acquisition-dismissal-safety`; exact-head CI pending. Not verified for release. The reported HTTP 409 was not reproduced and remains deferred. |
 | ACQ-05 | slskd candidates are grouped by their actual remote folder/path; punctuation, edition suffixes, and Unicode normalization should be handled without merging unrelated candidates. | Implemented in development history; preserve regression tests |
-| ACQ-06 | Acquisition/import must not overwrite or delete unrelated library content. Validate file completeness and paths before any destructive or import operation. | Safety-critical requirement |
+| ACQ-06 | Acquisition/import must not overwrite or delete unrelated library content. Validate file completeness and paths before any destructive or import operation. | Safety-critical; import path has direct regression coverage. Dismissal cleanup refusal cases are being expanded in `test/acquisition-dismissal-safety`; exact-head CI pending. |
 | ACQ-07 | If an exact slskd artist+album query returns no usable peer file payloads, try a small bounded set of broader query variants. Keep album/artist candidate checks unchanged and report each query plus slskd-reported and collected response counts. | Implemented on PR #21 branch; automated CI passed on prior code/test revision, latest diagnostic-message test pending CI, live regression retest pending |
 | SET-01 | Provide configuration for Navidrome, slskd, Last.fm, and ListenBrainz as applicable to the current UI. | Implemented in development history; verify secrets are not returned to clients |
 | SET-02 | A blank secret submitted while editing settings must not accidentally erase an existing secret unless the user explicitly requests clearing it. | Verify with tests |
