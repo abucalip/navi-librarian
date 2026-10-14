@@ -1,12 +1,20 @@
-## 2026-10-14 — Pure slskd search helper tests migrated; verification pending
+## 2026-10-14 — PR #73 candidate extraction test migration in progress
 
-- Branch: `test/migrate-slskd-search-pure-tests`, based on current `main` after PR #70 merge.
-- Added `tests/test_slskd_search.py` with direct-import coverage for progressive query generation, blank input and whitespace normalization, response payload normalization, album-path matching, path diagnostics, audio-file filtering, and diagnostic result bounds.
-- Removed six pure-helper cases from the AST-based `tests/test_acquisition_safety.py`; retained acquisition retry/wait integration tests and the candidate-folder extraction scenario in the harness.
-- No production code changed. Focused tests, full suite, syntax checks, exact-head four-workflow CI, and final diff review remain pending. No test pass is claimed yet.
-- Next: verify that the new direct-import tests pass and inspect the complete diff before considering further AST migration.
+- Branch: `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
+- Move the Tinariwen/Idrache candidate-grouping and ranking scenario from the AST harness to `tests/test_slskd_candidates.py`, calling `slskd_search.extract_candidates` with the real direct-import quality, path-match, and track-identity helpers.
+- Keep acquisition retry/wait and lifecycle coordination tests in the AST harness because they exercise the integrated coordinator, shared locks, state persistence, dismissal/reactivation, and watcher recovery.
+- Focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review are pending. No test pass is claimed yet.
+- Next: verify this focused migration, then continue the top-level acquisition-coordination audit without weakening safety coverage.
 
+---
 
+## 2026-10-14 — PR #72 merged: pure slskd search-helper tests
+
+- PR #72: https://github.com/abucalip/navi-librarian/pull/72
+- Tested PR head: `17be72e52b39e63cad63391fb2c4e63ea55d3c26`; squash merge commit: `6c6157a8238691b18d2209ea2d2e1306385ec9a2`.
+- Migrated six pure query/payload/path-matching/diagnostic cases into `tests/test_slskd_search.py`; retained acquisition retry/wait and candidate extraction coverage in the AST harness at merge time.
+- All four required workflows passed on the exact tested head: Python syntax `38651547240`, Docker packaging/full unit suite `38651547229`, runtime smoke `38651547283`, and Docker image validation with publishing paused `38651547264`.
+- Test-only change. No standalone local test commands, live slskd interaction, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
