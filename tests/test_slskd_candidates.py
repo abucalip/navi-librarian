@@ -17,10 +17,10 @@ class SlskdCandidateExtractionTests(unittest.TestCase):
             "Tenere Dafeo Nikchan",
         ]
         folders = [
-            r"Tinariwen\\2024 - Idrache Traces of the Past",
-            r"Music\\Tinariwen\\Tinariwen - Idrache (Traces Of The Past) - 2024",
-            r"Tinariwen\\2024 - Idrache (Traces Of The Past) [24-44.1]",
-            r"Tinariwen\\2024 - Idrache (Traces Of The Past)",
+            r"Tinariwen\2024 - Idrache Traces of the Past",
+            r"Music\Tinariwen\Tinariwen - Idrache (Traces Of The Past) - 2024",
+            r"Tinariwen\2024 - Idrache (Traces Of The Past) [24-44.1]",
+            r"Tinariwen\2024 - Idrache (Traces Of The Past)",
         ]
         responses = []
         for index, folder in enumerate(folders):
