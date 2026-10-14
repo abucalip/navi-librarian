@@ -1,3 +1,11 @@
+## 2026-10-14 — Direct-import slskd search helper coverage (pending verification)
+
+- Added `tests/test_slskd_search.py` to test `slskd_search` directly for query progression, blank/whitespace input, response normalization, album path matching, path-match diagnostics, audio filtering, and result bounds.
+- Removed six corresponding pure-helper cases from the AST safety harness while retaining acquisition-level retry/wait integration coverage and candidate extraction coverage.
+- Required before merge: focused and full suite, syntax checks, all four required workflows on exact final PR head, and complete diff review. No test success is claimed before evidence is observed.
+
+---
+
 ## 2026-10-14 — Completed import safety tests migrated to direct imports (PR pending)
 
 - Removed the redundant `CompletedAlbumMatchingTests` cases from the AST-based `tests/test_acquisition_safety.py` harness. Equivalent or stronger coverage already exercises the production modules directly in `tests/test_acquisition_completion.py` and `tests/test_acquisition_import.py`.
