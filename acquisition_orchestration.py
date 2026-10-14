@@ -93,3 +93,22 @@ def queue_candidate_unless_dismissed(
         if is_dismissed(artist, album):
             return None
         return queue_source()
+
+
+def import_source_unless_dismissed(
+    artist: str,
+    album: str,
+    *,
+    transition_lock: Any,
+    is_dismissed: Callable[[str, str], bool],
+    import_source: Callable[[], Any],
+) -> Any:
+    """Run verified-source import only while serialized against dismissal.
+
+    The transition lock deliberately spans both the dismissal check and the
+    entire import callback so dismissal cannot win between those operations.
+    """
+    with transition_lock:
+        if is_dismissed(artist, album):
+            return "dismissed"
+        return import_source()
