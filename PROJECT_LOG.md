@@ -3,7 +3,7 @@
 - Branch: `refactor/metadata-api-router`, based on updated GitHub `main` after PR #35 merged.
 - Moved artist bio, album-year, album-details, and artwork handlers plus their provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
 - Added direct-import tests for route inventory, validation/cache behavior, MusicBrainz year preference, exact Deezer matching, and tracklist parsing.
-- Focused/full tests, exact-head CI, diff review, and PR creation remain pending; no local test run is claimed.
+- Initial exact-head CI exposed an AST-based regression test coupled to `album_artwork` being defined in `app/main.py` (`tests/test_artwork_retry.py`). Updated the test to exercise `app.api.metadata.album_artwork` directly. Re-run focused/full tests and all required workflows on the corrected exact head before merge; no local test run is claimed.
 - No image publication, deployment, or production runtime verification. GHCR publishing remains disabled pending roadmap completion and explicit authorization.
 
 ## 2026-10-14 — PR #35 merged; discovery API router closeout
