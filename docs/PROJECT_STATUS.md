@@ -1,10 +1,13 @@
-## 2026-10-14 — Frontend asset extraction (PR pending)
+## 2026-10-14 — PR #41 merged: frontend asset extraction
 
-- Base: GitHub `main` at `790db077ee14c2e7ab8f7c64e37b8ea6e3e6233b`; branch: `refactor/frontend-assets`.
-- Moved the login and main-page HTML into `app/templates/login.html` and `app/templates/index.html`; styles and scripts are in `static/login.css`, `static/login.js`, `static/app.css`, and `static/app.js`. `app/main.py` now loads templates from disk and mounts the static directory, substantially reducing the module's inline presentation payload.
-- The authentication middleware explicitly allows `/static/*` and the existing `/assets/cassette.png` endpoint so the unauthenticated login screen can load its required assets. Other routes remain subject to the existing auth middleware.
-- Added integration assertions for login/home external asset references, asset delivery before setup/login, and no inline style/script blocks in the returned page HTML.
-- The first exact-head CI attempt on `480fa466d27ca163a302d01863cc8dc32fba62fd` passed Python compilation but the full suite found two source-location assumptions in existing tests (`test_artwork_cache_isolation.py` and `test_quality_priority.py`). Updated both to inspect the extracted JavaScript and template files directly, preserving their assertions. A subsequent run showed the quality-priority assertion also spans HTML and JavaScript, so it now checks both extracted files. The four required workflows are rerunning on the corrected head; outcomes remain pending. Manual browser testing is required after CI and must include the previously deferred performance observation and a distinct error/recovery exercise. No image publication, deployment, or runtime verification; GHCR publication remains disabled.
+- PR #41 was squash-merged to `main` at `410506ea76d7181aa300edb9c05ebbd337dd7159` from exact tested head `b94dde68cccef776cea3813dbe7310eb857d170b`.
+- Extracted login and main-page HTML into `app/templates/`, and CSS/JavaScript into `static/`; FastAPI serves the extracted assets, and Docker packaging includes them. Auth middleware permits the public login assets and bundled cassette icon while continuing to protect app/API routes.
+- Added/updated integration and source-based regression tests for public asset delivery, external asset references, artwork-cache isolation, and quality-priority behavior.
+- All four required workflows passed on the exact tested head: Python syntax (run `38493894120`), Docker packaging/full unit tests (run `38493894221`), validation-only Docker image/multi-architecture (run `38493894141`), and container runtime smoke (run `38493893959`).
+- Manual report published in [PR #41 comment](https://github.com/abucalip/navi-librarian/pull/41#issuecomment-6159043901): all eight checklist items passed with zero reported failures on macOS 26.2 arm64, Python 3.12.14, isolated port 8090, sandbox music/download paths, and slskd disabled. User additionally reports navigation is noticeably snappier/smoother and no errors occurred during testing. A separate deliberately induced error/recovery scenario was not reported, so do not claim that scenario was exercised.
+- No local tests are claimed beyond the published browser report. No image publication, deployment, or production runtime verification occurred; GHCR publishing remains disabled.
+- Next: continue the modularization roadmap from the current GitHub `main`, starting with a fresh review of open PRs, requirements, and remaining verification gaps.
+
 
 ## 2026-10-14 — PR #39 merged: authentication API routes
 
