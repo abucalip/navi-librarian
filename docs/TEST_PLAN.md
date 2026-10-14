@@ -113,7 +113,7 @@ python -m unittest discover -s tests -v
 - Moved `_discovery_reconcile_interrupted_import` into `acquisition_recovery.py` with injected state, path, matcher, persistence, clock, JSON, and move dependencies. The legacy MCP function remains a compatibility adapter.
 - Added direct-import tests for exact completed-destination reconciliation, changed mount-device refusal, partial staging rollback to the source folder, wrong/incomplete destination refusal, and dismissed/non-importing state refusal.
 - The direct tests assert no unintended status updates and preserve source/destination files on refusal. Docker packaging includes `acquisition_recovery.py`.
-- Exact-head CI pending: syntax/acquisition safety, full unit suite and Docker build, runtime smoke, and validation-only multi-architecture build must all pass before merge.
+- PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed syntax/acquisition safety `38601516322`, Docker packaging/full unit suite/image build `38601516096`, runtime smoke `38601516565`, and validation-only multi-architecture build `38601516203` (publishing paused). Squash-merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`.
 - No production filesystem recovery or live service interaction is claimed.
 
 ## Acquisition cleanup domain extraction — current branch
