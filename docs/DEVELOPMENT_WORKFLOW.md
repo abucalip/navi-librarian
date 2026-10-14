@@ -5,7 +5,7 @@ Last updated: 2026-10-14
 ## Authority and responsibilities
 
 - **GitHub is the single source of truth** for project code, commits, branches, pull requests, documentation, and release history.
-- **Work is split by ownership boundary.** ZCode owns front-end implementation only, within the permitted UI paths defined in root `AGENTS.md`; ZCode must read that file and relevant project docs before starting. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification. Either agent's code changes must be made on a focused GitHub branch and proposed through a PR; neither should bypass the repository's review, testing, or merge gates.
+- **Work is split by ownership boundary.** ZCode owns front-end implementation only, within the permitted UI paths defined in root `AGENTS.md`; every front-end agent must read `AGENTS.md` and `docs/FRONTEND_DESIGN_GUIDE.md` plus relevant project docs before starting. The design guide is the canonical agent-independent source for visual principles and the UI backlog. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification. Either agent's code changes must be made on a focused GitHub branch and proposed through a PR; neither should bypass the repository's review, testing, or merge gates.
 - **GitHub remains authoritative regardless of agent.** The assistant coordinates integration and project-level verification. ZCode must not independently change backend behavior, merge PRs, publish images, deploy, or alter project-wide safety/release controls. Local-only edits or commits are not authoritative.
 - **The user's local checkout is a testing environment only.** The user may fetch/check out a GitHub branch or commit locally and run the app/tests to verify behavior. Local-only edits or commits are not authoritative and must not be treated as changes to merge back into GitHub.
 - **Production is a separate state.** A GitHub merge or passing CI does not mean the Docker image is published, deployed, or verified on the server.
@@ -54,6 +54,10 @@ Project status and durable decisions belong in `docs/PROJECT_STATUS.md`, `docs/D
 - Run the full manual browser checklist for UI-facing changes only after required automated checks pass on the exact tested SHA. The outstanding performance observation and distinct error/recovery exercise are scheduled for the next UI-facing change. Non-UI PRs still require relevant automated/API/integration tests; do not rerun the full visual checklist solely due to a SHA change.
 - Use the documented local helper with sandbox music/download paths and slskd disabled for ordinary checks. Keep application data isolated by PR; verify separately before claiming that it persists across different source SHAs. A server-restart persistence observation does not prove cross-SHA helper reuse.
 
+
+## Front-end design reference and acceptance
+
+Before any UI task, consult [`FRONTEND_DESIGN_GUIDE.md`](FRONTEND_DESIGN_GUIDE.md) for the established visual identity, anti-patterns, Impeccable workflow, accessibility/responsive expectations, ownership boundaries, PR checklist, and prioritized backlog. Keep the guide current through reviewable documentation PRs; do not treat historical PR comments as the canonical specification. For UI changes, report the backlog item addressed, design-tool recommendations applied/rejected, exact tested SHA, screenshots where visual, and any skipped checks.
 
 ## Frontend assets and authentication boundary
 
