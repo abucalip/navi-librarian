@@ -379,3 +379,11 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 - `tests/test_acquisition_state.py` directly imports the extracted SQLite state store and covers round-trip state, normalized identity, preservation of candidate/settings/quality fields on partial updates, invalid identity rejection, and conservative malformed-JSON decoding.
 - Preserve the legacy transition lock, dismissed-state conditional behavior, secondary feedback projection, and compatibility adapters. These are not moved by this extraction.
 - On corrected code head `29c5e6a460f1f61296680af7b1230fd5561496b4`, CI ran the full suite (`180` tests, passed), compile, container smoke, and validation-only multi-architecture build; all four required workflows passed (runs `116019140196`, `116019144533`, `116019141476`, `116019141889`, respectively; publishing paused). The initial attempt exposed only an incorrect test fixture expectation for JSON `null`; the fixture was corrected and no production behavior changed. Because this closeout updates documentation, rerun all four workflows on the new exact PR head before merge. No separate assistant-local test run is claimed.
+
+
+## Acquisition state persistence extraction — PR #59
+
+- `tests/test_acquisition_state.py` directly imports `acquisition_state.py` and covers persistence round-trip, normalized identity, metadata preservation on partial updates, invalid identity rejection, and malformed JSON decoding.
+- For changes to this module, run focused `tests.test_acquisition_state`, syntax checks, the full unit suite, and all four required exact-head workflows (compile/acquisition safety, Docker packaging/full suite/build, container runtime smoke, validation-only multi-architecture).
+- PR #59 exact head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d` passed all four workflows: compile `116019930318`, test/build `116019925188`, smoke `116019924747`, multi-architecture validation `116019926066`. Merge commit: `730ae16e613f3962c488f87c8de54034db7463dd`.
+- Tests do not establish live slskd behavior, production filesystem operations, publication, deployment, or production runtime health.
