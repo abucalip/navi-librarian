@@ -4284,7 +4284,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
 def _discovery_start_import_watcher(artist, album, candidate, settings):
     """Compatibility adapter for dependency-injected watcher startup."""
     from acquisition_watcher_startup import start_import_watcher
-    return start_import_watcher(
+    start_import_watcher(
         artist, album, candidate, settings,
         services={
             "music_key": _music_key,
