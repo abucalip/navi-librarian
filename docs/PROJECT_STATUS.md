@@ -1,9 +1,9 @@
-## 2026-10-14 — Front-end ownership boundary proposed
+## 2026-10-14 — Claude front-end project instructions merged; expanded handoff in progress
 
-- Added root `CLAUDE.md` defining Claude Code's front-end-only scope: extracted assets in `static/`, templates in `app/templates/`, and narrowly scoped UI tests. It explicitly protects API/security/domain, application assembly, acquisition/filesystem safety, CI, and release/deployment paths.
-- Updated `docs/DEVELOPMENT_WORKFLOW.md` to define shared agent ownership while preserving GitHub as the sole source of truth and existing PR/CI/release gates.
-- Branch: `docs/frontend-claude-boundary`. Current documentation change is proposed for review; it is not merged. No application code or runtime behavior changed. No tests or CI are claimed as run.
-- Next: review the boundary PR, merge only through the normal workflow, then instruct Claude to read `CLAUDE.md` before its first UI task.
+- PR #42 defined the initial ownership boundary and was squash-merged to `main` at `b23e0da128d63bee2bef7f47ed3350cf1be2e613` from exact head `663d826f02c12e0dbf9b1832570b60f20864ecbc`.
+- The root `CLAUDE.md` is being expanded into a practical project-instructions document: product context, allowed/protected paths, API/security boundaries, UI conventions, branch/PR workflow, exact-SHA testing, and required handoff reporting.
+- This follow-up is documentation-only; no application behavior changes. PR #42's four required workflows passed on its exact head. The current follow-up must pass its own exact-head checks before merge.
+- Publishing and deployment remain paused/not performed. Next: review this documentation PR, verify all required checks and mergeability, then give Claude the task-specific objective and have it follow `CLAUDE.md`.
 
 ## 2026-10-14 — PR #41 merged: frontend asset extraction
 
