@@ -1,0 +1,8 @@
+:root{color-scheme:dark;--bg:#171918;--panel:#202321;--text:#f0f0e8;--muted:#b5b8ad;--accent:#e8d34a;--border:#3a3d39}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}
+main{width:min(100%,420px);padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+.brand-icon{display:block;width:76px;height:76px;object-fit:contain;margin-bottom:14px;border-radius:8px}
+h1{margin:0 0 6px;font-size:25px}p{color:var(--muted)}label{display:block;margin:16px 0 5px;color:var(--muted);font-size:13px}
+input{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;background:#171918;color:var(--text);font:inherit}
+button{width:100%;margin-top:20px;padding:12px;border:1px solid var(--accent);border-radius:4px;background:var(--accent);color:#191a1a;font-weight:700;cursor:pointer}
+#message{min-height:24px;color:#ff9a91}.hint{font-size:12px}
