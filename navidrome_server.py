@@ -398,7 +398,8 @@ def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
                 if not has_value:
                     absent.append(field)
 
-            if absent:                missing.append({
+            if absent:
+                missing.append({
                     "file": str(path.relative_to(MUSIC_DIR)),
                     "missing_ids": absent,
                 })
@@ -1197,7 +1198,8 @@ def recommend_new_music(count: int = 10) -> str:
                 "acid jazz", "afro-jazz", "afro jazz", "jazz fusion",
                 "free jazz", "latin jazz", "ethiopian jazz", "ethio-jazz",
             ))
-            for tag in tags        )
+            for tag in tags
+        )
         priority = ["bossa_nova_brazilian", "rock", "hip-hop", "soul",
                     "electronic", "african", "north_african", "funk", "pop"]
         if "jazz" in families and (not has_hiphop_tag or has_specific_jazz_tag):
@@ -1596,7 +1598,8 @@ def recommend_new_music(count: int = 10) -> str:
         if len(found) >= count:
             record_decision(
                 candidate,
-                "not_considered",                "The requested number of recommendations was already reached.",
+                "not_considered",
+                "The requested number of recommendations was already reached.",
             )
             return
 
@@ -1995,7 +1998,8 @@ def recommend_new_music(count: int = 10) -> str:
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
 
-        "category_targets": targets,        "category_counts": dict(selected_counts),
+        "category_targets": targets,
+        "category_counts": dict(selected_counts),
         "category_shortfalls": {
             category: max(0, target - selected_counts.get(category, 0))
             for category, target in targets.items()
@@ -2794,7 +2798,8 @@ def _build_artist_deep_dive_list():
             "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
             "discovery_type": "artist_deep_dive",
             "discovery_source": "resolved_candidate_pool_beyond_main_selection",
-            "reason": (                "An additional resolved candidate for an artist with at least "
+            "reason": (
+                "An additional resolved candidate for an artist with at least "
                 "three albums in your library; not selected for the main list."
             ),
             "anchor_artist": anchor["name"],
@@ -3592,7 +3597,8 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
         for item in tracked:
             filename = str(item.get("filename") or "").replace("\\", "/")
             name = filename.rsplit("/", 1)[-1].casefold()
-            if name not in expected:                continue
+            if name not in expected:
+                continue
             directory = item.get("_transfer_directory")
             if directory is None:
                 normalized_filename = normalized_remote_path(filename)
