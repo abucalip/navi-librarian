@@ -22,7 +22,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
     _slskd_download_transfer_files = services["download_transfer_files"]
     _discovery_update_acquisition_status = services["update_status"]
     _discovery_inspect_completed_album = services["inspect_completed_album"]
-    time = services.get("clock", time)
+    clock = services.get("clock", time)
     import shutil
     music_root = MUSIC_DIR.expanduser()
     if _discovery_reconcile_interrupted_import(artist, album, candidate):
@@ -43,13 +43,13 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
         for item in candidate.get("files", [])
         if str(item.get("filename") or "").strip()
     }
-    deadline = time.monotonic() + 48 * 60 * 60
+    deadline = clock.monotonic() + 48 * 60 * 60
     completed_at = None
-    last_progress_at = time.monotonic()
+    last_progress_at = clock.monotonic()
     last_progress_bytes = 0
     stall_detected_at = None
     source_switches = 0
-    while time.monotonic() < deadline:
+    while clock.monotonic() < deadline:
         try:
             if _discovery_is_dismissed(artist, album):
                 return
@@ -70,7 +70,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                     for item in candidate.get("files", [])
                     if str(item.get("filename") or "").strip()
                 }
-                last_progress_at = time.monotonic()
+                last_progress_at = clock.monotonic()
                 last_progress_bytes = 0
                 stall_detected_at = None
                 completed_at = None
@@ -116,7 +116,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                             break
                     except (TypeError, ValueError):
                         pass
-            now_mono = time.monotonic()
+            now_mono = clock.monotonic()
             if current_bytes > last_progress_bytes:
                 last_progress_bytes = current_bytes
                 last_progress_at = now_mono
@@ -125,7 +125,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
             if (stalled_for >= 120 and candidate.get("fallback_candidates")
                     and not (states and states.issubset({"succeeded", "completed"}))):
                 if stall_detected_at is None:
-                    stall_detected_at = time.time()
+                    stall_detected_at = clock.time()
                     _discovery_update_acquisition_status(artist, album, "downloading", {
                         "source_username": candidate.get("username"),
                         "folder": candidate.get("folder"),
@@ -138,7 +138,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                         "message": "No download progress for 2 minutes. Switching automatically in 15 seconds unless skipped manually.",
                     })
                 skip_requested = _discovery_skip_requested(artist, album)
-                if skip_requested or time.time() - stall_detected_at >= 15:
+                if skip_requested or clock.time() - stall_detected_at >= 15:
                     next_candidate = _discovery_switch_to_next_source(
                         artist, album, candidate, settings, download_root, headers,
                         "manual_skip" if skip_requested else "zero_progress_timeout",
@@ -156,7 +156,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                         for item in candidate.get("files", [])
                         if str(item.get("filename") or "").strip()
                     }
-                    last_progress_at = time.monotonic()
+                    last_progress_at = clock.monotonic()
                     last_progress_bytes = 0
                     stall_detected_at = None
                     completed_at = None
@@ -188,7 +188,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                 for name in expected
             )
             if all_transfers_complete:
-                completed_at = completed_at or time.monotonic()
+                completed_at = completed_at or clock.monotonic()
                 folder_inspection = _discovery_inspect_completed_album(download_root, candidate)
                 source = folder_inspection["path"]
                 if source is None:
@@ -210,7 +210,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                     if result in {"dismissed", "failed", "imported"}:
                         return
                 # Keep looking for the local SMB/NFS-visible folder for up to six hours.
-                if time.monotonic() - completed_at > 6 * 60 * 60:
+                if clock.monotonic() - completed_at > 6 * 60 * 60:
                     _discovery_update_acquisition_status(artist, album, "download_complete_move_failed", {
                         "downloads_path": str(download_root),
                         "folder": candidate.get("folder"),
@@ -223,7 +223,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                 "error": type(exc).__name__,
                 "error_message": str(exc)[:500],
             })
-        time.sleep(2)
+        clock.sleep(2)
     _discovery_update_acquisition_status(artist, album, "monitor_timeout", {
         "source_username": candidate["username"]
     })
