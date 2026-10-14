@@ -60,8 +60,6 @@ def load_helpers():
     # function body without importing/initializing MCPServer.
     for node in selected:
         node.decorator_list = []
-        # Keep the helper under test separate from the stub used by the other
-        # orchestration tests, which intentionally isolate source switching.
 
     namespace = {
         "Path": Path,
