@@ -229,13 +229,13 @@ def dashboard_picks(count: int = 10):
 
 app.include_router(create_auth_router(
     settings_read=_auth_settings,
-    settings_write=librarian._discovery_settings_write,
+    settings_write=lambda values: librarian._discovery_settings_write(values),
     auth_configured=_auth_configured,
     session_username=lambda token: _session_username(token),
     set_auth_cookie=_set_auth_cookie,
     valid_username=_valid_auth_username,
     valid_password=_valid_auth_password,
-    password_digest=_password_digest,
+    password_digest=lambda password, salt: _password_digest(password, salt),
     cookie_name=AUTH_COOKIE_NAME,
     login_page_html=LOGIN_PAGE,
 ))
