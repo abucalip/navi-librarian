@@ -1,3 +1,13 @@
+## 2026-10-14 — Read-only audit: remaining `navidrome_server.py` dependencies
+
+- Audited GitHub `main` at `edc6239c0a01573e1eaa3161a4485ca03a9851da`; the legacy module was approximately 6,179 lines. This was a source/documentation inspection only: no application changes or tests were run.
+- Direct web imports remain in `app/main.py`, `app/api/settings.py`, `app/api/discovery.py`, and `app/api/acquisitions.py`. Metadata routes are already separated in `app/api/metadata.py`.
+- `app/main.py` still uses the legacy module for `DATA_DIR`, persistent settings reads/writes, Navidrome health checks, discovery-list retrieval, and album-candidate eligibility. Settings routes delegate Navidrome, Last.fm, ListenBrainz, and slskd configuration/testing to legacy functions. Discovery routes delegate recommendations, list retrieval/refresh, feedback, and eligibility. Acquisition routes delegate status, skip, dismiss, acquire, and queue operations.
+- The web import initializes MCP-related code because `navidrome_server.py` imports and instantiates `MCPServer` and registers tools. The web Dockerfile copies the legacy module and `requirements.txt` includes the MCP package. `server.py` is another MCP-related entry point whose role and callers must be checked before repository-wide dependency removal.
+- Safety regression coupling remains: `tests/test_acquisition_safety.py` parses the legacy file with `ast`, extracts named functions, strips decorators, and executes them in a stub namespace. Do not delete this coverage wholesale; migrate each case to direct tests against extracted implementations and preserve lifecycle/safety assertions.
+- **Next implementation priority:** extract acquisition lifecycle/orchestration behind an importable domain module, retaining existing web/MCP adapters and filesystem safety. Then separate settings/configuration and service access, finish discovery orchestration, and remove remaining `app/main.py` dependencies. Retire MCP only after a fresh repository-wide usage/entry-point/dependency/test/docs audit.
+- Verification boundary: GitHub source and selected docs were inspected; no tests were run. Workflow/status lookups for the audited `main` SHA returned no runs/status entries, so no CI result is claimed. No merge, publication, deployment, or runtime verification occurred.
+
 ## 2026-10-14 — PR #44 local manual test report published
 
 - **PR:** [#44 — fix: diagnose acquisition dismissal cleanup refusals](https://github.com/abucalip/navi-librarian/pull/44)
