@@ -1,11 +1,13 @@
-## 2026-10-14 — Frontend asset extraction (PR pending)
+## 2026-10-14 — PR #41 merged: frontend asset extraction
 
-- Based on GitHub `main` at `790db077ee14c2e7ab8f7c64e37b8ea6e3e6233b`, branch `refactor/frontend-assets`.
-- Extracted the login and primary application HTML to `app/templates/login.html` and `app/templates/index.html`; extracted CSS and JavaScript to `static/login.css`, `static/login.js`, `static/app.css`, and `static/app.js`. `app/main.py` now reads the templates and mounts the static directory.
-- Explicitly allowed only `/static/*` and `/assets/cassette.png` through the auth middleware so unauthenticated setup/login screens can load assets. Added integration tests for public asset delivery and external-asset page markup.
-- First exact-head CI on `480fa466d27ca163a302d01863cc8dc32fba62fd` compiled Python successfully but found two existing tests coupled to inline UI content in `app/main.py`. Updated `tests/test_artwork_cache_isolation.py` and `tests/test_quality_priority.py` to inspect the extracted JavaScript and template files directly; the underlying cache-isolation and quality-control assertions remain. A second run identified that the quality-priority assertion spans both HTML and JavaScript; it now checks both files. Four required workflows are rerunning on the corrected head; results are pending.
-- No local test execution is claimed. Because this changes UI asset delivery, manual browser checks are required after CI, including the deferred performance and distinct error/recovery checks.
-- Not published, deployed, or runtime-verified. GHCR publication remains disabled.
+- **PR:** [#41 — refactor: extract frontend templates and static assets](https://github.com/abucalip/navi-librarian/pull/41).
+- **Branch/head:** `refactor/frontend-assets`, exact tested head `b94dde68cccef776cea3813dbe7310eb857d170b`; squash-merge commit `410506ea76d7181aa300edb9c05ebbd337dd7159`.
+- **Changes:** moved login/main HTML into `app/templates/login.html` and `app/templates/index.html`; moved styles/scripts to `static/`; mounted static assets and preserved public login/icon paths while keeping app/API paths protected. Updated Docker packaging, integration coverage, and tests that were coupled to inline frontend source.
+- **Exact-head CI:** Python syntax `38493894120`, Docker packaging/full unit tests `38493894221`, validation-only Docker image/multi-architecture `38493894141`, and container runtime smoke `38493893959` all succeeded.
+- **Manual UI report:** [published on PR #41](https://github.com/abucalip/navi-librarian/pull/41#issuecomment-6159043901). Eight checklist items passed with zero reported failures on macOS 26.2 arm64, Python 3.12.14, isolated port 8090, sandbox music/download paths, and slskd disabled. User observed noticeably snappier/smoother navigation and reported no errors during testing. A separately induced error/recovery scenario was not reported and is not claimed as completed.
+- **Safety/status:** no local automated test run is claimed; no image publication, deployment, or production runtime verification. GHCR publishing remains paused.
+- **Next:** inspect current GitHub main, open PRs, and roadmap/test gaps before selecting the next focused task.
+
 
 ## 2026-10-14 — Authentication integration coverage and route extraction (PRs #38–#39 merged)
 
