@@ -151,3 +151,11 @@
 - Clarified manual testing: no full local-helper browser run is required for backend-only modularization. Performance observation and a distinct error/recovery exercise remain for the next UI-facing change. The HTTP 409 investigation remains deferred until recurrence.
 - Verification boundary: documentation-only change; no application tests were run in this session. No local helper run, live slskd interaction, production filesystem operation, publication, deployment, or runtime verification is claimed.
 - Next action: inspect current callers and tests on GitHub main, then implement the smallest safe acquisition-coordination extraction with direct-import regression coverage.
+
+
+## 2026-10-14 — Front-end ownership transferred to ZCode
+
+- Added root `AGENTS.md` with front-end scope, protected paths, API/security contract, design workflow using Impeccable where available, exact-SHA verification requirements, and an initial focused visual-polish task.
+- Updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/PROJECT_STATUS.md`, and historical handoff wording to identify ZCode as the front-end owner. Retired the previous root-specific instruction file so there is one authoritative instruction file.
+- Backend/domain, safety, integration, merge, publishing, deployment, and project-level verification ownership remains with the assistant. The acquisition-coordination roadmap remains the main engineering priority.
+- Documentation-only change. No application tests or UI checks were run; verify required CI on the exact PR head before merge.

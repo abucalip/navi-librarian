@@ -1,4 +1,4 @@
-# Claude Code project instructions — front-end ownership
+# Project instructions — ZCode front-end ownership
 
 Repository: `abucalip/navi-librarian`.
 
@@ -58,6 +58,10 @@ Do not change endpoint paths/methods, request or response schemas, auth/session/
 - Avoid unnecessary full-page reloads or repeated requests when the current architecture supports a smaller update. Do not add premature complexity or duplicate domain state in the browser.
 - Preserve existing behavior outside the requested scope. Keep changes focused and explain material trade-offs in the PR.
 
+## Design-tool workflow (Impeccable)
+
+Use Impeccable as a design critique and implementation aid when available in ZCode. Start with its critique/audit guidance before styling; use its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility guidance rather than applying a generic template. Apply only recommendations that fit this product and its existing components. Do not blindly run broad redesign commands, add a frontend framework, or introduce new dependencies. Prefer one cohesive, reviewable improvement over sweeping visual churn. Record which Impeccable guidance was applied and what was intentionally rejected in the PR summary.
+
 ## Git and pull-request workflow
 
 1. Work from current GitHub `main`, unless a different GitHub base is explicitly justified.
@@ -69,6 +73,18 @@ Do not change endpoint paths/methods, request or response schemas, auth/session/
 7. Open a PR against `main`. Include purpose, changed files, acceptance criteria, tests actually run, limitations, and screenshots or before/after notes for visual changes.
 8. Do not merge, publish images, deploy, alter branch protection, disable CI, or bypass required checks. The assistant owns cross-layer review, release controls, merge coordination, and project-level verification.
 9. Never force-push, overwrite unrelated work, or delete branches/worktrees without explicit authorization. If `main` advances, update the branch safely and rerun relevant checks.
+
+## Initial assigned task — visual quality audit and focused polish
+
+Audit the existing web UI and implement one focused, visible improvement that makes it feel intentionally designed and less generic, using Impeccable guidance where available. Begin by identifying the highest-impact issue in the existing UI; prefer improving hierarchy, typography, spacing, component consistency, or responsive behavior over adding features. Preserve the existing dark visual direction and yellow/red accents, existing font choices, album artwork, and established product interactions. Do not redesign every screen in one PR.
+
+Acceptance criteria:
+- State the chosen problem and why it matters before implementation.
+- Make a focused change only within the allowed UI files and narrow front-end tests.
+- No backend/API/authentication, acquisition, or domain behavior changes.
+- Verify desktop and narrow viewport behavior, keyboard/focus states, loading/empty/error states where relevant, and browser console/network errors.
+- Add/update tests for any changed client behavior.
+- Open a PR with before/after screenshots and a concise explanation of the design decisions; do not merge it yourself.
 
 ## Testing and acceptance checklist
 
