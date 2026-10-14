@@ -1,23 +1,13 @@
 """Regression guard for independent album-year and artwork request caches."""
-import ast
 import unittest
 from pathlib import Path
 
 
-SOURCE = Path(__file__).resolve().parents[1] / "app" / "main.py"
+SOURCE = Path(__file__).resolve().parents[1] / "static" / "app.js"
 
 
 def load_page_script():
-    tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
-    page = next(
-        node.value.value
-        for node in tree.body
-        if isinstance(node, ast.Assign)
-        and any(isinstance(target, ast.Name) and target.id == "PAGE" for target in node.targets)
-        and isinstance(node.value, ast.Constant)
-        and isinstance(node.value.value, str)
-    )
-    return page
+    return SOURCE.read_text(encoding="utf-8")
 
 
 class ArtworkCacheIsolationTests(unittest.TestCase):
