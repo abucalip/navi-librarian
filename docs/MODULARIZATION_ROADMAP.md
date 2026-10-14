@@ -12,7 +12,7 @@ PR #51 and PR #53 established refusal and neighbor-preservation coverage for des
 - Next safety-focused slice: move `_discovery_reconcile_interrupted_import` into directly importable `acquisition_recovery.py`, injecting the transition lock, dismissal/state readers, configured music root, canonical folder sanitizer, strict completion matcher, persistence callback, clock, JSON module, and file-move operation.
 - Keep the existing `navidrome_server.py` compatibility adapter and MCP interface; package the new module in Docker.
 - Migrate all existing interrupted-recovery cases out of the AST harness into `tests/test_acquisition_recovery.py`. Preserve exact destination/mount-device verification, manifest matching, staged-file rollback, symlink refusal, no-overwrite behavior, and refusal for dismissed/non-importing jobs.
-- Exact-head CI is pending. No live production filesystem recovery is claimed. Do not merge until all four required workflows pass on the final PR head and the diff is reviewed.
+PR #55 exact head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed all four required workflows (syntax `38601516322`, Docker packaging/full unit suite `38601516096`, runtime smoke `38601516565`, multi-architecture validation `38601516203`) and merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30`. No live production filesystem recovery is claimed.
 - After this slice, the next task is the source-switch orchestration extraction; preserve cleanup failure as a hard stop and uncertain queue outcomes as monitored, never as an automatic duplicate retry.
 
 ## Goal and guardrails
