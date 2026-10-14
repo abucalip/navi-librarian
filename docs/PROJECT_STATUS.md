@@ -1,9 +1,19 @@
-## 2026-10-14 — Metadata API router extraction in progress
+## 2026-10-14 — PR #36 merged: metadata API router
+
+- PR #36 was squash-merged to `main` at `15011614649470c9c71734422b95ee048fbf9f3c`, from corrected exact PR head `19d88637d110ecee8fb2c7c8c4ba2053c6b6113c`.
+- Moved artist biography, album-year, album-details, and artwork endpoints plus provider/cache helpers to `app/api/metadata.py`; registered the router from `app/main.py`.
+- Initial CI exposed an AST-based artwork retry test tied to the previous handler location. Migrated `tests/test_artwork_retry.py` to test the extracted module directly.
+- All four required workflows passed on the corrected exact head: syntax/full unit tests (`38488440438`), Docker packaging/full unit tests (`38488440512`), container runtime smoke (`38488440488`), and validation-only multi-architecture (`38488440439`). No local test run is claimed.
+- This API-only extraction has no intended UI contract change; no manual browser test was required. No image publication, deployment, or production runtime verification occurred.
+- Next roadmap task: inspect and extract authentication/app assembly only after mapping persistent-settings, signing-key, session, middleware, and public-path dependencies with regression tests.
+- GHCR publishing remains disabled until roadmap completion and explicit authorization.
+
+## Historical note — Metadata API router extraction
 
 - Branch: `refactor/metadata-api-router`, based on updated GitHub `main` after PR #35 merged and documentation was reconciled.
 - Objective: move artist biography, album-year, album-details, and artwork routes plus provider/cache helpers from `app/main.py` into `app/api/metadata.py` without changing URLs or provider matching/fallback behavior.
 - Added `tests/test_metadata_routes.py` for route inventory, input validation, cache behavior, MusicBrainz year preference, exact Deezer matching, and tracklist parsing.
-- Initial CI failed because `tests/test_artwork_retry.py` AST-loaded `album_artwork` from `app/main.py`; the route now lives in `app/api/metadata.py`. Updated that test to import and patch the extracted module directly. Exact-head CI on the corrected revision is pending; no local tests are claimed as run.
+- PR #36 has since been merged after all four required workflows passed on the corrected exact head; see the closeout entry above. No local tests are claimed as run.
 - Publishing remains disabled; no image publication, deployment, or production runtime verification.
 
 ## 2026-10-14 — PR #35 merged: discovery API router
