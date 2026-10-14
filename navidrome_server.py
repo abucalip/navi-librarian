@@ -397,8 +397,7 @@ def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
                 if not has_value:
                     absent.append(field)
 
-            if absent:
-                missing.append({
+            if absent:                missing.append({
                     "file": str(path.relative_to(MUSIC_DIR)),
                     "missing_ids": absent,
                 })
@@ -797,8 +796,7 @@ def recommend_new_music(count: int = 10) -> str:
 
                 album_title = next(iter(album_groups.values()))
 
-                key = (_music_key(primary_artist), _music_key(album_title))
-                score = item.get("score", 0)
+                key = (_music_key(primary_artist), _music_key(album_title))                score = item.get("score", 0)
 
                 if key not in albums:
                     albums[key] = {
@@ -1197,8 +1195,7 @@ def recommend_new_music(count: int = 10) -> str:
                 "acid jazz", "afro-jazz", "afro jazz", "jazz fusion",
                 "free jazz", "latin jazz", "ethiopian jazz", "ethio-jazz",
             ))
-            for tag in tags
-        )
+            for tag in tags        )
         priority = ["bossa_nova_brazilian", "rock", "hip-hop", "soul",
                     "electronic", "african", "north_african", "funk", "pop"]
         if "jazz" in families and (not has_hiphop_tag or has_specific_jazz_tag):
@@ -1597,8 +1594,7 @@ def recommend_new_music(count: int = 10) -> str:
         if len(found) >= count:
             record_decision(
                 candidate,
-                "not_considered",
-                "The requested number of recommendations was already reached.",
+                "not_considered",                "The requested number of recommendations was already reached.",
             )
             return
 
@@ -1997,8 +1993,7 @@ def recommend_new_music(count: int = 10) -> str:
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
 
-        "category_targets": targets,
-        "category_counts": dict(selected_counts),
+        "category_targets": targets,        "category_counts": dict(selected_counts),
         "category_shortfalls": {
             category: max(0, target - selected_counts.get(category, 0))
             for category, target in targets.items()
@@ -2397,8 +2392,7 @@ def _lastfm_top_albums(artist, limit=8):
     records = items(payload.get("topalbums", {}).get("album"))
     output = []
     for album in records:
-        title = (album.get("name") or "").strip()
-        if not title or not _discovery_is_album_candidate({"album": title}):
+        title = (album.get("name") or "").strip()        if not title or not _discovery_is_album_candidate({"album": title}):
             continue
         stats = album.get("playcount")
         output.append({
@@ -2797,8 +2791,7 @@ def _build_artist_deep_dive_list():
             "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
             "discovery_type": "artist_deep_dive",
             "discovery_source": "resolved_candidate_pool_beyond_main_selection",
-            "reason": (
-                "An additional resolved candidate for an artist with at least "
+            "reason": (                "An additional resolved candidate for an artist with at least "
                 "three albums in your library; not selected for the main list."
             ),
             "anchor_artist": anchor["name"],
@@ -3199,7 +3192,6 @@ def discovery_set_navidrome_settings(
         "message": "Navidrome settings saved. The password is never returned.",
     }, ensure_ascii=False)
 
-
 @mcp.tool()
 def discovery_test_navidrome_connection() -> str:
     """Test the configured Navidrome credentials without exposing them."""
@@ -3597,8 +3589,7 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
         for item in tracked:
             filename = str(item.get("filename") or "").replace("\\", "/")
             name = filename.rsplit("/", 1)[-1].casefold()
-            if name not in expected:
-                continue
+            if name not in expected:                continue
             directory = item.get("_transfer_directory")
             if directory is None:
                 normalized_filename = normalized_remote_path(filename)
@@ -3997,8 +3988,7 @@ def discovery_dismiss_acquisition(artist, album):
     with _DISCOVERY_IMPORT_TRANSITION_LOCK:
         with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
             row = db.execute(
-                "SELECT status, details_json, candidate_json, settings_json "
-                "FROM discovery_acquisitions WHERE artist_key=? AND album_key=?",
+                "SELECT status, details_json, candidate_json, settings_json "                "FROM discovery_acquisitions WHERE artist_key=? AND album_key=?",
                 identity,
             ).fetchone()
             if not row:
@@ -4067,37 +4057,18 @@ def _discovery_skip_requested(artist, album):
 
 
 def discovery_skip_acquisition_source(artist, album):
-    """Request a safe switch to the next eligible source for a stalled acquisition."""
-    _discovery_init()
-    # Keep the status check and skip request atomic with dismissal in this process.
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        identity = (_music_key(artist), _music_key(album))
-        with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-            row = db.execute(
-                "SELECT status, details_json, candidate_json FROM discovery_acquisitions "
-                "WHERE artist_key=? AND album_key=?", identity,
-            ).fetchone()
-            if not row:
-                return json.dumps({"ok": False, "error": _acquisition_lifecycle.skip_request_error(None, {})})
-            try:
-                candidate = json.loads(row[2] or "{}")
-                details = json.loads(row[1] or "{}")
-            except (ValueError, TypeError):
-                candidate, details = {}, {}
-            error = _acquisition_lifecycle.skip_request_error(row[0], candidate)
-            if error:
-                return json.dumps({"ok": False, "error": error})
-            details["skip_requested"] = True
-            details["skip_requested_at"] = time.time()
-            cursor = db.execute(
-                "UPDATE discovery_acquisitions SET details_json=?, updated_at=? "
-                "WHERE artist_key=? AND album_key=? AND status='downloading'",
-                (json.dumps(details, ensure_ascii=False), time.time(), *identity),
-            )
-            if cursor.rowcount != 1:
-                return json.dumps({"ok": False, "error": "Acquisition state changed; please refresh and try again."})
-            db.commit()
-    return json.dumps({"ok": True, "status": "skip_requested", "message": "Switch requested; cancelling the current source before starting the next one."})
+    """Compatibility adapter for the importable acquisition lifecycle service."""
+    return json.dumps(acquisition_orchestration.request_skip_acquisition_source(
+        artist, album,
+        initialize=_discovery_init,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        connect=lambda: sqlite3.connect(DISCOVERY_DB, timeout=10),
+        music_key=_music_key,
+        lifecycle=_acquisition_lifecycle,
+        now=time.time,
+        json_module=json,
+    ), ensure_ascii=False)
+
 
 
 def _discovery_cancel_and_clean_source(
@@ -4398,7 +4369,6 @@ def _discovery_cancel_and_clean_source(
 
         if expected is None:
             continue
-
         state = (
             str(item.get("state") or "")
             .replace("_", "")
@@ -4798,7 +4768,6 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
                 expected_sizes[key] = size
             if not expected_sizes:
                 return False
-
             staging_dirs = [
                 path for path in artist_dir.glob(".navidrome-import-*")
                 if path.is_dir() and not path.is_symlink()
@@ -5197,8 +5166,7 @@ def _discovery_acquire_album_impl(
                     "minimumResponseFileCount": 1,
                     "minimumPeerUploadSpeed": 0,
                     "responseLimit": 100,
-                    "searchTimeout": search_timeout_ms,
-                },
+                    "searchTimeout": search_timeout_ms,                },
                 timeout=10,
             )
             response.raise_for_status()
@@ -5597,8 +5565,7 @@ def _discovery_reactivate_dismissed_acquisition(artist, album, metadata=None):
     with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
         cursor = db.execute(
             "UPDATE discovery_acquisitions SET status=?, details_json=?, "
-            "candidate_json='{}', settings_json='{}', updated_at=? "
-            "WHERE artist_key=? AND album_key=? AND status='dismissed'",
+            "candidate_json='{}', settings_json='{}', updated_at=? "            "WHERE artist_key=? AND album_key=? AND status='dismissed'",
             (
                 "retry_requested", json.dumps(details, ensure_ascii=False), now,
                 artist_key, album_key,
@@ -5997,8 +5964,7 @@ def restart_server() -> str:
 import os, signal, socket, subprocess, sys, time
 script, pid_text, port_text, log_path = sys.argv[1:]
 pid, port = int(pid_text), int(port_text)
-with open(log_path, "a", buffering=1) as log:
-    log.write(f"Restart requested for PID {pid} on port {port}\\n")
+with open(log_path, "a", buffering=1) as log:    log.write(f"Restart requested for PID {pid} on port {port}\\n")
     time.sleep(2)
     try:
         os.kill(pid, signal.SIGTERM)
