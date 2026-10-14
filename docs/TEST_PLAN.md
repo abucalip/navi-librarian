@@ -286,3 +286,10 @@ For changes that move templates, stylesheets, or scripts out of `app/main.py`:
 - Confirm `/static/login.css`, `/static/login.js`, `/static/app.css`, `/static/app.js`, and `/assets/cassette.png` are reachable before first-run setup/login; verify protected application/API routes remain protected.
 - Run syntax checks and all required Docker packaging/full-test, runtime-smoke, and validation-only multi-architecture workflows on the exact final PR head. Publishing remains disabled.
 - After CI succeeds, perform the full manual browser checklist on that exact SHA, including the deferred performance observation and distinct error/recovery scenario. Record results; do not infer them from unit tests.
+
+
+## Acquisition lifecycle orchestration extraction — follow-up to PR #47
+
+- Direct-import tests must cover the persisted skip transition: eligible downloading state records a request; missing, dismissed, non-downloading, and no-fallback states reject without mutation.
+- For subsequent watcher/source-switch extractions, retain tests for uncertain queue outcomes (never blindly duplicate), safe cleanup refusal, source state persistence, dismiss/skip/import serialization, interrupted-import recovery, and safe rollback.
+- This change's exact-head CI has not yet run at documentation time; do not treat the successful PR #47 workflows as verification of this follow-up branch.
