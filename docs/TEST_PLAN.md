@@ -113,7 +113,7 @@ python -m unittest discover -s tests -v
 - Extracted the existing fail-safe cleanup implementation into `acquisition_cleanup.py` with injected folder-name validation, slskd transfer lookup, and HTTP client dependencies. `navidrome_server.py` retains its existing MCP-compatible wrapper and delegates to the extracted function.
 - Moved all seven dismissal cleanup cases out of the AST-based `tests/test_acquisition_safety.py` harness into directly imported `tests/test_acquisition_cleanup.py`: verified cleanup after transfers stop; unexpected-entry refusal; neighbor artwork/album preservation; traversal rejection; duplicate-folder refusal; symlink-target refusal; failed cancellation preservation.
 - The direct tests use the canonical `acquisition_completion.safe_folder_name` helper. Docker packaging includes the new module.
-- Pending exact-head CI on this branch. Do not claim tests pass until the syntax, full-unit/Docker packaging, runtime smoke, and validation-only multi-architecture workflows finish successfully.
+- PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed syntax/acquisition safety `38600688719`, Docker packaging/full unit suite/image build `38600688787`, container runtime smoke `38600688814`, and validation-only multi-architecture build `38600688667` (publishing paused). Squash-merged at `982e39122a401b8b68d75e38423dbb93711b4abd`.
 - No live slskd request, production-folder deletion, image publication, deployment, or runtime verification is performed. HTTP 409 remains deferred because it was not reproduced.
 
 ## Acquisition dismissal neighbor-preservation regression — PR #53
