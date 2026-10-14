@@ -1,3 +1,9 @@
+## Queue failure classification test migration — in progress (2026-10-14)
+
+- Removed two tests that compiled the thin `_slskd_queue_failure_action` adapter through the AST harness. The adapter delegates to `acquisition_lifecycle.queue_failure_action`.
+- Existing direct-import test `tests/test_acquisition_lifecycle.py::AcquisitionLifecyclePolicyTests.test_queue_failure_classification_never_retries_uncertain_errors` exercises retryable 400/404/422 statuses, fatal 401/403 statuses, uncertain missing/408/429/500/503 statuses, and transport errors.
+- This is test-only; no production behavior or safety assertions are intentionally changed. Focused tests, full suite, syntax, exact-head CI and diff review are pending. Do not record this migration as verified until those checks complete.
+
 ## Acquisition queue guard test migration — verified (2026-10-14)
 
 - PR #64 merged at `1596161aa525896d43c37c85533e8056a742439b` from exact tested head `3bde365e43acbe1cc95f68d7014d899046e735f6`.

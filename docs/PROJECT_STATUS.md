@@ -1,3 +1,13 @@
+## 2026-10-14 — Queue failure classification test migration in progress
+
+- Branch: `test/migrate-queue-failure-classification`, based on current GitHub `main` at `23798189e058c97a2080c64ae6ad6468b0ce3645`.
+- Removed two AST-harness tests for `_slskd_queue_failure_action` and removed that compatibility adapter from the AST harness's selected-function list. The production wrapper delegates directly to `acquisition_lifecycle.queue_failure_action`.
+- Equivalent direct-import coverage already exists in `tests/test_acquisition_lifecycle.py::AcquisitionLifecyclePolicyTests.test_queue_failure_classification_never_retries_uncertain_errors`, covering retryable explicit rejections (400/404/422), fatal authentication failures (401/403), uncertain HTTP outcomes (408/429/500/503/missing status), and transport errors.
+- Test-only change; no production behavior or safety checks changed. Exact-head focused/full tests and all four required workflows remain pending; no test pass is claimed yet.
+- Next: verify direct-import coverage and the complete diff, then migrate the next AST-coupled case only where existing direct-import tests exercise the real implementation with equivalent or stronger safety assertions.
+
+---
+
 ## 2026-10-14 — PR #64 merged: queue dismissal test migration
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/64

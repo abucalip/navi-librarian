@@ -1,3 +1,11 @@
+## 2026-10-14 — Queue failure classification test migration in progress
+
+- Branch `test/migrate-queue-failure-classification` starts from GitHub `main` at `23798189e058c97a2080c64ae6ad6468b0ce3645`.
+- Removed the AST-harness's two `_slskd_queue_failure_action` cases and stopped AST-compiling its thin compatibility wrapper. The production wrapper delegates to `acquisition_lifecycle.queue_failure_action`; `tests/test_acquisition_lifecycle.py` already tests the real policy directly for explicit retryable rejections, fatal authentication failures, uncertain HTTP statuses, and transport failures.
+- This is a test-only migration. No production code, acquisition semantics, cleanup/import behavior, or safety checks changed.
+- Focused tests, full suite, syntax checks, exact-head CI, and final diff review are pending. No tests are claimed to have passed at this point.
+- Next: verify the migration and continue the AST-harness audit incrementally without dropping safety coverage.
+
 ## 2026-10-14 — PR #64 merged: queue dismissal test migration
 
 - PR #64 `test: migrate queue dismissal regression from AST harness` was squash-merged to `main` at `1596161aa525896d43c37c85533e8056a742439b`; exact tested PR head `3bde365e43acbe1cc95f68d7014d899046e735f6`.

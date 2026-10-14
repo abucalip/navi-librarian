@@ -1,3 +1,9 @@
+## 2026-10-14 — Queue failure classification test migration in progress
+
+- Branch `test/migrate-queue-failure-classification` removes two AST-harness cases for `_slskd_queue_failure_action`; its production adapter is a thin delegation to `acquisition_lifecycle.queue_failure_action`.
+- Existing direct-import coverage in `tests/test_acquisition_lifecycle.py` covers retryable 400/404/422 responses, fatal 401/403 responses, uncertain HTTP statuses including 503, and transport errors. No production code or safety semantics change.
+- Exact-head test and CI verification are pending. Continue with the next AST-coupled case only after reviewing the test diff and confirming direct coverage exercises the actual extracted implementation.
+
 ## 2026-10-14 — Queue dismissal regression migrated (PR #64)
 
 - PR #64 merged at `1596161aa525896d43c37c85533e8056a742439b` from tested head `3bde365e43acbe1cc95f68d7014d899046e735f6`.
