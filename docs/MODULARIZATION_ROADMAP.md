@@ -2,9 +2,9 @@
 
 Last updated: 2026-10-14
 
-## Priority override — destructive acquisition cleanup verification
+## Priority override — destructive acquisition cleanup safety
 
-Before continuing routine lifecycle/orchestration extraction, close the higher-risk verification gap in ACQ-04/ACQ-06: directly exercise the actual dismissal cleanup helper against positive and unsafe filesystem fixtures. The reported HTTP 409 remains deferred because the user could not reproduce it; this work does not claim to diagnose or fix that response. PR #51 merged at `790d690ca99866878ee6204f9d101dec5f099994`; all four required workflows passed on exact PR head `58021141472c85c9fa33c431cba15cb66792bc1c`. The six tests still load the legacy helper through the AST harness; a future extraction should migrate them to direct-import tests without weakening assertions. Initial CI exposed a test-harness namespace collision with the existing source-switch stub; the helper-under-test was renamed in the AST namespace and corrected-head CI passed. This verifies the regression suite in CI, not live slskd behavior or production-folder deletion. The reported HTTP 409 remains deferred because it was not reproduced.
+PR #51's six dismissal cleanup regression cases passed all four required workflows on exact head `58021141472c85c9fa33c431cba15cb66792bc1c` and merged at `790d690ca99866878ee6204f9d101dec5f099994`. PR #52's documentation closeout passed all four required workflows on exact head `4684fb257685aec90025af0b02a7dff5eacfe10a` and merged at `7f05363c3b9abec29ef7c7d516bad2796813b11e`. A focused follow-up regression now checks that successful dismissal preserves sibling files and another album folder; its exact-head CI remains pending. Existing coverage also proves an unexpected file inside the target album folder aborts before deleting any expected track. The tests still load the legacy helper via the AST harness; migrate them to direct imports when extracting the implementation, preserving all positive and unsafe cases. The reported HTTP 409 remains deferred because it was not reproduced. Do not test destructive behavior against real production download data without explicit authorization.
 
 ## Goal and guardrails
 
