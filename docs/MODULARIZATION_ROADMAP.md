@@ -7,11 +7,11 @@
 
 ---
 
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
+## 2026-10-14 — PR #73 candidate extraction test migration verified; merge pending
 
 - The remaining candidate-folder scenario was moved from the AST harness into a direct-import regression against `slskd_search.extract_candidates`, using the production quality, album-path, track-identity, and music-key helpers.
 - Acquisition retry/wait and lifecycle coordination cases remain AST-coupled because they test end-to-end query sequencing, shared locks, state persistence, dismissal/reactivation, and watcher recovery rather than just the extracted candidate algorithm.
-- PR #73 exact-head focused/full tests, syntax checks, complete diff review, and four required workflows remain pending.
+- Exact final tested head `a33772ca1da0b6628da490b69f1dc305b6794de3` passed syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`. The first attempt found an empty AST class after its only test moved; it was removed and corrected-head CI passed.
 - Next after verification: audit the top-level acquisition coordinator for the smallest safe extraction seam, preserving cancellation/cleanup refusal, conditional persistence transitions, and uncertain queue outcomes.
 
 ---
