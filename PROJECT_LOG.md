@@ -3,7 +3,7 @@
 - Branch: refactor/acquisition-watcher-startup from GitHub main.
 - Scope: move watcher reservation, persisted downloading state, safe-settings persistence, and thread-start failure handling into acquisition_watcher_startup.py; keep the legacy function as a compatibility adapter and package the new module in Docker.
 - Regression coverage: direct-import cases cover dismissal/duplicate suppression, credential filtering, persistence failure reservation cleanup, and thread-start failure status cleanup. Focused and full tests, four exact-head workflows, final diff review, and docs verification remain required.
-- Limits: implementation proposed; no tests, CI, merge, publication, deployment, or runtime verification claimed yet.
+- CI snapshot on earlier head b60fbacabcdd4b76259e525fef20149dcc71ce72: Python syntax, Docker packaging/full unit suite, and container runtime smoke succeeded; validation-only image/multi-architecture workflow was still in progress at last check. The branch advanced afterward, so final-head CI is required. No local test run, merge, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-14 — PR #57 merged: acquisition watcher lifecycle
 
