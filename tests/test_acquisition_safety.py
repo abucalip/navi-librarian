@@ -36,7 +36,6 @@ def load_helpers():
         "_slskd_search_queries",
         "_slskd_search_response_items",
         "_slskd_path_match_diagnostics",
-        "_slskd_queue_failure_action",
         "_slskd_quality_tier",
         "_slskd_track_identity",
         "_slskd_extract_candidates",
@@ -330,25 +329,6 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
         matcher = HELPERS["_slskd_album_path_match"]
         self.assertFalse(matcher("Moon River", "Radiohead/Moonlight River"))
         self.assertFalse(matcher("AM", "Sam"))
-
-    def test_explicit_source_queue_rejections_allow_failover(self):
-        classify = HELPERS["_slskd_queue_failure_action"]
-        for status in (400, 404, 422):
-            with self.subTest(status=status):
-                exc = SimpleNamespace(response=SimpleNamespace(status_code=status))
-                self.assertEqual(classify(exc), "retry_source")
-
-    def test_queue_auth_errors_are_fatal_but_ambiguous_errors_remain_uncertain(self):
-        classify = HELPERS["_slskd_queue_failure_action"]
-        for status in (401, 403):
-            with self.subTest(status=status):
-                exc = SimpleNamespace(response=SimpleNamespace(status_code=status))
-                self.assertEqual(classify(exc), "fatal")
-        self.assertEqual(classify(FakeHTTPError("timeout")), "uncertain")
-        self.assertEqual(
-            classify(SimpleNamespace(response=SimpleNamespace(status_code=503))),
-            "uncertain",
-        )
 
     def test_slskd_search_response_payload_normalization(self):
         normalize = HELPERS["_slskd_search_response_items"]
