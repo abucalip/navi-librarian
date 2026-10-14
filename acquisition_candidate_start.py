@@ -47,7 +47,7 @@ def candidate_start_state(
             tracked = download_transfer_files(
                 base_url, headers, candidate["username"]
             )
-        except (*http_error_types, ValueError, TypeError):
+        except http_error_types + (ValueError, TypeError):
             return None
         last_files = []
         for item in tracked:
