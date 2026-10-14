@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #76 merged: slskd search polling extraction
+
+- PR #76 squash-merged at `a55a9fa7eed1e221f52434b50f44d0c415fd491a` from exact tested head `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`.
+- Extracted progressive query submission, polling, response/file count aggregation, delayed payload waiting, payload deduplication, and per-query diagnostics into `slskd_search_polling.py`. HTTP, time, ID generation, and response normalization are injected. The server coordinator still owns candidate interpretation, status reporting, queueing, and acquisition state.
+- Direct-import regressions cover fallback queries, delayed payloads, 404/405 compatibility, and unexpected HTTP error propagation. The AST end-to-end retry test remains.
+- All four required workflows passed on the exact head: syntax `38652846800`, Docker packaging/full unit suite `38652846779`, runtime smoke `38652846790`, and image validation with publishing paused `38652846819`; full suite reported 184 tests.
+- No local standalone test command, live slskd, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — slskd search polling extraction in progress
 
 - Branch `refactor/slskd-search-polling`, based on main after PR #74.
