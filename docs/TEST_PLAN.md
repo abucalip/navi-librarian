@@ -400,3 +400,10 @@ python -m unittest discover -s tests -v
 ```
 
 The source-switch guard tests must prove the dismissal check and switch callback execute within one transition-lock critical section, dismissed acquisitions never invoke the callback, and callback return values/exceptions pass through unchanged. Keep the shared lock, conditional persistence writes, source cleanup, and MCP adapter contract unchanged. All four required CI workflows must pass on the exact final PR head; this does not establish live slskd or production filesystem behavior.
+
+
+## Acquisition transition guard — PR #61 closeout
+
+- Exact tested PR head: `aa554ff2be2a19e215538ed2e699b8036764dca1`; squash merge `73172847535d3683facfbe559706c26a8637a3d4`.
+- All four required exact-head workflows passed: Python syntax/acquisition safety `38617537652`, Docker packaging/full unit suite/build `38617538490`, container runtime smoke `38617537978`, and validation-only multi-architecture image validation `38617538229` (publishing paused).
+- Direct-import regressions cover shared-lock critical-section ordering, no source switch after dismissal, callback result preservation, and exception propagation. No separate local test run or live slskd/production filesystem behavior is claimed.
