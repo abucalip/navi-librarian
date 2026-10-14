@@ -1,9 +1,9 @@
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
-- Reconciled the current status against GitHub main at `95a744f8a6f5b4749e5c50de6e095027081a15d5`; PRs #76 and #78 and their documentation closeouts are merged. The latest main commit removes obsolete pending entries for the import guard.
-- This closeout is documentation-only. No application code changed and no new tests were run; retain the exact-head CI evidence recorded in the merged PR entries rather than treating the documentation update as new verification.
-- **Next action:** audit remaining AST-coupled acquisition lifecycle tests for the smallest safe direct-import seam: duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and refusal on failed reactivation, and stale watcher recovery. Keep persistence-transition integration coverage and true lock/race tests unless equivalent direct tests cover the same boundary.
-- No publishing, deployment, or production runtime verification is claimed.
+- Reconciled the project status against GitHub `main` at `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. PR #81 (documentation closeout) is merged; PRs #76 and #78 and their exact-head verification records remain documented below.
+- PR #81's exact tested head was `5dfa47ed4b3dd2cc234b88a2f18b95ba950425fa`; all four required workflows passed on that head. Its squash merge is `3c483aa31e5298595f74f24f3050ef3a0c2b1f96`. This follow-up is documentation-only; no application code changed and no new tests were run.
+- **Next action:** continue the remaining AST-coupled acquisition lifecycle test audit: duplicate-request reservation/concurrency, incomplete saved candidate details, dismissed-job reactivation and refusal on failed reactivation, and stale watcher recovery. Keep persistence-transition integration coverage and true lock/race tests unless equivalent direct tests cover the same boundary.
+- Publishing remains paused. No deployment or production runtime verification is claimed.
 
 ---
 
