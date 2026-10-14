@@ -1,3 +1,9 @@
+## 2026-10-14 — Queue dismissal regression migrated (PR #64)
+
+- PR #64 merged at `1596161aa525896d43c37c85533e8056a742439b` from tested head `3bde365e43acbe1cc95f68d7014d899046e735f6`.
+- The redundant AST-harness queue-dismissal case, adapter shim, and unused HTTP helper were removed. Direct-import coverage against `acquisition_orchestration.queue_candidate_unless_dismissed` preserves the safety assertion and tests critical-section ordering, return propagation, and exceptions.
+- All four required CI workflows passed on the exact tested head; publishing remains paused. Continue with the next AST-coupled case only where direct-import coverage is equivalent or stronger.
+
 ## 2026-10-14 — Acquisition safety test migration follow-up
 
 - After PR #62, removed one redundant AST-harness queue-dismissal case and its shim; equivalent dismissal-refusal coverage remains in direct-import tests against `acquisition_orchestration.queue_candidate_unless_dismissed`.
