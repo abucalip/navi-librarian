@@ -4,7 +4,7 @@
 - Regression coverage checks that an invalid configured download root emits a safe stage-specific warning and that a fully identified album track can be removed without recursive directory deletion.
 - The diagnostic log records the cleanup phase that refused deletion (inventory, configured root, album folder, local file ownership, slskd transfer lookup/cancellation/verification, or unlink). It does not log usernames, paths, credentials, or track names.
 - This is not yet a fix for the reported HTTP 409. Use the stage from a controlled failing dismissal to identify the specific precondition before changing cleanup behavior.
-- Required validation: `python -m py_compile navidrome_server.py tests/test_acquisition_cleanup_diagnostics.py`; `python -m unittest discover -s tests -v`; all four required CI workflows on the exact final PR-head SHA. No local run is claimed for this branch at handoff.
+- Required validation: `python -m py_compile navidrome_server.py tests/test_acquisition_cleanup_diagnostics.py`; `python -m unittest discover -s tests -v`; all four required CI workflows on the exact final PR-head SHA. On initial PR head `7737b4f437457af1b46187e8479c4589102faea2`, Python syntax (`38549845344`), Docker packaging/full unit suite (`38549845313`), and container runtime smoke (`38549845404`) passed; validation-only multi-architecture run `38549845368` was still in progress at last poll. Documentation follow-up creates a new head, so final-head CI must be rechecked. No local run is claimed.
 
 ## Authentication security helper extraction — PR #37 merged (2026-10-14)
 
