@@ -582,3 +582,11 @@ Update this file at the end of every GitHub development session. Keep entries co
 - Documentation-only changes; no application code or runtime behavior changed. No local tests or manual browser tests were run for this documentation-only follow-up. Required CI must be checked on this follow-up's exact PR head before merge.
 - Publishing/deployment/runtime verification: not performed. Publishing remains paused.
 - **Next action:** verify this PR's exact-head CI and mergeability, then provide Claude a specific UI task and direct it to read `CLAUDE.md` first.
+
+
+## 2026-10-14 — PR #47 merged; PR #48 dependency reconciliation required
+
+- Squash-merged PR #47 to `main` at `1877dca3187f7cbde85b211d5414e558f12da502`. The lifecycle policy extraction is merged; do not confuse this with completion of the broader acquisition lifecycle/orchestration migration.
+- Inspected PR #48 `refactor/acquisition-lifecycle-orchestration` at `115e1f9373744d361a20f0ba20c35589db0ca099`. Because PR #47 was squash-merged, the PR #48 branch still has the old history and its diff against updated `main` contains both PRs' changes. GitHub comparison: diverged, 31 ahead/1 behind; PR #48 reported not mergeable.
+- The four required workflows had succeeded on the existing PR #48 head, but that evidence does not validate a reconciled revision. No local tests, publishing, deployment, or production runtime checks were performed in this closeout.
+- PR #48 was left open; no force push or branch rewrite was attempted. **Next action:** create a clean orchestration-only branch on current `main`, review its complete diff and safety/MCP compatibility, then require all four workflows to pass on the exact new PR head before merge.
