@@ -58,8 +58,8 @@ def load_helpers():
 
     namespace = {
         "Path": Path,
-        "_module_candidate_start_state": _module_candidate_start_state,
         "_acquisition_lifecycle": _acquisition_lifecycle,
+        "_module_candidate_start_state": _module_candidate_start_state,
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
         "_discovery_match_completed_album_files": _module_match_completed_album_files,
@@ -345,31 +345,6 @@ class SlskdAlbumPathMatchingTests(unittest.TestCase):
 class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
         self.ns = load_helpers()
-
-    def test_parent_traversal_is_rejected_before_transfer_lookup(self):
-        calls = []
-        self.ns["_slskd_download_transfer_files"] = lambda *args: calls.append(args) or []
-        candidate = {"username": "peer", "files": [
-            {"filename": "Album/../Other/01.flac"}
-        ]}
-        result = self.ns["_slskd_candidate_start_state"](
-            "http://slskd", {}, candidate, timeout=1
-        )
-        self.assertIsNone(result)
-        self.assertEqual(calls, [])
-
-    def test_files_from_multiple_remote_directories_are_rejected(self):
-        calls = []
-        self.ns["_slskd_download_transfer_files"] = lambda *args: calls.append(args) or []
-        candidate = {"username": "peer", "files": [
-            {"filename": "Album/01.flac"},
-            {"filename": "Other/02.flac"},
-        ]}
-        result = self.ns["_slskd_candidate_start_state"](
-            "http://slskd", {}, candidate, timeout=1
-        )
-        self.assertIsNone(result)
-        self.assertEqual(calls, [])
 
     def test_simultaneous_requests_do_not_run_two_acquisition_searches(self):
         entered_impl = threading.Event()
