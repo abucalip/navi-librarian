@@ -5,7 +5,7 @@
 - Focused command: `python -m unittest tests.test_discovery_routes -v`.
 - Baseline commands: `python -m py_compile navidrome_server.py app/main.py app/api/discovery.py` and `python -m unittest discover -s tests -v`.
 - Direct-import tests cover route/method inventory, recommendation count defaults and album-candidate filtering, discovery list validation/defaults, refresh count parsing/defaults, feedback validation and Unicode metadata serialization, domain payload mapping, and sanitized errors.
-- This is an API-only extraction with no intended UI contract change. Manual browser testing is not required unless review/CI reveals a UI behavior change. Do not claim tests/CI passed until actually observed on the exact final PR head.
+- This is an API-only extraction with no intended UI contract change. Manual browser testing is not required unless review/CI reveals a UI behavior change. PR #35 is open; the workflow/status lookup returned no runs or checks for observed head `1700fee4332876fe0478f88a78f65c4f752df5ff`. Do not merge until exact-head CI is visible and passing; do not claim tests/CI passed without evidence.
 
 ## Current verification state — PR #34 merged (2026-10-14)
 
