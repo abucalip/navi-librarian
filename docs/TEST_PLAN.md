@@ -1,3 +1,11 @@
+## Authentication security helper extraction — in progress
+
+- Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 and documentation closeout.
+- Added `app/security/auth.py` for persistent signing-secret loading, username/password policy, PBKDF2 digest, and signed-session creation/validation. `app/main.py` imports these primitives and retains compatibility wrappers; HTTP routes, cookie settings, login throttling, and middleware are intentionally unchanged.
+- Updated `tests/test_app_auth.py` to import the extracted primitives directly without AST-loading functions from `app/main.py` or starting the service. Tests cover username/password policy, deterministic salt-sensitive digest, signed token expiry/tampering/user binding, persistent secret reuse, private POSIX permissions, and invalid-secret failure.
+- Required verification: `python -m unittest tests.test_app_auth -v`; `python -m py_compile app/security/auth.py app/main.py tests/test_app_auth.py`; full `python -m unittest discover -s tests -v`; all four required CI workflows on the exact final PR head.
+- Security-sensitive extraction: no intended auth behavior change. Do not merge unless full tests and runtime smoke pass on the exact final head. No local test run is claimed.
+
 ## Metadata API route extraction — PR #36 merged (2026-10-14)
 
 - Branch: `refactor/metadata-api-router`, based on the updated GitHub `main` after PR #35 and documentation closeout.
