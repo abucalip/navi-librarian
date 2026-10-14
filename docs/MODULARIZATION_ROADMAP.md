@@ -1,3 +1,12 @@
+## 2026-10-15 — Candidate extraction test migration (PR #73 preparation)
+
+- Moved the remaining Tinariwen/Idrache candidate-folder grouping/ranking scenario into direct-import coverage for `slskd_search.extract_candidates`, injecting the production music-key, album-path, quality-tier, and track-identity helpers.
+- Acquisition retry/wait and lifecycle coordination tests remain AST-coupled until an extraction seam and direct tests preserve the actual sequencing, shared-lock races, persistence transitions, cancellation, dismissal/reactivation, and watcher recovery.
+- Verification remains pending: focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review.
+- Next after verification: inspect the acquisition coordinator for a small safe seam; do not split coordination state merely to eliminate AST loading.
+
+---
+
 ## 2026-10-14 — PR #73 candidate extraction test migration in progress
 
 - The remaining candidate-folder scenario was moved from the AST harness into a direct-import regression against `slskd_search.extract_candidates`, using the production quality, album-path, track-identity, and music-key helpers.
