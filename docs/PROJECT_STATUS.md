@@ -520,3 +520,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - **CI evidence:** the four required workflows passed on the existing PR #48 head (Python syntax, Docker packaging, container runtime smoke, validation-only Docker image build). These results apply only to that old, unreconciled head and are not evidence for a cleaned branch.
 - **Safety decision:** PR #48 was not merged, force-pushed, or rewritten. No tests were run in a local checkout during this closeout. No publishing, deployment, or production runtime verification occurred.
 - **Next action:** reconstruct/rebase the orchestration extraction onto current `main`, retaining only its intended implementation, direct regression tests, packaging changes, and relevant documentation. Review the full diff and run all required workflows on the exact new head before reconsidering merge.
+
+
+## 2026-10-14 — PR #49 merged; PR #48 orchestration reconstructed
+
+- PR #49 documentation closeout was squash-merged at `c972278566d8ec68f3755f464df1afb5a8a18f56` after all four required workflows passed on exact head `f4712aa2703d4f1deae6a0532502f27123b80fc6`.
+- The original PR #48 branch remains unsuitable for merge because it carries pre-squash history. A clean reconstruction was started from updated `main` on `refactor/acquisition-orchestration-reconstructed`.
+- Intended scope: extract only the persisted manual source-skip transition into `acquisition_orchestration.py`, keep the MCP adapter and safety boundaries, add direct-import tests, and package the module in Docker. No cleanup/import implementation or filesystem safety rule is changed.
+- Verification of the reconstructed branch is pending; do not transfer CI results from the old PR #48 head or PR #49 to this new revision. No publication, deployment, or production runtime verification occurred.
