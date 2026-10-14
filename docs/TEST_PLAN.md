@@ -108,6 +108,14 @@ python -m unittest discover -s tests -v
 - PR #28 was squash-merged to `main` at `686fb393a178fe27f3806ecd5ce2138b026291cc`. No workflow runs were returned for the merge commit at closeout; CI evidence above is for the exact PR head, not the merge commit.
 - No local test execution or live/manual runtime checks were performed during closeout.
 
+## Acquisition cleanup domain extraction — current branch
+
+- Extracted the existing fail-safe cleanup implementation into `acquisition_cleanup.py` with injected folder-name validation, slskd transfer lookup, and HTTP client dependencies. `navidrome_server.py` retains its existing MCP-compatible wrapper and delegates to the extracted function.
+- Moved all six dismissal cleanup cases out of the AST-based `tests/test_acquisition_safety.py` harness into directly imported `tests/test_acquisition_cleanup.py`: verified cleanup after transfers stop; unexpected-entry refusal; neighbor artwork/album preservation; traversal rejection; duplicate-folder refusal; symlink-target refusal; failed cancellation preservation. (Seven test methods are present.)
+- The direct tests use the canonical `acquisition_completion.safe_folder_name` helper. Docker packaging includes the new module.
+- Pending exact-head CI on this branch. Do not claim tests pass until the syntax, full-unit/Docker packaging, runtime smoke, and validation-only multi-architecture workflows finish successfully.
+- No live slskd request, production-folder deletion, image publication, deployment, or runtime verification is performed. HTTP 409 remains deferred because it was not reproduced.
+
 ## Acquisition dismissal neighbor-preservation regression — PR #53
 
 - Final PR head `ef6ec7347f69c0be04331d7bd671d9f56f3c137d` passed all four required workflows: Python syntax/acquisition safety `38599666003`, Docker packaging/full unit suite `38599666001`, container runtime smoke `38599665955`, and validation-only multi-architecture image build `38599665933` (publishing paused).
