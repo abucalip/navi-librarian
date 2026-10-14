@@ -1,3 +1,11 @@
+## PR #44 — acquisition dismissal diagnostics: manual report (2026-10-14)
+
+- Tested exact PR head `4c505423afef8c6959063ddea7e5672a0b9894ef` in the isolated local helper environment on macOS 26.2 arm64, Python 3.12.14, port 8089, per-commit app data, sandbox music/download paths, and slskd disabled by default.
+- User-reported manual checklist passed: setup/login, dashboard/artwork, discovery, navigation/album details, settings save/load without secret exposure, Get/request without a real download, acquisition cards/status, and no unexpected browser/server errors.
+- Dismiss attempts all succeeded; HTTP 409 was **not reproduced**. No cleanup refusal stage was captured, so this is not evidence of a root-cause fix.
+- The report's trailing console detail was truncated (`console showed 2$`); no inference is made from it. Full suite and CI claims remain limited to the exact-head GitHub Actions results recorded in PR #44.
+- PR remains draft/unmerged pending reproduction or other concrete evidence. No live slskd test, image publication, deployment, or production runtime verification.
+ 
 ## Authentication security helper extraction — PR #37 merged (2026-10-14)
 
 - Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 and documentation closeout.
