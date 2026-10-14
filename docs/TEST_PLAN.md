@@ -1,3 +1,10 @@
+## Acquisition queue/dismissal coordination extraction (2026-10-14)
+
+- `queue_candidate_unless_dismissed` in `acquisition_orchestration.py` is tested directly for shared-lock scope, dismissal refusal, successful return propagation, and exception propagation.
+- The legacy server adapter retains the HTTP request construction and `raise_for_status()`; the guard retains the same shared transition lock and dismissal predicate.
+- The AST-based safety case remains in place but delegates to the extracted implementation, avoiding loss of the prior dismissed-job/no-queue regression.
+- Verify focused and full unit suites, syntax, Docker packaging/build, container runtime smoke, and validation-only multi-architecture build on the exact PR head. No local or live slskd test is implied by CI.
+
 
 
 ## Acquisition watcher startup extraction
