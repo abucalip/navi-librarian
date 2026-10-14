@@ -1,4 +1,11 @@
-## 2026-10-14 — Candidate-start validation extraction (PR pending)
+## 2026-10-14 — PR #71 merged: candidate-start validation extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/71; branch `refactor/extract-candidate-start-validation`.
+- Tested PR head: `f53e8ceffc8307c7b8dbcbf837e123b51671bbda`; squash merge commit: `b10650aa6a8889610b5734c5a1cf02c3197f1ad0`.
+- Extracted `acquisition_candidate_start.py` with injected transfer lookup, HTTP, and timing dependencies; retained `_slskd_candidate_start_state` as a compatibility adapter. Added direct tests for traversal, mixed directories, active transfers, cancellation, and fail-closed uncertain outcomes.
+- All four required workflows passed on exact PR head: syntax `38648719075`, Docker packaging/full unit suite `38648719066`, runtime smoke `38648719107`, and Docker image validation (publishing paused) `38648719074`.
+- No standalone local tests, live slskd interaction, image publication, deployment, or production runtime verification claimed.
+- Next: continue auditing AST-coupled tests, preserving acquisition coordination and persistence safety coverage.
 
 - Branch `refactor/extract-candidate-start-validation` is based on post-PR #70 main commit `78e7f01dc8bf011e3c77e3d6316f6ee565ca6161`.
 - Extracted the candidate-start validator into `acquisition_candidate_start.py`, retaining the server adapter and injecting external dependencies for isolated tests.
