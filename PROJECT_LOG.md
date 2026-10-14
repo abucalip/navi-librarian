@@ -53,4 +53,6 @@
 
 - Extracted the existing reconciliation algorithm into `acquisition_recovery.py`; injected the lock, dismissal/state readers, music root, folder sanitizer, strict completion matcher, persistence, clock, JSON, and move operation. Preserved the legacy adapter.
 - Moved four existing recovery cases out of `tests/test_acquisition_safety.py` and added a direct-import test for dismissed/non-importing states. Docker packaging updated.
-- CI on the final PR head is pending. No production filesystem recovery, live service interaction, publication, or deployment is claimed.
+- Final exact PR head `92a1bce84f7a826dc7d0e45cf0be05a51fd47fd5` passed syntax/acquisition safety `38601516322`, Docker packaging/full unit suite/image build `38601516096`, runtime smoke `38601516565`, and validation-only multi-architecture build `38601516203` (publishing paused). PR #55 was squash-merged at `7d9ef435ce9b74db2bd93aec305209cd9cbb6e30` after complete diff review; no review submissions or inline threads were present.
+- No production filesystem recovery, live service interaction, publication, deployment, or production runtime verification is claimed.
+- Next: extract source-switch orchestration behind injected dependencies, preserving cleanup failure as a hard stop and uncertain queue outcomes as monitored rather than retried.
