@@ -29,6 +29,40 @@ These extractions are merged to main. They do not mean the monolithic server or 
 6. Frontend assets: **completed in PR #41**, squash-merged to `main` at `410506ea76d7181aa300edb9c05ebbd337dd7159` from exact tested head `b94dde68cccef776cea3813dbe7310eb857d170b`. Login/main HTML is in `app/templates/`; CSS/JavaScript is in `static/`; Docker packaging and auth middleware public-asset rules are updated, with regression coverage for asset delivery and external references. All four required exact-head workflows passed, and the manual report recorded eight checklist items passing. User reports navigation is noticeably snappier and no errors occurred. A distinct deliberately induced error/recovery scenario was not reported and is not claimed. See `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md` for the verification boundary.
 7. MCP retirement: audit all imports, entry points, dependencies, tests and docs. Remove MCP registration and MCP-only runtime/dependencies only after the web app no longer relies on navidrome_server.py as its domain API. Keep compatibility wrappers until every consumer is migrated.
 
+## Remaining `navidrome_server.py` dependencies — audit 2026-10-14
+
+The current web application still imports the monolith as its domain API. Treat this as the dependency inventory and sequence for remaining work; re-check current `main` and callers before implementation.
+
+### Direct web callers
+
+- `app/main.py`: imports `navidrome_server as librarian`; uses `DATA_DIR`, settings read/write, `api_call` for health, discovery-list retrieval, and album-candidate filtering for dashboard picks.
+- `app/api/settings.py`: delegates Navidrome, Last.fm, ListenBrainz, and slskd settings reads/writes and connection tests to legacy functions.
+- `app/api/discovery.py`: delegates recommendation generation, discovery-list retrieval/refresh, feedback, and album eligibility.
+- `app/api/acquisitions.py`: delegates acquisition status, source skipping, dismissal, album acquisition, and slskd candidate queueing.
+- `app/api/metadata.py` no longer imports the monolith; its route/provider helpers are extracted.
+
+### Hidden runtime and test coupling
+
+- Importing `navidrome_server.py` also imports/instantiates `MCPServer` and registers MCP tools. Therefore the FastAPI runtime pulls in MCP code despite the web Docker entry point running Uvicorn.
+- The web Dockerfile copies `navidrome_server.py`; `requirements.txt` includes the MCP package. `server.py` is another MCP-related entry point and must be checked before any repository-wide claim that MCP is unused.
+- `tests/test_acquisition_safety.py` uses AST parsing to extract named functions from `navidrome_server.py`, remove decorators, and execute them in a stub namespace. This makes tests sensitive to function location and names. Replace this coverage incrementally with direct-import tests of extracted implementations; preserve lifecycle, cleanup, path-validation, no-overwrite, rollback, and unsafe-failure cases.
+
+### Recommended implementation order
+
+1. **Acquisition lifecycle/orchestration and test migration.** Extract state transitions, persistence coordination, candidate/source selection, queue/skip/dismiss/failover, completed-import coordination, and recovery behind importable domain interfaces. Keep destructive operations fail-safe and preserve existing callers with adapters until verified.
+2. **Settings, configuration, and service access.** Separate persistent settings operations and Navidrome/slskd/Last.fm/ListenBrainz integration from MCP registration. Preserve secret handling, data-directory behavior, defaults, validation, and errors.
+3. **Discovery orchestration.** Connect existing recommendation, store, and refresh modules through service interfaces; extract remaining list construction, feedback, provider integration, and inventory access without duplicating domain logic in routes.
+4. **Application assembly.** Remove `app/main.py`'s remaining dependency on the monolith for settings/auth persistence, health checks, and dashboard discovery behavior. Keep middleware and public/protected route behavior unchanged.
+5. **MCP retirement.** Only after web callers and tests no longer depend on the monolith, audit all imports, entry points, dependencies, tests, docs, and compatibility needs. Remove MCP registration/runtime dependencies only when each web-required behavior has an independent tested owner.
+
+### Acceptance gates for each extraction
+
+- Direct-import regression tests exercise the extracted implementation; no parallel copy of domain behavior in the web layer.
+- Preserve MCP compatibility until the separately verified retirement step.
+- For acquisition changes, cover both successful behavior and unsafe failure cases, including traversal/symlink escape, ambiguous targets, unrelated files, cleanup refusals, import rollback, and interrupted lifecycle recovery where applicable.
+- Run focused tests, `python -m unittest discover -s tests -v`, syntax checks, and applicable Docker/API/runtime checks. Verify all required CI on the exact final PR-head SHA.
+- Review all changed callers and the complete diff. Update this roadmap, project status/log, and test/architecture docs with actual evidence; never infer test success from compilation or a successful container start.
+
 ## Testing and release gates
 
 For each route extraction:
@@ -41,7 +75,7 @@ Docker runtime smoke and multi-architecture build validation remain enabled. GHC
 
 ## Current status
 
-Domain extractions through PR #30 are merged. Settings route separation is complete on `main` via PR #33. Acquisition route separation is merged via PR #34; all four required workflows passed on the exact final PR head. Discovery route separation is merged via PR #35; all four required workflows passed on the exact final PR head. Metadata route separation is merged via PR #36; all four required workflows passed on the corrected exact head. Authentication security primitives are merged via PR #37 with all four required workflows passing. Integration tests are merged via PR #38. Auth route extraction is merged via PR #39 at `f08495088b28ca538f90b9ff9edf4410f5e55749`; all four required workflows passed on exact PR head `9187a51380d2a7ed7d27276ce4505827becaed32`. Middleware remains in `app/main.py`. Frontend asset extraction is merged via PR #41 at `410506ea76d7181aa300edb9c05ebbd337dd7159`; MCP retirement remains future work.
+Domain extractions through PR #30 and the route/frontend stages through PR #41 are merged as recorded above. The 2026-10-14 read-only audit confirms that `app/main.py`, settings, discovery, and acquisition routes still import `navidrome_server.py`; MCP retirement is blocked until those domain dependencies and the AST-coupled acquisition tests are migrated. The next implementation priority is acquisition lifecycle/orchestration extraction with direct regression tests, followed by settings/service boundaries, discovery orchestration, and app assembly. Audit-only CI lookup returned no workflow runs or status entries for main SHA `edc6239c0a01573e1eaa3161a4485ca03a9851da`; no CI result is claimed for that SHA.
 
 
 ## Stage 7 — FastAPI route separation: settings routes
