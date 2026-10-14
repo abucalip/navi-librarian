@@ -4128,7 +4128,7 @@ def _discovery_cancel_and_clean_source(
         logging.getLogger(__name__).warning(
             "Acquisition dismissal cleanup refused at %s", reason or stage
         )
-        return reject()
+        return False
 
     def normalized_path(value):
         """Normalize separators without treating different paths as equal."""
