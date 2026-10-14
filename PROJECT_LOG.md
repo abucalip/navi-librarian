@@ -1,9 +1,17 @@
+## 2026-10-14 — PR #37 merged; authentication security helper closeout
+
+- PR #37 squash-merged to `main` at `cb6b1d1d17a6ea3b4dc0099a7588b8752b5d84b3` from exact head `192b084850ecbe0137b64b3dae9d07e0471198b4`.
+- Extracted persistent signing-secret loading, username/password policy, PBKDF2 digest, and signed-session creation/validation into `app/security/auth.py`. Routes, cookie policy, throttling, settings access, and middleware remain in `app/main.py`.
+- Replaced AST-based auth helper tests with direct unit tests for policy, digest, signing/expiry/tampering/user binding, secret persistence, permissions, and invalid-secret failure.
+- All four required workflows passed on the exact head: syntax/full tests `38488744726`, Docker packaging/full tests `38488744684`, runtime smoke `38488744607`, and validation-only multi-architecture `38488744643`.
+- No local test run, image publication, deployment, or production runtime verification is claimed. Next action: establish auth route/middleware integration tests before further app-assembly extraction.
+
 ## 2026-10-14 — Authentication security helper extraction started
 
 - Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 merged.
 - Added `app/security/auth.py` for signing-secret persistence, username/password validation, PBKDF2 digest, and signed-session creation/validation. `app/main.py` retains compatibility wrappers and all route/cookie/middleware behavior.
 - Reworked `tests/test_app_auth.py` from AST extraction of `app/main.py` functions to direct unit tests against the isolated primitives, including signing-secret permissions and invalid-secret handling.
-- Focused/full tests, exact-head CI, final diff review, and PR creation remain pending; no local test run is claimed.
+- PR #37 has since been merged after all four required workflows passed on exact head `192b084850ecbe0137b64b3dae9d07e0471198b4`; see the closeout entry above. No local test run is claimed.
 - No image publication, deployment, or production runtime verification. Publishing remains disabled pending roadmap completion and explicit authorization.
 
 ## 2026-10-14 — PR #36 merged; metadata API router closeout
