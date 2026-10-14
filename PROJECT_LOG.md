@@ -113,3 +113,13 @@
 - **Corrected exact-head CI:** `6793c339464c9d573c02f5e7dc91d15b5f568348` passed Python syntax/acquisition safety run `38604931720`, Docker packaging/full unit suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture `38604932002` (publishing paused).
 - **Final-head CI:** after the documentation updates, exact PR head `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed Python syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture `38605193820` (publishing paused).
 - **State:** PR #57 was subsequently squash-merged to main at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589. No assistant-local test run, live slskd behavior, production filesystem operation, image publication, deployment, or production runtime verification.
+
+
+## 2026-10-14 — Modularization roadmap reconciliation and session closeout
+
+- Reconciled the roadmap against current GitHub main and the open-PR list after PRs #57–#59.
+- Marked watcher-loop extraction (#57), watcher-startup extraction (#58), and acquisition-state save/list persistence (#59) as merged, with their known merge SHAs and exact-head CI boundaries.
+- Reordered remaining work: acquisition coordination and AST-test migration; settings/configuration/service boundaries; discovery orchestration; application assembly; MCP retirement last.
+- Clarified manual testing: no full local-helper browser run is required for backend-only modularization. Performance observation and a distinct error/recovery exercise remain for the next UI-facing change. The HTTP 409 investigation remains deferred until recurrence.
+- Verification boundary: documentation-only change; no application tests were run in this session. No local helper run, live slskd interaction, production filesystem operation, publication, deployment, or runtime verification is claimed.
+- Next action: inspect current callers and tests on GitHub main, then implement the smallest safe acquisition-coordination extraction with direct-import regression coverage.
