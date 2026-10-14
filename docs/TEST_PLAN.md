@@ -1,10 +1,10 @@
-## Authentication security helper extraction — in progress
+## Authentication security helper extraction — PR #37 merged (2026-10-14)
 
 - Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 and documentation closeout.
 - Added `app/security/auth.py` for persistent signing-secret loading, username/password policy, PBKDF2 digest, and signed-session creation/validation. `app/main.py` imports these primitives and retains compatibility wrappers; HTTP routes, cookie settings, login throttling, and middleware are intentionally unchanged.
 - Updated `tests/test_app_auth.py` to import the extracted primitives directly without AST-loading functions from `app/main.py` or starting the service. Tests cover username/password policy, deterministic salt-sensitive digest, signed token expiry/tampering/user binding, persistent secret reuse, private POSIX permissions, and invalid-secret failure.
-- Required verification: `python -m unittest tests.test_app_auth -v`; `python -m py_compile app/security/auth.py app/main.py tests/test_app_auth.py`; full `python -m unittest discover -s tests -v`; all four required CI workflows on the exact final PR head.
-- Security-sensitive extraction: no intended auth behavior change. Do not merge unless full tests and runtime smoke pass on the exact final head. No local test run is claimed.
+- Exact-head verification on `192b084850ecbe0137b64b3dae9d07e0471198b4`: Python syntax/full-unit-test workflow `38488744726` passed; Docker packaging/full-unit-test workflow `38488744684` passed; container runtime smoke `38488744607` passed; validation-only multi-architecture `38488744643` passed. No local test execution is claimed.
+- Security-sensitive extraction: no intended auth behavior change. PR #37 was squash-merged at `cb6b1d1d17a6ea3b4dc0099a7588b8752b5d84b3`. No local test run is claimed.
 
 ## Metadata API route extraction — PR #36 merged (2026-10-14)
 
