@@ -1,3 +1,11 @@
+## Acquisition dismissal cleanup diagnostics — investigation branch
+
+- Focused command: `python -m unittest tests.test_acquisition_cleanup_diagnostics -v`.
+- Regression coverage checks that an invalid configured download root emits a safe stage-specific warning and that a fully identified album track can be removed without recursive directory deletion.
+- The diagnostic log records the cleanup phase that refused deletion (inventory, configured root, album folder, local file ownership, slskd transfer lookup/cancellation/verification, or unlink). It does not log usernames, paths, credentials, or track names.
+- This is not yet a fix for the reported HTTP 409. Use the stage from a controlled failing dismissal to identify the specific precondition before changing cleanup behavior.
+- Required validation: `python -m py_compile navidrome_server.py tests/test_acquisition_cleanup_diagnostics.py`; `python -m unittest discover -s tests -v`; all four required CI workflows on the exact final PR-head SHA. No local run is claimed for this branch at handoff.
+
 ## Authentication security helper extraction — PR #37 merged (2026-10-14)
 
 - Branch: `refactor/auth-security-helpers`, based on updated GitHub `main` after PR #36 and documentation closeout.
