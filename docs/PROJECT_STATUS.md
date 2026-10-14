@@ -3,7 +3,7 @@
 - Branch: `refactor/metadata-api-router`, based on updated GitHub `main` after PR #35 merged and documentation was reconciled.
 - Objective: move artist biography, album-year, album-details, and artwork routes plus provider/cache helpers from `app/main.py` into `app/api/metadata.py` without changing URLs or provider matching/fallback behavior.
 - Added `tests/test_metadata_routes.py` for route inventory, input validation, cache behavior, MusicBrainz year preference, exact Deezer matching, and tracklist parsing.
-- Exact-head CI, complete diff review, and PR creation remain pending; no local tests are claimed as run.
+- Initial CI failed because `tests/test_artwork_retry.py` AST-loaded `album_artwork` from `app/main.py`; the route now lives in `app/api/metadata.py`. Updated that test to import and patch the extracted module directly. Exact-head CI on the corrected revision is pending; no local tests are claimed as run.
 - Publishing remains disabled; no image publication, deployment, or production runtime verification.
 
 ## 2026-10-14 — PR #35 merged: discovery API router
