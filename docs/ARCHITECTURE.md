@@ -89,3 +89,8 @@ The acquisition endpoints (`/api/acquisitions*` and `/api/acquire*`) are being m
 ## Discovery API route boundary — merged PR #35
 
 The recommendations, cached discovery-list, refresh, and feedback HTTP handlers are grouped in `app/api/discovery.py`. The router adapts request parameters and responses while delegating recommendation filtering, ownership behavior, persistence, refresh coordination, and feedback semantics to existing `navidrome_server` functions. `app.main` registers the router alongside settings and acquisition routes. Direct-import route tests cover route inventory, defaults, validation, payload mapping, and sanitized failures. This extraction preserves existing URLs and delegates domain behavior to existing functions. All four required CI workflows passed on exact PR head `eac2a79e3e993d57edc22e86ea50f47e38cf300d`; merge commit is `d61162b29c6f0cccc97aefe9c779567e671651b2`.
+
+
+## Metadata API route boundary — in progress
+
+Artist biography, album-year, album-details, and artwork endpoints plus their external-provider HTTP client and in-memory cache/rate-limit helpers are being separated into `app/api/metadata.py`. The router preserves provider matching rules, cache TTLs, MusicBrainz request pacing, and the non-fatal fallback behavior for optional metadata. Regression coverage is being added in `tests/test_metadata_routes.py`; exact-head CI and review are pending.
