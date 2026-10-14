@@ -548,3 +548,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Scope merged: extracted persisted source-skip transition into `acquisition_orchestration.py`, kept the MCP compatibility adapter and safety boundaries, added direct regression tests, and updated Docker packaging and documentation.
 - No PR reviews or inline review threads were present at merge time. No separate local test run is claimed. No image publication, deployment, or production runtime verification occurred.
 - **Next action:** continue with the next highest-priority roadmap item; do not infer publication or deployment from this merge.
+
+
+## 2026-10-14 — Follow-up regression: preserve neighboring acquisition files
+
+- PR #51's six dismissal cleanup regression cases passed all four required workflows on exact head `58021141472c85c9fa33c431cba15cb66792bc1c`; PR #51 merged at `790d690ca99866878ee6204f9d101dec5f099994`.
+- PR #52's documentation closeout passed all four required workflows on exact head `4684fb257685aec90025af0b02a7dff5eacfe10a`; merged at `7f05363c3b9abec29ef7c7d516bad2796813b11e`.
+- Branch `test/acquisition-dismissal-neighbor-preservation` adds a regression proving successful dismissal removes only the identified album folder while preserving a sibling artwork file and another album folder. Test-only change; exact-head CI pending.
+- The tests still invoke the legacy cleanup helper through the AST harness. Migrate to direct-import tests only alongside a tested extraction, without weakening assertions. HTTP 409 remains deferred because it was not reproduced.
+- No local test run, live slskd test, real production-folder deletion, image publication, deployment, or production runtime verification is claimed.
+- Next: verify all four required workflows on the final PR head and review the full diff before merge.
