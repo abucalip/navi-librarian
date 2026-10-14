@@ -589,9 +589,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Next priority: extract the acquisition watcher loop and top-level lifecycle coordination behind injected dependencies, migrating direct-import tests while preserving cancellation, import rollback, status persistence, and MCP compatibility.
 
 
-## 2026-10-14 — Acquisition watcher lifecycle extraction proposed
+## 2026-10-14 — Acquisition watcher lifecycle extraction (PR #57)
 
-- Branch `refactor/acquisition-watcher-domain`, based on GitHub `main` `09c5c884ffbfba035a6ee698f7192b1e9bbb6282`.
-- Extracted the watcher loop to `acquisition_watcher.py` with injected service dependencies; retained `_discovery_watch_and_import_album` as the compatibility adapter used by current MCP/web callers. Docker packaging includes the new module.
-- Added direct-import tests for dismissal, interrupted-import reconciliation, completed-transfer waiting when no strictly verified folder is available, and routing a verified folder to the existing safe import coordinator.
-- **Verification status:** implementation prepared for PR; tests and all four exact-head workflows remain unverified until run on the final PR head. No live slskd test, production filesystem action, publication, deployment, or runtime verification is claimed.
+- **Branch:** `refactor/acquisition-watcher-domain`; based on `main` `09c5c884ffbfba035a6ee698f7192b1e9bbb6282`.
+- **Implementation:** extracted the 200+ line watcher loop into `acquisition_watcher.py` behind injected service dependencies. The legacy `_discovery_watch_and_import_album` remains a compatibility adapter. Docker packaging and lifecycle documentation are updated.
+- **Regression tests:** direct-import tests cover dismissal and interrupted-import exits, completed transfers without a verified folder (wait without import), and passing only a verified path to the existing safe import coordinator.
+- **Exact-head CI:** corrected PR head `6793c339464c9d573c02f5e7dc91d15b5f568348` passed Python syntax/acquisition safety (run `38604931720`), Docker packaging/full unit suite/build (run `38604931649`), container runtime smoke (run `38604931792`), and validation-only multi-architecture build (run `38604932002`; publishing paused). The first CI attempt exposed a test assertion reading status details from the wrong argument position; the test was corrected and the subsequent four workflows passed.
+- **Review boundary:** PR #57 remains open and unmerged pending final-head re-verification after this documentation update. No assistant-local test run, live slskd test, production filesystem action, image publication, deployment, or production runtime verification is claimed.
+- **Next:** verify all four workflows on the updated final PR head and review the complete diff before deciding merge; then continue with persistent acquisition-state coordination and watcher startup.
