@@ -432,3 +432,12 @@ The source-switch guard tests must prove the dismissal check and switch callback
 - Exact tested PR head: `aa554ff2be2a19e215538ed2e699b8036764dca1`; squash merge `73172847535d3683facfbe559706c26a8637a3d4`.
 - All four required exact-head workflows passed: Python syntax/acquisition safety `38617537652`, Docker packaging/full unit suite/build `38617538490`, container runtime smoke `38617537978`, and validation-only multi-architecture image validation `38617538229` (publishing paused).
 - Direct-import regressions cover shared-lock critical-section ordering, no source switch after dismissal, callback result preservation, and exception propagation. No separate local test run or live slskd/production filesystem behavior is claimed.
+
+
+## Login-page design-system alignment — PR #66 (merged 2026-10-14)
+
+- Change is limited to `static/login.css`; no template, JavaScript, auth/API behavior, or data model changes.
+- Exact tested PR head: `d0b13b7411b9b300b78b24a8944348b7e57d4b65`; squash merge: `717b1ad08e5de54e2dd8c11c2734976d75ce2e5f`.
+- All four required exact-head workflows passed: syntax `38639793800`, Docker packaging/full unit suite `38639793772`, container runtime smoke `38639793518`, and validation-only multi-architecture `38639793667` (publishing paused). Reported tests: 15 focused auth/integration tests and 185 full-suite tests with one pre-existing skip.
+- Manual report/screenshots were published in PR #66 comments. Reported pass: desktop 1280×900, narrow 375×720, failed sign-in message/layout/button recovery, and login assets/auth-status network responses. The report marks keyboard-focus modality and first-run setup variant as skipped; do not treat those two as verified by the report.
+- Future UI PRs should retain desktop/narrow responsive checks, keyboard Tab confirmation for focus-visible styling, setup and sign-in variants where applicable, status/error recovery, and the outstanding performance observation on the next UI-facing change.
