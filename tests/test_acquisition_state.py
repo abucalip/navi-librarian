@@ -70,7 +70,7 @@ class AcquisitionStateStoreTests(unittest.TestCase):
         with sqlite3.connect(self.db_path) as db:
             db.execute(
                 "INSERT INTO discovery_acquisitions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                ("artist", "album", "Artist", "Album", "failed", "{", "[", "null", 1, 1),
+                ("artist", "album", "Artist", "Album", "failed", "{", "[", "{", 1, 1),
             )
         job = list_jobs(services=self.services)[0]
         self.assertEqual(job["details"], {"status": "failed"})
