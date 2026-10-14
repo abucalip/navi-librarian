@@ -8,6 +8,14 @@ Reduce coupling in the Python application through small, behavior-preserving ext
 
 The delivered product's target is web-only. MCP retirement is a later step: the web application still imports navidrome_server.py, so do not remove the legacy module/runtime until web callers have been redirected to importable domain/service modules and a repository-wide usage audit confirms MCP-only code can be removed safely.
 
+## Acquisition lifecycle orchestration — follow-up PR #48
+
+PR #48 extracts the persisted manual source-skip transition into `acquisition_orchestration.py`. Dependencies for initialization, the shared transition lock, database access, key normalization, lifecycle policy, time, and JSON serialization are injected. `discovery_skip_acquisition_source` remains as the compatibility adapter, preserving the conditional `status='downloading'` transition and existing lock boundary. Direct-import tests cover the successful persisted transition and rejection of missing, dismissed, non-downloading, and no-fallback states without mutation.
+
+**Verification and dependency:** exact head `c116a692f59bc0e136c79197965fe60db8b15bdf` passed Python syntax (run `38583921780`), Docker packaging/full unit suite (`38583921958`), container runtime smoke (`38583922449`), and validation-only multi-architecture image validation (`38583922118`). PR #48 is open/draft and currently includes open PR #47's changes while targeting `main`; resolve #47 first, then refresh the base and review the combined/final diff before considering a merge. No publication, deployment, or production runtime verification occurred.
+
+This remains a narrow persisted-transition extraction, not the full orchestration migration. Watcher coordination, cleanup execution, source switching/failover, interrupted-import recovery, and top-level acquisition coordination remain outstanding. Preserve filesystem safety checks and MCP compatibility while extracting those seams in focused, directly tested changes.
+
 ## Completed domain extractions
 
 - PR #24 — acquisition completion matching: acquisition_completion.py; direct tests for filename identity and completed-folder inspection.
