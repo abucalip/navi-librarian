@@ -94,3 +94,8 @@ PR #33 extracts settings handlers to app/api/settings.py and the shared response
 The next extraction adds `acquisition_orchestration.py` as the owner of the persisted manual source-skip transition. It accepts injected initialization, lock, database connection, key normalization, lifecycle policy, clock, and JSON dependencies. `navidrome_server.py` retains the public MCP function as a compatibility adapter. Direct-import tests exercise successful persistence and rejected/missing-state cases without initializing MCP.
 
 This is one bounded orchestration slice, not the full migration. Watcher loops, source switching, safe cleanup execution, interrupted-import reconciliation, and top-level acquire coordination remain to be extracted next. The strict cleanup/import modules remain authoritative; this change does not weaken filesystem protections.
+
+
+## 2026-10-14 closeout — persisted transition slice
+
+PR #48 (`refactor/acquisition-lifecycle-orchestration`) now includes the persisted source-skip transition in `acquisition_orchestration.py`, direct-import regression coverage, Docker packaging, and documentation updates. The MCP function remains a compatibility adapter. The PR is draft/open; the exact-head workflow lookup returned no runs/statuses for code head `787244fdc702a2ceb4d33b550bb28eb249bdd48d`, so CI remains pending. Recheck after documentation commits. Next priority after successful CI is watcher/source-switch orchestration, with queue uncertainty, locking, cleanup safety, and interrupted-import recovery covered by direct tests.
