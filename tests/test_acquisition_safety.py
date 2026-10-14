@@ -304,7 +304,6 @@ class SlskdSearchQueryTests(unittest.TestCase):
         self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 1)
         self.assertEqual(result["search_queries_attempted"][0]["state"], "completed, timedout")
 
-class SlskdAlbumPathMatchingTests(unittest.TestCase):
 class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
         self.ns = load_helpers()
