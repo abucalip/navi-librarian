@@ -122,7 +122,7 @@ async def require_app_login(request: Request, call_next):
     return RedirectResponse(url="/login", status_code=303)
 
 
-LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")"
+LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
 
 
 @app.get("/api/health")
