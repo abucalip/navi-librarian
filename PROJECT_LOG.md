@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition dismissal 409 investigation deferred
+
+- User confirmed the HTTP 409 cannot currently be reproduced and asked to move on; stop active investigation until it recurs.
+- Keep PR #44 draft and unmerged. Its diagnostic instrumentation is not a confirmed root-cause fix. The last fully verified head is `4c505423afef8c6959063ddea7e5672a0b9894ef`; subsequent follow-up commits require exact-head CI before they can be treated as verified.
+- If the 409 recurs, capture the HTTP response body and matching safe stage-only server warning before retrying. Preserve all cleanup safety checks.
+- Next task: read-only audit of `navidrome_server.py` dependencies from the web app and runtime entry points, then propose a small, tested next step toward the documented web-only target. Do not remove MCP or legacy code until every web caller and compatibility requirement is mapped.
+
 ## 2026-10-14 — PR #44 local manual test report published
 
 - **PR:** [#44 — fix: diagnose acquisition dismissal cleanup refusals](https://github.com/abucalip/navi-librarian/pull/44)

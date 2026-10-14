@@ -1,3 +1,9 @@
+## Deferred issue — acquisition dismissal HTTP 409 (2026-10-14)
+
+- The user cannot currently reproduce the reported 409; active investigation is deferred until it recurs.
+- Do not claim a fix or weaken deletion safeguards. If it recurs, capture the response body and corresponding safe cleanup-stage warning, then add a regression test for the established root cause.
+- The diagnostic PR's last fully verified head is `4c505423afef8c6959063ddea7e5672a0b9894ef`. Any later code/test commits need exact-head CI and focused-test verification before being treated as validated.
+
 ## PR #44 — acquisition dismissal diagnostics: manual report (2026-10-14)
 
 - Tested exact PR head `4c505423afef8c6959063ddea7e5672a0b9894ef` in the isolated local helper environment on macOS 26.2 arm64, Python 3.12.14, port 8089, per-commit app data, sandbox music/download paths, and slskd disabled by default.
