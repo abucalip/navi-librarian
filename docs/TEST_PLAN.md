@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #76 merged: slskd polling regressions
+
+- PR #76 exact tested head: `dc6800bd40c7142a3d7e0d3505dd7c43309d7ab6`; squash merge: `a55a9fa7eed1e221f52434b50f44d0c415fd491a`.
+- Direct-import tests cover progressive query fallback, delayed peer payloads after reported response/file counts, legacy 404/405 endpoint behavior, and propagation of unexpected HTTP errors.
+- All four required workflows passed on the exact head: syntax `38652846800`, Docker packaging/full unit suite `38652846779`, runtime smoke `38652846790`, and image validation with publishing paused `38652846819`. The full suite reported 184 tests passed.
+- The end-to-end AST retry test remains to assert the coordinator's final response and query diagnostics. No live slskd, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — slskd search polling extraction (verification pending)
 
 - Direct-import tests exercise query fallback when a completed exact query has no payload, delayed peer payloads after response/file counts, legacy 404/405 endpoint compatibility, and propagation of unexpected HTTP errors.
