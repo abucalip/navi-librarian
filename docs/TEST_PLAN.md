@@ -4,7 +4,7 @@
 - Moved `/api/artist-bio`, `/api/album-year`, `/api/album-details`, and `/api/artwork` with provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
 - Added `tests/test_metadata_routes.py` for endpoint/method inventory, artist bio cache and validation, MusicBrainz year preference, exact Deezer album matching and tracklist parsing, and artwork cache/validation.
 - Required verification: `python -m unittest tests.test_metadata_routes -v`; `python -m py_compile navidrome_server.py app/main.py app/api/metadata.py tests/test_metadata_routes.py`; `python -m unittest discover -s tests -v`; Docker packaging/full-unit-test, container runtime smoke, and validation-only multi-architecture workflows on the exact PR head.
-- No intended UI contract change; manual browser testing is not required unless review or CI identifies a UI behavior change. No test/CI result is claimed before observed exact-head results.
+- No intended UI contract change; manual browser testing is not required unless review or CI identifies a UI behavior change. Initial CI exposed the expected AST-test coupling (`test_artwork_retry` searched for `album_artwork` in `app/main.py`); that regression test has been migrated to patch the new metadata module directly. Re-run all checks on the corrected exact head before merge.
 
 ## Discovery API route extraction — PR #35 merged (2026-10-14)
 
