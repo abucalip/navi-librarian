@@ -1,3 +1,11 @@
+## 2026-10-14 — Modularization session closeout after PR #37
+
+- Re-read the live GitHub roadmap, requirements, development workflow, architecture, test plan, project status, and project log. The current documentation records PRs #35–#37 and their exact-head CI evidence; no code changes or tests were performed in this documentation closeout.
+- Main tip at review: `621295f87ab57cf1690be925cdcfd29d3f2b8fc7`. PRs #35–#37 are merged. The repository search still surfaced the older roadmap documentation PR #23, but the roadmap is already maintained on `main`; do not infer missing documentation from that search result alone.
+- Next action: map auth setup/login/logout, throttling, cookie/session behavior, and middleware/public paths in `app/main.py`; add integration tests for those contracts before extracting route handlers or app assembly. Preserve the direct unit tests for primitives in `app/security/auth.py`.
+- On the next UI-facing change, run the manual browser checklist after exact-head CI and explicitly record the deferred performance observation and separate error/recovery scenario.
+- No local tests, manual UI run, image publication, deployment, or production runtime verification is claimed. GHCR publication remains disabled pending roadmap completion and explicit authorization.
+
 ## 2026-10-14 — PR #37 merged; authentication security helper closeout
 
 - PR #37 squash-merged to `main` at `cb6b1d1d17a6ea3b4dc0099a7588b8752b5d84b3` from exact head `192b084850ecbe0137b64b3dae9d07e0471198b4`.
