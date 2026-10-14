@@ -108,6 +108,14 @@ python -m unittest discover -s tests -v
 - PR #28 was squash-merged to `main` at `686fb393a178fe27f3806ecd5ce2138b026291cc`. No workflow runs were returned for the merge commit at closeout; CI evidence above is for the exact PR head, not the merge commit.
 - No local test execution or live/manual runtime checks were performed during closeout.
 
+## Interrupted-import recovery domain extraction — current branch
+
+- Moved `_discovery_reconcile_interrupted_import` into `acquisition_recovery.py` with injected state, path, matcher, persistence, clock, JSON, and move dependencies. The legacy MCP function remains a compatibility adapter.
+- Added direct-import tests for exact completed-destination reconciliation, changed mount-device refusal, partial staging rollback to the source folder, wrong/incomplete destination refusal, and dismissed/non-importing state refusal.
+- The direct tests assert no unintended status updates and preserve source/destination files on refusal. Docker packaging includes `acquisition_recovery.py`.
+- Exact-head CI pending: syntax/acquisition safety, full unit suite and Docker build, runtime smoke, and validation-only multi-architecture build must all pass before merge.
+- No production filesystem recovery or live service interaction is claimed.
+
 ## Acquisition cleanup domain extraction — current branch
 
 - Extracted the existing fail-safe cleanup implementation into `acquisition_cleanup.py` with injected folder-name validation, slskd transfer lookup, and HTTP client dependencies. `navidrome_server.py` retains its existing MCP-compatible wrapper and delegates to the extracted function.
