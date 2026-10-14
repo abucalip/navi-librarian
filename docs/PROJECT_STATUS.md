@@ -1,9 +1,10 @@
-## 2026-10-15 — Acquisition lifecycle AST audit: preserve integration boundaries
+## 2026-10-15 — Watcher-start concurrency regression verified
 
-- Audited the remaining AST-harness lifecycle cases on GitHub main. The duplicate-search test is a real coordinator race; the incomplete saved-candidate and dismissed-job cases verify coordinator decisions; stale-watcher recovery verifies the coordinator does not requeue; and the import-status test proves persistence succeeds before filesystem import. None can be safely replaced by policy/helper tests alone, so they remain.
-- Existing direct-import coverage already exercises lifecycle policy, watcher startup reservation/failure handling, and persisted state. Added a direct-import concurrent duplicate watcher-start regression to tests/test_acquisition_watcher.py; it asserts exactly one reservation, persisted job, and thread start across simultaneous callers.
-- Exact-head focused/full tests, syntax checks, final diff review, and all four required workflows are pending on this branch. No test result is claimed until observed. No publication, deployment, or production runtime verification is claimed.
-- Next: verify the new race test on the exact PR head; continue the AST audit only where a test is truly helper-level and equivalent direct-import coverage preserves the safety boundary.
+- PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`. All four required workflows passed: Python syntax and acquisition safety regressions (run 38656927551), Docker packaging/full unit suite (38656927436), container runtime smoke (38656927801), and multi-architecture image validation with publishing paused (38656927516).
+- The full unit-test step and focused acquisition safety regression step both succeeded. The new concurrent watcher-start regression is included in the exact tested head; CI workflow evidence is green.
+- Final diff reviewed: one threaded test plus documentation updates; no production code changed. The remaining AST lifecycle tests are retained where they uniquely exercise coordinator sequencing, races, persistence-before-import, or recovery behavior.
+- No image publication, deployment, or production runtime verification is claimed.
+- Next: merge PR #84 after final exact-head status confirmation, then continue the AST audit against the updated main.
 
 ---
 
