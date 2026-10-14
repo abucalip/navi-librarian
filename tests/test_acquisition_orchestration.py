@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import request_skip_acquisition_source
+from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed
 from acquisition_lifecycle import skip_request_error
 
 
@@ -79,6 +79,61 @@ class AcquisitionSkipTransitionTests(unittest.TestCase):
                 with self.connect() as db:
                     row = db.execute("SELECT details_json FROM discovery_acquisitions").fetchone()
                 self.assertEqual(json.loads(row[0]), {})
+
+
+class AcquisitionSourceSwitchGuardTests(unittest.TestCase):
+    def test_dismissal_check_and_switch_run_inside_same_transition_lock(self):
+        events = []
+
+        class TrackingLock:
+            def __enter__(self):
+                events.append("lock-enter")
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                events.append("lock-exit")
+
+        result = switch_source_unless_dismissed(
+            "Artist", "Album",
+            transition_lock=TrackingLock(),
+            is_dismissed=lambda artist, album: events.append(("check", artist, album)) or False,
+            switch_source=lambda: events.append("switch") or {"queued": True},
+        )
+        self.assertEqual(result, {"queued": True})
+        self.assertEqual(events, [
+            "lock-enter", ("check", "Artist", "Album"), "switch", "lock-exit",
+        ])
+
+    def test_dismissed_acquisition_never_calls_switch_source(self):
+        events = []
+        result = switch_source_unless_dismissed(
+            "Artist", "Album",
+            transition_lock=threading.RLock(),
+            is_dismissed=lambda _artist, _album: True,
+            switch_source=lambda: events.append("switch"),
+        )
+        self.assertIsNone(result)
+        self.assertEqual(events, [])
+
+    def test_switch_result_and_exceptions_are_not_hidden(self):
+        expected = object()
+        self.assertIs(
+            switch_source_unless_dismissed(
+                "Artist", "Album", transition_lock=threading.RLock(),
+                is_dismissed=lambda _artist, _album: False,
+                switch_source=lambda: expected,
+            ),
+            expected,
+        )
+        failure = RuntimeError("switch failed")
+        def fail():
+            raise failure
+        with self.assertRaisesRegex(RuntimeError, "switch failed"):
+            switch_source_unless_dismissed(
+                "Artist", "Album", transition_lock=threading.RLock(),
+                is_dismissed=lambda _artist, _album: False,
+                switch_source=fail,
+            )
 
 
 if __name__ == "__main__":
