@@ -149,6 +149,7 @@ class QualityPriorityTests(unittest.TestCase):
 
     def test_settings_ui_uses_sortable_rows_and_has_non_drag_controls(self):
         source = APP_SOURCE.read_text(encoding="utf-8")
+        source += (ROOT / "app" / "templates" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="qualityPriorityList"', source)
         self.assertIn("item.draggable = true", source)
         self.assertIn("data-quality-move", source)
