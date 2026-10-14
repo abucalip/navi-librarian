@@ -1,11 +1,11 @@
-## Discovery API route extraction — PR in progress
+## Discovery API route extraction — PR #35 merged (2026-10-14)
 
 - Branch: `refactor/discovery-api-router` (based on GitHub `main`).
 - Added `app/api/discovery.py` and `tests/test_discovery_routes.py`; `app.main` registers the router and no longer defines the four discovery/recommendation handlers inline.
 - Focused command: `python -m unittest tests.test_discovery_routes -v`.
 - Baseline commands: `python -m py_compile navidrome_server.py app/main.py app/api/discovery.py` and `python -m unittest discover -s tests -v`.
 - Direct-import tests cover route/method inventory, recommendation count defaults and album-candidate filtering, discovery list validation/defaults, refresh count parsing/defaults, feedback validation and Unicode metadata serialization, domain payload mapping, and sanitized errors.
-- This is an API-only extraction with no intended UI contract change. Manual browser testing is not required unless review/CI reveals a UI behavior change. PR #35 is open; the workflow/status lookup returned no runs or checks for observed head `1700fee4332876fe0478f88a78f65c4f752df5ff`. Do not merge until exact-head CI is visible and passing; do not claim tests/CI passed without evidence.
+- This is an API-only extraction with no intended UI contract change. Manual browser testing is not required unless review/CI reveals a UI behavior change. PR #35 was squash-merged from exact head `eac2a79e3e993d57edc22e86ea50f47e38cf300d` at `d61162b29c6f0cccc97aefe9c779567e671651b2`. Python syntax/full-unit-test workflow run `38487647938`, container runtime smoke `38487647898`, Docker packaging `38487647913`, and validation-only multi-architecture `38487647952` all completed successfully on that exact head. No local test execution is claimed. These CI results do not indicate image publication or deployment.
 
 ## Current verification state — PR #34 merged (2026-10-14)
 
