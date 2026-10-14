@@ -114,3 +114,8 @@ Pure authentication primitives are being separated into `app/security/auth.py`: 
 ## Acquisition orchestration seam
 
 The acquisition domain is being split beyond deterministic policy. `acquisition_orchestration.py` owns the persisted source-skip transition behind injected persistence/runtime dependencies; the existing MCP function remains an adapter. Keep database status checks and writes under the shared transition lock so skip/dismiss/import races remain serialized. Destructive cleanup and import remain in their existing safety-focused modules until each is migrated with direct regression tests.
+
+
+## Acquisition orchestration follow-up — PR #48
+
+The persisted source-skip transition is now owned by `acquisition_orchestration.py`, with initialization, transition lock, DB connection, key normalization, lifecycle policy, clock, and JSON dependencies injected. `navidrome_server.py` retains the MCP compatibility adapter. The shared lock and conditional update for a still-downloading row remain in place. No filesystem cleanup/import code or safety authority was changed. PR #48 remains draft/open and its own exact-head CI is pending; the successful PR #47 workflows are not evidence for this follow-up.
