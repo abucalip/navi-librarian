@@ -1,3 +1,9 @@
+## Acquisition queue guard test migration (2026-10-14)
+
+- The dismissed-queue-refusal case was removed from the AST-based `tests/test_acquisition_safety.py` harness because `tests/test_acquisition_orchestration.py::AcquisitionQueueGuardTests::test_dismissed_acquisition_does_not_queue` directly tests the extracted production guard.
+- Direct-import coverage also verifies shared-lock ordering, return propagation, and exception propagation. No safety assertion was dropped; no production behavior changed.
+- Required verification: exact-head syntax/acquisition safety, full unit/build workflow, container runtime smoke, and validation-only multi-architecture workflow. Publishing remains unauthorized.
+
 ## Acquisition queue/dismissal coordination extraction (2026-10-14)
 
 - `queue_candidate_unless_dismissed` in `acquisition_orchestration.py` is tested directly for shared-lock scope, dismissal refusal, successful return propagation, and exception propagation.
