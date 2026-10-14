@@ -1,3 +1,11 @@
+## 2026-10-14 — Authentication integration coverage and route extraction
+
+- PR #38 was squash-merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553` from exact head `1901cc68d1bb689da5257b6a51947af84b87d5ca`. The new FastAPI TestClient integration tests cover first-run setup and validation, login/logout, rate limiting, cookie attributes over HTTP/HTTPS, session reuse/tampering, and public/protected route behavior. Exact-head syntax, Docker packaging/full suite (147 tests), container runtime smoke, and validation-only multi-architecture workflows all passed. An initial test revision failed two redirect assertions; `follow_redirects=False` corrected those expectations.
+- PR #39 (`refactor/auth-api-router`) extracts the authentication status/setup/login/logout endpoints and login page into `app/api/auth.py`; middleware remains in `app/main.py`, and security primitives remain in `app/security/auth.py`. Injected callbacks preserve the existing persistent settings store and runtime auth secret.
+- PR #39 head: `5c5ba907748807d453fb397ac01585cede35dff6` at the time of documentation update. Exact-head CI was not yet available. No local test execution is claimed.
+- No UI changes intended; no manual UI tests, image publication, deployment, or production runtime verification. Keep GHCR publication disabled.
+- Next: check exact-head CI for PR #39; address any failures and merge only after all required gates pass.
+
 ## 2026-10-14 — Modularization session closeout after PR #37
 
 - Re-read the live GitHub roadmap, requirements, development workflow, architecture, test plan, project status, and project log. The current documentation records PRs #35–#37 and their exact-head CI evidence; no code changes or tests were performed in this documentation closeout.
