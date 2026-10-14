@@ -11,6 +11,7 @@ import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
 
 from acquisition_import import import_matched_album_files as _module_import_matched_album_files
+from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
 from acquisition_completion import (
     filename_key as _module_filename_key,
     match_completed_album_files as _module_match_completed_album_files,
@@ -41,7 +42,6 @@ def load_helpers():
         "_slskd_track_identity",
         "_slskd_extract_candidates",
         "_discovery_reconcile_interrupted_import",
-        "_discovery_cancel_and_clean_source",
         "_discovery_import_matched_album_files",
         "_slskd_candidate_start_state",
         "_discovery_queue_candidate_unless_dismissed",
@@ -63,8 +63,6 @@ def load_helpers():
         node.decorator_list = []
         # Keep the helper under test separate from the stub used by the other
         # orchestration tests, which intentionally isolate source switching.
-        if node.name == "_discovery_cancel_and_clean_source":
-            node.name = "_test_discovery_cancel_and_clean_source"
 
     namespace = {
         "Path": Path,
@@ -585,8 +583,14 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
             return batches.pop(0) if batches else []
 
         self.ns["_slskd_download_transfer_files"] = transfers
-        result = self.ns["_test_discovery_cancel_and_clean_source"](
-            self.root, self.candidate, "http://slskd", {"X-API-KEY": "test"}
+        result = _clean_acquisition_source(
+            self.root,
+            self.candidate,
+            "http://slskd",
+            {"X-API-KEY": "test"},
+            safe_folder_name=self.ns["_discovery_safe_folder_name"],
+            download_transfer_files=self.ns["_slskd_download_transfer_files"],
+            http_client=self.ns["httpx"],
         )
         return result, calls
 
