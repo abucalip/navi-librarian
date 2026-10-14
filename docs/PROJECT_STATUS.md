@@ -554,7 +554,7 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 
 - PR #51's six dismissal cleanup regression cases passed all four required workflows on exact head `58021141472c85c9fa33c431cba15cb66792bc1c`; PR #51 merged at `790d690ca99866878ee6204f9d101dec5f099994`.
 - PR #52's documentation closeout passed all four required workflows on exact head `4684fb257685aec90025af0b02a7dff5eacfe10a`; merged at `7f05363c3b9abec29ef7c7d516bad2796813b11e`.
-- Branch `test/acquisition-dismissal-neighbor-preservation` adds a regression proving successful dismissal removes only the identified album folder while preserving a sibling artwork file and another album folder. Test-only change; exact-head CI pending.
+- Branch `test/acquisition-dismissal-neighbor-preservation` adds a regression proving successful dismissal removes only the identified album folder while preserving a sibling artwork file and another album folder. Test-only change. All four required workflows passed on exact head `f220ce3b0296cf9429daa927d9c5bfaae9bea7a7`: syntax `38594117785`, Docker packaging/full unit suite `38594117579`, container runtime smoke `38594117489`, validation-only multi-architecture build `38594117597` (publishing paused).
 - The tests still invoke the legacy cleanup helper through the AST harness. Migrate to direct-import tests only alongside a tested extraction, without weakening assertions. HTTP 409 remains deferred because it was not reproduced.
 - No local test run, live slskd test, real production-folder deletion, image publication, deployment, or production runtime verification is claimed.
-- Next: verify all four required workflows on the final PR head and review the full diff before merge.
+- The first CI attempt caught an incorrect transfer-preflight call-count expectation; the test now expects both checks. ${evidence} A final documentation update still requires its own exact-head CI before merge.
