@@ -37,6 +37,10 @@ The web application still delegates settings persistence and service checks, dis
 
 Retirement condition: all web-required behavior must have an independent tested domain/service owner, all web callers must use those interfaces, and a repository-wide audit of imports, entry points, dependencies, tests, docs, and compatibility must establish that MCP-specific code can be removed safely.
 
+## Acquisition lifecycle orchestration seam (PR #48)
+
+`acquisition_orchestration.py` owns the extracted persisted manual source-skip transition through injected dependencies for initialization, locking, database access, normalized keys, policy, clock, and JSON serialization. `navidrome_server.py` retains the MCP-compatible `discovery_skip_acquisition_source` adapter. The extraction preserves the shared transition lock and the conditional update that only changes an acquisition still in `downloading` state. This is a narrow seam; watcher orchestration, source switching/failover, cleanup execution, interrupted-import recovery, and top-level acquisition coordination remain in the legacy module.
+
 ## Main components
 
 - **`app/main.py`** — FastAPI routes and the web UI. It adapts existing librarian functions for browser/API use.
