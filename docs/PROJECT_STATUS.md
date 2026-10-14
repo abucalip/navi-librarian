@@ -1,10 +1,12 @@
-## 2026-10-14 — Authentication route extraction in review
+## 2026-10-14 — PR #39 merged: authentication API routes
 
-- PR #38 integration tests were squash-merged at `84da7ebfe51199a5caf63f7689fe89df8d61b553` from exact head `1901cc68d1bb689da5257b6a51947af84b87d5ca`. On that exact head, all four required workflows passed: Python syntax, Docker packaging/full unit tests (147 tests), container runtime smoke, and validation-only multi-architecture build. The initial test commit had two redirect-following failures; the corrected head passed.
-- PR #39 (`refactor/auth-api-router`) extracts authentication status/setup/login/logout and the login page into `app/api/auth.py`. Middleware remains in `app/main.py`; security primitives remain in `app/security/auth.py`. The route factory injects settings/session/cookie dependencies so persistent settings and signing behavior remain app-owned.
-- Exact PR #39 head at documentation update: `5c5ba907748807d453fb397ac01585cede35dff6`. CI status was not yet available when this entry was written. Do not merge until syntax, full unit suite, container smoke, and validation-only multi-architecture checks pass on the final head.
-- No local tests or manual browser tests were run. This is a route-only extraction with no intended UI change; no image publication or deployment occurred. GHCR publishing remains disabled.
-- Next action: inspect PR #39 exact-head CI and fix any regression before merge.
+- PR #39 was squash-merged to `main` at `f08495088b28ca538f90b9ff9edf4410f5e55749` from exact PR head `9187a51380d2a7ed7d27276ce4505827becaed32`.
+- All four required GitHub Actions workflows passed on that exact head: container runtime smoke (run `38492677708`), Python syntax (run `38492677728`), Docker packaging/full unit tests (run `38492677704`), and validation-only multi-architecture image validation (run `38492677825`). The combined commit-status endpoint returned no legacy status entries; workflow-run conclusions were successful.
+- Extracted `/api/auth/status`, `/api/auth/setup`, `/api/auth/login`, `/api/auth/logout`, and `/login` into `app/api/auth.py`. Middleware remains in `app/main.py`; signing/session primitives remain in `app/security/auth.py`. Injected dependencies preserve app-owned settings, cookie setup, and authentication helpers.
+- PR #38's integration tests cover first-run setup, login/logout, rate limiting, HTTP/HTTPS cookie attributes, session reuse/tampering, and public/protected route behavior; its exact-head CI passed before this extraction.
+- No local test run or manual browser test was performed. This route-only change has no intended UI changes. No image publication, deployment, or production runtime verification occurred; GHCR publishing remains disabled.
+- Next: continue with the next roadmap priority, frontend asset extraction, only after reviewing remaining verification gates and preserving MCP compatibility.
+
 
 ## 2026-10-14 — Session closeout: modularization handoff after PR #37
 
