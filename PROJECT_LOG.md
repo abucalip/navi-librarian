@@ -182,3 +182,11 @@
 - Updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/PROJECT_STATUS.md`, and historical handoff wording to identify ZCode as the front-end owner. Retired the previous root-specific instruction file so there is one authoritative instruction file.
 - Backend/domain, safety, integration, merge, publishing, deployment, and project-level verification ownership remains with the assistant. The acquisition-coordination roadmap remains the main engineering priority.
 - Documentation-only change. No application tests or UI checks were run; verify required CI on the exact PR head before merge.
+
+## 2026-10-14 — PR #66 merged: login-page design-system alignment
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/66; branch `ui/login-alignment`; tested head `d0b13b7411b9b300b78b24a8944348b7e57d4b65`; squash merge `717b1ad08e5de54e2dd8c11c2734976d75ce2e5f`.
+- Updated only `static/login.css`: aligned color tokens and typography with the app, refined panel/button treatment, and added input/button focus-visible rings. Authentication and application behavior were unchanged.
+- All four required workflows passed on the exact PR head: syntax `38639793800`, Docker packaging/full unit suite `38639793772`, runtime smoke `38639793518`, and validation-only multi-architecture `38639793667` (publishing paused). Reported test runs: 15 focused tests; 185 full-suite tests, one pre-existing skip.
+- Manual report and screenshots were published on the PR. Desktop/narrow viewport, failed-sign-in state, and asset/network checks passed. The report explicitly marks keyboard-focus modality and first-run setup variant as skipped, so these are not logged as independently exercised.
+- No image publication, deployment, or production runtime verification. Next: continue acquisition-safety test migration/audit; keep front-end work within the ZCode ownership boundary.
