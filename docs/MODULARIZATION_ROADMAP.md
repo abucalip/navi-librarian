@@ -1,3 +1,12 @@
+## 2026-10-15 — slskd polling extraction in progress
+
+- Progressive query submission, search-state/response polling, count aggregation, payload deduplication, delayed payload waiting, and per-attempt diagnostics moved into `slskd_search_polling.py` behind injected external boundaries.
+- Direct-import tests cover broader-query fallback and delayed peer payloads. The AST-based end-to-end broad-query test remains intentionally as coordinator integration coverage.
+- Docker packaging and the syntax workflow now include the module. All verification and final diff review are pending.
+- Next after verification: audit the remaining acquisition lifecycle cases; preserve shared-lock races, conditional persistence, cancellation/cleanup refusal, dismissal/reactivation, and watcher recovery.
+
+---
+
 ## 2026-10-15 — PR #73 merged: candidate extraction test migration complete
 
 - PR #73 merged at `df2f79b3d18df7d13484f7e3b5e7f550a39323d3` from tested head `a33772ca1da0b6628da490b69f1dc305b6794de3`.
