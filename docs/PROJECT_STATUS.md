@@ -9,13 +9,14 @@
 
 ---
 
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
+## 2026-10-14 — PR #73 candidate extraction test migration verified; merge pending
 
 - Branch: `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
 - Move the Tinariwen/Idrache candidate-grouping and ranking scenario from the AST harness to `tests/test_slskd_candidates.py`, calling `slskd_search.extract_candidates` with the real direct-import quality, path-match, and track-identity helpers.
 - Keep acquisition retry/wait and lifecycle coordination tests in the AST harness because they exercise the integrated coordinator, shared locks, state persistence, dismissal/reactivation, and watcher recovery.
-- Focused/full tests, syntax checks, exact-head four-workflow CI, and complete diff review are pending. No test pass is claimed yet.
-- Next: verify this focused migration, then continue the top-level acquisition-coordination audit without weakening safety coverage.
+- Exact tested PR head: `a33772ca1da0b6628da490b69f1dc305b6794de3`. All four required workflows passed: syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- The first CI attempt exposed an empty AST test class after moving its only scenario; the class was removed and corrected-head CI passed. The final diff contains only the intended test migration and docs updates.
+- Merge remains pending. Next after merge: continue the top-level acquisition-coordination audit without weakening safety coverage.
 
 ---
 
