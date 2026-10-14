@@ -7,6 +7,14 @@ Last updated: 2026-10-14
 PR #51 and PR #53 established refusal and neighbor-preservation coverage for destructive dismissal cleanup. The next safety-focused slice extracts the existing cleanup implementation into `acquisition_cleanup.py`, injects its folder sanitizer, transfer lookup, and HTTP client, and retains the legacy MCP wrapper in `navidrome_server.py`. The seven cleanup safety cases now live in direct-import `tests/test_acquisition_cleanup.py`, rather than depending on AST extraction of the cleanup function. Docker packaging includes the new module. PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows (syntax `38600688719`, Docker packaging/full unit suite `38600688787`, runtime smoke `38600688814`, multi-architecture validation `38600688667`) and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`. Preserve every refusal/success assertion and the existing filesystem authorities. The HTTP 409 remains deferred because it was not reproduced. No live slskd or production-folder deletion is claimed. After exact-head CI, continue extracting source-switch and interrupted-import orchestration behind injected dependencies while preserving MCP compatibility.
 
 
+## Interrupted-import recovery safety extraction
+
+- Next safety-focused slice: move `_discovery_reconcile_interrupted_import` into directly importable `acquisition_recovery.py`, injecting the transition lock, dismissal/state readers, configured music root, canonical folder sanitizer, strict completion matcher, persistence callback, clock, JSON module, and file-move operation.
+- Keep the existing `navidrome_server.py` compatibility adapter and MCP interface; package the new module in Docker.
+- Migrate all existing interrupted-recovery cases out of the AST harness into `tests/test_acquisition_recovery.py`. Preserve exact destination/mount-device verification, manifest matching, staged-file rollback, symlink refusal, no-overwrite behavior, and refusal for dismissed/non-importing jobs.
+- Exact-head CI is pending. No live production filesystem recovery is claimed. Do not merge until all four required workflows pass on the final PR head and the diff is reviewed.
+- After this slice, the next task is the source-switch orchestration extraction; preserve cleanup failure as a hard stop and uncertain queue outcomes as monitored, never as an automatic duplicate retry.
+
 ## Goal and guardrails
 
 Reduce coupling in the Python application through small, behavior-preserving extractions. GitHub is the source of truth. Preserve the web API/UI, authentication, settings and persistent state, acquisition safety, and any existing caller until its replacement is verified. New extracted modules should have direct-import regression tests. Do not remove tests simply because their current AST-based setup is awkward.
