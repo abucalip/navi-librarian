@@ -4236,138 +4236,25 @@ def _discovery_acquire_album_impl(
                            "album": album, "message": message}, ensure_ascii=False)
     priority = settings.get("quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"])
     headers = {"X-API-KEY": api_key}
-    search_id = str(uuid.uuid4())
     search_queries = _slskd_search_queries(artist, album)
-    # Give a search that has already found peers time to expose their file payloads.
-    # Do not start broader queries while slskd is still collecting known responses.
-    search_deadline = time.monotonic() + 45
-    search_attempts = []
-    reported_response_count = 0
-    reported_file_count = 0
-    payload_by_peer = {}
     try:
-        for query_index, query in enumerate(search_queries):
-            if time.monotonic() >= search_deadline:
-                break
-            search_timeout_ms = 15000 if query_index == 0 else 6000
-            search_id = str(uuid.uuid4())
-            response = httpx.post(
-                base_url + "/api/v0/searches",
-                headers=headers,
-                json={
-                    "id": search_id,
-                    "searchText": query,
-                    "fileLimit": 1000,
-                    "filterResponses": True,
-                    "maximumPeerQueueLength": 100,
-                    "minimumResponseFileCount": 1,
-                    "minimumPeerUploadSpeed": 0,
-                    "responseLimit": 100,
-                    "searchTimeout": search_timeout_ms,
-                },
-                timeout=10,
-            )
-            response.raise_for_status()
-            deadline = min(
-                time.monotonic() + (18 if query_index == 0 else 8),
-                search_deadline,
-            )
-            completed_without_payload_since = None
-            attempt_reported_response_count = 0
-            attempt_reported_file_count = 0
-            attempt_payload_by_peer = {}
-            last_state = ""
-            while time.monotonic() < deadline:
-                search_state = {}
-                try:
-                    state_response = httpx.get(
-                        f"{base_url}/api/v0/searches/{search_id}",
-                        params={"includeResponses": "true"},
-                        headers=headers,
-                        timeout=8,
-                    )
-                    state_response.raise_for_status()
-                    state_data = state_response.json()
-                    if isinstance(state_data, dict):
-                        search_state = state_data
-                        try:
-                            attempt_reported_response_count = max(
-                                attempt_reported_response_count,
-                                int(state_data.get("responseCount") or state_data.get("response_count") or 0),
-                            )
-                            attempt_reported_file_count = max(
-                                attempt_reported_file_count,
-                                int(state_data.get("fileCount") or state_data.get("file_count") or 0),
-                            )
-                        except (TypeError, ValueError):
-                            pass
-                        for entry in _slskd_search_response_items(state_data):
-                            files = entry.get("files") or entry.get("fileList") or []
-                            if not isinstance(files, list) or not files:
-                                continue
-                            identity = (
-                                entry.get("username") or entry.get("user") or "",
-                                json.dumps(files, sort_keys=True, ensure_ascii=False),
-                            )
-                            attempt_payload_by_peer[identity] = entry
-                except httpx.HTTPStatusError as exc:
-                    if exc.response.status_code not in (404, 405):
-                        raise
-                response_poll = httpx.get(
-                    f"{base_url}/api/v0/searches/{search_id}/responses",
-                    headers=headers,
-                    timeout=8,
-                )
-                if response_poll.status_code not in (404, 405):
-                    response_poll.raise_for_status()
-                    data = response_poll.json()
-                    for entry in _slskd_search_response_items(data):
-                        files = entry.get("files") or entry.get("fileList") or []
-                        if not isinstance(files, list) or not files:
-                            continue
-                        identity = (
-                            entry.get("username") or entry.get("user") or "",
-                            json.dumps(files, sort_keys=True, ensure_ascii=False),
-                        )
-                        attempt_payload_by_peer[identity] = entry
-                state_text = str(search_state.get("state") or "").lower()
-                last_state = state_text or ("complete" if search_state.get("isComplete") is True else last_state)
-                is_complete = search_state.get("isComplete") is True or (
-                    state_text and ("complete" in state_text or "timedout" in state_text)
-                )
-                if is_complete:
-                    if attempt_payload_by_peer:
-                        break
-                    if attempt_reported_response_count > 0:
-                        if completed_without_payload_since is None:
-                            completed_without_payload_since = time.monotonic()
-                        elif time.monotonic() - completed_without_payload_since >= 3:
-                            break
-                        time.sleep(0.5)
-                        continue
-                    break
+        from slskd_search_polling import collect_search_responses
 
-                # slskd can publish response/file counts before the peer file lists
-                # are exposed. Once it has reported peers, keep polling this search
-                # rather than spending the remaining budget on fallback queries.
-                if attempt_reported_response_count > 0 and not attempt_payload_by_peer:
-                    deadline = search_deadline
-
-                time.sleep(0.75)
-
-            reported_response_count = max(reported_response_count, attempt_reported_response_count)
-            reported_file_count = max(reported_file_count, attempt_reported_file_count)
-            search_attempts.append({
-                "query": query,
-                "search_id": search_id,
-                "state": last_state or "unknown",
-                "slskd_reported_response_count": attempt_reported_response_count,
-                "slskd_reported_file_count": attempt_reported_file_count,
-                "collected_peer_response_count": len(attempt_payload_by_peer),
-            })
-            if attempt_payload_by_peer:
-                payload_by_peer = attempt_payload_by_peer
-                break
+        search_result = collect_search_responses(
+            search_queries,
+            base_url,
+            headers,
+            http_client=httpx,
+            monotonic=time.monotonic,
+            sleep=time.sleep,
+            new_search_id=lambda: str(uuid.uuid4()),
+            response_items=_slskd_search_response_items,
+        )
+        search_id = search_result["search_id"]
+        search_attempts = search_result["search_attempts"]
+        reported_response_count = search_result["reported_response_count"]
+        reported_file_count = search_result["reported_file_count"]
+        payload_by_peer = search_result["payload_by_peer"]
         expected_track_count = _discovery_expected_track_count(metadata)
         candidates = _slskd_extract_candidates(
             list(payload_by_peer.values()), artist, album, priority,
