@@ -1,3 +1,10 @@
+## PR #57 merged — acquisition watcher lifecycle
+
+- Merged to main at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589; exact tested PR head f4b92a98bae942ac6080316c3f1803d1b6bcff76.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety 38605510990, Docker packaging/full unit suite/build 38605510819, container runtime smoke 38605511271, and validation-only multi-architecture build 38605510906 (publishing paused).
+- Regression coverage directly imports the watcher module and verifies dismissal and recovery exits, that completed transfer evidence without a verified folder does not import, and that only the verified folder is passed to the existing safe import coordinator. A first CI attempt exposed an assertion reading status details from the wrong argument position; the test was corrected before final verification.
+- No separate local test run, live slskd behavior, or production filesystem behavior is claimed. Image publication and deployment remain unperformed.
+
 ## ACQ-04/ACQ-06 — dismissal cleanup safety regression coverage (PR #51 merged)
 
 - Six focused cases exercise the actual `_discovery_cancel_and_clean_source` helper via the existing AST harness: successful cleanup only after transfers stop; refusal with unrelated files; remote `..` traversal rejection before transfer lookup; duplicate same-name folders rejected without touching either; symlinked album folder rejected without touching the target; failed transfer cancellation preserving local files.
@@ -353,7 +360,7 @@ Run focused regression tests with `python -m unittest tests.test_acquisition_orc
 
 - First CI attempt failed one test assertion: status details are passed as the fourth positional argument, not keyword arguments. The test was corrected.
 - Corrected head `6793c339464c9d573c02f5e7dc91d15b5f568348`: syntax/acquisition safety run `38604931720`, Docker packaging/full suite/build `38604931649`, container runtime smoke `38604931792`, and validation-only multi-architecture build `38604932002` all succeeded. Publishing remains paused.
-- Because this test-plan/status/log update creates a new PR head, all four workflows must pass again on the final updated SHA before merge. No separate local test run or live slskd/production filesystem verification is claimed.
+- After the final documentation update, all four workflows passed on exact head 9f201e247c092ca74f805b8ca8a1cb6f872b3cba; PR #57 was subsequently squash-merged from tested head f4b92a98bae942ac6080316c3f1803d1b6bcff76. No separate local test run or live slskd/production filesystem verification is claimed.
 
 
 - **Final documentation-updated PR head:** `9f201e247c092ca74f805b8ca8a1cb6f872b3cba` passed syntax/acquisition safety `38605193852`, Docker packaging/full suite/build `38605193845`, runtime smoke `38605193808`, and validation-only multi-architecture build `38605193820`. All four required workflows succeeded; image publishing remains paused.
