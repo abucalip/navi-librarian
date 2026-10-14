@@ -1,3 +1,12 @@
+## 2026-10-15 — Candidate extraction test migration in progress
+
+- Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72.
+- Moved the Tinariwen/Idrache candidate grouping/ranking scenario from the AST harness to direct-import coverage in `tests/test_slskd_candidates.py`. It invokes the extracted search implementation with production helper functions; no production implementation was changed.
+- Kept orchestration retry/wait and acquisition lifecycle coordination tests in the AST harness.
+- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending.
+
+---
+
 ## 2026-10-14 — PR #73 candidate extraction test migration in progress
 
 - Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72 merge.
