@@ -584,4 +584,6 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Branch `refactor/acquisition-source-switch-domain` starts from current main after PR #55.
 - Extracted the locked source-switch implementation to `acquisition_source_switch.py` with injected service dependencies. Kept the legacy wrapper and caller-owned transition lock; Docker packaging updated.
 - Migrated the ambiguous-queue regression out of the AST harness and added direct-import tests for cleanup refusal, no fallback, failed fallback cleanup, and successful fallback persistence.
-- Exact-head CI pending. No live slskd or production cleanup is claimed.
+- PR #56 exact head `15c0c237585dc4037df1e3e4d1f98b261d0415d9` passed syntax/acquisition safety `38602255318`, Docker packaging/full unit suite/image build `38602255282`, runtime smoke `38602255326`, and validation-only multi-architecture build `38602255378` (publishing paused). Final diff reviewed; GitHub reported mergeable and no review submissions/inline threads. Squash-merged at `d49d96c91a460346730676c22deceb68c8dbd82c`.
+- No live slskd interaction, production cleanup, publication, deployment, or production runtime verification is claimed.
+- Next priority: extract the acquisition watcher loop and top-level lifecycle coordination behind injected dependencies, migrating direct-import tests while preserving cancellation, import rollback, status persistence, and MCP compatibility.
