@@ -1,9 +1,17 @@
+## 2026-10-14 — PR #36 merged; metadata API router closeout
+
+- PR #36 squash-merged to `main` at `15011614649470c9c71734422b95ee048fbf9f3c` from corrected exact head `19d88637d110ecee8fb2c7c8c4ba2053c6b6113c`.
+- Extracted artist biography, album-year, album-details, and artwork endpoints plus provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`; added `tests/test_metadata_routes.py`.
+- Initial CI caught the AST-coupled artwork retry test. Updated `tests/test_artwork_retry.py` to import and patch the extracted metadata module. All four workflows then passed on the corrected exact head: syntax/full tests `38488440438`, packaging/full tests `38488440512`, runtime smoke `38488440488`, and validation-only multi-architecture `38488440439`.
+- No local test run, image publication, deployment, or production runtime verification is claimed. Manual UI testing was not required for this API-only extraction.
+- Next action: map authentication dependencies and tests before a focused auth/app-assembly extraction. Keep publishing disabled pending roadmap completion and explicit authorization.
+
 ## 2026-10-14 — Metadata API route extraction started
 
 - Branch: `refactor/metadata-api-router`, based on updated GitHub `main` after PR #35 merged.
 - Moved artist bio, album-year, album-details, and artwork handlers plus their provider/cache helpers into `app/api/metadata.py`; registered the router in `app/main.py`.
 - Added direct-import tests for route inventory, validation/cache behavior, MusicBrainz year preference, exact Deezer matching, and tracklist parsing.
-- Initial exact-head CI exposed an AST-based regression test coupled to `album_artwork` being defined in `app/main.py` (`tests/test_artwork_retry.py`). Updated the test to exercise `app.api.metadata.album_artwork` directly. Re-run focused/full tests and all required workflows on the corrected exact head before merge; no local test run is claimed.
+- PR #36 was subsequently merged after all four required workflows passed on corrected exact head `19d88637d110ecee8fb2c7c8c4ba2053c6b6113c`; see the closeout entry above. No local test run is claimed.
 - No image publication, deployment, or production runtime verification. GHCR publishing remains disabled pending roadmap completion and explicit authorization.
 
 ## 2026-10-14 — PR #35 merged; discovery API router closeout
