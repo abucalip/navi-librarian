@@ -46,6 +46,7 @@ Retirement condition: all web-required behavior must have an independent tested 
 - **`discovery_refresh.py`** — refresh coordination for personal and named cached discovery lists; list builders, provider calls, server-owned locks, and persistence are injected.
 - **`discovery_recommendations.py`** — pure discovery eligibility, normalization, scoring, and diversity helpers with direct-import tests.
 - **`acquisition_lifecycle.py`** — importable lifecycle policy for monitor recovery, cleanup-required classification, skip validation, fallback payload normalization, and queue-error classification. The legacy server adapts these policies while database/network/filesystem orchestration is extracted incrementally.
+- **`acquisition_state.py`** — dependency-injected SQLite persistence and decoding for acquisition job rows; legacy server adapters retain transition locks, conditional state transitions, and secondary feedback projections.
 - **`acquisition_watcher_startup.py`** — dependency-injected watcher reservation, persisted state/status, and thread startup; the legacy adapter supplies locks and runtime callbacks.
 - **`acquisition_import.py`** — staged filesystem import of verified album tracks, no-overwrite checks, storage-identity guards, and rollback; acquisition status/orchestration remains in `navidrome_server.py`.
 - **`server.py`** — MCP/server entry point; inspect it before changing how the MCP integration is launched.

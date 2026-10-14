@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition state persistence extraction proposed
+
+- Branch: `refactor/acquisition-state-store`, based on GitHub main `066fff8e7ef88364b1dc9cc909bfb2722118880e`.
+- Extracted SQLite save/list mechanics for acquisition rows into `acquisition_state.py`, preserving legacy server functions as adapters and adding direct-import persistence tests. Docker packaging and architecture, roadmap, test plan, and project status documentation updated.
+- Explicitly retained the shared transition lock, dismissed-state conditional checks, secondary feedback projection, dismissal/import coordination, and filesystem safety logic in `navidrome_server.py`.
+- Validation, full diff review, exact-head CI, merge, publication, deployment, and production runtime verification remain pending.
+
 ## 2026-10-14 — Acquisition watcher startup extraction proposed
 
 - Branch: refactor/acquisition-watcher-startup from GitHub main.

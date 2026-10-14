@@ -1,3 +1,10 @@
+## 2026-10-14 — Acquisition state persistence extraction (in progress)
+
+- Branch `refactor/acquisition-state-store` starts from main `066fff8e7ef88364b1dc9cc909bfb2722118880e`.
+- Extracted acquisition-row SQLite save/list mechanics into `acquisition_state.py` behind injected initialization, DB path, key normalization, and clock; legacy functions remain adapters. Added direct-import tests and Docker packaging.
+- Safety boundary intentionally retained in the server: transition lock, conditional dismissed-state checks, feedback projection, dismissal/import coordination, and filesystem operations. Acceptance requires exact-head CI and diff review before merge.
+- No local tests, CI, merge, publication, deployment, or production verification are claimed at this stage.
+
 ## 2026-10-14 — Acquisition watcher startup extraction (in progress)
 
 - Extracted watcher reservation/persistence/thread startup into acquisition_watcher_startup.py with injected services. The legacy _discovery_start_import_watcher function remains the adapter used by existing MCP/web call paths.
