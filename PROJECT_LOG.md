@@ -7,12 +7,13 @@
 
 ---
 
-## 2026-10-14 — PR #73 candidate extraction test migration in progress
+## 2026-10-14 — PR #73 candidate extraction test migration verified; merge pending
 
 - Branch `test/migrate-slskd-candidate-extraction`, based on main after PR #72 merge.
 - Move the Tinariwen/Idrache source-folder candidate grouping/ranking regression from the AST harness to a direct-import test of `slskd_search.extract_candidates`, injecting the real music-key, album-path matcher, quality-tier classifier, and track-identity helpers.
 - This is test-only: the production adapter and implementation are unchanged. Retry/wait and lifecycle-coordination scenarios remain in the AST harness.
-- Focused/full tests, syntax checks, final diff review, and all four required workflows on the exact final PR head are pending. No test pass is claimed.
+- Initial exact-head CI found an empty `SlskdAlbumPathMatchingTests` class after its sole test moved. Removed the empty class; final head `a33772ca1da0b6628da490b69f1dc305b6794de3` passed syntax `38652066842`, Docker packaging/full unit suite `38652066649`, runtime smoke `38652066755`, and Docker image validation with publishing paused `38652066683`.
+- Complete diff reviewed: only the candidate scenario moved to direct imports, the empty AST class removed, and project docs updated. Merge pending.
 
 ---
 
