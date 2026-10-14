@@ -1,3 +1,10 @@
+## 2026-10-14 — Queue/dismissal guard extraction proposed
+
+- Branch: `refactor/acquisition-queue-guard`, based on current GitHub `main` after PR #61.
+- Extracts the existing queue-candidate dismissal guard into `acquisition_orchestration.py`; the legacy server function remains an adapter and keeps the HTTP request/response behavior unchanged.
+- Direct-import tests cover lock ordering, refusal after dismissal, return-value preservation, and exception propagation. The existing AST safety test is retained but delegates this case to the extracted production function.
+- Required next gates: exact-head four-workflow CI, final diff review, and docs verification. No live slskd or production filesystem test is claimed.
+
 ## 2026-10-14 — Acquisition transition guard merged (PR #61)
 
 - The dismissal-serialized source-switch guard is now extracted into `acquisition_orchestration.py`; the server function remains a compatibility adapter.

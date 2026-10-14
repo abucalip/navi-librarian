@@ -4255,10 +4255,8 @@ def _discovery_start_import_watcher(artist, album, candidate, settings):
 def _discovery_queue_candidate_unless_dismissed(
     artist, album, base_url, headers, username, selected_files
 ):
-    """Queue a source atomically with dismissal in this process."""
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if _discovery_is_dismissed(artist, album):
-            return None
+    """Compatibility adapter for the directly tested queue/dismissal guard."""
+    def queue_source():
         response = httpx.post(
             f"{base_url}/api/v0/transfers/downloads/{username}",
             headers=headers,
@@ -4267,6 +4265,13 @@ def _discovery_queue_candidate_unless_dismissed(
         )
         response.raise_for_status()
         return response
+
+    return acquisition_orchestration.queue_candidate_unless_dismissed(
+        artist, album,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        is_dismissed=_discovery_is_dismissed,
+        queue_source=queue_source,
+    )
 
 
 def _slskd_queue_failure_action(exc):

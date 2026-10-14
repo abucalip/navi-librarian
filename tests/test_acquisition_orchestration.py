@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed
+from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed
 from acquisition_lifecycle import skip_request_error
 
 
@@ -133,6 +133,54 @@ class AcquisitionSourceSwitchGuardTests(unittest.TestCase):
                 "Artist", "Album", transition_lock=threading.RLock(),
                 is_dismissed=lambda _artist, _album: False,
                 switch_source=fail,
+            )
+
+
+
+class AcquisitionQueueGuardTests(unittest.TestCase):
+    def test_dismissal_check_and_queue_are_serialized(self):
+        events = []
+
+        class TrackingLock:
+            def __enter__(self):
+                events.append("lock-enter")
+            def __exit__(self, exc_type, exc, tb):
+                events.append("lock-exit")
+
+        result = queue_candidate_unless_dismissed(
+            "Artist", "Album", transition_lock=TrackingLock(),
+            is_dismissed=lambda artist, album: events.append(("check", artist, album)) or False,
+            queue_source=lambda: events.append("queue") or {"queued": True},
+        )
+        self.assertEqual(result, {"queued": True})
+        self.assertEqual(events, [
+            "lock-enter", ("check", "Artist", "Album"), "queue", "lock-exit",
+        ])
+
+    def test_dismissed_acquisition_does_not_queue(self):
+        calls = []
+        result = queue_candidate_unless_dismissed(
+            "Artist", "Album", transition_lock=threading.RLock(),
+            is_dismissed=lambda _artist, _album: True,
+            queue_source=lambda: calls.append("queue"),
+        )
+        self.assertIsNone(result)
+        self.assertEqual(calls, [])
+
+    def test_queue_result_and_exceptions_are_preserved(self):
+        expected = object()
+        self.assertIs(queue_candidate_unless_dismissed(
+            "Artist", "Album", transition_lock=threading.RLock(),
+            is_dismissed=lambda _artist, _album: False,
+            queue_source=lambda: expected,
+        ), expected)
+        failure = RuntimeError("queue failed")
+        def fail():
+            raise failure
+        with self.assertRaisesRegex(RuntimeError, "queue failed"):
+            queue_candidate_unless_dismissed(
+                "Artist", "Album", transition_lock=threading.RLock(),
+                is_dismissed=lambda _artist, _album: False, queue_source=fail,
             )
 
 

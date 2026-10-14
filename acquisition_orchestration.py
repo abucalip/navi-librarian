@@ -78,3 +78,18 @@ def switch_source_unless_dismissed(
         if is_dismissed(artist, album):
             return None
         return switch_source()
+
+
+def queue_candidate_unless_dismissed(
+    artist: str,
+    album: str,
+    *,
+    transition_lock: Any,
+    is_dismissed: Callable[[str, str], bool],
+    queue_source: Callable[[], Any],
+) -> Any:
+    """Queue a candidate only while the shared dismissal transition is held."""
+    with transition_lock:
+        if is_dismissed(artist, album):
+            return None
+        return queue_source()
