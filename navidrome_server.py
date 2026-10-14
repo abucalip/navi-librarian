@@ -797,7 +797,8 @@ def recommend_new_music(count: int = 10) -> str:
 
                 album_title = next(iter(album_groups.values()))
 
-                key = (_music_key(primary_artist), _music_key(album_title))                score = item.get("score", 0)
+                key = (_music_key(primary_artist), _music_key(album_title))
+                score = item.get("score", 0)
 
                 if key not in albums:
                     albums[key] = {
