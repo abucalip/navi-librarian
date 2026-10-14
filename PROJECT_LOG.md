@@ -1,3 +1,14 @@
+## 2026-10-14 — PR #59 merged: acquisition state persistence
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/59
+- **Branch:** `refactor/acquisition-state-store`; exact tested PR head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d`.
+- **Merge commit:** `730ae16e613f3962c488f87c8de54034db7463dd` (squash merge).
+- **Diff review:** nine files; added `acquisition_state.py`, retained legacy save/list functions as compatibility adapters, added direct-import persistence regressions, updated Docker packaging, and revised architecture/roadmap/test/status docs.
+- **Exact-head CI:** compile `116019930318`, test/build `116019925188`, container smoke `116019924747`, and validation-only multi-architecture `116019926066` all succeeded on `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d`. Publishing remains paused.
+- **Safety:** transition locking, dismissed-state conditional writes, secondary feedback projection, dismissal/import coordination, and filesystem safety were not moved or weakened.
+- **Limits:** no separate local test run, live slskd test, production filesystem action, image publication, deployment, or production runtime verification.
+- **Next:** re-inspect main and open PRs, then follow the highest-priority unresolved requirement in the roadmap.
+
 ## 2026-10-14 — Acquisition state persistence extraction proposed
 
 - Branch: `refactor/acquisition-state-store`, based on GitHub main `066fff8e7ef88364b1dc9cc909bfb2722118880e`.
