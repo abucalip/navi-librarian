@@ -117,3 +117,8 @@ Pure authentication primitives are being separated into `app/security/auth.py`: 
 ## Persisted acquisition orchestration seam — reconstructed PR #48
 
 `acquisition_orchestration.py` owns the persisted manual source-skip transition through injected initialization, lock, database connection, key normalization, lifecycle policy, clock, and JSON dependencies. `navidrome_server.py` retains the MCP-compatible `discovery_skip_acquisition_source` adapter. The shared transition lock and conditional update requiring `status='downloading'` are preserved. Filesystem cleanup/import authorities are unchanged; watcher orchestration, source switching, interrupted-import recovery, and top-level acquisition coordination remain outstanding.
+
+
+## Acquisition state persistence extraction — PR #59 merged
+
+`acquisition_state.py` now owns SQLite save/list mechanics for acquisition rows behind injected dependencies. Legacy server adapters remain. Shared transition locking, conditional dismissed-state checks, feedback projection, dismissal/import coordination, and filesystem safety remain in `navidrome_server.py`. PR #59 exact head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d` passed all four required workflows and was squash-merged at `730ae16e613f3962c488f87c8de54034db7463dd`. Publishing/deployment/runtime verification are not claimed.
