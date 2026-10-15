@@ -1,3 +1,17 @@
+## 2026-10-16 — Multi-extraction session: PRs #163, #164, and #165 merged
+
+Three independent integration-client extractions were completed sequentially, refreshing GitHub main after each merge.
+
+- **PR #163 — ListenBrainz client.** Branch `refactor/extract-listenbrainz-client`; tested head `4c494a2679884579df5d6bc204287637e45e2ccd`; merge `7be68c74b8a97ed4d9c50e6a7e22e296b25e79e2`. Added bounded paging with injected clock/client/sleep, compatibility adapter tests, and Docker packaging. All required exact-head workflows passed: compile `38822823853`, unit suite/build `38822823922`, smoke `38822823751`, multi-architecture validation (publishing paused) `38822823989`.
+- **PR #164 — Last.fm client.** Branch `refactor/extract-lastfm-client`; tested head `957f3a56afe15e4dd665b041f1fbf7803921d3b6`; merge `9f174c6086c0d2b9749e53e38cbe8e1eb337e22f`. Extracted cached/rate-limited HTTP calls with injected settings/cache/transport/time dependencies. All required exact-head workflows passed: compile `38823469617`, unit suite/build `38823470035`, smoke `38823469896`, multi-architecture validation `38823469762`.
+- **PR #165 — MusicBrainz rating client.** Branch `refactor/extract-musicbrainz-rating-client`; tested head `4888bd08fdf05007cc74ad7005a196fd678305b5`; merge `a0cd3d8ff5dcdf6acb7d678c9fc8f1aa0d537629`. Extracted cached release-group rating/year lookup, preserving cache TTL/key, request pacing, 404 caching, and result shape. All required exact-head workflows passed: compile `38823643925`, unit suite/build `38823643703`, smoke `38823643931`, multi-architecture validation `38823643848`.
+- The full unit suite and Docker build passed on all three final PR heads. Assistant-side local test execution was not performed. No manual UI testing was applicable. All multi-architecture validation workflows were non-publishing.
+- These merges do not indicate image publication, deployment, or production runtime verification; those states remain paused/unverified.
+
+Next: prioritize the outstanding acquisition-dismissal HTTP 409 investigation/diagnostic gate before more routine modularization.
+
+---
+
 ## 2026-10-15 — PR #160 merged: discovery refresh orchestration extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/160. Exact tested head: `5aafc1a9c5835e2d9e2959a36e7419d09913403a`; squash merge commit: `dba172d5747607e65e8fadd32442b12d32054749`.
