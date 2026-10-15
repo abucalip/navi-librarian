@@ -4608,7 +4608,14 @@ def discovery_acquire_album(
         )
         if existing_response is not None:
             return existing_response
-        _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
+        if not _acquisition_orchestration.reserve_acquisition_request(
+            identity, active_requests=_DISCOVERY_ACQUIRE_ACTIVE
+        ):
+            return json.dumps({
+                "ok": False, "status": "already_in_progress",
+                "artist": artist, "album": album,
+                "message": "An acquisition request or download is already active for this album.",
+            }, ensure_ascii=False)
     return _acquisition_orchestration.run_reserved_acquisition(
         identity,
         transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
