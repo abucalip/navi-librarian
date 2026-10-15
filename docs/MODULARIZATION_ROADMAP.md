@@ -2,7 +2,7 @@
 
 - Move only Last.fm API-key normalization, blank-input preservation, configured-status response serialization, and settings-write invocation into `service_settings.py` with injected read/write callbacks.
 - Keep `discovery_set_lastfm_settings` as the compatibility/MCP adapter; SQLite schema and persistence implementation remain in `navidrome_server.py`. Preserve the exact JSON response contract and never return the key.
-- Acceptance: direct-import regression for trimmed replacement key, blank-key preservation, redaction, then focused/full tests and four exact-head workflows. Do not remove MCP dependencies or publish images.
+- Acceptance: direct-import regression for trimmed replacement key, blank-key preservation, redaction, focused/full tests and four exact-head workflows. All four workflows passed on `9d3390e4f369cc11fbac852b9dc3481b865bb2f5` (runs `38721093901`, `38721093899`, `38721093983`, `38721093945`). Do not remove MCP dependencies or publish images.
 
 ---
 
