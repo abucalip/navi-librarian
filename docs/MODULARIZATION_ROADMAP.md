@@ -1,7 +1,8 @@
-## Settings persistence boundary — PR in progress (2026-10-15)
+## Settings persistence boundary — completed (PR #143 merged, 2026-10-15)
 
-The settings persistence implementation is being extracted from `navidrome_server.py` into `settings_persistence.py`. The new store owns SQLite initialization, restrictive database permissions, persistence reads/writes, and the existing legacy migrations; it receives path/default dependencies rather than importing or initializing the application. Legacy `_discovery_settings_*` wrappers remain in the server to preserve callers and MCP behavior. Direct-import regression tests and Docker packaging coverage are added. Mark this item complete only after reviewing the final diff and verifying all four required workflows on the exact PR head.
+The settings persistence implementation has been extracted from `navidrome_server.py` into `settings_persistence.py`. The store owns SQLite initialization, restrictive database permissions, persistence reads/writes, saved music-path application, and existing legacy quality/download-path migrations, using injected defaults and path callbacks. Legacy `_discovery_settings_*` wrappers preserve callers and MCP behavior; Docker packaging includes the module. Direct-import regression tests cover persistence round trips, malformed data, migration order, music-path application, and permissions.
 
+PR #143 exact final head `e28cd12d3736fd2eb368b53c98e3cbddb5438166` passed all four required workflows: Docker packaging/full tests/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`. Squash merge: `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`. Publishing, deployment, and production runtime verification remain separate and paused.
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
 - Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.
