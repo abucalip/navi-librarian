@@ -6,12 +6,11 @@
 
 ---
 
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — PR #98 merged: acquisition request coordinator
 
-- PR #98 exact tested head: `edd5131c9005a5bb09b4a8c6f593c41fadc62699` ([PR](https://github.com/abucalip/navi-librarian/pull/98)); still open at session close.
-- Direct-import tests cover blank input, refusal after failed dismissed-job reactivation, incomplete saved-source refusal, valid watcher recovery without requeue, reservation release after success/exception, and concurrent duplicate suppression. Existing AST adapter integration tests remain.
-- All four required workflows passed on that exact head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture image validation `38722709298`. The initial AST-harness binding failure was fixed before the passing final-head run.
-- No separate local test run, publishing, deployment, or production runtime verification.
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- All four required workflows passed on that exact head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, validation-only multi-architecture image validation `38723927057`.
+- Direct-import coordinator regressions cover invalid input, failed dismissed-job reactivation, saved-source recovery, reservation cleanup, and concurrent duplicate suppression; existing AST adapter integration coverage remains.
 
 ---
 
