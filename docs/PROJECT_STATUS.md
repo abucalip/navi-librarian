@@ -1,3 +1,13 @@
+## 2026-10-16 — Listening profile aggregation extraction (PR pending)
+
+- Branch: `refactor/extract-listening-profile`, based on main `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`.
+- Added pure `listening_profile.build_listening_profile`; `recent_listening_profile(days)` remains the compatibility/MCP adapter and preserves validation, ListenBrainz retrieval/error behavior, JSON output shape, and read-only semantics.
+- Added direct-import tests for payload shape, counts, empty history, and tie ordering; added the module to Docker packaging.
+- Tests and all four required exact-final-head workflows have not yet been observed. No merge, publication, deployment, or runtime verification is claimed.
+- Acquisition dismissal HTTP 409 remains intentionally deferred until it recurs; PRs #44 and #45 are closed per user direction. PR #23 remains open as the modularization roadmap.
+
+---
+
 ## 2026-10-16 — Multi-extraction session closeout (three backend PRs merged)
 
 - Session base: GitHub `main` at `383228e333b1222bb2696b1514f9584ea60d0654`; final code main after the three merges: `a0cd3d8ff5dcdf6acb7d678c9fc8f1aa0d537629`.
