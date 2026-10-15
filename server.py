@@ -21,7 +21,5 @@ def run(command: str) -> str:
         capture_output=True, text=True, timeout=60)
     return (r.stdout + r.stderr)[:20000]
 
-
-
 if __name__ == "__main__":
     mcp.run()
