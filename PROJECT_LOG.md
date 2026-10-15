@@ -44,3 +44,12 @@
 - PR #147 merged by squash. Tested head: `22db7e7b4414f1ff3df7440bc47aece41bf0ae1d`; merge commit: `9ce0ae37ae207f79180d98b10f71147736fe2a75`.
 - All four required PR-head workflows passed: syntax, container runtime smoke, Docker packaging, and Docker image validation. Image publication remains paused. No deployment or production runtime verification claimed.
 
+
+
+## 2026-10-15 — Data-directory resolution extraction started
+
+- Branch: `refactor/extract-data-directory-config`.
+- Added `data_directory.py` as a pure resolver for `NAVIDROME_LIBRARIAN_DATA_DIR` and the legacy source-directory fallback. `navidrome_server.py` retains `DATA_DIR` and the existing directory-creation side effect; no persistence logic or MCP-facing API was moved.
+- Added `tests/test_data_directory.py` for configured path expansion, empty setting fallback, and missing setting fallback. Updated Docker packaging to include the module.
+- Implementation commits: `b46adec455eb2a889df523591a1c454f7200e805`, `7eaadcc7e3c88119f16101e4b6e2217948ab8edc`, `c4eecffc46fc312c5949c56043acfb0abdcb7e49`, `a5ff011456e05ce98a81c17074732ce81f7b4a39`.
+- Verification, PR, merge, publishing, deployment, and production runtime status are pending; do not infer success from the changes being committed.
