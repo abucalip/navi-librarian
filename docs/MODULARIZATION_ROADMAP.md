@@ -545,3 +545,8 @@ The next small application-assembly seam is pure resolution of `NAVIDROME_LIBRAR
 ## Completed — data-directory resolution (PR #152, 2026-10-15)
 
 Extracted the pure `NAVIDROME_LIBRARIAN_DATA_DIR` / source-directory fallback resolver to `data_directory.py`. The legacy `navidrome_server.DATA_DIR` and directory-creation behavior remain intact. Three direct-import regression tests and Docker packaging were added. All four required workflows passed on exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; merged by squash as `567409bb90f240667575a3730976e4c52676bc02`. Publishing remains paused; no deployment or production runtime verification is claimed.
+
+
+## Subsonic response collection normalization — implementation in progress
+
+Move the small shared response-normalization rule into `navidrome_client.items()`, keeping `navidrome_server.items()` as a compatibility adapter for existing discovery and MCP callers. Direct-import tests cover missing, scalar, empty, and populated collection values. This is a deliberately narrow step after the API transport extraction; preserve response semantics and run all four required workflows on the exact final PR head before merge. Publishing and deployment remain separate.

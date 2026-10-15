@@ -1331,3 +1331,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
 - State: implemented, CI passed, merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
 - Next: inspect current GitHub main, open PRs, and the roadmap before selecting the next small application-assembly/domain-service dependency.
+
+
+## 2026-10-15 — Subsonic collection normalization extraction in progress
+
+- Branch: `refactor/extract-subsonic-list-normalizer`. Moved optional API collection normalization (`None` to `[]`, scalar to one-element list, list unchanged) into `navidrome_client.items()` because it is part of interpreting Subsonic response values.
+- Kept `navidrome_server.items()` as a compatibility adapter so existing discovery/MCP callers retain the same behavior. Added direct-import regression cases for missing, scalar, empty-list, and multi-item values.
+- Implementation commits: `3f97f2bafc29265d12a8a4bf858a1e27384f16b3`, `2f0ae7939f0ea3052faa237b2246cf3d32206bdf`, `e7e105a850928705339613780fb55641ac44f72c`.
+- CI, merge, publication, deployment, and runtime verification are pending. Do not claim tests passed until the four required workflows complete on the exact final PR head.

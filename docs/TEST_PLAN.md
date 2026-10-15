@@ -920,3 +920,8 @@ Run `python -m unittest tests.test_data_directory -v` and `python -m unittest di
 - Added direct-import regression coverage for configured path home expansion, empty configuration fallback, and resolved source-directory fallback in `tests/test_data_directory.py`.
 - Exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae` passed all four required workflows: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
 - PR #152 merged by squash at `567409bb90f240667575a3730976e4c52676bc02`. No separate local test run, image publication, deployment, or production runtime verification is claimed.
+
+
+## Subsonic collection normalization extraction — pending verification
+
+Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m unittest discover -s tests -v` suite. The direct-import regression must cover `None`, a scalar value, an empty list, and a multi-item list, while the legacy `navidrome_server.items()` adapter remains compatible. Verify Python syntax/acquisition safety, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. No results are claimed until the workflows complete.

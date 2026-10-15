@@ -47,3 +47,10 @@ def api_call(method, config_provider, *, client_factory=None, salt_factory=None,
         )
 
     return root
+
+
+def items(value):
+    """Normalize an optional Subsonic collection field to a list."""
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
