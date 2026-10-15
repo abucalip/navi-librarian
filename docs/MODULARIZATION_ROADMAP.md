@@ -10,10 +10,6 @@ Moved expected track-count metadata parsing into `slskd_search.py`; retained `_d
 
 Open PR #156 is UI-facing and its required manual browser checklist is explicitly recorded as NOT RUN. Resolve and record that higher-priority verification gate before selecting another routine extraction. Publishing remains paused.
 
-## Expected slskd track-count extraction — completed (PR #155 merged, 2026-10-15)
-
-Moved expected track-count metadata parsing into `slskd_search.py`; retained `_discovery_expected_track_count(metadata)` as a compatibility adapter. Direct-import regressions cover supported aliases, nested metadata, track-object lists, invalid values, unrelated arrays, cyclic metadata, and adapter compatibility. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67` from exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`. All four required workflows passed on that exact head: syntax `38814733899`, Docker packaging/full suite/build `38814734001`, runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`. Publishing/deployment remain paused.
-
 ## Music path default policy — completed (PR #151)
 
 Extracted environment override and mount-path fallback into pure `music_paths.py`, retaining `navidrome_server._default_music_dir()` and existing initialization. Direct-import regressions and Docker packaging are in place. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`. Publishing remains paused; deployment is unverified.
