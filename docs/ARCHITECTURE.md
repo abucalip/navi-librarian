@@ -1,3 +1,7 @@
+## Music path default policy — in progress
+
+music_paths.py owns the pure decision policy for configured music path and host mount fallback. It receives environment and directory-existence behavior from the caller, so import does not initialize application state. navidrome_server._default_music_dir() remains a compatibility adapter. Direct-import tests and Docker packaging are included; exact-head CI is pending.
+
 ## 2026-10-15 — Navidrome HTTP client extraction in progress
 
 - `navidrome_client.py` owns Subsonic-compatible request authentication, HTTP request execution, and API response error interpretation.

@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
 from metadata_cache import MetadataCache
@@ -74,19 +75,8 @@ def _metadata_cache_set(key, value):
 # Environment variables provide first-run defaults; service settings are persistent.
 
 def _default_music_dir():
-    """Choose an explicit override or the native mount path for this host."""
-    configured = os.environ.get("NAVIDROME_MUSIC_DIR")
-    if configured:
-        return Path(configured).expanduser()
-
-    server_path = Path("/media/library/music")
-    mac_path = Path("/Volumes/media/library/music")
-    if server_path.is_dir():
-        return server_path
-    if mac_path.is_dir():
-        return mac_path
-    # The production deployment is the media LXC; this is its default.
-    return server_path
+    """Compatibility adapter for the extracted music-path default policy."""
+    return _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
 
 
 MUSIC_DIR = _default_music_dir()
