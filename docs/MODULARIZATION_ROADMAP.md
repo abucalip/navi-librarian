@@ -2,8 +2,8 @@
 
 - Extracted six settings-policy/configuration functions into importable `service_settings.py` with injected persistence/path callbacks. The AST-coupled test harness was replaced with direct imports against the real module.
 - Preserved legacy MCP/web adapter names and signatures. Kept SQLite initialization/migrations, global `MUSIC_DIR` mutation, service connectivity requests, and other service settings in `navidrome_server.py` to keep this step narrow.
-- Added `service_settings.py` to the Docker image file list. All four required workflows passed on implementation revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a`; The exact code revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a` passed all four workflows after a CI-discovered test-injection mismatch was fixed; this docs update triggers another exact-head CI run.
-- Next: review other settings functions and their web/MCP callers to find the next safe direct-import seam. Do not retire MCP while the web app still imports the legacy module.
+- Added `service_settings.py` to the Docker image file list. Final PR head `b0a9d4df97723bc05983fb362a9b3060587f0df9` passed all four required workflows (syntax/acquisition safety `38664285319`, Docker packaging/full suite `38664285227`, runtime smoke `38664285195`, validation-only multi-architecture `38664285194`; publishing paused). The earlier callback-injection mismatch was corrected before this final-head verification. No local test run, publication, deployment, or production runtime verification is claimed.
+- After PR #95's review/merge decision, continue a caller-driven audit for the next safe direct-import seam. Do not retire MCP while the web app still imports the legacy module.
 
 ---
 
