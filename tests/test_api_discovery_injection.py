@@ -15,10 +15,10 @@ class FakeLibrarian:
 
     def recommend_new_music(self, *, count):
         self.calls.append(("recommend_new_music", count))
-        return json.dumps({"items": [{"artist": "A", "album": "B"}]})
+        return json.dumps({"items": [{"artist": "A", "album": "B"}, {"artist": "Filtered", "album": "Exclude"}]})
 
     def _discovery_is_album_candidate(self, item):
-        return True
+        return item.get("album") != "Exclude"
 
     def discovery_get_list(self, *, list_name, count):
         self.calls.append(("discovery_get_list", list_name, count))
