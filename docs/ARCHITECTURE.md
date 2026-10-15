@@ -1,3 +1,12 @@
+## 2026-10-15 — Web/MCP dependency boundary audit
+
+- Direct server coupling remains in `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, and `app/api/settings.py`. These are adapters around the existing `discovery_*` service surface, and preserving that surface is important for MCP compatibility.
+- `app/api/auth.py` already uses a router factory with injected settings/session/password dependencies; `app/api/metadata.py` is independent of the legacy server. These are useful patterns for a future service-injection boundary.
+- The main app still uses server-owned `DATA_DIR`, settings access, Navidrome ping, discovery list retrieval, and album-candidate filtering. Route tests currently patch each module's `librarian` binding, so an injection refactor must migrate these test seams deliberately.
+- This was a read-only audit. No MCP retirement, domain relocation, route behavior change, or code extraction was performed.
+
+---
+
 ## 2026-10-15 — Import source-root safety merged (PR #103)
 
 - PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.

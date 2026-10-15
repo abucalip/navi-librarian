@@ -1,3 +1,11 @@
+## 2026-10-15 — Web dependency audit and next safe seam
+
+- Read-only audit complete: the FastAPI app imports `navidrome_server` in the app assembly and the acquisition, discovery, and settings routers. Metadata and auth route modules are independent; auth already demonstrates dependency injection.
+- Next narrow task: introduce a shared, injectable web service dependency/factory while keeping `navidrome_server` as the default adapter. Preserve MCP wrappers, route contracts, error mapping, and persistence ownership. Do not move or duplicate domain logic in the HTTP layer.
+- Do not reopen the deferred dismissal HTTP 409 investigation unless the user reports recurrence. Continue verifying current-main CI and open PR state before starting the next code change.
+
+---
+
 ## 2026-10-15 — Acquisition import source-root safety merged (PR #103)
 
 - PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
