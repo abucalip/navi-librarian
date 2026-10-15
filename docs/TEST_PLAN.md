@@ -1,9 +1,9 @@
-## 2026-10-15 — Atomic acquisition request reservation
+## 2026-10-15 — Acquisition reservation lifecycle verified
 
-- PR #89 merged at `c4334c4984dcb988733bd0b1f2464b9030849a70`; all four workflows passed on its exact PR head, with 197 unit tests.
-- `reserve_acquisition_request` must add a new identity, refuse duplicates without mutation, and preserve unrelated active identities. It assumes the caller holds the shared transition lock; do not move lock ownership into the helper.
-- The existing-job decision must run before reservation. A failed reservation returns the existing `already_in_progress` response. The end-to-end AST simultaneous-request test remains required to validate atomic preflight/reservation wiring.
-- Required before merge: focused orchestration tests, full unit suite, syntax/acquisition safety checks, final diff review, and all four workflows on the exact final PR head.
+- PR #90 merged at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`; all four workflows passed, with 199 unit tests.
+- Direct tests verify reservation of a fresh identity, duplicate refusal without mutation, and preservation of unrelated active identities. Reservation still occurs while the coordinator owns the shared transition lock.
+- The callback runs outside the lock; `run_reserved_acquisition` guarantees cleanup under the lock on success and exception. Keep the top-level simultaneous-request regression.
+- Next: cover dismissal/reactivation preflight through an injected orchestration helper, retaining coordinator-level success and refusal tests. Any further extraction requires focused/full tests and all four exact-head workflows.
 
 ---
 

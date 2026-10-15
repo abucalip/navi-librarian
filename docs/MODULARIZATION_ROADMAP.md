@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #89 merged; atomic reservation decision extraction
+## 2026-10-15 — PR #90 merged; request reservation seam extracted
 
-- PR #89 merged at `c4334c4984dcb988733bd0b1f2464b9030849a70` from exact tested head `c778a8c4b6083229aa5e59928f0598f21c5327b9`; all four required workflows passed (197 tests, publishing paused).
-- Move the active-request identity check/add into `acquisition_orchestration.reserve_acquisition_request` while leaving the shared transition lock with `discovery_acquire_album`. This preserves atomic ordering with dismissal, watcher-state, and persisted-job checks.
-- Keep `run_reserved_acquisition` responsible for callback execution outside the lock and guaranteed identity cleanup under the lock.
-- Preserve the top-level simultaneous-request AST test; direct helper tests are not a substitute for the end-to-end race. Do not merge until all four exact-head workflows pass.
+- PR #90 merged at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`; all four workflows passed (199 tests, publishing paused).
+- `acquisition_orchestration.reserve_acquisition_request` now owns the active-request identity check/add; `discovery_acquire_album` retains transition-lock ownership, ensuring persisted-state preflight and reservation stay atomic.
+- `run_reserved_acquisition` owns callback execution outside the lock and reservation cleanup under the lock. The end-to-end concurrent-request AST test remains.
+- Next focused seam: dismissal/reactivation preflight and metadata normalization. Preserve safe refusal when reactivation fails, conditional state persistence, and the legacy MCP adapter. Do not migrate the wrapper-level success/failure tests unless equivalent direct coverage preserves the same integration boundary.
 
 ---
 

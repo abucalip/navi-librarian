@@ -1,11 +1,11 @@
-## 2026-10-15 — PR #89 merged: reserved acquisition cleanup
+## 2026-10-15 — PR #90 merged: atomic acquisition reservation
 
-- PR: https://github.com/abucalip/navi-librarian/pull/89
-- Exact tested PR head: `c778a8c4b6083229aa5e59928f0598f21c5327b9`; squash merge / updated `main`: `c4334c4984dcb988733bd0b1f2464b9030849a70`.
-- Extracted callback execution and final reservation cleanup into `acquisition_orchestration.run_reserved_acquisition`. The callback still runs outside the shared transition lock; cleanup reacquires the lock and removes only the relevant identity.
-- Direct tests cover result and exception propagation plus cleanup on both paths without disturbing unrelated active identities. Full suite: 197 tests.
-- All four required workflows passed on the exact PR head: syntax/acquisition safety `38659433212`, Docker packaging/full suite `38659433201`, runtime smoke `38659433218`, and multi-architecture validation with publishing paused `38659433230`.
-- No publication, deployment, or production runtime verification. Next: extract the atomic active-request identity check/add while retaining lock ownership and the end-to-end concurrency regression.
+- PR: https://github.com/abucalip/navi-librarian/pull/90
+- Exact tested PR head: `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`; squash merge / updated `main`: `4756ad6a7669ab77e284309ca9cd0f178e7f032a`.
+- Extracted the active-request identity check/add into `acquisition_orchestration.reserve_acquisition_request`; the coordinator retains the shared transition lock so existing-state checks and reservation remain one atomic decision.
+- Direct tests cover new reservations, duplicate refusal without mutation, and preserving other active identities. `run_reserved_acquisition` retains callback result/exception behavior and guaranteed cleanup.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38659706561`, Docker packaging/full suite `38659706115` (199 tests), runtime smoke `38659706074`, and multi-architecture image validation with publishing paused `38659706150`.
+- No publication, deployment, or production runtime verification. Next: a focused dismissal/reactivation preflight extraction with wrapper-level success/failure coverage preserved.
 
 ---
 
