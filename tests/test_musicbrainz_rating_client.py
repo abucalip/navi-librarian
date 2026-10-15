@@ -25,8 +25,8 @@ class MusicBrainzRatingClientTests(unittest.TestCase):
         self.requests = []
         self.sleeps = []
 
-        def cache_get(key, ttl):
-            self.requests.append(("cache_get", key, ttl))
+        def cache_get(key, ttl_seconds):
+            self.requests.append(("cache_get", key, ttl_seconds))
             return self.cache.get(key)
 
         def cache_set(key, value):
