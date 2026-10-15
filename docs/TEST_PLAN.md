@@ -1,9 +1,9 @@
-## 2026-10-15 — Existing acquisition recovery coordination
+## 2026-10-15 — Acquisition recovery coordinator verified; remaining AST boundary
 
-- PR #86 merged at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64`; all four required workflows passed on its exact PR head.
-- Direct-import tests for `existing_acquisition_response` must verify: incomplete source inventory returns `recovery_unavailable` without starting a watcher; valid persisted source resumes monitoring without queueing; watcher-start failure returns `monitor_recovery_failed`; importing/imported and active requests short-circuit; no conflicting job permits a new search.
-- Retain the top-level AST integration tests for simultaneous request reservation and persistence-before-import, because those exercise the full server adapter and shared-lock sequencing.
-- Required before merge: focused orchestration tests, full unit suite, syntax/acquisition safety checks, final diff review, and all four workflows on the exact final PR head.
+- PR #87 merged at `007edbc3396b80e415b67aa8a35e6471836627bb` from exact tested head `e019cd04fe16eda64aaf84878c766687925ba7c0`.
+- Direct-import recovery tests cover incomplete source inventory, valid saved-source watcher restart without requeue, watcher-start failure, importing/imported and active-request short-circuits, and the no-conflict path. All four workflows passed on the exact PR head; full suite: 194 tests.
+- Keep remaining AST integration tests for end-to-end query retry sequencing, simultaneous request reservation, persistence-before-import, wrapper-level dismissed-job reactivation/refusal, and no-requeue stale watcher recovery. They test coordinator/wiring boundaries not replaced by the helper tests.
+- Next test/extraction target: top-level acquisition reservation/coordination. Any extraction must retain the shared-lock race regression and all four exact-head workflows.
 
 ---
 
