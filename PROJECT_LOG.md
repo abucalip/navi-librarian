@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #131 merged: Get/request state reporting
+
+- PR: https://github.com/abucalip/navi-librarian/pull/131
+- Tested head: `7eb009c92821b6eb9dfb33326e7dfc3d81fd7244`; squash merge: `5fafad0b5a2d94ef2473c0a7c121d647cf8bdc76`.
+- Unified the three Get/request control variants and fixed lost status messages, premature success state, and `ok: false` handling. API contract and acquisition semantics unchanged.
+- Exact-head CI: syntax `38763416411`; Docker packaging `38763416267`; runtime smoke `38763416429`; image validation (publishing paused) `38763416356` — all passed.
+- Manual report: https://github.com/abucalip/navi-librarian/pull/131#issuecomment-6196528875. All eight checklist items passed; no real download was triggered.
+- No image publication, deployment, or production runtime verification.
+
 ## 2026-10-15 — PR #128 merged: acquisition status layout
 
 - PR #128 (https://github.com/abucalip/navi-librarian/pull/128) merged by squash at `424929410b0324313e9aee5e59da73803d4b32bb`, from final head `653984684be4e2da28e6de6955b43299143f1141`.
