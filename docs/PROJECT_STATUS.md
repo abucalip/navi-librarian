@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #154 merged; PR #149 remains gated
+
+- PR #154: https://github.com/abucalip/navi-librarian/pull/154. Final tested head: `6de27ec137e9f859424eca0928fca25500852471`; squash merge commit: `b547ff5c647d8bacd8bf17fd6cd760dc9c41980a`.
+- All four required workflows passed on the exact PR #154 head: Python syntax, container runtime smoke, Docker packaging/full unit suite/image build, and validation-only multi-architecture image validation. Publishing remained paused; no deployment or production runtime verification is claimed.
+- PR #154 standardized multi-extraction session verification in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`. It is merged; this session is closed out for that work.
+- PR #149 remains open and was **not merged**: https://github.com/abucalip/navi-librarian/pull/149. Its exact head `600c75475cfbe1d28230345835aee2316519365f` has all four workflows passing, but its own description explicitly says the required manual browser checklist was not run. The branch is also 26 commits behind current `main`; do not merge until the branch is safely brought current, exact-head CI is reverified, and the required UI browser checklist is performed and recorded. No assumption is made that the user’s “report published” statement substitutes for that verification gate.
+- Next action: update PR #149 safely against current GitHub `main`, rerun required CI on its resulting exact head, and complete the documented manual UI checklist before merge.
+
+---
+
 ## 2026-10-15 — Standard multi-extraction session workflow (PR #154 pending)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/154; branch: `docs/multi-extraction-session-workflow`.
