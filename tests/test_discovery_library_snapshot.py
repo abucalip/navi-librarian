@@ -40,6 +40,7 @@ class DiscoveryLibrarySnapshotTests(unittest.TestCase):
 
         result = build_library_snapshot(
             api_call, items, self.read_list, self.write_list, now=lambda: 1000,
+            page_size=3, max_albums=6,
         )
 
         self.assertEqual(result["artists"], [{"id": "ar1", "name": "Artist", "album_count": 2}])
@@ -48,7 +49,7 @@ class DiscoveryLibrarySnapshotTests(unittest.TestCase):
             {"id": "al2", "artist": "Other", "album": "Two", "year": None, "song_count": 4, "coverArt": None},
         ])
         self.assertEqual([method for method, _ in self.calls], ["getArtists", "getAlbumList2", "getAlbumList2"])
-        self.assertEqual(self.calls[1][1], {"type": "alphabeticalByName", "size": 500, "offset": 0})
+        self.assertEqual(self.calls[1][1], {"type": "alphabeticalByName", "size": 3, "offset": 0})
         self.assertEqual(self.writes, [("library_snapshot", result)])
 
     def test_uses_fresh_cache_when_album_schema_is_current(self):
