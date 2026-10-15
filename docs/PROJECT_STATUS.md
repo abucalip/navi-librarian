@@ -1,3 +1,9 @@
+## 2026-10-15 — PR #144 merged; PR #142 awaiting conflict resolution
+
+- PR #144, “fix: give landmarks accessible names,” merged after the user published the manual test report and all four required CI workflows passed on exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`. Squash merge: `f1008bb3af25c7c76dac8bae67177a07b21df147`.
+- PR #142’s manual test report is published for exact head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`; all four required workflows passed on that head (Docker packaging `38790385782`, image validation `38790385783`, Python syntax `38790385860`, runtime smoke `38790385745`). The merge attempt was rejected by GitHub with HTTP 405 because the PR has merge conflicts after subsequent main changes. It remains open and unmerged; do not claim it merged.
+- Next action: resolve the PR #142 conflict without force-pushing or overwriting the merged landmark documentation, rerun required CI on the resulting exact PR head, then merge. Publishing/deployment remain paused; no production runtime verification is claimed.
+
 ## 2026-10-15 — PR #143 merged: settings persistence extraction
 
 - PR #143: https://github.com/abucalip/navi-librarian/pull/143. Exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
