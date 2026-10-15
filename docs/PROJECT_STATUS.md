@@ -1058,3 +1058,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Authentication integration tests inject a fake service and include a subprocess regression asserting that importing `app.main` does not load `navidrome_server`. Existing setup/login/logout, cookie/session, rate-limit, and middleware tests remain.
 - All four required workflows passed on exact head `ded9aef759c87ccf07d71cd777b366af424cc06c`: syntax `38737672741`; Docker packaging/full suite/build `38737672443`; container runtime smoke `38737672507`; validation-only multi-architecture image validation `38737672689`.
 - PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after final diff review and all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local test execution, image publication, deployment, or production runtime verification. Publishing remains paused.
+
+
+## 2026-10-15 — PR #118: discovery eligibility tests use direct imports
+
+- PR #118 moves the duplicate album-eligibility, exact artist-credit, and Various Artists regression checks out of the AST harness in `tests/test_acquisition_safety.py`; their existing direct-import coverage in `tests/test_discovery_recommendations.py` remains authoritative.
+- The legacy AST harness now focuses on orchestration/lifecycle paths that still require the monolithic adapter's shared state and stubbed I/O. No runtime code or MCP behavior changed.
+- Branch: `test/migrate-discovery-eligibility-direct-import`. Initial implementation commit: `4731f9b9c706f19927b30c2f4434c71f19bb44b8`. Exact-head CI and full-suite result are pending; no local test run is claimed. Publishing/deployment remain paused.
