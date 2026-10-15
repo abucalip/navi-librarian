@@ -3215,6 +3215,8 @@ def _slskd_download_transfer_files(base_url, headers, username):
     from slskd_transfers import download_transfer_files
 
     return download_transfer_files(base_url, headers, username, http_client=httpx)
+
+
 def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     """Compatibility adapter for independently tested candidate-start validation."""
     return _module_candidate_start_state(
