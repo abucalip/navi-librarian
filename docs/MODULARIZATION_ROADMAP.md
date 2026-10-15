@@ -455,9 +455,9 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 
 
 
-## 2026-10-15 — Lazy authentication service dependency
+## 2026-10-15 — PR #112: lazy authentication service dependency verified
 
-- Remove the direct `navidrome_server.py` import from `app/main.py` and resolve auth settings and signing-key storage through the shared lazy `get_librarian` dependency.
-- Keep persistent settings, `DATA_DIR`, secret-file permissions, MCP adapters, auth route contracts, cookie/session semantics, and middleware behavior unchanged.
-- Add a subprocess regression proving that importing `app.main` alone does not load `navidrome_server`; migrate auth integration tests to an injected fake service.
-- Require focused auth tests, full unit suite, syntax/acquisition-safety, Docker/runtime smoke, and validation-only multi-architecture CI on the exact final PR head. No publication/deployment.
+- Removed the direct `navidrome_server.py` import from `app/main.py`; auth settings and signing-key storage resolve through the shared lazy `get_librarian` dependency.
+- Kept persistent settings, `DATA_DIR`, secret-file permissions, MCP adapters, auth route contracts, cookie/session semantics, and middleware behavior unchanged.
+- Migrated auth integration tests to an injected fake service and added a subprocess regression proving importing `app.main` alone does not load `navidrome_server`.
+- Exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture validation `38737672689`. No publication/deployment. Review and merge PR #112 after final-head checks.
