@@ -19,6 +19,9 @@ from service_settings import (
     get_slskd_settings as _service_get_slskd_settings,
     set_slskd_settings as _service_set_slskd_settings,
     slskd_config as _service_slskd_config,
+    test_navidrome_connection as _service_test_navidrome_connection,
+    test_lastfm_connection as _service_test_lastfm_connection,
+    test_listenbrainz_connection as _service_test_listenbrainz_connection,
 )
 import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
@@ -3180,15 +3183,8 @@ def discovery_set_navidrome_settings(
 
 
 def discovery_test_navidrome_connection() -> str:
-    """Test the configured Navidrome credentials without exposing them."""
-    try:
-        api_call("ping")
-        return json.dumps({"ok": True, "status": "connected", "message": "Navidrome connection succeeded."})
-    except Exception as exc:
-        return json.dumps({
-            "ok": False, "status": "connection_failed",
-            "message": str(exc) if isinstance(exc, ValueError) else "Navidrome is unavailable or authentication failed.",
-        })
+    """Compatibility adapter for the extracted Navidrome connection service."""
+    return _service_test_navidrome_connection(api_call, json.dumps)
 
 
 def discovery_get_lastfm_settings() -> str:
@@ -3204,22 +3200,8 @@ def discovery_set_lastfm_settings(api_key: str = "") -> str:
 
 
 def discovery_test_lastfm_connection() -> str:
-    """Test the configured Last.fm API key without exposing it."""
-    key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
-    if not key:
-        return json.dumps({"ok": False, "status": "not_configured", "message": "Add a Last.fm API key first."})
-    try:
-        response = httpx.get(
-            "https://ws.audioscrobbler.com/2.0/",
-            params={"method": "chart.getTopArtists", "api_key": key, "format": "json", "limit": 1},
-            headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
-        )
-        response.raise_for_status()
-        if response.json().get("error"):
-            return json.dumps({"ok": False, "status": "authentication_failed", "message": "Last.fm rejected the API key. Check the key in Settings."})
-        return json.dumps({"ok": True, "status": "connected", "message": "Last.fm API connection succeeded."})
-    except Exception:
-        return json.dumps({"ok": False, "status": "connection_failed", "message": "Could not reach Last.fm or validate the API key."})
+    """Compatibility adapter for the extracted Last.fm connection service."""
+    return _service_test_lastfm_connection(_discovery_settings_read, httpx.get, json.dumps)
 
 
 def discovery_get_listenbrainz_settings() -> str:
@@ -3233,19 +3215,8 @@ def discovery_set_listenbrainz_settings(username: str) -> str:
 
 
 def discovery_test_listenbrainz_connection() -> str:
-    """Test whether the configured public ListenBrainz profile can be read."""
-    try:
-        username = _listenbrainz_username()
-        response = httpx.get(
-            f"https://api.listenbrainz.org/1/user/{username}/listens",
-            params={"count": 1}, headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
-        )
-        if response.status_code == 404:
-            return json.dumps({"ok": False, "status": "not_found", "message": "ListenBrainz user was not found."})
-        response.raise_for_status()
-        return json.dumps({"ok": True, "status": "connected", "message": "ListenBrainz profile is reachable."})
-    except Exception:
-        return json.dumps({"ok": False, "status": "connection_failed", "message": "Could not reach ListenBrainz or validate the username."})
+    """Compatibility adapter for the extracted ListenBrainz connection service."""
+    return _service_test_listenbrainz_connection(_listenbrainz_username, httpx.get, json.dumps)
 
 
 def _slskd_config():
