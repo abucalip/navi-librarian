@@ -1,14 +1,15 @@
-## 2026-10-15 — Safety follow-up: acquisition cleanup path race
+## 2026-10-15 — Safety gate before the next service extraction
 
-- Before another routine extraction, harden the destructive cleanup boundary against directory replacement between preflight and deletion. Require a regression that swaps the target directory for a symlink during transfer lookup and proves an outside file is untouched.
-- Keep cleanup conservative: descriptor-relative deletion, inode/path revalidation, no recursive removal, and exact-head CI. Do not claim a fix until the regression and all required workflows pass.
+- Pause routine modularization while verifying the acquisition cleanup directory-swap hardening. Path-based deletion after external transfer callbacks presented a plausible symlink replacement race; the fix and regression are on `fix/acquisition-cleanup-directory-race`.
+- Next: review the final diff and require focused/full tests plus all four CI workflows on the exact PR head before merge. No image publication or deployment.
 
 ---
 
-## 2026-10-15 — PR #98 merged: acquisition request coordinator
+## 2026-10-15 — PR #98 merged
 
-- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`; all four required workflows passed on that head.
-- Next priority is the destructive acquisition cleanup path-race regression, ahead of further routine extraction.
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- The top-level acquisition request decision sequence now lives in `acquisition_request_coordinator.py`; adapters, persistence ownership, shared locks, and watcher lifecycle remain in the legacy server boundary.
+- All four required workflows passed on that exact head. Continue with the highest-priority safety/test gaps before routine service extractions.
 
 ---
 

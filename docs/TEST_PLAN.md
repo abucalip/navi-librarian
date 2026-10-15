@@ -1,16 +1,15 @@
-## 2026-10-15 — Acquisition cleanup directory-race regression
+## 2026-10-15 — Destructive cleanup directory-swap regression (verification pending)
 
-- `tests/test_acquisition_cleanup.py` exercises replacement of the verified album directory with a symlink during transfer lookup; the outside target must remain untouched and cleanup must fail closed.
-- `acquisition_cleanup.py` pins the configured root and target directory chain with no-follow directory descriptors, revalidates target/file identities and contents, and performs deletions relative to the pinned target descriptor.
-- Run focused cleanup tests, the full unit suite, Python syntax/acquisition-safety workflow, Docker packaging/full unit suite, runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. The regression is not considered verified until those checks pass.
+- `tests/test_acquisition_cleanup.py` now covers replacement of the preflighted album folder with a symlink during the external transfer lookup callback. Cleanup must return false and preserve files in both the symlink target and the moved original album directory.
+- The implementation uses no-follow descriptor-relative traversal and verifies directory/file device+inode identity before deleting. Required gates: focused cleanup tests, full unit suite, syntax/acquisition safety, Docker packaging/full suite, container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. No publishing.
 
 ---
 
-## 2026-10-15 — PR #98 merged: acquisition request coordinator
+## 2026-10-15 — PR #98 verified and merged
 
 - PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
-- All four required workflows passed on that exact head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, validation-only multi-architecture image validation `38723927057`.
-- Direct-import coordinator regressions cover invalid input, failed dismissed-job reactivation, saved-source recovery, reservation cleanup, and concurrent duplicate suppression; existing AST adapter integration coverage remains.
+- All four required workflows passed on that exact head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, and validation-only multi-architecture validation `38723927057`. Existing AST adapter integration coverage remains alongside direct-import coordinator tests.
+- No separate local tests, publishing, deployment, or production runtime verification.
 
 ---
 

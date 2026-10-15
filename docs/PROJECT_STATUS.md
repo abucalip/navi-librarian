@@ -1,8 +1,16 @@
-## 2026-10-15 — PR #98 merged; acquisition cleanup race hardening in progress
+## 2026-10-15 — Acquisition cleanup directory-swap hardening (verification pending)
 
-- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from final tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
-- Exact-head CI passed: syntax `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, and validation-only multi-architecture image validation `38723927057`. Publishing remains paused; no deployment or production runtime verification.
-- Current safety task: prevent acquisition dismissal cleanup from following a directory path replaced with a symlink after preflight. A regression test simulates replacement during transfer lookup and asserts an outside file remains untouched. This branch is not yet merged; final exact-head CI is required.
+- Safety audit found a time-of-check/time-of-use gap in `clean_acquisition_source`: the code preflighted a target folder, called external transfer lookups, then deleted via path-based operations. Replacing that folder with a symlink during the callback could redirect deletion outside the intended folder.
+- The fix pins the verified directory through no-follow, descriptor-relative traversal, compares device/inode identities, and unlinks only verified basenames relative to the pinned directory. Added a regression that swaps the album folder for a symlink during transfer lookup and asserts both the outside target and moved original album files remain intact.
+- Branch: `fix/acquisition-cleanup-directory-race`. Implementation and regression are committed; exact-head CI and focused/full test results are pending. No production data or deployment was touched.
+
+---
+
+## 2026-10-15 — PR #98 merged: acquisition request coordinator
+
+- PR #98 ([acquisition request coordinator extraction](https://github.com/abucalip/navi-librarian/pull/98)) merged at `ae6635573aa57eb9303909701e6f0a5834066495`, from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- `acquisition_request_coordinator.py` owns the top-level request decision sequence behind injected dependencies; the MCP/web adapter retains the legacy interface, while shared state, persistence, watcher lifecycle, and acquisition implementation remain injected.
+- All four required workflows passed on the exact head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, container runtime smoke `38723927058`, and validation-only multi-architecture validation `38723927057`. Publishing remains paused; no deployment/runtime verification.
 
 ---
 

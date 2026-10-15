@@ -1,14 +1,14 @@
-## 2026-10-15 — Acquisition cleanup directory identity guard
+## 2026-10-15 — Acquisition cleanup filesystem boundary hardening (verification pending)
 
-- Dismissal cleanup is a destructive boundary. A successful read-only preflight does not authorize later path-based unlink if the album directory can be replaced in between.
-- Re-open the configured root and target directory chain with no-follow flags, compare device/inode identities, revalidate the exact planned file set, and unlink relative to the pinned directory descriptor. Fail closed on changed paths, file identities, unexpected entries, or symlinks. Never recursively delete a directory.
+- `acquisition_cleanup.py` still owns destructive cleanup policy. To avoid trusting a mutable pathname after external callbacks, cleanup now opens target directories with no-follow flags, walks components relative to directory descriptors, checks device/inode identities, and unlinks verified files relative to the pinned directory.
+- The regression exercises a target-directory symlink swap during transfer lookup. Exact-head CI remains the acceptance gate; no production deletion test is claimed.
 
 ---
 
-## 2026-10-15 — PR #98 merged: acquisition request coordinator
+## 2026-10-15 — Acquisition request coordinator merged
 
-- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`; all four required workflows passed on that head.
-- The coordinator keeps the legacy MCP/web adapter and persistence ownership in `navidrome_server.py` while moving request decisions behind injected dependencies.
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- The coordinator owns request decision sequencing through injected dependencies. The legacy MCP/web adapter, shared locks/state, persistence, watcher lifecycle, and acquisition implementation retain their existing ownership boundaries. All four required workflows passed on the exact PR head.
 
 ---
 
