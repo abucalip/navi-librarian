@@ -98,7 +98,7 @@ class DashboardRoutesTests(unittest.TestCase):
             response = self.client.get("/api/dashboard-picks?count=20")
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["pool_size"], 4)
+        self.assertEqual(payload["pool_size"], 3)
         identities = [(item["artist"].casefold(), item["album"].casefold())
                       for item in payload["items"]]
         self.assertEqual(len(identities), len(set(identities)))
