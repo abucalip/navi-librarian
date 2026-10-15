@@ -678,3 +678,11 @@ The source-switch guard tests must prove the dismissal check and switch callback
 - Regression coverage includes source-root symlink replacement after matching, collision-suffixed matching, cross-filesystem fallback, and rollback. Preserve existing no-overwrite destination checks, verified track matching, mount/device checks, and recovery-manifest behavior.
 - PR #103 final tested head `9de78c268af1b640a2a08afecb25a22502322a85` passed all four required workflows: syntax `38726626891`, Docker packaging/full suite/build `38726626846`, runtime smoke `38726626956`, and validation-only multi-architecture validation `38726626910`. Squash merge: `cf40df35a76d669421dcddbafd21ea22652bd0b1`. Publishing remains paused.
 - No separate assistant-local test run or live slskd/production filesystem verification is claimed.
+
+## 2026-10-15 — Settings router service injection in progress
+
+- Current implementation branch: `refactor/settings-router-service-injection`, based on `main` at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` (PR #108 merge).
+- `app/api/settings.py` now uses the shared lazy `get_librarian` dependency for all twelve settings endpoints instead of importing `navidrome_server` at module import time. Existing settings functions remain the service implementation; payload mapping, defaults, response parsing, validation status codes, and sanitized 502 errors are intentionally unchanged.
+- `tests/test_settings_routes.py` now supplies fake services directly and checks route/method contracts, dependency wiring, payload mapping, slskd defaults/path trimming, client validation errors, and sanitized connection failures.
+- Verification state at documentation update: no local tests run; CI not yet verified for the final branch head. No image publication, deployment, or production runtime verification. Preserve the MCP adapters and legacy persistence ownership.
+
