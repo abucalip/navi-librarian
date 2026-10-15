@@ -6,13 +6,24 @@
 - All four required workflows passed on the exact final head: syntax `38825137244`; Docker packaging/full unit suite/image build `38825137296`; runtime smoke `38825137346`; validation-only multi-architecture validation `38825137280`. The full unit suite passed in CI. Assistant-side local tests were not run.
 - No image publication, deployment, or production runtime verification is claimed.
 
-## 2026-10-16 — Discovery library snapshot extraction (PR pending)
+## 2026-10-16 — Discovery library snapshot extraction completed (PR #168)
 
-- Branch `refactor/extract-discovery-library-snapshot`, based on post-PR-167 main `6b656dc7218280aa0d37e738a881061ceefde55e`.
-- Extracted cached Navidrome artist/album inventory assembly to `discovery_library_snapshot.py` with injected API, collection-normalization, and store callbacks; retained `_discovery_library_snapshot()` as the compatibility adapter.
-- Direct-import tests cover cache reuse, outdated cache schema, album ID deduplication, inventory shape/pagination, and the safety-limit refusal. Docker packaging and architecture documentation are updated.
-- Focused/full test results and all four exact-final-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
-- Acquisition dismissal HTTP 409 remains deferred until it recurs. PRs #44 and #45 are closed per user direction; PR #23 remains open as the modularization roadmap.
+- Branch `refactor/extract-discovery-library-snapshot`; exact tested head `fc69943301c5065a54a0128c8b82ae214cd69dd1`; squash merge `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`.
+- Extracted cached Navidrome artist/album inventory assembly into `discovery_library_snapshot.py`, preserving `_discovery_library_snapshot()` as the compatibility adapter.
+- Direct-import tests cover cache reuse, outdated cache schema, album ID deduplication, inventory shape/pagination, and safety-limit refusal. Docker packaging was updated.
+- All four required workflows passed on the exact final head: syntax `38825386951`; Docker packaging/full unit suite/image build `38825387005`; runtime smoke `38825386785`; validation-only multi-architecture validation `38825386797`. The full unit suite passed in CI. Assistant-side local tests were not run.
+- No image publication, deployment, or production runtime verification is claimed. PR #44 and #45 are closed as requested; the HTTP 409 investigation remains deferred until it recurs. PR #23 remains open as the modularization roadmap.
+
+---
+
+## 2026-10-16 — Multi-extraction session closeout
+
+- Starting main SHA: `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`. Final main SHA after two sequential extractions: `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`.
+- PR #167 extracted ListenBrainz listening-profile aggregation; exact tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; merge `6b656dc7218280aa0d37e738a881061ceefde55e`. All four required workflows passed: syntax `38825137244`, full suite/build `38825137296`, runtime smoke `38825137346`, validation-only multi-architecture `38825137280`.
+- PR #168 extracted cached Navidrome library snapshot assembly; exact tested head `fc69943301c5065a54a0128c8b82ae214cd69dd1`; merge `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`. All four required workflows passed: syntax `38825386951`, full suite/build `38825387005`, runtime smoke `38825386785`, validation-only multi-architecture `38825386797`.
+- Both PRs retained compatibility adapters, added direct-import regressions, and updated Docker packaging. Assistant-side local tests were not run. Publishing/deployment/runtime verification remain separate and unclaimed.
+- Only PR #23 remains open; it is the modularization roadmap. PRs #44 and #45 are closed per the user's direction. The dismissal HTTP 409 investigation remains deferred until it recurs.
+- Next action: continue selecting the next smallest low-coupling application-assembly/domain-service seam from current main, after verifying the documentation closeout PR.
 
 ---
 
