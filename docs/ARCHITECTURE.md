@@ -1,6 +1,9 @@
-## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+## Proxmox MCP command allowlist — PR #114 merged
 
-The separate root-level `server.py` is a host-side Proxmox MCP entry point and is not copied into the Librarian application image. Its `run(command)` tool must not forward arbitrary caller input to SSH: SSH remote commands are interpreted by a shell. PR #114 introduces a separate strict allowlist module for a small set of read-only diagnostic forms, with all other inputs refused before subprocess invocation. This does not change the web app, acquisition domain logic, or the separate MCP server used by the Librarian product.
+The separate root-level `server.py` is a host-side Proxmox MCP entry point and is not copied into the Librarian application image. Its `run(command)` tool previously forwarded arbitrary caller input to SSH despite describing the input as allowlisted. PR #114 adds a standalone strict allowlist for the documented diagnostic forms and refuses all other input before subprocess invocation. The MCP tool schema, SSH target/options, timeout, and output truncation for accepted commands are unchanged.
+
+PR #114 exact head `cd8319696180875a3cb6f0dc151d88e0c8c490d7` passed syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, and validation-only multi-architecture validation `38740491281`. Squash merge: `6ab848d444373dfa37e6d46528a2840a53a8f763`. No live Proxmox command, publication, or deployment was performed.
+
 
 ---
 
