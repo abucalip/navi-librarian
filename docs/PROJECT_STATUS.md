@@ -1,8 +1,8 @@
-## 2026-10-15 — Acquisition import source-root safety follow-up (verification pending)
+## 2026-10-15 — PR #103 merged: acquisition import source-root safety
 
-- Audit found that `import_matched_album_files` invokes its matcher before moving source files; if the source directory is replaced by a symlink during that boundary, path-based `stat`/`shutil.move` can follow the replacement.
-- The current branch pins source and destination-parent directories with no-follow descriptors, validates matched file identities, performs descriptor-relative moves/rollback, and adds regression coverage for source-directory swaps, collision-suffixed filenames, cross-filesystem fallback, and rollback.
-- Branch `fix/acquisition-import-source-race`; focused/full tests and all four required workflows must pass on the exact final PR head before merge. No production data or deployment was touched.
+- PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
+- Import now pins source and destination-parent directory chains with no-follow descriptors, validates matched source file identities, performs descriptor-relative staging/publication/rollback, and retains cross-filesystem copy fallback. Regressions cover source-folder symlink replacement, collision-suffixed matching, cross-filesystem fallback, and rollback.
+- All four required workflows passed on that exact head: syntax/acquisition safety `38726626891`, Docker packaging/full unit suite/build `38726626846`, container runtime smoke `38726626956`, and validation-only multi-architecture image validation `38726626910`. No separate local test, production-folder test, image publication, deployment, or production runtime verification.
 
 ---
 
