@@ -1,7 +1,8 @@
-## 2026-10-15 — Destructive cleanup directory-swap regression (verification pending)
+## 2026-10-15 — PR #99 cleanup directory-swap regression verified
 
-- `tests/test_acquisition_cleanup.py` now covers replacement of the preflighted album folder with a symlink during the external transfer lookup callback. Cleanup must return false and preserve files in both the symlink target and the moved original album directory.
-- The implementation uses no-follow descriptor-relative traversal and verifies directory/file device+inode identity before deleting. Required gates: focused cleanup tests, full unit suite, syntax/acquisition safety, Docker packaging/full suite, container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. No publishing.
+- PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
+- Regression covers replacement of the preflighted album folder with a symlink during external transfer lookup; cleanup must fail closed while preserving both the outside target and moved original album track.
+- All four required workflows passed on the exact head: syntax/acquisition safety `38724377954`, Docker packaging/full unit suite/build `38724378021`, runtime smoke `38724378097`, and validation-only multi-architecture image validation `38724377870`. No separate local test or production-folder deletion test is claimed.
 
 ---
 
