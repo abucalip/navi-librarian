@@ -124,7 +124,13 @@ p { line-height: 1.55; }
 #loadRecommendations:hover, #saveSlskd:hover { background: #f3d66b; border-color: #f3d66b; }
 .discovery-controls { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); gap: 8px; margin: 17px 0 8px; }
 .discovery-controls input, .discovery-controls select { width: 100%; min-width: 0; background: #202221; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 4px; }
-#recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 11px/1.5 var(--mono); letter-spacing: .02em; }
+/* A sentence with embedded counts, not a code readout: it is read as prose and announced
+   as a live region, so it takes the body face at the same 13px the .status-line convention
+   uses. Monospace at 11px fell below the readable floor for text a user must read.
+   tabular-nums keeps the two numbers column-stable without mono, which is what the
+   numeric-content guidance asks for. Size and weight are combined deliberately: the count
+   is quiet metadata, so it stays 400 and does not compete with the section heading. */
+#recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 400 13px/1.5 var(--body); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
 /* Acquisition cards are status records, not artwork tiles: they carry a progress
