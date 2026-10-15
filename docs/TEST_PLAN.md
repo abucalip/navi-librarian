@@ -1,8 +1,8 @@
-## 2026-10-15 — Acquisition reservation lifecycle
+## 2026-10-15 — Atomic acquisition request reservation
 
-- PR #88 merged at `bd8a162d98e3ddadf439f6a3f437e7327531a8f8`; its exact documentation PR head passed all four required workflows.
-- `run_reserved_acquisition` must preserve callback return values and exceptions, always discard only the reserved identity, and reacquire the shared transition lock during cleanup.
-- The caller must continue to reserve atomically under the shared transition lock before the callback runs outside the lock. Keep the AST simultaneous-request test to validate this end-to-end race boundary.
+- PR #89 merged at `c4334c4984dcb988733bd0b1f2464b9030849a70`; all four workflows passed on its exact PR head, with 197 unit tests.
+- `reserve_acquisition_request` must add a new identity, refuse duplicates without mutation, and preserve unrelated active identities. It assumes the caller holds the shared transition lock; do not move lock ownership into the helper.
+- The existing-job decision must run before reservation. A failed reservation returns the existing `already_in_progress` response. The end-to-end AST simultaneous-request test remains required to validate atomic preflight/reservation wiring.
 - Required before merge: focused orchestration tests, full unit suite, syntax/acquisition safety checks, final diff review, and all four workflows on the exact final PR head.
 
 ---
