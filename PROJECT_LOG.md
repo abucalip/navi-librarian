@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #137 merged: authentication signing-key symlink safety
+
+- PR #137: https://github.com/abucalip/navi-librarian/pull/137. Final PR head `f6458af4b84b957902a2da1960cdafc06d0f7594`; squash merge `d7b75567ce8d3729c1ed92f091e89a794fff2341`.
+- Regression-first test commit: `ddcac7d1e9aa72196267881d7fe0d42ab98004a8`; implementation commit: `a143e8353e9e0a899e70c854a22bc7d50d5e03c0`. Existing authentication keys now reject symlink redirection, verify regular-file type, and use descriptor-based permission tightening.
+- All four required workflows passed on the exact PR head: Python syntax, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation. Publishing paused; no deployment or production runtime verification is claimed.
+- Next priority: continue the safety/verification audit before routine modularization; investigate acquisition dismissal HTTP 409 only if it recurs, collecting stage-specific evidence first.
+
+---
+
 ## 2026-10-15 — Authentication signing-key symlink safety (PR preparation)
 
 - Regression-first change: `ddcac7d1e9aa72196267881d7fe0d42ab98004a8` adds a test proving that an existing `app_auth.key` symlink is refused without changing the target file's bytes or mode.
