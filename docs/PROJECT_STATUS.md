@@ -1118,4 +1118,5 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 
 - Backend audit found that `POST /api/discovery/{list_name}/refresh` converted `count` with `int(...)`, silently accepting numeric strings and booleans and truncating floats. This could turn malformed input into a different refresh request.
 - Branch `fix/discovery-refresh-strict-count` now requires a real JSON integer from 1 through 20 (while preserving the omitted default of 20) and adds direct-route regression cases for strings, floats, booleans, null, arrays, objects, and range violations.
-- Exact-head tests and CI are pending. No local test execution, merge, publication, deployment, or production runtime verification is claimed.
+- Exact implementation head `859bf10b1bbaececd2045596287c7680bb66d514` passed all four workflows: Python syntax `38762625902`, container runtime smoke `38762625878`, Docker packaging/full unit suite/build `38762625612`, and validation-only multi-architecture image validation `38762625568`. The documentation-updated final head must pass all four again before merge.
+- No separate local test execution, merge, publication, deployment, or production runtime verification is claimed.
