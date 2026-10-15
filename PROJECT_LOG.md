@@ -1,3 +1,21 @@
+## 2026-10-15 — Conditional dismissed-job reactivation extraction proposed
+
+- Branch: `refactor/dismissed-acquisition-reactivation-state`, based on GitHub `main` `3f9304f21ec282912ca7427f7074dbc35cb62585`.
+- Planned change: extract the conditional `status='dismissed'` SQLite update into `acquisition_state.reactivate_dismissed_job`; keep the legacy MCP/server wrapper and caller-owned transition lock unchanged.
+- Planned regression tests: successful retry persists metadata/time and clears stale candidate/settings; missing and non-dismissed rows refuse reactivation without mutation. Existing coordinator AST tests remain.
+- Validation, exact-head CI, diff review, merge, publication, and deployment are pending; do not treat the task as complete until recorded with evidence.
+
+---
+
+## 2026-10-15 — Conditional dismissed-job reactivation extraction proposed
+
+- Branch: `refactor/dismissed-acquisition-reactivation-state`, based on GitHub `main` `3f9304f21ec282912ca7427f7074dbc35cb62585`.
+- Planned change: extract the conditional `status='dismissed'` SQLite update into `acquisition_state.reactivate_dismissed_job`; keep the legacy MCP/server wrapper and caller-owned transition lock unchanged.
+- Planned regression tests: successful retry persists metadata/time and clears stale candidate/settings; missing and non-dismissed rows refuse reactivation without mutation. Existing coordinator AST tests remain.
+- Validation, exact-head CI, diff review, merge, publication, and deployment are pending; do not treat the task as complete until recorded with evidence.
+
+---
+
 ## 2026-10-15 — PR #84 verification closeout
 
 - Exact PR head `398486476aacdbbefefeaee5cb79182cc0835fb8` passed all four required workflows: syntax/acquisition safety run 38656927551, Docker packaging/full unit suite run 38656927436, runtime smoke run 38656927801, and validation-only multi-architecture image run 38656927516.
