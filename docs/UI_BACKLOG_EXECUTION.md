@@ -477,6 +477,65 @@ region now lists its link children instead of the leaked heading; 8/8 pages rend
 expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/360px; no console
 or page errors.
 
+## 5f. recommendationCount findings
+
+C4 of the external critique. Measured before changing anything.
+
+### What the element is
+
+It holds two different kinds of text, which matters for the fix:
+
+- Initial: an instructional sentence, "Generate recommendations to get started."
+- After generating: `"Showing 12 of 30 recommendations"` — a sentence with embedded counts.
+
+### Defect: 11px is below the readable floor
+
+Measured: `font: 11px/1.5 var(--mono)`, weight 400. `typeset.md` says to "use 1rem / 16px as
+the ordinary web body floor unless a dense role, platform convention, or user setting
+justifies otherwise". This is neither dense nor a convention: it is a live region the user is
+meant to read. 11px was the smallest text in the app.
+
+**Fixed:** 13px in `var(--body)`, matching the existing `.status-line` convention, plus
+`font-variant-numeric: tabular-nums`.
+
+### Correction: the contrast claim was wrong
+
+The critique said "the contrast is also uncertain at 11px depending on the color in use".
+Measured: the element uses `--muted` (`#a5a69c`) on `--bg`, which is **7.09:1** — comfortably
+passing AA, and never in doubt. Only `--subtle` ever failed, and that was C1.
+
+This is recorded because "uncertain" invited a change that was not needed. The element's
+colour is unchanged.
+
+### Why mono was replaced rather than enlarged
+
+The critique suggested switching "from mono to body". `typeset.md` line 51 says to "use
+numeric, tabular, code, and label features when their content benefits" — so mono is not
+wrong a priori for numeric content. But this is a **sentence with numbers in it**, not a code
+readout or a column of figures: it is read as prose and announced as a live region.
+Proportional body type at a readable size, with tabular figures to keep the two counts
+column-stable, satisfies both lines rather than trading one for the other.
+
+`typeset.md` line 42 also says to "combine size, weight, space, and tone deliberately instead
+of asking size alone to do all the work". That is why the weight stays 400 and the colour
+stays `--muted`: the count is quiet metadata and must not compete with the section heading.
+
+### Also fixed: the live region had no role
+
+The element was `aria-live="polite"` with no `role`. It now carries `role="status"`, which
+gives it an implicit polite live region and a reliable announcement across assistive tech.
+The explicit `aria-live` is retained for readers that do not infer it from the role.
+Verification shows it now appears as `status:` in the accessibility tree; before it was an
+unroled paragraph.
+
+### Verification
+
+Measured on the branch: computed style is 13px, weight 400, `IBM Plex Sans`, `tabular-nums`,
+`role="status"`, contrast unchanged at 7.09:1; the region renders as `status:` in the ARIA
+tree; 8/8 pages render their expected heading; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors; `--mono` still has 18 other
+uses so the token is not orphaned.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
