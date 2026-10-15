@@ -3,7 +3,7 @@
 - Extracted repeated selected-source/fallback-source payload normalization from `_discovery_acquire_album_impl` into `acquisition_monitor_payload.py`.
 - Added direct-import regressions for filename/size-only file records, quality summary normalization, preservation of fallback metadata, and no mutation of source candidates.
 - The MCP-facing function and orchestration decisions remain in place; queue handling, cancellation/cleanup, shared locks, persistence, and watcher lifecycle were not moved.
-- Dockerfile includes the new module. Regression tests and syntax/full-suite/packaging/runtime workflows are still pending exact final PR-head verification at this entry; no local execution or deployment is claimed.
+- Dockerfile includes the new module. Exact PR head `f3d444fce0902637d394b48680e4274e2b513f6f` passed syntax `38780380213`, Docker packaging/full unit suite/build `38780380196`, runtime smoke `38780380199`, and validation-only multi-architecture image validation `38780380566` (publishing paused). Documentation updates create a new head, so all four checks must be re-verified on the final PR head before merge. No local test execution, publication, deployment, or production runtime verification is claimed.
 
 ---
 
