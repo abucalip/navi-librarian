@@ -1,6 +1,14 @@
-## slskd transfer listing extraction — in progress (2026-10-15)
+## slskd transfer listing extraction — completed (PR #157 merged, 2026-10-15)
 
-Move the transfer-list HTTP request and recursive response normalization from `navidrome_server.py` into `slskd_transfers.py`. Keep `_slskd_download_transfer_files(base_url, headers, username)` as the legacy adapter and inject the HTTP client into the new service. Preserve the 8-second timeout, URL-encoded username, 404-as-no-active-transfers behavior, `raise_for_status()` errors, nested remote-directory inheritance, copied file records, and `_transfer_directory` identity. Add direct-import tests and adapter coverage. The Dockerfile COPY reference was added to current `main` in commit `08c0703ed1dea19eae1aa84f8a18b4a3ea8f8666`; this PR supplies the referenced module and verifies the complete package/build state. Do not change candidate-start safety or acquisition watcher behavior. Initial PR #157 head `139304fb1ba3c9812931a91025e0efa90c62c869` passed all four required workflows (syntax `38815948143`, Docker/full suite/build `38815948355`, runtime smoke `38815948227`, multi-architecture validation `38815948105`). Previously tested PR head `22edf45e09d6f86470298de2a54af8d5b9c8af0c` passed all four required workflows: syntax/acquisition safety `38816159790`, Docker packaging/full unit suite/image build `38816159713`, isolated container runtime smoke `38816159767`, and validation-only multi-architecture validation `38816159649`. This documentation-only closeout commit changes the PR head; all four workflows must pass on the resulting final head before merge.
+`slskd_transfers.py` owns the HTTP transfer-list request and recursive normalization into file records carrying `_transfer_directory`. It uses an injected HTTP client. `navidrome_server._slskd_download_transfer_files(base_url, headers, username)` remains the compatibility adapter used by candidate-start validation. The implementation preserves URL encoding, 8-second timeout, 404-as-empty behavior, HTTP error propagation, nested directory inheritance, copied file records, and transfer-directory identity. Direct-import and adapter tests cover these contracts. PR #157 merged at `17922f878f0ea391b47652012a38530e9eb044fc` from exact tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`. All four required workflows passed: syntax `38816375215`, Docker/full suite/build `38816375266`, runtime smoke `38816375339`, multi-architecture validation `38816375410`.
+
+## Expected slskd track-count extraction — completed (PR #155 merged, 2026-10-15)
+
+Moved expected track-count metadata parsing into `slskd_search.py`; retained `_discovery_expected_track_count(metadata)` as the compatibility adapter. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67` from exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; all four required workflows passed.
+
+## Next gate before further modularization
+
+Open PR #156 is UI-facing and its required manual browser checklist is explicitly recorded as NOT RUN. Resolve and record that higher-priority verification gate before selecting another routine extraction. Publishing remains paused.
 
 ## Expected slskd track-count extraction — completed (PR #155 merged, 2026-10-15)
 
