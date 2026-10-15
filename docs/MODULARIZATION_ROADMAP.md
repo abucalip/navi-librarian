@@ -512,3 +512,8 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 ## Next settings/domain boundary — connection-check service extraction (2026-10-15)
 
 Extract the settings connection-check logic into `service_settings.py` behind injected HTTP/service dependencies. Keep SQLite persistence, settings migration, runtime path mutation, and the legacy MCP-facing function signatures in `navidrome_server.py`. Verify secret redaction and preserve the existing JSON result contract before continuing to the remaining application assembly/domain dependencies.
+
+
+## Completed — settings connection checks (2026-10-15, PR #140)
+
+Navidrome, Last.fm, and ListenBrainz connection-check logic is extracted into `service_settings.py` with injected dependencies; legacy public entry points remain adapters. Regression tests cover response mapping, missing configuration/profile, and Last.fm key redaction. All four required workflows passed on PR head `cacdbc809f35040f0cc1bc70a39251ff80b7315e`; merged as `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. Continue with the remaining application-assembly/domain-service boundaries; do not treat this as completion of all modularization.
