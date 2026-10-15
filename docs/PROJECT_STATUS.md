@@ -1,3 +1,14 @@
+## 2026-10-15 — Backend extraction session started: expected track count
+
+- Current GitHub main was inspected before work. Recent main commit: 463f27ea06ca33f06cc1b32798f3019901322075; PR #154 is merged. PR #149 has since merged, despite stale status text below; latest GitHub commits include its merge and closeout records. Open PRs include #44 and #45 (deferred acquisition-dismissal diagnostics/decision) and #23 (older roadmap documentation); none is being changed in this session.
+- Branch: refactor/extract-expected-track-count, based on current main.
+- Objective: move the pure expected-track-count metadata reader into slskd_search.py; preserve navidrome_server._discovery_expected_track_count as a compatibility adapter, with unchanged return behavior and no acquisition lifecycle changes.
+- Acceptance: direct-import regressions cover all supported count keys, nested metadata, track-object lists, invalid/non-positive values, unrelated lists, and cyclic metadata; adapter compatibility is retained; Docker already packages slskd_search.py.
+- Implementation commits so far: c39cc55cc7347e7003525dac9c14497e8bef214d (legacy adapter), 595188c0bc12757602ecc4dad605742b2972746d (extracted helper), 52eb9f74101e4bab7c70ca1de56d635346d2db29 (direct-import tests).
+- Verification, PR, exact-head CI, merge, publication, deployment, and runtime status are pending. No tests are claimed as run yet.
+
+---
+
 ## 2026-10-15 — PR #154 merged; PR #149 remains gated
 
 - PR #154: https://github.com/abucalip/navi-librarian/pull/154. Final tested head: `6de27ec137e9f859424eca0928fca25500852471`; squash merge commit: `b547ff5c647d8bacd8bf17fd6cd760dc9c41980a`.
