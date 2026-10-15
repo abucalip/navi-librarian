@@ -131,7 +131,7 @@ their claims were re-verified against `main` at `30e7c04`.
 | C1 | **Fix `--subtle` contrast.** It fails WCAG AA at 3.94:1 and is used on functional metadata. | One token | Verified, not fixed |
 | C2 | **Add `aria-label` to `<nav>`; give page sections accessible names.** | Small | Verified, not fixed |
 | C3 | **Set the modal artwork `alt` dynamically.** It is hardcoded and never updated. | Small | Verified, not fixed |
-| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Verified, not fixed |
+| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Implemented in refreshed PR #149; four workflows passed on head `084aebb`; refreshed-head browser verification pending |
 | C5 | **Move `<footer>` out of `<main>`.** It sits mid-document before five sections. | One line | Verified, not fixed |
 | C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | Not started |
 | C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | Item 1, partial |
@@ -476,6 +476,70 @@ the modal nav's pseudo-element is `none` while the sidebar's is `"YOUR COLLECTIO
 region now lists its link children instead of the leaked heading; 8/8 pages render their
 expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/360px; no console
 or page errors.
+
+## 5f. recommendationCount findings
+
+C4 of the external critique. Measured before changing anything.
+
+### What the element is
+
+It holds two different kinds of text, which matters for the fix:
+
+- Initial: an instructional sentence, "Generate recommendations to get started."
+- After generating: `"Showing 12 of 30 recommendations"` — a sentence with embedded counts.
+
+### Defect: 11px is below the readable floor
+
+Measured: `font: 11px/1.5 var(--mono)`, weight 400. `typeset.md` says to "use 1rem / 16px as
+the ordinary web body floor unless a dense role, platform convention, or user setting
+justifies otherwise". This is neither dense nor a convention: it is a live region the user is
+meant to read. 11px was the smallest text in the app.
+
+**Fixed:** 13px in `var(--body)`, matching the existing `.status-line` convention, plus
+`font-variant-numeric: tabular-nums`.
+
+### Correction: the contrast claim was wrong
+
+The critique said "the contrast is also uncertain at 11px depending on the color in use".
+Measured: the element uses `--muted` (`#a5a69c`) on `--bg`, which is **7.09:1** — comfortably
+passing AA, and never in doubt. Only `--subtle` ever failed, and that was C1.
+
+This is recorded because "uncertain" invited a change that was not needed. The element's
+colour is unchanged.
+
+### Why mono was replaced rather than enlarged
+
+The critique suggested switching "from mono to body". `typeset.md` line 51 says to "use
+numeric, tabular, code, and label features when their content benefits" — so mono is not
+wrong a priori for numeric content. But this is a **sentence with numbers in it**, not a code
+readout or a column of figures: it is read as prose and announced as a live region.
+Proportional body type at a readable size, with tabular figures to keep the two counts
+column-stable, satisfies both lines rather than trading one for the other.
+
+`typeset.md` line 42 also says to "combine size, weight, space, and tone deliberately instead
+of asking size alone to do all the work". That is why the weight stays 400 and the colour
+stays `--muted`: the count is quiet metadata and must not compete with the section heading.
+
+### Also fixed: the live region had no role
+
+The element was `aria-live="polite"` with no `role`. It now carries `role="status"`, which
+gives it an implicit polite live region and a reliable announcement across assistive tech.
+The explicit `aria-live` is retained for readers that do not infer it from the role.
+Verification shows it now appears as `status:` in the accessibility tree; before it was an
+unroled paragraph.
+
+### Verification
+
+Measured on the branch: computed style is 13px, weight 400, `IBM Plex Sans`, `tabular-nums`,
+`role="status"`, contrast unchanged at 7.09:1; the region renders as `status:` in the ARIA
+tree; 8/8 pages render their expected heading; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors; `--mono` still has 18 other
+uses so the token is not orphaned.
+
+The manual browser report is published in PR #149's comments and records tested head
+`600c75475cfbe1d28230345835aee2316519365f`. Because the branch has now been refreshed onto
+current `main`, repeat the required browser checklist on the new exact head after CI passes.
+The prior report remains evidence for the prior SHA only.
 
 ## 5. Observed evidence for item 1 (State craft)
 
