@@ -306,6 +306,7 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
                 self.assertEqual(result["status"], status)
         result = json.loads(self.run_decision(status="downloading", watcher_active=True))
         self.assertEqual(result["status"], "already_in_progress")
+
     def test_no_existing_job_allows_new_search(self):
         self.assertIsNone(self.run_decision())
 
