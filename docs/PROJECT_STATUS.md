@@ -5,7 +5,7 @@
 - A packaging-only commit `08c0703ed1dea19eae1aa84f8a18b4a3ea8f8666` reached `main` prematurely and added `slskd_transfers.py` to Docker COPY before the module existed on `main`. The current PR branch `refactor/slskd-transfer-listing` is based on that exact current `main` head and adds the missing module, adapter, tests, and documentation. All required Docker/CI gates must pass before merge; the temporary packaging gap is not considered resolved until then.
 - Objective: move the slskd transfer-list HTTP request and recursive response normalization from `navidrome_server.py` into `slskd_transfers.py`, retaining `_slskd_download_transfer_files` as a compatibility adapter and preserving 404, timeout, error propagation, and remote-directory identity semantics.
 - Acceptance: direct-import tests cover encoded usernames, request options, 404, nested directories/fallback identity, malformed records/payloads, no mutation, propagated HTTP errors, and the legacy adapter; Docker packages the new module.
-- Verification, PR, exact-head CI, and merge for this extraction are pending. Publishing remains paused; no deployment or production runtime verification is claimed.
+- PR #157 opened: https://github.com/abucalip/navi-librarian/pull/157. Implementation/documentation head `139304fb1ba3c9812931a91025e0efa90c62c869` passed all four required workflows: syntax/acquisition safety `38815948143`, Docker packaging/full unit suite/image build `38815948355`, isolated runtime smoke `38815948227`, and validation-only multi-architecture validation `38815948105`. This status/roadmap/log follow-up changes the head, so rerun all four workflows on the exact final PR head before merge. Publishing remains paused; no deployment or production runtime verification is claimed.
 
 ---
 
