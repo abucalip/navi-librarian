@@ -1339,3 +1339,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Kept `navidrome_server.items()` as a compatibility adapter so existing discovery/MCP callers retain the same behavior. Added direct-import regression cases for missing, scalar, empty-list, and multi-item values.
 - Implementation commits: `3f97f2bafc29265d12a8a4bf858a1e27384f16b3`, `2f0ae7939f0ea3052faa237b2246cf3d32206bdf`, `e7e105a850928705339613780fb55641ac44f72c`.
 - CI, merge, publication, deployment, and runtime verification are pending. Do not claim tests passed until the four required workflows complete on the exact final PR head.
+
+
+## 2026-10-15 — PR #153 merged: Subsonic collection normalization
+
+- PR #153: https://github.com/abucalip/navi-librarian/pull/153; exact tested head `c834383b7484f3c149679d62812f1c81f6133625`; squash merge commit `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc`.
+- Moved optional Subsonic collection normalization into `navidrome_client.items()` while retaining `navidrome_server.items()` as a compatibility adapter. Added direct-import regressions for `None`, scalar, empty-list, and multi-item inputs.
+- All four required workflows passed on the exact PR head: Python syntax check, Docker packaging validation (including full unit suite/build), container runtime smoke test, and validation-only multi-architecture image validation.
+- State: implemented, CI passed, merged. Image publishing remains paused; no deployment or production runtime verification is claimed.
+- Next session: review current main, recent commits, open PRs, and the modularization roadmap before selecting the next smallest application-assembly/domain-service seam.
