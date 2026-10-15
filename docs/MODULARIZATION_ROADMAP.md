@@ -1,10 +1,10 @@
-## 2026-10-15 — Discovery refresh orchestration extraction in review
+## 2026-10-15 — PR #160 merged: discovery refresh orchestration extraction
 
-- Branch: `refactor/extract-discovery-refresh-assembly`.
-- Moved the ordered “refresh all discovery lists” callback orchestration into `discovery_refresh.refresh_all`. The legacy `navidrome_server._discovery_refresh_all()` remains as an adapter, with the same callbacks, personal count (20), list order, returned list, and exception propagation.
-- Added a direct-import regression test asserting callback order, count, and returned values. The module was already included in Docker packaging; no packaging change is needed.
-- Current PR-head CI, full-suite outcome, merge, and exact final verification are pending. No test is claimed as passing until CI reports it on the final PR head.
-- No MCP registrations, signatures, tool names, response shapes, provider calls, lock ownership, or persistence behavior were changed. No publishing, deployment, or runtime verification is claimed.
+- PR: https://github.com/abucalip/navi-librarian/pull/160. Exact tested head: `5aafc1a9c5835e2d9e2959a36e7419d09913403a`; squash merge commit: `dba172d5747607e65e8fadd32442b12d32054749`.
+- Extracted ordered refresh-all orchestration into `discovery_refresh.refresh_all`; retained `navidrome_server._discovery_refresh_all()` as the compatibility adapter.
+- Added regression coverage for callback order, personal count (20), and returned results. The existing module packaging was unchanged.
+- All four required workflows passed on the exact PR head: Python syntax `38818349092`, Docker packaging/full unit suite/image build `38818349082`, container runtime smoke `38818349397`, and validation-only Docker/multi-architecture validation `38818349076`.
+- MCP registrations, signatures, names, response shapes, provider calls, lock ownership, and persistence behavior remain unchanged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
 
 ---
 
