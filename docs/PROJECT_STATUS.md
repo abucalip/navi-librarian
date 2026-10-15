@@ -1322,3 +1322,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Branch `refactor/extract-data-directory-config` extracts only the selection of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback into `data_directory.py`. The legacy `DATA_DIR` name and directory creation remain in `navidrome_server.py`; persistence ownership and import-time initialization behavior are unchanged.
 - Added direct-import tests for explicit home expansion, empty environment fallback, and resolved source-directory fallback. Docker packaging includes the new module.
 - Pending: run focused and full tests, verify syntax plus all four required CI workflows on the exact final PR head, review the full diff, then update the closeout record. No test/CI success, merge, publication, deployment, or runtime verification is claimed yet.
+
+
+## 2026-10-15 — PR #152 merged: data-directory resolution extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/152. Exact tested PR head: `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; squash merge commit: `567409bb90f240667575a3730976e4c52676bc02`.
+- Extracted `NAVIDROME_LIBRARIAN_DATA_DIR` resolution and the source-directory fallback into pure `data_directory.py`; retained `navidrome_server.DATA_DIR`, `mkdir` behavior, persistence ownership, and MCP compatibility. Added three direct-import regression tests and Docker packaging.
+- All four required workflows passed on the exact PR head: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
+- State: implemented, CI passed, merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next: inspect current GitHub main, open PRs, and the roadmap before selecting the next small application-assembly/domain-service dependency.
