@@ -1,3 +1,13 @@
+## 2026-10-15 — Web dependency audit and settings extraction seam
+
+- After PR #93 merged at `e5d908b11e2a70e8294d0781c630238d4361e503`, audited the current GitHub `main` web/entry-point dependency graph and relevant docs/tests.
+- `app/main.py` and the acquisition, discovery, and settings routers import `navidrome_server.py`; calls span shared settings persistence, Navidrome API access, discovery list/recommendation behavior, acquisition lifecycle, and service configuration/connectivity. The import also loads MCP tool registration. `server.py` is a separate MCP entry point; the Dockerfile does not copy/run it, while `requirements.txt` pins MCP.
+- Identified the smallest existing AST-coupled seam: six service-settings/configuration functions in `tests/test_service_settings.py`. Proposed next step is to extract these into an importable settings-policy module with injected storage/path dependencies, preserve legacy MCP/web adapters, and keep database initialization, global path updates, and live network checks out of scope.
+- Audit only: no code/tests changed and no local tests run. PR #93's four required workflows passed on exact head `616c4af7fb17c3d287fca596ddcbba09f7fd7736`; merged main is `e5d908b11e2a70e8294d0781c630238d4361e503`. Main merge-commit CI must be checked independently; no image publication/deployment/runtime verification claimed.
+- Next: implement the narrow settings-policy extraction with direct-import regression tests.
+
+---
+
 ## 2026-10-15 — Acquisition lifecycle AST-boundary audit
 
 - Based on GitHub `main` `c6017f7a59e2aaec09e498ca4bda9315b0325cd3`, reviewed the remaining AST-coupled cases in `tests/test_acquisition_safety.py` against direct-import orchestration/lifecycle/watcher/import/recovery tests.

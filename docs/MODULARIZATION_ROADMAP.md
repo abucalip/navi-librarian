@@ -1,3 +1,13 @@
+## 2026-10-15 — Web dependency audit complete; settings policy is next seam
+
+- Traced the current web callers of `navidrome_server.py` across `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, and `app/api/settings.py`. They use shared persistence/configuration, recommendation/list operations, acquisition lifecycle functions, and service settings/connectivity methods. `app/main.py` imports the legacy module directly, so importing the web app also initializes/registers MCP tool definitions.
+- `server.py` is a separate MCP entry point and `requirements.txt` pins the MCP dependency; the Dockerfile does not copy or launch `server.py`. Do not remove MCP code or dependency until a repository-wide caller/entry-point audit and compatibility decision support it.
+- **Smallest next extraction:** move the six functions currently AST-executed by `tests/test_service_settings.py` into a direct-import settings-policy module with injected read/write and music-directory dependencies. Preserve the existing `discovery_*` functions as thin MCP/web compatibility adapters. Leave database initialization/migrations, global path mutation, and live connectivity checks where they are for this focused step.
+- Acceptance: direct-import tests cover validation, blank-secret preservation, redaction, invalid-input no-write behavior, path handling, and response compatibility; adapter tests preserve names/signatures; full unit suite, syntax check, Docker/API smoke, and all four required CI workflows pass on exact PR head. No secrets or production data are touched.
+- This session was audit-only; no code changes or tests claimed. The next step is implementation of that narrowly scoped extraction.
+
+---
+
 ## 2026-10-15 — Acquisition AST-boundary audit complete
 
 - Reviewed remaining AST-coupled lifecycle tests against the direct-import suites and current orchestration helpers.

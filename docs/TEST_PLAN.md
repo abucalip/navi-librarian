@@ -1,3 +1,13 @@
+## 2026-10-15 — Web dependency audit and next test seam
+
+- Dependency audit found web routes call the legacy server for settings, Navidrome service checks, recommendation/list orchestration, and all acquisition lifecycle actions. Keep these integration boundaries intact during modularization.
+- `tests/test_service_settings.py` currently uses AST extraction to execute six real functions in a stub namespace. Next migration candidate: extract those six settings-policy/configuration functions to an importable module with injected settings read/write and music-directory dependencies, then test the actual module directly.
+- Required regression assertions for that extraction: Navidrome URL and credential validation; blank-password preservation; no password/API-key leakage in returned payloads; ListenBrainz username validation and no write on invalid input; existing response shapes/messages; music-library path handling; and unchanged MCP wrapper signatures. Keep storage/migration/global path ownership in the legacy server.
+- Do not combine settings policy with live network checks, SQLite schema changes, or MCP dependency removal. Test the new module directly and add adapter tests for compatibility.
+- Audit only in this session: no code/tests changed and no local tests were run. PR #93 CI was green on its exact head; current merge-main workflow status must be verified independently.
+
+---
+
 ## 2026-10-15 — Acquisition lifecycle AST-boundary audit
 
 - Compared the remaining AST-coupled acquisition lifecycle regressions with direct-import tests on `main`. No test was deleted because each still covers top-level orchestration/adapter behavior not fully exercised by isolated helper tests.
