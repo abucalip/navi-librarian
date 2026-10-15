@@ -1,3 +1,12 @@
+## 2026-10-15 — Read-only web dependency audit completed
+
+- Before any MCP retirement, the FastAPI app still imports `navidrome_server` directly from `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, and `app/api/settings.py`.
+- The main app uses server-owned data/settings, Navidrome ping, discovery-list, and album-candidate helpers. The route modules are thin adapters around existing `discovery_*` service functions; they do not duplicate the domain logic. `app/api/metadata.py`, `app/api/auth.py`, and `app/security/auth.py` do not directly import the server; auth routes already receive dependencies through a router factory.
+- Existing route tests patch module-level `librarian` references and verify endpoint contracts. A future injection seam must preserve paths/methods, payload mapping, error/status mapping, streaming, persistence, and MCP compatibility. No code changes were made during this read-only audit.
+- PRs #44/#45 remain open. The documented decision to defer the HTTP 409 investigation until it recurs is unchanged.
+
+---
+
 ## 2026-10-15 — PR #103 merged: acquisition import source-root safety
 
 - PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
