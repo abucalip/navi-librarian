@@ -871,3 +871,10 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 
 - Exact PR head `cacdbc809f35040f0cc1bc70a39251ff80b7315e`: all required CI workflows passed — Python syntax `38784634643`; Docker packaging/full unit suite/build `38784634599`; container runtime smoke `38784635107`; validation-only multi-architecture image validation `38784634797`.
 - PR #140 merged as `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. These results are CI evidence only; no separate local test run or production runtime verification is claimed.
+
+
+## 2026-10-15 — PR #145 UI verification
+
+- PR #145 tested head `421d1d2860945548aa01677847ce0953b7c9f263` passed the manual browser checklist 8/8 with zero failures; report: https://github.com/abucalip/navi-librarian/pull/145#issuecomment-6200647429.
+- The report covers app startup/setup, dashboard/artwork, discovery, navigation/modal, settings, Get/request, acquisition cards, and unexpected browser/server errors. It is tied to the exact PR head.
+- The report does not claim real screen-reader testing; isolated artwork checks used a placeholder. Four required CI workflows passed on that exact head: syntax `38794301415`, runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only image validation `38794301405`. Publishing remains paused.
