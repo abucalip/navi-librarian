@@ -1368,3 +1368,14 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: Python syntax check, Docker packaging validation (including full unit suite/build), container runtime smoke test, and validation-only multi-architecture image validation.
 - State: implemented, CI passed, merged. Image publishing remains paused; no deployment or production runtime verification is claimed.
 - Next session: review current main, recent commits, open PRs, and the modularization roadmap before selecting the next smallest application-assembly/domain-service seam.
+
+
+## 2026-10-15 — PR #149 merged: recommendation-count readability and status semantics
+
+- PR #149: https://github.com/abucalip/navi-librarian/pull/149. Final tested head: `c71d28e74bbdfadbedef4ec3e30fdba5181feb5a`; squash merge commit: `f3ac971e6c04b9c9caa8d4d20f50d0c25302556e`.
+- Refreshed the original PR branch onto current main without force-pushing. Increased recommendation-count text from 11px monospace to 13px body type with tabular numerals and added `role="status"` while retaining explicit `aria-live="polite"`.
+- Updated `docs/UI_BACKLOG_EXECUTION.md` to record the accessibility rationale and keep the manual verification evidence tied to the commit actually tested.
+- The operator-published manual browser report is attached to PR #149 and records the exact final head `c71d28e74bbdfadbedef4ec3e30fdba5181feb5a`; all checklist items passed.
+- All four required workflows passed on that exact head: Python syntax, container runtime smoke, Docker packaging (including full unit suite/build), and validation-only Docker image validation. Publishing remains paused.
+- State: implemented, manually tested, CI passed, merged. No image publication, deployment, or production runtime verification is claimed.
+- Next: review current main, open PRs, and the modularization roadmap before selecting the next smallest safe dependency extraction.
