@@ -34,12 +34,36 @@ nav {
   padding: 23px 13px; background: #1d1f1e; border-right: 1px solid var(--border);
 }
 nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: var(--subtle); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; }
+/* The sliding indicator tracks the active item with translateY only. Animating top or
+   height would trigger layout on every nav change; transform stays on the compositor. */
+.nav-list {
+  position: relative; display: flex; flex-direction: column; gap: 4px;
+}
+/* The goo filter may only be applied to a subtree that contains the blob and nothing
+   else. Its final feComposite step keeps source pixels only where the goo is opaque,
+   so any text inside the filtered subtree is discarded outside the blob's area: the
+   six inactive labels disappeared entirely. Filtering one row's worth of blob here
+   keeps the labels outside the filter. */
+.nav-blob-layer {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  filter: url(#nav-goo); isolation: isolate;
+}
+.nav-blob {
+  position: absolute; inset: 0 0 auto 0; height: 40px;
+  background: var(--yellow-dim); border-radius: 3px;
+  transform: translateY(0);
+  transition: transform 380ms cubic-bezier(.34,1.56,.64,1);
+}
+.nav-list > button { position: relative; z-index: 1; }
 nav button { position: relative; width: 100%; padding: 10px 12px 10px 15px; text-align: left; color: #b7b8ae; background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
 nav button:hover { color: var(--text); background: var(--surface-raised); }
+nav button.active { color: var(--text); background: transparent; box-shadow: none; }
+nav button.active::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--yellow); border-radius: 3px 0 0 3px; }
+nav button.active .nav-count { background: var(--surface); color: var(--yellow); }
 .nav-count { float: right; min-width: 20px; margin-left: 8px; padding: 1px 5px; border-radius: 10px; color: #191a1a; background: var(--yellow); font: 500 10px/1.6 var(--mono); text-align: center; }
 .nav-count[hidden] { display: none; }
-nav button.active { color: var(--text); background: #2b2d29; box-shadow: inset 3px 0 var(--yellow); }
-nav button.active::after { content: ""; position: absolute; top: 9px; right: 10px; width: 5px; height: 5px; background: var(--red); border-radius: 50%; }
+/* Parity with the previous active treatment, minus the inset bar the blob now implies. */
+nav button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 .panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
 .panel h2 { margin: 0 0 9px; font: 600 34px/1.05 var(--display); letter-spacing: .01em; }
 .panel h2::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 11px; background: var(--red); }
@@ -234,8 +258,16 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 @media (max-width: 620px) {
   header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); }
-  nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; } nav button.active { box-shadow: inset 0 -3px var(--yellow); } nav button.active::after { display: none; }
+  nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; }
+  /* Below 620px the rail becomes a horizontal scroller, so a vertical blob would be
+     pointing the wrong way. Drop it and keep a flat underline for the active item. */
+  .nav-list { flex-direction: row; align-items: center; gap: 3px; }
+  .nav-blob-layer { display: none; }
+  .nav-blob { display: none; }
+  nav button.active::before { inset: auto 0 0 0; width: auto; height: 3px; border-radius: 0; }
+  nav button.active { box-shadow: inset 0 -3px var(--yellow); }
   main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .cards.acquisition-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
 @media (max-width: 360px) { .cards:not(.acquisition-grid) { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { .nav-blob { transition: none; } }

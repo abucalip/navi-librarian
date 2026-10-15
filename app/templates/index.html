@@ -14,13 +14,30 @@
 </header>
 <main>
   <nav>
-    <button class="active" data-page="dashboard">Dashboard</button>
-    <button data-page="recommendations">Recommendations</button>
-    <button data-page="newReleases">New releases</button>
-    <button data-page="personalDiscoveries">Personal Discoveries</button>
-    <button data-page="classics">Add to your collection</button>
-    <button data-page="artistDeepDive">Artist Deep Dives</button>
-    <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
+    <!-- SVG goo filter, applied to .nav-list only so the blur stays bounded to the nav. -->
+    <svg class="nav-filter" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <filter id="nav-goo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="nav-blur"/>
+          <feColorMatrix in="nav-blur" mode="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" result="nav-goo"/>
+          <!-- Composite the ORIGINAL sharp source back over the goo. Without this the
+               blur applies to every descendant, including the button labels, and the
+               whole navigation renders as an unreadable smear. -->
+          <feComposite in="SourceGraphic" in2="nav-goo" operator="atop"/>
+        </filter>
+      </defs>
+    </svg>
+    <div class="nav-list">
+      <div class="nav-blob-layer" aria-hidden="true"><div class="nav-blob"></div></div>
+      <button class="active" data-page="dashboard">Dashboard</button>
+      <button data-page="recommendations">Recommendations</button>
+      <button data-page="newReleases">New releases</button>
+      <button data-page="personalDiscoveries">Personal Discoveries</button>
+      <button data-page="classics">Add to your collection</button>
+      <button data-page="artistDeepDive">Artist Deep Dives</button>
+      <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
+    </div>
     <button data-page="settings">Settings</button>
     <button id="logoutButton" type="button">Log out</button>
   </nav>

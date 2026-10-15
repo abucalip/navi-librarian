@@ -20,6 +20,29 @@ function showPage(name) {
     el.classList.toggle('hidden', el.id !== name));
   document.querySelectorAll('nav button[data-page]').forEach(el =>
     el.classList.toggle('active', el.dataset.page === name));
+  moveNavBlob();
+  syncNavAria();
+}
+
+// Slide the navigation indicator to the active item using translateY only. The blob is
+// height-locked to a nav row, so only the offset changes; animating top would force layout
+// on every navigation. Rows inside .nav-list share one width, so no width term is needed.
+function moveNavBlob() {
+  const blob = document.querySelector('.nav-blob');
+  if (!blob) return;
+  const active = document.querySelector('.nav-list > button.active');
+  if (!active) { blob.hidden = true; return; }
+  blob.hidden = false;
+  blob.style.transform = 'translateY(' + active.offsetTop + 'px)';
+}
+
+// The reference component ships no aria-selected or role=tablist, so this is added here:
+// the sidebar is a navigation landmark, and the current page is exposed as aria-current.
+function syncNavAria() {
+  document.querySelectorAll('nav button[data-page]').forEach(el => {
+    if (el.classList.contains('active')) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
+  });
 }
 
 const initializedPages = new Set(['dashboard']);
@@ -46,6 +69,14 @@ document.querySelectorAll('nav button[data-page]').forEach(button =>
 
 document.querySelectorAll('button[data-go]').forEach(button =>
   button.addEventListener('click', () => showPage(button.dataset.go)));
+
+// Place the indicator once layout is settled, and keep it aligned when the rail is
+// resized. offsetTop is only meaningful after layout, so the first move waits a frame.
+syncNavAria();
+requestAnimationFrame(moveNavBlob);
+window.addEventListener('resize', moveNavBlob);
+// Web fonts change row metrics after first paint; re-align once they are ready.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveNavBlob);
 
 async function requestJSON(url) {
   const response = await fetch(url);

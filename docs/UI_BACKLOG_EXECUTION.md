@@ -80,6 +80,11 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 - Login-page alignment (PR #66). The guide marks this closed and says not to reopen it
   without new evidence. Its verification recorded keyboard focus modality and the
   first-run setup variant as **skips, not passes**.
+- **Navigation rail redesign** (not a numbered backlog item; requested directly) — on
+  branch `ui/nav-blob`. The sidebar active state is now a sliding indicator driven by
+  `translateY`, adapted from the Forever Components `navigation/gooey-tab-bar`. The blob
+  covers the seven content items; Acquisitions and Settings are intended to move elsewhere
+  later, as is Log out. See section 5b for the technique and the two failures encountered.
 - **State craft** (item 1) — implemented in PR #121 on branch `ui/state-craft`. A shared
   `.status-line` treatment now covers every status element, with `aria-live` on all of
   them and a per-state leading glyph so state is never carried by colour alone. See
@@ -155,6 +160,62 @@ The real, smaller gap found on re-inspection is that the settings tab widget imp
 `role="tab"` and `role="tabpanel"` without `aria-controls`, `aria-labelledby`, or roving
 `tabindex`, which is the ARIA tabs pattern only half-applied. That is genuine but minor
 and is not a focus-reach defect.
+
+## 5b. Navigation rail findings
+
+Adapted from Forever Components `navigation/gooey-tab-bar`
+(`https://forevercomponents.com/infinite/navigation/03-gooey-tab-bar.html`).
+
+### What was taken
+
+Only the technique: a pill that slides between items with a spring easing, combined with an
+SVG `feGaussianBlur` + `feColorMatrix` goo filter for a liquid merge. **No component code or
+styling was copied.** The reference ships its own palette (`#E04729` vermillion) and tokens;
+the project's own tokens are used throughout.
+
+Adapted for a vertical rail: the reference is horizontal, so the blob animates `translateY`,
+and it is height-locked to a nav row so no width term is needed.
+
+### Two failures, and what they teach
+
+Both were found by rendering the result, not by reading the code.
+
+1. **The goo filter erased every navigation label.** Applying `filter: url(#nav-goo)` to the
+   list containing the buttons blurred all seven labels into illegibility. The filter's final
+   `feComposite operator="atop"` keeps source pixels only where the goo is opaque, so text
+   outside the blob's area is discarded outright.
+
+   The reference escapes this only because all of its tabs sit *inside* one pill, so the goo
+   is opaque across the whole control. With one blob behind one row out of seven, six labels
+   vanished.
+
+   **Fix:** apply the filter to `.nav-blob-layer`, an absolutely positioned overlay holding
+   the blob and nothing else. Labels live outside it.
+
+2. **A missing filter primitive produced an unreadable smear.** The first attempt omitted
+   `feComposite in="SourceGraphic" in2="nav-goo" operator="atop"`, leaving the blur applied
+   to the whole nav. This primitive is not optional decoration; it is what restores the sharp
+   original over the goo.
+
+### Deviations from the reference, and why
+
+| Reference behaviour | What this branch does | Reason |
+|---|---|---|
+| Auto-cycles tabs every 1700ms as a demo | No auto-cycle | Its own `knownLimitations` says to remove the `loop()` call before production. Unsolicited motion in a library tool is the decorative noise the design guide prohibits. |
+| No `aria-selected` or `role=tablist` | `aria-current="page"` on the active item | Its own `knownLimitations` flags the missing ARIA. This is a navigation landmark, not a tab widget, so `aria-current` is the correct semantic. |
+| `translateX`, width-matched blob | `translateY`, height-locked blob | The rail is vertical. Height is fixed at 40px, so neither width nor height is animated. |
+| Any number of tabs | Blob on the 7 content items only | Its own `avoidWhen` warns that blob sizing breaks past 4-5 tabs. Acquisitions and Settings sit outside `.nav-list` and keep the flat treatment. |
+| Horizontal at every width | Vertical rail to 620px, then the blob is removed and a flat underline returns | Below 620px the nav becomes a horizontal scroller, so a vertical blob would point the wrong way. |
+
+### Verification
+
+Measured on the branch: the blob aligns to the active row within 1px on all seven content
+items; the transition animates `transform` only, never `top` or `height`; exactly one element
+carries `aria-current="page"`; the goo filter applies to `.nav-blob-layer` and not to `nav`;
+the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the transition to
+`1e-05s`; all eight navigation items are reachable by Tab with a visible focus ring; 8/8
+pages render their expected heading; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; and no console or page errors.
 
 ## 5. Observed evidence for item 1 (State craft)
 
