@@ -1,3 +1,9 @@
+## MCP registration isolation — current PR
+
+- Run python -m unittest tests.test_mcp_registry tests.test_auth_routes_integration -v and the full python -m unittest discover -s tests -v suite.
+- The regression must prove all 27 existing MCP tool functions remain callable through the explicit registry, registry names are unique and stable, and importing navidrome_server does not load mcp.server.mcpserver.
+- Run Python syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture checks on the exact final PR head. Publishing remains paused; no local test, deployment, or production runtime claim unless actually performed.
+
 ## Authentication signing-key symlink refusal — PR #137 merged
 
 - `tests/test_app_auth.py::test_signing_secret_refuses_symlink_without_chmodding_target` checks an existing `app_auth.key` symlink is rejected and the target contents and permissions remain unchanged.
