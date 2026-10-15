@@ -1,9 +1,11 @@
-## 2026-10-15 — Conditional dismissed-job reactivation extraction proposed
+## 2026-10-15 — Dismissed-acquisition reactivation extraction: code tests passed
 
-- Branch: `refactor/dismissed-acquisition-reactivation-state`, based on GitHub `main` `3f9304f21ec282912ca7427f7074dbc35cb62585`.
-- Planned change: extract the conditional `status='dismissed'` SQLite update into `acquisition_state.reactivate_dismissed_job`; keep the legacy MCP/server wrapper and caller-owned transition lock unchanged.
-- Planned regression tests: successful retry persists metadata/time and clears stale candidate/settings; missing and non-dismissed rows refuse reactivation without mutation. Existing coordinator AST tests remain.
-- Validation, exact-head CI, diff review, merge, publication, and deployment are pending; do not treat the task as complete until recorded with evidence.
+- PR #85: https://github.com/abucalip/navi-librarian/pull/85
+- Branch: `refactor/dismissed-acquisition-reactivation-state`, based on `main` `3f9304f21ec282912ca7427f7074dbc35cb62585`.
+- Extracted the conditional `status='dismissed'` SQLite update into `acquisition_state.reactivate_dismissed_job`; retained the server/MCP adapter and coordinator-owned transition lock.
+- Direct-import tests cover metadata/timestamp persistence, stale candidate/settings clearing, and refusing absent/non-dismissed rows without mutation. Coordinator AST coverage remains.
+- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed syntax/acquisition safety run `38658206572`, Docker packaging/full unit suite `38658206550` (189 tests), runtime smoke `38658206476`, and validation-only multi-architecture build `38658206595` (publishing paused).
+- Documentation-only closeout updates follow. Final PR-head workflows, diff review, merge, and post-merge main verification remain pending. No publication, deployment, or production runtime verification.
 
 ---
 
