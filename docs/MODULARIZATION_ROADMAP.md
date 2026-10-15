@@ -1,9 +1,8 @@
-## 2026-10-15 — Dismissed-job reactivation state extraction
+## 2026-10-15 — Reactivation state extraction merged; watcher recovery follow-up
 
-- Extracted the conditional reactivation SQL into `acquisition_state.py` using injected schema, database path, identity normalization, and clock dependencies.
-- Preserved the server function as a compatibility adapter and kept transition-lock ownership in the coordinator.
-- Direct tests cover successful stale-source reset and no mutation for absent/non-dismissed rows; AST tests remain for coordinator-level success/failure sequencing.
-- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed all four workflows (full suite: 189 tests); publishing remained paused. Re-run all four workflows on the final documentation-updated PR head before merge.
+- PR #85 merged at `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`; exact PR head `95d7eb19352dd2a680ae55355026656e76ceeaeb` passed all four workflows. Full unit suite reported 189 tests on code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb`; publishing remained paused.
+- Next focused change: use `acquisition_lifecycle.should_resume_monitor` for the stale-download watcher-recovery eligibility check, preserving the AST test that asserts incomplete saved source inventory cannot trigger a watcher or a duplicate queue attempt.
+- Keep recovery coordination, shared-lock races, and persistence-before-import integration checks in the AST suite where they exercise behavior beyond deterministic policy helpers.
 
 ---
 
