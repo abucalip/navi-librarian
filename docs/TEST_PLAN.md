@@ -2,7 +2,7 @@
 
 - `tests/test_auth_routes_integration.py::test_concurrent_login_attempts_cannot_race_past_rate_limit` holds one password-verification call while another request reaches the last available per-client attempt slot.
 - Expected HTTP outcomes are one `401` for the in-flight bad password and one `429` for the request that would exceed the limit. This catches check-then-record races without timing-only assertions.
-- Run `python -m unittest tests.test_app_auth tests.test_auth_routes_integration` and all four required CI workflows on the exact PR head before merge. CI is pending at documentation time; no local test execution is claimed.
+- Run `python -m unittest tests.test_app_auth tests.test_auth_routes_integration` and all four required CI workflows on the exact final PR head before merge. All four workflows passed on pre-closeout head `d3f25518e1d3ecb8a15c848e84e80c0d369df4da` (Docker packaging `38776404115`, runtime smoke `38776404108`, Python syntax `38776404131`, image validation `38776403893`; publishing paused). The documentation correction requires the workflows to pass again on the new final head. No local test execution is claimed.
 
 ---
 
