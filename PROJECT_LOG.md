@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition import source-root safety follow-up (verification pending)
+
+- A caller-driven safety audit found a path-replacement window between the completed-folder matcher and `import_matched_album_files` filesystem moves. A source directory swapped for a symlink could redirect path-based moves to files outside the verified folder.
+- Branch `fix/acquisition-import-source-race` pins source and destination-parent directory descriptors, moves files relative to those descriptors, and adds regressions for source-root swaps, collision-suffixed names, cross-filesystem fallback, and rollback.
+- Verification is pending. No local test run, production-folder test, publication, deployment, or runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — PR #100 merged: cleanup root path traversal hardening
 
 - **PR:** [#100 — fix: pin acquisition cleanup root without symlink traversal](https://github.com/abucalip/navi-librarian/pull/100) — merged.

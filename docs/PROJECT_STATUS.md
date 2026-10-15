@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition import source-root safety follow-up (verification pending)
+
+- Audit found that `import_matched_album_files` invokes its matcher before moving source files; if the source directory is replaced by a symlink during that boundary, path-based `stat`/`shutil.move` can follow the replacement.
+- The current branch pins source and destination-parent directories with no-follow descriptors, validates matched file identities, performs descriptor-relative moves/rollback, and adds regression coverage for source-directory swaps, collision-suffixed filenames, cross-filesystem fallback, and rollback.
+- Branch `fix/acquisition-import-source-race`; focused/full tests and all four required workflows must pass on the exact final PR head before merge. No production data or deployment was touched.
+
+---
+
 ## 2026-10-15 — PR #100 merged: cleanup root path traversal hardening
 
 - PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.

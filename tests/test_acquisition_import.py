@@ -50,17 +50,17 @@ class AcquisitionImportTests(unittest.TestCase):
         self.assertTrue((self.source / "01 - Track.flac").exists())
 
     def test_partial_move_failure_rolls_tracks_back(self):
-        import shutil
-        original_move = shutil.move
+        import os
+        original_rename = os.rename
         calls = {"count": 0}
 
         def fail_on_second_move(src, dst, *args, **kwargs):
             calls["count"] += 1
             if calls["count"] == 2:
                 raise OSError("simulated second-track move failure")
-            return original_move(src, dst, *args, **kwargs)
+            return original_rename(src, dst, *args, **kwargs)
 
-        with patch("shutil.move", side_effect=fail_on_second_move):
+        with patch("os.rename", side_effect=fail_on_second_move):
             with self.assertRaisesRegex(OSError, "simulated second-track move failure"):
                 import_matched_album_files(self.source, self.destination, self.candidate)
 
@@ -68,6 +68,78 @@ class AcquisitionImportTests(unittest.TestCase):
         self.assertEqual((self.source / "01 - Track.flac").read_bytes(), b"1234")
         self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
         self.assertEqual(list(self.music.glob(".navidrome-import-*")), [])
+
+    def test_import_preserves_collision_suffixed_source_matching(self):
+        self.candidate = {
+            "files": [{"filename": "Album/01 - Track.flac", "size": 4}]
+        }
+        (self.source / "01 - Track.flac").unlink()
+        (self.source / "02 - Track.flac").unlink()
+        (self.source / "01 - Track_1.flac").write_bytes(b"1234")
+
+        import_matched_album_files(self.source, self.destination, self.candidate)
+
+        self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertFalse((self.source / "01 - Track_1.flac").exists())
+
+    def test_cross_filesystem_fallback_copies_then_removes_only_verified_source(self):
+        import errno
+        import os
+        original_rename = os.rename
+        calls = {"count": 0}
+
+        def force_first_cross_device_move(src, dst, *args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise OSError(errno.EXDEV, "simulated cross-filesystem move")
+            return original_rename(src, dst, *args, **kwargs)
+
+        with patch("os.rename", side_effect=force_first_cross_device_move):
+            import_matched_album_files(self.source, self.destination, self.candidate)
+
+        self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertEqual((self.destination / "02 - Track.flac").read_bytes(), b"567")
+        self.assertFalse((self.source / "01 - Track.flac").exists())
+        self.assertFalse((self.source / "02 - Track.flac").exists())
+        self.assertFalse((self.destination / ".navidrome-import.json").exists())
+
+    def test_source_directory_replaced_by_symlink_after_matching_cannot_move_outside_files(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        outside_first = outside / "01 - Track.flac"
+        outside_second = outside / "02 - Track.flac"
+        outside_first.write_bytes(b"OUT!")
+        outside_second.write_bytes(b"OUT")
+
+        moved_source = self.root / "downloads-original"
+
+        def match_then_swap(source, candidate):
+            matched = {
+                name: Path(source) / name
+                for name in ("01 - Track.flac", "02 - Track.flac")
+            }
+            self.source.rename(moved_source)
+            self.source.symlink_to(outside, target_is_directory=True)
+            return matched
+
+        with self.assertRaises(OSError):
+            import_matched_album_files(
+                self.source,
+                self.destination,
+                self.candidate,
+                match_files=match_then_swap,
+            )
+
+        self.assertTrue(outside_first.exists())
+        self.assertEqual(outside_first.read_bytes(), b"OUT!")
+        self.assertTrue(outside_second.exists())
+        self.assertEqual(outside_second.read_bytes(), b"OUT")
+        self.assertTrue((moved_source / "01 - Track.flac").exists())
+        self.assertEqual((moved_source / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertTrue((moved_source / "02 - Track.flac").exists())
+        self.assertEqual((moved_source / "02 - Track.flac").read_bytes(), b"567")
+        self.assertFalse(self.destination.exists())
+        self.assertTrue(self.source.is_symlink())
 
     def test_storage_identity_mismatch_aborts_before_staging(self):
         with self.assertRaisesRegex(OSError, "filesystem changed"):

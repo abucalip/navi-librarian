@@ -1,3 +1,11 @@
+## 2026-10-15 — Import source-root swap regression (verification pending)
+
+- `tests/test_acquisition_import.py` now simulates a matcher callback replacing the source folder with a symlink; cleanup/import must fail closed while preserving outside files and the original source tracks.
+- Import staging and rollback use pinned source/destination-parent directory descriptors and descriptor-relative file operations. Existing collision-suffix matching, cross-filesystem fallback, and rollback behavior have regression coverage.
+- Run focused import tests, full unit suite, syntax/acquisition-safety, Docker packaging/full suite, runtime smoke, and validation-only multi-architecture validation on the exact final PR head.
+
+---
+
 ## 2026-10-15 — PR #100 verified and merged: cleanup root traversal
 
 - PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
