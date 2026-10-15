@@ -1,9 +1,10 @@
-## 2026-10-15 — PR #89 merged; atomic acquisition reservation extraction in progress
+## 2026-10-15 — PR #90 merged; acquisition reservation lifecycle verified
 
-- PR #89 merged to `main` at `c4334c4984dcb988733bd0b1f2464b9030849a70` from exact tested head `c778a8c4b6083229aa5e59928f0598f21c5327b9`; all four workflows passed (syntax `38659433212`, packaging/full suite `38659433201` with 197 tests, runtime smoke `38659433218`, validation-only multi-architecture `38659433230`; publishing paused).
-- Current branch `refactor/extract-acquisition-request-reservation` extracts the atomic active-request set check/add into `acquisition_orchestration.reserve_acquisition_request`. The caller continues to hold the shared transition lock across existing-job checks and reservation.
-- `existing_acquisition_response` now handles persisted job/watcher states; the new reservation helper handles only the active-request identity check/add. The already-reserved callback/final cleanup remains in `run_reserved_acquisition`.
-- Direct tests cover fresh reservation, duplicate refusal without mutation, and preserving other active identities. Focused/full tests and exact-head CI remain pending. No publication, deployment, or production runtime verification.
+- PR #90 merged to `main` at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`.
+- Extracted active-request identity check/add into `acquisition_orchestration.reserve_acquisition_request`; the server continues to own the shared transition lock across persisted-state checks and reservation. `run_reserved_acquisition` handles callback execution outside the lock and guaranteed cleanup under the lock.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38659706561`, Docker packaging/full suite `38659706115` (199 tests passed), runtime smoke `38659706074`, and validation-only multi-architecture `38659706150` (publishing paused).
+- The end-to-end simultaneous-request AST regression remains; direct helper tests do not replace the shared-lock integration boundary.
+- Next: extract the dismissal/reactivation preflight decision behind injected dependencies while retaining the top-level Get/reactivation success/failure tests. No publication, deployment, or production runtime verification.
 
 ---
 
