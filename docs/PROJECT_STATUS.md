@@ -4,7 +4,8 @@
 - **Change:** discovery routes now resolve the legacy librarian service through the shared lazy `get_librarian` dependency instead of importing `navidrome_server` at module load. Added direct-import route tests for injected fake-service calls, response parsing, candidate filtering, payload normalization, and validation.
 - **Compatibility:** no domain logic moved; MCP adapters, endpoint paths, response/error mapping, validation, and persistence ownership remain unchanged.
 - **Verification:** not yet run in a local environment. Exact-head CI and full diff review remain required; do not claim tested until those results are available. No publication, deployment, or production runtime verification.
-- **Next:** finish docs and open PR, then verify all four required workflows on the exact PR head. Publishing remains paused.
+- **PR:** [#108](https://github.com/abucalip/navi-librarian/pull/108) is open against current main. Exact PR head: `a7259fdca343cb9effb575331fab9fbcf2d38973`.
+- **CI state:** no workflow runs or commit statuses were returned for that head at the latest check; this is pending, not a pass. Review the exact diff and wait for/obtain all four required workflows before merge. Publishing remains paused.
 
 ---
 
