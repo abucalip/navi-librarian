@@ -1,10 +1,18 @@
+## 2026-10-15 — PR #156 merged: footer placement and accessibility verification
+
+- PR #156: https://github.com/abucalip/navi-librarian/pull/156; exact tested head `47d33cbecadf64ed4b434764883cec6ae99d30bc`; squash merge `c560c28063f26a1a72d7016c951bf265d2ddd158`.
+- Manual browser report published in the PR conversation for that exact SHA. All eight manual acceptance checklist items passed, with zero failures. Browser verification measured footer placement/reading order on all eight routes, the `contentinfo` landmark, expected headings, keyboard order, responsive overflow at eight widths, and absence of console/page errors.
+- Exact-head CI passed: syntax `38815023255`, Docker packaging `38815023085`, runtime smoke `38815023444`, and validation-only Docker image/multi-architecture validation `38815023661`. Publishing remains paused.
+- Limitations: Chromium only; no real screen reader test. The missing skip link remains a separate UI backlog item. No image publication, deployment, or production runtime verification is claimed.
+- Session closeout: implementation, manual test, CI, and merge are complete. Next: re-check main/open PRs/CI and prioritize any remaining safety or verification gap before routine modularization.
+
 ## 2026-10-15 — Backend session closeout: PRs #155 and #157 merged
 
 - PR #155: expected track-count metadata extracted to `slskd_search.py`; tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. All four required workflows passed on that exact head.
 - PR #157: slskd transfer listing/normalization extracted to `slskd_transfers.py`; `_slskd_download_transfer_files` retained as the adapter. Tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`; merge `17922f878f0ea391b47652012a38530e9eb044fc`.
 - Exact-head PR #157 CI passed: syntax/acquisition safety `38816375215`; Docker packaging/full unit suite/image build `38816375266`; runtime smoke `38816375339`; validation-only multi-architecture validation `38816375410`.
 - A packaging-only Dockerfile commit landed on `main` before the module; PR #157 added the missing module and tests. The current main tree now packages the module and the exact-head Docker build passed.
-- Next action: complete and record the required manual browser checklist for open PR #156 before starting another routine backend extraction. Its PR description records the checklist as NOT RUN. Publishing/deployment/runtime verification remain separate and unclaimed.
+- Historical next action at the time: complete PR #156's manual browser checklist. This gate was later completed and the PR merged; see the newer closeout entry above. Publishing/deployment/runtime verification remain separate and unclaimed.
 
 ## 2026-10-15 — Multi-extraction workflow closeout; PR #149 blocked on UI gate
 
