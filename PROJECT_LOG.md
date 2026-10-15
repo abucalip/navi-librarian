@@ -529,12 +529,13 @@
 - No separate local tests, image publication, deployment, or production runtime verification. PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local tests, image publication, deployment, or production runtime verification. Publishing remains paused.
 
 
-## 2026-10-15 — PR #116 verified: Proxmox MCP SDK compatibility and handler regression
+## 2026-10-15 — PR #116 merged: Proxmox MCP SDK compatibility and handler regression
 
-- Corrected the host-side entry point to use mcp.server.mcpserver.MCPServer, matching the repository's pinned mcp==2.3.0 and the main MCP server. FastMCP startup now occurs only when server.py is executed as a script, so tests can import and exercise the command handler without launching a server.
-- Added handler regressions proving a rejected shell-composed command never invokes SSH, an accepted command retains the existing SSH argument/timeout/output behavior, and output stays capped at 20,000 characters.
-- PR #116 exact tested head: 81ffdf3ad647637a670690c88a77f335d5b2aca8. All four required workflows passed on that exact head: Python syntax/acquisition safety 38742459339; Docker packaging/full suite/build 38742459163 (243 tests passed); container runtime smoke 38742459489; validation-only multi-architecture image validation 38742459124.
-- The initial CI run caught the stale FastMCP import; that failing head was corrected before final verification. No local test run or live Proxmox command, publication, deployment, or production runtime verification is claimed.
+- PR #116 merged at `9e6979203cbdb6f2d38225584952136170eb2df5` from exact tested PR head `a14accac574d1997e6785ffbf170be136b95c5b9`.
+- Corrected the host-side entry point to use `mcp.server.mcpserver.MCPServer`, matching pinned `mcp==2.3.0` and the main MCP server. MCP startup now occurs only when `server.py` is executed as a script.
+- Added handler regressions proving rejected shell-composed commands never invoke SSH, accepted commands retain the existing SSH argument/timeout/output behavior, and output remains capped at 20,000 characters.
+- All four required workflows passed on the exact final PR head: Python syntax/acquisition safety `38742736856`; Docker packaging/full suite/build `38742737079` (243 tests passed); container runtime smoke `38742737082`; validation-only multi-architecture image validation `38742736770`.
+- An earlier CI cycle exposed the stale FastMCP import; the defect was corrected and all four workflows passed on the final head. No local test run or live Proxmox command, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
