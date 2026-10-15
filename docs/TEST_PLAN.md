@@ -1,7 +1,8 @@
-## 2026-10-15 — Last.fm settings-policy extraction (in progress)
+## 2026-10-15 — PR #97 verification complete
 
-- Direct-import regression checks that a nonblank Last.fm API key is trimmed, a blank key preserves the existing value, and serialized responses never contain the key.
-- Preserve the existing success JSON contract and keep SQLite persistence in the legacy adapter. CI on exact head `9d3390e4f369cc11fbac852b9dc3481b865bb2f5` passed all four required workflows: syntax/acquisition safety `38721093901`, full unit suite/Docker packaging `38721093899`, runtime smoke `38721093983`, and validation-only multi-architecture build `38721093945`. No local test run; no publication/deployment.
+- Added direct-import regression coverage for Last.fm key trimming, blank-input preservation, and response redaction while preserving the existing success JSON contract.
+- All four required workflows passed on exact PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`: Python syntax/acquisition safety `38721333335`, Docker packaging/full unit suite `38721333353`, container runtime smoke `38721333332`, and validation-only multi-architecture image validation `38721333418` (publishing paused).
+- No assistant-local test run, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
