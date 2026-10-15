@@ -3,7 +3,7 @@
 - Branch `refactor/acquisition-request-coordinator` extracts the `discovery_acquire_album` coordination sequence into `acquisition_request_coordinator.py` with injected dependencies; the MCP/web function remains a compatibility adapter.
 - Preserve transition-lock scope across dismissed-job reactivation, existing-state inspection, and active-request reservation; preserve watcher lock ordering and reservation cleanup. Keep top-level AST integration tests alongside direct-import coordinator tests.
 - Direct tests cover blank input, refusal when dismissed reactivation fails, incomplete saved-source refusal, watcher recovery without requeue, reservation cleanup after success/exception, and concurrent duplicate-request suppression.
-- First CI attempt exposed the expected AST-harness dependency boundary: the adapter test namespace lacked `_acquire_album_request`. Added the direct import to that namespace without removing the end-to-end tests. Corrected-head CI and final review remain pending; no publishing/deployment.
+- First CI attempt exposed the expected AST-harness dependency boundary: the adapter test namespace lacked `_acquire_album_request`. Added the direct import to that namespace without removing the end-to-end tests. All four workflows passed on code head `e46403ca6a71a08277b33f48adb479cac2f33199`: syntax/acquisition safety `38722530776`, Docker packaging/full unit suite `38722530794`, container runtime smoke `38722530808`, validation-only multi-architecture image validation `38722530903`. The documentation-updated final head still needs its own exact-head checks. No publishing/deployment.
 
 ---
 ## 2026-10-15 — PR #97 merged: Last.fm save policy
