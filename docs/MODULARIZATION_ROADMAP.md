@@ -1,3 +1,10 @@
+## 2026-10-15 — Safety follow-up: acquisition import source-root replacement
+
+- After cleanup directory-swap hardening, audit the import boundary where the matcher returns paths before staging/moving tracks. A source-directory replacement can redirect path-based file movement unless the source directory is pinned.
+- Require regressions for source-root symlink swaps, collision-suffixed matches, cross-filesystem fallback, and rollback; preserve existing no-overwrite and recovery-manifest behavior. Do not resume routine modularization until exact-head CI passes.
+
+---
+
 ## 2026-10-15 — Cleanup root traversal hardening merged (PR #100)
 
 - PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
