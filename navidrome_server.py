@@ -3308,7 +3308,6 @@ def discovery_set_slskd_settings(
 
 
 @mcp.tool()
-@mcp.tool()
 def discovery_test_slskd_connection() -> str:
     """Test the configured slskd API without exposing the API key."""
     try:
