@@ -1,3 +1,13 @@
+## 2026-10-15 — slskd settings-policy extraction (next PR)
+
+- Directly import `service_settings.py`; do not use AST extraction or initialize MCP in policy tests.
+- Verify `slskd_config` rejects invalid HTTP(S) URLs and missing keys, and never serializes the API key in settings responses.
+- Verify get-settings defaults and quality labels, blank API-key preservation, and successful write/path callback behavior.
+- Invalid URL, malformed/duplicate/missing quality tiers, relative/nonexistent music-library paths, and relative download paths must return the existing error contract without settings writes or runtime path mutation. Malformed quality elements must fail safely rather than raise from set conversion.
+- Keep connection tests, SQLite persistence/schema, and global `MUSIC_DIR` ownership in the legacy adapter. Run focused `python -m unittest tests.test_service_settings -v`, full `python -m unittest discover -s tests -v`, syntax checks, and all four required workflows on the exact final PR head. Publishing remains paused.
+
+---
+
 ## 2026-10-15 — Service settings policy direct-import migration (PR #95)
 
 - `tests/test_service_settings.py` now imports `service_settings.py` directly instead of parsing and executing selected functions from `navidrome_server.py`.
