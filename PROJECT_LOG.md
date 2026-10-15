@@ -539,3 +539,10 @@
 
 ---
 
+
+
+## 2026-10-15 — PR #118: discovery eligibility tests use direct imports
+
+- PR #118 moves the duplicate album-eligibility, exact artist-credit, and Various Artists regression checks out of the AST harness in `tests/test_acquisition_safety.py`; their existing direct-import coverage in `tests/test_discovery_recommendations.py` remains authoritative.
+- The direct-import suite now retains the removed edge cases: live/remix/EP/compilation rejection, exact artist-credit false matches and empty credits, plus all five Various Artists aliases. The legacy AST harness now focuses on orchestration/lifecycle paths that still require the monolithic adapter's shared state and stubbed I/O. No runtime code or MCP behavior changed.
+- Branch: `test/migrate-discovery-eligibility-direct-import`. Code/test head `873f47328de0808c8d18e034d5a7d04e39a083f2` passed all four required workflows: syntax `38745139119`; Docker packaging/full suite/build `38745139114` (238 tests passed); runtime smoke `38745139370`; validation-only multi-architecture image validation `38745139332`. Documentation-only closeout commits follow this code head; final PR-head CI will be checked before merge. No local test run, publication, or deployment is claimed.

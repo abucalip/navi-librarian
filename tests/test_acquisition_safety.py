@@ -1,7 +1,8 @@
-"""Regression tests for acquisition path/import safety and lifecycle guards.
+"""Regression tests for acquisition safety and legacy lifecycle integration.
 
-The tests compile selected real function definitions from navidrome_server.py into
-a small stubbed namespace, avoiding import-time initialization of the full MCP app.
+Pure discovery and slskd policies are covered through direct-import tests in their
+own modules. The remaining AST harness is limited to legacy orchestration that
+still needs the monolithic adapter's shared state and injected I/O stubs.
 """
 import ast
 import json
@@ -31,9 +32,6 @@ class FakeHTTPError(Exception):
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
-        "_discovery_is_album_candidate",
-        "_discovery_exact_artist_credit_matches",
-        "_discovery_is_various_artists",
         "_slskd_album_path_match",
         "_slskd_search_queries",
         "_slskd_search_response_items",
@@ -123,47 +121,6 @@ def load_helpers():
 
 
 HELPERS = load_helpers()
-
-
-class RecommendationEligibilityTests(unittest.TestCase):
-    def test_rejects_compilations_remixes_and_non_album_types(self):
-        is_album = HELPERS["_discovery_is_album_candidate"]
-        for item in (
-            {"album": "Greatest Hits"},
-            {"album": "The Remixes"},
-            {"album": "Live at Wembley"},
-            {"album": "An Ordinary Title", "primary_type": "EP"},
-            {"album": "An Ordinary Title", "secondary_types": ["Compilation"]},
-        ):
-            with self.subTest(item=item):
-                self.assertFalse(is_album(item))
-
-    def test_accepts_regular_full_album(self):
-        self.assertTrue(HELPERS["_discovery_is_album_candidate"]({
-            "album": "Back to Black", "primary_type": "Album",
-        }))
-
-
-class NewReleasesArtistCreditTests(unittest.TestCase):
-    def test_requires_exact_artist_credit_name(self):
-        matches = HELPERS["_discovery_exact_artist_credit_matches"]
-        self.assertTrue(matches([{"artist": {"name": "Queen"}}], "Queen"))
-        self.assertFalse(matches([{"artist": {"name": "Queen Tribute"}}], "Queen"))
-        self.assertFalse(matches([{"artist": {"name": "The Queens"}}], "Queen"))
-        self.assertFalse(matches([], "Queen"))
-
-
-class VariousArtistsNewReleasesTests(unittest.TestCase):
-    def test_rejects_various_artists_aliases(self):
-        is_various = HELPERS["_discovery_is_various_artists"]
-        for value in ("Various Artists", "VARIOUS ARTISTS", "Various Artist", "Various", "V.A."):
-            with self.subTest(value=value):
-                self.assertTrue(is_various(value))
-
-    def test_keeps_named_artists(self):
-        is_various = HELPERS["_discovery_is_various_artists"]
-        self.assertFalse(is_various("Queen"))
-        self.assertFalse(is_various("The Various"))
 
 
 class SlskdSearchQueryTests(unittest.TestCase):
