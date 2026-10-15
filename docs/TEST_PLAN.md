@@ -1,3 +1,11 @@
+## 2026-10-15 — Dismissed-acquisition preflight extraction (verification pending)
+
+- Direct-import tests added for bypassing reactivation when the job is not dismissed, passing valid metadata, normalizing malformed/non-object metadata to `{}`, and refusing a dismissed request when reactivation fails.
+- Keep the AST integration tests `test_explicit_get_reactivates_safely_dismissed_job` and `test_dismissed_job_stays_blocked_if_reactivation_fails`; they verify the top-level Get flow and response behavior, not just the helper.
+- Preserve the shared transition lock around the preflight and reservation. Focused tests, full suite, syntax checks, final diff review, and all four workflows on the exact PR head are pending.
+
+---
+
 ## 2026-10-15 — Acquisition reservation lifecycle verified
 
 - PR #90 merged at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`; all four workflows passed, with 199 unit tests.
