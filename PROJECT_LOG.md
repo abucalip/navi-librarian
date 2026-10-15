@@ -53,3 +53,12 @@
 - Added `tests/test_data_directory.py` for configured path expansion, empty setting fallback, and missing setting fallback. Updated Docker packaging to include the module.
 - Implementation commits: `b46adec455eb2a889df523591a1c454f7200e805`, `7eaadcc7e3c88119f16101e4b6e2217948ab8edc`, `c4eecffc46fc312c5949c56043acfb0abdcb7e49`, `a5ff011456e05ce98a81c17074732ce81f7b4a39`.
 - Verification, PR, merge, publishing, deployment, and production runtime status are pending; do not infer success from the changes being committed.
+
+
+## 2026-10-15 — PR #152 merged: data-directory resolution extraction
+
+- PR #152: https://github.com/abucalip/navi-librarian/pull/152; tested head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; squash merge commit `567409bb90f240667575a3730976e4c52676bc02`.
+- Extracted configured/fallback data-directory resolution to `data_directory.py`; retained the legacy `DATA_DIR` symbol and directory-creation behavior. Added three direct-import regression tests and updated Docker packaging.
+- All four required exact-head workflows passed: syntax `38807325467`; Docker packaging/full suite/build `38807325564`; runtime smoke `38807325555`; validation-only multi-architecture image validation `38807325557`.
+- Merged and CI-verified. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next action: review current main, open PRs, and the modularization roadmap to select the next smallest safe dependency seam.
