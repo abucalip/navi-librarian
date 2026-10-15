@@ -425,3 +425,8 @@ PR #57 was squash-merged at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact 
 - Login-page alignment is complete: `static/login.css` now shares the app's design tokens, type system, primary-control treatment, and focus-visible styles. PR #66 merged at `717b1ad08e5de54e2dd8c11c2734976d75ce2e5f` from tested head `d0b13b7411b9b300b78b24a8944348b7e57d4b65`.
 - Exact-head syntax, Docker packaging/full suite, runtime smoke, and validation-only multi-architecture CI all passed. Manual screenshots/report are published on the PR; keyboard-focus modality and first-run setup variant remain explicitly skipped in that report.
 - This visual improvement does not change the backend modularization priority or authorize image publication/deployment. Continue the safety-first acquisition coordination/test migration roadmap.
+
+## 2026-10-15 — Settings router is the next injection seam
+
+After discovery-router injection (PR #108), the next narrow step is to inject the existing service into all settings routes through `get_librarian`. Keep settings policy, SQLite persistence, runtime path mutation, and network connection checks in the existing service module; do not duplicate or relocate domain behavior. Verify endpoint paths/methods, payload/default mapping, validation and sanitized error contracts, plus all four required CI workflows on the exact PR head. `app/main.py` still imports the legacy server and remains a separate follow-up boundary.
+

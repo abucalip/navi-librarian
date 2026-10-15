@@ -5,16 +5,16 @@ the existing librarian domain functions; this module only adapts HTTP payloads.
 """
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-import navidrome_server as librarian
+from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 
 router = APIRouter()
 
 
 @router.get("/api/settings/navidrome")
-def get_navidrome_settings():
+def get_navidrome_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_get_navidrome_settings())
     except Exception:
@@ -22,7 +22,7 @@ def get_navidrome_settings():
 
 
 @router.put("/api/settings/navidrome")
-def set_navidrome_settings(payload: dict):
+def set_navidrome_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
         result = parse_result(librarian.discovery_set_navidrome_settings(
             navidrome_url=str(payload.get("navidrome_url") or ""),
@@ -40,7 +40,7 @@ def set_navidrome_settings(payload: dict):
 
 
 @router.post("/api/settings/navidrome/test")
-def test_navidrome_settings():
+def test_navidrome_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_test_navidrome_connection())
     except Exception:
@@ -48,7 +48,7 @@ def test_navidrome_settings():
 
 
 @router.get("/api/settings/lastfm")
-def get_lastfm_settings():
+def get_lastfm_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_get_lastfm_settings())
     except Exception:
@@ -56,7 +56,7 @@ def get_lastfm_settings():
 
 
 @router.put("/api/settings/lastfm")
-def set_lastfm_settings(payload: dict):
+def set_lastfm_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_set_lastfm_settings(api_key=str(payload.get("api_key") or "")))
     except Exception:
@@ -64,7 +64,7 @@ def set_lastfm_settings(payload: dict):
 
 
 @router.post("/api/settings/lastfm/test")
-def test_lastfm_settings():
+def test_lastfm_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_test_lastfm_connection())
     except Exception:
@@ -72,7 +72,7 @@ def test_lastfm_settings():
 
 
 @router.get("/api/settings/listenbrainz")
-def get_listenbrainz_settings():
+def get_listenbrainz_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_get_listenbrainz_settings())
     except Exception:
@@ -80,7 +80,7 @@ def get_listenbrainz_settings():
 
 
 @router.put("/api/settings/listenbrainz")
-def set_listenbrainz_settings(payload: dict):
+def set_listenbrainz_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
         result = parse_result(librarian.discovery_set_listenbrainz_settings(username=str(payload.get("username") or "")))
         if isinstance(result, dict) and not result.get("ok"):
@@ -93,7 +93,7 @@ def set_listenbrainz_settings(payload: dict):
 
 
 @router.post("/api/settings/listenbrainz/test")
-def test_listenbrainz_settings():
+def test_listenbrainz_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_test_listenbrainz_connection())
     except Exception:
@@ -101,7 +101,7 @@ def test_listenbrainz_settings():
 
 
 @router.get("/api/settings/slskd")
-def get_slskd_settings():
+def get_slskd_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_get_slskd_settings())
     except Exception:
@@ -109,7 +109,7 @@ def get_slskd_settings():
 
 
 @router.put("/api/settings/slskd")
-def set_slskd_settings(payload: dict):
+def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
     url = str(payload.get("slskd_url") or "http://192.168.1.12:5030")
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
@@ -141,7 +141,7 @@ def set_slskd_settings(payload: dict):
 
 
 @router.post("/api/settings/slskd/test")
-def test_slskd_settings():
+def test_slskd_settings(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_test_slskd_connection())
     except Exception:

@@ -231,3 +231,8 @@ Pure authentication primitives are being separated into `app/security/auth.py`: 
 ## Acquisition state persistence extraction — PR #59 merged
 
 `acquisition_state.py` now owns SQLite save/list mechanics for acquisition rows behind injected dependencies. Legacy server adapters remain. Shared transition locking, conditional dismissed-state checks, feedback projection, dismissal/import coordination, and filesystem safety remain in `navidrome_server.py`. PR #59 exact head `d22dea2dd39f287cd0c634ffbc1d276b9d735b5d` passed all four required workflows and was squash-merged at `730ae16e613f3962c488f87c8de54034db7463dd`. Publishing/deployment/runtime verification are not claimed.
+
+## Settings router dependency seam (2026-10-15)
+
+The settings router now obtains the existing librarian service through `app.api.dependencies.get_librarian`, consistent with acquisition and discovery routers. It no longer imports `navidrome_server.py` directly. The existing service functions remain responsible for settings policy, persistence, and live connectivity checks; HTTP handlers retain request/response adaptation and error mapping. This change does not retire MCP or change the application assembly dependency in `app/main.py`.
+

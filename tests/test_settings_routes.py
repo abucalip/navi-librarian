@@ -1,14 +1,19 @@
-"""Regression tests for the extracted settings API router."""
+"""Regression tests for the settings API router's injected service boundary."""
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock
 
 from fastapi import HTTPException
+from fastapi.params import Depends
 
 from app.api import settings
+from app.api.dependencies import get_librarian
 
 
 class SettingsRoutesTests(unittest.TestCase):
+    def setUp(self):
+        self.librarian = Mock()
+
     def test_router_preserves_all_settings_endpoint_paths_and_methods(self):
         actual = {
             (route.path, method)
@@ -30,44 +35,52 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/slskd/test", "POST"),
         }
         self.assertEqual(actual, expected)
+
+    def test_handlers_use_shared_lazy_dependency_without_importing_server(self):
+        self.assertIs(settings.get_librarian, get_librarian)
+        for route in settings.router.routes:
+            if not getattr(route, "methods", set()).intersection({"GET", "PUT", "POST"}):
+                continue
+            dependency = next(
+                parameter.default
+                for parameter in __import__("inspect").signature(route.endpoint).parameters.values()
+                if parameter.name == "librarian"
+            )
+            self.assertIsInstance(dependency, Depends)
+            self.assertIs(dependency.dependency, get_librarian)
+
     def test_get_navidrome_settings_parses_json_string(self):
-        with patch.object(settings.librarian, "discovery_get_navidrome_settings", return_value='{"ok": true}') as call:
-            self.assertEqual(settings.get_navidrome_settings(), {"ok": True})
-        call.assert_called_once_with()
+        self.librarian.discovery_get_navidrome_settings.return_value = '{"ok": true}'
+        self.assertEqual(settings.get_navidrome_settings(librarian=self.librarian), {"ok": True})
+        self.librarian.discovery_get_navidrome_settings.assert_called_once_with()
 
     def test_set_navidrome_settings_preserves_payload_mapping(self):
-        with patch.object(settings.librarian, "discovery_set_navidrome_settings", return_value='{"ok": true}') as call:
-            result = settings.set_navidrome_settings({
-                "navidrome_url": "http://music.local",
-                "username": "owner",
-                "password": "secret",
-                "music_library_path": "/music",
-            })
+        self.librarian.discovery_set_navidrome_settings.return_value = '{"ok": true}'
+        result = settings.set_navidrome_settings({
+            "navidrome_url": "http://music.local", "username": "owner",
+            "password": "secret", "music_library_path": "/music",
+        }, librarian=self.librarian)
         self.assertEqual(result, {"ok": True})
-        call.assert_called_once_with(
-            navidrome_url="http://music.local",
-            username="owner",
-            password="secret",
+        self.librarian.discovery_set_navidrome_settings.assert_called_once_with(
+            navidrome_url="http://music.local", username="owner", password="secret",
             music_library_path="/music",
         )
 
     def test_set_listenbrainz_returns_client_validation_error(self):
-        with patch.object(settings.librarian, "discovery_set_listenbrainz_settings", return_value='{"ok": false, "error": "invalid"}'):
-            with self.assertRaises(HTTPException) as raised:
-                settings.set_listenbrainz_settings({"username": "bad"})
+        self.librarian.discovery_set_listenbrainz_settings.return_value = '{"ok": false, "error": "invalid"}'
+        with self.assertRaises(HTTPException) as raised:
+            settings.set_listenbrainz_settings({"username": "bad"}, librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 400)
         self.assertEqual(raised.exception.detail, "invalid")
 
     def test_slskd_defaults_quality_priority_and_trims_optional_paths(self):
-        with patch.object(settings.librarian, "discovery_set_slskd_settings", return_value='{"ok": true}') as call:
-            result = settings.set_slskd_settings({
-                "slskd_url": "http://slskd.local",
-                "api_key": "secret",
-                "slskd_downloads_path": " /downloads ",
-                "music_library_path": " /music ",
-            })
+        self.librarian.discovery_set_slskd_settings.return_value = '{"ok": true}'
+        result = settings.set_slskd_settings({
+            "slskd_url": "http://slskd.local", "api_key": "secret",
+            "slskd_downloads_path": " /downloads ", "music_library_path": " /music ",
+        }, librarian=self.librarian)
         self.assertEqual(result, {"ok": True})
-        kwargs = call.call_args.kwargs
+        kwargs = self.librarian.discovery_set_slskd_settings.call_args.kwargs
         self.assertEqual(kwargs["slskd_url"], "http://slskd.local")
         self.assertEqual(kwargs["api_key"], "secret")
         self.assertEqual(json.loads(kwargs["quality_priority_json"]), [
@@ -77,11 +90,18 @@ class SettingsRoutesTests(unittest.TestCase):
         self.assertEqual(kwargs["music_library_path"], "/music")
 
     def test_connection_error_is_sanitized(self):
-        with patch.object(settings.librarian, "discovery_test_slskd_connection", side_effect=RuntimeError("sensitive upstream detail")):
-            with self.assertRaises(HTTPException) as raised:
-                settings.test_slskd_settings()
+        self.librarian.discovery_test_slskd_connection.side_effect = RuntimeError("sensitive upstream detail")
+        with self.assertRaises(HTTPException) as raised:
+            settings.test_slskd_settings(librarian=self.librarian)
         self.assertEqual(raised.exception.status_code, 502)
         self.assertEqual(raised.exception.detail, "Could not test the slskd connection.")
+
+    def test_invalid_settings_remain_client_errors(self):
+        self.librarian.discovery_set_navidrome_settings.return_value = '{"ok": false, "error": "bad input"}'
+        with self.assertRaises(HTTPException) as raised:
+            settings.set_navidrome_settings({}, librarian=self.librarian)
+        self.assertEqual(raised.exception.status_code, 400)
+        self.assertEqual(raised.exception.detail, "bad input")
 
 
 if __name__ == "__main__":
