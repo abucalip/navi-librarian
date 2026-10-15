@@ -465,3 +465,11 @@
 - **State:** implemented, exact-head CI passed, merged. Main was observed at `5cf853cbd85cd9aec88ea6276522e86f83b7935c` immediately after merge; documentation closeout follows in a separate PR.
 - **Next:** continue the highest-priority remaining acquisition-coordination/test audit from the current GitHub main and roadmap; inspect current PRs and checks before choosing the next code change.
 
+
+## 2026-10-15 — Settings router service injection in progress
+
+- Current implementation branch: `refactor/settings-router-service-injection`, based on `main` at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` (PR #108 merge).
+- `app/api/settings.py` now uses the shared lazy `get_librarian` dependency for all twelve settings endpoints instead of importing `navidrome_server` at module import time. Existing settings functions remain the service implementation; payload mapping, defaults, response parsing, validation status codes, and sanitized 502 errors are intentionally unchanged.
+- `tests/test_settings_routes.py` now supplies fake services directly and checks route/method contracts, dependency wiring, payload mapping, slskd defaults/path trimming, client validation errors, and sanitized connection failures.
+- Verification state at documentation update: no local tests run; CI not yet verified for the final branch head. No image publication, deployment, or production runtime verification. Preserve the MCP adapters and legacy persistence ownership.
+
