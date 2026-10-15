@@ -1,15 +1,15 @@
-## 2026-10-15 — Dismissed-acquisition reactivation extraction: code tests passed
+## 2026-10-15 — PR #85 merged: dismissed-acquisition reactivation state
 
-- PR #85: https://github.com/abucalip/navi-librarian/pull/85
-- Branch: `refactor/dismissed-acquisition-reactivation-state`, based on `main` `3f9304f21ec282912ca7427f7074dbc35cb62585`.
-- Extracted the conditional `status='dismissed'` SQLite update into `acquisition_state.reactivate_dismissed_job`; retained the server/MCP adapter and coordinator-owned transition lock.
-- Direct-import tests cover metadata/timestamp persistence, stale candidate/settings clearing, and refusing absent/non-dismissed rows without mutation. Coordinator AST coverage remains.
-- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed syntax/acquisition safety run `38658206572`, Docker packaging/full unit suite `38658206550` (189 tests), runtime smoke `38658206476`, and validation-only multi-architecture build `38658206595` (publishing paused).
-- Documentation-only closeout updates follow. Final PR-head workflows, diff review, merge, and post-merge main verification remain pending. No publication, deployment, or production runtime verification.
+- PR: https://github.com/abucalip/navi-librarian/pull/85
+- Exact tested PR head: `95d7eb19352dd2a680ae55355026656e76ceeaeb`; squash merge / updated `main`: `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`.
+- Extracted the conditional dismissed-job SQLite transition into `acquisition_state.reactivate_dismissed_job`; kept the legacy MCP/server adapter and coordinator-owned transition lock.
+- Direct-import tests cover retry metadata/timestamp persistence, stale candidate/settings clearing, and no mutation for missing or non-dismissed rows. The full suite reported 189 tests on code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb`.
+- All four required workflows passed on the exact final PR head: syntax `38658355926`, Docker packaging/full suite `38658355948`, runtime smoke `38658355942`, and multi-architecture image validation with publishing paused `38658355919`.
+- No publication, deployment, or production runtime verification. Next: reuse the lifecycle policy in stale-watcher recovery while retaining the coordinator-level no-requeue integration test.
 
 ---
 
-## 2026-10-15 — PR #84 verification closeout
+# 2026-10-15 — PR #84 verification closeout
 
 - Exact PR head `398486476aacdbbefefeaee5cb79182cc0835fb8` passed all four required workflows: syntax/acquisition safety run 38656927551, Docker packaging/full unit suite run 38656927436, runtime smoke run 38656927801, and validation-only multi-architecture image run 38656927516.
 - Full unit-test and acquisition safety regression steps passed. Diff reviewed: threaded watcher-start race test plus documentation only; no production changes.
