@@ -132,6 +132,38 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertEqual(protected.read_bytes(), b"keep")
         self.assertEqual(calls, [])
 
+    def test_directory_replaced_by_symlink_during_transfer_lookup_cannot_delete_outside_files(self):
+        outside = Path(self.temp.name) / "outside"
+        outside.mkdir()
+        protected = outside / "01.flac"
+        protected.write_bytes(b"outside")
+        moved = self.root / "Album-original"
+        calls = []
+
+        def transfers(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                self.folder.rename(moved)
+                self.folder.symlink_to(outside, target_is_directory=True)
+            return []
+
+        result = _clean_acquisition_source(
+            self.root,
+            self.candidate,
+            "http://slskd",
+            {"X-API-KEY": "test"},
+            safe_folder_name=self.safe_folder_name,
+            download_transfer_files=transfers,
+            http_client=self.http_client,
+        )
+
+        self.assertFalse(result)
+        self.assertTrue(protected.exists())
+        self.assertEqual(protected.read_bytes(), b"outside")
+        self.assertTrue((moved / "01.flac").exists())
+        self.assertTrue(self.folder.is_symlink())
+        self.assertEqual(len(calls), 1)
+
     def test_failed_transfer_cancellation_preserves_local_files(self):
         active = [{
             "id": "transfer-1",
