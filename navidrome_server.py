@@ -4607,7 +4607,9 @@ def discovery_acquire_album(
             # treating a stale in-memory watcher flag as proof the job is active.
             candidate = (existing_job or {}).get("candidate") or {}
             settings = (existing_job or {}).get("settings") or {}
-            if candidate.get("username") and candidate.get("files"):
+            if _acquisition_lifecycle.should_resume_monitor(
+                existing_status, candidate, watcher_active
+            ):
                 try:
                     _discovery_start_import_watcher(
                         existing_job["artist"], existing_job["album"],
