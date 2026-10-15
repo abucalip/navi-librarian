@@ -1,8 +1,10 @@
 ## UI accessibility PRs — 2026-10-15
 
-- PR #144 landmark naming: manual test report published by user; all four required CI workflows passed on exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`; merged at `f1008bb3af25c7c76dac8bae67177a07b21df147`.
-- PR #142 contrast: manual test report published by user; all four required workflows passed on exact tested head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`. Merge was blocked by a GitHub-reported conflict; keep open until conflict resolution and exact-final-head verification. Do not treat prior CI as verification of any conflict-resolution commit.
-- Publishing remains paused. No production deployment or runtime verification is claimed.
+- PR #144 landmark naming merged at `f1008bb3af25c7c76dac8bae67177a07b21df147` from exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`; manual report was published.
+- PR #142 contrast merged at `77faf5e03fdc4985541b0da5952568d0925336df` from conflict-resolved exact PR head `dd5561bff2ca8b89ca934a60f8348e67a044093c`. All four required workflows passed on that exact head: Docker packaging `38794146977`, validation-only multi-architecture image validation `38794146985`, Python syntax `38794147000`, and container runtime smoke `38794146979`.
+- Conflict resolution retained the merged landmark documentation and the `--subtle: #94958b` contrast fix. The contrast manual report applies to prior head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`; the combined resolution head did not receive a separate manual browser pass.
+- Publishing remains paused. No deployment or production runtime verification is claimed.
+
 
 ## Settings persistence extraction — PR #143 merged
 
