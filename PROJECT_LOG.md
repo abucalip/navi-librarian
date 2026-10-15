@@ -1,16 +1,10 @@
-## 2026-10-15 — Backend session: slskd transfer listing extraction
+## 2026-10-15 — Backend session closeout: PRs #155 and #157 merged
 
-- PR #155 was merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. During this follow-on task, a packaging-only commit `08c0703ed1dea19eae1aa84f8a18b4a3ea8f8666` was inadvertently committed to `main`, adding the new module to Docker COPY before the module itself existed on `main`. The active branch `refactor/slskd-transfer-listing` was created from that exact current `main` head and supplies the module, adapter, tests, and documentation. Treat the Docker packaging gap as unresolved until this PR passes all required workflows and merges.
-- Objective: move the slskd transfer-list HTTP request and recursive response normalization into `slskd_transfers.py`, preserving `_slskd_download_transfer_files` as the legacy adapter.
-- Added a focused service with injected HTTP client and regression coverage for URL encoding/request timeout, 404-as-empty, nested directory inheritance, invalid payload records, input immutability, HTTP error propagation, and adapter behavior. The Dockerfile COPY reference is already on `main`; this PR supplies the referenced module and verifies the complete packaging/build state.
-- PR #157 opened: https://github.com/abucalip/navi-librarian/pull/157. Head `139304fb1ba3c9812931a91025e0efa90c62c869` passed syntax/acquisition safety `38815948143`, Docker packaging/full unit suite/image build `38815948355`, runtime smoke `38815948227`, and validation-only multi-architecture validation `38815948105`. Previously tested PR head `22edf45e09d6f86470298de2a54af8d5b9c8af0c` passed all four required workflows: syntax/acquisition safety `38816159790`, Docker packaging/full unit suite/image build `38816159713`, isolated container runtime smoke `38816159767`, and validation-only multi-architecture validation `38816159649`. This documentation-only closeout commit changes the PR head; all four workflows must pass on the resulting final head before merge. No publication, deployment, or production runtime verification is claimed.
-
-## 2026-10-15 — PR #155 merged: expected slskd track count
-
-- PR #155: https://github.com/abucalip/navi-librarian/pull/155. Exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; squash merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
-- Extracted expected track-count metadata parsing to `slskd_search.py`, preserving `_discovery_expected_track_count` as the compatibility adapter and adding direct-import/adapter regressions.
-- All four required workflows passed on the exact final PR head: syntax/acquisition safety `38814733899`, Docker packaging/full suite/image build `38814734001`, runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`.
-- No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+- PR #155: expected track-count metadata extracted to `slskd_search.py`; tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. All four required workflows passed on that exact head.
+- PR #157: slskd transfer listing/normalization extracted to `slskd_transfers.py`; `_slskd_download_transfer_files` retained as the adapter. Tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`; merge `17922f878f0ea391b47652012a38530e9eb044fc`.
+- Exact-head PR #157 CI passed: syntax/acquisition safety `38816375215`; Docker packaging/full unit suite/image build `38816375266`; runtime smoke `38816375339`; validation-only multi-architecture validation `38816375410`.
+- A packaging-only Dockerfile commit landed on `main` before the module; PR #157 added the missing module and tests. The current main tree now packages the module and the exact-head Docker build passed.
+- Next action: complete and record the required manual browser checklist for open PR #156 before starting another routine backend extraction. Its PR description records the checklist as NOT RUN. Publishing/deployment/runtime verification remain separate and unclaimed.
 
 ## 2026-10-15 — Multi-extraction workflow closeout; PR #149 blocked on UI gate
 
