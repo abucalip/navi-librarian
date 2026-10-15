@@ -908,3 +908,8 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - PR #145 tested head `421d1d2860945548aa01677847ce0953b7c9f263` passed the manual browser checklist 8/8 with zero failures; report: https://github.com/abucalip/navi-librarian/pull/145#issuecomment-6200647429.
 - The report covers app startup/setup, dashboard/artwork, discovery, navigation/modal, settings, Get/request, acquisition cards, and unexpected browser/server errors. It is tied to the exact PR head.
 - The report does not claim real screen-reader testing; isolated artwork checks used a placeholder. Four required CI workflows passed on that exact head: syntax `38794301415`, runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only image validation `38794301405`. Publishing remains paused.
+
+
+## Data-directory resolution extraction — PR verification required
+
+Run `python -m unittest tests.test_data_directory -v` and `python -m unittest discover -s tests -v`. The direct-import regressions verify configured-path home expansion, empty-value fallback, and source-directory fallback. Also verify Python syntax, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. Confirm the Docker image contains `data_directory.py`. Preserve `navidrome_server.DATA_DIR`, directory creation, configured relative-path semantics, and legacy persistence ownership. Do not claim tests passed until actual CI results are observed.

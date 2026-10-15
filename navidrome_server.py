@@ -45,6 +45,7 @@ from acquisition_completion import (
 )
 from pathlib import Path
 from urllib.parse import urlparse
+from data_directory import resolve_data_dir
 
 import httpx
 from dotenv import load_dotenv
@@ -52,10 +53,7 @@ from mutagen import File
 load_dotenv(Path(__file__).with_name(".env"))
 
 # Mutable application state lives outside the source tree when configured (e.g. Docker /data).
-DATA_DIR = Path(
-    os.environ.get("NAVIDROME_LIBRARIAN_DATA_DIR")
-    or Path(__file__).resolve().parent
-).expanduser()
+DATA_DIR = resolve_data_dir(os.environ, __file__)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Persistent MusicBrainz metadata cache.

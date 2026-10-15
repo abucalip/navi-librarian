@@ -1315,3 +1315,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: Python syntax `38794301415`, container runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only Docker image validation `38794301405` (publishing paused).
 - Status: implemented, CI passed, manual browser checklist passed, merged. The report notes that no real screen reader was tested and artwork used a placeholder in isolated checks. No image publication, deployment, or production runtime verification is claimed.
 - Next UI follow-up noted by the PR: assess the remaining C4 recommendation-count live-region font-size issue.
+
+
+## 2026-10-15 — Data-directory resolution extraction in progress
+
+- Branch `refactor/extract-data-directory-config` extracts only the selection of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback into `data_directory.py`. The legacy `DATA_DIR` name and directory creation remain in `navidrome_server.py`; persistence ownership and import-time initialization behavior are unchanged.
+- Added direct-import tests for explicit home expansion, empty environment fallback, and resolved source-directory fallback. Docker packaging includes the new module.
+- Pending: run focused and full tests, verify syntax plus all four required CI workflows on the exact final PR head, review the full diff, then update the closeout record. No test/CI success, merge, publication, deployment, or runtime verification is claimed yet.
