@@ -1,3 +1,12 @@
+## 2026-10-15 — Read-only web dependency audit
+
+- Audited current `main` after the acquisition import source-root fix. `app/main.py` and three API routers import `navidrome_server` as `librarian`; route modules call the existing service wrappers rather than reimplementing domain logic.
+- Main-app dependencies include `DATA_DIR`, settings read/write, Navidrome ping, discovery-list retrieval, and album-candidate filtering. Acquisition routes call status/skip/dismiss/acquire/queue wrappers; discovery routes call recommendation/list/refresh/feedback wrappers; settings routes call provider get/set/test wrappers.
+- Metadata routes are independent of `navidrome_server`; auth route handlers are dependency-injected already, although the app assembly supplies their settings and signing dependencies from the server boundary.
+- No code was changed. PR #44/#45 remain open; the user's documented decision to defer the dismissal HTTP 409 investigation until recurrence was respected. Next candidate: a narrow app/router service-dependency seam, with no MCP/domain behavior removal until contract tests prove parity.
+
+---
+
 ## 2026-10-15 — PR #103 merged: acquisition import source-root safety
 
 - **PR:** [#103 — fix: pin acquisition import source directory](https://github.com/abucalip/navi-librarian/pull/103) — merged.
