@@ -1,3 +1,10 @@
+## 2026-10-15 — Navidrome API client extraction in progress
+
+- Branch: `refactor/extract-navidrome-api-client`.
+- Extracted the Subsonic-compatible request transport and authentication from `navidrome_server.py` into `navidrome_client.py`, leaving `api_call(method, **params)` as a compatibility adapter.
+- Added direct-import regressions and included the new module in Docker packaging.
+- Tests, all four required CI workflows, PR creation/review, merge, publication, deployment, and production runtime verification remain pending. No passing result is claimed.
+
 ## 2026-10-15 — PR #148 merged
 
 - Merged metadata-cache service extraction to `main` via squash merge commit `99e8da326fb0e2c4a8cf22acf9000e28647ec20f` (PR head `972376953444502fb1a372648adc8c58157403c9`).
