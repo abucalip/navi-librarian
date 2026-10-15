@@ -2,7 +2,7 @@
 
 - `app/api/discovery.py` uses `Depends(get_librarian)` from the shared lazy dependency module, matching the acquisition router. Importing the discovery router no longer imports `navidrome_server.py` directly.
 - Existing discovery functions still own recommendations, list generation, candidate filtering, and feedback persistence. `app/main.py`, settings routes, and MCP runtime retain their legacy server integration; no MCP tools or domain behavior were removed.
-- PR #108 merged at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` from tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`; all four required CI workflows passed. No publication, deployment, or production runtime verification.
+- PR #108 merged at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` from tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`; all four required CI workflows passed. PR #112 was squash-merged at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No publication, deployment, or production runtime verification.
 
 ---
 
