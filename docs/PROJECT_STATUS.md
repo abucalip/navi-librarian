@@ -1214,3 +1214,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: Docker packaging `38766740766`, container runtime smoke `38766741159`, Python syntax `38766741253`, and Docker image validation with publishing paused `38766741247`.
 - Manual browser report published on PR #132: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079. All eight checklist items passed on the exact tested SHA; zero failed items.
 - Status: implemented, CI passed, manually verified, merged. No image publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-15 — Settings connection checks extracted (PR preparation)
+
+- Moved Navidrome ping, Last.fm API-key verification, and ListenBrainz profile reachability/result mapping into directly importable `service_settings.py` functions with injected HTTP/service dependencies.
+- `navidrome_server.py` retains the existing public MCP/web functions as compatibility adapters; endpoint response JSON/status/message contracts, timeouts, request headers, and credential redaction are intended to remain unchanged.
+- Added direct-import regression tests for successful/failed Navidrome ping mapping, Last.fm missing-key/authentication failure with secret redaction, and ListenBrainz missing-profile handling.
+- Branch: `refactor/extract-settings-connection-services`. Focused and full test runs plus all four required exact-head CI workflows are pending. No merge, publication, deployment, or production runtime verification claimed.
