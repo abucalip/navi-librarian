@@ -1,3 +1,10 @@
+## 2026-10-15 — API boolean input validation
+
+- For `POST /api/acquire`, test omitted `auto_queue` defaults to true, explicit JSON false remains false, and non-boolean JSON values (including strings, numbers, null, arrays, and objects) return HTTP 400 without invoking the service.
+- Run focused acquisition route tests and all four required exact-head workflows before merge. No local test execution should be claimed unless actually performed.
+
+---
+
 ## 2026-10-15 — PR #116 merged: Proxmox MCP SDK compatibility and handler regression
 
 - PR #116 merged at `9e6979203cbdb6f2d38225584952136170eb2df5` from exact tested PR head `a14accac574d1997e6785ffbf170be136b95c5b9`.
