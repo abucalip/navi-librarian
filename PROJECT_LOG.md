@@ -1,3 +1,13 @@
+## 2026-10-15 — Service settings policy extraction (PR #95)
+
+- Implemented on branch `refactor/service-settings-policy-direct-import`, PR #95. New `service_settings.py` owns six injected settings-policy/configuration functions. Existing MCP/web wrappers in `navidrome_server.py` retain names/signatures and delegate to the module.
+- Replaced AST execution in `tests/test_service_settings.py` with direct-import tests for secret redaction, blank-password preservation, invalid URL/user/path no-write behavior, library-path update callback, and ListenBrainz validation. Dockerfile now includes the module.
+- Reviewed the focused four-file diff. All four required workflows passed on implementation revision `89fd6220afce03aa16496776d185afe132986dc8`: syntax/acquisition safety, full unit suite/Docker build, container runtime smoke, and validation-only multi-architecture build. No local tests were run.
+- PR #95 remains open pending final-head CI after this documentation update. No publication, deployment, or production runtime verification claimed.
+- Next: continue a caller-driven audit for the next independently testable settings/service seam; preserve MCP compatibility until the complete web dependency graph is decoupled and tested.
+
+---
+
 ## 2026-10-15 — Web dependency audit and settings extraction seam
 
 - After PR #93 merged at `e5d908b11e2a70e8294d0781c630238d4361e503`, audited the current GitHub `main` web/entry-point dependency graph and relevant docs/tests.
