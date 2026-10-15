@@ -1,3 +1,11 @@
+## slskd transfer listing service — in progress (2026-10-15)
+
+`slskd_transfers.py` owns the HTTP transfer-list request and recursive normalization of the response into flat file records carrying `_transfer_directory`. It receives the HTTP client as an injected dependency and does not import or initialize the application. `navidrome_server._slskd_download_transfer_files(base_url, headers, username)` remains the compatibility adapter used by acquisition candidate-start validation. Preserve the 8-second request timeout, encoded username path, 404-as-empty behavior, HTTP error propagation, directory inheritance, and input immutability. Docker packaging and direct-import tests are part of this extraction. Verification is pending.
+
+## Expected slskd track count — extracted (PR #155)
+
+`slskd_search.py` owns expected track-count metadata parsing. `navidrome_server._discovery_expected_track_count()` remains a compatibility adapter for the acquisition coordinator. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67` after all four required workflows passed on exact head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`. Deployment remains unverified.
+
 ## Music path default policy — extracted (PR #151)
 
 `music_paths.py` owns the pure decision policy for configured music path and host mount fallback. It receives environment and directory-existence behavior from the caller, so importing it does not initialize application state. `navidrome_server._default_music_dir()` remains a compatibility adapter. Direct-import tests and Docker packaging are included; all four required exact-head workflows passed before merge. Deployment remains unverified.
