@@ -1,7 +1,8 @@
-## 2026-10-15 — Last.fm settings policy boundary
+## 2026-10-15 — Last.fm settings policy boundary merged
 
-- Last.fm API-key update policy is being extracted into `service_settings.py` behind injected read/write callbacks. The legacy `discovery_set_lastfm_settings` function remains the MCP/web adapter and owns no duplicated persistence logic.
-- SQLite persistence/schema and network connectivity testing remain in `navidrome_server.py`. Responses report only whether a key is configured; never return the key itself.
+- PR #97 merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
+- `service_settings.py` owns Last.fm API-key update policy behind injected settings read/write callbacks. `discovery_set_lastfm_settings` remains the MCP/web adapter with its existing signature and JSON response; SQLite persistence/schema and connectivity testing remain in `navidrome_server.py`.
+- Responses expose only `api_key_configured`, never the key. Exact-head CI passed all four required workflows; no publication, deployment, or production runtime verification.
 
 ---
 
