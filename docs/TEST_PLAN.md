@@ -722,8 +722,9 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 
 
 
-## Lazy auth service dependency regression (PR in progress)
+## Lazy auth service dependency regression — PR #112 verified
 
 - Authentication integration tests inject a fake librarian service rather than patching a module-level `app.main.librarian` binding.
-- A subprocess test asserts that importing `app.main` does not import `navidrome_server.py`. Existing tests continue to cover first-run setup, duplicate setup refusal, password/username validation, login failures/success, rate limiting, logout cookie clearing, session reuse/tampering, HTTPS cookie policy, public assets, and protected page/API behavior.
-- Verify focused auth integration/security tests, the full unit suite, syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture checks on the exact final PR head. No image publication, deployment, or production runtime verification.
+- A subprocess test asserts that importing `app.main` does not import `navidrome_server.py`. Existing setup, duplicate setup refusal, credential validation, login failure/success, rate limiting, logout cookie clearing, session reuse/tampering, HTTPS cookie policy, public assets, and protected page/API behavior remain covered.
+- Exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed the required workflows: syntax/acquisition safety `38737672741`, Docker packaging/full unit suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture validation `38737672689`.
+- No separate local test execution, image publication, deployment, or production runtime verification.
