@@ -7,8 +7,12 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed, import_source_unless_dismissed, existing_acquisition_response
-from acquisition_lifecycle import skip_request_error
+from acquisition_orchestration import (
+    existing_acquisition_response, import_source_unless_dismissed,
+    queue_candidate_unless_dismissed, request_skip_acquisition_source,
+    switch_source_unless_dismissed,
+)
+from acquisition_lifecycle import should_resume_monitor, skip_request_error
 
 
 class AcquisitionSkipTransitionTests(unittest.TestCase):
@@ -248,16 +252,15 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
             self.start_calls.append(args)
             if start is not None:
                 return start(*args)
-            self.active_watchers.add(self.identity)
+            with self.watcher_lock:
+                self.active_watchers.add(self.identity)
         return existing_acquisition_response(
             "Artist", "Album", self.identity, job, status, watcher_active,
             active_requests=self.active_requests,
             start_watcher=start_watcher,
             watcher_lock=self.watcher_lock,
             active_watchers=self.active_watchers,
-            lifecycle=SimpleNamespace(should_resume_monitor=__import__(
-                "acquisition_lifecycle"
-            ).should_resume_monitor),
+            lifecycle=SimpleNamespace(should_resume_monitor=should_resume_monitor),
             json_module=json,
         )
 
@@ -299,6 +302,8 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
             with self.subTest(status=status):
                 result = json.loads(self.run_decision(status=status))
                 self.assertEqual(result["status"], status)
+        result = json.loads(self.run_decision(status="downloading", watcher_active=True))
+        self.assertEqual(result["status"], "already_in_progress")
         self.active_requests.add(self.identity)
         result = json.loads(self.run_decision())
         self.assertEqual(result["status"], "already_in_progress")
