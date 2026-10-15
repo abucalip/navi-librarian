@@ -294,3 +294,8 @@ PR #112 exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed all four re
 ## Listening profile aggregation — extraction in progress
 
 The pure aggregation of ListenBrainz history into the existing recent-listening profile payload lives in `listening_profile.py`. The `recent_listening_profile(days)` legacy MCP-facing function remains responsible for input validation, provider retrieval/error mapping, and JSON serialization, and delegates only aggregation. The module is packaged in Docker and has direct-import tests for payload shape, counts, empty history, and stable tie order. Exact-head CI and merge are pending; publishing/deployment remain paused.
+
+
+## Discovery library snapshot — extraction in progress
+
+`discovery_library_snapshot.py` owns cached artist/album inventory assembly with injected Navidrome API, collection-normalization, and discovery-store callbacks. The legacy `_discovery_library_snapshot()` wrapper remains in `navidrome_server.py`. Cache freshness/schema checks, album-ID deduplication, 500-item pagination, and the 50,000-album safety stop are covered by direct-import tests. Docker packaging is updated; exact-head verification and merge are pending.

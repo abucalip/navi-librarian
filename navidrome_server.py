@@ -2168,61 +2168,14 @@ def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
 
 
 def _discovery_library_snapshot():
-    cached = _discovery_read_list("library_snapshot")
-    if (
-        cached
-        and time.time() - cached["generated_at"] < 10 * 60
-        and (
-            not cached["payload"].get("albums")
-            or "song_count" in cached["payload"]["albums"][0]
-        )
-    ):
-        return cached["payload"]
-
-    root = api_call("getArtists")
-    indexes = root.get("artists", {}).get("index", [])
-    artists = [
-        {
-            "id": artist.get("id"),
-            "name": artist.get("name", "").strip(),
-            "album_count": int(artist.get("albumCount") or 0),
-        }
-        for index in indexes
-        for artist in items(index.get("artist"))
-        if artist.get("name")
-    ]
-
-    albums = []
-    seen_ids = set()
-    complete = False
-    for offset in range(0, 50000, 500):
-        album_root = api_call(
-            "getAlbumList2", type="alphabeticalByName", size=500, offset=offset
-        )
-        page = items(album_root.get("albumList2", {}).get("album"))
-        for album in page:
-            album_id = album.get("id")
-            if album_id and album_id in seen_ids:
-                continue
-            if album_id:
-                seen_ids.add(album_id)
-            albums.append({
-                "id": album_id,
-                "artist": album.get("artist", ""),
-                "album": album.get("name", ""),
-                "year": album.get("year"),
-                "song_count": int(album.get("songCount") or 0),
-                "coverArt": album.get("coverArt"),
-            })
-        if len(page) < 500:
-            complete = True
-            break
-    if not complete:
-        raise RuntimeError("Navidrome album inventory exceeded the safety limit.")
-
-    snapshot = {"artists": artists, "albums": albums}
-    _discovery_write_list("library_snapshot", snapshot)
-    return snapshot
+    """Compatibility adapter for cached Navidrome library inventory assembly."""
+    from discovery_library_snapshot import build_library_snapshot
+    return build_library_snapshot(
+        api_call,
+        items,
+        _discovery_read_list,
+        _discovery_write_list,
+    )
 
 
 def _lastfm_top_albums(artist, limit=8):

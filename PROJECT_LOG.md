@@ -1,7 +1,13 @@
-## 2026-10-16 — Listening profile aggregation extraction (PR pending)
+## 2026-10-16 — Listening profile aggregation extraction completed (PR #167)
 
-- Branch `refactor/extract-listening-profile`, base `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`.
-- Added `listening_profile.py` for pure aggregation and retained `recent_listening_profile(days)` as the compatibility adapter. Added direct-import tests and Docker packaging.
+- Exact tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; squash merge `6b656dc7218280aa0d37e738a881061ceefde55e`.
+- Extracted pure aggregation into `listening_profile.py), kept the legacy adapter, added direct-import tests, and updated Docker packaging.
+- All four required workflows passed on the exact final head: syntax `38825137244`, full unit suite/build `38825137296`, runtime smoke `38825137346`, and validation-only multi-architecture `38825137280`. Assistant-side local tests were not run. No publishing or deployment.
+
+## 2026-10-16 — Discovery library snapshot extraction (PR pending)
+
+- Branch `refactor/extract-discovery-library-snapshot`, base `6b656dc7218280aa0d37e738a881061ceefde55e`.
+- Added `discovery_library_snapshot.py` for cached inventory assembly with injected dependencies and retained the legacy wrapper. Added direct-import tests for cache behavior, schema migration, deduplication, pagination, and safety-limit refusal; updated Docker packaging.
 - Focused/full tests and all four required workflows on the exact final PR head remain pending. No merge, publication, deployment, or runtime verification is claimed.
 
 ## 2026-10-16 — Multi-extraction session: PRs #163, #164, and #165 merged
