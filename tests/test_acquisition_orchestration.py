@@ -246,7 +246,6 @@ class AcquisitionImportGuardTests(unittest.TestCase):
 class ExistingAcquisitionRecoveryTests(unittest.TestCase):
     def setUp(self):
         self.identity = ("artist", "album")
-        self.active_requests = set()
         self.active_watchers = set()
         self.watcher_lock = threading.RLock()
         self.start_calls = []
@@ -368,7 +367,6 @@ class AcquisitionReservationLifecycleTests(unittest.TestCase):
 
         self.assertEqual(result, "done")
         self.assertEqual(active, {other})
-
 
 
 class AcquisitionRequestReservationTests(unittest.TestCase):
