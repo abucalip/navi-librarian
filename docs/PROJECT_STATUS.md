@@ -1,8 +1,8 @@
-## 2026-10-15 — Acquisition cleanup directory-swap hardening (verification pending)
+## 2026-10-15 — PR #99 merged: acquisition cleanup directory-swap hardening
 
-- Safety audit found a time-of-check/time-of-use gap in `clean_acquisition_source`: the code preflighted a target folder, called external transfer lookups, then deleted via path-based operations. Replacing that folder with a symlink during the callback could redirect deletion outside the intended folder.
-- The fix pins the verified directory through no-follow, descriptor-relative traversal, compares device/inode identities, and unlinks only verified basenames relative to the pinned directory. Added a regression that swaps the album folder for a symlink during transfer lookup and asserts both the outside target and moved original album files remain intact.
-- Branch: `fix/acquisition-cleanup-directory-race`. Implementation and regression are committed; exact-head CI and focused/full test results are pending. No production data or deployment was touched.
+- PR #99 (https://github.com/abucalip/navi-librarian/pull/99) merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25`, from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
+- Cleanup now opens the verified directory using no-follow, descriptor-relative traversal; validates device/inode identity; and unlinks verified files relative to the pinned directory. Added a regression that replaces the album folder with a symlink during transfer lookup and verifies the outside target and moved original album files remain untouched.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38724377954`, Docker packaging/full unit suite/build `38724378021`, runtime smoke `38724378097`, and validation-only multi-architecture image validation `38724377870` (publishing paused). No separate local test run, production deletion test, publication, deployment, or runtime verification.
 
 ---
 
