@@ -850,3 +850,9 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 
 - Direct-import tests cover Navidrome ping success and ValueError mapping, Last.fm missing-key and authentication-failure handling without leaking the configured key, and ListenBrainz 404 profile handling.
 - Run `python -m unittest tests.test_service_settings -v`, the full `python -m unittest discover -s tests -v` suite, syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture validation on the exact final PR head. Do not claim tests passed unless CI evidence exists for that SHA; publishing remains paused.
+
+
+## PR #140 — settings connection extraction (2026-10-15)
+
+- Exact PR head `cacdbc809f35040f0cc1bc70a39251ff80b7315e`: all required CI workflows passed — Python syntax `38784634643`; Docker packaging/full unit suite/build `38784634599`; container runtime smoke `38784635107`; validation-only multi-architecture image validation `38784634797`.
+- PR #140 merged as `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. These results are CI evidence only; no separate local test run or production runtime verification is claimed.
