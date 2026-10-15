@@ -1,3 +1,11 @@
+## 2026-10-15 — slskd settings policy extracted (PR #96)
+
+- `service_settings.py` now owns the pure slskd configuration validation, safe settings serialization, and update policy behind injected persistence/path callbacks. `navidrome_server.py` retains MCP adapters and remains the owner of SQLite persistence, connection tests, and runtime `MUSIC_DIR`.
+- Quality priority validation rejects invalid tiers before writes. The API key remains write-only in settings responses, and the runtime music directory changes only after settings persistence succeeds.
+- Exact implementation head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed all four required workflows; the documentation-updated head must be checked again before merge. The web app still imports the legacy module, so MCP retirement is not in scope.
+
+---
+
 ## 2026-10-15 — Settings-policy boundary follow-up
 
 - PR #95 moved Navidrome, ListenBrainz, and Last.fm settings policy to direct-import `service_settings.py`; legacy MCP/web adapters and persistence ownership remain in `navidrome_server.py`.
