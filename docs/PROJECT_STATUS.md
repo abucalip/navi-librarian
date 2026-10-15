@@ -1112,3 +1112,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Direct-import regressions prove mismatched directory metadata, absolute paths, and Windows drive-qualified paths refuse cancellation and preserve local files.
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety 38751732156; Docker packaging/full unit suite/build 38751732263; container runtime smoke 38751732282; validation-only multi-architecture image validation 38751732196. Publishing remained paused.
 - No separate local test run, live slskd operation, production deletion test, image publication, deployment, or production runtime verification is claimed. This is not a diagnosis or fix for the deferred acquisition-dismissal HTTP 409.
+
+
+## 2026-10-15 — Discovery refresh API count validation in progress
+
+- Backend audit found that `POST /api/discovery/{list_name}/refresh` converted `count` with `int(...)`, silently accepting numeric strings and booleans and truncating floats. This could turn malformed input into a different refresh request.
+- Branch `fix/discovery-refresh-strict-count` now requires a real JSON integer from 1 through 20 (while preserving the omitted default of 20) and adds direct-route regression cases for strings, floats, booleans, null, arrays, objects, and range violations.
+- Exact-head tests and CI are pending. No local test execution, merge, publication, deployment, or production runtime verification is claimed.
