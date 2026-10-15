@@ -113,6 +113,13 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
 
+**Contrast fix (C1 of the external critique, see PR #141).** The `--subtle` token was raised
+from `#77796f` to `#94958b` on branch `fix/subtle-contrast`. The critique recommended
+approximately `#8a8b81`; that clears AA on three of the four backgrounds `--subtle` renders
+on but leaves only 4.53:1 on `--surface`, so a value with real margin was chosen instead.
+See section 5c.
+
+
 ### Priorities from the Claude critique (see section 4a)
 
 An external design critique scored the UI 17/36 and ranked its findings. The following
@@ -310,6 +317,46 @@ the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the tr
 `1e-05s`; all eight navigation items are reachable by Tab with a visible focus ring; 8/8
 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; and no console or page errors.
+
+## 5c. Contrast findings (`--subtle`)
+
+Measured on the running app, reading the real composited background behind each use rather
+than assuming `--bg`.
+
+### Three live failures, all on `--subtle`
+
+| Use | Background | Before | After |
+|---|---|---|---|
+| `nav::before` "YOUR COLLECTION" label | `#1d1f1e` | **3.75:1 FAIL** | 5.47:1 |
+| `footer` notice | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.status-line.is-loading` glyph `…` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.status-line.is-empty` glyph `—` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.genre-row-count`, track numbers | page / modal | fail | pass |
+
+WCAG AA requires 4.5:1 for normal text.
+
+**Two of the failures were glyphs added in PR #121 specifically for accessibility.** That
+work introduced a state vocabulary carried by a leading glyph; two of the five glyphs were
+painted in the one token that failed contrast. An accessibility affordance that cannot be
+seen does not do its job. All five glyphs now pass: loading 5.76:1, empty 5.76:1, error
+4.8:1 (uses `--red`, unchanged, pre-existing), success 9.23:1, progress 10.5:1.
+
+### Why `#94958b` rather than the suggested `#8a8b81`
+
+Only four backgrounds actually matter, because `--subtle` is never used on `--surface-raised`
+or `--surface-hover`:
+
+| Candidate | nav `#1d1f1e` | page `#191a1a` | modal `#202221` | card `#222424` | worst |
+|---|---|---|---|---|---|
+| `#77796f` (before) | 3.75 | 3.94 | 3.62 | 3.53 | **3.53** |
+| `#8a8b81` (suggested) | 4.81 | 5.06 | 4.64 | 4.53 | 4.53 (no margin) |
+| **`#94958b` (chosen)** | 5.47 | 5.76 | 5.28 | 5.15 | **5.15** |
+
+The lighter value keeps `--subtle` measurably quieter than `--muted` (`#a5a69c`, 7.09:1 on
+`--bg`), so the three-tier text hierarchy survives: subtle 5.76, muted 7.09, text 15.01.
+
+Also verified: the two save buttons flagged as unverified by the critique measure 10.5:1
+(dark on `--yellow`) and need no change.
 
 ## 5d. Landmark naming findings
 

@@ -2,7 +2,13 @@
 :root {
   color-scheme: dark;
   --bg: #191a1a; --surface: #222424; --surface-raised: #292b2a; --surface-hover: #30322f;
-  --border: #3b3d39; --text: #f0eee5; --muted: #a5a69c; --subtle: #77796f;
+  --border: #3b3d39; --text: #f0eee5; --muted: #a5a69c;
+  /* --subtle carries functional metadata: the loading and empty state glyphs, nav and
+     footer labels, genre counts and track numbers. At #77796f it measured 3.53-3.94:1 on
+     the backgrounds it actually renders on, below the 4.5:1 WCAG AA floor. #94958b is the
+     lowest value that clears AA on all four (worst 5.15:1 on --surface) while staying
+     quieter than --muted, which is 5.76:1 on the same background. */
+  --subtle: #94958b;
   --yellow: #e9c64a; --yellow-dim: #554b26; --red: #e05b4f; --green: #a8c59a;
   --radius: 6px; --display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --body: "IBM Plex Sans", sans-serif; --mono: "IBM Plex Mono", monospace;
