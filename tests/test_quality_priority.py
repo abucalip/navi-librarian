@@ -6,6 +6,7 @@ import re
 import sqlite3
 import tempfile
 import time
+from service_settings import set_slskd_settings
 import unittest
 from pathlib import Path
 
@@ -21,7 +22,6 @@ def load_quality_helpers(db_path, music_dir):
         "_discovery_settings_init",
         "_discovery_settings_read",
         "_discovery_settings_write",
-        "discovery_set_slskd_settings",
     }
     selected = [
         node for node in tree.body
@@ -123,12 +123,23 @@ class QualityPriorityTests(unittest.TestCase):
         settings = self.ns["_discovery_settings_read"]()
         self.assertEqual(settings["quality_priority"], old_order + ["flac_hires"])
 
+    def save_settings(self, **overrides):
+        args = {
+            "settings_read": self.ns["_discovery_settings_read"],
+            "settings_write": self.ns["_discovery_settings_write"],
+            "get_music_dir": lambda: self.music,
+            "set_music_dir": lambda path: self.ns.update({"MUSIC_DIR": path}),
+            "defaults": self.ns["_DISCOVERY_SETTINGS_DEFAULTS"],
+        }
+        args.update(overrides)
+        return json.loads(set_slskd_settings(**args))
+
     def test_saving_six_tiers_preserves_user_order(self):
         order = ["flac_hires", "flac_16_44", "mp3_192", "flac_cd", "mp3_320", "mp3_193_319"]
-        result = json.loads(self.ns["discovery_set_slskd_settings"](
+        result = self.save_settings(
             slskd_url="http://localhost:5030",
             quality_priority_json=json.dumps(order),
-        ))
+        )
         self.assertTrue(result["ok"])
         self.assertEqual(result["quality_priority"], order)
         self.assertEqual(self.ns["_discovery_settings_read"]()["quality_priority"], order)
@@ -141,10 +152,10 @@ class QualityPriorityTests(unittest.TestCase):
         ]
         for order in invalid_orders:
             with self.subTest(order=order):
-                result = json.loads(self.ns["discovery_set_slskd_settings"](
+                result = self.save_settings(
                     slskd_url="http://localhost:5030",
                     quality_priority_json=json.dumps(order),
-                ))
+                )
                 self.assertFalse(result["ok"])
 
     def test_settings_ui_uses_sortable_rows_and_has_non_drag_controls(self):
