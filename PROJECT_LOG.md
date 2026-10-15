@@ -1,3 +1,13 @@
+## 2026-10-15 — Acquisition lifecycle AST-boundary audit
+
+- Based on GitHub `main` `c6017f7a59e2aaec09e498ca4bda9315b0325cd3`, reviewed the remaining AST-coupled cases in `tests/test_acquisition_safety.py` against direct-import orchestration/lifecycle/watcher/import/recovery tests.
+- No test migration was made because each remaining case protects an integration boundary: simultaneous request reservation under the shared transition lock; persistence-before-filesystem-import; top-level refusal for incomplete saved candidates; explicit dismissed-job Get success and refusal; stale watcher recovery without requeue; and broad-query retry sequencing/result diagnostics.
+- Existing direct helper tests remain useful complementary coverage, not substitutes for the coordinator-level assertions. No production behavior changed and no local tests were run.
+- Baseline `main` `c6017f7a59e2aaec09e498ca4bda9315b0325cd3` has all four required workflows green (syntax, Docker packaging/full suite, runtime smoke, validation-only multi-architecture; publishing paused). This does not validate the documentation branch.
+- Next: read-only audit of web and entry-point dependencies on `navidrome_server.py`, then select one narrow independently tested service boundary. MCP retirement remains deferred until all web callers and compatibility needs are verified.
+
+---
+
 ## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/92

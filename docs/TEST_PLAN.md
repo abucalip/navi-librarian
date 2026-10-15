@@ -1,3 +1,13 @@
+## 2026-10-15 — Acquisition lifecycle AST-boundary audit
+
+- Compared the remaining AST-coupled acquisition lifecycle regressions with direct-import tests on `main`. No test was deleted because each still covers top-level orchestration/adapter behavior not fully exercised by isolated helper tests.
+- Keep the simultaneous-request test for shared-lock/reservation integration; keep the import-persistence-failure test for persist-before-filesystem-import ordering; keep incomplete-saved-candidate coverage for top-level no-search/no-watcher behavior; keep both dismissed-job Get outcomes for adapter/status behavior; keep stale-watcher recovery for coordinator routing/no-requeue behavior; and keep broad-query retry for end-to-end sequencing/diagnostics.
+- Direct tests for reservation, recovery decisions, reactivation preflight, polling, and lifecycle policy remain complementary. Any future migration must prove equivalent integration-boundary assertions before removing an AST case.
+- Audit only; no code/tests changed and no local tests were run. The four required workflows passed on baseline `main` `c6017f7a59e2aaec09e498ca4bda9315b0325cd3`; these are not results for this documentation branch.
+- Next: read-only audit of web and entry-point dependencies on `navidrome_server.py` before proposing any MCP retirement. Keep MCP compatibility and runtime dependencies intact until web-required behavior has independently tested owners.
+
+---
+
 ## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight coverage
 
 - PR #92 merged as `60698f7bf1413e4c643309e200d1ace2e268bee3` from exact tested head `1f0ce2174e1e60f3aab7c898dd534b8b1f11e858`.

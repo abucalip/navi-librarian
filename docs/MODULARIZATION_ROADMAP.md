@@ -1,3 +1,12 @@
+## 2026-10-15 — Acquisition AST-boundary audit complete
+
+- Reviewed remaining AST-coupled lifecycle tests against the direct-import suites and current orchestration helpers.
+- No further test migration was safe: the remaining cases protect shared-lock/reservation integration, persist-before-import ordering, top-level handling of incomplete saved state, dismissed-Get adapter/status behavior, stale watcher recovery without requeue, and end-to-end broad-query retry diagnostics. The isolated helpers are covered directly, but those tests do not replace the integration assertions.
+- No application/test code changed in this audit. Do not treat baseline `main` CI as validation of a future branch.
+- **Next implementation priority:** read-only audit of `navidrome_server.py` dependencies from `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, `app/api/settings.py`, and `server.py`. Use the findings to select the smallest service boundary for independent web tests; do not retire MCP code/dependencies as part of the audit.
+
+---
+
 ## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight seam
 
 - PR #92 merged at `60698f7bf1413e4c643309e200d1ace2e268bee3` from exact tested head `1f0ce2174e1e60f3aab7c898dd534b8b1f11e858`.
