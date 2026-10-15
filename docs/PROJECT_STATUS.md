@@ -1,8 +1,11 @@
-## 2026-10-15 — PR #144 merged; PR #142 awaiting conflict resolution
+## 2026-10-15 — PR #142 merged after conflict resolution
 
-- PR #144, “fix: give landmarks accessible names,” merged after the user published the manual test report and all four required CI workflows passed on exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`. Squash merge: `f1008bb3af25c7c76dac8bae67177a07b21df147`.
-- PR #142’s manual test report is published for exact head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`; all four required workflows passed on that head (Docker packaging `38790385782`, image validation `38790385783`, Python syntax `38790385860`, runtime smoke `38790385745`). The merge attempt was rejected by GitHub with HTTP 405 because the PR has merge conflicts after subsequent main changes. It remains open and unmerged; do not claim it merged.
-- Next action: resolve the PR #142 conflict without force-pushing or overwriting the merged landmark documentation, rerun required CI on the resulting exact PR head, then merge. Publishing/deployment remain paused; no production runtime verification is claimed.
+- PR #142, “fix: raise --subtle to meet WCAG AA contrast,” was rebased by preserving both parent histories in a merge-resolution commit and integrating the contrast changes with the already-merged PR #144 landmark accessibility changes. Resolved head: `dd5561bff2ca8b89ca934a60f8348e67a044093c`; squash merge: `77faf5e03fdc4985541b0da5952568d0925336df`.
+- The resolved tree preserves PR #144’s landmark documentation and keeps `--subtle: #94958b` plus its measured-contrast rationale. PR #142 is closed and merged.
+- All four required workflows passed on the exact resolved PR head: Docker packaging `38794146977`; validation-only multi-architecture image build (publishing paused) `38794146985`; Python syntax `38794147000`; container runtime smoke `38794146979`.
+- Manual browser reports exist for the original contrast head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9` and PR #144’s separately tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`. The combined conflict-resolution head was not manually retested as one combined revision; no new visual result is claimed.
+- Publishing/deployment remain paused. No production runtime verification is claimed.
+
 
 ## 2026-10-15 — PR #143 merged: settings persistence extraction
 
