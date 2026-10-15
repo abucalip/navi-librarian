@@ -618,3 +618,10 @@
 - All four required workflows passed on the exact PR head: Docker packaging `38766740766`, runtime smoke `38766741159`, Python syntax `38766741253`, and validation-only image validation `38766741247` (publishing paused).
 - Manual browser report: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079. All eight checklist items passed on the exact tested commit; zero failures.
 - No image publication, deployment, or production runtime verification.
+
+## 2026-10-15 — PR #126 merged: acquire `auto_queue` validation
+
+- PR #126: https://github.com/abucalip/navi-librarian/pull/126; exact final tested head `a67be60e8f35a3a6e9430ac3ad30700532d958cc`; squash merge `3b3a9d47538d51820b6ce162f524812d0800f3c1`.
+- `POST /api/acquire` now accepts only a JSON boolean for `auto_queue`; omitted input still defaults to `true`, explicit `false` is preserved, and invalid strings, numbers, null, arrays, or objects return HTTP 400 before the service call. Regression tests cover those cases.
+- All four required workflows passed on the exact final PR head: Python syntax `38756653450`, Docker packaging/full suite/build `38756653379`, container runtime smoke `38756653406`, and validation-only multi-architecture image validation `38756653398` (publishing paused).
+- No separate local test run, image publication, deployment, or production runtime verification is claimed.
