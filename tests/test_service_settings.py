@@ -81,7 +81,7 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(self.music_dir, Path("/music"))
 
         result = json.loads(set_navidrome_settings(
-            self.read_settings, self.write_settings, self.music_dir,
+            self.read_settings, self.write_settings, lambda: self.music_dir,
             self.set_music_dir, "http://navidrome:4533", "", "password",
         ))
         self.assertFalse(result["ok"])
