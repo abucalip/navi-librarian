@@ -1,8 +1,10 @@
-## 2026-10-15 — PR #144 merged; PR #142 blocked by merge conflict
+## 2026-10-15 — PR #142 conflict resolution and merge
 
-- PR #144: manual test report published by user; all four required workflows passed on exact head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`. Squash merge `f1008bb3af25c7c76dac8bae67177a07b21df147`.
-- PR #142: manual report published for exact head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`; all four workflows passed (Docker packaging `38790385782`, image validation `38790385783`, syntax `38790385860`, runtime smoke `38790385745`). GitHub rejected the merge with HTTP 405: merge conflicts. PR remains open. Conflict resolution must preserve the landmark changes/docs now on main; rerun all four workflows on the final resolved head before merging.
-- Publishing/deployment remain paused; no production runtime verification is claimed.
+- Conflict-resolution commit: `dd5561bff2ca8b89ca934a60f8348e67a044093c`. The commit integrates current `main` (including merged PR #144) while preserving PR #142’s CSS contrast token and documentation section. No force push was used.
+- All four required workflows passed on that exact head: Docker packaging `38794146977`; validation-only multi-architecture image validation `38794146985`; Python syntax `38794147000`; container runtime smoke `38794146979`.
+- PR #142 squash-merged at `77faf5e03fdc4985541b0da5952568d0925336df`. Publishing/deployment remain paused.
+- Manual UI reports were published for the original contrast head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9` and PR #144 head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`; the combined resolution head was not separately browser-tested. No production runtime verification is claimed.
+
 
 ## 2026-10-15 — PR #143 merged: settings persistence extraction
 
