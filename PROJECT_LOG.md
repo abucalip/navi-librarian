@@ -1,9 +1,9 @@
-## 2026-10-15 — Malformed session token fail-closed regression
+## 2026-10-15 — PR #133 merged: malformed session token fail-closed regression
 
-- Audited application assembly and authentication integration. The app import isolation test already asserts `navidrome_server` is not imported, and auth routes are dependency-injected. Found that `session_username()` performed ASCII encoding of untrusted token data outside its exception handling, so a non-ASCII token could escape as `UnicodeEncodeError`.
-- Added `test_malformed_non_ascii_session_token_is_rejected_without_exception` before changing implementation. Fixed by validating token type and guarding signature encoding/verification together with payload parsing. No valid-session semantics changed.
-- Test commit: `318f4e7077356aee2994f6401db42cb087395e0e`; implementation commit: `c3d55096b6df4ab462132f78f004cfefd1343bb7`; branch `fix/auth-malformed-session-token`.
-- Focused tests and CI remain pending; do not treat this as verified until exact-head workflows pass.
+- Audited app assembly and auth integration; existing import-isolation coverage asserts that importing `app.main` does not initialize `navidrome_server`, and auth routes use dependency injection.
+- Fixed `session_username()` so non-ASCII token segments and non-string inputs are rejected safely instead of leaking `UnicodeEncodeError`; regression test was committed before the implementation change.
+- PR #133: https://github.com/abucalip/navi-librarian/pull/133. Exact tested head `60df367eb4004fe439d1abcd61957c5986111b90`; all four required workflows passed on that SHA: syntax `38775004824`, Docker packaging/test-and-build `38775004877`, container smoke `38775004963`, and image validation (publishing paused) `38775004827`.
+- Squash merge: `ae49bacf3c793fac70688f55c2d1d7c9ed54cc13`. Post-merge workflows were queued at closeout; no local test run, publication, deployment, or production runtime verification is claimed.
 
 ---
 
