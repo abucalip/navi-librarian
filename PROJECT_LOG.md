@@ -1,3 +1,12 @@
+## 2026-10-15 — Acquisition monitor payload extraction (PR preparation)
+
+- Extracted repeated selected-source/fallback-source payload normalization from `_discovery_acquire_album_impl` into `acquisition_monitor_payload.py`.
+- Added direct-import regressions for filename/size-only file records, quality summary normalization, preservation of fallback metadata, and no mutation of source candidates.
+- The MCP-facing function and orchestration decisions remain in place; queue handling, cancellation/cleanup, shared locks, persistence, and watcher lifecycle were not moved.
+- Dockerfile includes the new module. Regression tests and syntax/full-suite/packaging/runtime workflows are still pending exact final PR-head verification at this entry; no local execution or deployment is claimed.
+
+---
+
 ## 2026-10-15 — PR #134 merged: concurrent login rate-limit race
 
 - PR: https://github.com/abucalip/navi-librarian/pull/134. Added a deterministic integration regression before implementation, then reserved each login attempt atomically under a dedicated lock while keeping password verification outside the lock.
