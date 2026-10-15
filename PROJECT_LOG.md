@@ -1,3 +1,12 @@
+## 2026-10-15 — Malformed session token fail-closed regression
+
+- Audited application assembly and authentication integration. The app import isolation test already asserts `navidrome_server` is not imported, and auth routes are dependency-injected. Found that `session_username()` performed ASCII encoding of untrusted token data outside its exception handling, so a non-ASCII token could escape as `UnicodeEncodeError`.
+- Added `test_malformed_non_ascii_session_token_is_rejected_without_exception` before changing implementation. Fixed by validating token type and guarding signature encoding/verification together with payload parsing. No valid-session semantics changed.
+- Test commit: `318f4e7077356aee2994f6401db42cb087395e0e`; implementation commit: `c3d55096b6df4ab462132f78f004cfefd1343bb7`; branch `fix/auth-malformed-session-token`.
+- Focused tests and CI remain pending; do not treat this as verified until exact-head workflows pass.
+
+---
+
 ## 2026-10-15 — PR #131 merged: Get/request state reporting
 
 - PR: https://github.com/abucalip/navi-librarian/pull/131

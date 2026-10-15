@@ -40,6 +40,11 @@ class AppAuthenticationTests(unittest.TestCase):
         self.assertIsNone(auth.session_username(token + "tampered", secret, settings, now=now + 60))
         self.assertIsNone(auth.session_username("", secret, settings, now=now + 60))
 
+    def test_malformed_non_ascii_session_token_is_rejected_without_exception(self):
+        secret = b"test signing secret with enough entropy"
+        settings = lambda: {"app_auth_username": "test-user"}
+        self.assertIsNone(auth.session_username("badé.token", secret, settings))
+
     def test_session_for_different_username_is_rejected(self):
         secret = b"test signing secret with enough entropy"
         settings = lambda: {"app_auth_username": "test-user"}

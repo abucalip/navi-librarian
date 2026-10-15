@@ -1,3 +1,13 @@
+## 2026-10-15 — Authentication boundary audit: malformed session token
+
+- Found a correctness gap in `app/security/auth.py`: `session_username()` encoded the untrusted token segment as ASCII before entering its exception guard. A malformed non-ASCII token could raise `UnicodeEncodeError` rather than fail closed, turning a bad session cookie into a server error on protected requests.
+- Added the regression first in `tests/test_app_auth.py`, then moved signature verification and token parsing inside the guarded block and reject non-string token inputs. Valid signed sessions, expiry checks, and username matching are unchanged.
+- Branch: `fix/auth-malformed-session-token`; implementation commit `c3d55096b6df4ab462132f78f004cfefd1343bb7`; regression-test commit `318f4e7077356aee2994f6401db42cb087395e0e`.
+- Tests/CI have not yet been run on this branch; exact-head CI is required. No merge, publication, deployment, or runtime verification claimed.
+- Next: run focused authentication tests and all required workflows on the final PR head, then merge only if they pass.
+
+---
+
 ## 2026-10-15 — PR #131 merged: Get/request state reporting
 
 - PR #131 merged to `main` by squash at `5fafad0b5a2d94ef2473c0a7c121d647cf8bdc76`, from tested head `7eb009c92821b6eb9dfb33326e7dfc3d81fd7244`.
