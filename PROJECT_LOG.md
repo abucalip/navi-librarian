@@ -527,3 +527,13 @@
 - Added a subprocess regression for import-time decoupling and converted auth integration tests to fake-service injection while retaining existing auth behavior assertions.
 - All four required workflows passed on the exact head: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`.
 - No separate local tests, image publication, deployment, or production runtime verification. PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local tests, image publication, deployment, or production runtime verification. Publishing remains paused.
+
+
+## 2026-10-15 — Proxmox MCP handler wiring regression in progress
+
+- Audit finding: PR #114 added direct tests for the command allowlist, but those tests did not exercise the actual server.run handler. A future wiring regression could bypass the policy while the policy-only suite stayed green.
+- Narrow follow-up: make importing server.py side-effect-safe by starting FastMCP only as a script, then test the handler itself with SSH mocked. Rejected commands must never invoke subprocess; accepted commands must preserve the existing SSH invocation and output truncation.
+- No live Proxmox command, local test run, publication, or deployment is performed by this change. Exact-head CI remains the merge gate.
+
+---
+
