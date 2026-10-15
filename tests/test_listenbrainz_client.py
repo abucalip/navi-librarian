@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from listenbrainz_client import recent_listens
 
@@ -86,6 +87,19 @@ class ListenBrainzClientTests(unittest.TestCase):
         )
         self.assertEqual(result, [{"listened_at": 99}])
         self.assertEqual(len(client.requests), 1)
+
+    def test_legacy_server_adapter_preserves_signature_and_username_lookup(self):
+        import navidrome_server
+
+        expected = [{"listened_at": 123}]
+        with patch.object(navidrome_server, "_listenbrainz_username", return_value="configured-user"), patch.object(
+            navidrome_server._listenbrainz_client,
+            "recent_listens",
+            return_value=expected,
+        ) as recent:
+            self.assertIs(navidrome_server._listenbrainz_recent(days=12, page_limit=4), expected)
+
+        recent.assert_called_once_with("configured-user", days=12, page_limit=4)
 
 
 if __name__ == "__main__":
