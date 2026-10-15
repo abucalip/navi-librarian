@@ -652,3 +652,11 @@ The source-switch guard tests must prove the dismissal check and switch callback
 - All four required exact-head workflows passed: syntax `38639793800`, Docker packaging/full unit suite `38639793772`, container runtime smoke `38639793518`, and validation-only multi-architecture `38639793667` (publishing paused). Reported tests: 15 focused auth/integration tests and 185 full-suite tests with one pre-existing skip.
 - Manual report/screenshots were published in PR #66 comments. Reported pass: desktop 1280×900, narrow 375×720, failed sign-in message/layout/button recovery, and login assets/auth-status network responses. The report marks keyboard-focus modality and first-run setup variant as skipped; do not treat those two as verified by the report.
 - Future UI PRs should retain desktop/narrow responsive checks, keyboard Tab confirmation for focus-visible styling, setup and sign-in variants where applicable, status/error recovery, and the outstanding performance observation on the next UI-facing change.
+
+
+## Acquisition import source-root race hardening — PR #103
+
+- The import module pins source and destination-parent directory descriptors without following symlinks, then uses descriptor-relative staging/moves/rollback to prevent a source-root path swap from redirecting file movement.
+- Regression coverage includes source-root symlink replacement after matching, collision-suffixed matching, cross-filesystem fallback, and rollback. Preserve existing no-overwrite destination checks, verified track matching, mount/device checks, and recovery-manifest behavior.
+- PR #103 final tested head `9de78c268af1b640a2a08afecb25a22502322a85` passed all four required workflows: syntax `38726626891`, Docker packaging/full suite/build `38726626846`, runtime smoke `38726626956`, and validation-only multi-architecture validation `38726626910`. Squash merge: `cf40df35a76d669421dcddbafd21ea22652bd0b1`. Publishing remains paused.
+- No separate assistant-local test run or live slskd/production filesystem verification is claimed.
