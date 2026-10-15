@@ -1,3 +1,11 @@
+## 2026-10-15 — MCP tool registration separated from shared service imports
+
+- Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.
+- The legacy MCP entry point remains compatible: when navidrome_server.py is executed directly, it creates the server through create_mcp_server() and runs on the existing streamable HTTP host/port. Tool names and function objects are kept in an explicit ordered registry.
+- The web service can now import navidrome_server.py without loading mcp.server.mcpserver. MCP registration is deferred to explicit server startup; the MCP package and legacy tool surface are retained.
+- Added tests/test_mcp_registry.py to assert the registry contains 27 unique tools, registers each provided function exactly once, and importing the legacy service keeps all registered functions callable without importing the MCP SDK.
+- Branch: refactor/separate-mcp-tool-registration. Exact-head CI, merge, and publication/deployment status are pending; no local test execution is claimed.
+
 ## Proxmox MCP command allowlist — PR #114 merged
 
 The separate root-level `server.py` is a host-side Proxmox MCP entry point and is not copied into the Librarian application image. Its `run(command)` tool previously forwarded arbitrary caller input to SSH despite describing the input as allowlisted. PR #114 adds a standalone strict allowlist for the documented diagnostic forms and refuses all other input before subprocess invocation. The MCP tool schema, SSH target/options, timeout, and output truncation for accepted commands are unchanged.
