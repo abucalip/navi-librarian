@@ -1,10 +1,11 @@
-## 2026-10-15 — PR #86 merged: lifecycle policy reuse in watcher recovery
+## 2026-10-15 — PR #87 merged: existing-acquisition recovery coordination
 
-- PR: https://github.com/abucalip/navi-librarian/pull/86
-- Exact tested PR head: `5663d3d76f9a5c1503160b776b3b1e8674656a64`; squash merge / updated `main`: `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64`.
-- Reused `acquisition_lifecycle.should_resume_monitor` in the stale-download recovery guard, retaining the AST test that proves incomplete saved source details do not start a watcher or requeue the album.
-- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658600290`, Docker packaging/full unit suite `38658600316`, runtime smoke `38658600300`, and multi-architecture image validation with publishing paused `38658600309`.
-- No publication, deployment, or production runtime verification. Next: extract the existing-acquisition recovery/conflict response branch behind injected dependencies while preserving top-level concurrency and persistence tests.
+- PR: https://github.com/abucalip/navi-librarian/pull/87
+- Exact tested PR head: `e019cd04fe16eda64aaf84878c766687925ba7c0`; squash merge / updated `main`: `007edbc3396b80e415b67aa8a35e6471836627bb`.
+- Extracted the existing-job response/recovery branch from `discovery_acquire_album` into `acquisition_orchestration.existing_acquisition_response`. Injected dependencies cover the lifecycle policy, watcher start, watcher lock/state, active request set, and JSON serialization. The server retains the shared transition lock and reservation lifecycle.
+- Added five direct-import tests for incomplete source refusal, valid watcher recovery without requeue, watcher-start failure, existing conflict/active request, and the no-conflict path.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658965486`, Docker packaging/full suite `38658965565` (194 tests), runtime smoke `38658965513`, and multi-architecture image validation with publishing paused `38658969866`.
+- Audit outcome: keep remaining AST tests that cover end-to-end search sequencing, concurrency, persistence-before-import, dismissed-job wrapper behavior, and stale watcher recovery. Next: extract top-level acquisition request reservation/coordination without weakening those boundaries. No publication, deployment, or production runtime verification.
 
 ---
 

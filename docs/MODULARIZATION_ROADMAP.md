@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #86 merged; acquisition recovery coordinator extraction
+## 2026-10-15 — PR #87 merged; acquisition lifecycle AST audit reconciled
 
-- PR #86 merged at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64` from exact tested head `5663d3d76f9a5c1503160b776b3b1e8674656a64`; all four required workflows passed and publishing remained paused.
-- Extract the existing-job response branch from `discovery_acquire_album` into `acquisition_orchestration.py` behind injected dependencies. Keep the server wrapper, transition lock, active-request reservation, and MCP compatibility.
-- Direct coverage must preserve fail-closed recovery for incomplete saved details, no duplicate queue on stale watcher recovery, and clear failure reporting if watcher startup raises. Keep end-to-end reservation and persistence-before-import tests.
-- Do not merge until focused/full tests, final diff review, and all four exact-head workflows pass.
+- PR #87 merged at `007edbc3396b80e415b67aa8a35e6471836627bb` from exact tested head `e019cd04fe16eda64aaf84878c766687925ba7c0`; all four required workflows passed (syntax `38658965486`, packaging/full suite `38658965565`, runtime smoke `38658965513`, validation-only multi-architecture `38658969866`; 194 tests passed).
+- `acquisition_orchestration.existing_acquisition_response` now owns existing-job conflicts and stale watcher recovery decisions behind injected dependencies. `discovery_acquire_album` retains dismissal handling, the shared transition lock, new-request reservation, implementation invocation, and reservation cleanup.
+- Audit conclusion: remaining AST cases are genuine integration boundaries (search sequencing, simultaneous request race, persistence-before-import, dismissed-job wrapper sequencing, and watcher-recovery/no-requeue wiring). Do not remove them merely to reduce AST coupling.
+- Next priority: a focused top-level acquisition request reservation/coordination extraction. Preserve the shared lock, state transitions, cleanup refusal, uncertain queue outcomes, and MCP compatibility.
 
 ---
 
