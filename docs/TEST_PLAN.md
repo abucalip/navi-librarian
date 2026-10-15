@@ -1,3 +1,10 @@
+## 2026-10-15 — Completed: slskd settings boolean validation
+
+- `PUT /api/settings/slskd` accepts explicit JSON booleans for `auto_acquire_for_me`, rejects strings (including `"false"`), numbers, null, arrays, and objects with HTTP 400 before service invocation, and preserves the existing value when the field is omitted.
+- Regression test coverage was added in PR #147 and merged at `9ce0ae37ae207f79180d98b10f71147736fe2a75`.
+- Exact tested PR head `22db7e7b4414f1ff3df7440bc47aece41bf0ae1d`: syntax, container runtime smoke, Docker packaging, and Docker image validation all passed.
+- Docker image publishing remains paused; deployment/runtime verification was not performed.
+
 ## slskd settings boolean validation — PR in progress
 
 - For `PUT /api/settings/slskd`, an omitted `auto_acquire_for_me` must remain omitted/unchanged; explicit JSON `true` and `false` must be forwarded as booleans.
