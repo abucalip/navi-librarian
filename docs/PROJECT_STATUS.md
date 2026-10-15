@@ -1,3 +1,15 @@
+## 2026-10-15 — PR #124 merged: shared UI status states
+
+- PR #124 (https://github.com/abucalip/navi-librarian/pull/124) merged by squash at `9a3aa7bd295de0de7d9408b01db22ab700e4d101`, from exact tested head `28e5a88ae362043171aaabb1f8667f6cf5ef10f7`.
+- Standardized loading, empty, error, success, progress, and neutral status text using the existing design tokens and state glyphs; applied `aria-live` to dynamically updated status regions. No API, authentication, acquisition, or domain behavior changed.
+- The published local manual report on PR #124 records all eight checklist items as PASS on the exact tested SHA, including first-run setup, dashboard/artwork, discovery, navigation/album details, settings secret handling, Get/request without a real download, acquisition cards, and no unexpected browser/server errors. Report: https://github.com/abucalip/navi-librarian/pull/124#issuecomment-6194989181.
+- All four required GitHub Actions workflows passed on the exact PR head: Python syntax `38753222840`, container runtime smoke `38753222934`, Docker packaging `38753222902`, and validation-only image validation `38753222878` (publishing paused).
+- A separate keyboard-focus reach issue was observed during verification (25 Tab presses reached only three dashboard controls); it remains unfixed and should be tracked as a focused UI follow-up by the front-end owner. The state-classifier remains heuristic.
+- State: implemented, automated CI passed, manual browser checklist passed and report published, merged. No image publication, deployment, or production runtime verification is claimed.
+- Next: prioritize the documented keyboard-focus reach defect for front-end follow-up; continue to keep publication/deployment as separate gates.
+
+---
+
 ## 2026-10-15 — PR #116 merged: Proxmox MCP SDK compatibility and handler regression
 
 - PR #116 merged at `9e6979203cbdb6f2d38225584952136170eb2df5` from exact tested PR head `a14accac574d1997e6785ffbf170be136b95c5b9`.
