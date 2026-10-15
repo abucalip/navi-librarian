@@ -2,9 +2,9 @@
 
 - Implemented on branch `refactor/service-settings-policy-direct-import`, PR #95. New `service_settings.py` owns six injected settings-policy/configuration functions. Existing MCP/web wrappers in `navidrome_server.py` retain names/signatures and delegate to the module.
 - Replaced AST execution in `tests/test_service_settings.py` with direct-import tests for secret redaction, blank-password preservation, invalid URL/user/path no-write behavior, library-path update callback, and ListenBrainz validation. Dockerfile now includes the module.
-- Reviewed the focused four-file diff. All four required workflows passed on implementation revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a`: syntax/acquisition safety, full unit suite/Docker build, container runtime smoke, and validation-only multi-architecture build. No local tests were run.
-- PR #95 remains open pending exact-head CI for this documentation update. No publication, deployment, or production runtime verification claimed.
-- Next: continue a caller-driven audit for the next independently testable settings/service seam; preserve MCP compatibility until the complete web dependency graph is decoupled and tested.
+- Reviewed the focused implementation diff and the exact final PR head `b0a9d4df97723bc05983fb362a9b3060587f0df9`. All four required workflows passed on that exact head: syntax/acquisition safety `38664285319`, Docker packaging/full unit suite/build `38664285227`, container runtime smoke `38664285195`, and validation-only multi-architecture image validation `38664285194` (publishing paused). The initial callback-injection mismatch was caught and corrected in an earlier CI cycle. No local tests were run.
+- PR #95 remains open and mergeable, not merged. No image publication, deployment, or production runtime verification is claimed.
+- Session closeout: docs reconciled to the verified final-head evidence. Next action is review PR #95's full diff and checks, then decide whether to merge; after that, continue the next narrow service-boundary extraction while preserving MCP compatibility.
 
 ---
 
@@ -347,3 +347,11 @@
 - All four required workflows passed on the exact PR head: syntax `38639793800`, Docker packaging/full unit suite `38639793772`, runtime smoke `38639793518`, and validation-only multi-architecture `38639793667` (publishing paused). Reported test runs: 15 focused tests; 185 full-suite tests, one pre-existing skip.
 - Manual report and screenshots were published on the PR. Desktop/narrow viewport, failed-sign-in state, and asset/network checks passed. The report explicitly marks keyboard-focus modality and first-run setup variant as skipped, so these are not logged as independently exercised.
 - No image publication, deployment, or production runtime verification. Next: continue acquisition-safety test migration/audit; keep front-end work within the ZCode ownership boundary.
+
+
+## 2026-10-15 — Session closeout: service settings policy extraction
+
+- PR #95 (`refactor: extract service settings policy`) remains open; final verified PR head `b0a9d4df97723bc05983fb362a9b3060587f0df9` passed all four required workflows: syntax/acquisition safety `38664285319`, Docker packaging/full unit suite/build `38664285227`, container runtime smoke `38664285195`, and validation-only multi-architecture image validation `38664285194` (publishing paused).
+- Extracted six settings-policy functions into `service_settings.py` with injected storage/path callbacks; legacy MCP/web function signatures remain adapters. Direct-import regression tests replace AST-executed tests. Docker packaging includes the new module.
+- No local tests were run. No image publication, deployment, or production runtime verification. PR #95 is not merged.
+- **Next action:** review PR #95's full diff and exact-head checks, then make an explicit merge decision; continue service-boundary modularization only after preserving the web/MCP compatibility contract.
