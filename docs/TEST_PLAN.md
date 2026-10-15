@@ -1,10 +1,14 @@
-## slskd transfer listing extraction — verification gate
+## slskd transfer listing extraction — completed verification (PR #157)
 
-Run `python -m unittest tests.test_slskd_transfers -v`, `python -m unittest discover -s tests -v`, syntax/acquisition-safety checks, Docker packaging/full suite/image build, isolated container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. Review that `_slskd_download_transfer_files` keeps its signature and delegates to `slskd_transfers.download_transfer_files`, the new module is copied into the image, and no watcher/candidate-start semantics changed. Publishing must remain disabled. Initial PR #157 head `139304fb1ba3c9812931a91025e0efa90c62c869` passed focused/full test coverage through Docker packaging/full unit suite/build `38815948355`, syntax/acquisition safety `38815948143`, runtime smoke `38815948227`, and validation-only multi-architecture validation `38815948105`. Previously tested PR head `22edf45e09d6f86470298de2a54af8d5b9c8af0c` passed all four required workflows: syntax/acquisition safety `38816159790`, Docker packaging/full unit suite/image build `38816159713`, isolated container runtime smoke `38816159767`, and validation-only multi-architecture validation `38816159649`. This documentation-only closeout commit changes the PR head; all four workflows must pass on the resulting final head before merge.
+Exact final PR head `504b10392061dbc44d28d66e663b88cbefb8f1a4` passed all four required workflows: Python syntax/acquisition-safety regressions `38816375215`; Docker packaging, full unit suite, and image build `38816375266`; isolated container runtime smoke `38816375339`; validation-only multi-architecture image validation `38816375410`. PR #157 merged at `17922f878f0ea391b47652012a38530e9eb044fc`. No separate local test execution, image publication, deployment, or production runtime verification is claimed.
 
 ## Expected slskd track-count extraction — completed verification (PR #155)
 
-Exact final PR head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6` passed all four required workflows: Python syntax/acquisition-safety regressions `38814733899`; Docker packaging, full unit suite, and image build `38814734001`; isolated container runtime smoke `38814733916`; validation-only multi-architecture image validation `38814733954`. PR #155 merged by squash at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+Exact final PR head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6` passed all four required workflows: syntax/acquisition-safety `38814733899`; Docker packaging/full suite/build `38814734001`; runtime smoke `38814733916`; validation-only multi-architecture validation `38814733954`. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
+
+## Session priority gate
+
+Before another routine backend extraction, complete and record the required manual browser checklist for open PR #156; the PR currently records that checklist as NOT RUN. See `docs/DEVELOPMENT_WORKFLOW.md` for merge gates.
 
 ---
 
