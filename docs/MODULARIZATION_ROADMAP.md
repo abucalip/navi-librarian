@@ -1,9 +1,9 @@
-## 2026-10-15 — Acquisition state transition follow-up (in progress)
+## 2026-10-15 — Dismissed-job reactivation state extraction
 
-- Extract the dismissed-job conditional reactivation SQL into `acquisition_state.py`, alongside save/list persistence, using injected schema, database path, identity normalization, and clock dependencies.
-- Preserve the server function as a compatibility adapter and keep transition-lock ownership in the coordinator.
-- Direct tests must prove source candidate/settings are cleared on success and that absent/non-dismissed rows are not mutated. Retain AST tests for coordinator-level successful/failed reactivation and lock sequencing.
-- Do not merge until focused/full tests, final diff review, and all four exact-head workflows pass.
+- Extracted the conditional reactivation SQL into `acquisition_state.py` using injected schema, database path, identity normalization, and clock dependencies.
+- Preserved the server function as a compatibility adapter and kept transition-lock ownership in the coordinator.
+- Direct tests cover successful stale-source reset and no mutation for absent/non-dismissed rows; AST tests remain for coordinator-level success/failure sequencing.
+- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed all four workflows (full suite: 189 tests); publishing remained paused. Re-run all four workflows on the final documentation-updated PR head before merge.
 
 ---
 
