@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from navidrome_client import api_call
+from navidrome_client import api_call, items
 
 
 class FakeResponse:
@@ -34,6 +34,12 @@ class FakeClient:
 
 
 class NavidromeClientTests(unittest.TestCase):
+    def test_items_normalizes_optional_collection_values(self):
+        self.assertEqual(items(None), [])
+        self.assertEqual(items("single"), ["single"])
+        self.assertEqual(items(["first", "second"]), ["first", "second"])
+        self.assertEqual(items([]), [])
+
     def test_authentication_request_and_success_response(self):
         response = FakeResponse({"subsonic-response": {"status": "ok", "artists": []}})
         client = FakeClient(response)
