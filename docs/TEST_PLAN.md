@@ -1,3 +1,7 @@
+## 2026-10-15 — Navidrome API client extraction (pending verification)
+
+Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m unittest discover -s tests -v` suite. Direct-import tests must cover deterministic token generation, base URL and method path, authentication/version/client/format parameters, forwarded caller parameters, HTTP client timeout and redirect policy, successful response handling, and exact legacy API error messages. Then verify Python syntax, Docker packaging/full tests/build, isolated container runtime smoke, and validation-only multi-architecture Docker image validation on the exact final PR head. Do not merge until all four required workflows pass on that exact SHA. No test or CI result is claimed until observed.
+
 ## 2026-10-15 — Metadata cache extraction CI follow-up
 
 - Initial PR-head CI exposed a regression-test fixture issue: the malformed-JSON test inserted directly before creating the cache table. The fixture now initializes the table through the public cache service before inserting malformed JSON.
