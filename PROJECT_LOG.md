@@ -687,3 +687,12 @@
 - `POST /api/acquire` now accepts only a JSON boolean for `auto_queue`; omitted input still defaults to `true`, explicit `false` is preserved, and invalid strings, numbers, null, arrays, or objects return HTTP 400 before the service call. Regression tests cover those cases.
 - All four required workflows passed on the exact final PR head: Python syntax `38756653450`, Docker packaging/full suite/build `38756653379`, container runtime smoke `38756653406`, and validation-only multi-architecture image validation `38756653398` (publishing paused).
 - No separate local test run, image publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-15 — PR #140 settings service extraction
+
+- Extracted Navidrome, Last.fm, and ListenBrainz connection checks into `service_settings.py`; preserved public compatibility adapters and added regression tests for result mapping and credential redaction.
+- PR #140: https://github.com/abucalip/navi-librarian/pull/140
+- Exact PR head: `cacdbc809f35040f0cc1bc70a39251ff80b7315e`. Required CI all passed: Python syntax `38784634643`; Docker packaging/full unit suite/build `38784634599`; container runtime smoke `38784635107`; multi-architecture validation (publishing paused) `38784634797`.
+- Squash merge: `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`; PR verified closed/merged. No local test execution, publishing, deployment, or production runtime verification claimed.
+- Next action: continue focused extraction of remaining settings/application-assembly and domain-service dependencies from `navidrome_server.py`.
