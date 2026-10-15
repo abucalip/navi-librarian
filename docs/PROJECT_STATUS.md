@@ -1,3 +1,13 @@
+## 2026-10-15 — Discovery router injection in progress
+
+- **Branch:** `refactor/discovery-router-service-injection`; implementation commits: `86d8536fb24e7ad711ef32c062a276b33ccdba24` and `506ac1a50af8c3d693565471a5977b3961a737d6`.
+- **Change:** discovery routes now resolve the legacy librarian service through the shared lazy `get_librarian` dependency instead of importing `navidrome_server` at module load. Added direct-import route tests for injected fake-service calls, response parsing, candidate filtering, payload normalization, and validation.
+- **Compatibility:** no domain logic moved; MCP adapters, endpoint paths, response/error mapping, validation, and persistence ownership remain unchanged.
+- **Verification:** not yet run in a local environment. Exact-head CI and full diff review remain required; do not claim tested until those results are available. No publication, deployment, or production runtime verification.
+- **Next:** finish docs and open PR, then verify all four required workflows on the exact PR head. Publishing remains paused.
+
+---
+
 ## 2026-10-15 — Acquisition router service-injection verification follow-up
 
 - Initial exact-head CI on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` exposed a test-only mistake: `fastapi.Depends` is a factory, not the runtime type for `isinstance`. The route dependency implementation itself compiled; the syntax/acquisition safety and Docker/full-suite workflows failed at this assertion before completing.
