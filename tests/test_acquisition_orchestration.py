@@ -12,6 +12,7 @@ from acquisition_orchestration import (
     import_source_unless_dismissed,
     queue_candidate_unless_dismissed,
     request_skip_acquisition_source,
+    reserve_acquisition_request,
     run_reserved_acquisition,
     switch_source_unless_dismissed,
 )
@@ -245,7 +246,6 @@ class AcquisitionImportGuardTests(unittest.TestCase):
 class ExistingAcquisitionRecoveryTests(unittest.TestCase):
     def setUp(self):
         self.identity = ("artist", "album")
-        self.active_requests = set()
         self.active_watchers = set()
         self.watcher_lock = threading.RLock()
         self.start_calls = []
@@ -259,7 +259,6 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
                 self.active_watchers.add(self.identity)
         return existing_acquisition_response(
             "Artist", "Album", self.identity, job, status, watcher_active,
-            active_requests=self.active_requests,
             start_watcher=start_watcher,
             watcher_lock=self.watcher_lock,
             active_watchers=self.active_watchers,
@@ -307,11 +306,8 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
                 self.assertEqual(result["status"], status)
         result = json.loads(self.run_decision(status="downloading", watcher_active=True))
         self.assertEqual(result["status"], "already_in_progress")
-        self.active_requests.add(self.identity)
-        result = json.loads(self.run_decision())
-        self.assertEqual(result["status"], "already_in_progress")
 
-    def test_no_existing_job_or_active_request_allows_new_search(self):
+    def test_no_existing_job_allows_new_search(self):
         self.assertIsNone(self.run_decision())
 
 
@@ -372,6 +368,25 @@ class AcquisitionReservationLifecycleTests(unittest.TestCase):
 
         self.assertEqual(result, "done")
         self.assertEqual(active, {other})
+
+
+class AcquisitionRequestReservationTests(unittest.TestCase):
+    def test_reserves_a_new_identity_and_refuses_a_duplicate_without_mutation(self):
+        identity = ("artist", "album")
+        active = set()
+
+        self.assertTrue(reserve_acquisition_request(identity, active_requests=active))
+        self.assertEqual(active, {identity})
+        self.assertFalse(reserve_acquisition_request(identity, active_requests=active))
+        self.assertEqual(active, {identity})
+
+    def test_reservation_preserves_other_active_identities(self):
+        identity = ("artist", "album")
+        other = ("artist", "other album")
+        active = {other}
+
+        self.assertTrue(reserve_acquisition_request(identity, active_requests=active))
+        self.assertEqual(active, {identity, other})
 
 
 if __name__ == "__main__":

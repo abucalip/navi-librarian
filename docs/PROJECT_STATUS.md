@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #88 merged; acquisition reservation cleanup extraction in progress
+## 2026-10-15 — PR #89 merged; atomic acquisition reservation extraction in progress
 
-- PR #88 merged to `main` at `bd8a162d98e3ddadf439f6a3f437e7327531a8f8` from exact tested head `57fef1d176a1d1c7de081aa024af3d6018abab56`; all four workflows passed (syntax `38659188156`, packaging `38659188159`, runtime smoke `38659188223`, validation-only multi-architecture `38659188194`). Documentation-only; no application behavior changed.
-- The AST audit is closed for now: remaining cases exercise coordinator sequencing, simultaneous request reservation, persistence-before-import, dismissed-job wrapper behavior, and stale watcher recovery. Keep these until replacement tests prove the same boundary.
-- Current branch `refactor/extract-acquisition-reservation-lifecycle` extracts the already-reserved acquisition callback/final cleanup into `acquisition_orchestration.run_reserved_acquisition`. The server still atomically reserves under the shared transition lock before invoking it.
-- Direct tests cover result propagation, exception propagation, cleanup after either outcome, and preserving other active reservations. Focused/full tests and exact-head CI remain pending. No publication, deployment, or production runtime verification.
+- PR #89 merged to `main` at `c4334c4984dcb988733bd0b1f2464b9030849a70` from exact tested head `c778a8c4b6083229aa5e59928f0598f21c5327b9`; all four workflows passed (syntax `38659433212`, packaging/full suite `38659433201` with 197 tests, runtime smoke `38659433218`, validation-only multi-architecture `38659433230`; publishing paused).
+- Current branch `refactor/extract-acquisition-request-reservation` extracts the atomic active-request set check/add into `acquisition_orchestration.reserve_acquisition_request`. The caller continues to hold the shared transition lock across existing-job checks and reservation.
+- `existing_acquisition_response` now handles persisted job/watcher states; the new reservation helper handles only the active-request identity check/add. The already-reserved callback/final cleanup remains in `run_reserved_acquisition`.
+- Direct tests cover fresh reservation, duplicate refusal without mutation, and preserving other active identities. Focused/full tests and exact-head CI remain pending. No publication, deployment, or production runtime verification.
 
 ---
 

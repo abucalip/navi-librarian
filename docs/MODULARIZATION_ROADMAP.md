@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #88 merged; reservation lifecycle follow-up
+## 2026-10-15 — PR #89 merged; atomic reservation decision extraction
 
-- PR #88 merged at `bd8a162d98e3ddadf439f6a3f437e7327531a8f8` from exact tested head `57fef1d176a1d1c7de081aa024af3d6018abab56`; all four workflows passed and the change was documentation-only.
-- Extract the already-reserved acquisition callback/final cleanup into `acquisition_orchestration.py` behind injected transition lock, active-request set, and callback.
-- Keep atomic reservation inside the existing locked preflight section; run the acquisition callback outside the lock; always release the same identity under the lock even when the callback raises.
-- Preserve the end-to-end simultaneous-request AST regression and do not merge until focused/full tests and all four exact-head workflows pass.
+- PR #89 merged at `c4334c4984dcb988733bd0b1f2464b9030849a70` from exact tested head `c778a8c4b6083229aa5e59928f0598f21c5327b9`; all four required workflows passed (197 tests, publishing paused).
+- Move the active-request identity check/add into `acquisition_orchestration.reserve_acquisition_request` while leaving the shared transition lock with `discovery_acquire_album`. This preserves atomic ordering with dismissal, watcher-state, and persisted-job checks.
+- Keep `run_reserved_acquisition` responsible for callback execution outside the lock and guaranteed identity cleanup under the lock.
+- Preserve the top-level simultaneous-request AST test; direct helper tests are not a substitute for the end-to-end race. Do not merge until all four exact-head workflows pass.
 
 ---
 

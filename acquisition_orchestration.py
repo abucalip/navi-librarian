@@ -122,7 +122,6 @@ def existing_acquisition_response(
     existing_status: str | None,
     watcher_active: bool,
     *,
-    active_requests: set[tuple[str, str]],
     start_watcher: Callable[..., Any],
     watcher_lock: Any,
     active_watchers: set[tuple[str, str]],
@@ -181,8 +180,7 @@ def existing_acquisition_response(
         }, ensure_ascii=False)
 
     if (
-        identity in active_requests
-        or watcher_active
+        watcher_active
         or existing_status == "downloading"
     ):
         return json_module.dumps({
@@ -212,3 +210,20 @@ def run_reserved_acquisition(
     finally:
         with transition_lock:
             active_requests.discard(identity)
+
+
+def reserve_acquisition_request(
+    identity: tuple[str, str],
+    *,
+    active_requests: set[tuple[str, str]],
+) -> bool:
+    """Atomically reserve a new acquisition identity while the caller holds the transition lock.
+
+    Returns False without mutation when another request already owns the identity.
+    Lock ownership remains with the coordinator so its existing-job checks and this
+    reservation can be one indivisible transition.
+    """
+    if identity in active_requests:
+        return False
+    active_requests.add(identity)
+    return True
