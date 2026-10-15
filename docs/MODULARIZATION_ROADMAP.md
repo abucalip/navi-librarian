@@ -1,7 +1,8 @@
-## 2026-10-15 — Safety follow-up: acquisition import source-root replacement
+## 2026-10-15 — Acquisition import source-root safety merged (PR #103)
 
-- After cleanup directory-swap hardening, audit the import boundary where the matcher returns paths before staging/moving tracks. A source-directory replacement can redirect path-based file movement unless the source directory is pinned.
-- Require regressions for source-root symlink swaps, collision-suffixed matches, cross-filesystem fallback, and rollback; preserve existing no-overwrite and recovery-manifest behavior. Do not resume routine modularization until exact-head CI passes.
+- PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
+- The import boundary now pins source and destination-parent directories, performs descriptor-relative moves/rollback, and retains cross-filesystem fallback. Regressions cover source-root symlink swaps, collision-suffixed names, cross-filesystem behavior, and rollback; all four required exact-head workflows passed.
+- **Next:** continue the highest-priority safety/test audit across remaining filesystem operations and external boundaries before routine service-boundary extraction. Publishing remains paused; no deployment/runtime verification.
 
 ---
 
