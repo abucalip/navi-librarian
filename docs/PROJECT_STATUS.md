@@ -1,3 +1,13 @@
+## 2026-10-15 — Watcher-start concurrency regression verified
+
+- PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`. All four required workflows passed: Python syntax and acquisition safety regressions (run 38656927551), Docker packaging/full unit suite (38656927436), container runtime smoke (38656927801), and multi-architecture image validation with publishing paused (38656927516).
+- The full unit-test step and focused acquisition safety regression step both succeeded. The new concurrent watcher-start regression is included in the exact tested head; CI workflow evidence is green.
+- Final diff reviewed: one threaded test plus documentation updates; no production code changed. The remaining AST lifecycle tests are retained where they uniquely exercise coordinator sequencing, races, persistence-before-import, or recovery behavior.
+- No image publication, deployment, or production runtime verification is claimed.
+- Next: merge PR #84 after final exact-head status confirmation, then continue the AST audit against the updated main.
+
+---
+
 ## 2026-10-15 — Session closeout: acquisition AST-test audit handoff
 
 - Reconciled the project status against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`. PR #82 is merged; it updates the status, log, test plan, and modularization roadmap after PR #81's closeout.

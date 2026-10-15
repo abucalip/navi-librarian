@@ -1,3 +1,12 @@
+## 2026-10-15 — Watcher-start concurrency regression verified
+
+- PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed: syntax/acquisition safety run 38656927551, Docker packaging/full suite run 38656927436, runtime smoke run 38656927801, and multi-architecture validation-only run 38656927516.
+- The full unit-test step and acquisition safety regression step passed. The new race test asserts exactly one successful watcher reservation, persisted job, and thread start under simultaneous calls.
+- Diff review found no production changes. Retain remaining AST integration tests until direct-import tests cover equivalent coordinator, persistence, and recovery boundaries.
+- Publishing remains paused; no deployment or production runtime verification.
+
+---
+
 ## 2026-10-15 — Session closeout: remaining AST-coupled lifecycle coverage
 
 - Baseline reconciled against GitHub `main` at `f46b3618eaa8abc98b7f077698439b304a0005b7`; PR #82's documentation closeout is merged. Its exact tested head `5fdad1045ba04db84aea05a477a51dce38733f5c` passed all four required workflows; this session adds no new test result.
