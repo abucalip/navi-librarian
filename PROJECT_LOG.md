@@ -496,3 +496,13 @@
 - Decision: do not delete these tests as redundant. Keep the adapter-level AST cases until an equivalent non-MCP adapter test seam can verify the same integration boundary; preserve concurrency and persisted-state checks.
 - Next narrow service-boundary task: move the two remaining `/api/health` and `/api/dashboard-picks` HTTP handlers into an injected dashboard router, leaving Navidrome ping, discovery-list retrieval, and album eligibility in the existing librarian service. This does not remove the remaining `app.main` settings/auth dependency on `navidrome_server.py`.
 
+
+## 2026-10-15 — PR #110 merged: dashboard and health router injection
+
+- PR #110: https://github.com/abucalip/navi-librarian/pull/110; exact tested head `a2bc06ac2ca6a4ca60341f3857135b97d2d6e68e`; squash merge / main SHA `b4015b8619f3c0db169722c347f72612996b9a1c`.
+- Moved `/api/health` and `/api/dashboard-picks` from `app/main.py` into `app/api/dashboard.py`, injecting the shared lazy `get_librarian` dependency. Service ownership, route/methods, response shapes, count validation, list count 150, category balancing, deduplication, album filtering, randomization, and sanitized 503 behavior remain unchanged.
+- Added direct-import API tests. All four required workflows passed on the exact final PR head: syntax `38735208616`, Docker packaging/full suite/build `38735208619`, runtime smoke `38735208830`, and validation-only multi-architecture image validation `38735208682`. Image publishing remains paused.
+- The first CI attempt caught an incorrect expected pool size in the new deduplication test; it was corrected before the final head, which passed all four workflows.
+- No separate local test run, image publication, deployment, or production runtime verification is claimed.
+- `app/main.py` still imports `navidrome_server.py` for authentication settings and `DATA_DIR`/auth-secret initialization. Next: audit that remaining authentication/configuration dependency and identify a narrow injectable seam without changing cookie, session, setup/login, or persistent settings behavior.
+
