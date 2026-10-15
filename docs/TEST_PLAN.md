@@ -1,3 +1,10 @@
+## Authentication malformed-token regression
+
+- `tests/test_app_auth.py::test_malformed_non_ascii_session_token_is_rejected_without_exception` verifies a non-ASCII session-token segment returns `None` rather than leaking `UnicodeEncodeError` from the authentication boundary.
+- Run `python -m unittest tests.test_app_auth tests.test_auth_routes_integration` plus the full Docker packaging/unit-test workflow and the other required exact-head CI workflows before merge. Report only tests actually run; no local test execution is claimed for the initial PR preparation.
+
+---
+
 ## 2026-10-15 — API boolean input validation
 
 - For `POST /api/acquire`, test omitted `auto_queue` defaults to true, explicit JSON false remains false, and non-boolean JSON values (including strings, numbers, null, arrays, and objects) return HTTP 400 without invoking the service.
