@@ -91,10 +91,8 @@ def api_call(method, **params):
 
 
 def items(value):
-    """Normalize an optional API result to a list."""
-    if value is None:
-        return []
-    return value if isinstance(value, list) else [value]
+    """Compatibility adapter for Subsonic collection normalization."""
+    return _navidrome_client.items(value)
 
 
 def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
