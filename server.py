@@ -1,9 +1,9 @@
 import subprocess
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from read_only_command_policy import is_allowed_read_only_command
 
-mcp = FastMCP("prox-ro")
+mcp = MCPServer("prox-ro")
 
 
 @mcp.tool()
@@ -21,5 +21,5 @@ def run(command: str) -> str:
         capture_output=True, text=True, timeout=60)
     return (r.stdout + r.stderr)[:20000]
 
-
-mcp.run()
+if __name__ == "__main__":
+    mcp.run()

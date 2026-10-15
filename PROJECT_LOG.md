@@ -527,3 +527,14 @@
 - Added a subprocess regression for import-time decoupling and converted auth integration tests to fake-service injection while retaining existing auth behavior assertions.
 - All four required workflows passed on the exact head: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`.
 - No separate local tests, image publication, deployment, or production runtime verification. PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local tests, image publication, deployment, or production runtime verification. Publishing remains paused.
+
+
+## 2026-10-15 — PR #116 verified: Proxmox MCP SDK compatibility and handler regression
+
+- Corrected the host-side entry point to use mcp.server.mcpserver.MCPServer, matching the repository's pinned mcp==2.3.0 and the main MCP server. FastMCP startup now occurs only when server.py is executed as a script, so tests can import and exercise the command handler without launching a server.
+- Added handler regressions proving a rejected shell-composed command never invokes SSH, an accepted command retains the existing SSH argument/timeout/output behavior, and output stays capped at 20,000 characters.
+- PR #116 exact tested head: 81ffdf3ad647637a670690c88a77f335d5b2aca8. All four required workflows passed on that exact head: Python syntax/acquisition safety 38742459339; Docker packaging/full suite/build 38742459163 (243 tests passed); container runtime smoke 38742459489; validation-only multi-architecture image validation 38742459124.
+- The initial CI run caught the stale FastMCP import; that failing head was corrected before final verification. No local test run or live Proxmox command, publication, deployment, or production runtime verification is claimed.
+
+---
+

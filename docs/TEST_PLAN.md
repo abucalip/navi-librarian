@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #116 verified: Proxmox MCP SDK compatibility and handler regression
+
+- Corrected the host-side entry point to use mcp.server.mcpserver.MCPServer, matching the repository's pinned mcp==2.3.0 and the main MCP server. FastMCP startup now occurs only when server.py is executed as a script, so tests can import and exercise the command handler without launching a server.
+- Added handler regressions proving a rejected shell-composed command never invokes SSH, an accepted command retains the existing SSH argument/timeout/output behavior, and output stays capped at 20,000 characters.
+- PR #116 exact tested head: 81ffdf3ad647637a670690c88a77f335d5b2aca8. All four required workflows passed on that exact head: Python syntax/acquisition safety 38742459339; Docker packaging/full suite/build 38742459163 (243 tests passed); container runtime smoke 38742459489; validation-only multi-architecture image validation 38742459124.
+- The initial CI run caught the stale FastMCP import; that failing head was corrected before final verification. No local test run or live Proxmox command, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## Proxmox MCP command allowlist — PR #114 verified and merged
 
 - Direct-import regressions accept only explicitly approved diagnostic forms and reject arbitrary commands, shell operators, command substitution, newlines, invalid container IDs, unsafe device paths, and non-string input.
