@@ -1,3 +1,13 @@
+## 2026-10-15 — Discovery refresh orchestration extraction in review
+
+- Branch: `refactor/extract-discovery-refresh-assembly`.
+- Moved the ordered “refresh all discovery lists” callback orchestration into `discovery_refresh.refresh_all`. The legacy `navidrome_server._discovery_refresh_all()` remains as an adapter, with the same callbacks, personal count (20), list order, returned list, and exception propagation.
+- Added a direct-import regression test asserting callback order, count, and returned values. The module was already included in Docker packaging; no packaging change is needed.
+- Current PR-head CI, full-suite outcome, merge, and exact final verification are pending. No test is claimed as passing until CI reports it on the final PR head.
+- No MCP registrations, signatures, tool names, response shapes, provider calls, lock ownership, or persistence behavior were changed. No publishing, deployment, or runtime verification is claimed.
+
+---
+
 ## slskd transfer listing extraction — completed (PR #157 merged, 2026-10-15)
 
 `slskd_transfers.py` owns the HTTP transfer-list request and recursive normalization into file records carrying `_transfer_directory`. It uses an injected HTTP client. `navidrome_server._slskd_download_transfer_files(base_url, headers, username)` remains the compatibility adapter used by candidate-start validation. The implementation preserves URL encoding, 8-second timeout, 404-as-empty behavior, HTTP error propagation, nested directory inheritance, copied file records, and transfer-directory identity. Direct-import and adapter tests cover these contracts. PR #157 merged at `17922f878f0ea391b47652012a38530e9eb044fc` from exact tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`. All four required workflows passed: syntax `38816375215`, Docker/full suite/build `38816375266`, runtime smoke `38816375339`, multi-architecture validation `38816375410`.
@@ -8,7 +18,7 @@ Moved expected track-count metadata parsing into `slskd_search.py`; retained `_d
 
 ## Next gate before further modularization
 
-Open PR #156 is UI-facing and its required manual browser checklist is explicitly recorded as NOT RUN. Resolve and record that higher-priority verification gate before selecting another routine extraction. Publishing remains paused.
+PR #156's manual browser checklist was completed and published for exact tested head `47d33cbecadf64ed4b434764883cec6ae99d30bc`; PR #156 merged at `c560c28063f26a1a72d7016c951bf265d2ddd158`. The former UI verification gate is resolved. Re-check current main/open PRs/CI and prioritize remaining safety or verification gaps before routine extraction. Publishing remains paused.
 
 ## Music path default policy — completed (PR #151)
 
