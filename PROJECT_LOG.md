@@ -584,3 +584,10 @@
 - Direct-import regressions prove mismatched directory metadata, absolute paths, and Windows drive-qualified paths refuse cancellation and preserve local files.
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety 38751732156; Docker packaging/full unit suite/build 38751732263; container runtime smoke 38751732282; validation-only multi-architecture image validation 38751732196. Publishing remained paused.
 - No separate local test run, live slskd operation, production deletion test, image publication, deployment, or production runtime verification is claimed. This is not a diagnosis or fix for the deferred acquisition-dismissal HTTP 409.
+
+
+## 2026-10-15 — Discovery refresh API count validation
+
+- Root cause: the refresh route used `int(payload.get("count", 20))`; Python accepts booleans as integers, numeric strings as parseable integers, and truncates floats. Replaced coercion with strict JSON integer validation before service invocation.
+- Added route regression cases for malformed types and out-of-range values. The default count and valid integer behavior remain unchanged.
+- Branch: `fix/discovery-refresh-strict-count`. Focused/full tests and exact-final-head CI are pending; do not claim verification until results are observed.
