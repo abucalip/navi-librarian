@@ -540,3 +540,8 @@ Navidrome, Last.fm, and ListenBrainz connection-check logic is extracted into `s
 ## 2026-10-15 — Data-directory resolution extraction in progress
 
 The next small application-assembly seam is pure resolution of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback. `data_directory.py` resolves the path without creating it; `navidrome_server.py` retains the legacy `DATA_DIR` symbol and the existing `mkdir` side effect, so data persistence and permissions remain owned by the existing service. Direct-import tests cover explicit path expansion, empty configuration, and fallback behavior. Docker packaging is updated. Verify the focused tests, full suite, syntax, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
+
+
+## Completed — data-directory resolution (PR #152, 2026-10-15)
+
+Extracted the pure `NAVIDROME_LIBRARIAN_DATA_DIR` / source-directory fallback resolver to `data_directory.py`. The legacy `navidrome_server.DATA_DIR` and directory-creation behavior remain intact. Three direct-import regression tests and Docker packaging were added. All four required workflows passed on exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; merged by squash as `567409bb90f240667575a3730976e4c52676bc02`. Publishing remains paused; no deployment or production runtime verification is claimed.
