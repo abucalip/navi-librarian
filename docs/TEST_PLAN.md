@@ -1,9 +1,9 @@
-## 2026-10-15 — Proxmox MCP SDK compatibility and handler regression in progress
+## 2026-10-15 — PR #116 verified: Proxmox MCP SDK compatibility and handler regression
 
-- CI on the first PR head exposed a real entry-point defect: server.py still imported the removed mcp.server.fastmcp.FastMCP API while requirements pin mcp==2.3.0 and navidrome_server.py uses mcp.server.mcpserver.MCPServer. The host-side Proxmox MCP therefore could not import under the declared dependency.
-- Follow-up: align the host-side entry point with MCPServer, start it only when server.py is executed as a script, and test the actual command handler with SSH mocked. Rejected commands must never invoke subprocess; accepted commands preserve the SSH invocation/output contract and truncation.
-- First exact-head CI exposed this defect: syntax/acquisition-safety and Docker packaging/full suite failed during test import; runtime smoke passed; multi-architecture validation was still running. Correct the issue and re-run all four workflows on the final head.
-- No local tests or live Proxmox command, publication, or deployment are claimed.
+- Corrected the host-side entry point to use mcp.server.mcpserver.MCPServer, matching the repository's pinned mcp==2.3.0 and the main MCP server. FastMCP startup now occurs only when server.py is executed as a script, so tests can import and exercise the command handler without launching a server.
+- Added handler regressions proving a rejected shell-composed command never invokes SSH, an accepted command retains the existing SSH argument/timeout/output behavior, and output stays capped at 20,000 characters.
+- PR #116 exact tested head: 81ffdf3ad647637a670690c88a77f335d5b2aca8. All four required workflows passed on that exact head: Python syntax/acquisition safety 38742459339; Docker packaging/full suite/build 38742459163 (243 tests passed); container runtime smoke 38742459489; validation-only multi-architecture image validation 38742459124.
+- The initial CI run caught the stale FastMCP import; that failing head was corrected before final verification. No local test run or live Proxmox command, publication, deployment, or production runtime verification is claimed.
 
 ---
 
