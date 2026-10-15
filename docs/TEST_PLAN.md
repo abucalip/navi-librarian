@@ -1,3 +1,20 @@
+## Standard multi-extraction session protocol
+
+A session may complete two or three small extractions, but each extraction must pass its own independent acceptance and verification gates. The default is one extraction per PR; combine extractions only when they are tightly coupled and explain why independent review/testing is not practical. Do not treat throughput as a quota.
+
+For each extraction, before merge:
+
+1. Trace production callers, compatibility adapters, tests, configuration and Docker packaging. Add direct-import tests for the extracted module and compatibility tests for the existing public/MCP-facing adapter. For acquisition/import/cleanup, retain positive and refusal cases, including traversal/symlink escapes, ambiguous targets, unrelated-file preservation, rollback and interrupted recovery as applicable.
+2. Run focused regression tests, `python -m unittest discover -s tests -v`, syntax checks, and relevant API/Docker checks when available. Record commands and real outcomes; list skipped or unavailable checks explicitly.
+3. Review the full diff and ensure no unrelated changes, weakened safety validation, secrets, or missing packaged modules.
+4. On the exact **final PR-head SHA after all edits**, require all four workflows to pass: (a) Python syntax and acquisition-safety regressions; (b) Docker packaging, full unit suite and image build; (c) isolated container runtime smoke; (d) validation-only multi-architecture image validation. Publishing remains disabled. A result from an earlier SHA does not verify a later documentation or code commit.
+5. For UI-facing PRs, run the documented manual browser checklist after automated CI passes, against that exact tested SHA. Non-UI changes require relevant automated/API/integration checks but not an unrelated full visual pass.
+6. Merge only after acceptance, diff review, and all required checks pass. Refresh GitHub `main`, PR list, and CI after each merge before proceeding to the next extraction. If later work depends on a merge, retarget/update the branch safely and rerun required checks on its new exact head.
+
+For the session closeout, record each PR separately in `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md`: branch, PR, exact tested SHA, focused/full test outcomes, four workflow outcomes, merge SHA, skipped checks, and distinct publication/deployment/runtime status. Stop rather than bundle additional work if a safety issue, unexpected coupling, or failed gate appears. See `docs/DEVELOPMENT_WORKFLOW.md` for the operational sequence.
+
+---
+
 ## 2026-10-15 — Music path default policy extraction (verified)
 
 Direct-import regression tests in `tests/test_music_paths.py` cover explicit environment override and home expansion, server mount preference, Mac mount fallback, and production fallback. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`: syntax plus acquisition safety regressions (`38805068326`), Docker packaging/full unit suite/build (`38805068317`), container runtime smoke (`38805068315`), and validation-only multi-architecture build (`38805068337`). Publishing remains paused; no production deployment/runtime verification is claimed.

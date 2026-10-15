@@ -1,3 +1,9 @@
+## 2026-10-15 — Standard multi-extraction session workflow (PR #154)
+
+- PR: https://github.com/abucalip/navi-librarian/pull/154; branch: `docs/multi-extraction-session-workflow`.
+- Documented the standard multi-extraction process in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`: target two or three small extractions without quota pressure, default one independent extraction per PR, per-extraction regression and compatibility tests, full-diff review, four exact-final-head CI gates, UI-specific manual verification, sequential merge/refresh, and evidence-based closeout.
+- Verification status at this entry: documentation-only; required CI is pending on the final PR head. No application tests, publishing, deployment, or production runtime verification are claimed.
+
 ## 2026-10-15 — Music path default policy extraction merged
 
 - PR #151: https://github.com/abucalip/navi-librarian/pull/151; tested head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`.
