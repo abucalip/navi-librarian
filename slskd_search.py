@@ -5,6 +5,37 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+def expected_track_count(metadata):
+    """Read an expected track count from common recommendation metadata shapes."""
+    if not isinstance(metadata, dict):
+        return None
+    keys = ("track_count", "trackCount", "number_of_tracks", "numberOfTracks",
+            "total_tracks", "totalTracks", "tracks_count", "tracksCount", "trackcount")
+    queue = [metadata]
+    seen = set()
+    while queue:
+        current = queue.pop(0)
+        if not isinstance(current, dict) or id(current) in seen:
+            continue
+        seen.add(id(current))
+        for key in keys:
+            value = current.get(key)
+            try:
+                count = int(value)
+                if count > 0:
+                    return count
+            except (TypeError, ValueError):
+                pass
+        for key in ("tracks", "tracklist", "track_list", "album", "release", "metadata"):
+            value = current.get(key)
+            if isinstance(value, list) and value:
+                # Track objects are strong evidence; avoid mistaking unrelated arrays for tracks.
+                if all(isinstance(item, dict) for item in value):
+                    return len(value)
+            elif isinstance(value, dict):
+                queue.append(value)
+    return None
+
 def track_identity(filename, music_key):
     """A filename-based track identity that ignores extensions and numeric collision suffixes."""
     import re
