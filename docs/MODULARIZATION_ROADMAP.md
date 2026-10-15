@@ -1,3 +1,12 @@
+## 2026-10-15 — slskd settings policy extraction (PR #96)
+
+- PR #96 extracts slskd configuration validation, safe settings serialization, and settings update policy into `service_settings.py`. The legacy MCP functions remain adapters; connection checks, SQLite persistence/schema, and global `MUSIC_DIR` ownership remain in `navidrome_server.py`.
+- Added direct-import tests for missing/invalid configuration, secret redaction and blank-key preservation, exact quality-tier validation (including malformed non-string values), path validation before writes, and music-path callback updates. Migrated quality-priority policy assertions off the AST-executed settings adapter while preserving the AST-based persistence fixture.
+- Exact implementation head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed all four workflows: syntax `38665710740`, Docker packaging/full suite `38665710718` (208 tests), runtime smoke `38665710761`, validation-only multi-architecture `38665710769`. Publishing remains paused; no deployment/runtime verification.
+- Before merge, verify all four workflows on the final documentation-updated PR head and review the complete diff. Continue with a caller-driven audit of remaining settings persistence and service integration boundaries; do not remove MCP while web callers still import the legacy module.
+
+---
+
 ## 2026-10-15 — PR #95 merged; slskd settings-policy extraction next
 
 - PR #95 merged at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68` from exact head `92d304d06713ec0f73253a5db48cf835ff93a063`; all four required workflows passed on that head (syntax `38665121156`, Docker packaging/full suite `38665121160`, runtime smoke `38665121170`, validation-only multi-architecture `38665121255`). Publishing remains paused.
