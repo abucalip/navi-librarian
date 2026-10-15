@@ -1,3 +1,13 @@
+## 2026-10-15 — Dismissed-acquisition preflight extraction started
+
+- Branch: `refactor/extract-dismissed-reactivation-preflight`, based on `c30dc6b4255b4cfa11ce95b46c92200144cdfd40`.
+- Added an injected orchestration seam for checking dismissal, decoding retry metadata, and invoking conditional reactivation. The caller still holds the shared transition lock, and the state store still owns the conditional `status='dismissed'` update and stale-source clearing.
+- Added four direct-import regression cases. Preserved the AST-level explicit-Get success and failed-reactivation refusal tests.
+- Validation status: implementation and docs drafted on the branch; tests have not been run locally and no CI result is yet available. No merge, publication, deployment, or production runtime verification.
+- Next: open the PR, run focused and full validation through CI, inspect all four required workflows on the exact final head, and review the complete diff before considering merge.
+
+---
+
 ## 2026-10-15 — PR #90 merged: atomic acquisition reservation
 
 - PR: https://github.com/abucalip/navi-librarian/pull/90
