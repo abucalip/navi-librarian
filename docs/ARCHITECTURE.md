@@ -1,3 +1,11 @@
+## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+
+- PR #98 ([review](https://github.com/abucalip/navi-librarian/pull/98)) extracts request coordination to `acquisition_request_coordinator.py`; exact tested PR head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`. The PR remains open.
+- The module receives locks, watcher/request state, persisted-job reader, dismissal/reactivation callbacks, watcher startup, lifecycle policy, JSON serializer, and acquisition implementation by injection. It does not take ownership of SQLite, MCP registration, filesystem operations, or service clients.
+- All four required workflows passed on that exact head. Publishing remains paused; no deployment or production runtime verification.
+
+---
+
 ## 2026-10-15 — Last.fm settings policy boundary merged
 
 - PR #97 merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
