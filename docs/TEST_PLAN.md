@@ -1,3 +1,10 @@
+## Authentication signing-key symlink refusal — PR #137 merged
+
+- `tests/test_app_auth.py::test_signing_secret_refuses_symlink_without_chmodding_target` checks an existing `app_auth.key` symlink is rejected and the target contents and permissions remain unchanged.
+- Exact final PR head `f6458af4b84b957902a2da1960cdafc06d0f7594` passed all four required workflows: Python syntax, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image build. Publishing remains paused. No separate local test run is claimed.
+
+---
+
 ## Authentication signing-key symlink refusal
 
 - `tests/test_app_auth.py::test_signing_secret_refuses_symlink_without_chmodding_target` verifies an existing `app_auth.key` symlink is rejected and its target contents and permissions remain unchanged.
