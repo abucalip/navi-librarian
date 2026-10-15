@@ -7,17 +7,17 @@ filesystem mutations and provider orchestration.
 import json
 from time import sleep
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-import navidrome_server as librarian
+from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 
 router = APIRouter()
 
 
 @router.get("/api/acquisitions")
-def acquisition_status():
+def acquisition_status(librarian=Depends(get_librarian)):
     try:
         return parse_result(librarian.discovery_get_acquisition_status())
     except Exception:
@@ -25,7 +25,7 @@ def acquisition_status():
 
 
 @router.post("/api/acquisitions/skip")
-def skip_acquisition_source(payload: dict):
+def skip_acquisition_source(payload: dict, librarian=Depends(get_librarian)):
     artist = str(payload.get("artist") or "").strip()
     album = str(payload.get("album") or "").strip()
     if not artist or not album:
@@ -44,7 +44,7 @@ def skip_acquisition_source(payload: dict):
 
 
 @router.post("/api/acquisitions/dismiss")
-def dismiss_acquisition(payload: dict):
+def dismiss_acquisition(payload: dict, librarian=Depends(get_librarian)):
     artist = str(payload.get("artist") or "").strip()
     album = str(payload.get("album") or "").strip()
     if not artist or not album:
@@ -63,7 +63,7 @@ def dismiss_acquisition(payload: dict):
 
 
 @router.get("/api/acquisitions/stream")
-def acquisition_status_stream():
+def acquisition_status_stream(librarian=Depends(get_librarian)):
     def events():
         while True:
             try:
@@ -81,7 +81,7 @@ def acquisition_status_stream():
 
 
 @router.post("/api/acquire")
-def acquire_album(payload: dict):
+def acquire_album(payload: dict, librarian=Depends(get_librarian)):
     artist = str(payload.get("artist") or "").strip()
     album = str(payload.get("album") or "").strip()
     if not artist or not album:
@@ -98,7 +98,7 @@ def acquire_album(payload: dict):
 
 
 @router.post("/api/acquire/queue")
-def queue_reviewed_candidate(payload: dict):
+def queue_reviewed_candidate(payload: dict, librarian=Depends(get_librarian)):
     username = str(payload.get("username") or "").strip()
     artist = str(payload.get("artist") or "").strip()
     album = str(payload.get("album") or "").strip()

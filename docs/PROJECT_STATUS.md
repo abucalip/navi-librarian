@@ -1,3 +1,21 @@
+## 2026-10-15 — Acquisition router service-injection verification follow-up
+
+- Initial exact-head CI on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` exposed a test-only mistake: `fastapi.Depends` is a factory, not the runtime type for `isinstance`. The route dependency implementation itself compiled; the syntax/acquisition safety and Docker/full-suite workflows failed at this assertion before completing.
+- Correct the assertion to use `fastapi.params.Depends`, then rerun all four required workflows on the new exact PR head. The fix is not considered verified until those reruns complete.
+
+---
+
+## 2026-10-15 — Acquisition router service-injection seam (in progress)
+
+- Branch: `refactor/acquisition-router-service-injection`, based on current `main` `77bc0c6c4a7ea110adf75e3b48d9f6d1e7171572`.
+- First narrow web integration step: add `app/api/dependencies.py` with a lazy `get_librarian()` default adapter and inject it into acquisition route handlers with FastAPI `Depends`. This removes the router module's import-time dependency on `navidrome_server` while preserving the legacy service methods, endpoint paths/methods, payload mapping, status/error mapping, and SSE response headers.
+- Regression tests were updated to call handlers with fake services and verify route contracts and the lazy adapter. Exact-head automated tests/CI have not yet run; treat this as in progress until the PR head has all four required workflow results and final diff review.
+- This is intentionally limited to acquisition routes. `app/main.py`, discovery, and settings still import `navidrome_server`; no MCP tool, persistence, domain behavior, packaging, publishing, or deployment changes are included.
+- No assistant-local tests, image publication, deployment, or production runtime verification are claimed.
+- **Next gate:** review the branch diff and confirm focused route tests, full unit suite, syntax/acquisition safety, Docker packaging/runtime smoke, and validation-only multi-architecture workflows pass on the exact PR head.
+
+---
+
 ## 2026-10-15 — PR #103 merged: acquisition import source-root race hardening
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/103; tested final head `9de78c268af1b640a2a08afecb25a22502322a85`; squash merge `cf40df35a76d669421dcddbafd21ea22652bd0b1`.
