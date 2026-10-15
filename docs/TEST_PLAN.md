@@ -913,3 +913,10 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 ## Data-directory resolution extraction — PR verification required
 
 Run `python -m unittest tests.test_data_directory -v` and `python -m unittest discover -s tests -v`. The direct-import regressions verify configured-path home expansion, empty-value fallback, and source-directory fallback. Also verify Python syntax, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. Confirm the Docker image contains `data_directory.py`. Preserve `navidrome_server.DATA_DIR`, directory creation, configured relative-path semantics, and legacy persistence ownership. Do not claim tests passed until actual CI results are observed.
+
+
+## Completed — data-directory resolution extraction (PR #152)
+
+- Added direct-import regression coverage for configured path home expansion, empty configuration fallback, and resolved source-directory fallback in `tests/test_data_directory.py`.
+- Exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae` passed all four required workflows: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
+- PR #152 merged by squash at `567409bb90f240667575a3730976e4c52676bc02`. No separate local test run, image publication, deployment, or production runtime verification is claimed.
