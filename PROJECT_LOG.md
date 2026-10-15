@@ -1,3 +1,17 @@
+## 2026-10-15 — PR #144 merged; PR #142 blocked by merge conflict
+
+- PR #144: manual test report published by user; all four required workflows passed on exact head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`. Squash merge `f1008bb3af25c7c76dac8bae67177a07b21df147`.
+- PR #142: manual report published for exact head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`; all four workflows passed (Docker packaging `38790385782`, image validation `38790385783`, syntax `38790385860`, runtime smoke `38790385745`). GitHub rejected the merge with HTTP 405: merge conflicts. PR remains open. Conflict resolution must preserve the landmark changes/docs now on main; rerun all four workflows on the final resolved head before merging.
+- Publishing/deployment remain paused; no production runtime verification is claimed.
+
+## 2026-10-15 — PR #143 merged: settings persistence extraction
+
+- PR #143: https://github.com/abucalip/navi-librarian/pull/143. Exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
+- Moved settings SQLite lifecycle, read/write persistence, restrictive file permissions, saved music-path application, and legacy quality/download-path migrations into `settings_persistence.py`. Legacy `_discovery_settings_*` wrappers preserve callers and MCP compatibility. Docker packaging includes the new module.
+- Added direct-import regression tests for Unicode round trips, malformed JSON fallback, quality-tier order migration, saved music-path application, and restrictive database permissions. Updated the AST-based quality-priority test harness to inject the extracted dependency after the initial CI run exposed that fixture gap.
+- All four required workflows passed on exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`: Docker packaging/full suite/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`. Publishing remains paused.
+- No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
 - Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.

@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 import time
 from service_settings import set_slskd_settings
+from settings_persistence import SettingsPersistence
 import unittest
 from pathlib import Path
 
@@ -57,6 +58,13 @@ def load_quality_helpers(db_path, music_dir):
             "slskd_downloads_path": str(Path(music_dir) / "downloads" / "slskd" / "complete"),
         },
     }
+    namespace["_settings_persistence"] = SettingsPersistence(
+        namespace["DISCOVERY_DB"],
+        namespace["_DISCOVERY_SETTINGS_DEFAULTS"],
+        lambda: namespace["MUSIC_DIR"],
+        lambda path: namespace.update({"MUSIC_DIR": path}),
+        clock=lambda: 123.0,
+    )
     module = ast.Module(body=selected, type_ignores=[])
     exec(compile(ast.fix_missing_locations(module), str(SERVER_SOURCE), "exec"), namespace)
     return namespace
