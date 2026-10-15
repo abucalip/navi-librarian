@@ -1,9 +1,11 @@
-## 2026-10-15 — PR #108 discovery router injection in progress
+## 2026-10-15 — PR #108 merged: discovery router service injection
 
-- Started the next narrow web service-boundary extraction after PR #107: `app/api/discovery.py` now injects the legacy librarian service via the shared lazy `get_librarian` dependency.
-- Added direct-import API tests for recommendations (including candidate filtering), discovery lists, refresh, feedback, and validation.
+- Replaced discovery router's import-time `navidrome_server` import with the shared lazy `get_librarian` dependency; kept route behavior and domain/MCP ownership unchanged.
+- Added direct-import regression tests and migrated existing route tests to explicit fake-service injection after initial CI found six tests coupled to the removed module attribute.
 - PR: https://github.com/abucalip/navi-librarian/pull/108
-- Verification is pending: no local test run. Initial CI on the synchronized head found six existing discovery-route tests still patching the removed module-level `discovery.librarian` attribute; updated them to inject fake services directly. Rerun all four required workflows on the final head and review the complete diff before merging. No image publication/deployment/runtime verification.
+- Exact tested head: `a5170e50080c0ca94b4068155ace83fd33c6f029`; squash merge/main at merge: `be51f0ce17fe8eccd1b57714e869db69a5f1ba78`.
+- All four required exact-head workflows passed: syntax/acquisition safety `38733725606`; Docker packaging/full suite/build `38733725816` (227 tests passed); container runtime smoke `38733725595`; validation-only multi-architecture image validation `38733725591`.
+- No local tests, publication, deployment, or production runtime verification. Publishing remains paused.
 
 ---
 
