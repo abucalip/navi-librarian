@@ -1,3 +1,9 @@
+## Settings persistence extraction — current PR
+
+- Run `python -m unittest tests.test_settings_persistence tests.test_service_settings -v`, then `python -m unittest discover -s tests -v`.
+- Direct-import tests cover persisted Unicode round trips, corrupt JSON handling, append-only legacy quality-tier migration, configured absolute music-path application, and restrictive SQLite file mode. Confirm legacy `_discovery_settings_init/read/write` wrappers and the MCP-facing settings functions remain available.
+- Required final-head gates: Python syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture image validation. Publishing remains paused. No merge until all four pass on the same final PR head.
+
 ## MCP registration isolation — current PR
 
 - Run python -m unittest tests.test_mcp_registry tests.test_auth_routes_integration -v and the full python -m unittest discover -s tests -v suite.
