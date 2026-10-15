@@ -310,7 +310,7 @@ def import_matched_album_files(
                     _copy_fd_to_directory(
                         file_fd, staging_fd, expected_name, opened
                     )
-                    moved.append(expected_name)
+                    moved.append((expected_name, source_name))
                     staged_stat = os.stat(
                         expected_name, dir_fd=staging_fd, follow_symlinks=False
                     )
@@ -423,7 +423,7 @@ def import_matched_album_files(
                             rollback_complete = False
 
                 if rollback_complete:
-                    if manifest_written and _entry_stat(staging_fd, manifest_name):
+                    if _entry_stat(staging_fd, manifest_name) is not None:
                         try:
                             os.unlink(manifest_name, dir_fd=staging_fd)
                         except OSError:
