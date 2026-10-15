@@ -1,8 +1,10 @@
-## 2026-10-15 — Last.fm settings-policy extraction in progress
+## 2026-10-15 — PR #97 merged: Last.fm settings-policy extraction
 
-- Branch `refactor/lastfm-settings-policy-direct-import`, based on PR #96 merge `d71a63247d4aa5f3eb8edbb53ec680a439275b3a`.
-- Scope: extract Last.fm key save/preserve/redaction policy into `service_settings.py`; preserve the MCP adapter signature/response and keep SQLite writes in the legacy layer. Direct-import tests cover key trimming, blank-key preservation, and response redaction.
-- All four required workflows passed on exact head `9d3390e4f369cc11fbac852b9dc3481b865bb2f5`: syntax/acquisition safety run `38721093901`, Docker packaging/full unit suite `38721093899`, runtime smoke `38721093983`, and validation-only multi-architecture image build `38721093945`. These runs completed successfully; publishing remains paused. Publishing remains paused.
+- PR #97 (`refactor: extract Last.fm settings policy`) merged at `ad239a59b77612b812ca842406fee7b47cf80889`; exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
+- `service_settings.py` now owns Last.fm API-key trimming, blank-input preservation, settings-write invocation, and configured-status response serialization through injected callbacks. The legacy `discovery_set_lastfm_settings` adapter keeps its signature/JSON contract; SQLite persistence/schema and connectivity testing remain in `navidrome_server.py`.
+- Direct-import regression covers trimmed replacement, blank-input preservation, and secret redaction. All four required workflows passed on the exact PR head: syntax `38721333335`, runtime smoke `38721333332`, validation-only multi-architecture `38721333418`, and Docker packaging/full unit suite `38721333353`.
+- No separate local test run, image publication, deployment, or production runtime verification. Publishing remains paused.
+- Next: continue the highest-priority remaining test/coordination audit from the current roadmap; do not start another routine extraction ahead of higher-priority verification gaps.
 
 ---
 
