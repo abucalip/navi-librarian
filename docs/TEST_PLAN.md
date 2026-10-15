@@ -794,3 +794,10 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 
 - Implementation head `859bf10b1bbaececd2045596287c7680bb66d514` passed all four workflows: syntax `38762625902`, Docker packaging/full unit suite/build `38762625612`, runtime smoke `38762625878`, and validation-only multi-architecture validation `38762625568`.
 - Documentation closeout changes require all four workflows to pass again on the final PR head before merge.
+
+
+## 2026-10-15 — PR #129 verification and merge
+
+- PR #129 merged at `b3db4d1d3ac3367a306435e0e3e50e7e3286ce22` from final tested head `d6f57b95f1cd77f58d1636f471a8f80bc9776f61`.
+- All four required exact-head workflows passed: syntax `38762802954`, Docker packaging/full unit suite/build `38762802863`, runtime smoke `38762803101`, and validation-only multi-architecture image validation `38762803211`.
+- No separate local tests, publication, deployment, or production runtime verification are claimed.
