@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #96 slskd settings policy validation
+
+- `service_settings.py` is the direct-import owner for slskd config validation and settings read/update policy; MCP wrappers remain in `navidrome_server.py`.
+- Regression coverage includes blank API-key preservation, no API-key serialization, invalid URL refusal, exact quality-tier set validation (including malformed JSON values that are not strings), invalid music/download path refusal without writes, default serialization, and successful runtime music-path callback.
+- `tests/test_quality_priority.py` now invokes the extracted policy directly for quality-order save/rejection tests; AST-executed SQLite settings helpers remain for storage migration/persistence behavior only.
+- Implementation head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed syntax/acquisition safety (`38665710740`), Docker packaging/full unit suite (`38665710718`, 208 tests), runtime smoke (`38665710761`), and validation-only multi-architecture image validation (`38665710769`). The initial failure was a stale AST namespace assumption and was fixed before this passing head.
+- Required before merge: rerun all four workflows on the final docs-updated PR head. No local test run, image publication, or deployment is claimed.
+
+---
+
 ## 2026-10-15 — slskd settings-policy extraction (next PR)
 
 - Directly import `service_settings.py`; do not use AST extraction or initialize MCP in policy tests.
