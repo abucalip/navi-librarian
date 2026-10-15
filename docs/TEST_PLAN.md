@@ -1,3 +1,11 @@
+## 2026-10-15 — Web service-injection acceptance criteria (planning)
+
+- Existing web route modules import `navidrome_server` directly. A future dependency seam must preserve all route paths/methods and payload mapping, provider error handling, status codes, SSE streaming, settings persistence, and the existing MCP tool surface.
+- Keep domain behavior in shared service functions; do not duplicate it in FastAPI. The current auth router factory is an example of injected dependencies; metadata routes are already independent of the legacy server.
+- Add tests proving routers can be constructed with a fake service without importing/initializing the MCP server, while the production app still uses the existing server-backed adapter. Run focused route/auth tests, full unit suite, syntax/acquisition safety, Docker packaging/full suite, runtime smoke, and validation-only multi-architecture checks on the exact final PR head.
+
+---
+
 ## 2026-10-15 — PR #103 verified and merged: import source-root guard
 
 - PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
