@@ -1,9 +1,10 @@
-## 2026-10-15 — PR #86 merged; existing-acquisition recovery extraction in progress
+## 2026-10-15 — PR #87 merged; acquisition lifecycle AST audit boundary confirmed
 
-- PR #86 merged to `main` at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64` from exact tested head `5663d3d76f9a5c1503160b776b3b1e8674656a64`; all four required workflows passed (syntax `38658600290`, packaging/full suite `38658600316`, runtime smoke `38658600300`, validation-only multi-architecture `38658600309`; publishing paused).
-- Current branch `refactor/extract-existing-acquisition-recovery` extracts the existing-job recovery/conflict response decisions from `discovery_acquire_album` into `acquisition_orchestration.existing_acquisition_response` with injected watcher, lock, state-set, lifecycle, and JSON dependencies.
-- New direct tests cover incomplete saved source refusal, watcher resume without requeue, watcher-start failure, importing/imported/active short-circuits, and allowing a new search when no existing job conflicts.
-- The server still owns the shared transition lock and its legacy MCP adapter. Focused/full tests, syntax checks, final diff review, and exact-head CI remain pending. No publication, deployment, or production runtime verification.
+- PR #87 merged to `main` at `007edbc3396b80e415b67aa8a35e6471836627bb` from exact tested head `e019cd04fe16eda64aaf84878c766687925ba7c0`.
+- Extracted existing-job status handling, stale watcher recovery, and active-request conflict responses into `acquisition_orchestration.existing_acquisition_response`; the server wrapper still owns the shared transition lock and new-search reservation.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658965486`, Docker packaging/full suite `38658965565` (194 tests passed), runtime smoke `38658965513`, and validation-only multi-architecture `38658969866` (publishing paused).
+- The remaining AST lifecycle tests were audited. Keep them where they prove full coordinator search sequencing, simultaneous request reservation, persistence-before-import, wrapper-level reactivation/refusal, and no-requeue watcher recovery; no further mechanical migration is justified without equivalent boundary coverage.
+- Next: extract the top-level acquisition request reservation/coordination seam behind injected dependencies, preserving the shared transition lock, cleanup/refusal behavior, uncertain queue outcomes, and MCP compatibility. No publication, deployment, or production runtime verification.
 
 ---
 
