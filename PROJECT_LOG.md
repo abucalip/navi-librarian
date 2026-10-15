@@ -1,14 +1,10 @@
-## 2026-10-16 — Listening profile aggregation extraction completed (PR #167)
+## 2026-10-16 — Two-extraction session closeout
 
-- Exact tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; squash merge `6b656dc7218280aa0d37e738a881061ceefde55e`.
-- Extracted pure aggregation into `listening_profile.py), kept the legacy adapter, added direct-import tests, and updated Docker packaging.
-- All four required workflows passed on the exact final head: syntax `38825137244`, full unit suite/build `38825137296`, runtime smoke `38825137346`, and validation-only multi-architecture `38825137280`. Assistant-side local tests were not run. No publishing or deployment.
-
-## 2026-10-16 — Discovery library snapshot extraction (PR pending)
-
-- Branch `refactor/extract-discovery-library-snapshot`, base `6b656dc7218280aa0d37e738a881061ceefde55e`.
-- Added `discovery_library_snapshot.py` for cached inventory assembly with injected dependencies and retained the legacy wrapper. Added direct-import tests for cache behavior, schema migration, deduplication, pagination, and safety-limit refusal; updated Docker packaging.
-- Focused/full tests and all four required workflows on the exact final PR head remain pending. No merge, publication, deployment, or runtime verification is claimed.
+- Starting main SHA `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`; final main SHA `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`.
+- **PR #167 — listening profile aggregation:** tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; merge `6b656dc7218280aa0d37e738a881061ceefde55e`. All four required workflows passed: syntax `38825137244`, full suite/build `38825137296`, runtime smoke `38825137346`, validation-only multi-architecture `38825137280`.
+- **PR #168 — discovery library snapshot:** tested head `fc69943301c5065a54a0128c8b82ae214cd69dd1`; merge `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`. All four required workflows passed: syntax `38825386951`, full suite/build `38825387005`, runtime smoke `38825386785`, validation-only multi-architecture `38825386797`.
+- Both extractions retained legacy adapters, added direct-import regressions, and updated Docker packaging. The full unit suite passed in CI for each exact final head. Assistant-side local test commands were not run.
+- Only PR #23 remains open as the modularization roadmap. PRs #44 and #45 are closed as requested; dismissal HTTP 409 investigation is deferred until it recurs. Publishing and deployment remain paused/unverified.
 
 ## 2026-10-16 — Multi-extraction session: PRs #163, #164, and #165 merged
 
