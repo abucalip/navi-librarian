@@ -3,7 +3,7 @@
 - Branch: `refactor/extract-navidrome-api-client`.
 - Extracted the Subsonic-compatible request transport and authentication from `navidrome_server.py` into `navidrome_client.py`, leaving `api_call(method, **params)` as a compatibility adapter.
 - Added direct-import regressions and included the new module in Docker packaging.
-- Tests, all four required CI workflows, PR creation/review, merge, publication, deployment, and production runtime verification remain pending. No passing result is claimed.
+- Initial exact implementation head `555da7027ae0aa9f636ba66e18b33d549cd787d6` passed all four required workflows: syntax `38802076122`, Docker packaging/full suite `38802076327`, container runtime smoke `38802076229`, and validation-only multi-architecture validation `38802076245`. The subsequent documentation-only updates require a fresh exact-final-head CI check. PR #150 is open; merge, publication, deployment, and production runtime verification remain pending.
 
 ## 2026-10-15 — PR #148 merged
 
