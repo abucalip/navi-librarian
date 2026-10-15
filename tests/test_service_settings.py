@@ -61,7 +61,7 @@ class ServiceSettingsTests(unittest.TestCase):
     def test_navidrome_save_preserves_password_and_does_not_return_it(self):
         with tempfile.TemporaryDirectory() as directory:
             result = json.loads(set_navidrome_settings(
-                self.read_settings, self.write_settings, Path("/music"),
+                self.read_settings, self.write_settings, lambda: Path("/music"),
                 self.set_music_dir, "http://navidrome:4533/", "new-user", "", directory,
             ))
         self.assertTrue(result["ok"])
@@ -73,7 +73,7 @@ class ServiceSettingsTests(unittest.TestCase):
     def test_navidrome_invalid_settings_do_not_write_or_change_path(self):
         self.music_dir = Path("/music")
         result = json.loads(set_navidrome_settings(
-            self.read_settings, self.write_settings, self.music_dir,
+            self.read_settings, self.write_settings, lambda: self.music_dir,
             self.set_music_dir, "file:///invalid", "user", "password",
         ))
         self.assertFalse(result["ok"])
@@ -91,7 +91,7 @@ class ServiceSettingsTests(unittest.TestCase):
         for path in ("relative/music", "/this/path/should/not/exist/navidrome-librarian"):
             with self.subTest(path=path):
                 result = json.loads(set_navidrome_settings(
-                    self.read_settings, self.write_settings, Path("/music"),
+                    self.read_settings, self.write_settings, lambda: Path("/music"),
                     self.set_music_dir, "http://navidrome:4533", "user", "",
                     path,
                 ))
