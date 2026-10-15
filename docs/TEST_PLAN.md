@@ -1,3 +1,12 @@
+## 2026-10-15 — Service settings policy direct-import migration (PR #95)
+
+- `tests/test_service_settings.py` now imports `service_settings.py` directly instead of parsing and executing selected functions from `navidrome_server.py`.
+- Regressions cover password/API-key redaction, Navidrome credential validation, blank-password preservation, invalid URL/user/path refusal without writes, library-directory update callback behavior, and ListenBrainz username validation/no-write behavior.
+- The legacy adapter signatures remain unchanged; SQLite and global runtime path ownership are not extracted.
+- All four required workflows passed on implementation revision `89fd6220afce03aa16496776d185afe132986dc8`. No local tests were run. Re-run all four on the final PR head after documentation updates; publishing remains paused.
+
+---
+
 ## 2026-10-15 — Web dependency audit and next test seam
 
 - Dependency audit found web routes call the legacy server for settings, Navidrome service checks, recommendation/list orchestration, and all acquisition lifecycle actions. Keep these integration boundaries intact during modularization.
