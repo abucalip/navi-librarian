@@ -1,3 +1,11 @@
+## Acquisition Get/request and Dismiss regression coverage — in progress (2026-10-16)
+
+Branch: test/acquisition-get-dismiss-regressions. Added browser-side source-contract regressions in tests/test_acquisition_ui_contract.py for one POST per Get click, no navigation, pending/requested/retryable transitions, server-declared failures, persistent Dismiss controls, and removal only after a successful dismissal response. Extended tests/test_acquisition_routes.py for successful Dismiss response mapping and required identity validation. Existing tests/test_acquisition_cleanup.py remains the destructive filesystem safety suite, including path traversal, symlink/race refusal, ambiguous folders, unexpected entries, and neighboring-file preservation.
+
+The UI contract tests do not call a live API or perform filesystem deletion. They inspect the browser JavaScript source rather than execute a real browser; therefore manual browser verification against the exact final PR-head SHA remains required after CI passes. Focused/full test results and exact-head workflow results are pending. The reported dismissal HTTP 409 remains deferred unless it recurs; this work does not claim to fix its root cause.
+
+---
+
 ## slskd transfer listing extraction — completed verification (PR #157)
 
 Exact final PR head `504b10392061dbc44d28d66e663b88cbefb8f1a4` passed all four required workflows: Python syntax/acquisition-safety regressions `38816375215`; Docker packaging, full unit suite, and image build `38816375266`; isolated container runtime smoke `38816375339`; validation-only multi-architecture image validation `38816375410`. PR #157 merged at `17922f878f0ea391b47652012a38530e9eb044fc`. No separate local test execution, image publication, deployment, or production runtime verification is claimed.

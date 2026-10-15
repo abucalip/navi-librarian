@@ -118,3 +118,11 @@
 - Kept the acquisition dismissal HTTP 409 investigation deferred as directed. PR #44 remains draft diagnostics only; it is not a verified fix. Publishing/deployment/runtime verification remain separate and paused.
 - Highest-priority next gap: automated regression coverage for ACQ-01/02/03 Get/request and Dismiss UI state transitions, while retaining backend ACQ-04/06 safe-cleanup tests. Acceptance criteria are specified in `docs/TEST_PLAN.md`. UI automation must mock acquisition API calls and never delete production files; complete manual browser verification against the exact final PR-head SHA after CI passes.
 - Audit documentation only. No app code/tests were changed or run in this session. The next action is to implement this single focused regression-coverage task, not another routine backend extraction.
+
+
+## 2026-10-16 — Acquisition Get/request and Dismiss regression coverage (in progress)
+
+- Started branch test/acquisition-get-dismiss-regressions from current GitHub main following the verification audit.
+- Added source-contract tests for Get's no-navigation/one-request behavior, pending/requested/retryable state transitions, and Dismiss visibility, successful card removal, and refusal/error handling. Added API adapter tests for successful Dismiss mapping and required artist/album validation.
+- Existing destructive-cleanup regressions remain unchanged and required; no safety validation or production data was altered.
+- Automated execution and exact-head CI have not yet been verified. UI tests are source-contract assertions, not browser execution; the manual checklist remains required after CI. No live slskd, production deletion, image publication, deployment, or runtime verification is claimed. The reported HTTP 409 remains deferred unless it recurs.
