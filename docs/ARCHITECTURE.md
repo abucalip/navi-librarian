@@ -236,3 +236,8 @@ Pure authentication primitives are being separated into `app/security/auth.py`: 
 
 The settings router now obtains the existing librarian service through `app.api.dependencies.get_librarian`, consistent with acquisition and discovery routers. It no longer imports `navidrome_server.py` directly. The existing service functions remain responsible for settings policy, persistence, and live connectivity checks; HTTP handlers retain request/response adaptation and error mapping. This change does not retire MCP or change the application assembly dependency in `app/main.py`.
 
+
+## Dashboard and health router boundary (2026-10-15)
+
+The `/api/health` and `/api/dashboard-picks` handlers are grouped in `app/api/dashboard.py` and use the shared lazy `get_librarian` dependency. Navidrome ping, discovery-list reads, and album-candidate eligibility remain delegated to the existing service. Response shapes, count validation, category balancing, deduplication, randomization, and sanitized health errors are preserved. `app/main.py` still imports the legacy server for authentication settings and secret data-directory setup; this extraction is not MCP retirement.
+

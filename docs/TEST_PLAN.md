@@ -693,3 +693,22 @@ The source-switch guard tests must prove the dismissal check and switch callback
 - Implementation commit `5a5a78aed24916aeddf01b306300850b95a56aa7` passed all four required workflows: Python syntax (`38734406727`), Docker packaging/full suite (`38734407126`), container runtime smoke (`38734406616`), and validation-only multi-architecture image validation (`38734407120`). The validation workflow's multi-architecture build step and overall job both completed successfully.
 - This is evidence for the implementation commit only. Documentation closeout commits are being added afterward; the exact final PR head must be rechecked before merge. No local test run, image publication, deployment, or production runtime verification is claimed.
 
+
+## 2026-10-15 — PR #109 merged: settings router service injection
+
+- PR #109: https://github.com/abucalip/navi-librarian/pull/109; exact tested head `a6c919a4d6c45f98394ee683095888f27513f1d6`; squash merge / current main at closeout `9a2aaea98cff38a1ad3da130d0958f945bec9673`.
+- The settings router now uses the shared lazy `get_librarian` dependency for all twelve endpoints. Route/method contracts, service calls, payload mapping, quality defaults, optional path trimming, validation responses, and sanitized connection errors are preserved.
+- All four required workflows passed on the exact final PR head: Python syntax `38734569394`, Docker packaging/full suite `38734569197`, container runtime smoke `38734569168`, and validation-only multi-architecture image validation `38734569302`. Image publishing remains paused.
+- No separate local test run, publication, deployment, or production runtime verification is claimed.
+
+## Dashboard and health route injection (2026-10-15)
+
+- Direct-import suite: `tests/test_dashboard_routes.py`.
+- Verify the two route/method pairs; injected `api_call("ping")`; sanitized HTTP 503 on Navidrome failure; dashboard's three list reads at count 150; category-balanced picks; case-insensitive artist/album deduplication; album-candidate filtering; and HTTP 400 for out-of-range count.
+- Required: focused route tests, full unit suite, syntax check, container runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. No separate local test run is claimed unless performed.
+- The dashboard route extraction changes no UI assets or user-facing route contracts; manual browser testing is not required by the current API-only gate.
+
+## Acquisition lifecycle AST audit disposition (2026-10-15)
+
+The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` exercise the legacy MCP adapter's integration with the extracted request coordinator. Direct-import coordinator tests do not independently validate that adapter's production locks, active sets, saved-job reader, reactivation callback, and watcher-start callback are wired correctly. Keep these tests until an equivalent adapter seam and regression coverage exist. Do not remove tests solely to eliminate AST usage.
+
