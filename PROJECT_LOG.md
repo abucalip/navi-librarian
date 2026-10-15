@@ -1,8 +1,10 @@
-## 2026-10-15 — Acquisition cleanup directory-swap hardening (in progress)
+## 2026-10-15 — PR #99 merged: acquisition cleanup directory-swap hardening
 
-- Audited `acquisition_cleanup.py` before routine modularization. Path-based deletion occurred after transfer lookup callbacks, leaving a possible symlink-swap window between preflight and unlink.
-- Added no-follow directory traversal, descriptor-relative unlink/rmdir, device/inode identity checks, and a regression that replaces the album directory with a symlink during transfer lookup. The test expects cleanup to fail closed while preserving both the outside target and the original album track.
-- Branch: `fix/acquisition-cleanup-directory-race`. Exact final commit and CI results will be recorded after docs are committed and required workflows finish. No local test run, publication, deployment, or production runtime verification is claimed.
+- **PR:** [#99 — fix: harden acquisition cleanup against directory swaps](https://github.com/abucalip/navi-librarian/pull/99) — merged.
+- **Squash merge commit:** `6a5d42148813d3b2725f5d79ca45bdecaee97c25`; exact tested PR head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
+- **Changes:** replaced path-based post-callback deletion with no-follow directory-descriptor traversal, device/inode identity checks, descriptor-relative unlink/rmdir, and a regression for a symlink swap during transfer lookup.
+- **Exact-head CI:** syntax/acquisition safety `38724377954`, Docker packaging/full unit suite/build `38724378021`, container runtime smoke `38724378097`, validation-only multi-architecture image validation `38724377870` — all successful.
+- **Limitations:** no separate local test run, production-folder deletion test, image publication, deployment, or production runtime verification. Publishing remains paused.
 
 ---
 
