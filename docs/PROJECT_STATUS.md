@@ -1027,3 +1027,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - No separate local test run, image publication, deployment, or production runtime verification is claimed.
 - `app/main.py` still imports `navidrome_server.py` for authentication settings and `DATA_DIR`/auth-secret initialization. Next: audit that remaining authentication/configuration dependency and identify a narrow injectable seam without changing cookie, session, setup/login, or persistent settings behavior.
 
+
+
+## 2026-10-15 — Lazy authentication service dependency in progress
+
+- Current branch: `refactor/lazy-auth-service-dependency`, based on main `41c050b86aded92dafb101165ed14aadd1e6c720`.
+- `app/main.py` no longer imports `navidrome_server.py` at module load. Authentication settings and the persistent signing key resolve the existing librarian service lazily; settings storage, `DATA_DIR`, and MCP-facing implementations remain owned by the legacy service.
+- Authentication integration tests now inject a fake service and include a subprocess regression asserting that importing `app.main` does not load `navidrome_server`. Existing setup/login/logout, cookie/session, rate-limit, and middleware tests remain in place.
+- Verification at implementation start: no local tests run and no CI result yet. Exact final PR-head CI is required before merge. No publication, deployment, or production runtime verification.
