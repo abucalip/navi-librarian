@@ -1,13 +1,20 @@
-## 2026-10-15 — Backend extraction session started: expected track count
+## 2026-10-15 — Backend extraction session: slskd transfer listing
 
-- Current GitHub main was inspected before work. Recent main commit: 463f27ea06ca33f06cc1b32798f3019901322075; PR #154 is merged. PR #149 has since merged, despite stale status text below; latest GitHub commits include its merge and closeout records. Open PRs include #44 and #45 (deferred acquisition-dismissal diagnostics/decision) and #23 (older roadmap documentation); none is being changed in this session.
-- Branch: refactor/extract-expected-track-count, based on current main.
-- Objective: move the pure expected-track-count metadata reader into slskd_search.py; preserve navidrome_server._discovery_expected_track_count as a compatibility adapter, with unchanged return behavior and no acquisition lifecycle changes.
-- Acceptance: direct-import regressions cover all supported count keys, nested metadata, track-object lists, invalid/non-positive values, unrelated lists, and cyclic metadata; adapter compatibility is retained; Docker already packages slskd_search.py.
-- Implementation commits so far: c39cc55cc7347e7003525dac9c14497e8bef214d (legacy adapter), 595188c0bc12757602ecc4dad605742b2972746d (extracted helper), 52eb9f74101e4bab7c70ca1de56d635346d2db29 (direct-import tests).
-- PR #155 is open: https://github.com/abucalip/navi-librarian/pull/155. Initial implementation head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows (syntax 38814552978, Docker packaging/full unit suite/build 38814552986, runtime smoke 38814552931, validation-only multi-architecture 38814552973). This status/roadmap/log follow-up changes the PR head, so all four workflows must be rechecked on the final updated head before merge. No separate local test run is claimed; publishing/deployment/runtime verification remain out of scope.
+- PR #155 merged by squash at `d732241de9edfd3c643a8fa89fb25c42b2a93c67` from exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`. All four required workflows passed on that exact head: syntax/acquisition safety `38814733899`, Docker packaging/full unit suite/image build `38814734001`, container runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`.
+- Current `main` at session start: `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. Open PRs included #156 (UI footer/accessibility change; its own manual checklist is recorded as not run), #44 and #45 (deferred acquisition-dismissal investigation), and #23 (older roadmap documentation). This backend task does not modify those PRs.
+- New branch: `refactor/extract-slskd-transfer-normalization`, based on current GitHub `main`.
+- Objective: move the slskd transfer-list HTTP request and recursive response normalization from `navidrome_server.py` into `slskd_transfers.py`, retaining `_slskd_download_transfer_files` as a compatibility adapter and preserving 404, timeout, error propagation, and remote-directory identity semantics.
+- Acceptance: direct-import tests cover encoded usernames, request options, 404, nested directories/fallback identity, malformed records/payloads, no mutation, propagated HTTP errors, and the legacy adapter; Docker packages the new module.
+- Verification, PR, exact-head CI, and merge for this extraction are pending. Publishing remains paused; no deployment or production runtime verification is claimed.
 
 ---
+
+## 2026-10-15 — PR #155 merged: expected slskd track count
+
+- Extracted expected track-count metadata parsing into `slskd_search.py`; retained `navidrome_server._discovery_expected_track_count` as the compatibility adapter.
+- PR #155: https://github.com/abucalip/navi-librarian/pull/155. Exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; squash merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety `38814733899`, Docker packaging/full unit suite/image build `38814734001`, isolated runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`.
+- Publishing remains paused. No deployment or production runtime verification is claimed.
 
 ## 2026-10-15 — Historical closeout: PR #154 and PR #149 merged
 
