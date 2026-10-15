@@ -4,7 +4,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
+from fastapi.params import Depends as DependsParam
 from fastapi.responses import StreamingResponse
 
 from app.api import acquisitions
@@ -40,7 +41,7 @@ class AcquisitionRoutesTests(unittest.TestCase):
             acquisitions.queue_reviewed_candidate,
         ):
             dependency = endpoint.__defaults__[-1]
-            self.assertIsInstance(dependency, Depends)
+            self.assertIsInstance(dependency, DependsParam)
             self.assertIs(dependency.dependency, get_librarian)
 
     def test_default_service_import_is_lazy_and_resolves_legacy_adapter(self):

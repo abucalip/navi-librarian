@@ -1,3 +1,10 @@
+## 2026-10-15 — Acquisition router service-injection verification follow-up
+
+- Initial exact-head CI on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` exposed a test-only mistake: `fastapi.Depends` is a factory, not the runtime type for `isinstance`. The route dependency implementation itself compiled; the syntax/acquisition safety and Docker/full-suite workflows failed at this assertion before completing.
+- Correct the assertion to use `fastapi.params.Depends`, then rerun all four required workflows on the new exact PR head. The fix is not considered verified until those reruns complete.
+
+---
+
 ## 2026-10-15 — Acquisition router service-injection seam (in progress)
 
 - Branch: `refactor/acquisition-router-service-injection`, based on current `main` `77bc0c6c4a7ea110adf75e3b48d9f6d1e7171572`.
