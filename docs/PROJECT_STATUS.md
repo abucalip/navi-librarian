@@ -1,3 +1,9 @@
+## 2026-10-15 — PR in progress: strict slskd auto-acquire settings validation
+
+- Backend audit found `PUT /api/settings/slskd` did not forward `auto_acquire_for_me` to the service. If it were forwarded without type validation, the service's boolean coercion would treat strings such as `"false"` as true.
+- The focused fix validates a supplied value as a JSON boolean, returns HTTP 400 for strings/numbers/null/containers, and forwards explicit true/false while leaving an omitted value unchanged.
+- Regression tests cover invalid values and both valid booleans. Exact-head CI and full-suite results are pending; no merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-15 — PR #142 merged after conflict resolution
 
 - PR #142, “fix: raise --subtle to meet WCAG AA contrast,” was rebased by preserving both parent histories in a merge-resolution commit and integrating the contrast changes with the already-merged PR #144 landmark accessibility changes. Resolved head: `dd5561bff2ca8b89ca934a60f8348e67a044093c`; squash merge: `77faf5e03fdc4985541b0da5952568d0925336df`.

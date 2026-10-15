@@ -1,3 +1,9 @@
+## slskd settings boolean validation — PR in progress
+
+- For `PUT /api/settings/slskd`, an omitted `auto_acquire_for_me` must remain omitted/unchanged; explicit JSON `true` and `false` must be forwarded as booleans.
+- Reject strings (including `"false"`), numbers, null, arrays, and objects with HTTP 400 before invoking the service. This prevents truthiness coercion from enabling a setting unintentionally.
+- Run focused settings route/service tests, the full unit suite, syntax checks, container runtime smoke, and validation-only multi-architecture build on the exact final PR head. Do not claim results until the workflows complete.
+
 ## UI accessibility PRs — 2026-10-15
 
 - PR #144 landmark naming merged at `f1008bb3af25c7c76dac8bae67177a07b21df147` from exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`; manual report was published.
