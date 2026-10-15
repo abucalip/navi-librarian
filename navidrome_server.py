@@ -4599,7 +4599,6 @@ def discovery_acquire_album(
         existing_status = (existing_job or {}).get("status")
         existing_response = _acquisition_orchestration.existing_acquisition_response(
             artist, album, identity, existing_job, existing_status, watcher_active,
-            active_requests=_DISCOVERY_ACQUIRE_ACTIVE,
             start_watcher=_discovery_start_import_watcher,
             watcher_lock=_DISCOVERY_IMPORT_LOCK,
             active_watchers=_DISCOVERY_IMPORT_ACTIVE,
