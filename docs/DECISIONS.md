@@ -119,3 +119,5 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The web application and MCP server share domain functions today, but importing the service should not itself load the MCP runtime. This is a safe incremental boundary before eventual MCP retirement.
 
 **Consequence:** Keep an explicit ordered registry and regression tests for all existing tool names and callable references. Do not remove the MCP dependency, tool surface, or runtime entry point until web callers and release gates demonstrate that removal is safe.
+
+**PR #138 verification record:** implementation/documentation head `fe71a9a19188a018a2ee65d5b313a99413d239f2` passed all four required workflows (syntax/acquisition safety `38783091362`, Docker packaging/full suite/build `38783091326`, runtime smoke `38783091309`, validation-only multi-architecture `38783091337`). Rerun the four gates on the final documentation-updated PR head before merge.
