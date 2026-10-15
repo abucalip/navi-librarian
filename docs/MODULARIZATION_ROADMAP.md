@@ -1,3 +1,10 @@
+## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+
+- **Priority override:** address the host-side Proxmox MCP command-execution gap before further routine modularization. `server.py` claimed to allowlist diagnostic commands but accepted arbitrary command strings and forwarded them to SSH. PR #114 adds exact-match validation and malicious-input regression cases. Require all four CI workflows on the final PR head before merge; publishing/deployment remain paused and are unrelated to this host-side fix.
+- After this safety gate, continue with a read-only audit of remaining high-risk boundaries and current CI/release verification gaps. Keep the previously deferred acquisition-dismissal HTTP 409 investigation deferred unless the user reports that it recurs.
+
+---
+
 ## 2026-10-15 — PR #108 merged: discovery router service injection
 
 - Merged PR #108 at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` from exact tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`.
