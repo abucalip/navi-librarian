@@ -7,7 +7,7 @@
 
 ---
 
-# 2026-10-15 — Watcher-start concurrency regression verified
+## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`. All four required workflows passed: Python syntax and acquisition safety regressions (run 38656927551), Docker packaging/full unit suite (38656927436), container runtime smoke (38656927801), and multi-architecture image validation with publishing paused (38656927516).
 - The full unit-test step and focused acquisition safety regression step both succeeded. The new concurrent watcher-start regression is included in the exact tested head; CI workflow evidence is green.
