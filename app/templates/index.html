@@ -119,10 +119,6 @@
     </div>
   </section>
 
-  <footer>
-    Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
-  </footer>
-
 <section id="personalDiscoveries" class="page hidden" aria-labelledby="personalDiscoveriesHeading">
   <div class="panel">
     <h2 id="personalDiscoveriesHeading">Personal Discoveries</h2>
@@ -221,6 +217,14 @@
 
 
 </main>
+
+<!-- Outside <main>, so it is a contentinfo landmark reached after the page content on
+     every route. It previously sat between two sections inside <main>, which put it above
+     the page heading on the five routes whose section follows it, and made its reading
+     order differ per route. -->
+<footer>
+  Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
+</footer>
 
 <div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
   <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">

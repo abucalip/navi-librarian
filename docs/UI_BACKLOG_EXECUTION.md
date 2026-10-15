@@ -541,6 +541,54 @@ The manual browser report is published in PR #149's comments and records tested 
 current `main`, repeat the required browser checklist on the new exact head after CI passes.
 The prior report remains evidence for the prior SHA only.
 
+## 5g. Footer placement findings
+
+C5 of the external critique. It reported the `<footer>` as sitting "mid-`<main>`, before five
+page sections". Measured, it was worse than that: **the footer's position changed per route.**
+
+### Measured before
+
+The footer sat inside `<main>` between the `newReleases` section and the five that follow it.
+Because sections are toggled with a `hidden` class, its place in the reading order depended on
+which section was visible:
+
+| Route | `<main>` children in order | footer renders |
+|---|---|---|
+| dashboard, recommendations, newReleases | `nav, section, footer` | below content (top 291) |
+| personalDiscoveries, classics, artistDeepDive, acquisitions, settings | `nav, footer, section` | **above content (top 112)** |
+
+On five of eight routes the footer rendered at `top=112` while the page heading started at
+`143`, so a page footer appeared **above the page heading**. A screenshot of the Settings page
+shows the notice line sitting over the word "Settings".
+
+It was also never a `contentinfo` landmark: nested inside `<main>`, the ARIA tree showed no
+`contentinfo` at all.
+
+### After
+
+Moved after `</main>`. Measured: `footerInsideMain: false`, ancestor chain `[body, html]`;
+`main`'s children are `[nav, section]` on all eight routes so the reading order is now
+identical everywhere; the footer renders **below** the content on all eight; and the ARIA tree
+now reports `contentinfo:` as its own landmark.
+
+### Not done: the skip link
+
+`harden.md` lists "skip links for long content" under keyboard navigation, and an audit of this
+change found **zero skip links**: the first tab stop is the Dashboard nav button, so a keyboard
+user must traverse all nine navigation controls before reaching page content on every route.
+
+Not fixed here. It is a real gap but a separate change with its own design question (where the
+link should become visible, and which target it should point at), and this PR is scoped to
+relocating the footer. Recorded so it is not lost.
+
+### Verification
+
+Measured on the branch: footer outside `<main>`; reading order identical across all 8 routes;
+footer below content on all 8 (verified by comparing `footerTop` against `sectionBottom` per
+route); `contentinfo` present in the ARIA tree; 8/8 pages render their expected heading; zero
+horizontal overflow at 1440/1200/1100/900/760/620/390/360px; keyboard order is nav then content
+with no footer interruption; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
