@@ -1,3 +1,7 @@
+## Settings persistence boundary — PR in progress (2026-10-15)
+
+The settings persistence implementation is being extracted from `navidrome_server.py` into `settings_persistence.py`. The new store owns SQLite initialization, restrictive database permissions, persistence reads/writes, and the existing legacy migrations; it receives path/default dependencies rather than importing or initializing the application. Legacy `_discovery_settings_*` wrappers remain in the server to preserve callers and MCP behavior. Direct-import regression tests and Docker packaging coverage are added. Mark this item complete only after reviewing the final diff and verifying all four required workflows on the exact PR head.
+
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
 - Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.
