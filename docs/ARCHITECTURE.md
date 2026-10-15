@@ -2,7 +2,7 @@
 
 - `acquisition_request_coordinator.py` owns the top-level request decision sequence behind injected callbacks and state/lock objects. `discovery_acquire_album` remains the MCP/web adapter.
 - The adapter still supplies the shared transition lock, watcher lock/set, active request set, persisted-job reader, dismissal/reactivation functions, watcher startup, lifecycle policy, JSON serializer, and acquisition implementation. The coordinator must not own SQLite, MCP registration, filesystem operations, or service clients.
-- The first CI attempt showed the AST adapter harness needed the new direct-import dependency in its stub namespace; that binding was added while preserving the integration cases. Corrected-head CI and review are pending; this is not yet marked tested or merged.
+- The first CI attempt showed the AST adapter harness needed the new direct-import dependency in its stub namespace; that binding was added while preserving the integration cases. All four workflows passed on code head `e46403ca6a71a08277b33f48adb479cac2f33199`: syntax/acquisition safety `38722530776`, Docker packaging/full unit suite `38722530794`, container runtime smoke `38722530808`, validation-only multi-architecture image validation `38722530903`. The final docs-updated head must pass all four workflows before merge; PR #98 remains open.
 
 ---
 ## 2026-10-15 — Last.fm settings policy boundary merged
