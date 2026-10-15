@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #108 discovery router injection verification pending
+
+- Direct-import regression tests cover recommendation service injection and candidate filtering, discovery-list retrieval, list refresh, feedback normalization, and validation status codes.
+- Required exact-head workflow gates remain: Python syntax/acquisition safety; Docker packaging plus full unit suite/build; container runtime smoke; validation-only multi-architecture image validation. No local execution is claimed.
+- Initial CI exposed six legacy route tests that relied on `discovery.librarian`; these tests now call handlers with an injected fake service. Rerun all four required workflows on the final PR head and confirm focused route tests/full suite pass. Publishing remains paused.
+
+---
+
 ## 2026-10-15 — PR #107 merged: acquisition router service injection
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/107; final tested PR head `67174e8026f44382a4a6bea48ff1df80744dda35`; squash merge / main SHA at closeout `1cc15dd6343370ce0915bf7228a745d3558b393b`.

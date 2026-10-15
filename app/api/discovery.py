@@ -6,16 +6,16 @@ are separated from app assembly.
 """
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-import navidrome_server as librarian
+from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 
 router = APIRouter()
 
 
 @router.get("/api/recommendations")
-def recommendations(count: int = 10):
+def recommendations(count: int = 10, librarian=Depends(get_librarian)):
     if not 1 <= count <= 30:
         raise HTTPException(
             status_code=400,
@@ -40,7 +40,7 @@ def recommendations(count: int = 10):
 
 
 @router.get("/api/discovery/{list_name}")
-def discovery_list(list_name: str, count: int = 30):
+def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librarian)):
     allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
     if list_name not in allowed:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
@@ -55,7 +55,7 @@ def discovery_list(list_name: str, count: int = 30):
 
 
 @router.post("/api/discovery/{list_name}/refresh")
-def refresh_discovery_list(list_name: str, payload: dict | None = None):
+def refresh_discovery_list(list_name: str, payload: dict | None = None, librarian=Depends(get_librarian)):
     if list_name not in {"personal", "classics", "artist_deep_dive", "new_releases", "all"}:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     payload = payload or {}
@@ -74,7 +74,7 @@ def refresh_discovery_list(list_name: str, payload: dict | None = None):
 
 
 @router.post("/api/discovery/feedback")
-def discovery_feedback(payload: dict):
+def discovery_feedback(payload: dict, librarian=Depends(get_librarian)):
     artist = str(payload.get("artist") or "").strip()
     album = str(payload.get("album") or "").strip()
     action = str(payload.get("action") or "").strip()

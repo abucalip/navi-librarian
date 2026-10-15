@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #108 discovery router injection in progress
+
+- Started the next narrow web service-boundary extraction after PR #107: `app/api/discovery.py` now injects the legacy librarian service via the shared lazy `get_librarian` dependency.
+- Added direct-import API tests for recommendations (including candidate filtering), discovery lists, refresh, feedback, and validation.
+- PR: https://github.com/abucalip/navi-librarian/pull/108
+- Verification is pending: no local test run. Initial CI on the synchronized head found six existing discovery-route tests still patching the removed module-level `discovery.librarian` attribute; updated them to inject fake services directly. Rerun all four required workflows on the final head and review the complete diff before merging. No image publication/deployment/runtime verification.
+
+---
+
 ## 2026-10-15 — PR #107 merged: acquisition router service injection
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/107; final tested PR head `67174e8026f44382a4a6bea48ff1df80744dda35`; squash merge / main SHA at closeout `1cc15dd6343370ce0915bf7228a745d3558b393b`.
