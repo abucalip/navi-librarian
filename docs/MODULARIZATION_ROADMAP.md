@@ -445,3 +445,11 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 - Read-only AST audit found the remaining lifecycle AST tests still verify the legacy `discovery_acquire_album` adapter wiring; keep them until equivalent direct coverage proves the adapter's lock/state/watcher dependency mapping.
 - PR #109 merged at `9a2aaea98cff38a1ad3da130d0958f945bec9673` after all four required workflows passed on exact PR head `a6c919a4d6c45f98394ee683095888f27513f1d6`. Publishing remains paused.
 
+
+## 2026-10-15 — PR #110 merged: dashboard and health router injection
+
+- PR #110 squash-merged at `b4015b8619f3c0db169722c347f72612996b9a1c` from exact tested head `a2bc06ac2ca6a4ca60341f3857135b97d2d6e68e`.
+- `app/api/dashboard.py` now owns `/api/health` and `/api/dashboard-picks`, using `get_librarian`; domain logic remains in the existing service. All four required exact-head workflows passed (syntax `38735208616`, package/full suite `38735208619`, runtime smoke `38735208830`, multi-architecture validation `38735208682`).
+- The remaining acquisition lifecycle AST tests were retained because they verify the legacy MCP adapter's dependency wiring beyond the direct-import coordinator tests.
+- **Next:** audit the remaining `app/main.py` direct `navidrome_server` dependency for auth settings reads/writes and `DATA_DIR`/secret initialization. Design a small testable injection seam that preserves setup/login/logout, cookie/session semantics, persistent settings ownership, and MCP compatibility. Do not retire MCP or move persistence without a separate evidence-based plan.
+
