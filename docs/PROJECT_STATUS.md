@@ -1137,3 +1137,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Direct-route regression cases were added in `tests/test_discovery_routes.py`. The unit-test step and Docker build passed on the final head.
 - All four required workflows passed on exact final PR head: Python syntax `38762802954`, container runtime smoke `38762803101`, Docker packaging/full unit suite/build `38762802863`, and validation-only multi-architecture image validation `38762803211`.
 - No separate local test execution, publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-15 — PR #132 merged: sliding navigation indicator
+
+- PR #132 merged by squash at `44b03d6e6293e1a1ba34803104f52c4e443d245b` from exact tested PR head `b4982260a4e5697ee02766f47d35f7182303387a`.
+- Replaced the static active-nav bar/dot with a transform-only sliding indicator and isolated SVG goo filter on the seven content items. Preserved the horizontal mobile navigation below 620px, reduced-motion behavior, and `aria-current="page"`; no route/API/auth/domain behavior changed.
+- All four required workflows passed on the exact PR head: Docker packaging `38766740766`, container runtime smoke `38766741159`, Python syntax `38766741253`, and Docker image validation with publishing paused `38766741247`.
+- Manual browser report published on PR #132: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079. All eight checklist items passed on the exact tested SHA; zero failed items.
+- Status: implemented, CI passed, manually verified, merged. No image publication, deployment, or production runtime verification is claimed.
