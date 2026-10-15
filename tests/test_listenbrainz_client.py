@@ -58,7 +58,7 @@ class ListenBrainzClientTests(unittest.TestCase):
         self.assertEqual(first_params, {"min_ts": 1_699_395_300, "count": 100})
         self.assertEqual(first_headers, {"User-Agent": "NavidromeLibrarian/1.0"})
         self.assertEqual(client.requests[1][1], {
-            "min_ts": 1_699_395_700,
+            "min_ts": 1_699_395_300,
             "count": 100,
             "max_ts": 1_699_999_900,
         })
