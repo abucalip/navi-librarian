@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #147 merged: strict slskd settings boolean validation
+
+- PR: https://github.com/abucalip/navi-librarian/pull/147
+- Tested PR head: `22db7e7b4414f1ff3df7440bc47aece41bf0ae1d`
+- Squash merge commit: `9ce0ae37ae207f79180d98b10f71147736fe2a75`
+- Root cause: the slskd settings HTTP route ignored `auto_acquire_for_me`; forwarding without type validation would allow truthiness coercion (for example, `"false"` becoming true).
+- Fix: validate supplied values as JSON booleans, return HTTP 400 for invalid types, forward explicit booleans, and preserve omitted settings. Regression tests cover true/false and rejected string, number, null, list, and object inputs.
+- Exact PR-head CI: Python syntax check, container runtime smoke test, Docker packaging validation, and Docker image validation all completed successfully. Image publishing remains paused by workflow configuration.
+- State: implemented, tested, CI passed, merged. Publication, deployment, and production runtime verification were not part of this task and are not claimed.
+
 ## 2026-10-15 — PR in progress: strict slskd auto-acquire settings validation
 
 - Backend audit found `PUT /api/settings/slskd` did not forward `auto_acquire_for_me` to the service. If it were forwarded without type validation, the service's boolean coercion would treat strings such as `"false"` as true.
