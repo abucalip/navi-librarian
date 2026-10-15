@@ -3,7 +3,7 @@
 - **Branch:** `refactor/acquisition-request-coordinator`, based on the current GitHub `main` after PR #97 merge and documentation closeout.
 - Extracted the `discovery_acquire_album` top-level decision sequence into `acquisition_request_coordinator.py` with injected locks, request/watcher state, persistence reader, dismissal/reactivation callbacks, watcher startup, lifecycle policy, JSON module, and acquisition implementation. The legacy MCP/web adapter delegates to it.
 - Added direct-import regression tests for invalid input, failed reactivation refusal, incomplete and valid saved-source recovery, reservation cleanup after success/exception, and concurrent duplicate suppression. Kept the existing AST integration tests intact. Added the new module to Docker packaging.
-- Verification is pending; do not claim tests or CI passed until the exact final PR head completes all four required workflows. No local test run, publication, deployment, or production runtime verification.
+- First exact-head CI exposed a test-harness mismatch: the AST-executed legacy adapter called the new `_acquire_album_request` binding, which was not yet injected. Added the imported production coordinator to the test namespace; kept all existing adapter integration assertions. Corrected-head CI is pending. No local test run, publication, deployment, or production runtime verification.
 
 ---
 ## 2026-10-15 — PR #97 merged: Last.fm settings policy
