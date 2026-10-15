@@ -22,4 +22,6 @@ def run(command: str) -> str:
     return (r.stdout + r.stderr)[:20000]
 
 
-mcp.run()
+
+if __name__ == "__main__":
+    mcp.run()
