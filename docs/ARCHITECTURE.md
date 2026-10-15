@@ -1,7 +1,7 @@
-## 2026-10-15 — Acquisition cleanup filesystem boundary hardening (verification pending)
+## 2026-10-15 — Acquisition cleanup filesystem boundary hardened
 
-- `acquisition_cleanup.py` still owns destructive cleanup policy. To avoid trusting a mutable pathname after external callbacks, cleanup now opens target directories with no-follow flags, walks components relative to directory descriptors, checks device/inode identities, and unlinks verified files relative to the pinned directory.
-- The regression exercises a target-directory symlink swap during transfer lookup. Exact-head CI remains the acceptance gate; no production deletion test is claimed.
+- PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
+- `acquisition_cleanup.py` now uses no-follow directory descriptors and descriptor-relative unlink/rmdir after external transfer callbacks; device/inode checks reject a changed directory or file. The symlink-swap regression and all four required exact-head workflows passed. No production deletion test or deployment is claimed.
 
 ---
 
