@@ -4,8 +4,9 @@
 - Authentication boundary audit found that simultaneous login requests could pass the per-client attempt-count check before either failed request recorded its timestamp.
 - Added a deterministic integration regression before implementation. It blocks the first password-digest call after the final available slot is reserved, then verifies the concurrent request receives HTTP 429 while the in-flight invalid login receives HTTP 401.
 - Implementation adds a dedicated lock and atomically reserves attempt slots before password verification; successful authentication clears the client's attempt bucket under the same lock. Expensive password verification remains outside the lock.
-- Exact current PR head at this documentation update: `4eafeb5adfba9607ff1b1ca1468a3dbac350dc36`. Regression-first test commit: `d829d6450ac39257a0177cf768e70a3de8937e7a`; implementation commit: `e7ff4b454d9478d4ca147913d356db545bfb2fed`.
-- Status: implemented; CI verification pending. No local test execution is claimed. Do not merge until all four required workflows pass on the exact final PR head. Publishing, deployment, and production runtime verification remain separate and paused.
+- Regression-first test commit: `d829d6450ac39257a0177cf768e70a3de8937e7a`; implementation commit: `e7ff4b454d9478d4ca147913d356db545bfb2fed`.
+- CI passed on exact pre-closeout head `d3f25518e1d3ecb8a15c848e84e80c0d369df4da`: Docker packaging `38776404115`, container runtime smoke `38776404108`, Python syntax `38776404131`, and Docker image validation (publishing paused) `38776403893`.
+- This documentation correction creates a new PR head, so all four workflows must pass again on that final head before merge. No local test execution is claimed. Publishing, deployment, and production runtime verification remain separate and paused.
 
 ---
 
