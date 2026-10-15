@@ -1,3 +1,10 @@
+## 2026-10-15 — Cleanup root traversal hardening merged (PR #100)
+
+- PR #100 extends the directory-swap defense by opening the configured absolute root from `/` one component at a time with no-follow directory flags and checking its preflight device/inode identity after external callbacks.
+- Cleanup validates the exact planned entries and file identities/sizes, then unlinks relative to the pinned target descriptor. Regressions cover target-folder and ancestor-folder symlink swaps. Exact-head CI passed; no production-folder deletion test is claimed.
+
+---
+
 ## 2026-10-15 — Acquisition cleanup filesystem boundary hardened
 
 - PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.

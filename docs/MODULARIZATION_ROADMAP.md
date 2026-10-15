@@ -1,3 +1,11 @@
+## 2026-10-15 — Cleanup root traversal hardening merged (PR #100)
+
+- PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
+- The configured root is now traversed component-by-component without following symlinks; directory and file identities plus the exact planned file set are revalidated before descriptor-relative deletion. Both target and ancestor symlink-swap regressions pass in exact-head CI.
+- Resume the remaining highest-priority safety/test audit before routine service-boundary extraction. Publishing remains paused; no deployment/runtime verification.
+
+---
+
 ## 2026-10-15 — PR #99 safety hardening merged
 
 - PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.

@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #100 merged: cleanup root path traversal hardening
+
+- **PR:** [#100 — fix: pin acquisition cleanup root without symlink traversal](https://github.com/abucalip/navi-librarian/pull/100) — merged.
+- **Squash merge commit:** `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4`; exact tested PR head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
+- **Changes:** extended PR #99's descriptor-relative cleanup by walking the absolute configured root component-by-component with no-follow flags, checking root identity, verifying the exact planned file set and file identity/size, and adding a parent-directory symlink-swap regression.
+- **Exact-head CI:** syntax/acquisition safety `38724953760`, Docker packaging/full unit suite/build `38724953699`, container runtime smoke `38724953828`, validation-only multi-architecture image validation `38724953678` — all successful.
+- **Limitations:** no separate local test run, production-folder deletion test, image publication, deployment, or production runtime verification. Publishing remains paused.
+
+---
+
 ## 2026-10-15 — PR #99 merged: acquisition cleanup directory-swap hardening
 
 - **PR:** [#99 — fix: harden acquisition cleanup against directory swaps](https://github.com/abucalip/navi-librarian/pull/99) — merged.

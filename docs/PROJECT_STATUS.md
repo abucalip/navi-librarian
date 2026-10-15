@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #100 merged: cleanup root path traversal hardening
+
+- PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
+- Builds on PR #99's directory-swap fix by opening the absolute configured download root one component at a time with no-follow flags and checking the root identity captured before external transfer callbacks. Cleanup revalidates the exact planned file set and file device/inode/size before descriptor-relative deletion.
+- Regression coverage includes replacing the album folder with a symlink and replacing an ancestor of the configured download root with a symlink; outside targets and the moved original album track must remain untouched.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38724953760`, Docker packaging/full unit suite/build `38724953699`, container runtime smoke `38724953828`, and validation-only multi-architecture image validation `38724953678`. No local test run, production deletion test, image publication, deployment, or production runtime verification.
+
+---
+
 ## 2026-10-15 — PR #99 merged: acquisition cleanup directory-swap hardening
 
 - PR #99 (https://github.com/abucalip/navi-librarian/pull/99) merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25`, from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
