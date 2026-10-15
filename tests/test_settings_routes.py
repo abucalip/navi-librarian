@@ -3,7 +3,8 @@ import json
 import unittest
 from unittest.mock import Mock
 
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
+from fastapi.params import Depends
 
 from app.api import settings
 from app.api.dependencies import get_librarian
@@ -45,7 +46,7 @@ class SettingsRoutesTests(unittest.TestCase):
                 for parameter in __import__("inspect").signature(route.endpoint).parameters.values()
                 if parameter.name == "librarian"
             )
-            self.assertIsInstance(dependency, Depends.__mro__[1] if False else type(dependency))
+            self.assertIsInstance(dependency, Depends)
             self.assertIs(dependency.dependency, get_librarian)
 
     def test_get_navidrome_settings_parses_json_string(self):
