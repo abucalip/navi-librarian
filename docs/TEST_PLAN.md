@@ -801,3 +801,11 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - PR #129 merged at `b3db4d1d3ac3367a306435e0e3e50e7e3286ce22` from final tested head `d6f57b95f1cd77f58d1636f471a8f80bc9776f61`.
 - All four required exact-head workflows passed: syntax `38762802954`, Docker packaging/full unit suite/build `38762802863`, runtime smoke `38762803101`, and validation-only multi-architecture image validation `38762803211`.
 - No separate local tests, publication, deployment, or production runtime verification are claimed.
+
+
+## 2026-10-15 — PR #132 navigation indicator verification
+
+- Exact tested PR head: `b4982260a4e5697ee02766f47d35f7182303387a`; merged by squash at `44b03d6e6293e1a1ba34803104f52c4e443d245b`.
+- All four required workflows passed on the tested head: Docker packaging `38766740766`, container runtime smoke `38766741159`, Python syntax `38766741253`, and validation-only Docker image validation `38766741247`.
+- Manual browser checklist passed 8/8 on the exact tested head. Report: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079.
+- Headless checks recorded in the PR body covered indicator alignment, transform-only animation, one `aria-current`, scoped filter, mobile layout, reduced motion, keyboard reachability, all eight page headings, viewport overflow, and browser/page errors. No separate local test run, image publication, deployment, or production runtime verification is claimed.
