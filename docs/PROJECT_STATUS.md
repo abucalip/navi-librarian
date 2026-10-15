@@ -1,10 +1,9 @@
-## 2026-10-15 — PR #87 merged; acquisition lifecycle AST audit boundary confirmed
+## 2026-10-15 — PR #88 merged; acquisition reservation cleanup extraction in progress
 
-- PR #87 merged to `main` at `007edbc3396b80e415b67aa8a35e6471836627bb` from exact tested head `e019cd04fe16eda64aaf84878c766687925ba7c0`.
-- Extracted existing-job status handling, stale watcher recovery, and active-request conflict responses into `acquisition_orchestration.existing_acquisition_response`; the server wrapper still owns the shared transition lock and new-search reservation.
-- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658965486`, Docker packaging/full suite `38658965565` (194 tests passed), runtime smoke `38658965513`, and validation-only multi-architecture `38658969866` (publishing paused).
-- The remaining AST lifecycle tests were audited. Keep them where they prove full coordinator search sequencing, simultaneous request reservation, persistence-before-import, wrapper-level reactivation/refusal, and no-requeue watcher recovery; no further mechanical migration is justified without equivalent boundary coverage.
-- Next: extract the top-level acquisition request reservation/coordination seam behind injected dependencies, preserving the shared transition lock, cleanup/refusal behavior, uncertain queue outcomes, and MCP compatibility. No publication, deployment, or production runtime verification.
+- PR #88 merged to `main` at `bd8a162d98e3ddadf439f6a3f437e7327531a8f8` from exact tested head `57fef1d176a1d1c7de081aa024af3d6018abab56`; all four workflows passed (syntax `38659188156`, packaging `38659188159`, runtime smoke `38659188223`, validation-only multi-architecture `38659188194`). Documentation-only; no application behavior changed.
+- The AST audit is closed for now: remaining cases exercise coordinator sequencing, simultaneous request reservation, persistence-before-import, dismissed-job wrapper behavior, and stale watcher recovery. Keep these until replacement tests prove the same boundary.
+- Current branch `refactor/extract-acquisition-reservation-lifecycle` extracts the already-reserved acquisition callback/final cleanup into `acquisition_orchestration.run_reserved_acquisition`. The server still atomically reserves under the shared transition lock before invoking it.
+- Direct tests cover result propagation, exception propagation, cleanup after either outcome, and preserving other active reservations. Focused/full tests and exact-head CI remain pending. No publication, deployment, or production runtime verification.
 
 ---
 

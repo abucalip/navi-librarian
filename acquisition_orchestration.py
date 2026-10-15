@@ -191,3 +191,24 @@ def existing_acquisition_response(
         }, ensure_ascii=False)
 
     return None
+
+
+def run_reserved_acquisition(
+    identity: tuple[str, str],
+    *,
+    transition_lock: Any,
+    active_requests: set[tuple[str, str]],
+    acquire: Callable[[], Any],
+) -> Any:
+    """Run an already-reserved acquisition and always release its reservation.
+
+    The caller must atomically add `identity` to `active_requests` while holding
+    `transition_lock` before calling this helper. The callback runs outside the
+    lock; cleanup reacquires it so a concurrent request cannot observe a stale
+    reservation after the callback completes or raises.
+    """
+    try:
+        return acquire()
+    finally:
+        with transition_lock:
+            active_requests.discard(identity)
