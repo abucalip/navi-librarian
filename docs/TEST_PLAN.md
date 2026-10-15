@@ -1,10 +1,11 @@
-## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+## Proxmox MCP command allowlist — PR #114 verified and merged
 
-## Proxmox MCP command allowlist — PR #114 in progress
+- Direct-import regressions accept only explicitly approved diagnostic forms and reject arbitrary commands, shell operators, command substitution, newlines, invalid container IDs, unsafe device paths, and non-string input.
+- The `server.py` handler refuses rejected input before invoking SSH. The `run(command: str)` MCP signature, SSH target/options, timeout, and output truncation for accepted commands remain unchanged.
+- Exact tested PR head: `cd8319696180875a3cb6f0dc151d88e0c8c490d7`; squash merge: `6ab848d444373dfa37e6d46528a2840a53a8f763`.
+- All four required workflows passed on that exact head: syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, and validation-only multi-architecture validation `38740491281`.
+- No local test execution or live Proxmox command is claimed.
 
-- Direct-import tests accept only explicitly approved diagnostic command forms and reject arbitrary commands, shell operators, command substitution, newlines, invalid container IDs, and unsafe device paths.
-- `server.py` must refuse rejected input before invoking SSH. Preserve the `run(command: str)` MCP tool signature, SSH target/options, timeout, and output truncation for accepted commands.
-- Exact PR head at initial verification: `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`. The four required workflows were in progress at the last check. No local test execution or live Proxmox command is claimed. Recheck all four workflows on the final documentation-updated head before merge.
 
 ---
 

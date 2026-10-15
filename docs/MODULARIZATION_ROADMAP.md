@@ -1,7 +1,10 @@
-## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+## 2026-10-15 — Security priority completed: Proxmox MCP command allowlist
 
-- **Priority override:** address the host-side Proxmox MCP command-execution gap before further routine modularization. `server.py` claimed to allowlist diagnostic commands but accepted arbitrary command strings and forwarded them to SSH. PR #114 adds exact-match validation and malicious-input regression cases. Require all four CI workflows on the final PR head before merge; publishing/deployment remain paused and are unrelated to this host-side fix.
-- After this safety gate, continue with a read-only audit of remaining high-risk boundaries and current CI/release verification gaps. Keep the previously deferred acquisition-dismissal HTTP 409 investigation deferred unless the user reports that it recurs.
+- PR #114 merged at `6ab848d444373dfa37e6d46528a2840a53a8f763` from exact tested head `cd8319696180875a3cb6f0dc151d88e0c8c490d7`.
+- The host-side Proxmox MCP now accepts only explicitly approved diagnostic command forms and rejects arbitrary shell execution before SSH. Direct-import regressions cover accepted and rejected inputs.
+- All four required exact-head workflows passed: syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, and validation-only multi-architecture validation `38740491281`. Publishing/deployment remain paused; the host-side MCP is not part of the application image.
+- **Next:** continue the highest-priority audit of safety and verification gaps before routine modularization. Keep the acquisition-dismissal HTTP 409 investigation deferred unless it recurs.
+
 
 ---
 

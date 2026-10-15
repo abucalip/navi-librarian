@@ -1,10 +1,12 @@
-## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+## 2026-10-15 — PR #114 merged: Proxmox MCP command allowlist
 
-- **Finding:** the separate host-side `server.py` MCP described its `run(command)` input as allowlisted but passed arbitrary text to SSH. Because the remote command is interpreted by a shell, this was an unintended command-execution surface.
-- **Change in progress:** add `read_only_command_policy.py` with exact-match allowlisting for the documented diagnostic command forms and reject all other input before SSH. Add direct-import positive/negative policy tests. Preserve the MCP tool schema and SSH invocation for accepted commands.
-- **PR:** https://github.com/abucalip/navi-librarian/pull/114; branch `fix/proxmox-mcp-command-allowlist-current-main`; current code head `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`.
-- **Verification at this point:** all four required workflows were started for the code head and were in progress at the last check. No local test execution or live Proxmox command is claimed. The host-side `server.py` is not copied into the application Docker image; no deployment is involved.
-- **Gate:** review final diff and require all four workflows on the final PR head before merge. Do not proceed to routine modularization while this safety gap remains unresolved.
+- **Finding/fix:** the separate host-side `server.py` MCP described `run(command)` as allowlisted but forwarded arbitrary text to SSH. Added `read_only_command_policy.py` with exact-match allowlisting for the documented diagnostic forms; arbitrary commands, shell composition, substitutions, newlines, and unsafe arguments are refused before SSH invocation.
+- **Regression coverage:** direct-import tests cover permitted diagnostic commands, arbitrary command refusal, shell operators/substitution/newlines, container IDs, device paths, and non-string input.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/114; exact tested PR head `cd8319696180875a3cb6f0dc151d88e0c8c490d7`; squash merge `6ab848d444373dfa37e6d46528a2840a53a8f763`.
+- **Exact-head CI:** Python syntax `38740491280`; Docker packaging/full unit suite/build `38740491274`; container runtime smoke `38740491268`; validation-only multi-architecture image validation `38740491281` — all passed on the exact PR head.
+- **Limits:** no local test execution or live Proxmox command. Root-level host-side `server.py` is not copied into the Librarian application Docker image; no publication, deployment, or production runtime verification occurred.
+- **Next:** continue the highest-priority safety/verification audit before routine modularization. Keep the acquisition-dismissal HTTP 409 investigation deferred unless the user reports recurrence.
+
 
 ---
 
