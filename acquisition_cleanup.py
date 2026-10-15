@@ -41,6 +41,38 @@ def clean_acquisition_source(
     def basename(value):
         return str(value or "").replace("\\", "/").rsplit("/", 1)[-1]
 
+    def transfer_directory(item):
+        """Return a validated transfer directory, or None if identity conflicts."""
+        filename = str(item.get("filename") or "")
+        normalized_filename = normalized_path(filename)
+        if normalized_filename is None:
+            return None
+
+        filename_directory = (
+            normalized_filename.rsplit("/", 1)[0]
+            if "/" in normalized_filename
+            else None
+        )
+        advertised_directory = item.get("_transfer_directory")
+
+        if advertised_directory is None:
+            return filename_directory
+
+        normalized_directory = normalized_path(advertised_directory)
+        if normalized_directory is None:
+            return None
+
+        # When both fields provide a source path, they must agree. Otherwise a
+        # stale or inconsistent directory field could authorize cancelling a
+        # same-named file from a different remote folder.
+        if (
+            filename_directory is not None
+            and filename_directory != normalized_directory
+        ):
+            return None
+
+        return normalized_directory
+
     username = str(candidate.get("username") or "")
     files = candidate.get("files") or []
 
@@ -272,18 +304,7 @@ def clean_acquisition_source(
 
         # A tracked file's directory must be explicit. If it is missing,
         # derive it only from a full remote filename.
-        tracked_directory = item.get("_transfer_directory")
-
-        if tracked_directory is None:
-            tracked_filename = str(item.get("filename") or "")
-            normalized_filename = normalized_path(tracked_filename)
-
-            if normalized_filename is None or "/" not in normalized_filename:
-                return False
-
-            tracked_directory = normalized_filename.rsplit("/", 1)[0]
-
-        normalized_tracked_directory = normalized_path(tracked_directory)
+        normalized_tracked_directory = transfer_directory(item)
 
         if normalized_tracked_directory is None:
             return False
@@ -350,17 +371,7 @@ def clean_acquisition_source(
         if state not in active_states:
             continue
 
-        directory = item.get("_transfer_directory")
-
-        if directory is None:
-            normalized_filename = normalized_path(item.get("filename"))
-
-            if normalized_filename is None or "/" not in normalized_filename:
-                return False
-
-            directory = normalized_filename.rsplit("/", 1)[0]
-
-        normalized_directory = normalized_path(directory)
+        normalized_directory = transfer_directory(item)
 
         if normalized_directory is None:
             return False
