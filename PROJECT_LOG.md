@@ -1,3 +1,10 @@
+## 2026-10-15 — Strict boolean validation for slskd settings (PR in progress)
+
+- Read the current project status, requirements, development workflow, test plan, and modularization roadmap before selecting the task.
+- A backend API audit found `PUT /api/settings/slskd` silently ignored the `auto_acquire_for_me` request field. The service already accepts this field but converts values with `bool(...)`, which would turn the string `"false"` into true if the adapter forwarded it without validation.
+- The branch adds strict JSON-boolean validation at the HTTP boundary, passes explicit booleans through unchanged, and keeps omission as `None` to preserve existing stored configuration. Regression tests cover false/true and reject strings, numbers, null, lists, and objects before calling the service.
+- Branch: `fix/slskd-settings-boolean-validation`. Automated tests and all required workflows are pending on the exact final PR head. No merge, publication, deployment, or production verification is claimed.
+
 ## 2026-10-15 — PR #142 conflict resolution and merge
 
 - Conflict-resolution commit: `dd5561bff2ca8b89ca934a60f8348e67a044093c`. The commit integrates current `main` (including merged PR #144) while preserving PR #142’s CSS contrast token and documentation section. No force push was used.
