@@ -1,6 +1,12 @@
-## Expected slskd track-count extraction — verification gate
+## slskd transfer listing extraction — verification gate
 
-Run `python -m unittest tests.test_slskd_search -v`, `python -m unittest discover -s tests -v`, syntax/acquisition-safety checks, Docker packaging/full suite/image build, isolated container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. Confirm the legacy navidrome_server._discovery_expected_track_count adapter preserves behavior and the already-packaged slskd_search.py remains in the image. Initial PR #155 head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed syntax (38814552978), Docker packaging/full suite/build (38814552986), runtime smoke (38814552931), and validation-only multi-architecture validation (38814552973). Because project-status, roadmap, and log updates changed the head, rerun all four workflows on the final PR head before merge.
+Run `python -m unittest tests.test_slskd_transfers -v`, `python -m unittest discover -s tests -v`, syntax/acquisition-safety checks, Docker packaging/full suite/image build, isolated container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. Review that `_slskd_download_transfer_files` keeps its signature and delegates to `slskd_transfers.download_transfer_files`, the new module is copied into the image, and no watcher/candidate-start semantics changed. Publishing must remain disabled. Initial PR #157 head `139304fb1ba3c9812931a91025e0efa90c62c869` passed focused/full test coverage through Docker packaging/full unit suite/build `38815948355`, syntax/acquisition safety `38815948143`, runtime smoke `38815948227`, and validation-only multi-architecture validation `38815948105`. Previously tested PR head `22edf45e09d6f86470298de2a54af8d5b9c8af0c` passed all four required workflows: syntax/acquisition safety `38816159790`, Docker packaging/full unit suite/image build `38816159713`, isolated container runtime smoke `38816159767`, and validation-only multi-architecture validation `38816159649`. This documentation-only closeout commit changes the PR head; all four workflows must pass on the resulting final head before merge.
+
+## Expected slskd track-count extraction — completed verification (PR #155)
+
+Exact final PR head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6` passed all four required workflows: Python syntax/acquisition-safety regressions `38814733899`; Docker packaging, full unit suite, and image build `38814734001`; isolated container runtime smoke `38814733916`; validation-only multi-architecture image validation `38814733954`. PR #155 merged by squash at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+
+---
 
 ## Standard multi-extraction session protocol
 
