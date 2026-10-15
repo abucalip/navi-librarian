@@ -1,10 +1,18 @@
-## 2026-10-16 — Listening profile aggregation extraction (PR pending)
+## 2026-10-16 — Listening profile aggregation extraction completed (PR #167)
 
-- Branch: `refactor/extract-listening-profile`, based on main `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`.
-- Added pure `listening_profile.build_listening_profile`; `recent_listening_profile(days)` remains the compatibility/MCP adapter and preserves validation, ListenBrainz retrieval/error behavior, JSON output shape, and read-only semantics.
-- Added direct-import tests for payload shape, counts, empty history, and tie ordering; added the module to Docker packaging.
-- Tests and all four required exact-final-head workflows have not yet been observed. No merge, publication, deployment, or runtime verification is claimed.
-- Acquisition dismissal HTTP 409 remains intentionally deferred until it recurs; PRs #44 and #45 are closed per user direction. PR #23 remains open as the modularization roadmap.
+- Branch `refactor/extract-listening-profile`; exact tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; squash merge `6b656dc7218280aa0d37e738a881061ceefde55e`.
+- Extracted pure ListenBrainz listening-history aggregation into `listening_profile.py`; retained `recent_listening_profile(days)` as the compatibility/MCP adapter for validation, provider retrieval/error mapping, and JSON serialization.
+- Added direct-import tests for payload shape, artist/album counts, empty history, and tie ordering; included the module in Docker packaging.
+- All four required workflows passed on the exact final head: syntax `38825137244`; Docker packaging/full unit suite/image build `38825137296`; runtime smoke `38825137346`; validation-only multi-architecture validation `38825137280`. The full unit suite passed in CI. Assistant-side local tests were not run.
+- No image publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-16 — Discovery library snapshot extraction (PR pending)
+
+- Branch `refactor/extract-discovery-library-snapshot`, based on post-PR-167 main `6b656dc7218280aa0d37e738a881061ceefde55e`.
+- Extracted cached Navidrome artist/album inventory assembly to `discovery_library_snapshot.py` with injected API, collection-normalization, and store callbacks; retained `_discovery_library_snapshot()` as the compatibility adapter.
+- Direct-import tests cover cache reuse, outdated cache schema, album ID deduplication, inventory shape/pagination, and the safety-limit refusal. Docker packaging and architecture documentation are updated.
+- Focused/full test results and all four exact-final-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
+- Acquisition dismissal HTTP 409 remains deferred until it recurs. PRs #44 and #45 are closed per user direction; PR #23 remains open as the modularization roadmap.
 
 ---
 
