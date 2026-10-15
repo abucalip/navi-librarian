@@ -1,8 +1,14 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — Acquisition cleanup directory identity guard
 
-- PR #98 ([review](https://github.com/abucalip/navi-librarian/pull/98)) extracts request coordination to `acquisition_request_coordinator.py`; exact tested PR head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`. The PR remains open.
-- The module receives locks, watcher/request state, persisted-job reader, dismissal/reactivation callbacks, watcher startup, lifecycle policy, JSON serializer, and acquisition implementation by injection. It does not take ownership of SQLite, MCP registration, filesystem operations, or service clients.
-- All four required workflows passed on that exact head. Publishing remains paused; no deployment or production runtime verification.
+- Dismissal cleanup is a destructive boundary. A successful read-only preflight does not authorize later path-based unlink if the album directory can be replaced in between.
+- Re-open the configured root and target directory chain with no-follow flags, compare device/inode identities, revalidate the exact planned file set, and unlink relative to the pinned directory descriptor. Fail closed on changed paths, file identities, unexpected entries, or symlinks. Never recursively delete a directory.
+
+---
+
+## 2026-10-15 — PR #98 merged: acquisition request coordinator
+
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`; all four required workflows passed on that head.
+- The coordinator keeps the legacy MCP/web adapter and persistence ownership in `navidrome_server.py` while moving request decisions behind injected dependencies.
 
 ---
 
