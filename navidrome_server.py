@@ -3176,7 +3176,7 @@ def discovery_set_navidrome_settings(
     return _service_set_navidrome_settings(
         _discovery_settings_read,
         _discovery_settings_write,
-        MUSIC_DIR,
+        lambda: MUSIC_DIR,
         set_music_dir,
         navidrome_url,
         username,
