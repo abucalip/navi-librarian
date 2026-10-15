@@ -1222,3 +1222,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - `navidrome_server.py` retains the existing public MCP/web functions as compatibility adapters; endpoint response JSON/status/message contracts, timeouts, request headers, and credential redaction are intended to remain unchanged.
 - Added direct-import regression tests for successful/failed Navidrome ping mapping, Last.fm missing-key/authentication failure with secret redaction, and ListenBrainz missing-profile handling.
 - Branch: `refactor/extract-settings-connection-services`. Focused and full test runs plus all four required exact-head CI workflows are pending. No merge, publication, deployment, or production runtime verification claimed.
+
+
+## 2026-10-15 — PR #140 merged and verified
+
+- PR: https://github.com/abucalip/navi-librarian/pull/140 — settings connection checks extracted into `service_settings.py`; legacy MCP/web entry points remain compatibility adapters.
+- Exact tested PR head: `cacdbc809f35040f0cc1bc70a39251ff80b7315e`.
+- All four required GitHub Actions workflows passed on that exact head: Python syntax `38784634643`, Docker packaging/full unit suite/build `38784634599`, container runtime smoke `38784635107`, and validation-only multi-architecture image validation `38784634797`.
+- Merged by squash; merge commit: `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. PR state verified closed/merged.
+- No local test execution, image publication, deployment, or production runtime verification is claimed. Publishing remains paused.
+- Next useful step: continue separating remaining settings/application-assembly and domain-service dependencies from `navidrome_server.py`, starting with repository status and docs review.
