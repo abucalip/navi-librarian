@@ -550,3 +550,8 @@ Extracted the pure `NAVIDROME_LIBRARIAN_DATA_DIR` / source-directory fallback re
 ## Subsonic response collection normalization — implementation in progress
 
 Move the small shared response-normalization rule into `navidrome_client.items()`, keeping `navidrome_server.items()` as a compatibility adapter for existing discovery and MCP callers. Direct-import tests cover missing, scalar, empty, and populated collection values. This is a deliberately narrow step after the API transport extraction; preserve response semantics and run all four required workflows on the exact final PR head before merge. Publishing and deployment remain separate.
+
+
+## Subsonic response collection normalization — completed (PR #153 merged, 2026-10-15)
+
+Moved the shared response-normalization rule into `navidrome_client.items()` and retained `navidrome_server.items()` as the compatibility adapter. Direct-import tests cover missing, scalar, empty, and populated collection values. All four required workflows passed on exact PR head `c834383b7484f3c149679d62812f1c81f6133625`; squash merge commit `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc`. Publishing and deployment remain separate and are not claimed.
