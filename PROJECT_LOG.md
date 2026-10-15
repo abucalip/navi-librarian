@@ -608,3 +608,13 @@
 - Replaced coercive `int(...)` handling with strict JSON integer validation on the discovery refresh count. Regression tests cover malformed types and range failures; default count and valid integer behavior remain unchanged.
 - All four required workflows passed on that exact head: syntax `38762802954`, Docker packaging/full suite/build `38762802863`, container runtime smoke `38762803101`, and validation-only multi-architecture validation `38762803211`.
 - No separate local test run, image publication, deployment, or production runtime verification.
+
+
+## 2026-10-15 — PR #132 merged: sliding navigation indicator
+
+- PR: https://github.com/abucalip/navi-librarian/pull/132
+- Tested head: `b4982260a4e5697ee02766f47d35f7182303387a`; squash merge: `44b03d6e6293e1a1ba34803104f52c4e443d245b`.
+- Replaced the static navigation active marker with a sliding, transform-only indicator and a scoped SVG goo filter. Preserved reduced-motion support, mobile horizontal navigation, and accessible current-page semantics. Changed files were limited to `app/templates/index.html`, `static/app.css`, `static/app.js`, and `docs/UI_BACKLOG_EXECUTION.md`.
+- All four required workflows passed on the exact PR head: Docker packaging `38766740766`, runtime smoke `38766741159`, Python syntax `38766741253`, and validation-only image validation `38766741247` (publishing paused).
+- Manual browser report: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079. All eight checklist items passed on the exact tested commit; zero failures.
+- No image publication, deployment, or production runtime verification.
