@@ -70,3 +70,20 @@ def refresh_other(
         return {"ok": False, "list": list_name, "error": str(exc)}
     finally:
         lock.release()
+
+
+def refresh_all(
+    refresh_personal_callback: Callable[[int], Any],
+    refresh_other_callback: Callable[[str], Any],
+) -> list[Any]:
+    """Refresh all discovery lists in the legacy, deterministic order.
+
+    Callbacks keep provider access, list locks, and persistence in their existing
+    owners while this orchestration remains directly testable.
+    """
+    return [
+        refresh_personal_callback(20),
+        refresh_other_callback("classics"),
+        refresh_other_callback("artist_deep_dive"),
+        refresh_other_callback("new_releases"),
+    ]
