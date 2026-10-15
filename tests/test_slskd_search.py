@@ -7,6 +7,7 @@ from slskd_search import (
     album_path_match,
     path_match_diagnostics,
     response_items,
+    expected_track_count,
     search_queries,
 )
 
@@ -14,6 +15,29 @@ from slskd_search import (
 def music_key(value):
     return re.sub(r"[^a-z0-9]+", "", str(value or "").casefold())
 
+
+class ExpectedTrackCountTests(unittest.TestCase):
+    def test_reads_common_positive_count_fields(self):
+        for key in ("track_count", "trackCount", "number_of_tracks", "numberOfTracks",
+                    "total_tracks", "totalTracks", "tracks_count", "tracksCount", "trackcount"):
+            with self.subTest(key=key):
+                self.assertEqual(expected_track_count({key: "12"}), 12)
+
+    def test_reads_nested_metadata_and_track_object_lists(self):
+        self.assertEqual(expected_track_count({"release": {"metadata": {"totalTracks": 9}}}), 9)
+        self.assertEqual(expected_track_count({"album": {"tracks": [{"title": "a"}, {"title": "b"}]}}), 2)
+        self.assertEqual(expected_track_count({"tracklist": [{"title": "a"}]}), 1)
+
+    def test_ignores_invalid_counts_and_unrelated_arrays(self):
+        self.assertIsNone(expected_track_count(None))
+        self.assertIsNone(expected_track_count([]))
+        self.assertIsNone(expected_track_count({"track_count": 0, "metadata": {"trackCount": "bad"}}))
+        self.assertIsNone(expected_track_count({"tracks": ["not", "track", "objects"]}))
+
+    def test_handles_recursive_metadata_cycle(self):
+        metadata = {}
+        metadata["metadata"] = metadata
+        self.assertIsNone(expected_track_count(metadata))
 
 class SlskdSearchQueryTests(unittest.TestCase):
     def test_queries_broaden_without_dropping_artist_immediately(self):
