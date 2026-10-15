@@ -1,3 +1,12 @@
+## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+
+- PR #98 is open: [refactor: extract acquisition request coordinator](https://github.com/abucalip/navi-librarian/pull/98), exact tested head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`.
+- The coordinator module owns the top-level request decision sequence behind injected dependencies; the MCP/web adapter and persistence ownership stay in `navidrome_server.py`.
+- All four required workflows passed on the exact head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture `38722709298`. No publishing/deployment/runtime verification.
+- **Next:** review the final diff and PR state, merge only if the exact head and all checks remain valid, then continue the highest-priority remaining safety/test audit rather than routine extraction.
+
+---
+
 ## 2026-10-15 — PR #97 merged: Last.fm save policy
 
 - Merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
