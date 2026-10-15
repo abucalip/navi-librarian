@@ -1,3 +1,12 @@
+## 2026-10-15 — Backend API input validation: `auto_queue`
+
+- Identified a correctness issue in `POST /api/acquire`: Python truthiness conversion treated values such as the JSON string `"false"` and number `0` as booleans, potentially requesting unintended queue behavior.
+- The focused fix validates that `auto_queue` is a JSON boolean before invoking the shared librarian service; omitted values still default to `true`, and explicit `false` is preserved.
+- Added route regressions for explicit false and invalid strings, numbers, null, lists, and objects; invalid inputs must return HTTP 400 without calling the service.
+- Implementation branch: `fix/acquire-auto-queue-boolean-validation`. The code/test revision `966f9e553d33d533b369ef8664e86eef7e1b2478` passed all four required workflows (Python syntax `38756432402`, Docker packaging/full suite/build `38756432326`, container runtime smoke `38756432344`, and validation-only multi-architecture image validation `38756432523`). This status entry is being updated after those results; the final documentation-updated head must pass all four workflows again before merge. No local test run, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — PR #124 merged: shared UI status states
 
 - PR #124 (https://github.com/abucalip/navi-librarian/pull/124) merged by squash at `9a3aa7bd295de0de7d9408b01db22ab700e4d101`, from exact tested head `28e5a88ae362043171aaabb1f8667f6cf5ef10f7`.

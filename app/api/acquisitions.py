@@ -86,12 +86,15 @@ def acquire_album(payload: dict, librarian=Depends(get_librarian)):
     album = str(payload.get("album") or "").strip()
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
+    auto_queue = payload.get("auto_queue", True)
+    if not isinstance(auto_queue, bool):
+        raise HTTPException(status_code=400, detail="auto_queue must be a boolean")
     try:
         return parse_result(librarian.discovery_acquire_album(
             artist=artist,
             album=album,
             metadata_json=json.dumps(payload.get("metadata") or {}, ensure_ascii=False),
-            auto_queue=bool(payload.get("auto_queue", True)),
+            auto_queue=auto_queue,
         ))
     except Exception:
         raise HTTPException(status_code=502, detail="Could not search slskd for this album.")
