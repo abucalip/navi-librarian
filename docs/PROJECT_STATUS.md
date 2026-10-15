@@ -1,3 +1,13 @@
+## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+
+- PR #98 ([acquisition request coordinator extraction](https://github.com/abucalip/navi-librarian/pull/98)) remains **open**, branch `refactor/acquisition-request-coordinator`, exact tested head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`.
+- Extracted the `discovery_acquire_album` decision sequence into `acquisition_request_coordinator.py`; the MCP/web adapter continues to supply state, locks, persistence access, watcher lifecycle, and acquisition implementation.
+- All four required workflows passed on that exact PR head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, and validation-only multi-architecture image validation `38722709298`. First CI caught a missing dependency in the AST adapter harness; it was fixed without removing integration coverage, and corrected/final-head checks passed.
+- No local tests were run separately. No image publication, deployment, or production runtime verification; publishing remains paused.
+- **Next action:** review the final PR diff and merge PR #98 only after confirming the current PR head and required checks still match the evidence above.
+
+---
+
 ## 2026-10-15 — PR #97 merged: Last.fm settings-policy extraction
 
 - PR #97 (`refactor: extract Last.fm settings policy`) merged at `ad239a59b77612b812ca842406fee7b47cf80889`; exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
