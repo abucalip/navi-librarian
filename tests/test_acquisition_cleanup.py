@@ -161,7 +161,57 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertTrue(protected.exists())
         self.assertEqual(protected.read_bytes(), b"outside")
         self.assertTrue((moved / "01.flac").exists())
+        self.assertEqual((moved / "01.flac").read_bytes(), b"1234")
         self.assertTrue(self.folder.is_symlink())
+        self.assertEqual(len(calls), 2)
+
+    def test_parent_directory_replaced_by_symlink_cannot_redirect_cleanup_root(self):
+        container = Path(self.temp.name) / "download-container"
+        container.mkdir()
+        self.root = container / "downloads"
+        self.root.mkdir()
+        self.folder = self.root / "Album"
+        self.folder.mkdir()
+        self.track = self.folder / "01.flac"
+        self.track.write_bytes(b"1234")
+
+        outside_container = Path(self.temp.name) / "outside-container"
+        outside_container.mkdir()
+        outside_root = outside_container / "downloads"
+        outside_root.mkdir()
+        outside_album = outside_root / "Album"
+        outside_album.mkdir()
+        protected = outside_album / "01.flac"
+        protected.write_bytes(b"outside")
+        moved_container = Path(self.temp.name) / "download-container-original"
+        calls = []
+
+        def transfers(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                container.rename(moved_container)
+                container.symlink_to(outside_container, target_is_directory=True)
+            return []
+
+        result = _clean_acquisition_source(
+            self.root,
+            self.candidate,
+            "http://slskd",
+            {"X-API-KEY": "test"},
+            safe_folder_name=self.safe_folder_name,
+            download_transfer_files=transfers,
+            http_client=self.http_client,
+        )
+
+        self.assertFalse(result)
+        self.assertTrue(protected.exists())
+        self.assertEqual(protected.read_bytes(), b"outside")
+        self.assertTrue((moved_container / "downloads" / "Album" / "01.flac").exists())
+        self.assertEqual(
+            (moved_container / "downloads" / "Album" / "01.flac").read_bytes(),
+            b"1234",
+        )
+        self.assertTrue(container.is_symlink())
         self.assertEqual(len(calls), 2)
 
     def test_failed_transfer_cancellation_preserves_local_files(self):
