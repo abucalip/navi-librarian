@@ -10,12 +10,19 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertTrue(is_album_candidate({"album":"Blue Train","primary_type":"Album"}))
   self.assertFalse(is_album_candidate({"album":"Blue Train","primary_type":"EP"}))
   self.assertFalse(is_album_candidate({"album":"Greatest Hits","primary_type":"Album"}))
+  self.assertFalse(is_album_candidate({"album":"The Remixes"}))
+  self.assertFalse(is_album_candidate({"album":"Live at Wembley"}))
+  self.assertFalse(is_album_candidate({"album":"An Ordinary Title","primary_type":"EP"}))
   self.assertFalse(is_album_candidate({"album":"Album","secondary_types":["Compilation"]}))
   self.assertFalse(is_album_candidate(None))
  def test_exact_credit_and_various_artists(self):
   self.assertTrue(exact_artist_credit_matches([{"artist":{"name":"Queen"}}],"Queen"))
   self.assertFalse(exact_artist_credit_matches([{"artist":{"name":"Queen Tribute"}}],"Queen"))
-  self.assertTrue(is_various_artists("V.A.")); self.assertFalse(is_various_artists("The Various"))
+  self.assertFalse(exact_artist_credit_matches([{"artist":{"name":"The Queens"}}],"Queen"))
+  self.assertFalse(exact_artist_credit_matches([],"Queen"))
+  for value in ("Various Artists", "VARIOUS ARTISTS", "Various Artist", "Various", "V.A."):
+   self.assertTrue(is_various_artists(value), value)
+  self.assertFalse(is_various_artists("The Various"))
  def test_genre_families(self):
   self.assertEqual(deep_dive_genre_families(["Malian desert blues","Bossa Nova","Jazz"]),["jazz","african","brazilian"])
  def test_scoring(self):
