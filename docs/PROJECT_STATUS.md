@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #131 merged: Get/request state reporting
+
+- PR #131 merged to `main` by squash at `5fafad0b5a2d94ef2473c0a7c121d647cf8bdc76`, from tested head `7eb009c92821b6eb9dfb33326e7dfc3d81fd7244`.
+- Consolidated the modal, artwork-overlay, and card-action Get/request controls. Fixed swallowed acquisition outcomes, premature requested-state reporting, and HTTP 200 responses with `ok: false`; API payload and acquisition semantics remain unchanged.
+- Exact-head CI passed: Python syntax `38763416411`, Docker packaging `38763416267`, container runtime smoke `38763416429`, and Docker image validation with publishing paused `38763416356`.
+- Manual report published on PR #131: https://github.com/abucalip/navi-librarian/pull/131#issuecomment-6196528875. All eight checklist items passed on the exact tested head, including Get/request behavior without starting a real download.
+- Status: implemented, tested, CI passed, manually verified, merged. No image publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-15 — PR #128 merged: acquisition status layout
 
 - PR #128 (https://github.com/abucalip/navi-librarian/pull/128) merged to `main` at `424929410b0324313e9aee5e59da73803d4b32bb`, from exact final PR head `653984684be4e2da28e6de6955b43299143f1141`.
