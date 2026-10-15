@@ -1,3 +1,11 @@
+## 2026-10-15 — Next narrow settings boundary: Last.fm save policy
+
+- Move only Last.fm API-key normalization, blank-input preservation, configured-status response serialization, and settings-write invocation into `service_settings.py` with injected read/write callbacks.
+- Keep `discovery_set_lastfm_settings` as the compatibility/MCP adapter; SQLite schema and persistence implementation remain in `navidrome_server.py`. Preserve the exact JSON response contract and never return the key.
+- Acceptance: direct-import regression for trimmed replacement key, blank-key preservation, redaction, then focused/full tests and four exact-head workflows. Do not remove MCP dependencies or publish images.
+
+---
+
 ## 2026-10-15 — slskd settings policy extraction (PR #96)
 
 - PR #96 extracts slskd configuration validation, safe settings serialization, and settings update policy into `service_settings.py`. The legacy MCP functions remain adapters; connection checks, SQLite persistence/schema, and global `MUSIC_DIR` ownership remain in `navidrome_server.py`.
