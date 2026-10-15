@@ -3,7 +3,7 @@
 - **PR:** https://github.com/abucalip/navi-librarian/pull/108; branch `refactor/discovery-router-service-injection`.
 - **Change:** discovery routes now use the shared lazy `get_librarian` FastAPI dependency instead of importing `navidrome_server` at module load. Existing discovery service calls, route contracts, validation, parsing, filtering, and HTTP error mapping remain in place.
 - **Regression tests:** direct-import tests inject a fake service across recommendations, list retrieval, refresh, and feedback; verify payload normalization and key validation; and now include both accepted and filtered recommendation candidates.
-- **Verification:** no local tests were run. The branch was synchronized with current main in merge commit `5c715fae8e78f0616f94ce98f2c58ffa05629e54`. Four required workflows were queued on that synchronized head; final results remain pending. Do not merge until all four required workflows pass on the final head and the final diff is reviewed.
+- **Verification:** no local tests were run. The branch was synchronized with current main in merge commit `5c715fae8e78f0616f94ce98f2c58ffa05629e54`. Initial CI on the synchronized head exposed six existing discovery-route tests that still patched the removed module-level `discovery.librarian` attribute. Updated those tests to inject a fake service directly. All four required workflows must pass on the final head; results are pending. Do not merge until all four required workflows pass on the final head and the final diff is reviewed.
 - **Release state:** no image publication, deployment, or production runtime verification. MCP compatibility remains a required constraint.
 
 ---
