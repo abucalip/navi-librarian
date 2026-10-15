@@ -2,7 +2,7 @@
 
 - PR #155 was merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`. During this follow-on task, a packaging-only commit `08c0703ed1dea19eae1aa84f8a18b4a3ea8f8666` was inadvertently committed to `main`, adding the new module to Docker COPY before the module itself existed on `main`. The active branch `refactor/slskd-transfer-listing` was created from that exact current `main` head and supplies the module, adapter, tests, and documentation. Treat the Docker packaging gap as unresolved until this PR passes all required workflows and merges.
 - Objective: move the slskd transfer-list HTTP request and recursive response normalization into `slskd_transfers.py`, preserving `_slskd_download_transfer_files` as the legacy adapter.
-- Added a focused service with injected HTTP client and regression coverage for URL encoding/request timeout, 404-as-empty, nested directory inheritance, invalid payload records, input immutability, HTTP error propagation, and adapter behavior. Added Docker packaging.
+- Added a focused service with injected HTTP client and regression coverage for URL encoding/request timeout, 404-as-empty, nested directory inheritance, invalid payload records, input immutability, HTTP error propagation, and adapter behavior. The Dockerfile COPY reference is already on `main`; this PR supplies the referenced module and verifies the complete packaging/build state.
 - PR and exact-head CI are pending. No publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-15 — PR #155 merged: expected slskd track count
