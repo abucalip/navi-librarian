@@ -1067,9 +1067,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Branch: `test/migrate-discovery-eligibility-direct-import`. Code/test head `873f47328de0808c8d18e034d5a7d04e39a083f2` passed all four required workflows: syntax `38745139119`; Docker packaging/full suite/build `38745139114` (238 tests passed); runtime smoke `38745139370`; validation-only multi-architecture image validation `38745139332`. Final PR head `4db6654678f9ce091caf43b650c04039c15dd6ef` also passed all four: syntax `38745425843`, Docker packaging/full suite/build `38745426466`, runtime smoke `38745425909`, and validation-only multi-architecture image validation `38745426093`. PR #118 merged to `main` at `9b1ba91923321a835e8bd3a210dd6aaf01caefc2`. No local test run, image publication, or deployment is claimed.
 
 
-## 2026-10-15 — Acquisition cleanup rejects ambiguous remote paths
+## 2026-10-15 — PR #121 merged: reject ambiguous acquisition cleanup paths
 
-- Hardened `acquisition_cleanup.py` so remote filenames/transfer directories reject absolute paths, Windows drive-qualified paths, repeated separators, and explicit dot segments instead of silently normalizing them into a different source path. Parent traversal remains rejected.
-- Added direct-import regression cases proving these malformed remote filenames refuse cleanup before transfer lookup and leave the intended local track untouched.
-- Exact-head CI and full-suite results are pending; no local test run, live slskd operation, production deletion, publication, or deployment is claimed.
-- This is cleanup input validation only. It does not diagnose or claim to fix the deferred acquisition-dismissal HTTP 409.
+- PR #121 merged to `main` at `8e53fe83c11db6592d4716e6b5002a360cf8b763` from exact tested PR head `cbba06ce919cab8bd97d939544f489ab8e859ae7`.
+- `acquisition_cleanup.py` now rejects absolute paths, Windows drive-qualified paths, repeated separators, and explicit dot segments instead of silently normalizing malformed remote paths into a different source identity. Parent traversal remains rejected; ordinary relative paths using either slash style remain supported.
+- Added direct-import regression cases proving malformed paths refuse cleanup before transfer lookup and leave local files untouched.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety `38750890697`; Docker packaging/full unit suite/build `38750890576`; container runtime smoke `38750890609`; validation-only multi-architecture image validation `38750890533`. The full unit-test and build job passed; no separate local test run is claimed.
+- No live slskd operation, production deletion test, image publication, deployment, or production runtime verification. This change does not diagnose or claim to fix the deferred acquisition-dismissal HTTP 409.
