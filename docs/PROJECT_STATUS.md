@@ -1,3 +1,19 @@
+## 2026-10-15 — Acquisition lifecycle AST-boundary audit
+
+- Audited the remaining acquisition lifecycle cases in `tests/test_acquisition_safety.py` against direct-import coverage in `tests/test_acquisition_orchestration.py`, `tests/test_acquisition_lifecycle.py`, `tests/test_acquisition_watcher.py`, and the focused import/recovery suites.
+- **No AST lifecycle test was removed.** Each remaining case still proves a coordinator or adapter boundary that helper-only tests do not fully cover:
+  - simultaneous Get requests: shared transition-lock / reservation ordering and duplicate prevention across the top-level coordinator;
+  - import status persistence failure: the actual import adapter must not enter filesystem import until the `importing` transition is persisted;
+  - incomplete saved candidate: top-level Get must return `recovery_unavailable` without starting a new search or watcher;
+  - dismissed-job Get success/refusal: adapter wiring, returned status, and no retry when reactivation fails;
+  - stale downloading job: top-level recovery starts the watcher and does not requeue;
+  - broader-query retry: end-to-end query sequencing and diagnostic/result contract beyond polling-helper unit coverage.
+- Direct-import coverage is already present for the pure decisions and helpers (request reservation, existing-job recovery decision, dismissal/reactivation preflight, polling, and lifecycle policy). Removing any of the coordinator cases now would reduce coverage rather than complete a safe migration.
+- Scope of this audit: GitHub source and tests only. No application code or tests changed, and no local test execution is claimed. Existing `main` CI for `c6017f7a59e2aaec09e498ca4bda9315b0325cd3` is green across all four required workflows; this is baseline evidence, not CI for this documentation branch.
+- **Next priority:** perform the read-only web dependency audit of `navidrome_server.py` callers before any MCP retirement, starting with `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, `app/api/settings.py`, and `server.py`. Identify the smallest independently testable service boundary; do not remove MCP dependencies yet.
+
+---
+
 ## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight extracted
 
 - PR: https://github.com/abucalip/navi-librarian/pull/92
