@@ -1,3 +1,12 @@
+## 2026-10-15 — Conditional dismissed-job reactivation coverage
+
+- Direct-import state tests verify the conditional transition from `dismissed` to `retry_requested`, persisted retry metadata/time, and clearing stale candidate/settings.
+- Missing rows and rows in other states must return false without mutation.
+- Keep AST coordinator tests for explicit Get/retry sequencing and failed-reactivation refusal; direct state tests do not replace that integration boundary.
+- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed focused acquisition safety/syntax CI, the full 189-test unit suite, runtime smoke, and validation-only multi-architecture build. The final documentation-updated head still requires all four workflows before merge.
+
+---
+
 ## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed: syntax/acquisition safety run 38656927551, Docker packaging/full suite run 38656927436, runtime smoke run 38656927801, and multi-architecture validation-only run 38656927516.

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from acquisition_state import list_jobs, save_job
+from acquisition_state import list_jobs, reactivate_dismissed_job, save_job
 
 
 class AcquisitionStateStoreTests(unittest.TestCase):
@@ -59,6 +59,51 @@ class AcquisitionStateStoreTests(unittest.TestCase):
         self.assertEqual(job["settings"], {"downloads": "/safe"})
         self.assertEqual(job["details"]["quality_summary"], ["mp3_320"])
         self.assertEqual(job["updated_at"], 200.0)
+
+    def test_reactivate_dismissed_job_clears_stale_source_and_persists_retry_metadata(self):
+        save_job(
+            "Artist", "Album", "dismissed", {"message": "cleaned"},
+            candidate={"username": "old-peer", "files": [{"filename": "old/01.flac"}]},
+            settings={"slskd_downloads_path": "/old"},
+            services=self.services,
+        )
+        self.now[0] = 250.0
+
+        result = reactivate_dismissed_job(
+            " ARTIST ", "Album", {"mbid": "release-id"}, services=self.services,
+        )
+
+        self.assertTrue(result)
+        job = list_jobs(services=self.services)[0]
+        self.assertEqual(job["status"], "retry_requested")
+        self.assertEqual(job["candidate"], {})
+        self.assertEqual(job["settings"], {})
+        self.assertEqual(job["updated_at"], 250.0)
+        self.assertEqual(job["details"], {
+            "status": "retry_requested",
+            "message": "Retry requested; searching for available sources.",
+            "retry_requested_at": 250.0,
+            "metadata": {"mbid": "release-id"},
+        })
+
+    def test_reactivation_refuses_missing_or_non_dismissed_rows_without_mutation(self):
+        self.assertFalse(reactivate_dismissed_job(
+            "Artist", "Missing", {}, services=self.services,
+        ))
+        save_job(
+            "Artist", "Album", "downloading", {"percent": 40},
+            candidate={"username": "peer", "files": [{"filename": "Album/01.flac"}]},
+            settings={"slskd_downloads_path": "/downloads"},
+            services=self.services,
+        )
+        before = list_jobs(services=self.services)[0]
+
+        self.assertFalse(reactivate_dismissed_job(
+            "Artist", "Album", {"mbid": "new-id"}, services=self.services,
+        ))
+
+        after = list_jobs(services=self.services)[0]
+        self.assertEqual(after, before)
 
     def test_invalid_identity_is_rejected_before_database_write(self):
         with self.assertRaises(ValueError):

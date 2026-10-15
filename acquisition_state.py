@@ -88,3 +88,36 @@ def list_jobs(*, services):
             "created_at": row[8], "updated_at": row[9],
         })
     return jobs
+
+
+def reactivate_dismissed_job(artist, album, metadata=None, *, services):
+    """Conditionally reopen a dismissed row and discard its stale source inventory.
+
+    The caller owns transition-lock coordination. The conditional UPDATE is the
+    authoritative guard: a missing or non-dismissed row is never reactivated.
+    """
+    init = services["init"]
+    db_path = services["db_path"]
+    music_key = services["music_key"]
+    clock = services["clock"]
+    init()
+    artist_key, album_key = music_key(artist), music_key(album)
+    now = clock()
+    details = {
+        "status": "retry_requested",
+        "message": "Retry requested; searching for available sources.",
+        "retry_requested_at": now,
+        "metadata": metadata if isinstance(metadata, dict) else {},
+    }
+    with sqlite3.connect(db_path, timeout=10) as db:
+        cursor = db.execute(
+            "UPDATE discovery_acquisitions SET status=?, details_json=?, "
+            "candidate_json='{}', settings_json='{}', updated_at=? "
+            "WHERE artist_key=? AND album_key=? AND status='dismissed'",
+            (
+                "retry_requested", json.dumps(details, ensure_ascii=False), now,
+                artist_key, album_key,
+            ),
+        )
+        db.commit()
+        return cursor.rowcount == 1

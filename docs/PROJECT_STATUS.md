@@ -1,3 +1,13 @@
+## 2026-10-15 — Dismissed-acquisition reactivation state extraction
+
+- Base: GitHub `main` at `3f9304f21ec282912ca7427f7074dbc35cb62585`; branch `refactor/dismissed-acquisition-reactivation-state`.
+- Extracted the conditional SQLite reactivation transition into `acquisition_state.reactivate_dismissed_job`; the server/MCP function remains a compatibility adapter and still receives the caller-owned transition lock from the coordinator.
+- Direct-import tests cover successful retry metadata/timestamp persistence, clearing stale candidate/settings, and refusal without mutation for missing or non-dismissed rows. Coordinator AST tests remain.
+- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed all four required workflows: syntax/acquisition safety `38658206572`, Docker packaging/full suite `38658206550` (189 tests passed), runtime smoke `38658206476`, and multi-architecture image validation with publishing paused `38658206595`.
+- Documentation-only verification follow-up is being added; all four workflows must also pass on the final PR head before merge. No merge, publication, deployment, or production runtime verification yet.
+
+---
+
 ## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`. All four required workflows passed: Python syntax and acquisition safety regressions (run 38656927551), Docker packaging/full unit suite (38656927436), container runtime smoke (38656927801), and multi-architecture image validation with publishing paused (38656927516).

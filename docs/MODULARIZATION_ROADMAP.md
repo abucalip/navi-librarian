@@ -1,3 +1,12 @@
+## 2026-10-15 — Dismissed-job reactivation state extraction
+
+- Extracted the conditional reactivation SQL into `acquisition_state.py` using injected schema, database path, identity normalization, and clock dependencies.
+- Preserved the server function as a compatibility adapter and kept transition-lock ownership in the coordinator.
+- Direct tests cover successful stale-source reset and no mutation for absent/non-dismissed rows; AST tests remain for coordinator-level success/failure sequencing.
+- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed all four workflows (full suite: 189 tests); publishing remained paused. Re-run all four workflows on the final documentation-updated PR head before merge.
+
+---
+
 ## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed (syntax 38656927551, Docker packaging/full suite 38656927436, runtime smoke 38656927801, multi-architecture validation-only 38656927516).
