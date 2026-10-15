@@ -1,9 +1,15 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — Safety gate before the next service extraction
 
-- PR #98 is open: [refactor: extract acquisition request coordinator](https://github.com/abucalip/navi-librarian/pull/98), exact tested head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`.
-- The coordinator module owns the top-level request decision sequence behind injected dependencies; the MCP/web adapter and persistence ownership stay in `navidrome_server.py`.
-- All four required workflows passed on the exact head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture `38722709298`. No publishing/deployment/runtime verification.
-- **Next:** review the final diff and PR state, merge only if the exact head and all checks remain valid, then continue the highest-priority remaining safety/test audit rather than routine extraction.
+- Pause routine modularization while verifying the acquisition cleanup directory-swap hardening. Path-based deletion after external transfer callbacks presented a plausible symlink replacement race; the fix and regression are on `fix/acquisition-cleanup-directory-race`.
+- Next: review the final diff and require focused/full tests plus all four CI workflows on the exact PR head before merge. No image publication or deployment.
+
+---
+
+## 2026-10-15 — PR #98 merged
+
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- The top-level acquisition request decision sequence now lives in `acquisition_request_coordinator.py`; adapters, persistence ownership, shared locks, and watcher lifecycle remain in the legacy server boundary.
+- All four required workflows passed on that exact head. Continue with the highest-priority safety/test gaps before routine service extractions.
 
 ---
 

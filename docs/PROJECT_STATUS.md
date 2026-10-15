@@ -1,10 +1,16 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — Acquisition cleanup directory-swap hardening (verification pending)
 
-- PR #98 ([acquisition request coordinator extraction](https://github.com/abucalip/navi-librarian/pull/98)) remains **open**, branch `refactor/acquisition-request-coordinator`, exact tested head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`.
-- Extracted the `discovery_acquire_album` decision sequence into `acquisition_request_coordinator.py`; the MCP/web adapter continues to supply state, locks, persistence access, watcher lifecycle, and acquisition implementation.
-- All four required workflows passed on that exact PR head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, and validation-only multi-architecture image validation `38722709298`. First CI caught a missing dependency in the AST adapter harness; it was fixed without removing integration coverage, and corrected/final-head checks passed.
-- No local tests were run separately. No image publication, deployment, or production runtime verification; publishing remains paused.
-- **Next action:** review the final PR diff and merge PR #98 only after confirming the current PR head and required checks still match the evidence above.
+- Safety audit found a time-of-check/time-of-use gap in `clean_acquisition_source`: the code preflighted a target folder, called external transfer lookups, then deleted via path-based operations. Replacing that folder with a symlink during the callback could redirect deletion outside the intended folder.
+- The fix pins the verified directory through no-follow, descriptor-relative traversal, compares device/inode identities, and unlinks only verified basenames relative to the pinned directory. Added a regression that swaps the album folder for a symlink during transfer lookup and asserts both the outside target and moved original album files remain intact.
+- Branch: `fix/acquisition-cleanup-directory-race`. Implementation and regression are committed; exact-head CI and focused/full test results are pending. No production data or deployment was touched.
+
+---
+
+## 2026-10-15 — PR #98 merged: acquisition request coordinator
+
+- PR #98 ([acquisition request coordinator extraction](https://github.com/abucalip/navi-librarian/pull/98)) merged at `ae6635573aa57eb9303909701e6f0a5834066495`, from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- `acquisition_request_coordinator.py` owns the top-level request decision sequence behind injected dependencies; the MCP/web adapter retains the legacy interface, while shared state, persistence, watcher lifecycle, and acquisition implementation remain injected.
+- All four required workflows passed on the exact head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, container runtime smoke `38723927058`, and validation-only multi-architecture validation `38723927057`. Publishing remains paused; no deployment/runtime verification.
 
 ---
 
