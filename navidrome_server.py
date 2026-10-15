@@ -43,7 +43,6 @@ from urllib.parse import urlparse
 import httpx
 from dotenv import load_dotenv
 from mutagen import File
-from mcp.server.mcpserver import MCPServer
 load_dotenv(Path(__file__).with_name(".env"))
 
 # Mutable application state lives outside the source tree when configured (e.g. Docker /data).
@@ -122,7 +121,6 @@ def _default_music_dir():
 
 MUSIC_DIR = _default_music_dir()
 
-mcp = MCPServer("navidrome-librarian")
 
 
 def api_call(method, **params):
@@ -170,7 +168,6 @@ def items(value):
     return value if isinstance(value, list) else [value]
 
 
-@mcp.tool()
 def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
     """Read a bounded section of this MCP server's own source code.
 
@@ -218,7 +215,6 @@ def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
     }, ensure_ascii=False, indent=2)
 
 
-@mcp.tool()
 def library_overview() -> str:
     """Summarize the artists and albums recently added to Navidrome."""
     artists_root = api_call("getArtists")
@@ -257,7 +253,6 @@ def library_overview() -> str:
     }, ensure_ascii=False, indent=2)
 
 
-@mcp.tool()
 def search_music(query: str, category: str = "all") -> str:
     """Search Navidrome for artists, albums, or tracks.
 
@@ -307,7 +302,6 @@ def search_music(query: str, category: str = "all") -> str:
     return json.dumps(output, ensure_ascii=False, indent=2)
 
 
-@mcp.tool()
 def get_album_details(album_id: str) -> str:
     """Get album metadata and track listings using an album ID from search_music."""
     if not album_id.strip():
@@ -337,7 +331,6 @@ def get_album_details(album_id: str) -> str:
     }, ensure_ascii=False, indent=2)
 
 
-@mcp.tool()
 def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
     """Read audio tags and report missing MusicBrainz IDs.
 
@@ -575,7 +568,6 @@ def _lastfm_album_popularity(artist, album):
         return None
 
 
-@mcp.tool()
 def recent_listening_profile(days: int = 30) -> str:
     """Summarize recent ListenBrainz listening by artist and album.
 
@@ -629,7 +621,6 @@ def recent_listening_profile(days: int = 30) -> str:
     }, ensure_ascii=False, indent=2)
 
 
-@mcp.tool()
 def recommend_new_music(count: int = 10) -> str:
     """Recommend albums from ListenBrainz that do not appear to be in Navidrome.
 
@@ -2236,7 +2227,6 @@ def _discovery_refresh_personal(count=20):
     )
 
 
-@mcp.tool()
 def discovery_set_feedback(
     artist: str,
     album: str,
@@ -3161,13 +3151,11 @@ def _listenbrainz_username():
     return _service_listenbrainz_username(_discovery_settings_read)
 
 
-@mcp.tool()
 def discovery_get_navidrome_settings() -> str:
     """Return Navidrome settings without exposing the saved password."""
     return _service_get_navidrome_settings(_discovery_settings_read, MUSIC_DIR)
 
 
-@mcp.tool()
 def discovery_set_navidrome_settings(
     navidrome_url: str,
     username: str,
@@ -3191,7 +3179,6 @@ def discovery_set_navidrome_settings(
     )
 
 
-@mcp.tool()
 def discovery_test_navidrome_connection() -> str:
     """Test the configured Navidrome credentials without exposing them."""
     try:
@@ -3204,13 +3191,11 @@ def discovery_test_navidrome_connection() -> str:
         })
 
 
-@mcp.tool()
 def discovery_get_lastfm_settings() -> str:
     """Return Last.fm configuration status without exposing the API key."""
     return _service_get_lastfm_settings(_discovery_settings_read)
 
 
-@mcp.tool()
 def discovery_set_lastfm_settings(api_key: str = "") -> str:
     """Save a Last.fm API key; a blank key preserves the saved key."""
     return _service_set_lastfm_settings(
@@ -3218,7 +3203,6 @@ def discovery_set_lastfm_settings(api_key: str = "") -> str:
     )
 
 
-@mcp.tool()
 def discovery_test_lastfm_connection() -> str:
     """Test the configured Last.fm API key without exposing it."""
     key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
@@ -3238,19 +3222,16 @@ def discovery_test_lastfm_connection() -> str:
         return json.dumps({"ok": False, "status": "connection_failed", "message": "Could not reach Last.fm or validate the API key."})
 
 
-@mcp.tool()
 def discovery_get_listenbrainz_settings() -> str:
     """Return the configured ListenBrainz username."""
     return json.dumps({"username": _listenbrainz_username()})
 
 
-@mcp.tool()
 def discovery_set_listenbrainz_settings(username: str) -> str:
     """Save a ListenBrainz username."""
     return _service_set_listenbrainz_settings(_discovery_settings_write, username)
 
 
-@mcp.tool()
 def discovery_test_listenbrainz_connection() -> str:
     """Test whether the configured public ListenBrainz profile can be read."""
     try:
@@ -3272,7 +3253,6 @@ def _slskd_config():
     return _service_slskd_config(_discovery_settings_read)
 
 
-@mcp.tool()
 def discovery_get_slskd_settings() -> str:
     """Read acquisition settings without returning the stored API key."""
     return _service_get_slskd_settings(
@@ -3280,7 +3260,6 @@ def discovery_get_slskd_settings() -> str:
     )
 
 
-@mcp.tool()
 def discovery_set_slskd_settings(
     slskd_url: str = "http://192.168.1.12:5030",
     api_key: str = "",
@@ -3309,7 +3288,6 @@ def discovery_set_slskd_settings(
     )
 
 
-@mcp.tool()
 def discovery_test_slskd_connection() -> str:
     """Test the configured slskd API without exposing the API key."""
     try:
@@ -4432,7 +4410,6 @@ def _discovery_acquire_album_impl(
         }, ensure_ascii=False)
 
 
-@mcp.tool()
 def _discovery_reactivate_dismissed_acquisition(artist, album, metadata=None):
     """Compatibility adapter for the conditional dismissed-job retry transition."""
     return _acquisition_state.reactivate_dismissed_job(
@@ -4446,7 +4423,6 @@ def _discovery_reactivate_dismissed_acquisition(artist, album, metadata=None):
     )
 
 
-@mcp.tool()
 def discovery_acquire_album(
     artist: str,
     album: str,
@@ -4471,7 +4447,6 @@ def discovery_acquire_album(
     )
 
 
-@mcp.tool()
 def discovery_queue_slskd_candidate(
     username: str,
     files_json: str,
@@ -4529,7 +4504,6 @@ def discovery_queue_slskd_candidate(
             "detail": str(exc)[:300],
         }, ensure_ascii=False)
 
-@mcp.tool()
 def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
     """Read saved discovery results or the For Me list.
 
@@ -4657,7 +4631,6 @@ def _discovery_refresh_all():
     return results
 
 
-@mcp.tool()
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
     """Refresh personal, classics, artist_deep_dive, new_releases, or all lists.
 
@@ -4743,7 +4716,6 @@ def _start_discovery_scheduler():
     thread.start()
 
 
-@mcp.tool()
 def restart_server() -> str:
     """Restart only this Navidrome Librarian HTTP server and log the result."""
     import json
@@ -4826,7 +4798,6 @@ with open(log_path, "a", buffering=1) as log:
     })
 
 
-@mcp.tool()
 def apply_server_patch(old_text: str, new_text: str) -> str:
     """Safely replace one exact, unique section in this server's own source."""
     import difflib
@@ -4913,4 +4884,9 @@ def apply_server_patch(old_text: str, new_text: str) -> str:
 
 if __name__ == "__main__":
     _start_discovery_scheduler()
-    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000)
+    import sys
+    from mcp_registry import create_mcp_server
+
+    create_mcp_server(sys.modules[__name__]).run(
+        transport="streamable-http", host="127.0.0.1", port=8000
+    )
