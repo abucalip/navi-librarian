@@ -4570,7 +4570,7 @@ def discovery_acquire_album(
         return json.dumps({"ok": False, "error": "Artist and album are required."})
     identity = (_music_key(artist), _music_key(album))
     with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if not acquisition_orchestration.reactivate_dismissed_acquisition_if_needed(
+        if not _acquisition_orchestration.reactivate_dismissed_acquisition_if_needed(
             artist, album, metadata_json,
             is_dismissed=_discovery_is_dismissed,
             reactivate=_discovery_reactivate_dismissed_acquisition,
