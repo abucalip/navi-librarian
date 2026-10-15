@@ -25,7 +25,7 @@ def clean_acquisition_source(
 
     def normalized_path(value):
         """Normalize a relative remote path, rejecting ambiguous components."""
-        raw = str(value or "").replace("\\\\", "/")
+        raw = str(value or "").replace("\\", "/")
         # slskd paths must be relative. Do not silently normalize absolute,
         # drive-qualified, repeated-separator, or dot-segment paths into a
         # different path that could be mistaken for the expected source.
