@@ -291,11 +291,10 @@ PR #110 moved `/api/health` and `/api/dashboard-picks` into `app/api/dashboard.p
 PR #112 exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed all four required workflows: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`. No publication, deployment, or production runtime verification.
 
 
-## Listening profile aggregation — extraction in progress
+## Listening profile aggregation — completed (PR #167)
 
-The pure aggregation of ListenBrainz history into the existing recent-listening profile payload lives in `listening_profile.py`. The `recent_listening_profile(days)` legacy MCP-facing function remains responsible for input validation, provider retrieval/error mapping, and JSON serialization, and delegates only aggregation. The module is packaged in Docker and has direct-import tests for payload shape, counts, empty history, and stable tie order. Exact-head CI and merge are pending; publishing/deployment remain paused.
+The pure aggregation of ListenBrainz history into the recent-listening profile payload lives in `listening_profile.py`; `recent_listening_profile(days)` remains the legacy MCP-facing adapter. Direct-import tests cover payload shape, counts, empty history, and stable tie order. All four required workflows passed on exact head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; PR #167 merged at `6b656dc7218280aa0d37e738a881061ceefde55e`.
 
+## Discovery library snapshot — completed (PR #168)
 
-## Discovery library snapshot — extraction in progress
-
-`discovery_library_snapshot.py` owns cached artist/album inventory assembly with injected Navidrome API, collection-normalization, and discovery-store callbacks. The legacy `_discovery_library_snapshot()` wrapper remains in `navidrome_server.py`. Cache freshness/schema checks, album-ID deduplication, 500-item pagination, and the 50,000-album safety stop are covered by direct-import tests. Docker packaging is updated; exact-head verification and merge are pending.
+`discovery_library_snapshot.py` owns cached artist/album inventory assembly with injected Navidrome API, collection-normalization, and discovery-store callbacks. The legacy `_discovery_library_snapshot()` wrapper remains in `navidrome_server.py`. Direct-import tests cover cache reuse/schema compatibility, album-ID deduplication, pagination, and the 50,000-album safety stop. All four required workflows passed on exact head `fc69943301c5065a54a0128c8b82ae214cd69dd1`; PR #168 merged at `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`. Publishing/deployment remain paused and unverified.
