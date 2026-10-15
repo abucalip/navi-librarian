@@ -115,6 +115,38 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
                 self.assertTrue(self.track.exists())
                 self.assertEqual(calls, [])
 
+    def test_inconsistent_transfer_paths_are_rejected_before_cancellation(self):
+        for filename, directory in (
+            ("Other/01.flac", "Album"),
+            ("/Album/01.flac", "Album"),
+            (r"C:\Album\01.flac", "Album"),
+        ):
+            with self.subTest(filename=filename, directory=directory):
+                active = [{
+                    "id": "transfer-1",
+                    "filename": filename,
+                    "_transfer_directory": directory,
+                    "size": 4,
+                    "state": "transferring",
+                }]
+                delete_calls = []
+                client = self.http_client
+                original_delete = client.delete
+                client.delete = lambda *args, **kwargs: (
+                    delete_calls.append(args)
+                    or SimpleNamespace(status_code=204)
+                )
+                try:
+                    result, calls = self.clean([active, []])
+                finally:
+                    client.delete = original_delete
+
+                self.assertFalse(result)
+                self.assertTrue(self.track.exists())
+                self.assertEqual(self.track.read_bytes(), b"1234")
+                self.assertEqual(delete_calls, [])
+                self.assertEqual(len(calls), 1)
+
     def test_duplicate_named_folders_are_rejected_as_ambiguous(self):
         self.track.unlink()
         self.folder.rmdir()
