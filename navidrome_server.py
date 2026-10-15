@@ -9,6 +9,7 @@ import unicodedata
 import discovery_store
 import listenbrainz_client as _listenbrainz_client
 import lastfm_client as _lastfm_client_module
+import musicbrainz_rating_client as _musicbrainz_rating_client
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
@@ -2322,39 +2323,13 @@ def _lastfm_similar_artists(artist, limit=8):
 
 
 def _musicbrainz_critical_rating(mbid, include_year=False):
-    if not mbid:
-        return None
-    cache_key = "discovery:mb-release-group-rating:" + str(mbid)
-    cached = _metadata_cache_get(cache_key, ttl_seconds=180 * 24 * 60 * 60)
-    if cached is not None and (not include_year or "year" in cached):
-        return cached
-    try:
-        # MusicBrainz requests must be spaced to respect its public API limit.
-        time.sleep(1.1)
-        response = httpx.get(
-            f"https://musicbrainz.org/ws/2/release-group/{mbid}",
-            params={"fmt": "json", "inc": "ratings"},
-            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-            timeout=15,
-        )
-        if response.status_code == 404:
-            empty_result = {"rating": None, "votes": 0, "year": None}
-            _metadata_cache_set(cache_key, empty_result)
-            return empty_result
-        response.raise_for_status()
-        data = response.json()
-        rating = data.get("rating") or {}
-        release_date = str(data.get("first-release-date") or "")
-        year_text = release_date[:4]
-        result = {
-            "rating": rating.get("value"),
-            "votes": int(rating.get("votes-count") or 0),
-            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
-        }
-        _metadata_cache_set(cache_key, result)
-        return result
-    except (httpx.HTTPError, ValueError, TypeError):
-        return None
+    """Compatibility adapter for cached MusicBrainz release-group ratings."""
+    return _musicbrainz_rating_client.critical_rating(
+        mbid,
+        include_year=include_year,
+        cache_get=_metadata_cache_get,
+        cache_set=_metadata_cache_set,
+    )
 
 
 def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
