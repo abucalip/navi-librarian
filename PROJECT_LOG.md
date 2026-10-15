@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #128 merged: acquisition status layout
+
+- PR #128 (https://github.com/abucalip/navi-librarian/pull/128) merged by squash at `424929410b0324313e9aee5e59da73803d4b32bb`, from final head `653984684be4e2da28e6de6955b43299143f1141`.
+- Acquisition cards now use a wider status-board composition appropriate for progress, transport details, quality profile, and actions; discovery layouts and backend/API behavior are unchanged.
+- Manual report (https://github.com/abucalip/navi-librarian/pull/128#issuecomment-6195576007) records all eight acceptance checks passing on UI commit `4b2d30a510d5b850be25e059641eee29d9d7dde9`. After the report, a documentation-only conflict resolution corrected the UI backlog record; no UI files changed.
+- All four required GitHub Actions workflows passed on final PR head `653984684be4e2da28e6de6955b43299143f1141`: syntax `38760144749`, container runtime smoke `38760144797`, Docker packaging `38760144678`, and image validation (publishing paused) `38760144644`.
+- Status: implemented, manually tested on the UI commit, CI passed on final PR head, merged. Not published, deployed, or runtime-verified in production.
+
 ## 2026-10-15 — PR #124 merged: shared UI status states
 
 - PR #124 (https://github.com/abucalip/navi-librarian/pull/124) merged by squash at `9a3aa7bd295de0de7d9408b01db22ab700e4d101`, from exact tested head `28e5a88ae362043171aaabb1f8667f6cf5ef10f7`.
