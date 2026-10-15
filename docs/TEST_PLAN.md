@@ -1,3 +1,37 @@
+## Standard multi-extraction session protocol
+
+A session may complete two or three small extractions, but each extraction must pass its own independent acceptance and verification gates. The default is one extraction per PR; combine extractions only when they are tightly coupled and explain why independent review/testing is not practical. Do not treat throughput as a quota.
+
+For each extraction, before merge:
+
+1. Trace production callers, compatibility adapters, tests, configuration and Docker packaging. Add direct-import tests for the extracted module and compatibility tests for the existing public/MCP-facing adapter. For acquisition/import/cleanup, retain positive and refusal cases, including traversal/symlink escapes, ambiguous targets, unrelated-file preservation, rollback and interrupted recovery as applicable.
+2. Run focused regression tests, `python -m unittest discover -s tests -v`, syntax checks, and relevant API/Docker checks when available. Record commands and real outcomes; list skipped or unavailable checks explicitly.
+3. Review the full diff and ensure no unrelated changes, weakened safety validation, secrets, or missing packaged modules.
+4. On the exact **final PR-head SHA after all edits**, require all four workflows to pass: (a) Python syntax and acquisition-safety regressions; (b) Docker packaging, full unit suite and image build; (c) isolated container runtime smoke; (d) validation-only multi-architecture image validation. Publishing remains disabled. A result from an earlier SHA does not verify a later documentation or code commit.
+5. For UI-facing PRs, run the documented manual browser checklist after automated CI passes, against that exact tested SHA. Non-UI changes require relevant automated/API/integration checks but not an unrelated full visual pass.
+6. Merge only after acceptance, diff review, and all required checks pass. Refresh GitHub `main`, PR list, and CI after each merge before proceeding to the next extraction. If later work depends on a merge, retarget/update the branch safely and rerun required checks on its new exact head.
+
+For the session closeout, record each PR separately in `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md`: branch, PR, exact tested SHA, focused/full test outcomes, four workflow outcomes, merge SHA, skipped checks, and distinct publication/deployment/runtime status. Stop rather than bundle additional work if a safety issue, unexpected coupling, or failed gate appears. See `docs/DEVELOPMENT_WORKFLOW.md` for the operational sequence.
+
+---
+
+## 2026-10-15 — Music path default policy extraction (verified)
+
+Direct-import regression tests in `tests/test_music_paths.py` cover explicit environment override and home expansion, server mount preference, Mac mount fallback, and production fallback. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`: syntax plus acquisition safety regressions (`38805068326`), Docker packaging/full unit suite/build (`38805068317`), container runtime smoke (`38805068315`), and validation-only multi-architecture build (`38805068337`). Publishing remains paused; no production deployment/runtime verification is claimed.
+
+## 2026-10-15 — Navidrome API client extraction (pending verification)
+
+Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m unittest discover -s tests -v` suite. Direct-import tests must cover deterministic token generation, base URL and method path, authentication/version/client/format parameters, forwarded caller parameters, HTTP client timeout and redirect policy, successful response handling, and exact legacy API error messages. Then verify Python syntax, Docker packaging/full tests/build, isolated container runtime smoke, and validation-only multi-architecture Docker image validation on the exact final PR head. Initial exact implementation head `555da7027ae0aa9f636ba66e18b33d549cd787d6` passed the four workflows (syntax `38802076122`, Docker packaging/full suite `38802076327`, runtime smoke `38802076229`, multi-architecture validation `38802076245`). Because this note is a documentation-only follow-up, rerun and confirm all four workflows on the resulting final PR head before merge.
+
+## 2026-10-15 — Metadata cache extraction CI follow-up
+
+- Initial PR-head CI exposed a regression-test fixture issue: the malformed-JSON test inserted directly before creating the cache table. The fixture now initializes the table through the public cache service before inserting malformed JSON.
+- Corrected test commit: d6e28b665a3b16cbd3aba68744e1943a73d1cda1. All required workflows must be rechecked on this exact updated head; the initial failed run is not evidence of a passing suite.
+
+## 2026-10-15 — Metadata cache extraction (pending CI)
+
+Direct-import tests in tests/test_metadata_cache.py cover Unicode JSON round-trips, cache misses/expiry, malformed cached JSON, and non-fatal storage failures for the extracted MetadataCache. Run this focused test, the full unit suite, syntax checks, Docker packaging, runtime smoke, and validation-only multi-architecture build on the exact PR head before merge. No result is claimed until those checks complete.
+
 ## 2026-10-15 — Completed: slskd settings boolean validation
 
 - `PUT /api/settings/slskd` accepts explicit JSON booleans for `auto_acquire_for_me`, rejects strings (including `"false"`), numbers, null, arrays, and objects with HTTP 400 before service invocation, and preserves the existing value when the field is omitted.
@@ -891,3 +925,25 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - PR #145 tested head `421d1d2860945548aa01677847ce0953b7c9f263` passed the manual browser checklist 8/8 with zero failures; report: https://github.com/abucalip/navi-librarian/pull/145#issuecomment-6200647429.
 - The report covers app startup/setup, dashboard/artwork, discovery, navigation/modal, settings, Get/request, acquisition cards, and unexpected browser/server errors. It is tied to the exact PR head.
 - The report does not claim real screen-reader testing; isolated artwork checks used a placeholder. Four required CI workflows passed on that exact head: syntax `38794301415`, runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only image validation `38794301405`. Publishing remains paused.
+
+
+## Data-directory resolution extraction — PR verification required
+
+Run `python -m unittest tests.test_data_directory -v` and `python -m unittest discover -s tests -v`. The direct-import regressions verify configured-path home expansion, empty-value fallback, and source-directory fallback. Also verify Python syntax, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. Confirm the Docker image contains `data_directory.py`. Preserve `navidrome_server.DATA_DIR`, directory creation, configured relative-path semantics, and legacy persistence ownership. Do not claim tests passed until actual CI results are observed.
+
+
+## Completed — data-directory resolution extraction (PR #152)
+
+- Added direct-import regression coverage for configured path home expansion, empty configuration fallback, and resolved source-directory fallback in `tests/test_data_directory.py`.
+- Exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae` passed all four required workflows: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
+- PR #152 merged by squash at `567409bb90f240667575a3730976e4c52676bc02`. No separate local test run, image publication, deployment, or production runtime verification is claimed.
+
+
+## Subsonic collection normalization extraction — pending verification
+
+Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m unittest discover -s tests -v` suite. The direct-import regression must cover `None`, a scalar value, an empty list, and a multi-item list, while the legacy `navidrome_server.items()` adapter remains compatible. Verify Python syntax/acquisition safety, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. No results are claimed until the workflows complete.
+
+
+## Subsonic collection normalization extraction — completed (PR #153)
+
+PR #153 merged at `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc` from exact tested head `c834383b7484f3c149679d62812f1c81f6133625`. Direct-import regression cases cover `None`, scalar, empty-list, and populated-list values. All four required exact-head CI workflows passed: Python syntax check, Docker packaging validation/full suite/build, container runtime smoke, and validation-only multi-architecture image validation. No separate local test execution, image publication, deployment, or production runtime verification is claimed.

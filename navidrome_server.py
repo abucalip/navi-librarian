@@ -3,12 +3,14 @@ import json
 import os
 import random
 import shutil
-import secrets
 import sqlite3
 import time
 import unicodedata
 import discovery_store
+from music_paths import default_music_dir as _default_music_dir_from_environment
+import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
+from metadata_cache import MetadataCache
 from service_settings import (
     get_lastfm_settings as _service_get_lastfm_settings,
     set_lastfm_settings as _service_set_lastfm_settings,
@@ -43,6 +45,7 @@ from acquisition_completion import (
 )
 from pathlib import Path
 from urllib.parse import urlparse
+from data_directory import resolve_data_dir
 
 import httpx
 from dotenv import load_dotenv
@@ -50,77 +53,28 @@ from mutagen import File
 load_dotenv(Path(__file__).with_name(".env"))
 
 # Mutable application state lives outside the source tree when configured (e.g. Docker /data).
-DATA_DIR = Path(
-    os.environ.get("NAVIDROME_LIBRARIAN_DATA_DIR")
-    or Path(__file__).resolve().parent
-).expanduser()
+DATA_DIR = resolve_data_dir(os.environ, __file__)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Persistent MusicBrainz metadata cache.
 METADATA_CACHE_DB = DATA_DIR / "navidrome_metadata_cache.sqlite3"
+_metadata_cache = MetadataCache(METADATA_CACHE_DB)
 
 
 def _metadata_cache_get(key, ttl_seconds):
-    """Return cached JSON data if it exists and has not expired."""
-    try:
-        with sqlite3.connect(METADATA_CACHE_DB, timeout=5) as db:
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS metadata_cache (
-                    cache_key TEXT PRIMARY KEY,
-                    value_json TEXT NOT NULL,
-                    cached_at REAL NOT NULL
-                )
-            """)
-            row = db.execute(
-                "SELECT value_json, cached_at FROM metadata_cache "
-                "WHERE cache_key = ?",
-                (key,),
-            ).fetchone()
-
-        if row is None or time.time() - row[1] > ttl_seconds:
-            return None
-
-        return json.loads(row[0])
-    except (sqlite3.Error, ValueError, TypeError):
-        # A cache problem must never prevent recommendations from working.
-        return None
+    """Compatibility adapter for the extracted metadata cache service."""
+    return _metadata_cache.get(key, ttl_seconds)
 
 
 def _metadata_cache_set(key, value):
-    """Store JSON-compatible metadata; cache failures are non-fatal."""
-    try:
-        with sqlite3.connect(METADATA_CACHE_DB, timeout=5) as db:
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS metadata_cache (
-                    cache_key TEXT PRIMARY KEY,
-                    value_json TEXT NOT NULL,
-                    cached_at REAL NOT NULL
-                )
-            """)
-            db.execute(
-                "INSERT OR REPLACE INTO metadata_cache "
-                "(cache_key, value_json, cached_at) VALUES (?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), time.time()),
-            )
-    except (sqlite3.Error, TypeError, ValueError):
-        pass
+    """Compatibility adapter for the extracted metadata cache service."""
+    _metadata_cache.set(key, value)
 
 # Environment variables provide first-run defaults; service settings are persistent.
 
 def _default_music_dir():
-    """Choose an explicit override or the native mount path for this host."""
-    configured = os.environ.get("NAVIDROME_MUSIC_DIR")
-    if configured:
-        return Path(configured).expanduser()
-
-    server_path = Path("/media/library/music")
-    mac_path = Path("/Volumes/media/library/music")
-    if server_path.is_dir():
-        return server_path
-    if mac_path.is_dir():
-        return mac_path
-    # The production deployment is the media LXC; this is its default.
-    return server_path
+    """Compatibility adapter for the extracted music-path default policy."""
+    return _default_music_dir_from_environment(os.environ, lambda path: path.is_dir())
 
 
 MUSIC_DIR = _default_music_dir()
@@ -128,48 +82,17 @@ MUSIC_DIR = _default_music_dir()
 
 
 def api_call(method, **params):
-    """Call the Subsonic-compatible API using configured token authentication."""
-    base_url, username, password = _navidrome_config()
-    salt = secrets.token_hex(12)
-    token = hashlib.md5(
-        (password + salt).encode("utf-8")
-    ).hexdigest()
-
-    query = {
-        "u": username,
-        "t": token,
-        "s": salt,
-        "v": "1.16.1",
-        "c": "navidrome-librarian",
-        "f": "json",
+    """Compatibility adapter for the extracted Navidrome API client."""
+    return _navidrome_client.api_call(
+        method,
+        _navidrome_config,
         **params,
-    }
-
-    with httpx.Client(timeout=30, follow_redirects=False) as client:
-        response = client.get(
-            f"{base_url}/rest/{method}.view",
-            params=query,
-        )
-        response.raise_for_status()
-        data = response.json()
-
-    root = data.get("subsonic-response", {})
-
-    if root.get("status") != "ok":
-        error = root.get("error", {})
-        raise RuntimeError(
-            f"Navidrome API error {error.get('code')}: "
-            f"{error.get('message', 'Unknown error')}"
-        )
-
-    return root
+    )
 
 
 def items(value):
-    """Normalize an optional API result to a list."""
-    if value is None:
-        return []
-    return value if isinstance(value, list) else [value]
+    """Compatibility adapter for Subsonic collection normalization."""
+    return _navidrome_client.items(value)
 
 
 def get_server_source(start_line: int = 1, end_line: int = 200) -> str:

@@ -1,3 +1,63 @@
+## 2026-10-15 — PR #154 merged; PR #149 remains gated
+
+- PR #154: https://github.com/abucalip/navi-librarian/pull/154. Final tested head: `6de27ec137e9f859424eca0928fca25500852471`; squash merge commit: `b547ff5c647d8bacd8bf17fd6cd760dc9c41980a`.
+- All four required workflows passed on the exact PR #154 head: Python syntax, container runtime smoke, Docker packaging/full unit suite/image build, and validation-only multi-architecture image validation. Publishing remained paused; no deployment or production runtime verification is claimed.
+- PR #154 standardized multi-extraction session verification in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`. It is merged; this session is closed out for that work.
+- PR #149 remains open and was **not merged**: https://github.com/abucalip/navi-librarian/pull/149. Its exact head `600c75475cfbe1d28230345835aee2316519365f` has all four workflows passing, but its own description explicitly says the required manual browser checklist was not run. The branch is also 26 commits behind current `main`; do not merge until the branch is safely brought current, exact-head CI is reverified, and the required UI browser checklist is performed and recorded. No assumption is made that the user’s “report published” statement substitutes for that verification gate.
+- Next action: update PR #149 safely against current GitHub `main`, rerun required CI on its resulting exact head, and complete the documented manual UI checklist before merge.
+
+---
+
+## 2026-10-15 — Standard multi-extraction session workflow (PR #154 pending)
+
+- PR: https://github.com/abucalip/navi-librarian/pull/154; branch: `docs/multi-extraction-session-workflow`.
+- Standardized session planning for two or three small extractions as a target, not a quota. Each extraction retains its own acceptance criteria and verification gates; one extraction per PR is the default unless boundaries are tightly coupled.
+- Updated `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md` with fresh GitHub-state checks, caller/compatibility audits, direct-import regressions, focused and full tests, full-diff review, all four required workflows on the exact final PR head, UI-specific manual gates, sequential merge refresh, and session closeout requirements.
+- Documentation-only; no application code, test code, Docker release configuration, publishing, or deployment changed. Required exact-final-head CI is pending. Do not merge until all four workflows pass on the final PR head after these documentation updates.
+- Publishing remains paused. No deployment or production runtime verification is claimed.
+
+---
+
+## 2026-10-15 — PR #151 merged: music path default policy extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/151. Tested head: `07cf1ab7dab46a1409236f7134881011dc31cac2`; squash merge commit: `6a7678bd04ef539ae5f4c118b6707524fd569280`.
+- Extracted environment override and host mount fallback into pure `music_paths.py`, preserving `navidrome_server._default_music_dir()` and `MUSIC_DIR` initialization. Added direct-import regression tests and Docker packaging.
+- All four required exact-head workflows passed: Python syntax and acquisition safety regressions `38805068326`; Docker packaging, full unit suite, and image build `38805068317`; container runtime smoke `38805068315`; validation-only multi-architecture image build `38805068337`.
+- State: implemented, CI passed, merged. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Next: review current main and open PRs before selecting the next smallest application-assembly/domain-service dependency.
+
+## 2026-10-15 — PR #150 merged: Navidrome API client extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/150. Tested PR head: `be9a2558bd87eb8e7e2fbf25593936aa8c671a1a`; squash merge commit: `efc2acb93e3edb570e77419daa866f4a228c85d2`.
+- Extracted Subsonic-compatible authentication, HTTP request execution, and API error interpretation into `navidrome_client.py`. The legacy `navidrome_server.api_call(method, **params)` remains as a compatibility adapter; Docker packaging and direct-import regression tests were updated.
+- All four required workflows passed on the exact final PR head: Python syntax `38802307579`, Docker packaging/full unit suite/build `38802307812`, container runtime smoke `38802307700`, and validation-only multi-architecture image validation `38802307683`.
+- State: implemented, tested, CI passed, merged. Image publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next: continue with the smallest remaining application-assembly/domain-service boundary after reviewing current main and open PRs; preserve the legacy MCP interface until retirement is separately justified and verified.
+
+## 2026-10-15 — Navidrome API client extraction: pre-merge record
+
+- Branch: `refactor/extract-navidrome-api-client`. Extracted Subsonic-compatible HTTP transport/authentication into `navidrome_client.py`; `navidrome_server.api_call(method, **params)` remains a compatibility adapter using the existing `_navidrome_config` provider.
+- Added direct-import unit tests for token construction, request URL/options/query parameters, successful responses, and legacy API-error messages. Added the module to Docker packaging.
+- Initial exact implementation head `555da7027ae0aa9f636ba66e18b33d549cd787d6` passed all four required workflows: Python syntax `38802076122`, Docker packaging/full unit suite `38802076327`, container runtime smoke `38802076229`, and validation-only multi-architecture image validation `38802076245`. The documentation follow-up changes the PR head; all four workflows must be rechecked on that final head before merge.
+- This is an implementation PR only. Merge, publication, deployment, and production runtime verification are pending and separate.
+
+## 2026-10-15 — PR #148 merged
+
+- Merged metadata-cache service extraction to `main` via squash merge commit `99e8da326fb0e2c4a8cf22acf9000e28647ec20f` (PR head `972376953444502fb1a372648adc8c58157403c9`).
+- All four required PR-head workflows passed on the exact final head: Python syntax/acquisition safety, Docker packaging and full unit suite, isolated container runtime smoke, and validation-only multi-architecture Docker build.
+- Publishing remains paused; no image publication, deployment, or production runtime verification is claimed. Next modularization step: inspect remaining application-assembly and domain-service dependencies in `navidrome_server.py` and choose the smallest seam consistent with the roadmap.
+
+## 2026-10-15 — Metadata cache extraction CI follow-up
+
+- Initial PR-head CI exposed a regression-test fixture issue: the malformed-JSON test inserted directly before creating the cache table. The fixture now initializes the table through the public cache service before inserting malformed JSON.
+- Corrected test commit: d6e28b665a3b16cbd3aba68744e1943a73d1cda1. All required workflows must be rechecked on this exact updated head; the initial failed run is not evidence of a passing suite.
+
+## 2026-10-15 — Metadata cache service extraction in progress
+
+- The persistent MusicBrainz metadata cache is being moved behind metadata_cache.py with an injected database path and clock. navidrome_server.py retains _metadata_cache_get / _metadata_cache_set compatibility adapters and the existing SQLite filename and non-fatal cache-failure behavior.
+- Direct-import regressions cover Unicode JSON round-trips, missing/expired entries, malformed cached JSON, and storage errors. Docker packaging includes the new module.
+- Branch: refactor/extract-metadata-cache. CI, merge, publication, deployment, and runtime verification are pending; do not infer them from the code or documentation changes.
+
 ## 2026-10-15 — PR #147 merged: strict slskd settings boolean validation
 
 - PR: https://github.com/abucalip/navi-librarian/pull/147
@@ -1275,3 +1335,36 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: Python syntax `38794301415`, container runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only Docker image validation `38794301405` (publishing paused).
 - Status: implemented, CI passed, manual browser checklist passed, merged. The report notes that no real screen reader was tested and artwork used a placeholder in isolated checks. No image publication, deployment, or production runtime verification is claimed.
 - Next UI follow-up noted by the PR: assess the remaining C4 recommendation-count live-region font-size issue.
+
+
+## 2026-10-15 — Data-directory resolution extraction in progress
+
+- Branch `refactor/extract-data-directory-config` extracts only the selection of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback into `data_directory.py`. The legacy `DATA_DIR` name and directory creation remain in `navidrome_server.py`; persistence ownership and import-time initialization behavior are unchanged.
+- Added direct-import tests for explicit home expansion, empty environment fallback, and resolved source-directory fallback. Docker packaging includes the new module.
+- Pending: run focused and full tests, verify syntax plus all four required CI workflows on the exact final PR head, review the full diff, then update the closeout record. No test/CI success, merge, publication, deployment, or runtime verification is claimed yet.
+
+
+## 2026-10-15 — PR #152 merged: data-directory resolution extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/152. Exact tested PR head: `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; squash merge commit: `567409bb90f240667575a3730976e4c52676bc02`.
+- Extracted `NAVIDROME_LIBRARIAN_DATA_DIR` resolution and the source-directory fallback into pure `data_directory.py`; retained `navidrome_server.DATA_DIR`, `mkdir` behavior, persistence ownership, and MCP compatibility. Added three direct-import regression tests and Docker packaging.
+- All four required workflows passed on the exact PR head: Python syntax `38807325467`, Docker packaging/full unit suite/build `38807325564`, container runtime smoke `38807325555`, and validation-only multi-architecture image validation `38807325557`.
+- State: implemented, CI passed, merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next: inspect current GitHub main, open PRs, and the roadmap before selecting the next small application-assembly/domain-service dependency.
+
+
+## 2026-10-15 — Subsonic collection normalization extraction in progress
+
+- Branch: `refactor/extract-subsonic-list-normalizer`. Moved optional API collection normalization (`None` to `[]`, scalar to one-element list, list unchanged) into `navidrome_client.items()` because it is part of interpreting Subsonic response values.
+- Kept `navidrome_server.items()` as a compatibility adapter so existing discovery/MCP callers retain the same behavior. Added direct-import regression cases for missing, scalar, empty-list, and multi-item values.
+- Implementation commits: `3f97f2bafc29265d12a8a4bf858a1e27384f16b3`, `2f0ae7939f0ea3052faa237b2246cf3d32206bdf`, `e7e105a850928705339613780fb55641ac44f72c`.
+- CI, merge, publication, deployment, and runtime verification are pending. Do not claim tests passed until the four required workflows complete on the exact final PR head.
+
+
+## 2026-10-15 — PR #153 merged: Subsonic collection normalization
+
+- PR #153: https://github.com/abucalip/navi-librarian/pull/153; exact tested head `c834383b7484f3c149679d62812f1c81f6133625`; squash merge commit `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc`.
+- Moved optional Subsonic collection normalization into `navidrome_client.items()` while retaining `navidrome_server.items()` as a compatibility adapter. Added direct-import regressions for `None`, scalar, empty-list, and multi-item inputs.
+- All four required workflows passed on the exact PR head: Python syntax check, Docker packaging validation (including full unit suite/build), container runtime smoke test, and validation-only multi-architecture image validation.
+- State: implemented, CI passed, merged. Image publishing remains paused; no deployment or production runtime verification is claimed.
+- Next session: review current main, recent commits, open PRs, and the modularization roadmap before selecting the next smallest application-assembly/domain-service seam.

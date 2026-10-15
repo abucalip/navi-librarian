@@ -1,3 +1,14 @@
+## Music path default policy — extracted (PR #151)
+
+`music_paths.py` owns the pure decision policy for configured music path and host mount fallback. It receives environment and directory-existence behavior from the caller, so importing it does not initialize application state. `navidrome_server._default_music_dir()` remains a compatibility adapter. Direct-import tests and Docker packaging are included; all four required exact-head workflows passed before merge. Deployment remains unverified.
+
+## 2026-10-15 — Navidrome HTTP client extraction in progress
+
+- `navidrome_client.py` owns Subsonic-compatible request authentication, HTTP request execution, and API response error interpretation.
+- The client receives the existing settings provider as a dependency; it does not load settings or initialize the application itself.
+- `navidrome_server.api_call(method, **params)` remains the compatibility adapter, preserving the legacy callable signature and existing callers, including MCP-facing discovery functions.
+- Direct-import tests cover deterministic token generation, request parameters/options, successful payloads, and API error formatting. Docker packaging includes the module. CI and merge are pending; no test result is claimed before workflows run on the exact final PR head.
+
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
 - Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.

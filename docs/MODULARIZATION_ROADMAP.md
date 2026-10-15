@@ -1,3 +1,16 @@
+## Music path default policy — completed (PR #151)
+
+Extracted environment override and mount-path fallback into pure `music_paths.py`, retaining `navidrome_server._default_music_dir()` and existing initialization. Direct-import regressions and Docker packaging are in place. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`. Publishing remains paused; deployment is unverified.
+
+## Navidrome API transport boundary — completed (PR #150 merged, 2026-10-15)
+
+The Navidrome HTTP transport has been extracted from `navidrome_server.py` into `navidrome_client.py`. The module owns token creation, request construction, HTTP execution, and response-status interpretation with the existing settings provider injected by the caller. `api_call(method, **params)` remains the legacy adapter, preserving discovery/MCP callers and API error semantics. Direct-import tests cover authentication parameters, request options, successful responses, and error messages; Docker packaging includes the module. All four required workflows passed on exact PR head `be9a2558bd87eb8e7e2fbf25593936aa8c671a1a`: Python syntax `38802307579`, Docker packaging/full suite/build `38802307812`, container runtime smoke `38802307700`, and validation-only multi-architecture validation `38802307683`. PR #150 merged to main at `efc2acb93e3edb570e77419daa866f4a228c85d2`. Publishing/deployment remain separate and are not claimed. Next: inspect the current open-PR list and remaining application-assembly/domain-service seams to choose the next focused change.
+
+## Metadata cache / domain-service boundary — completed (PR #148 merged, 2026-10-15)
+
+The SQLite TTL cache now lives in `metadata_cache.py` with injected database path and clock. Legacy `_metadata_cache_get` / `_metadata_cache_set` adapters preserve the existing table/schema, cache keys, TTL behavior, and non-fatal storage-error semantics. Direct-import regressions and Docker packaging were included; PR #148 merged at `99e8da326fb0e2c4a8cf22acf9000e28647ec20f` after the four required workflows passed on the exact final PR head.
+
+
 ## Settings persistence boundary — completed (PR #143 merged, 2026-10-15)
 
 The settings persistence implementation has been extracted from `navidrome_server.py` into `settings_persistence.py`. The store owns SQLite initialization, restrictive database permissions, persistence reads/writes, saved music-path application, and existing legacy quality/download-path migrations, using injected defaults and path callbacks. Legacy `_discovery_settings_*` wrappers preserve callers and MCP behavior; Docker packaging includes the module. Direct-import regression tests cover persistence round trips, malformed data, migration order, music-path application, and permissions.
@@ -522,3 +535,23 @@ Extract the settings connection-check logic into `service_settings.py` behind in
 ## Completed — settings connection checks (2026-10-15, PR #140)
 
 Navidrome, Last.fm, and ListenBrainz connection-check logic is extracted into `service_settings.py` with injected dependencies; legacy public entry points remain adapters. Regression tests cover response mapping, missing configuration/profile, and Last.fm key redaction. All four required workflows passed on PR head `cacdbc809f35040f0cc1bc70a39251ff80b7315e`; merged as `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. Continue with the remaining application-assembly/domain-service boundaries; do not treat this as completion of all modularization.
+
+
+## 2026-10-15 — Data-directory resolution extraction in progress
+
+The next small application-assembly seam is pure resolution of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback. `data_directory.py` resolves the path without creating it; `navidrome_server.py` retains the legacy `DATA_DIR` symbol and the existing `mkdir` side effect, so data persistence and permissions remain owned by the existing service. Direct-import tests cover explicit path expansion, empty configuration, and fallback behavior. Docker packaging is updated. Verify the focused tests, full suite, syntax, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
+
+
+## Completed — data-directory resolution (PR #152, 2026-10-15)
+
+Extracted the pure `NAVIDROME_LIBRARIAN_DATA_DIR` / source-directory fallback resolver to `data_directory.py`. The legacy `navidrome_server.DATA_DIR` and directory-creation behavior remain intact. Three direct-import regression tests and Docker packaging were added. All four required workflows passed on exact PR head `756ef13f6946299e2eacccbf5f9a55ebaf092aae`; merged by squash as `567409bb90f240667575a3730976e4c52676bc02`. Publishing remains paused; no deployment or production runtime verification is claimed.
+
+
+## Subsonic response collection normalization — implementation in progress
+
+Move the small shared response-normalization rule into `navidrome_client.items()`, keeping `navidrome_server.items()` as a compatibility adapter for existing discovery and MCP callers. Direct-import tests cover missing, scalar, empty, and populated collection values. This is a deliberately narrow step after the API transport extraction; preserve response semantics and run all four required workflows on the exact final PR head before merge. Publishing and deployment remain separate.
+
+
+## Subsonic response collection normalization — completed (PR #153 merged, 2026-10-15)
+
+Moved the shared response-normalization rule into `navidrome_client.items()` and retained `navidrome_server.items()` as the compatibility adapter. Direct-import tests cover missing, scalar, empty, and populated collection values. All four required workflows passed on exact PR head `c834383b7484f3c149679d62812f1c81f6133625`; squash merge commit `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc`. Publishing and deployment remain separate and are not claimed.

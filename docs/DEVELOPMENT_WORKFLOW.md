@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
 ## Authority and responsibilities
 
@@ -22,6 +22,36 @@ Last updated: 2026-10-14
 8. Give the user the exact branch/PR/commit and concise local testing instructions.
 9. Use the user's local test results as evidence about behavior, not as a source of code. If a test finds a problem, the assistant makes the fix on GitHub, commits it, and provides the new revision to test.
 10. For releases, separately verify image publication, deployment configuration, running image tag/digest, logs, and application behavior.
+
+
+## Multi-extraction sessions (standard workflow)
+
+A session may deliver **two or three small extractions**, but the session is a planning/coordination unit—not a reason to combine unrelated changes into one PR. Default to **one independently reviewable extraction per PR**. Use one PR for multiple extractions only when they share a boundary or cannot be validated independently, and explain that coupling in the PR description.
+
+### Session start and selection
+
+1. Re-check current GitHub `main`, recent commits, open PRs, and required CI; read this workflow, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/TEST_PLAN.md`, and the relevant architecture/decision/roadmap documents.
+2. Trace each proposed seam through its implementation, callers, tests, configuration/package files, and compatibility interfaces. Pick one concrete acceptance criterion per extraction and identify risks/dependencies before coding.
+3. Select up to three **small, low-coupling** candidates. Do not set a quota: stop at one if a safety issue, failing gate, unclear ownership boundary, or unexpected dependency appears. Acquisition/import/deletion and shared-state/locking changes need stricter isolation and must not be bundled with unrelated refactors.
+4. Order dependent extractions explicitly. Branch each PR from the current GitHub `main`; never use the local checkout as an authoritative base. Prefer sequential implementation/merge. Parallel work is appropriate for independent audits or reviews, not for concurrently editing the same files or assuming multiple PRs remain mergeable.
+
+### Per-extraction verification gates
+
+For **each PR separately**:
+
+1. Add direct-import tests for the extracted owner and adapter/compatibility tests for the old public interface. Preserve existing semantics, response shapes, side effects, persistence, and MCP compatibility unless a separately reviewed requirement authorizes a change.
+2. Run focused regressions, the full `python -m unittest discover -s tests -v` suite, Python syntax checks, and applicable API/Docker checks where execution is available. Report skipped/unavailable tests explicitly; never infer a pass from a successful import, build, or startup.
+3. Review the entire diff, changed-file list, call sites, Docker/package inclusion, unsafe-path and failure behavior where relevant, and any unintended changes. Check for secrets and unrelated modifications.
+4. After the **last code or documentation commit**, verify all four required workflows on that exact final PR-head SHA: Python syntax/acquisition-safety regressions; Docker packaging plus full unit suite/image build; isolated container runtime smoke; validation-only multi-architecture image validation. The multi-architecture workflow must remain non-publishing (`push: false`); do not publish or deploy as part of modularization.
+5. For UI-facing changes, after automated gates pass, run the full manual browser checklist against the exact tested SHA and record evidence. For non-UI changes, run the relevant automated/API/integration checks; do not claim manual UI verification that was not performed.
+6. Merge only when acceptance criteria, final diff review, and required exact-head gates are satisfied. After each merge, refresh `main`, open PRs, and CI before starting or retargeting the next dependent PR. If a branch's base changes, re-verify the new exact final head before merge.
+
+### Session closeout
+
+- Record each extraction separately with branch, PR, exact tested head SHA, test commands actually run, all four workflow results, merge SHA/state, and any skipped checks.
+- Keep **implemented, tested, CI passed, merged, published, deployed, and runtime verified** as distinct states. Do not claim deployment or production behavior from CI.
+- Update `docs/PROJECT_STATUS.md`, `PROJECT_LOG.md`, and relevant roadmap/test/architecture documents with verified evidence and remaining risks. Identify one next action, not a speculative queue of work.
+- A session is successful when every merged PR met its own gates—not when a target number of extractions was reached. If any gate fails, fix or stop at that PR and report the remaining work before continuing.
 
 ## Local testing without reconciling local code into GitHub
 
