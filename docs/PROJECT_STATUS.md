@@ -1,3 +1,14 @@
+## 2026-10-15 — Service settings policy extracted (PR #95)
+
+- Added `service_settings.py` with injected settings-read/write and runtime-path callbacks. Moved Navidrome config validation, ListenBrainz username validation, safe Navidrome settings serialization/update, Last.fm configured-status serialization, and ListenBrainz settings update policy out of the monolith.
+- Existing MCP/web function names and signatures remain in `navidrome_server.py` as adapters. SQLite persistence/schema, `MUSIC_DIR` ownership, connection checks, other service settings, and route behavior remain unchanged. Added the module to the Docker image.
+- Replaced AST-executed tests in `tests/test_service_settings.py` with direct-import tests covering credential/key redaction, blank-password preservation, URL and username validation, invalid-input no-write behavior, and library path validation.
+- All four required workflows passed on implementation revision `89fd6220afce03aa16496776d185afe132986dc8`: syntax/acquisition-safety, full unit suite and Docker build, isolated container smoke, and validation-only multi-architecture image build. No local tests were run. PR-head CI must be rechecked after the documentation update below.
+- PR #95 remains open; no merge, publication, deployment, or production runtime verification is claimed.
+- Next: use direct-import coverage and caller evidence to continue the settings/API boundary audit; do not remove MCP dependencies until all web callers and entry points have tested owners.
+
+---
+
 ## 2026-10-15 — Web dependency audit of the legacy server
 
 - Reviewed current GitHub `main` after PR #93, including `app/main.py`, all three service API routers, `server.py`, `navidrome_server.py`, `tests/test_service_settings.py`, the Dockerfile, requirements, and the architecture/development/requirements docs.
