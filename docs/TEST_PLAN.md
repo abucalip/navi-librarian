@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #100 verified and merged: cleanup root traversal
+
+- PR #100 merged at `6e8e861cc84d5951b0d177ffea256a0dd88fe4b4` from exact tested head `89813bd3802b1f8920715aaeca55ccb5e461c9c9`.
+- The regression suite covers target-directory and parent-directory symlink replacement during transfer lookup; both the outside target and moved original album file must survive. Cleanup uses no-follow root traversal, descriptor-relative unlink/rmdir, exact planned-entry validation, and device/inode/size checks.
+- All four required workflows passed on that exact head: syntax/acquisition safety `38724953760`, Docker packaging/full unit suite/build `38724953699`, runtime smoke `38724953828`, validation-only multi-architecture image validation `38724953678`. No local or production-folder deletion test is claimed.
+
+---
+
 ## 2026-10-15 — PR #99 cleanup directory-swap regression verified
 
 - PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
