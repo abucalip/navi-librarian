@@ -1,3 +1,11 @@
+## 2026-10-15 — Last.fm settings-policy extraction in progress
+
+- Branch `refactor/lastfm-settings-policy-direct-import`, based on PR #96 merge `d71a63247d4aa5f3eb8edbb53ec680a439275b3a`.
+- Scope: extract Last.fm key save/preserve/redaction policy into `service_settings.py`; preserve the MCP adapter signature/response and keep SQLite writes in the legacy layer. Direct-import tests cover key trimming, blank-key preservation, and response redaction.
+- All four required workflows passed on exact head `9d3390e4f369cc11fbac852b9dc3481b865bb2f5`: syntax/acquisition safety run `38721093901`, Docker packaging/full unit suite `38721093899`, runtime smoke `38721093983`, and validation-only multi-architecture image build `38721093945`. These runs completed successfully; publishing remains paused. Publishing remains paused.
+
+---
+
 ## 2026-10-15 — PR #96: slskd settings policy extraction
 
 - PR #96: [refactor: extract slskd settings policy](https://github.com/abucalip/navi-librarian/pull/96), branch `refactor/slskd-settings-policy-direct-import`. Implementation moves slskd config validation, safe settings serialization, and settings update policy to `service_settings.py` with injected read/write and music-directory callbacks; MCP adapters and network connection testing remain in `navidrome_server.py`.

@@ -10,6 +10,7 @@ import unicodedata
 import discovery_store
 from service_settings import (
     get_lastfm_settings as _service_get_lastfm_settings,
+    set_lastfm_settings as _service_set_lastfm_settings,
     get_navidrome_settings as _service_get_navidrome_settings,
     listenbrainz_username as _service_listenbrainz_username,
     navidrome_config as _service_navidrome_config,
@@ -3210,10 +3211,9 @@ def discovery_get_lastfm_settings() -> str:
 @mcp.tool()
 def discovery_set_lastfm_settings(api_key: str = "") -> str:
     """Save a Last.fm API key; a blank key preserves the saved key."""
-    current = _discovery_settings_read()
-    key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
-    _discovery_settings_write({"lastfm_api_key": key})
-    return json.dumps({"ok": True, "api_key_configured": bool(key), "message": "Last.fm settings saved; the API key is never returned."})
+    return _service_set_lastfm_settings(
+        _discovery_settings_read, _discovery_settings_write, api_key
+    )
 
 
 @mcp.tool()

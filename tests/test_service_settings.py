@@ -10,6 +10,7 @@ from service_settings import (
     listenbrainz_username,
     navidrome_config,
     set_listenbrainz_settings,
+    set_lastfm_settings,
     set_navidrome_settings,
 )
 
@@ -103,6 +104,20 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertTrue(result["api_key_configured"])
         self.assertNotIn("lastfm-secret", json.dumps(result))
         self.assertNotIn("lastfm_api_key", result)
+
+    def test_lastfm_save_preserves_blank_key_and_never_returns_secret(self):
+        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "  new-key  "))
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.state["lastfm_api_key"], "new-key")
+        self.assertNotIn("new-key", json.dumps(result))
+        self.assertNotIn("lastfm_api_key", result)
+
+        before = len(self.writes)
+        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "   "))
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.state["lastfm_api_key"], "new-key")
+        self.assertEqual(len(self.writes), before + 1)
+        self.assertNotIn("new-key", json.dumps(result))
 
     def test_listenbrainz_username_validation_and_save(self):
         self.assertEqual(listenbrainz_username(self.read_settings), "listener")

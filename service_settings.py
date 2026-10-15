@@ -89,6 +89,18 @@ def get_lastfm_settings(settings_read):
     return json.dumps({"api_key_configured": bool(settings.get("lastfm_api_key"))})
 
 
+def set_lastfm_settings(settings_read, settings_write, api_key=""):
+    """Save a Last.fm API key; blank input preserves the stored key."""
+    current = settings_read()
+    key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
+    settings_write({"lastfm_api_key": key})
+    return json.dumps({
+        "ok": True,
+        "api_key_configured": bool(key),
+        "message": "Last.fm settings saved; the API key is never returned.",
+    })
+
+
 def set_listenbrainz_settings(settings_write, username):
     """Validate and save a ListenBrainz username."""
     value = str(username or "").strip()
