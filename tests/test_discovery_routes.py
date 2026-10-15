@@ -69,10 +69,24 @@ class DiscoveryRoutesTests(unittest.TestCase):
             {"ok": True},
         )
         self.librarian.discovery_refresh_list.assert_called_once_with(list_name="all", count=20)
-        for payload, status in (({"count": "bad"}, 400), ({"count": 21}, 400)):
+        for payload in (
+            {"count": "bad"},
+            {"count": "2"},
+            {"count": 2.5},
+            {"count": True},
+            {"count": None},
+            {"count": []},
+            {"count": {}},
+            {"count": 0},
+            {"count": 21},
+        ):
             with self.subTest(payload=payload), self.assertRaises(HTTPException) as raised:
-                discovery.refresh_discovery_list("personal", payload)
-            self.assertEqual(raised.exception.status_code, status)
+                discovery.refresh_discovery_list("personal", payload, librarian=self.librarian)
+            self.assertEqual(raised.exception.status_code, 400)
+            self.assertEqual(raised.exception.detail,
+                             "count must be an integer" if type(payload.get("count")) is not int
+                             else "count must be between 1 and 20")
+        self.librarian.discovery_refresh_list.assert_called_once_with(list_name="all", count=20)
         with self.assertRaises(HTTPException) as raised:
             discovery.refresh_discovery_list("for_me")
         self.assertEqual(raised.exception.status_code, 404)

@@ -59,9 +59,10 @@ def refresh_discovery_list(list_name: str, payload: dict | None = None, libraria
     if list_name not in {"personal", "classics", "artist_deep_dive", "new_releases", "all"}:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     payload = payload or {}
-    try:
-        count = int(payload.get("count", 20))
-    except (TypeError, ValueError):
+    count = payload.get("count", 20)
+    # JSON booleans are Python integers, and int(...) silently truncates floats
+    # or accepts numeric strings. Require an actual JSON integer at this boundary.
+    if type(count) is not int:
         raise HTTPException(status_code=400, detail="count must be an integer")
     if not 1 <= count <= 20:
         raise HTTPException(status_code=400, detail="count must be between 1 and 20")
