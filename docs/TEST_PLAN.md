@@ -6,9 +6,9 @@ Exact final PR head `504b10392061dbc44d28d66e663b88cbefb8f1a4` passed all four r
 
 Exact final PR head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6` passed all four required workflows: syntax/acquisition-safety `38814733899`; Docker packaging/full suite/build `38814734001`; runtime smoke `38814733916`; validation-only multi-architecture validation `38814733954`. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
 
-## Session priority gate
+## Session priority gate — PR #156 completed
 
-Before another routine backend extraction, complete and record the required manual browser checklist for open PR #156; the PR currently records that checklist as NOT RUN. See `docs/DEVELOPMENT_WORKFLOW.md` for merge gates.
+PR #156's manual browser checklist was completed and published against exact head `47d33cbecadf64ed4b434764883cec6ae99d30bc`; all eight items passed with zero failures. Its four required CI workflows passed on that same head (syntax `38815023255`, Docker packaging `38815023085`, runtime smoke `38815023444`, validation-only Docker image/multi-architecture validation `38815023661`). PR #156 merged at `c560c28063f26a1a72d7016c951bf265d2ddd158`. No real screen reader was tested; the missing skip link remains a separate backlog item. Before another routine backend extraction, re-check current main/open PRs/CI and choose the highest-priority remaining safety or verification gap. See `docs/DEVELOPMENT_WORKFLOW.md` for merge gates.
 
 ---
 
