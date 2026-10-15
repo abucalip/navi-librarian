@@ -69,6 +69,44 @@ class AcquisitionImportTests(unittest.TestCase):
         self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
         self.assertEqual(list(self.music.glob(".navidrome-import-*")), [])
 
+    def test_source_directory_replaced_by_symlink_after_matching_cannot_move_outside_files(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        outside_first = outside / "01 - Track.flac"
+        outside_second = outside / "02 - Track.flac"
+        outside_first.write_bytes(b"OUT!")
+        outside_second.write_bytes(b"OUT")
+
+        moved_source = self.root / "downloads-original"
+
+        def match_then_swap(source, candidate):
+            matched = {
+                name: Path(source) / name
+                for name in ("01 - Track.flac", "02 - Track.flac")
+            }
+            self.source.rename(moved_source)
+            self.source.symlink_to(outside, target_is_directory=True)
+            return matched
+
+        with self.assertRaises(OSError):
+            import_matched_album_files(
+                self.source,
+                self.destination,
+                self.candidate,
+                match_files=match_then_swap,
+            )
+
+        self.assertTrue(outside_first.exists())
+        self.assertEqual(outside_first.read_bytes(), b"OUT!")
+        self.assertTrue(outside_second.exists())
+        self.assertEqual(outside_second.read_bytes(), b"OUT")
+        self.assertTrue((moved_source / "01 - Track.flac").exists())
+        self.assertEqual((moved_source / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertTrue((moved_source / "02 - Track.flac").exists())
+        self.assertEqual((moved_source / "02 - Track.flac").read_bytes(), b"567")
+        self.assertFalse(self.destination.exists())
+        self.assertTrue(self.source.is_symlink())
+
     def test_storage_identity_mismatch_aborts_before_staging(self):
         with self.assertRaisesRegex(OSError, "filesystem changed"):
             import_matched_album_files(
