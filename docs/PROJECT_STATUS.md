@@ -1,3 +1,14 @@
+## 2026-10-15 — Acquisition monitor payload extraction (PR preparation)
+
+- Modularization seam: extracted the repeated construction of selected/fallback source payloads passed to the acquisition import watcher into `acquisition_monitor_payload.py`.
+- Added direct-import regression coverage for minimal filename/size records, quality-summary normalization, fallback metadata preservation, and input immutability. The legacy MCP adapter, shared locks, watcher lifecycle, queue/fallback decisions, and persisted acquisition state remain unchanged.
+- Docker packaging includes the new module.
+- Exact PR head `f3d444fce0902637d394b48680e4274e2b513f6f` passed all four required workflows: Python syntax `38780380213`, Docker packaging/full unit suite/build `38780380196`, container runtime smoke `38780380199`, and validation-only multi-architecture image validation `38780380566` (publishing paused).
+- This verifies the listed checks on that head only. No local test execution, merge, image publication, deployment, or production runtime verification is claimed.
+- Before merge, re-run all four required workflows on the final PR head after documentation updates and review the complete diff.
+
+---
+
 ## 2026-10-15 — PR #134: concurrent login rate-limit race
 
 - PR: https://github.com/abucalip/navi-librarian/pull/134
