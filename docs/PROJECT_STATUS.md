@@ -1,3 +1,11 @@
+## 2026-10-15 — MCP tool registration separated from shared service imports
+
+- Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.
+- The legacy MCP entry point remains compatible: when navidrome_server.py is executed directly, it creates the server through create_mcp_server() and runs on the existing streamable HTTP host/port. Tool names and function objects are kept in an explicit ordered registry.
+- The web service can now import navidrome_server.py without loading mcp.server.mcpserver. MCP registration is deferred to explicit server startup; the MCP package and legacy tool surface are retained.
+- Added tests/test_mcp_registry.py to assert the registry contains 27 unique tools, registers each provided function exactly once, and importing the legacy service keeps all registered functions callable without importing the MCP SDK.
+- Branch: refactor/separate-mcp-tool-registration. All four required workflows passed on exact implementation/documentation head fe71a9a19188a018a2ee65d5b313a99413d239f2: Python syntax/acquisition safety run 38783091362; Docker packaging/full suite/build run 38783091326; container runtime smoke run 38783091309; validation-only multi-architecture run 38783091337. Publishing remains paused. No separate local test execution, deployment, or production runtime verification is claimed. Final documentation update requires a fresh exact-head CI cycle before merge.
+
 ## 2026-10-15 — PR #137 merged: authentication signing-key symlink safety
 
 - PR #137: https://github.com/abucalip/navi-librarian/pull/137. Exact PR head `f6458af4b84b957902a2da1960cdafc06d0f7594`; squash merge `d7b75567ce8d3729c1ed92f091e89a794fff2341`.
