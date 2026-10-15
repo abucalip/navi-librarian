@@ -1,5 +1,7 @@
 """HTTP integration contracts for app authentication routes and middleware."""
 import hashlib
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
@@ -8,12 +10,29 @@ from app import main
 PASSWORD = "correct horse battery staple"
 
 
+class FakeLibrarian:
+    def __init__(self, settings):
+        self.settings = settings
+        self.api_error = None
+
+    def _discovery_settings_read(self):
+        return dict(self.settings)
+
+    def _discovery_settings_write(self, values):
+        self.settings.update(values)
+
+    def api_call(self, method):
+        if self.api_error:
+            raise self.api_error
+        return {"status": "pong"}
+
+
 class AuthRouteIntegrationTests(unittest.TestCase):
     def setUp(self):
         self.settings = {}
+        self.librarian = FakeLibrarian(self.settings)
         self.patches = [
-            patch.object(main.librarian, "_discovery_settings_read", side_effect=lambda: dict(self.settings)),
-            patch.object(main.librarian, "_discovery_settings_write", side_effect=self.write_settings),
+            patch.object(main, "get_librarian", return_value=self.librarian),
             patch.object(main, "_AUTH_SECRET", b"integration-test-signing-secret-32"),
             patch.object(main, "_password_digest", side_effect=lambda password, salt: hashlib.sha256((salt + password).encode()).hexdigest()),
         ]
@@ -24,13 +43,24 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.client = TestClient(main.app, follow_redirects=False)
         self.addCleanup(self.client.close)
 
-    def write_settings(self, values):
-        self.settings.update(values)
-
     def setup_account(self, client=None):
         return (client or self.client).post("/api/auth/setup", json={
             "username": "owner", "password": PASSWORD, "password_confirmation": PASSWORD,
         })
+
+    def test_importing_app_does_not_initialize_legacy_server(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys; import app.main; "
+                "assert 'navidrome_server' not in sys.modules",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_first_run_setup_creates_account_and_signs_in(self):
         self.assertEqual(self.client.get("/api/auth/status").json(), {"setup_required": True})
@@ -109,7 +139,7 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.addCleanup(restarted_client.close)
         restarted_client.cookies.set(main.AUTH_COOKIE_NAME, token, path="/")
         self.assertEqual(restarted_client.get("/").status_code, 200)
-        with patch.object(main.librarian, "api_call", side_effect=RuntimeError("offline")):
+        with patch.object(self.librarian, "api_call", side_effect=RuntimeError("offline")):
             self.assertEqual(restarted_client.get("/api/health").status_code, 503)
         restarted_client.cookies.set(main.AUTH_COOKIE_NAME, token + "tampered", path="/")
         self.assertEqual(restarted_client.get("/api/health").status_code, 401)
