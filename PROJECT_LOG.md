@@ -1,11 +1,12 @@
-## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+## 2026-10-15 — PR #114 merged: Proxmox MCP command execution guard
 
-## 2026-10-15 — Proxmox MCP command allowlist safety fix in progress
+- Found a mismatch between `server.py`'s read-only/allowlist promise and its implementation, which forwarded arbitrary input to SSH. Prioritized this command-execution risk ahead of routine modularization.
+- Added strict exact-match command validation and direct-import regression tests for approved diagnostics and malicious/disallowed inputs. Preserved the MCP tool signature and accepted-command SSH execution shape.
+- PR #114: https://github.com/abucalip/navi-librarian/pull/114; exact tested head `cd8319696180875a3cb6f0dc151d88e0c8c490d7`; squash merge `6ab848d444373dfa37e6d46528a2840a53a8f763`.
+- All four exact-head workflows passed: syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, validation-only multi-architecture validation `38740491281`.
+- No local tests or live Proxmox command were run. The host-side MCP is not included in the application Docker image; no publication or deployment.
+- Next: continue the highest-priority safety/verification audit. The previously deferred HTTP 409 investigation remains deferred unless the user reports recurrence.
 
-- Found a mismatch between `server.py`'s promise to run allowlisted read-only commands and its implementation, which forwarded arbitrary input to SSH. This was treated as a security/data-safety priority ahead of routine modularization.
-- PR #114 adds a strict standalone exact-match command policy and direct-import regression tests for permitted diagnostic forms and rejected shell composition/arbitrary commands. The MCP tool signature and accepted-command SSH execution shape remain unchanged.
-- Branch `fix/proxmox-mcp-command-allowlist-current-main`; code head `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`. Four required workflows were in progress at the last check. No local tests or live Proxmox command were run. The file is not included in the application Docker image; no publication or deployment.
-- Next gate: inspect the final diff, verify all four workflows on the exact final PR head, then merge only if all pass. PR #44/#45's deferred HTTP 409 decision remains unchanged.
 
 ---
 
