@@ -1,3 +1,10 @@
+## 2026-10-15 — Acquisition request coordinator boundary (in progress)
+
+- `acquisition_request_coordinator.py` owns the top-level request decision sequence behind injected callbacks and state/lock objects. `discovery_acquire_album` remains the MCP/web adapter.
+- The adapter still supplies the shared transition lock, watcher lock/set, active request set, persisted-job reader, dismissal/reactivation functions, watcher startup, lifecycle policy, JSON serializer, and acquisition implementation. The coordinator must not own SQLite, MCP registration, filesystem operations, or service clients.
+- Review and exact-head CI are pending; this is not yet marked tested or merged.
+
+---
 ## 2026-10-15 — Last.fm settings policy boundary merged
 
 - PR #97 merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
