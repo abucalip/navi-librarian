@@ -6,7 +6,7 @@
 - State: implemented, tested, CI passed, merged. Image publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
 - Next: continue with the smallest remaining application-assembly/domain-service boundary after reviewing current main and open PRs; preserve the legacy MCP interface until retirement is separately justified and verified.
 
-## 2026-10-15 — Navidrome API client extraction in progress
+## 2026-10-15 — Navidrome API client extraction: pre-merge record
 
 - Branch: `refactor/extract-navidrome-api-client`.
 - Extracted the Subsonic-compatible request transport and authentication from `navidrome_server.py` into `navidrome_client.py`, leaving `api_call(method, **params)` as a compatibility adapter.
