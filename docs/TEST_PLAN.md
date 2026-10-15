@@ -781,3 +781,10 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - Direct-import regressions prove mismatched directory metadata, absolute paths, and Windows drive-qualified paths refuse cancellation and preserve local files.
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety 38751732156; Docker packaging/full unit suite/build 38751732263; container runtime smoke 38751732282; validation-only multi-architecture image validation 38751732196. Publishing remained paused.
 - No separate local test run, live slskd operation, production deletion test, image publication, deployment, or production runtime verification is claimed. This is not a diagnosis or fix for the deferred acquisition-dismissal HTTP 409.
+
+
+## Discovery refresh count validation
+
+- For `POST /api/discovery/{list_name}/refresh`, accept an omitted count as the existing default of 20 and accept only JSON integers from 1 through 20.
+- Reject strings (including numeric strings), floats, booleans, null, arrays, objects, and out-of-range integers with HTTP 400 before invoking the service.
+- Run `python -m unittest tests.test_discovery_routes -v`, the full unit suite, syntax checks, and all four required workflows on the exact final PR head. No local test execution should be claimed unless actually run.
