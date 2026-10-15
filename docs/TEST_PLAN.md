@@ -7,15 +7,6 @@
 
 ---
 
-## 2026-10-15 — Conditional dismissed-job reactivation test migration
-
-- Add direct-import coverage for the state-store transition: only a row currently marked `dismissed` can become `retry_requested`; stale candidate/settings are cleared; retry metadata and timestamp are persisted.
-- Verify missing and non-dismissed rows return false and remain unchanged.
-- Keep the AST coordinator tests for explicit Get/retry sequencing and refusal when reactivation fails. Direct state tests do not replace the coordinator integration boundary.
-- Required before merge: focused state tests, full unit suite, Python syntax/acquisition safety checks, final diff review, and all four CI workflows on the exact final PR head.
-
----
-
 ## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed: syntax/acquisition safety run 38656927551, Docker packaging/full suite run 38656927436, runtime smoke run 38656927801, and multi-architecture validation-only run 38656927516.
