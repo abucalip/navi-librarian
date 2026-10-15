@@ -50,17 +50,17 @@ class AcquisitionImportTests(unittest.TestCase):
         self.assertTrue((self.source / "01 - Track.flac").exists())
 
     def test_partial_move_failure_rolls_tracks_back(self):
-        import shutil
-        original_move = shutil.move
+        import os
+        original_rename = os.rename
         calls = {"count": 0}
 
         def fail_on_second_move(src, dst, *args, **kwargs):
             calls["count"] += 1
             if calls["count"] == 2:
                 raise OSError("simulated second-track move failure")
-            return original_move(src, dst, *args, **kwargs)
+            return original_rename(src, dst, *args, **kwargs)
 
-        with patch("shutil.move", side_effect=fail_on_second_move):
+        with patch("os.rename", side_effect=fail_on_second_move):
             with self.assertRaisesRegex(OSError, "simulated second-track move failure"):
                 import_matched_album_files(self.source, self.destination, self.candidate)
 
