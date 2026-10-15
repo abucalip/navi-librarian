@@ -185,5 +185,30 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.assertEqual(self.client.get("/static/app.js").status_code, 200)
 
 
+    def test_concurrent_login_attempts_cannot_race_past_rate_limit(self):
+        self.setup_account()
+        main._LOGIN_ATTEMPTS["testclient"] = [
+            __import__("time").time()
+        ] * (main._LOGIN_MAX_ATTEMPTS - 1)
+        barrier = __import__("threading").Barrier(2)
+
+        def blocked_digest(password, salt):
+            barrier.wait(timeout=5)
+            return hashlib.sha256((salt + password).encode()).hexdigest()
+
+        payload = {"username": "owner", "password": "wrong password"}
+
+        def attempt_login():
+            with TestClient(main.app, follow_redirects=False) as client:
+                return client.post("/api/auth/login", json=payload).status_code
+
+        with patch.object(main, "_password_digest", side_effect=blocked_digest):
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                statuses = list(executor.map(lambda _: attempt_login(), range(2)))
+
+        self.assertEqual(sorted(statuses), [401, 429])
+
+
 if __name__ == "__main__":
     unittest.main()
