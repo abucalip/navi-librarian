@@ -1,3 +1,11 @@
+## 2026-10-15 — Service settings policy extracted
+
+- `service_settings.py` now owns injected, directly testable policy for Navidrome configuration validation/settings serialization/update, ListenBrainz username validation/settings update, and Last.fm configured-status serialization.
+- `navidrome_server.py` keeps its existing MCP-decorated public functions and private compatibility helpers as adapters. It remains the owner of SQLite settings persistence, global `MUSIC_DIR` updates via an injected callback, network connectivity checks, and the remaining settings functions.
+- The Dockerfile copies `service_settings.py`; tests now import it directly rather than AST-executing functions from the legacy server. This is an incremental seam, not removal of MCP initialization from the web import path.
+
+---
+
 ## 2026-10-15 — Web dependency audit: settings-policy boundary
 
 - The web layer currently imports `navidrome_server.py` directly in `app/main.py` and in the acquisitions, discovery, and settings routers. Main uses legacy persistence/configuration, Navidrome API access, discovery-list retrieval, and album eligibility; routers delegate to the corresponding legacy settings/discovery/acquisition functions.
