@@ -1029,9 +1029,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 
 
 
-## 2026-10-15 — Lazy authentication service dependency in progress
+## 2026-10-15 — PR #112 implementation and exact-head CI verified
 
-- Current branch: `refactor/lazy-auth-service-dependency`, based on main `41c050b86aded92dafb101165ed14aadd1e6c720`.
-- `app/main.py` no longer imports `navidrome_server.py` at module load. Authentication settings and the persistent signing key resolve the existing librarian service lazily; settings storage, `DATA_DIR`, and MCP-facing implementations remain owned by the legacy service.
-- Authentication integration tests now inject a fake service and include a subprocess regression asserting that importing `app.main` does not load `navidrome_server`. Existing setup/login/logout, cookie/session, rate-limit, and middleware tests remain in place.
-- Verification at implementation start: no local tests run and no CI result yet. Exact final PR-head CI is required before merge. No publication, deployment, or production runtime verification.
+- PR #112: https://github.com/abucalip/navi-librarian/pull/112; branch `refactor/lazy-auth-service-dependency`; final implementation/documentation head at this verification point: `ded9aef759c87ccf07d71cd777b366af424cc06c`.
+- `app/main.py` no longer imports `navidrome_server.py` at module load. Auth settings and the persistent signing key resolve the existing librarian service lazily; settings storage, `DATA_DIR`, MCP adapters, and domain ownership remain unchanged.
+- Authentication integration tests inject a fake service and include a subprocess regression asserting that importing `app.main` does not load `navidrome_server`. Existing setup/login/logout, cookie/session, rate-limit, and middleware tests remain.
+- All four required workflows passed on exact head `ded9aef759c87ccf07d71cd777b366af424cc06c`: syntax `38737672741`; Docker packaging/full suite/build `38737672443`; container runtime smoke `38737672507`; validation-only multi-architecture image validation `38737672689`.
+- No separate local test execution, image publication, deployment, or production runtime verification. Publishing remains paused. Final review/merge is the remaining gate.
