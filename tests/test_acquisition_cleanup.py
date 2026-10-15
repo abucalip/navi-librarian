@@ -162,7 +162,7 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertEqual(protected.read_bytes(), b"outside")
         self.assertTrue((moved / "01.flac").exists())
         self.assertTrue(self.folder.is_symlink())
-        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(calls), 2)
 
     def test_failed_transfer_cancellation_preserves_local_files(self):
         active = [{
