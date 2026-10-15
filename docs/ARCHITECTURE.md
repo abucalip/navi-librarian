@@ -241,3 +241,8 @@ The settings router now obtains the existing librarian service through `app.api.
 
 The `/api/health` and `/api/dashboard-picks` handlers are grouped in `app/api/dashboard.py` and use the shared lazy `get_librarian` dependency. Navidrome ping, discovery-list reads, and album-candidate eligibility remain delegated to the existing service. Response shapes, count validation, category balancing, deduplication, randomization, and sanitized health errors are preserved. `app/main.py` still imports the legacy server for authentication settings and secret data-directory setup; this extraction is not MCP retirement.
 
+
+## Dashboard and health router boundary — PR #110 merged
+
+PR #110 moved `/api/health` and `/api/dashboard-picks` into `app/api/dashboard.py` behind the shared lazy `get_librarian` dependency. The extraction preserves the legacy service calls, response shapes, count validation, category balance, deduplication, randomization, and sanitized health errors. Exact tested head `a2bc06ac2ca6a4ca60341f3857135b97d2d6e68e` passed all four required workflows and was squash-merged at `b4015b8619f3c0db169722c347f72612996b9a1c`. `app/main.py` still imports the legacy module for authentication settings and data-directory/auth-secret initialization; MCP compatibility and persistence ownership remain unchanged.
+
