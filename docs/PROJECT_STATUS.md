@@ -1,3 +1,12 @@
+## 2026-10-15 — Acquisition request coordinator extraction in progress
+
+- Branch `refactor/acquisition-request-coordinator`, based on main after PR #97 and its documentation closeout.
+- Move the existing `discovery_acquire_album` coordination sequence into `acquisition_request_coordinator.py` behind injected identity, locks, watcher/request sets, persisted-job reader, dismissal/reactivation callbacks, watcher startup, lifecycle policy, JSON module, and acquisition implementation.
+- Keep `discovery_acquire_album` as the MCP/web compatibility adapter; preserve the shared transition-lock boundary, watcher lock ordering, active-request reservation, response contracts, no-requeue recovery behavior, and reservation cleanup on exceptions. Docker packaging includes the new module.
+- Added direct-import tests for invalid input, failed dismissed reactivation, incomplete/valid saved source recovery, reservation cleanup, and concurrent duplicate requests. The original AST integration cases remain to verify the legacy adapter.
+- Exact-head CI and full diff review pending. No local tests, publication, deployment, or production runtime verification claimed.
+
+---
 ## 2026-10-15 — PR #97 merged: Last.fm settings-policy extraction
 
 - PR #97 (`refactor: extract Last.fm settings policy`) merged at `ad239a59b77612b812ca842406fee7b47cf80889`; exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
