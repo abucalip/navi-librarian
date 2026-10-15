@@ -34,6 +34,13 @@ class ExpectedTrackCountTests(unittest.TestCase):
         self.assertIsNone(expected_track_count({"track_count": 0, "metadata": {"trackCount": "bad"}}))
         self.assertIsNone(expected_track_count({"tracks": ["not", "track", "objects"]}))
 
+    def test_legacy_server_adapter_preserves_result(self):
+        from navidrome_server import _discovery_expected_track_count
+
+        metadata = {"release": {"metadata": {"totalTracks": "11"}}}
+        self.assertEqual(_discovery_expected_track_count(metadata), expected_track_count(metadata))
+        self.assertIsNone(_discovery_expected_track_count({"track_count": 0}))
+
     def test_handles_recursive_metadata_cycle(self):
         metadata = {}
         metadata["metadata"] = metadata
