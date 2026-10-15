@@ -1,3 +1,14 @@
+## 2026-10-15 — Acquisition router service-injection seam (in progress)
+
+- Branch: `refactor/acquisition-router-service-injection`, based on current `main` `77bc0c6c4a7ea110adf75e3b48d9f6d1e7171572`.
+- First narrow web integration step: add `app/api/dependencies.py` with a lazy `get_librarian()` default adapter and inject it into acquisition route handlers with FastAPI `Depends`. This removes the router module's import-time dependency on `navidrome_server` while preserving the legacy service methods, endpoint paths/methods, payload mapping, status/error mapping, and SSE response headers.
+- Regression tests were updated to call handlers with fake services and verify route contracts and the lazy adapter. Exact-head automated tests/CI have not yet run; treat this as in progress until the PR head has all four required workflow results and final diff review.
+- This is intentionally limited to acquisition routes. `app/main.py`, discovery, and settings still import `navidrome_server`; no MCP tool, persistence, domain behavior, packaging, publishing, or deployment changes are included.
+- No assistant-local tests, image publication, deployment, or production runtime verification are claimed.
+- **Next gate:** review the branch diff and confirm focused route tests, full unit suite, syntax/acquisition safety, Docker packaging/runtime smoke, and validation-only multi-architecture workflows pass on the exact PR head.
+
+---
+
 ## 2026-10-15 — Web dependency audit and next safe seam
 
 - Read-only audit complete: the FastAPI app imports `navidrome_server` in the app assembly and the acquisition, discovery, and settings routers. Metadata and auth route modules are independent; auth already demonstrates dependency injection.
