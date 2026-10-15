@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #137 merged: authentication signing-key symlink safety
+
+- PR #137: https://github.com/abucalip/navi-librarian/pull/137. Exact PR head `f6458af4b84b957902a2da1960cdafc06d0f7594`; squash merge `d7b75567ce8d3729c1ed92f091e89a794fff2341`.
+- Fixed `load_auth_secret()` following an existing `app_auth.key` symlink and potentially changing its target permissions. Existing keys are opened with `O_NOFOLLOW`, verified as regular files through `fstat`, and permission tightening uses the open descriptor. Added regression coverage for refusal without modifying target bytes or mode.
+- All four required workflows on the exact final PR head succeeded: Python syntax, Docker packaging (including full unit suite/build), container runtime smoke, and validation-only multi-architecture image build (publishing paused). No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+- Next backend priority: continue safety and verification audit before routine modularization; preserve evidence-first handling for any recurrence of acquisition dismissal HTTP 409.
+
+---
+
 ## 2026-10-15 — Authentication signing-key symlink hardening in review
 
 - Safety audit found `load_auth_secret()` followed an existing `app_auth.key` symlink and could read the target and change its permissions. Added a regression that requires symlink refusal and verifies the target content and mode remain unchanged; the test was committed before the implementation change.
