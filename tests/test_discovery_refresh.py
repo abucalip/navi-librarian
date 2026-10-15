@@ -1,10 +1,29 @@
 import unittest
 from threading import Lock
 
-from discovery_refresh import refresh_other, refresh_personal
+from discovery_refresh import refresh_all, refresh_other, refresh_personal
 
 
 class DiscoveryRefreshTests(unittest.TestCase):
+    def test_refresh_all_preserves_callback_order_and_results(self):
+        calls = []
+        def personal(count):
+            calls.append(("personal", count))
+            return "personal-result"
+        def other(name):
+            calls.append(("other", name))
+            return name
+
+        result = refresh_all(personal, other)
+
+        self.assertEqual(calls, [
+            ("personal", 20),
+            ("other", "classics"),
+            ("other", "artist_deep_dive"),
+            ("other", "new_releases"),
+        ])
+        self.assertEqual(result, ["personal-result", "classics", "artist_deep_dive", "new_releases"])
+
     def test_personal_refresh_parses_and_persists_payload(self):
         writes = []
         result = refresh_personal(
