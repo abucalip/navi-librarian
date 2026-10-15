@@ -106,12 +106,106 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
    artist exploration, library, and settings. The guide's instruction is "do not force
    every page into the same dashboard grid"; six sections still share one grid, so the
    candidates are the discovery sections and settings rather than acquisition again.
-3. ~~**Get/request button consolidation**~~ — done on `ui/get-request-consolidation`.
+3. ~~**Get/request button consolidation**~~ — done, merged (PR #131).
 4. **Type/token cleanup** — consolidate duplicated values into shared tokens and tighten
    the type scale without broad visual churn.
 5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
+
+### Priorities from the Claude critique (see section 4a)
+
+An external design critique scored the UI 17/36 and ranked its findings. The following
+supersedes the order above where they disagree, because these are evidence-backed and
+their claims were re-verified against `main` at `30e7c04`.
+
+| # | Action | Effort | Status |
+|---|---|---|---|
+| C1 | **Fix `--subtle` contrast.** It fails WCAG AA at 3.94:1 and is used on functional metadata. | One token | Verified, not fixed |
+| C2 | **Add `aria-label` to `<nav>`; give page sections accessible names.** | Small | Verified, not fixed |
+| C3 | **Set the modal artwork `alt` dynamically.** It is hardcoded and never updated. | Small | Verified, not fixed |
+| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Verified, not fixed |
+| C5 | **Move `<footer>` out of `<main>`.** It sits mid-document before five sections. | One line | Verified, not fixed |
+| C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | Not started |
+| C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | Item 1, partial |
+
+C1–C5 are all small and independently verifiable. C6 is the rest of backlog item 2.
+
+## 4a. External critique findings
+
+Source: `Claude critique.docx` in the operator's project folder (not a repository file).
+Method: dual-agent review — a design assessment plus a deterministic detector scan — then
+synthesis. Scored **17/36** across ten usability heuristics. Its verdict: "competent first
+pass rather than a finished specialist tool."
+
+### Verification of its claims
+
+The critique was written against an earlier `main`. Every claim below was re-checked against
+`main` at `30e7c04` before being recorded as a priority. Measured, not assumed:
+
+| Claim | Result |
+|---|---|
+| `--subtle` (#77796f) fails WCAG AA | **Confirmed.** 3.94:1 on `--bg`, 3.53:1 on `--surface`. AA needs 4.5:1. |
+| `--subtle` is used on functional metadata | **Confirmed.** 7 uses, including the `.status-line` state glyph, track numbers and durations, and `genre-row-count`. |
+| `<nav>` has no `aria-label` | **Confirmed.** `index.html:16` is a bare `<nav>`. |
+| Modal `alt` is static, never updated | **Confirmed.** `alt="Album artwork"` in markup; `static/app.js` never assigns `.alt` on it. |
+| `#recommendationCount` is 11px mono | **Confirmed.** `app.css:118`. |
+| `<footer>` sits mid-`<main>` | **Confirmed.** `<main>` opens at line 15, `<footer>` at 114, `</main>` at 215. |
+| Six sections share one grid | **Confirmed.** Five use bare `.cards`; only `#acquisitionCards` was differentiated (PR #128). |
+
+One critique claim was already resolved by the time it would have been acted on: the
+"bounce-easing advisory on the nav blob" refers to my `ui/nav-blob` work, which was merged as
+PR #132 with a spring easing the critique flagged as advisory only.
+
+Its contrast remedy was directionally right but understated: it suggested ~4.6:1. Measured,
+`#8a8b81` gives **5.06:1** on `--bg`. Use the measured value.
+
+It also flagged `#saveNavidrome` / `#saveSlskd` (dark on yellow) as needing verification.
+Measured: **10.5:1**, comfortably passing. No change needed.
+
+### Endorsed, and the reasoning worth keeping
+
+- **"Layout that serves the task rather than defaulting to a universal grid."** This is the
+  same principle as the design guide's "do not force every page into the same dashboard
+  grid", stated from the other direction. It is why item 2 exists.
+- **The status glyph system only works if the glyphs are visible.** The critique noticed
+  that the `.status-line` prefix, added in PR #121 specifically for accessibility, is painted
+  in the one token that fails contrast. That is a real self-inflicted contradiction and makes
+  C1 more than a token tidy-up.
+- **"Copy is the deliverable, not a component"** (on empty states). Worth carrying into C7.
+- **Its highest-leverage recommendation is Artist Deep Dive first**, because that section's
+  content type (one album per artist, grouped by genre) is the most obviously ill-served by a
+  flat album grid. This matches the design guide's backlog order and my own reading, arrived
+  at independently.
+
+### Treated with caution
+
+Recorded so later sessions apply judgement rather than treating the critique as a mandate.
+
+- **The 17/36 score is not a metric.** It is one model's subjective scoring of ten
+  heuristics with no calibration, and the critique says so itself in places. Do not report it
+  as a tracked number or try to raise it.
+- **Two of its seven detector findings are self-declared false positives or debatable**, and
+  it says so: the missing modal `src` (populated at runtime) and the `.card-art` bottom
+  stripe (a hover animation, not a border badge).
+- **"Visual overlays: browser automation was not available"** — it did its review from
+  source and a CLI scan, without rendering the UI. Findings that depend on rendered
+  appearance are therefore weaker than its measured contrast and structural claims. This is
+  exactly the gap the local headless verifier now covers; findings that matter should be
+  confirmed by rendering.
+- **It praises things I know to be recent or fragile.** It credits the "sliding nav blob" as
+  evidence of authored craft, and that landed days earlier in PR #132. Praise for
+  freshly-merged work is not independent corroboration of it.
+- **Its heuristics 9 and 10 scored 1 and n/a.** "Help users recover from errors: 1" is
+  doing a lot of work in the total. Treat the low scores as directional, not precise.
+
+### What it got right that is easy to miss
+
+- The **`.card-category` 2px yellow left border** technically brushes the guide's anti-pattern
+  about card borders. Its judgement that this is a *tag*, not a card, and that the 2px is what
+  makes it legible, is sound. Leave it, but acknowledge it consciously.
+- The **`nav::before` "YOUR COLLECTION"** label is misleading above Recommendations and
+  Classics, which are outside the collection. A real copy problem, not a nitpick.
 
 ## 5a. Item 3 findings
 
