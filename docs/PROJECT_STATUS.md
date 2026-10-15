@@ -1,3 +1,16 @@
+## 2026-10-16 — Multi-extraction session closeout (three backend PRs merged)
+
+- Session base: GitHub `main` at `383228e333b1222bb2696b1514f9584ea60d0654`; final code main after the three merges: `a0cd3d8ff5dcdf6acb7d678c9fc8f1aa0d537629`.
+- PR #163, ListenBrainz HTTP client: tested head `4c494a2679884579df5d6bc204287637e45e2ccd`; all four required workflows passed (compile `38822823853`, unit suite/Docker build `38822823922`, container smoke `38822823751`, non-publishing multi-architecture validation `38822823989`); merge `7be68c74b8a97ed4d9c50e6a7e22e296b25e79e2`.
+- PR #164, cached/rate-limited Last.fm client: tested head `957f3a56afe15e4dd665b041f1fbf7803921d3b6`; all four required workflows passed (compile `38823469617`, unit suite/Docker build `38823470035`, container smoke `38823469896`, non-publishing multi-architecture validation `38823469762`); merge `9f174c6086c0d2b9749e53e38cbe8e1eb337e22f`.
+- PR #165, cached MusicBrainz rating client: tested head `4888bd08fdf05007cc74ad7005a196fd678305b5`; all four required workflows passed (compile `38823643925`, unit suite/Docker build `38823643703`, container smoke `38823643931`, non-publishing multi-architecture validation `38823643848`); merge `a0cd3d8ff5dcdf6acb7d678c9fc8f1aa0d537629`.
+- Each extraction retained the prior `navidrome_server.py` adapter and added deterministic direct-import and adapter regression tests. Docker packaging includes all three modules. CI's full unit suite passed on each exact final PR head. Assistant-side local test commands were not run. These were backend-only changes, so no manual browser checks were required.
+- The code changes are implemented, CI-tested, and merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Open PRs after the session: #23 documentation/modularization plan, #44 draft acquisition dismissal diagnostics, and #45 deferral note for the dismissal HTTP 409 investigation.
+- Next action: prioritize the outstanding acquisition dismissal 409 safety/diagnostic gap and its verification state before routine extraction; continue to treat it as unresolved unless reproduced and root-caused.
+
+---
+
 ## 2026-10-16 — Acquisition Get/request and Dismiss regression coverage (in progress)
 
 - Branch: test/acquisition-get-dismiss-regressions, based on current GitHub main after the verification-audit follow-up.
