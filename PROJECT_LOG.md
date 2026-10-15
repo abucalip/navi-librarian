@@ -1,11 +1,10 @@
-## 2026-10-15 — PR #87 merged: existing-acquisition recovery coordination
+## 2026-10-15 — PR #88 merged: acquisition lifecycle AST audit closeout
 
-- PR: https://github.com/abucalip/navi-librarian/pull/87
-- Exact tested PR head: `e019cd04fe16eda64aaf84878c766687925ba7c0`; squash merge / updated `main`: `007edbc3396b80e415b67aa8a35e6471836627bb`.
-- Extracted the existing-job response/recovery branch from `discovery_acquire_album` into `acquisition_orchestration.existing_acquisition_response`. Injected dependencies cover the lifecycle policy, watcher start, watcher lock/state, active request set, and JSON serialization. The server retains the shared transition lock and reservation lifecycle.
-- Added five direct-import tests for incomplete source refusal, valid watcher recovery without requeue, watcher-start failure, existing conflict/active request, and the no-conflict path.
-- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658965486`, Docker packaging/full suite `38658965565` (194 tests), runtime smoke `38658965513`, and multi-architecture image validation with publishing paused `38658969866`.
-- Audit outcome: keep remaining AST tests that cover end-to-end search sequencing, concurrency, persistence-before-import, dismissed-job wrapper behavior, and stale watcher recovery. Next: extract top-level acquisition request reservation/coordination without weakening those boundaries. No publication, deployment, or production runtime verification.
+- PR: https://github.com/abucalip/navi-librarian/pull/88
+- Exact tested PR head: `57fef1d176a1d1c7de081aa024af3d6018abab56`; squash merge / updated `main`: `bd8a162d98e3ddadf439f6a3f437e7327531a8f8`.
+- Reconciled status, test plan, roadmap, and log with PR #87's merge and CI evidence. The audit concluded the remaining AST tests are integration boundaries and should remain until equivalent direct-import coverage tests the same sequencing/concurrency/persistence behavior.
+- All four required workflows passed on the exact documentation PR head: syntax `38659188156`, Docker packaging `38659188159`, runtime smoke `38659188223`, and multi-architecture validation with publishing paused `38659188194`.
+- Next: extract reserved-acquisition callback cleanup behind an injected orchestration helper while preserving the atomic reservation and concurrency test. No publication, deployment, or production runtime verification.
 
 ---
 
