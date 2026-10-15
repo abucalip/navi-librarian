@@ -1,3 +1,13 @@
+## 2026-10-16 — Acquisition Get/request and Dismiss regression coverage (in progress)
+
+- Branch: test/acquisition-get-dismiss-regressions, based on current GitHub main after the verification-audit follow-up.
+- Added tests/test_acquisition_ui_contract.py to guard Get request count/no-navigation, pending/requested/retryable states, server-declared failure handling, and Dismiss visibility/removal/error handling. Extended tests/test_acquisition_routes.py with Dismiss success mapping and missing-identity rejection.
+- Filesystem safety implementation is unchanged. Existing tests/test_acquisition_cleanup.py remains in the required focused/full suite and covers traversal, symlink and race refusal, ambiguous targets, unexpected contents, and preservation of neighboring files.
+- UI automation currently asserts source-level contracts; it does not run a browser. Focused tests, full suite, all four exact-final-head workflows, and the required manual browser checklist are pending. No production filesystem or live slskd operations are used by the new UI tests.
+- The acquisition dismissal HTTP 409 investigation remains deferred unless it recurs. This task does not claim to fix that issue. Publishing/deployment remain paused and unverified.
+
+---
+
 ## 2026-10-15 — PR #160 merged: discovery refresh orchestration extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/160. Exact tested head: `5aafc1a9c5835e2d9e2959a36e7419d09913403a`; squash merge commit: `dba172d5747607e65e8fadd32442b12d32054749`.
