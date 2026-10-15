@@ -712,3 +712,11 @@ The source-switch guard tests must prove the dismissal check and switch callback
 
 The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` exercise the legacy MCP adapter's integration with the extracted request coordinator. Direct-import coordinator tests do not independently validate that adapter's production locks, active sets, saved-job reader, reactivation callback, and watcher-start callback are wired correctly. Keep these tests until an equivalent adapter seam and regression coverage exist. Do not remove tests solely to eliminate AST usage.
 
+
+## Dashboard and health router injection — PR #110
+
+- Exact tested head: `a2bc06ac2ca6a4ca60341f3857135b97d2d6e68e`; squash merge `b4015b8619f3c0db169722c347f72612996b9a1c`.
+- All four required workflows passed on that exact head: syntax `38735208616`, Docker packaging/full unit suite/build `38735208619`, runtime smoke `38735208830`, validation-only multi-architecture image validation `38735208682`.
+- Direct-import regressions cover route inventory, injected Navidrome ping success and sanitized failure, dashboard category balance, three list reads at count 150, case-insensitive deduplication, candidate filtering, and invalid count rejection. The first CI run exposed a wrong expected pool size; the test was corrected before the passing final head.
+- No separate local test execution, publication, deployment, or production runtime verification is claimed.
+
