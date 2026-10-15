@@ -220,7 +220,12 @@ def clean_acquisition_source(
                     # safely claim that cleanup is complete.
                     return False
 
-                planned_deletions.append(actual)
+                planned_deletions.append({
+                    "name": actual.name,
+                    "device": actual_stat.st_dev,
+                    "inode": actual_stat.st_ino,
+                    "size": actual_stat.st_size,
+                })
 
         except (OSError, RuntimeError):
             return False
