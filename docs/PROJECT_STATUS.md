@@ -1,10 +1,11 @@
-## 2026-10-15 — PR #108 discovery router injection in progress
+## 2026-10-15 — PR #108 merged: discovery router service injection
 
-- **PR:** https://github.com/abucalip/navi-librarian/pull/108; branch `refactor/discovery-router-service-injection`.
-- **Change:** discovery routes now use the shared lazy `get_librarian` FastAPI dependency instead of importing `navidrome_server` at module load. Existing discovery service calls, route contracts, validation, parsing, filtering, and HTTP error mapping remain in place.
-- **Regression tests:** direct-import tests inject a fake service across recommendations, list retrieval, refresh, and feedback; verify payload normalization and key validation; and now include both accepted and filtered recommendation candidates.
-- **Verification:** no local tests were run. The branch was synchronized with current main in merge commit `5c715fae8e78f0616f94ce98f2c58ffa05629e54`. Initial CI on the synchronized head exposed six existing discovery-route tests that still patched the removed module-level `discovery.librarian` attribute. Updated those tests to inject a fake service directly. All four required workflows must pass on the final head; results are pending. Do not merge until all four required workflows pass on the final head and the final diff is reviewed.
-- **Release state:** no image publication, deployment, or production runtime verification. MCP compatibility remains a required constraint.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/108; exact tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`; squash merge `be51f0ce17fe8eccd1b57714e869db69a5f1ba78`.
+- **Change:** discovery routes use the shared lazy `get_librarian` FastAPI dependency instead of importing `navidrome_server` at module load. Domain calls, route paths, validation, response parsing, candidate filtering, feedback persistence, and HTTP error mapping remain in the existing service boundary.
+- **Regression coverage:** direct-import tests exercise fake-service injection for recommendations (including candidate filtering), list retrieval, refresh, feedback, and validation. Updated the pre-existing discovery route tests to pass explicit fake services instead of patching the removed `discovery.librarian` module attribute.
+- **Exact-head CI:** all four required workflows passed on `a5170e50080c0ca94b4068155ace83fd33c6f029`: Python syntax/acquisition safety `38733725606`; Docker packaging/full unit suite/build `38733725816` (227 tests passed); container runtime smoke `38733725595`; validation-only multi-architecture image validation `38733725591`.
+- **State:** implemented, tested, all required CI passed, merged. No local test run, image publication, deployment, or production runtime verification is claimed. Publishing remains paused.
+- **Next:** continue the service-boundary audit with the next narrow route extraction only after checking current roadmap and higher-priority safety/test gaps.
 
 ---
 
