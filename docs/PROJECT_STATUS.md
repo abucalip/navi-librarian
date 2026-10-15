@@ -1,40 +1,22 @@
-## 2026-10-15 — Discovery router injection in progress
+## 2026-10-15 — PR #108 discovery router injection in progress
 
-- **Branch:** `refactor/discovery-router-service-injection`; implementation commits: `86d8536fb24e7ad711ef32c062a276b33ccdba24` and `506ac1a50af8c3d693565471a5977b3961a737d6`.
-- **Change:** discovery routes now resolve the legacy librarian service through the shared lazy `get_librarian` dependency instead of importing `navidrome_server` at module load. Added direct-import route tests for injected fake-service calls, response parsing, candidate filtering, payload normalization, and validation.
-- **Compatibility:** no domain logic moved; MCP adapters, endpoint paths, response/error mapping, validation, and persistence ownership remain unchanged.
-- **Verification:** not yet run in a local environment. Exact-head CI and full diff review remain required; do not claim tested until those results are available. No publication, deployment, or production runtime verification.
-- **PR:** [#108](https://github.com/abucalip/navi-librarian/pull/108) is open against current main. Exact PR head: `a7259fdca343cb9effb575331fab9fbcf2d38973`.
-- **CI state:** no workflow runs or commit statuses were returned for that head at the latest check; this is pending, not a pass. Review the exact diff and wait for/obtain all four required workflows before merge. Publishing remains paused.
-
----
-
-## 2026-10-15 — Acquisition router service-injection verification follow-up
-
-- Initial exact-head CI on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` exposed a test-only mistake: `fastapi.Depends` is a factory, not the runtime type for `isinstance`. The route dependency implementation itself compiled; the syntax/acquisition safety and Docker/full-suite workflows failed at this assertion before completing.
-- Correct the assertion to use `fastapi.params.Depends`, then rerun all four required workflows on the new exact PR head. The fix is not considered verified until those reruns complete.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/108; branch `refactor/discovery-router-service-injection`.
+- **Change:** discovery routes now use the shared lazy `get_librarian` FastAPI dependency instead of importing `navidrome_server` at module load. Existing discovery service calls, route contracts, validation, parsing, filtering, and HTTP error mapping remain in place.
+- **Regression tests:** direct-import tests inject a fake service across recommendations, list retrieval, refresh, and feedback; verify payload normalization and key validation; and now include both accepted and filtered recommendation candidates.
+- **Verification:** no local tests were run. Earlier checks on prior heads returned no workflow runs/statuses. The branch was based on main before PR #107's documentation closeout commit; documentation is being reconciled with current main before exact-head verification. Do not merge until all four required workflows pass on the final head and the final diff is reviewed.
+- **Release state:** no image publication, deployment, or production runtime verification. MCP compatibility remains a required constraint.
 
 ---
 
-## 2026-10-15 — Acquisition router service-injection seam (in progress)
+## 2026-10-15 — PR #107 merged: acquisition router service injection
 
-- Branch: `refactor/acquisition-router-service-injection`, based on current `main` `77bc0c6c4a7ea110adf75e3b48d9f6d1e7171572`.
-- First narrow web integration step: add `app/api/dependencies.py` with a lazy `get_librarian()` default adapter and inject it into acquisition route handlers with FastAPI `Depends`. This removes the router module's import-time dependency on `navidrome_server` while preserving the legacy service methods, endpoint paths/methods, payload mapping, status/error mapping, and SSE response headers.
-- Regression tests were updated to call handlers with fake services and verify route contracts and the lazy adapter. Exact-head automated tests/CI have not yet run; treat this as in progress until the PR head has all four required workflow results and final diff review.
-- This is intentionally limited to acquisition routes. `app/main.py`, discovery, and settings still import `navidrome_server`; no MCP tool, persistence, domain behavior, packaging, publishing, or deployment changes are included.
-- No assistant-local tests, image publication, deployment, or production runtime verification are claimed.
-- **Next gate:** review the branch diff and confirm focused route tests, full unit suite, syntax/acquisition safety, Docker packaging/runtime smoke, and validation-only multi-architecture workflows pass on the exact PR head.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/107; final tested PR head `67174e8026f44382a4a6bea48ff1df80744dda35`; squash merge / main SHA at closeout `1cc15dd6343370ce0915bf7228a745d3558b393b`.
+- **Change:** added `app/api/dependencies.py` with lazy `get_librarian()` and injected it into all acquisition routes. This removes the acquisition router's import-time import of `navidrome_server` while preserving endpoint paths/methods, existing service calls, payload mapping, HTTP error behavior, and SSE response headers. Added regression tests for route contracts, dependency wiring, fake-service handler calls, validation, and sanitized errors.
+- **Exact-head CI:** all four required workflows passed on `67174e8026f44382a4a6bea48ff1df80744dda35`: Python syntax `38732084595`; Docker packaging/full unit suite `38732084663`; container runtime smoke `38732084579`; validation-only multi-architecture image build `38732084589`. An earlier test-only assertion failure on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` was corrected before these passing runs.
+- **Status:** Implemented, tested, CI passed, merged. Publishing remains paused; this did not publish an image, deploy the application, or verify production runtime. `app/main.py`, discovery, and settings still import `navidrome_server`; MCP tools and domain logic were not removed or duplicated.
+- **Next priority:** continue the narrow web service-injection audit at the discovery router, preserving API behavior and MCP compatibility. Keep deployment/runtime verification as a separate gate; do not resume routine modularization if a higher-priority safety or delivery gap appears.
 
 ---
-
-## 2026-10-15 — PR #103 merged: acquisition import source-root race hardening
-
-- **PR:** https://github.com/abucalip/navi-librarian/pull/103; tested final head `9de78c268af1b640a2a08afecb25a22502322a85`; squash merge `cf40df35a76d669421dcddbafd21ea22652bd0b1`.
-- **Change:** pin the source directory and destination parent with no-follow directory descriptors; perform staging, moves, and rollback relative to pinned descriptors so replacing the source path with a symlink cannot redirect imports. Preserve collision-suffixed matching, cross-filesystem fallback, no-overwrite checks, and recovery behavior. Added direct-import regression coverage for source-root replacement, collision suffixes, cross-filesystem fallback, and rollback.
-- **Exact-head CI:** all four required workflows passed on `9de78c268af1b640a2a08afecb25a22502322a85`: Python syntax `38726626891`, Docker packaging/full unit suite/build `38726626846`, container runtime smoke `38726626956`, and validation-only multi-architecture image validation `38726626910`. Image publishing remains paused.
-- **Verification boundary:** no separate assistant-local test run, live slskd test, production filesystem operation, image publication, deployment, or production runtime verification is claimed.
-- **State:** implemented, exact-head CI passed, merged. Main was observed at `5cf853cbd85cd9aec88ea6276522e86f83b7935c` immediately after merge; documentation closeout follows in a separate PR.
-- **Next:** continue the highest-priority remaining acquisition-coordination/test audit from the current GitHub main and roadmap; inspect current PRs and checks before choosing the next code change.
 
 ## 2026-10-15 — Read-only web dependency audit completed
 
