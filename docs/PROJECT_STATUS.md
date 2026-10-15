@@ -987,3 +987,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - **Manual UI evidence:** report and screenshots are published in PR comments against the exact tested head. Desktop and 375×720 viewport, failed-sign-in layout, and asset/network checks passed. The published checklist marks keyboard focus-modality confirmation and the first-run setup variant as skipped; the stylesheet's focus rule was verified, but those two observations are not represented as fully exercised in the report.
 - **State:** Implemented, automated CI passed, manual UI report published, merged. Image publishing remains paused; no deployment or production runtime verification is claimed.
 - **Next:** continue the highest-priority acquisition-safety test migration/audit; do not infer deployed UI behavior from merge or CI.
+
+## 2026-10-15 — Settings router service injection in progress
+
+- Current implementation branch: `refactor/settings-router-service-injection`, based on `main` at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` (PR #108 merge).
+- `app/api/settings.py` now uses the shared lazy `get_librarian` dependency for all twelve settings endpoints instead of importing `navidrome_server` at module import time. Existing settings functions remain the service implementation; payload mapping, defaults, response parsing, validation status codes, and sanitized 502 errors are intentionally unchanged.
+- `tests/test_settings_routes.py` now supplies fake services directly and checks route/method contracts, dependency wiring, payload mapping, slskd defaults/path trimming, client validation errors, and sanitized connection failures.
+- Verification state at documentation update: no local tests run; CI not yet verified for the final branch head. No image publication, deployment, or production runtime verification. Preserve the MCP adapters and legacy persistence ownership.
+
