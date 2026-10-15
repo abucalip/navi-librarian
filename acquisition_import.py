@@ -249,6 +249,8 @@ def import_matched_album_files(
             },
         }
 
+        # Preserve the legacy fail-before-staging storage-mount guard.
+        assert_music_storage_identity()
         os.mkdir(staging_name, dir_fd=parent_fd)
         staging_created = True
         staging_fd = os.open(staging_name, _DIRECTORY_FLAGS, dir_fd=parent_fd)
