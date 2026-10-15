@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed, import_source_unless_dismissed
+from acquisition_orchestration import request_skip_acquisition_source, switch_source_unless_dismissed, queue_candidate_unless_dismissed, import_source_unless_dismissed, existing_acquisition_response
 from acquisition_lifecycle import skip_request_error
 
 
@@ -232,6 +232,79 @@ class AcquisitionImportGuardTests(unittest.TestCase):
                 "Artist", "Album", transition_lock=threading.RLock(),
                 is_dismissed=lambda _artist, _album: False, import_source=fail,
             )
+
+
+
+class ExistingAcquisitionRecoveryTests(unittest.TestCase):
+    def setUp(self):
+        self.identity = ("artist", "album")
+        self.active_requests = set()
+        self.active_watchers = set()
+        self.watcher_lock = threading.RLock()
+        self.start_calls = []
+
+    def run_decision(self, job=None, status=None, watcher_active=False, start=None):
+        def start_watcher(*args):
+            self.start_calls.append(args)
+            if start is not None:
+                return start(*args)
+            self.active_watchers.add(self.identity)
+        return existing_acquisition_response(
+            "Artist", "Album", self.identity, job, status, watcher_active,
+            active_requests=self.active_requests,
+            start_watcher=start_watcher,
+            watcher_lock=self.watcher_lock,
+            active_watchers=self.active_watchers,
+            lifecycle=SimpleNamespace(should_resume_monitor=__import__(
+                "acquisition_lifecycle"
+            ).should_resume_monitor),
+            json_module=json,
+        )
+
+    def test_incomplete_saved_source_refuses_recovery_without_starting_watcher(self):
+        result = json.loads(self.run_decision({
+            "artist": "Artist", "album": "Album",
+            "candidate": {"username": "peer", "files": []}, "settings": {},
+        }, status="downloading"))
+        self.assertEqual(result["status"], "recovery_unavailable")
+        self.assertEqual(self.start_calls, [])
+        self.assertEqual(self.active_watchers, set())
+
+    def test_valid_saved_source_resumes_watcher_without_requeue(self):
+        candidate = {"username": "peer", "files": [{"filename": "Album/01.flac"}]}
+        result = json.loads(self.run_decision({
+            "artist": "Artist", "album": "Album",
+            "candidate": candidate, "settings": {"slskd_downloads_path": "/downloads"},
+        }, status="downloading"))
+        self.assertEqual(result["status"], "recovery_started")
+        self.assertEqual(self.start_calls, [(
+            "Artist", "Album", candidate, {"slskd_downloads_path": "/downloads"},
+        )])
+        self.assertEqual(self.active_watchers, {self.identity})
+
+    def test_watcher_start_failure_is_reported_without_requeue(self):
+        def fail(*_args):
+            raise RuntimeError("thread start failed")
+        result = json.loads(self.run_decision({
+            "artist": "Artist", "album": "Album",
+            "candidate": {"username": "peer", "files": [{"filename": "Album/01.flac"}]},
+            "settings": {},
+        }, status="downloading", start=fail))
+        self.assertEqual(result["status"], "monitor_recovery_failed")
+        self.assertEqual(result["error"], "RuntimeError")
+        self.assertEqual(self.active_watchers, set())
+
+    def test_importing_imported_and_active_requests_short_circuit(self):
+        for status in ("importing", "imported"):
+            with self.subTest(status=status):
+                result = json.loads(self.run_decision(status=status))
+                self.assertEqual(result["status"], status)
+        self.active_requests.add(self.identity)
+        result = json.loads(self.run_decision())
+        self.assertEqual(result["status"], "already_in_progress")
+
+    def test_no_existing_job_or_active_request_allows_new_search(self):
+        self.assertIsNone(self.run_decision())
 
 
 if __name__ == "__main__":
