@@ -11,6 +11,7 @@ import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration as _acquisition_orchestration
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
+from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
 
 from acquisition_completion import (
     filename_key as _module_filename_key,
@@ -62,6 +63,7 @@ def load_helpers():
         "Path": Path,
         "_acquisition_lifecycle": _acquisition_lifecycle,
         "_acquisition_orchestration": _acquisition_orchestration,
+        "_acquire_album_request": _module_acquire_album_request,
         "_module_candidate_start_state": _module_candidate_start_state,
         "unicodedata": unicodedata,
         "_discovery_filename_key": _module_filename_key,
