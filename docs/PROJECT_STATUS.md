@@ -1,3 +1,12 @@
+## 2026-10-15 — PR #136 merged: acquisition monitor payload preparation
+
+- PR: https://github.com/abucalip/navi-librarian/pull/136; final head: `c963bb6a1510d86ebb2cfe5bb9514fccbc478efa`; squash merge: `5f28823d0c279d49947912f9fbce0a160a7a5bc3`.
+- Extracted selected/fallback candidate payload normalization into `acquisition_monitor_payload.py`; direct-import tests cover file-record shape, quality-summary defaults, fallback metadata preservation, and input immutability. Docker packaging includes the module.
+- All four required workflows associated with the exact final PR head succeeded: Python syntax, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation (publishing paused). No separate local test run, image publication, deployment, or production runtime verification is claimed.
+- Next backend priority: continue the safety/verification audit before routine modularization. Keep the acquisition-dismissal HTTP 409 investigation deferred unless it recurs; if it recurs, capture the refusal stage and evidence before changing cleanup behavior. Review the still-open diagnostic/defer PRs (#44/#45) as part of that follow-up.
+
+---
+
 ## 2026-10-15 — Acquisition monitor payload extraction (PR preparation)
 
 - Modularization seam: extracted the repeated construction of selected/fallback source payloads passed to the acquisition import watcher into `acquisition_monitor_payload.py`.
