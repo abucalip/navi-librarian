@@ -311,6 +311,60 @@ the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the tr
 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; and no console or page errors.
 
+## 5e. Modal artwork and nav label findings
+
+C3 of the external critique: set the modal artwork `alt` dynamically. Auditing it surfaced a
+second, unrelated defect in the same dialog.
+
+### Defect 1 — the modal image never described its own album
+
+The `<img>` carried a hardcoded `alt="Album artwork"` that was never updated. The ARIA tree
+for an open modal read:
+
+```
+- dialog "Bitches Brew":
+  - img "Album artwork"
+```
+
+The name is identical for every album, so it conveys nothing. `audit.md` lists "Alt text:
+Missing or poor image descriptions", and `clarify.md:74` gives the rule: "Make alt text convey
+the image's information; use empty alt for decoration."
+
+**Fixed:** the description is set on open — `Album artwork for <album> by <artist>` — and
+cleared to an empty `alt` when no artwork resolves, since an `<img>` with an alt but no source
+is announced as a broken image.
+
+The card artwork deliberately keeps `alt=""`. Each card already carries its own heading, so a
+per-image description there would duplicate the announcement. The modal image is different: it
+is a distinct larger depiction and the first content a user meets when the dialog opens. This
+distinction is recorded as a comment in `static/app.js` so the two are not "made consistent"
+later.
+
+### Defect 2 — the sidebar's label leaked into the modal's navigation
+
+`nav::before { content: "YOUR COLLECTION" }` was **unscoped**, so it matched both `<nav>`
+elements. The album modal's platform-links navigation rendered the sidebar's heading above its
+icon links, and the accessible name of that region was polluted:
+
+```
+- navigation "Find this album on music services": YOUR COLLECTION
+```
+
+Measured before: the modal nav's `::before` computed to `"YOUR COLLECTION"`. After scoping the
+rule to `main > nav`, it computes to `none` and the region exposes its platform links directly.
+
+A comment in `static/app.css` records why the selector is scoped, because the unscoped form
+looks more natural and would be an easy regression.
+
+### Verification
+
+Measured on the branch: with artwork present the image is announced as "Album artwork for
+Bitches Brew by Miles Davis"; with no artwork the alt is empty and no broken image is exposed;
+the modal nav's pseudo-element is `none` while the sidebar's is `"YOUR COLLECTION"`; the modal
+region now lists its link children instead of the leaked heading; 8/8 pages render their
+expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/360px; no console
+or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)

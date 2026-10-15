@@ -547,6 +547,12 @@ async function openAlbumModal(card) {
   setStatusState($('albumModalStatus'), 'loading');
   tracklist.replaceChildren();
   artwork.removeAttribute('src');
+  // Name the artwork with the album it actually shows. The card artwork uses empty alt
+  // because each card is already labelled by its own heading; the modal image is a
+  // distinct, larger depiction and is the element a user lands on when the dialog opens,
+  // so it carries its own description rather than relying on the heading further down
+  // the reading order. Cleared again below when no artwork resolves.
+  artwork.alt = 'Album artwork for ' + album + ' by ' + artist;
   setGetButtonState(get, 'idle', artist, album);
   get.onclick = () => searchAlbum(artist, album, metadata, get);
   backdrop.hidden = false;
@@ -559,7 +565,13 @@ async function openAlbumModal(card) {
     ]);
     if (!activeAlbumModal || activeAlbumModal.card !== card) return;
     const artworkUrl = details.artwork_url || (art && art.artwork_url);
-    if (artworkUrl) artwork.src = artworkUrl;
+    if (artworkUrl) {
+      artwork.src = artworkUrl;
+    } else {
+      // No artwork resolved. An <img> with an alt but no source is announced as a
+      // broken image, so this falls back to a decorative empty alt.
+      artwork.alt = '';
+    }
     const year = details.year || (art && art.year) || metadata.year || metadata.release_year || metadata.first_release_year || card.dataset.releaseYear;
     if (year) {
       $('albumModalYear').textContent = String(year);
