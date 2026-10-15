@@ -1,3 +1,8 @@
+## 2026-10-15 — Multi-extraction workflow closeout; PR #149 blocked on UI gate
+
+- PR #154 merged: https://github.com/abucalip/navi-librarian/pull/154; tested head `6de27ec137e9f859424eca0928fca25500852471`; merge commit `b547ff5c647d8bacd8bf17fd6cd760dc9c41980a`. All four required workflows passed on that exact tested head. Publishing/deployment/runtime verification remain separate and were not performed.
+- PR #149 was not merged. All four workflows passed on head `600c75475cfbe1d28230345835aee2316519365f`, but the PR explicitly records its required manual browser checklist as NOT RUN, and the branch is 26 commits behind current `main`. Merge remains blocked pending safe branch refresh, exact-head CI, and the required manual UI checklist.
+
 ## 2026-10-15 — Standard multi-extraction session workflow (PR #154)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/154; branch: `docs/multi-extraction-session-workflow`.
