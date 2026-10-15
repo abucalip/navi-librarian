@@ -425,6 +425,37 @@ Do not re-read `PROJECT_STATUS.md`, `PROJECT_LOG.md`, `TEST_PLAN.md`, or the oth
 docs unless the item genuinely requires it. GitHub is the record of what happened; this
 file is the compressed index into it.
 
+**Impeccable is mandatory every session, not optional.** `AGENTS.md` frames it as "when
+available in ZCode", and that latitude is what caused two sessions (C1, C2) to proceed
+without opening it. Treat it as required:
+
+1. Read the relevant reference file(s) below **before** choosing an approach — not after, to
+   justify a decision already made.
+2. Record in the PR body which guidance was **applied** and which was **rejected**, with the
+   reason. A PR that cites no Impeccable guidance is incomplete.
+
+The reference files live at `.pi/skills/impeccable/reference/`. Select by kind of work:
+
+| Kind of work | Read |
+|---|---|
+| Contrast, WCAG, ARIA, landmarks, semantic HTML, keyboard access | `audit.md` |
+| Error, empty, loading, edge-case and boundary states | `harden.md` |
+| Hierarchy, spacing, type scale, motion, general refinement | `polish.md` |
+| Adding or changing motion | `animate.md` |
+| Fonts, type scale, sizing | `typeset.md` |
+| Section composition, grids, layout rhythm | `layout.md` |
+| Interface copy, empty-state wording, error text | `clarify.md` |
+| Removing clutter, simplifying a busy screen | `distill.md` |
+| Evaluating an existing component in isolation | `component-review.md` |
+
+If two apply, read both. `audit.md` carries a severity model (P0-P3) and a health-score
+template that are useful even when the task is not a full audit.
+
+**Do not treat Impeccable as a mandate.** `AGENTS.md` is explicit that only recommendations
+fitting this product and its existing components should be applied, and that broad redesign
+commands are out of scope. Where it conflicts with `docs/FRONTEND_DESIGN_GUIDE.md` or with
+`AGENTS.md`, the project documents win and the conflict is recorded in the PR.
+
 **Work:**
 1. Confirm current `main` and the highest PR number (`gh pr list --state all --limit 1`).
 2. Branch `ui/<short-task-name>` from current `main`. Never commit to `main`.
