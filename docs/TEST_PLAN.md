@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition cleanup directory-race regression
+
+- `tests/test_acquisition_cleanup.py` exercises replacement of the verified album directory with a symlink during transfer lookup; the outside target must remain untouched and cleanup must fail closed.
+- `acquisition_cleanup.py` pins the configured root and target directory chain with no-follow directory descriptors, revalidates target/file identities and contents, and performs deletions relative to the pinned target descriptor.
+- Run focused cleanup tests, the full unit suite, Python syntax/acquisition-safety workflow, Docker packaging/full unit suite, runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. The regression is not considered verified until those checks pass.
+
+---
+
 ## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
 
 - PR #98 exact tested head: `edd5131c9005a5bb09b4a8c6f593c41fadc62699` ([PR](https://github.com/abucalip/navi-librarian/pull/98)); still open at session close.
