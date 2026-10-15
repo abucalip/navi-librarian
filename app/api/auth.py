@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 AUTH_LOCK = threading.Lock()
 _LOGIN_ATTEMPTS = {}
+_LOGIN_ATTEMPTS_LOCK = threading.Lock()
 _LOGIN_WINDOW_SECONDS = 15 * 60
 _LOGIN_MAX_ATTEMPTS = 8
 
@@ -62,10 +63,22 @@ def create_auth_router(
             raise HTTPException(status_code=409, detail="Create the app account first.")
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
-        attempts = [stamp for stamp in _LOGIN_ATTEMPTS.get(client_ip, []) if now - stamp < _LOGIN_WINDOW_SECONDS]
-        _LOGIN_ATTEMPTS[client_ip] = attempts
-        if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
-            raise HTTPException(status_code=429, detail="Too many login attempts. Try again in 15 minutes.")
+        # Reserve an attempt atomically before password verification. Otherwise,
+        # concurrent requests can all pass the limit check before any failed
+        # request records its timestamp.
+        with _LOGIN_ATTEMPTS_LOCK:
+            attempts = [
+                stamp for stamp in _LOGIN_ATTEMPTS.get(client_ip, [])
+                if now - stamp < _LOGIN_WINDOW_SECONDS
+            ]
+            if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+                _LOGIN_ATTEMPTS[client_ip] = attempts
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many login attempts. Try again in 15 minutes.",
+                )
+            attempts.append(now)
+            _LOGIN_ATTEMPTS[client_ip] = attempts
         username = str(payload.get("username") or "").strip()
         password = payload.get("password")
         settings = settings_read()
@@ -81,10 +94,9 @@ def create_auth_router(
             )
         )
         if not valid:
-            attempts.append(now)
-            _LOGIN_ATTEMPTS[client_ip] = attempts
             raise HTTPException(status_code=401, detail="Invalid username or password.")
-        _LOGIN_ATTEMPTS.pop(client_ip, None)
+        with _LOGIN_ATTEMPTS_LOCK:
+            _LOGIN_ATTEMPTS.pop(client_ip, None)
         response = JSONResponse({"ok": True, "message": "Signed in."})
         set_auth_cookie(response, request, username)
         return response

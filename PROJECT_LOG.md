@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #134 concurrent login rate-limit race
+
+- PR: https://github.com/abucalip/navi-librarian/pull/134. Added a deterministic integration regression before changing implementation, then reserved login-attempt slots atomically under a dedicated lock.
+- Pre-closeout head `d3f25518e1d3ecb8a15c848e84e80c0d369df4da` passed all four required workflows: Docker packaging `38776404115`, container runtime smoke `38776404108`, Python syntax `38776404131`, and Docker image validation `38776403893` (publishing paused).
+- Follow-up documentation commits correct stale CI status and SHA references. Re-run all four workflows on the exact final PR head before merge. No local test run, publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — PR #133 merged: malformed session token fail-closed regression
 
 - Audited app assembly and auth integration; existing import-isolation coverage asserts that importing `app.main` does not initialize `navidrome_server`, and auth routes use dependency injection.

@@ -185,5 +185,47 @@ class AuthRouteIntegrationTests(unittest.TestCase):
         self.assertEqual(self.client.get("/static/app.js").status_code, 200)
 
 
+    def test_concurrent_login_attempts_cannot_race_past_rate_limit(self):
+        import threading
+        import time
+        from concurrent.futures import ThreadPoolExecutor
+
+        self.setup_account()
+        main._LOGIN_ATTEMPTS["testclient"] = [
+            time.time()
+        ] * (main._LOGIN_MAX_ATTEMPTS - 1)
+        digest_entered = threading.Event()
+        release_digest = threading.Event()
+        call_lock = threading.Lock()
+        calls = 0
+
+        def delayed_digest(password, salt):
+            nonlocal calls
+            with call_lock:
+                calls += 1
+                first_call = calls == 1
+            if first_call:
+                digest_entered.set()
+                if not release_digest.wait(timeout=5):
+                    raise TimeoutError("test did not release delayed digest")
+            return hashlib.sha256((salt + password).encode()).hexdigest()
+
+        payload = {"username": "owner", "password": "wrong password"}
+
+        def attempt_login():
+            with TestClient(main.app, follow_redirects=False) as client:
+                return client.post("/api/auth/login", json=payload).status_code
+
+        with patch.object(main, "_password_digest", side_effect=delayed_digest):
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                first = executor.submit(attempt_login)
+                self.assertTrue(digest_entered.wait(timeout=5))
+                second_status = attempt_login()
+                release_digest.set()
+                first_status = first.result(timeout=5)
+
+        self.assertEqual(sorted([first_status, second_status]), [401, 429])
+
+
 if __name__ == "__main__":
     unittest.main()
