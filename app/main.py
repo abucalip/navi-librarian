@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.dependencies import get_librarian
 from app.api.settings import router as settings_router
 from app.api.auth import (
     AUTH_LOCK, _LOGIN_ATTEMPTS, _LOGIN_MAX_ATTEMPTS,
@@ -32,7 +33,6 @@ from app.api.discovery import router as discovery_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
 
-import navidrome_server as librarian
 
 
 app = FastAPI(
@@ -57,11 +57,22 @@ def cassette_icon():
 
 # Authentication settings remain in the existing persistent settings store.
 
-_AUTH_SECRET = load_auth_secret(librarian.DATA_DIR)
+_AUTH_SECRET = None
+_AUTH_SECRET_LOCK = threading.Lock()
+
+
+def _auth_secret():
+    """Load the persistent signing key only when an auth operation needs it."""
+    global _AUTH_SECRET
+    if _AUTH_SECRET is None:
+        with _AUTH_SECRET_LOCK:
+            if _AUTH_SECRET is None:
+                _AUTH_SECRET = load_auth_secret(get_librarian().DATA_DIR)
+    return _AUTH_SECRET
 
 
 def _auth_settings():
-    return librarian._discovery_settings_read()
+    return get_librarian()._discovery_settings_read()
 
 
 def _auth_configured():
@@ -74,11 +85,11 @@ def _auth_configured():
 
 
 def _make_session_token(username, now=None):
-    return _make_session_token_impl(username, _AUTH_SECRET, now=now)
+    return _make_session_token_impl(username, _auth_secret(), now=now)
 
 
 def _session_username(token, now=None):
-    return _session_username_impl(token, _AUTH_SECRET, _auth_settings, now=now)
+    return _session_username_impl(token, _auth_secret(), _auth_settings, now=now)
 
 
 def _set_auth_cookie(response, request, username):
@@ -126,7 +137,7 @@ LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
 
 app.include_router(create_auth_router(
     settings_read=_auth_settings,
-    settings_write=lambda values: librarian._discovery_settings_write(values),
+    settings_write=lambda values: get_librarian()._discovery_settings_write(values),
     auth_configured=_auth_configured,
     session_username=lambda token: _session_username(token),
     set_auth_cookie=_set_auth_cookie,
