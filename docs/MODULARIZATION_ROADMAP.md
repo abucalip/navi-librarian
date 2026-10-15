@@ -1,7 +1,8 @@
-## 2026-10-15 — Safety gate before the next service extraction
+## 2026-10-15 — PR #99 safety hardening merged
 
-- Pause routine modularization while verifying the acquisition cleanup directory-swap hardening. Path-based deletion after external transfer callbacks presented a plausible symlink replacement race; the fix and regression are on `fix/acquisition-cleanup-directory-race`.
-- Next: review the final diff and require focused/full tests plus all four CI workflows on the exact PR head before merge. No image publication or deployment.
+- PR #99 merged at `6a5d42148813d3b2725f5d79ca45bdecaee97c25` from exact tested head `a62cdae8fa8cf916b7a5a50038e7ae8a6dfd6df1`.
+- The acquisition cleanup TOCTOU window is hardened and regression-tested; all four required workflows passed on the exact PR head. Publishing and deployment remain paused.
+- **Next:** continue the highest-priority safety/test audit, especially remaining filesystem operations that cross external callbacks or filesystem boundaries, before routine modularization.
 
 ---
 
