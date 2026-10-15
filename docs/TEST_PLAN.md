@@ -1,8 +1,9 @@
-## 2026-10-15 — PR #108 discovery router injection verification pending
+## 2026-10-15 — PR #108 verified and merged
 
-- Direct-import regression tests cover recommendation service injection and candidate filtering, discovery-list retrieval, list refresh, feedback normalization, and validation status codes.
-- Required exact-head workflow gates remain: Python syntax/acquisition safety; Docker packaging plus full unit suite/build; container runtime smoke; validation-only multi-architecture image validation. No local execution is claimed.
-- Initial CI exposed six legacy route tests that relied on `discovery.librarian`; these tests now call handlers with an injected fake service. Rerun all four required workflows on the final PR head and confirm focused route tests/full suite pass. Publishing remains paused.
+- Migrated discovery route unit tests from patching `discovery.librarian` to explicit fake-service injection, consistent with the new lazy dependency seam.
+- Final tested PR head: `a5170e50080c0ca94b4068155ace83fd33c6f029`; squash merge: `be51f0ce17fe8eccd1b57714e869db69a5f1ba78`.
+- All four required workflows passed on that exact head: Python syntax/acquisition safety `38733725606`; Docker packaging/full unit suite/build `38733725816` (227 tests); container runtime smoke `38733725595`; validation-only multi-architecture image validation `38733725591`.
+- No separate local test run, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
