@@ -1,3 +1,7 @@
+## Expected slskd track-count extraction — in progress (2026-10-15)
+
+Move the pure metadata-shape reader from navidrome_server.py into the already packaged slskd_search.py. Keep _discovery_expected_track_count(metadata) as a compatibility adapter because the acquisition coordinator still calls it. Direct-import tests cover supported aliases, nested structures, track-object lists, invalid values, unrelated arrays, and cycles. This step does not change candidate matching/ranking or acquisition lifecycle behavior. PR #155 initial head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows (runs 38814552978, 38814552986, 38814552931, 38814552973). Documentation updates require the four workflows to be rechecked on the resulting final PR head before merge.
+
 ## Music path default policy — completed (PR #151)
 
 Extracted environment override and mount-path fallback into pure `music_paths.py`, retaining `navidrome_server._default_music_dir()` and existing initialization. Direct-import regressions and Docker packaging are in place. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`. Publishing remains paused; deployment is unverified.

@@ -3160,37 +3160,10 @@ def _slskd_quality_tier(file_record, filename, priority):
     return quality_tier(file_record, filename, priority)
 
 def _discovery_expected_track_count(metadata):
-    """Read an expected track count from common recommendation metadata shapes."""
-    if not isinstance(metadata, dict):
-        return None
-    keys = ("track_count", "trackCount", "number_of_tracks", "numberOfTracks",
-            "total_tracks", "totalTracks", "tracks_count", "tracksCount", "trackcount")
-    queue = [metadata]
-    seen = set()
-    while queue:
-        current = queue.pop(0)
-        if not isinstance(current, dict) or id(current) in seen:
-            continue
-        seen.add(id(current))
-        for key in keys:
-            value = current.get(key)
-            try:
-                count = int(value)
-                if count > 0:
-                    return count
-            except (TypeError, ValueError):
-                pass
-        for key in ("tracks", "tracklist", "track_list", "album", "release", "metadata"):
-            value = current.get(key)
-            if isinstance(value, list) and value:
-                # Track objects are strong evidence; don't mistake unrelated arrays for tracks.
-                if all(isinstance(item, dict) for item in value):
-                    return len(value)
-            elif isinstance(value, dict):
-                queue.append(value)
-    return None
+    """Compatibility adapter for expected slskd album track-count extraction."""
+    from slskd_search import expected_track_count
 
-
+    return expected_track_count(metadata)
 def _slskd_track_identity(filename):
     """Compatibility wrapper for slskd track identity normalization."""
     from slskd_search import track_identity
