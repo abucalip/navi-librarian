@@ -1,3 +1,12 @@
+## 2026-10-15 — Service settings policy extraction (PR #95)
+
+- Extracted six settings-policy/configuration functions into importable `service_settings.py` with injected persistence/path callbacks. The AST-coupled test harness was replaced with direct imports against the real module.
+- Preserved legacy MCP/web adapter names and signatures. Kept SQLite initialization/migrations, global `MUSIC_DIR` mutation, service connectivity requests, and other service settings in `navidrome_server.py` to keep this step narrow.
+- Added `service_settings.py` to the Docker image file list. All four required workflows passed on implementation revision `89fd6220afce03aa16496776d185afe132986dc8`; final PR-head CI must be rechecked after docs changes.
+- Next: review other settings functions and their web/MCP callers to find the next safe direct-import seam. Do not retire MCP while the web app still imports the legacy module.
+
+---
+
 ## 2026-10-15 — Web dependency audit complete; settings policy is next seam
 
 - Traced the current web callers of `navidrome_server.py` across `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, and `app/api/settings.py`. They use shared persistence/configuration, recommendation/list operations, acquisition lifecycle functions, and service settings/connectivity methods. `app/main.py` imports the legacy module directly, so importing the web app also initializes/registers MCP tool definitions.
