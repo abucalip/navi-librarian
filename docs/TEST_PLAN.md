@@ -1,11 +1,13 @@
-## 2026-10-15 — Dismissed-acquisition preflight tests
+## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight coverage
 
-- Direct-import coverage exercises non-dismissed bypass, valid metadata forwarding, malformed/non-object metadata normalization to `{}`, and refusal when reactivation fails.
-- On implementation SHA `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf`, all four required workflows passed: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and validation-only multi-architecture `38661745743` (publishing paused).
-- Keep AST integration tests `test_explicit_get_reactivates_safely_dismissed_job` and `test_dismissed_job_stays_blocked_if_reactivation_fails`; they protect the top-level Get flow and response behavior. Preserve shared transition-lock ownership.
-- The docs follow-up changes the PR head; all four workflows must be green on that final exact head before merge.
+- PR #92 merged as `60698f7bf1413e4c643309e200d1ace2e268bee3` from exact tested head `1f0ce2174e1e60f3aab7c898dd534b8b1f11e858`.
+- Direct-import tests cover non-dismissed bypass, valid metadata forwarding, malformed/non-object metadata normalization to `{}`, and refusal when reactivation fails.
+- All four required workflows passed on that exact PR head: syntax/acquisition safety `38661883721`; Docker packaging/full suite `38661883755` (203 tests); runtime smoke `38661883730`; multi-architecture validation `38661883723` (publishing paused).
+- Retain AST integration tests `test_explicit_get_reactivates_safely_dismissed_job` and `test_dismissed_job_stays_blocked_if_reactivation_fails`; they protect the top-level Get flow and response behavior. Preserve shared transition-lock ownership.
+- Next: continue auditing remaining AST-coupled acquisition lifecycle tests for safe direct-import seams without weakening end-to-end transition coverage.
 
 ---
+
 
 
 ## 2026-10-15 — Acquisition reservation lifecycle verified
