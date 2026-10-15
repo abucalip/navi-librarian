@@ -3,8 +3,9 @@
 - Modularization seam: extracted the repeated construction of selected/fallback source payloads passed to the acquisition import watcher into `acquisition_monitor_payload.py`.
 - Added direct-import regression coverage for minimal filename/size records, quality-summary normalization, fallback metadata preservation, and input immutability. The legacy MCP adapter, shared locks, watcher lifecycle, queue/fallback decisions, and persisted acquisition state remain unchanged.
 - Docker packaging includes the new module.
-- Verification status at this documentation commit: implementation and regression tests are committed on `refactor/acquisition-monitor-payload`; exact-head CI has not yet been verified. No local tests, merge, publication, deployment, or runtime verification are claimed.
-- Acceptance gate: inspect the complete diff and verify Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only image validation on the final PR head before considering merge.
+- Exact PR head `f3d444fce0902637d394b48680e4274e2b513f6f` passed all four required workflows: Python syntax `38780380213`, Docker packaging/full unit suite/build `38780380196`, container runtime smoke `38780380199`, and validation-only multi-architecture image validation `38780380566` (publishing paused).
+- This verifies the listed checks on that head only. No local test execution, merge, image publication, deployment, or production runtime verification is claimed.
+- Before merge, re-run all four required workflows on the final PR head after documentation updates and review the complete diff.
 
 ---
 
