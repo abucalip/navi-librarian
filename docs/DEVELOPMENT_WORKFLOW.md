@@ -62,3 +62,11 @@ Before any UI task, consult [`FRONTEND_DESIGN_GUIDE.md`](FRONTEND_DESIGN_GUIDE.m
 ## Frontend assets and authentication boundary
 
 When extracting templates/styles/scripts, serve only the dedicated static directory under `/static/` and retain authentication for application pages and APIs. Public static access should be explicitly scoped to `/static/*` and the existing bundled `/assets/cassette.png` endpoint. Add integration tests for asset loading before setup/login and protected-route behavior. UI-facing asset delivery changes require exact-head CI followed by the full manual browser checklist, including the outstanding performance and error/recovery checks.
+
+
+## Settings router injection acceptance (2026-10-15)
+
+- The settings router must use `Depends(get_librarian)` and be importable without a direct import of `navidrome_server.py`.
+- Keep all twelve endpoint path/method pairs and existing service calls, request mapping, default quality priorities, optional-path trimming, 400 validation errors, and sanitized 502 errors unchanged.
+- Unit tests must exercise the router with injected fakes and verify dependency wiring. Require exact-final-head results for all four CI workflows before merge. Do not claim local tests, publication, deployment, or runtime verification unless performed.
+
