@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #128 merged: acquisition status layout
+
+- PR #128 (https://github.com/abucalip/navi-librarian/pull/128) merged to `main` at `424929410b0324313e9aee5e59da73803d4b32bb`, from exact final PR head `653984684be4e2da28e6de6955b43299143f1141`.
+- Acquisition cards now use a wider status-board composition rather than the shared four-column artwork grid; discovery layouts and acquisition behavior/API semantics are unchanged.
+- Manual browser report: https://github.com/abucalip/navi-librarian/pull/128#issuecomment-6195576007. All eight checklist items passed on the pre-documentation-fix UI commit `4b2d30a510d5b850be25e059641eee29d9d7dde9`; the only subsequent change on the PR branch was documentation reconciliation.
+- All four required workflows passed on final PR head `653984684be4e2da28e6de6955b43299143f1141`: Python syntax run `38760144749`, container runtime smoke `38760144797`, Docker packaging `38760144678`, and Docker image validation with publishing paused `38760144644`.
+- Image publication, deployment, and production runtime verification were not performed. The PR also reconciles `docs/UI_BACKLOG_EXECUTION.md` with the withdrawn keyboard-focus finding; acquisition is the first completed section under per-section layouts, with artist exploration, library, and settings still candidates.
+
 ## 2026-10-15 — Backend API input validation: `auto_queue`
 
 - Identified a correctness issue in `POST /api/acquire`: Python truthiness conversion treated values such as the JSON string `"false"` and number `0` as booleans, potentially requesting unintended queue behavior.
