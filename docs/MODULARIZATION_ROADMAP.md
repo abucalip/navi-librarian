@@ -1,3 +1,12 @@
+## 2026-10-15 — Discovery router injection in progress
+
+- Branch `refactor/discovery-router-service-injection` replaces discovery router's import-time `navidrome_server` import with the shared lazy `get_librarian` FastAPI dependency.
+- Direct-import route regressions cover fake-service injection across recommendations, list retrieval, refresh, and feedback, plus key validation behavior.
+- Domain behavior remains in existing service functions; route contracts and MCP compatibility are intended to remain unchanged.
+- This change is not yet verified: obtain exact-head CI, inspect full diff, and update status before merge. Publishing/deployment are not in scope.
+
+---
+
 ## 2026-10-15 — Acquisition router service-injection verification follow-up
 
 - Initial exact-head CI on `d6a1696c06f594e2c4025e0eff54bb8496fd8e29` exposed a test-only mistake: `fastapi.Depends` is a factory, not the runtime type for `isinstance`. The route dependency implementation itself compiled; the syntax/acquisition safety and Docker/full-suite workflows failed at this assertion before completing.
