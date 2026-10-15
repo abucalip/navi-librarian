@@ -14,12 +14,12 @@
 - All four required workflows passed on final PR head `653984684be4e2da28e6de6955b43299143f1141`: Python syntax run `38760144749`, container runtime smoke `38760144797`, Docker packaging `38760144678`, and Docker image validation with publishing paused `38760144644`.
 - Image publication, deployment, and production runtime verification were not performed. The PR also reconciles `docs/UI_BACKLOG_EXECUTION.md` with the withdrawn keyboard-focus finding; acquisition is the first completed section under per-section layouts, with artist exploration, library, and settings still candidates.
 
-## 2026-10-15 — Backend API input validation: `auto_queue`
+## 2026-10-15 — PR #126 merged: `auto_queue` API input validation
 
 - Identified a correctness issue in `POST /api/acquire`: Python truthiness conversion treated values such as the JSON string `"false"` and number `0` as booleans, potentially requesting unintended queue behavior.
 - The focused fix validates that `auto_queue` is a JSON boolean before invoking the shared librarian service; omitted values still default to `true`, and explicit `false` is preserved.
 - Added route regressions for explicit false and invalid strings, numbers, null, lists, and objects; invalid inputs must return HTTP 400 without calling the service.
-- Implementation branch: `fix/acquire-auto-queue-boolean-validation`. The code/test revision `966f9e553d33d533b369ef8664e86eef7e1b2478` passed all four required workflows (Python syntax `38756432402`, Docker packaging/full suite/build `38756432326`, container runtime smoke `38756432344`, and validation-only multi-architecture image validation `38756432523`). This status entry is being updated after those results; the final documentation-updated head must pass all four workflows again before merge. No local test run, publication, deployment, or production runtime verification is claimed.
+- Implementation branch: `fix/acquire-auto-queue-boolean-validation`. Final PR head `a67be60e8f35a3a6e9430ac3ad30700532d958cc` passed all four required exact-head workflows: Python syntax `38756653450`, Docker packaging/full suite/build `38756653379`, container runtime smoke `38756653406`, and validation-only multi-architecture image validation `38756653398`. PR #126 merged by squash at `3b3a9d47538d51820b6ce162f524812d0800f3c1`. No separate local test run, image publication, deployment, or production runtime verification is claimed. No local test run, publication, deployment, or production runtime verification is claimed.
 
 ---
 
