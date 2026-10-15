@@ -73,3 +73,13 @@
 - All four required exact-head workflows passed: syntax `38807325467`; Docker packaging/full suite/build `38807325564`; runtime smoke `38807325555`; validation-only multi-architecture image validation `38807325557`.
 - Merged and CI-verified. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
 - Next action: review current main, open PRs, and the modularization roadmap to select the next smallest safe dependency seam.
+
+
+## 2026-10-15 — PR #149 merged: recommendation-count accessibility fix
+
+- PR #149: https://github.com/abucalip/navi-librarian/pull/149; exact tested head `c71d28e74bbdfadbedef4ec3e30fdba5181feb5a`; squash merge commit `f3ac971e6c04b9c9caa8d4d20f50d0c25302556e`.
+- Brought the original PR branch up to current GitHub main without force-pushing. Made the recommendation count readable at 13px in the body font, retained stable numeric figures with `tabular-nums`, and assigned `role="status"` to its polite live region.
+- Reviewed the three-file diff: `app/templates/index.html`, `static/app.css`, and `docs/UI_BACKLOG_EXECUTION.md`.
+- Manual browser report published by the operator for the exact final tested head; checklist reports zero failed items. All four required GitHub Actions workflows passed on that same SHA: syntax, runtime smoke, Docker packaging/full unit suite/build, and validation-only multi-architecture image validation.
+- Merged after both the exact-head CI and manual verification gates passed. Image publishing remains paused; no deployment or production runtime verification claimed.
+- Next session: inspect current main, open PRs, and the modularization roadmap before choosing the next smallest safe application-assembly/domain-service seam.
