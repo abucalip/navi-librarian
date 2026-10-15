@@ -27,6 +27,7 @@ class MetadataCacheTests(unittest.TestCase):
 
     def test_invalid_json_is_a_cache_miss(self):
         import sqlite3
+        self.cache.set("seed", {})  # Initializes the cache table.
         with sqlite3.connect(self.database) as db:
             db.execute(
                 "INSERT INTO metadata_cache (cache_key, value_json, cached_at) "
