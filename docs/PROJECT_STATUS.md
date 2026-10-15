@@ -1027,3 +1027,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - No separate local test run, image publication, deployment, or production runtime verification is claimed.
 - `app/main.py` still imports `navidrome_server.py` for authentication settings and `DATA_DIR`/auth-secret initialization. Next: audit that remaining authentication/configuration dependency and identify a narrow injectable seam without changing cookie, session, setup/login, or persistent settings behavior.
 
+
+
+## 2026-10-15 — PR #112 implementation and exact-head CI verified
+
+- PR #112: https://github.com/abucalip/navi-librarian/pull/112; branch `refactor/lazy-auth-service-dependency`; final implementation/documentation head at this verification point: `ded9aef759c87ccf07d71cd777b366af424cc06c`.
+- `app/main.py` no longer imports `navidrome_server.py` at module load. Auth settings and the persistent signing key resolve the existing librarian service lazily; settings storage, `DATA_DIR`, MCP adapters, and domain ownership remain unchanged.
+- Authentication integration tests inject a fake service and include a subprocess regression asserting that importing `app.main` does not load `navidrome_server`. Existing setup/login/logout, cookie/session, rate-limit, and middleware tests remain.
+- All four required workflows passed on exact head `ded9aef759c87ccf07d71cd777b366af424cc06c`: syntax `38737672741`; Docker packaging/full suite/build `38737672443`; container runtime smoke `38737672507`; validation-only multi-architecture image validation `38737672689`.
+- No separate local test execution, image publication, deployment, or production runtime verification. Publishing remains paused. Final review/merge is the remaining gate.

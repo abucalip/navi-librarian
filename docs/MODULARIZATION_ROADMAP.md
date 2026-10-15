@@ -453,3 +453,11 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 - The remaining acquisition lifecycle AST tests were retained because they verify the legacy MCP adapter's dependency wiring beyond the direct-import coordinator tests.
 - **Next:** audit the remaining `app/main.py` direct `navidrome_server` dependency for auth settings reads/writes and `DATA_DIR`/secret initialization. Design a small testable injection seam that preserves setup/login/logout, cookie/session semantics, persistent settings ownership, and MCP compatibility. Do not retire MCP or move persistence without a separate evidence-based plan.
 
+
+
+## 2026-10-15 — PR #112: lazy authentication service dependency verified
+
+- Removed the direct `navidrome_server.py` import from `app/main.py`; auth settings and signing-key storage resolve through the shared lazy `get_librarian` dependency.
+- Kept persistent settings, `DATA_DIR`, secret-file permissions, MCP adapters, auth route contracts, cookie/session semantics, and middleware behavior unchanged.
+- Migrated auth integration tests to an injected fake service and added a subprocess regression proving importing `app.main` alone does not load `navidrome_server`.
+- Exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture validation `38737672689`. No publication/deployment. Review and merge PR #112 after final-head checks.
