@@ -481,3 +481,18 @@
 - Implementation commit `5a5a78aed24916aeddf01b306300850b95a56aa7` passed all four required workflows: Python syntax (`38734406727`), Docker packaging/full suite (`38734407126`), container runtime smoke (`38734406616`), and validation-only multi-architecture image validation (`38734407120`). The validation workflow's multi-architecture build step and overall job both completed successfully.
 - This is evidence for the implementation commit only. Documentation closeout commits are being added afterward; the exact final PR head must be rechecked before merge. No local test run, image publication, deployment, or production runtime verification is claimed.
 
+
+## 2026-10-15 — PR #109 merged: settings router service injection
+
+- PR #109: https://github.com/abucalip/navi-librarian/pull/109; exact tested head `a6c919a4d6c45f98394ee683095888f27513f1d6`; squash merge / current main at closeout `9a2aaea98cff38a1ad3da130d0958f945bec9673`.
+- The settings router now uses the shared lazy `get_librarian` dependency for all twelve endpoints. Route/method contracts, service calls, payload mapping, quality defaults, optional path trimming, validation responses, and sanitized connection errors are preserved.
+- All four required workflows passed on the exact final PR head: Python syntax `38734569394`, Docker packaging/full suite `38734569197`, container runtime smoke `38734569168`, and validation-only multi-architecture image validation `38734569302`. Image publishing remains paused.
+- No separate local test run, publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-15 — Remaining acquisition AST lifecycle test audit
+
+- Reviewed the remaining lifecycle cases in `tests/test_acquisition_safety.py` against direct-import tests for `acquisition_request_coordinator.py` and `acquisition_orchestration.py`.
+- The simultaneous-request, incomplete-saved-candidate, dismissed-job reactivation/refusal, and stale-watcher cases in the AST harness still exercise the legacy `discovery_acquire_album` adapter wiring as well as the coordinator. Direct-import coordinator tests cover the extracted coordinator's own logic but do not independently prove the adapter passes the production locks, active sets, persistence readers, and watcher callbacks correctly.
+- Decision: do not delete these tests as redundant. Keep the adapter-level AST cases until an equivalent non-MCP adapter test seam can verify the same integration boundary; preserve concurrency and persisted-state checks.
+- Next narrow service-boundary task: move the two remaining `/api/health` and `/api/dashboard-picks` HTTP handlers into an injected dashboard router, leaving Navidrome ping, discovery-list retrieval, and album eligibility in the existing librarian service. This does not remove the remaining `app.main` settings/auth dependency on `navidrome_server.py`.
+
