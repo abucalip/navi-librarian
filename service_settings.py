@@ -215,3 +215,50 @@ def set_slskd_settings(
         "quality_priority": quality,
         "message": "Settings saved. The API key is never returned by this tool.",
     }, ensure_ascii=False)
+
+
+def test_navidrome_connection(api_call, json_dumps):
+    """Translate the configured Navidrome ping into the stable settings result."""
+    try:
+        api_call("ping")
+        return json_dumps({"ok": True, "status": "connected", "message": "Navidrome connection succeeded."})
+    except Exception as exc:
+        return json_dumps({
+            "ok": False, "status": "connection_failed",
+            "message": str(exc) if isinstance(exc, ValueError) else "Navidrome is unavailable or authentication failed.",
+        })
+
+
+def test_lastfm_connection(settings_read, http_get, json_dumps):
+    """Validate the configured Last.fm key without exposing it in the result."""
+    key = str(settings_read().get("lastfm_api_key") or "").strip()
+    if not key:
+        return json_dumps({"ok": False, "status": "not_configured", "message": "Add a Last.fm API key first."})
+    try:
+        response = http_get(
+            "https://ws.audioscrobbler.com/2.0/",
+            params={"method": "chart.getTopArtists", "api_key": key, "format": "json", "limit": 1},
+            headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+        )
+        response.raise_for_status()
+        if response.json().get("error"):
+            return json_dumps({"ok": False, "status": "authentication_failed", "message": "Last.fm rejected the API key. Check the key in Settings."})
+        return json_dumps({"ok": True, "status": "connected", "message": "Last.fm API connection succeeded."})
+    except Exception:
+        return json_dumps({"ok": False, "status": "connection_failed", "message": "Could not reach Last.fm or validate the API key."})
+
+
+def test_listenbrainz_connection(username_get, http_get, json_dumps):
+    """Check whether the configured public ListenBrainz profile can be read."""
+    try:
+        username = username_get()
+        response = http_get(
+            f"https://api.listenbrainz.org/1/user/{username}/listens",
+            params={"count": 1}, headers={"User-Agent": "NavidromeLibrarian/0.1"}, timeout=10,
+        )
+        if response.status_code == 404:
+            return json_dumps({"ok": False, "status": "not_found", "message": "ListenBrainz user was not found."})
+        response.raise_for_status()
+        return json_dumps({"ok": True, "status": "connected", "message": "ListenBrainz profile is reachable."})
+    except Exception:
+        return json_dumps({"ok": False, "status": "connection_failed", "message": "Could not reach ListenBrainz or validate the username."})

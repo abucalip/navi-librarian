@@ -507,3 +507,8 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 - Direct-import regressions prove mismatched directory metadata, absolute paths, and Windows drive-qualified paths refuse cancellation and preserve local files.
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety 38751732156; Docker packaging/full unit suite/build 38751732263; container runtime smoke 38751732282; validation-only multi-architecture image validation 38751732196. Publishing remained paused.
 - No separate local test run, live slskd operation, production deletion test, image publication, deployment, or production runtime verification is claimed. This is not a diagnosis or fix for the deferred acquisition-dismissal HTTP 409.
+
+
+## Next settings/domain boundary — connection-check service extraction (2026-10-15)
+
+Extract the settings connection-check logic into `service_settings.py` behind injected HTTP/service dependencies. Keep SQLite persistence, settings migration, runtime path mutation, and the legacy MCP-facing function signatures in `navidrome_server.py`. Verify secret redaction and preserve the existing JSON result contract before continuing to the remaining application assembly/domain dependencies.

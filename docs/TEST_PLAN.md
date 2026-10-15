@@ -844,3 +844,9 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - All four required workflows passed on the tested head: Docker packaging `38766740766`, container runtime smoke `38766741159`, Python syntax `38766741253`, and validation-only Docker image validation `38766741247`.
 - Manual browser checklist passed 8/8 on the exact tested head. Report: https://github.com/abucalip/navi-librarian/pull/132#issuecomment-6196780079.
 - Headless checks recorded in the PR body covered indicator alignment, transform-only animation, one `aria-current`, scoped filter, mobile layout, reduced motion, keyboard reachability, all eight page headings, viewport overflow, and browser/page errors. No separate local test run, image publication, deployment, or production runtime verification is claimed.
+
+
+## Settings connection service extraction — PR preparation
+
+- Direct-import tests cover Navidrome ping success and ValueError mapping, Last.fm missing-key and authentication-failure handling without leaking the configured key, and ListenBrainz 404 profile handling.
+- Run `python -m unittest tests.test_service_settings -v`, the full `python -m unittest discover -s tests -v` suite, syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture validation on the exact final PR head. Do not claim tests passed unless CI evidence exists for that SHA; publishing remains paused.
