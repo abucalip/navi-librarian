@@ -1,10 +1,12 @@
-## 2026-10-15 — Dismissed-acquisition preflight seam (verification pending)
+## 2026-10-15 — Dismissed-acquisition preflight seam
 
-- Branch `refactor/extract-dismissed-reactivation-preflight` extracts only the dismissal/reactivation preflight decision and retry-metadata normalization into `acquisition_orchestration.reactivate_dismissed_acquisition_if_needed`.
-- The server remains responsible for shared transition-lock ownership and the existing user-facing refusal response. The state-store adapter and conditional database update remain unchanged.
-- Direct helper tests were added; retain top-level AST success/refusal cases to protect the Get integration boundary. Verification and exact-head CI are pending; do not merge until all required workflows pass.
+- PR #92 extracts dismissal/reactivation preflight and retry-metadata normalization into `acquisition_orchestration.reactivate_dismissed_acquisition_if_needed`.
+- Implementation SHA `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf` passed all four required workflows: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and validation-only multi-architecture `38661745743`.
+- The server retains shared transition-lock ownership and the existing refusal response. State-store conditional update and stale-source clearing remain unchanged. Keep top-level AST success/refusal cases.
+- Documentation follow-up is part of the PR; verify all four workflows on the final exact PR head before merge.
 
 ---
+
 
 ## 2026-10-15 — PR #90 merged; request reservation seam extracted
 
