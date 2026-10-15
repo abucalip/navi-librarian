@@ -1,6 +1,10 @@
-## Expected slskd track-count extraction — in progress (2026-10-15)
+## slskd transfer listing extraction — in progress (2026-10-15)
 
-Move the pure metadata-shape reader from navidrome_server.py into the already packaged slskd_search.py. Keep _discovery_expected_track_count(metadata) as a compatibility adapter because the acquisition coordinator still calls it. Direct-import tests cover supported aliases, nested structures, track-object lists, invalid values, unrelated arrays, and cycles. This step does not change candidate matching/ranking or acquisition lifecycle behavior. PR #155 initial head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows (runs 38814552978, 38814552986, 38814552931, 38814552973). Documentation updates require the four workflows to be rechecked on the resulting final PR head before merge.
+Move the transfer-list HTTP request and recursive response normalization from `navidrome_server.py` into `slskd_transfers.py`. Keep `_slskd_download_transfer_files(base_url, headers, username)` as the legacy adapter and inject the HTTP client into the new service. Preserve the 8-second timeout, URL-encoded username, 404-as-no-active-transfers behavior, `raise_for_status()` errors, nested remote-directory inheritance, copied file records, and `_transfer_directory` identity. Add direct-import tests and adapter coverage; add the new module to Docker packaging. Do not change candidate-start safety or acquisition watcher behavior. CI and merge are pending.
+
+## Expected slskd track-count extraction — completed (PR #155 merged, 2026-10-15)
+
+Moved expected track-count metadata parsing into `slskd_search.py`; retained `_discovery_expected_track_count(metadata)` as a compatibility adapter. Direct-import regressions cover supported aliases, nested metadata, track-object lists, invalid values, unrelated arrays, cyclic metadata, and adapter compatibility. PR #155 merged at `d732241de9edfd3c643a8fa89fb25c42b2a93c67` from exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`. All four required workflows passed on that exact head: syntax `38814733899`, Docker packaging/full suite/build `38814734001`, runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`. Publishing/deployment remain paused.
 
 ## Music path default policy — completed (PR #151)
 
