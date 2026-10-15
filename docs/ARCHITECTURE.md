@@ -1,3 +1,10 @@
+## 2026-10-15 — Import source-root path boundary (verification pending)
+
+- `acquisition_import.py` crosses a matcher callback before staging files. The source folder and destination parent must be treated as mutable pathnames after that boundary.
+- The current implementation opens both directory chains with no-follow flags, validates device/inode identities, performs track moves and rollback relative to pinned directory descriptors, and preserves cross-filesystem copy fallback. The exact-head regression and CI results remain the acceptance gate.
+
+---
+
 ## 2026-10-15 — Cleanup root traversal hardening merged (PR #100)
 
 - PR #100 extends the directory-swap defense by opening the configured absolute root from `/` one component at a time with no-follow directory flags and checking its preflight device/inode identity after external callbacks.
