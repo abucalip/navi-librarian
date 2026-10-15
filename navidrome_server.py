@@ -8,6 +8,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+from settings_persistence import SettingsPersistence
 from service_settings import (
     get_lastfm_settings as _service_get_lastfm_settings,
     set_lastfm_settings as _service_set_lastfm_settings,
@@ -3055,89 +3056,32 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
 }
 
 
+_settings_persistence = SettingsPersistence(
+    DISCOVERY_DB,
+    _DISCOVERY_SETTINGS_DEFAULTS,
+    lambda: MUSIC_DIR,
+    lambda path: _set_music_dir(path),
+)
+
+
+def _set_music_dir(path):
+    global MUSIC_DIR
+    MUSIC_DIR = path
+
+
 def _discovery_settings_init():
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS discovery_settings (
-                setting_key TEXT PRIMARY KEY,
-                value_json TEXT NOT NULL,
-                updated_at REAL NOT NULL
-            )
-        """)
-        db.commit()
-    # This database now contains an API credential: restrict local file access.
-    try:
-        os.chmod(DISCOVERY_DB, 0o600)
-    except OSError:
-        pass
+    """Compatibility wrapper for initializing the persistent settings store."""
+    return _settings_persistence.initialize()
 
 
 def _discovery_settings_read():
-    global MUSIC_DIR
-    _discovery_settings_init()
-    settings = dict(_DISCOVERY_SETTINGS_DEFAULTS)
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        rows = db.execute(
-            "SELECT setting_key, value_json FROM discovery_settings"
-        ).fetchall()
-    for key, value in rows:
-        try:
-            settings[key] = json.loads(value)
-        except (ValueError, TypeError):
-            continue
-
-    configured_music_path = str(settings.get("music_library_path") or "").strip()
-    if configured_music_path:
-        candidate_music_path = Path(configured_music_path).expanduser()
-        if candidate_music_path.is_absolute():
-            MUSIC_DIR = candidate_music_path
-
-    # Migrate older settings by appending new tiers without disturbing the
-    # user's established priority order.
-    legacy_quality_tiers = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd"}
-    saved_quality = settings.get("quality_priority")
-    if isinstance(saved_quality, list):
-        if len(saved_quality) == 4 and set(saved_quality) == legacy_quality_tiers:
-            settings["quality_priority"] = [*saved_quality, "flac_16_44", "flac_hires"]
-        elif (
-            len(saved_quality) == 5
-            and set(saved_quality) == legacy_quality_tiers | {"flac_16_44"}
-        ):
-            settings["quality_priority"] = [*saved_quality, "flac_hires"]
-
-    # Migrate the former downloads-root defaults to slskd's actual completed
-    # directory when that directory is available on the current host. This
-    # also handles a settings DB moved from the Mac development environment
-    # to the Debian media LXC without overwriting custom paths.
-    saved_path = str(settings.get("slskd_downloads_path") or "")
-    legacy_paths = {
-        str(MUSIC_DIR.parent.parent / "downloads"),
-        "/Volumes/media/downloads",
-        "/media/downloads",
-    }
-    current_default = _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
-    if (
-        saved_path in legacy_paths
-        and saved_path != current_default
-        and Path(current_default).is_dir()
-    ):
-        settings["slskd_downloads_path"] = current_default
-        _discovery_settings_write({
-            "slskd_downloads_path": current_default,
-        })
-    return settings
+    """Compatibility wrapper for reading and migrating persisted settings."""
+    return _settings_persistence.read()
 
 
 def _discovery_settings_write(values):
-    _discovery_settings_init()
-    with sqlite3.connect(DISCOVERY_DB, timeout=10) as db:
-        for key, value in values.items():
-            db.execute(
-                "INSERT OR REPLACE INTO discovery_settings "
-                "(setting_key, value_json, updated_at) VALUES (?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), time.time()),
-            )
-        db.commit()
+    """Compatibility wrapper for writing persisted settings."""
+    return _settings_persistence.write(values)
 
 
 # Load persisted directory overrides before any library operation runs.

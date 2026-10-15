@@ -1,3 +1,16 @@
+## UI accessibility PRs — 2026-10-15
+
+- PR #144 landmark naming: manual test report published by user; all four required CI workflows passed on exact tested head `4b44cdb98485a93ba86ac102f29081b917d4e4fe`; merged at `f1008bb3af25c7c76dac8bae67177a07b21df147`.
+- PR #142 contrast: manual test report published by user; all four required workflows passed on exact tested head `38addc52dfb14ccbf95a72ffad2dbd0713d9fcf9`. Merge was blocked by a GitHub-reported conflict; keep open until conflict resolution and exact-final-head verification. Do not treat prior CI as verification of any conflict-resolution commit.
+- Publishing remains paused. No production deployment or runtime verification is claimed.
+
+## Settings persistence extraction — PR #143 merged
+
+- PR #143 exact final head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
+- Direct-import regressions cover Unicode round trips, corrupt JSON fallback, append-only legacy quality-tier migration, configured absolute music-path application, and restrictive SQLite file mode. Legacy `_discovery_settings_init/read/write` wrappers and MCP-facing settings functions remain available.
+- All four required exact-head workflows passed: Docker packaging/full suite/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`.
+- No separate local test execution, publishing, deployment, or production runtime verification is claimed. Publishing remains paused.
+
 ## MCP registration isolation — current PR
 
 - Run python -m unittest tests.test_mcp_registry tests.test_auth_routes_integration -v and the full python -m unittest discover -s tests -v suite.

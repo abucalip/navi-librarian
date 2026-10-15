@@ -106,7 +106,7 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
    artist exploration, library, and settings. The guide's instruction is "do not force
    every page into the same dashboard grid"; six sections still share one grid, so the
    candidates are the discovery sections and settings rather than acquisition again.
-3. ~~**Get/request button consolidation**~~ — done on `ui/get-request-consolidation`.
+3. ~~**Get/request button consolidation**~~ — done, merged (PR #131).
 4. **Type/token cleanup** — consolidate duplicated values into shared tokens and tighten
    the type scale without broad visual churn.
 5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow
@@ -119,45 +119,100 @@ approximately `#8a8b81`; that clears AA on three of the four backgrounds `--subt
 on but leaves only 4.53:1 on `--surface`, so a value with real margin was chosen instead.
 See section 5c.
 
-## 5c. Contrast findings (`--subtle`)
 
-Measured on the running app, reading the real composited background behind each use rather
-than assuming `--bg`.
+### Priorities from the Claude critique (see section 4a)
 
-### Three live failures, all on `--subtle`
+An external design critique scored the UI 17/36 and ranked its findings. The following
+supersedes the order above where they disagree, because these are evidence-backed and
+their claims were re-verified against `main` at `30e7c04`.
 
-| Use | Background | Before | After |
+| # | Action | Effort | Status |
 |---|---|---|---|
-| `nav::before` "YOUR COLLECTION" label | `#1d1f1e` | **3.75:1 FAIL** | 5.47:1 |
-| `footer` notice | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
-| `.status-line.is-loading` glyph `…` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
-| `.status-line.is-empty` glyph `—` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
-| `.genre-row-count`, track numbers | page / modal | fail | pass |
+| C1 | **Fix `--subtle` contrast.** It fails WCAG AA at 3.94:1 and is used on functional metadata. | One token | Verified, not fixed |
+| C2 | **Add `aria-label` to `<nav>`; give page sections accessible names.** | Small | Verified, not fixed |
+| C3 | **Set the modal artwork `alt` dynamically.** It is hardcoded and never updated. | Small | Verified, not fixed |
+| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Verified, not fixed |
+| C5 | **Move `<footer>` out of `<main>`.** It sits mid-document before five sections. | One line | Verified, not fixed |
+| C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | Not started |
+| C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | Item 1, partial |
 
-WCAG AA requires 4.5:1 for normal text.
+C1–C5 are all small and independently verifiable. C6 is the rest of backlog item 2.
 
-**Two of the failures were glyphs added in PR #121 specifically for accessibility.** That
-work introduced a state vocabulary carried by a leading glyph; two of the five glyphs were
-painted in the one token that failed contrast. An accessibility affordance that cannot be
-seen does not do its job. All five glyphs now pass: loading 5.76:1, empty 5.76:1, error
-4.8:1 (uses `--red`, unchanged, pre-existing), success 9.23:1, progress 10.5:1.
+## 4a. External critique findings
 
-### Why `#94958b` rather than the suggested `#8a8b81`
+Source: `Claude critique.docx` in the operator's project folder (not a repository file).
+Method: dual-agent review — a design assessment plus a deterministic detector scan — then
+synthesis. Scored **17/36** across ten usability heuristics. Its verdict: "competent first
+pass rather than a finished specialist tool."
 
-Only four backgrounds actually matter, because `--subtle` is never used on `--surface-raised`
-or `--surface-hover`:
+### Verification of its claims
 
-| Candidate | nav `#1d1f1e` | page `#191a1a` | modal `#202221` | card `#222424` | worst |
-|---|---|---|---|---|---|
-| `#77796f` (before) | 3.75 | 3.94 | 3.62 | 3.53 | **3.53** |
-| `#8a8b81` (suggested) | 4.81 | 5.06 | 4.64 | 4.53 | 4.53 (no margin) |
-| **`#94958b` (chosen)** | 5.47 | 5.76 | 5.28 | 5.15 | **5.15** |
+The critique was written against an earlier `main`. Every claim below was re-checked against
+`main` at `30e7c04` before being recorded as a priority. Measured, not assumed:
 
-The lighter value keeps `--subtle` measurably quieter than `--muted` (`#a5a69c`, 7.09:1 on
-`--bg`), so the three-tier text hierarchy survives: subtle 5.76, muted 7.09, text 15.01.
+| Claim | Result |
+|---|---|
+| `--subtle` (#77796f) fails WCAG AA | **Confirmed.** 3.94:1 on `--bg`, 3.53:1 on `--surface`. AA needs 4.5:1. |
+| `--subtle` is used on functional metadata | **Confirmed.** 7 uses, including the `.status-line` state glyph, track numbers and durations, and `genre-row-count`. |
+| `<nav>` has no `aria-label` | **Confirmed.** `index.html:16` is a bare `<nav>`. |
+| Modal `alt` is static, never updated | **Confirmed.** `alt="Album artwork"` in markup; `static/app.js` never assigns `.alt` on it. |
+| `#recommendationCount` is 11px mono | **Confirmed.** `app.css:118`. |
+| `<footer>` sits mid-`<main>` | **Confirmed.** `<main>` opens at line 15, `<footer>` at 114, `</main>` at 215. |
+| Six sections share one grid | **Confirmed.** Five use bare `.cards`; only `#acquisitionCards` was differentiated (PR #128). |
 
-Also verified: the two save buttons flagged as unverified by the critique measure 10.5:1
-(dark on `--yellow`) and need no change.
+One critique claim was already resolved by the time it would have been acted on: the
+"bounce-easing advisory on the nav blob" refers to my `ui/nav-blob` work, which was merged as
+PR #132 with a spring easing the critique flagged as advisory only.
+
+Its contrast remedy was directionally right but understated: it suggested ~4.6:1. Measured,
+`#8a8b81` gives **5.06:1** on `--bg`. Use the measured value.
+
+It also flagged `#saveNavidrome` / `#saveSlskd` (dark on yellow) as needing verification.
+Measured: **10.5:1**, comfortably passing. No change needed.
+
+### Endorsed, and the reasoning worth keeping
+
+- **"Layout that serves the task rather than defaulting to a universal grid."** This is the
+  same principle as the design guide's "do not force every page into the same dashboard
+  grid", stated from the other direction. It is why item 2 exists.
+- **The status glyph system only works if the glyphs are visible.** The critique noticed
+  that the `.status-line` prefix, added in PR #121 specifically for accessibility, is painted
+  in the one token that fails contrast. That is a real self-inflicted contradiction and makes
+  C1 more than a token tidy-up.
+- **"Copy is the deliverable, not a component"** (on empty states). Worth carrying into C7.
+- **Its highest-leverage recommendation is Artist Deep Dive first**, because that section's
+  content type (one album per artist, grouped by genre) is the most obviously ill-served by a
+  flat album grid. This matches the design guide's backlog order and my own reading, arrived
+  at independently.
+
+### Treated with caution
+
+Recorded so later sessions apply judgement rather than treating the critique as a mandate.
+
+- **The 17/36 score is not a metric.** It is one model's subjective scoring of ten
+  heuristics with no calibration, and the critique says so itself in places. Do not report it
+  as a tracked number or try to raise it.
+- **Two of its seven detector findings are self-declared false positives or debatable**, and
+  it says so: the missing modal `src` (populated at runtime) and the `.card-art` bottom
+  stripe (a hover animation, not a border badge).
+- **"Visual overlays: browser automation was not available"** — it did its review from
+  source and a CLI scan, without rendering the UI. Findings that depend on rendered
+  appearance are therefore weaker than its measured contrast and structural claims. This is
+  exactly the gap the local headless verifier now covers; findings that matter should be
+  confirmed by rendering.
+- **It praises things I know to be recent or fragile.** It credits the "sliding nav blob" as
+  evidence of authored craft, and that landed days earlier in PR #132. Praise for
+  freshly-merged work is not independent corroboration of it.
+- **Its heuristics 9 and 10 scored 1 and n/a.** "Help users recover from errors: 1" is
+  doing a lot of work in the total. Treat the low scores as directional, not precise.
+
+### What it got right that is easy to miss
+
+- The **`.card-category` 2px yellow left border** technically brushes the guide's anti-pattern
+  about card borders. Its judgement that this is a *tag*, not a card, and that the 2px is what
+  makes it legible, is sound. Leave it, but acknowledge it consciously.
+- The **`nav::before` "YOUR COLLECTION"** label is misleading above Recommendations and
+  Classics, which are outside the collection. A real copy problem, not a nitpick.
 
 ## 5a. Item 3 findings
 
@@ -263,6 +318,111 @@ the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the tr
 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; and no console or page errors.
 
+## 5c. Contrast findings (`--subtle`)
+
+Measured on the running app, reading the real composited background behind each use rather
+than assuming `--bg`.
+
+### Three live failures, all on `--subtle`
+
+| Use | Background | Before | After |
+|---|---|---|---|
+| `nav::before` "YOUR COLLECTION" label | `#1d1f1e` | **3.75:1 FAIL** | 5.47:1 |
+| `footer` notice | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.status-line.is-loading` glyph `…` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.status-line.is-empty` glyph `—` | `#191a1a` | **3.94:1 FAIL** | 5.76:1 |
+| `.genre-row-count`, track numbers | page / modal | fail | pass |
+
+WCAG AA requires 4.5:1 for normal text.
+
+**Two of the failures were glyphs added in PR #121 specifically for accessibility.** That
+work introduced a state vocabulary carried by a leading glyph; two of the five glyphs were
+painted in the one token that failed contrast. An accessibility affordance that cannot be
+seen does not do its job. All five glyphs now pass: loading 5.76:1, empty 5.76:1, error
+4.8:1 (uses `--red`, unchanged, pre-existing), success 9.23:1, progress 10.5:1.
+
+### Why `#94958b` rather than the suggested `#8a8b81`
+
+Only four backgrounds actually matter, because `--subtle` is never used on `--surface-raised`
+or `--surface-hover`:
+
+| Candidate | nav `#1d1f1e` | page `#191a1a` | modal `#202221` | card `#222424` | worst |
+|---|---|---|---|---|---|
+| `#77796f` (before) | 3.75 | 3.94 | 3.62 | 3.53 | **3.53** |
+| `#8a8b81` (suggested) | 4.81 | 5.06 | 4.64 | 4.53 | 4.53 (no margin) |
+| **`#94958b` (chosen)** | 5.47 | 5.76 | 5.28 | 5.15 | **5.15** |
+
+The lighter value keeps `--subtle` measurably quieter than `--muted` (`#a5a69c`, 7.09:1 on
+`--bg`), so the three-tier text hierarchy survives: subtle 5.76, muted 7.09, text 15.01.
+
+Also verified: the two save buttons flagged as unverified by the critique measure 10.5:1
+(dark on `--yellow`) and need no change.
+
+## 5d. Landmark naming findings
+
+C2 of the external critique: add `aria-label` to `<nav>` and give page sections accessible
+names. Audited with Playwright's ARIA snapshot, which reports what assistive technology
+actually receives rather than what the markup implies.
+
+### Before
+
+The landmark tree rendered as three bare, unnamed entries:
+
+```
+- banner:
+- main:
+  - navigation:
+```
+
+| Element | Unnamed, before |
+|---|---|
+| `<nav>` | 1 of 2 — the sidebar had no name; the modal's links did |
+| `<section class="page">` | **8 of 8** |
+| `<section>` overall | 8 of 9 — only the album modal was named |
+
+A `<section>` only becomes a `region` landmark when it has an accessible name. So the eight
+page sections were **not landmarks at all**: a screen-reader user could not jump between pages
+by region, and each announced as an anonymous group.
+
+### After
+
+```
+- banner:
+- main:
+  - navigation "Main":
+  - region "Ten from the collection":
+```
+
+- `<nav>` sidebar: `aria-label="Main"`, so the two nav landmarks are distinguishable.
+- All 8 page sections: `aria-labelledby` pointing at their own `<h2>`, so all 8 are now
+  `region` landmarks. Measured **9 of 9** named, up from 1 of 9.
+- Each section has a unique name; checked for duplicates.
+
+### Why `aria-labelledby` rather than `aria-label`
+
+The critique suggested accessible names; `aria-labelledby` pointing at the existing visible
+heading is the better mechanism because the name **cannot drift from the visible text**. A
+hardcoded `aria-label="Settings"` would silently disagree with the `<h2>` the moment anyone
+rewords the heading. This required adding ids to the eight `<h2>` elements; all nine
+`aria-labelledby` references were verified to resolve to an existing id.
+
+### Deliberately NOT labelled
+
+The critique named only `<nav>` and the sections. `banner`, `main` and `contentinfo` are left
+unlabelled on purpose: **a landmark type that appears once is unambiguous by role alone**, so
+a label there is noise. Labels are needed only where a type repeats, which is why both `<nav>`
+elements have one.
+
+This means the audit's `UNNAMED` result for `<header>`, `<main>` and `<footer>` is **not a
+defect**, and should not be "fixed" by a later session.
+
+### Verification
+
+Measured on the branch: the landmark tree shows `navigation "Main"` and named regions; all 9
+sections named; the visible region on each of the 8 pages resolves to its expected heading
+name; no two sections share a name; 79 ids with zero duplicates; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
@@ -311,6 +471,37 @@ Each session handles exactly one backlog item and produces exactly one PR.
 Do not re-read `PROJECT_STATUS.md`, `PROJECT_LOG.md`, `TEST_PLAN.md`, or the other project
 docs unless the item genuinely requires it. GitHub is the record of what happened; this
 file is the compressed index into it.
+
+**Impeccable is mandatory every session, not optional.** `AGENTS.md` frames it as "when
+available in ZCode", and that latitude is what caused two sessions (C1, C2) to proceed
+without opening it. Treat it as required:
+
+1. Read the relevant reference file(s) below **before** choosing an approach — not after, to
+   justify a decision already made.
+2. Record in the PR body which guidance was **applied** and which was **rejected**, with the
+   reason. A PR that cites no Impeccable guidance is incomplete.
+
+The reference files live at `.pi/skills/impeccable/reference/`. Select by kind of work:
+
+| Kind of work | Read |
+|---|---|
+| Contrast, WCAG, ARIA, landmarks, semantic HTML, keyboard access | `audit.md` |
+| Error, empty, loading, edge-case and boundary states | `harden.md` |
+| Hierarchy, spacing, type scale, motion, general refinement | `polish.md` |
+| Adding or changing motion | `animate.md` |
+| Fonts, type scale, sizing | `typeset.md` |
+| Section composition, grids, layout rhythm | `layout.md` |
+| Interface copy, empty-state wording, error text | `clarify.md` |
+| Removing clutter, simplifying a busy screen | `distill.md` |
+| Evaluating an existing component in isolation | `component-review.md` |
+
+If two apply, read both. `audit.md` carries a severity model (P0-P3) and a health-score
+template that are useful even when the task is not a full audit.
+
+**Do not treat Impeccable as a mandate.** `AGENTS.md` is explicit that only recommendations
+fitting this product and its existing components should be applied, and that broad redesign
+commands are out of scope. Where it conflicts with `docs/FRONTEND_DESIGN_GUIDE.md` or with
+`AGENTS.md`, the project documents win and the conflict is recorded in the PR.
 
 **Work:**
 1. Confirm current `main` and the highest PR number (`gh pr list --state all --limit 1`).

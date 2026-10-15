@@ -13,7 +13,12 @@
   <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
 </header>
 <main>
-  <nav>
+  <!-- This sidebar is one of two <nav> landmarks in the document; the other is the album
+       modal's platform links. Where a landmark type repeats, each instance needs its own
+       name so assistive tech can tell them apart instead of announcing "navigation"
+       twice. The single <header>, <main> and <footer> need no label: one instance of a
+       landmark type is unambiguous by role alone. -->
+  <nav aria-label="Main">
     <!-- SVG goo filter, applied to .nav-list only so the blur stays bounded to the nav. -->
     <svg class="nav-filter" width="0" height="0" aria-hidden="true" focusable="false">
       <defs>
@@ -42,11 +47,11 @@
     <button id="logoutButton" type="button">Log out</button>
   </nav>
 
-  <section id="dashboard" class="page">
+  <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
     <div class="panel">
       <div class="dashboard-carousel-heading">
         <div>
-          <h2>Ten from the collection</h2>
+          <h2 id="dashboardHeading">Ten from the collection</h2>
           <p>A fresh, random mix from every discovery lane.</p>
         </div>
         <button id="shuffleDashboard">Shuffle picks ↻</button>
@@ -56,9 +61,9 @@
     </div>
   </section>
 
-  <section id="recommendations" class="page hidden">
+  <section id="recommendations" class="page hidden" aria-labelledby="recommendationsHeading">
     <div class="panel">
-      <h2>Discover music</h2>
+      <h2 id="recommendationsHeading">Discover music</h2>
       <div class="controls">
         <label for="count">Albums</label>
         <select id="count">
@@ -98,9 +103,9 @@
     </div>
   </section>
 
-  <section id="newReleases" class="page hidden">
+  <section id="newReleases" class="page hidden" aria-labelledby="newReleasesHeading">
     <div class="panel">
-      <h2>New releases</h2>
+      <h2 id="newReleasesHeading">New releases</h2>
       <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
       <div class="controls">
         <button data-load-discovery="new_releases">Load new releases</button>
@@ -115,9 +120,9 @@
     Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
   </footer>
 
-<section id="personalDiscoveries" class="page hidden">
+<section id="personalDiscoveries" class="page hidden" aria-labelledby="personalDiscoveriesHeading">
   <div class="panel">
-    <h2>Personal Discoveries</h2>
+    <h2 id="personalDiscoveriesHeading">Personal Discoveries</h2>
     <p>Recommendations based on your listening and musical interests.</p>
     <button data-load-discovery="personal">Load discoveries</button>
     <button data-refresh-discovery="personal">Refresh</button>
@@ -126,9 +131,9 @@
   </div>
 </section>
 
-<section id="classics" class="page hidden">
+<section id="classics" class="page hidden" aria-labelledby="classicsHeading">
   <div class="panel">
-    <h2>Add to your collection</h2>
+    <h2 id="classicsHeading">Add to your collection</h2>
     <p>Find acclaimed albums and less obvious discoveries to expand your library.</p>
     <button data-load-discovery="classics">Load albums</button>
     <button data-refresh-discovery="classics">Refresh</button>
@@ -137,9 +142,9 @@
   </div>
 </section>
 
-<section id="artistDeepDive" class="page hidden">
+<section id="artistDeepDive" class="page hidden" aria-labelledby="artistDeepDiveHeading">
   <div class="panel">
-    <h2>Artist Deep Dives</h2>
+    <h2 id="artistDeepDiveHeading">Artist Deep Dives</h2>
     <p>Explore missing albums by artists in your library and discover similar artists.</p>
     <button data-load-discovery="artist_deep_dive">Load albums</button>
     <button data-refresh-discovery="artist_deep_dive">Refresh</button>
@@ -148,9 +153,9 @@
   </div>
 </section>
 
-<section id="settings" class="page hidden">
+<section id="settings" class="page hidden" aria-labelledby="settingsHeading">
   <div class="panel">
-    <h2>Settings</h2>
+    <h2 id="settingsHeading">Settings</h2>
     <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
     <div class="settings-tabs" role="tablist" aria-label="Service settings">
       <button type="button" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
@@ -200,9 +205,9 @@
   </div>
 </section>
 
-<section id="acquisitions" class="page hidden">
+<section id="acquisitions" class="page hidden" aria-labelledby="acquisitionsHeading">
   <div class="panel">
-    <h2>Acquisition status</h2>
+    <h2 id="acquisitionsHeading">Acquisition status</h2>
     <p class="muted">Persistent download and import status, including failures. Active jobs are resumed when this page checks in.</p>
     <p id="acquisitionsStatus" class="status-line" aria-live="polite"></p>
     <div id="acquisitionCards" class="cards acquisition-grid"></div>
