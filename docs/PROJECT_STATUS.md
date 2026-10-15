@@ -5,26 +5,14 @@
 - Objective: move the pure expected-track-count metadata reader into slskd_search.py; preserve navidrome_server._discovery_expected_track_count as a compatibility adapter, with unchanged return behavior and no acquisition lifecycle changes.
 - Acceptance: direct-import regressions cover all supported count keys, nested metadata, track-object lists, invalid/non-positive values, unrelated lists, and cyclic metadata; adapter compatibility is retained; Docker already packages slskd_search.py.
 - Implementation commits so far: c39cc55cc7347e7003525dac9c14497e8bef214d (legacy adapter), 595188c0bc12757602ecc4dad605742b2972746d (extracted helper), 52eb9f74101e4bab7c70ca1de56d635346d2db29 (direct-import tests).
-- Verification, PR, exact-head CI, merge, publication, deployment, and runtime status are pending. No tests are claimed as run yet.
+- PR #155 is open: https://github.com/abucalip/navi-librarian/pull/155. Initial implementation head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows (syntax 38814552978, Docker packaging/full unit suite/build 38814552986, runtime smoke 38814552931, validation-only multi-architecture 38814552973). This status/roadmap/log follow-up changes the PR head, so all four workflows must be rechecked on the final updated head before merge. No separate local test run is claimed; publishing/deployment/runtime verification remain out of scope.
 
 ---
 
-## 2026-10-15 — PR #154 merged; PR #149 remains gated
+## 2026-10-15 — Historical closeout: PR #154 and PR #149 merged
 
-- PR #154: https://github.com/abucalip/navi-librarian/pull/154. Final tested head: `6de27ec137e9f859424eca0928fca25500852471`; squash merge commit: `b547ff5c647d8bacd8bf17fd6cd760dc9c41980a`.
-- All four required workflows passed on the exact PR #154 head: Python syntax, container runtime smoke, Docker packaging/full unit suite/image build, and validation-only multi-architecture image validation. Publishing remained paused; no deployment or production runtime verification is claimed.
-- PR #154 standardized multi-extraction session verification in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`. It is merged; this session is closed out for that work.
-- PR #149 remains open and was **not merged**: https://github.com/abucalip/navi-librarian/pull/149. Its exact head `600c75475cfbe1d28230345835aee2316519365f` has all four workflows passing, but its own description explicitly says the required manual browser checklist was not run. The branch is also 26 commits behind current `main`; do not merge until the branch is safely brought current, exact-head CI is reverified, and the required UI browser checklist is performed and recorded. No assumption is made that the user’s “report published” statement substitutes for that verification gate.
-- Next action: update PR #149 safely against current GitHub `main`, rerun required CI on its resulting exact head, and complete the documented manual UI checklist before merge.
-
----
-
-## 2026-10-15 — Standard multi-extraction session workflow (PR #154 pending)
-
-- PR: https://github.com/abucalip/navi-librarian/pull/154; branch: `docs/multi-extraction-session-workflow`.
-- Standardized session planning for two or three small extractions as a target, not a quota. Each extraction retains its own acceptance criteria and verification gates; one extraction per PR is the default unless boundaries are tightly coupled.
-- Updated `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md` with fresh GitHub-state checks, caller/compatibility audits, direct-import regressions, focused and full tests, full-diff review, all four required workflows on the exact final PR head, UI-specific manual gates, sequential merge refresh, and session closeout requirements.
-- Documentation-only; no application code, test code, Docker release configuration, publishing, or deployment changed. Required exact-final-head CI is pending. Do not merge until all four workflows pass on the final PR head after these documentation updates.
+- PR #154 merged at b547ff5c647d8bacd8bf17fd6cd760dc9c41980a from tested head 6de27ec137e9f859424eca0928fca25500852471. All four required workflows passed on that exact head.
+- PR #149 was subsequently brought current, manually tested, and merged. Its recommendation-count accessibility fix is recorded by merge commit f3ac971e6c04b9c9caa8d4d20f50d0c25302556e; closeout commits ecf0a607394a7e9209ebf76ce29ef8c2f496bcc7 and 463f27ea06ca33f06cc1b32798f3019901322075 follow it. The earlier warning below is historical and superseded.
 - Publishing remains paused. No deployment or production runtime verification is claimed.
 
 ---
