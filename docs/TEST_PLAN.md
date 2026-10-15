@@ -1,6 +1,6 @@
-## 2026-10-15 — Music path default policy extraction (pending verification)
+## 2026-10-15 — Music path default policy extraction (verified)
 
-Direct-import tests in tests/test_music_paths.py cover explicit environment override (including home expansion), server mount preference, Mac mount fallback, and production fallback. Preserve navidrome_server._default_music_dir() and include music_paths.py in Docker packaging. Run focused tests, full unit suite, syntax checks, Docker packaging, isolated runtime smoke, and validation-only multi-architecture build on the exact final PR head. CI results are pending; image publication remains paused.
+Direct-import regression tests in `tests/test_music_paths.py` cover explicit environment override and home expansion, server mount preference, Mac mount fallback, and production fallback. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`: syntax plus acquisition safety regressions (`38805068326`), Docker packaging/full unit suite/build (`38805068317`), container runtime smoke (`38805068315`), and validation-only multi-architecture build (`38805068337`). Publishing remains paused; no production deployment/runtime verification is claimed.
 
 ## 2026-10-15 — Navidrome API client extraction (pending verification)
 
