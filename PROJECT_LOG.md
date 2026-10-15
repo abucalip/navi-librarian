@@ -712,3 +712,12 @@
 - Exact PR head: `cacdbc809f35040f0cc1bc70a39251ff80b7315e`. Required CI all passed: Python syntax `38784634643`; Docker packaging/full unit suite/build `38784634599`; container runtime smoke `38784635107`; multi-architecture validation (publishing paused) `38784634797`.
 - Squash merge: `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`; PR verified closed/merged. No local test execution, publishing, deployment, or production runtime verification claimed.
 - Next action: continue focused extraction of remaining settings/application-assembly and domain-service dependencies from `navidrome_server.py`.
+
+
+## 2026-10-15 — PR #145 merged: modal artwork and sidebar navigation
+
+- Merged PR #145 by squash at `d8abea9502c88312326835c40889b63062adc1b3` from exact tested head `421d1d2860945548aa01677847ce0953b7c9f263`.
+- Set modal artwork alt text to describe the current album/artist, clear it when artwork is unavailable, and scoped the sidebar pseudo-element heading so it no longer appears in the modal platform navigation.
+- Four required workflows passed on the exact PR head: Python syntax `38794301415`, container runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only image validation `38794301405` (publishing paused).
+- Manual checklist report: https://github.com/abucalip/navi-librarian/pull/145#issuecomment-6200647429. All eight items passed; zero failures. The report explicitly notes no real screen-reader test and use of placeholder artwork in isolated checks.
+- No image publication, deployment, or production runtime verification is claimed.
