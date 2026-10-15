@@ -1,13 +1,13 @@
-## 2026-10-15 — Conditional dismissed-job reactivation coverage
+## 2026-10-15 — Watcher-recovery policy reuse
 
-- Direct-import state tests verify the conditional transition from `dismissed` to `retry_requested`, persisted retry metadata/time, and clearing stale candidate/settings.
-- Missing rows and rows in other states must return false without mutation.
-- Keep AST coordinator tests for explicit Get/retry sequencing and failed-reactivation refusal; direct state tests do not replace that integration boundary.
-- Code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb` passed focused acquisition safety/syntax CI, the full 189-test unit suite, runtime smoke, and validation-only multi-architecture build. The final documentation-updated head still requires all four workflows before merge.
+- PR #85's conditional dismissed-job state extraction is merged at `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`; exact PR-head workflows passed (runs `38658355926`, `38658355948`, `38658355942`, `38658355919`).
+- For stale `downloading` jobs, use the existing `should_resume_monitor` policy instead of duplicating its status/source-inventory/active-watcher predicate inline.
+- Keep the AST integration test proving incomplete saved source details return `recovery_unavailable` without calling the acquisition implementation or starting a watcher. Direct policy tests alone do not cover those coordinator side effects.
+- Required: focused/full suite, syntax checks, final diff review, and all four workflows on the exact final PR head.
 
 ---
 
-## 2026-10-15 — Watcher-start concurrency regression verified
+# 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed: syntax/acquisition safety run 38656927551, Docker packaging/full suite run 38656927436, runtime smoke run 38656927801, and multi-architecture validation-only run 38656927516.
 - The full unit-test step and acquisition safety regression step passed. The new race test asserts exactly one successful watcher reservation, persisted job, and thread start under simultaneous calls.
