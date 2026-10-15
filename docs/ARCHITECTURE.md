@@ -246,3 +246,8 @@ The `/api/health` and `/api/dashboard-picks` handlers are grouped in `app/api/da
 
 PR #110 moved `/api/health` and `/api/dashboard-picks` into `app/api/dashboard.py` behind the shared lazy `get_librarian` dependency. The extraction preserves the legacy service calls, response shapes, count validation, category balance, deduplication, randomization, and sanitized health errors. Exact tested head `a2bc06ac2ca6a4ca60341f3857135b97d2d6e68e` passed all four required workflows and was squash-merged at `b4015b8619f3c0db169722c347f72612996b9a1c`. `app/main.py` still imports the legacy module for authentication settings and data-directory/auth-secret initialization; MCP compatibility and persistence ownership remain unchanged.
 
+
+
+## Lazy authentication service dependency (in progress)
+
+The web app assembly no longer needs to import `navidrome_server.py` just to define routes. Authentication settings access and signing-key initialization call the existing service lazily through `get_librarian`. This is an import-time dependency seam only: SQLite persistence, `DATA_DIR` ownership, settings migrations, MCP wrappers, and authentication semantics remain unchanged. Direct integration coverage verifies that app import does not initialize the legacy server and that auth routes work with an injected fake service.
