@@ -1,3 +1,15 @@
+## 2026-10-15 — Web dependency audit of the legacy server
+
+- Reviewed current GitHub `main` after PR #93, including `app/main.py`, all three service API routers, `server.py`, `navidrome_server.py`, `tests/test_service_settings.py`, the Dockerfile, requirements, and the architecture/development/requirements docs.
+- Web coupling is broad, not just an import accident: `app/main.py` uses `DATA_DIR`, settings read/write, `api_call`, discovery list retrieval, and album eligibility; acquisition routes call the acquisition lifecycle API; discovery routes call recommendation/list/refresh/feedback functions; settings routes call all four services' get/set/test functions. The web app imports the monolith at module import time, which constructs/registers MCP tools.
+- `server.py` is a separate MCP entry point using `FastMCP`; `requirements.txt` pins `mcp==2.3.0`; the Dockerfile intentionally copies `navidrome_server.py` and domain modules but does not copy/run `server.py`. Therefore MCP retirement is not a safe first extraction and must not be inferred from the web dependency audit.
+- Smallest existing extraction seam identified: the six functions currently AST-loaded by `tests/test_service_settings.py` (`_navidrome_config`, `_listenbrainz_username`, Navidrome settings get/set, Last.fm settings get, ListenBrainz settings set). Their test currently executes copied function AST with fake storage, which is an explicit migration opportunity. A follow-up should move their real implementation into an importable settings-policy/service module with injected settings read/write and music-directory dependencies, preserve the MCP-named functions as thin compatibility adapters, and replace AST execution with direct-import tests.
+- Keep the extraction narrow: leave SQLite schema/migrations and `MUSIC_DIR` mutation owned by existing persistence/runtime code; do not duplicate settings storage, expose secret values, or move network connection tests in the same change. Expand only after callers and behavior are covered directly.
+- Audit only: no production or test code changed and no local tests were run. PR #93's four required workflows passed on exact head `616c4af7fb17c3d287fca596ddcbba09f7fd7736`; PR #93 has since merged at `e5d908b11e2a70e8294d0781c630238d4361e503`. Merge-commit CI is being checked separately; neither result implies publication or deployment.
+- Next implementation objective: extract the six settings-policy functions behind injected storage/path dependencies, add direct-import regression tests, preserve MCP adapter signatures and web response contracts, then run focused tests, the full suite, syntax checks, and all four workflows on the exact PR head.
+
+---
+
 ## 2026-10-15 — Acquisition lifecycle AST-boundary audit
 
 - Audited the remaining acquisition lifecycle cases in `tests/test_acquisition_safety.py` against direct-import coverage in `tests/test_acquisition_orchestration.py`, `tests/test_acquisition_lifecycle.py`, `tests/test_acquisition_watcher.py`, and the focused import/recovery suites.
