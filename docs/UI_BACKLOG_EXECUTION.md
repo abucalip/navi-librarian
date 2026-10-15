@@ -311,6 +311,71 @@ the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the tr
 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; and no console or page errors.
 
+## 5d. Landmark naming findings
+
+C2 of the external critique: add `aria-label` to `<nav>` and give page sections accessible
+names. Audited with Playwright's ARIA snapshot, which reports what assistive technology
+actually receives rather than what the markup implies.
+
+### Before
+
+The landmark tree rendered as three bare, unnamed entries:
+
+```
+- banner:
+- main:
+  - navigation:
+```
+
+| Element | Unnamed, before |
+|---|---|
+| `<nav>` | 1 of 2 — the sidebar had no name; the modal's links did |
+| `<section class="page">` | **8 of 8** |
+| `<section>` overall | 8 of 9 — only the album modal was named |
+
+A `<section>` only becomes a `region` landmark when it has an accessible name. So the eight
+page sections were **not landmarks at all**: a screen-reader user could not jump between pages
+by region, and each announced as an anonymous group.
+
+### After
+
+```
+- banner:
+- main:
+  - navigation "Main":
+  - region "Ten from the collection":
+```
+
+- `<nav>` sidebar: `aria-label="Main"`, so the two nav landmarks are distinguishable.
+- All 8 page sections: `aria-labelledby` pointing at their own `<h2>`, so all 8 are now
+  `region` landmarks. Measured **9 of 9** named, up from 1 of 9.
+- Each section has a unique name; checked for duplicates.
+
+### Why `aria-labelledby` rather than `aria-label`
+
+The critique suggested accessible names; `aria-labelledby` pointing at the existing visible
+heading is the better mechanism because the name **cannot drift from the visible text**. A
+hardcoded `aria-label="Settings"` would silently disagree with the `<h2>` the moment anyone
+rewords the heading. This required adding ids to the eight `<h2>` elements; all nine
+`aria-labelledby` references were verified to resolve to an existing id.
+
+### Deliberately NOT labelled
+
+The critique named only `<nav>` and the sections. `banner`, `main` and `contentinfo` are left
+unlabelled on purpose: **a landmark type that appears once is unambiguous by role alone**, so
+a label there is noise. Labels are needed only where a type repeats, which is why both `<nav>`
+elements have one.
+
+This means the audit's `UNNAMED` result for `<header>`, `<main>` and `<footer>` is **not a
+defect**, and should not be "fixed" by a later session.
+
+### Verification
+
+Measured on the branch: the landmark tree shows `navigation "Main"` and named regions; all 9
+sections named; the visible region on each of the 8 pages resolves to its expected heading
+name; no two sections share a name; 79 ids with zero duplicates; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
