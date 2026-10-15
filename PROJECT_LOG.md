@@ -557,10 +557,10 @@
 - No live slskd operation, production deletion test, image publication, deployment, or production runtime verification. This change does not diagnose or claim to fix the deferred acquisition-dismissal HTTP 409.
 
 
-## 2026-10-15 — Transfer source identity audit (pending CI)
+## 2026-10-15 — PR #122 merged: validate remote transfer source identity
 
-- Backend-only audit found cleanup trusted the _transfer_directory field when present without checking it against the directory encoded in the same transfer filename. A stale or inconsistent metadata pair could therefore authorize cancellation of a same-basename transfer from another remote folder.
-- The proposed fix validates any supplied filename as a safe relative path and requires its directory to agree with _transfer_directory; the same check is used during pre-cancellation inspection and post-cancellation verification. Basename-only filenames remain supported when an explicit directory is supplied.
-- Added direct-import regressions for mismatched directories, absolute filenames, and Windows drive-qualified filenames; each must refuse before issuing a cancellation and preserve local files.
-- Branch: fix/validate-transfer-source-identity. Exact-head CI and tests are pending. No local test execution, live slskd operation, deletion test against production data, publication, deployment, or runtime verification is claimed.
-- Acquisition-dismissal HTTP 409 remains outside this task; this change is a separate remote-transfer identity validation finding.
+- PR #122 merged at 3bb8a5154915d82cc8b831af7a1dacb4a9384864 from exact tested PR head 55a14c0f9c6c7dbe35e4b3deee4b33b9ffd9c28d.
+- Acquisition cleanup now validates a transfer filename even when slskd supplies _transfer_directory. If both filename and directory identify a folder, they must agree; unsafe absolute and drive-qualified filenames are refused before cancellation. The same identity check runs during post-cancellation verification, while basename-only transfer filenames remain supported when an explicit directory is present.
+- Direct-import regressions prove mismatched directory metadata, absolute paths, and Windows drive-qualified paths refuse cancellation and preserve local files.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety 38751732156; Docker packaging/full unit suite/build 38751732263; container runtime smoke 38751732282; validation-only multi-architecture image validation 38751732196. Publishing remained paused.
+- No separate local test run, live slskd operation, production deletion test, image publication, deployment, or production runtime verification is claimed. This is not a diagnosis or fix for the deferred acquisition-dismissal HTTP 409.
