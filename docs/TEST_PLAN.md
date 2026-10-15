@@ -788,3 +788,9 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - For `POST /api/discovery/{list_name}/refresh`, accept an omitted count as the existing default of 20 and accept only JSON integers from 1 through 20.
 - Reject strings (including numeric strings), floats, booleans, null, arrays, objects, and out-of-range integers with HTTP 400 before invoking the service.
 - Run `python -m unittest tests.test_discovery_routes -v`, the full unit suite, syntax checks, and all four required workflows on the exact final PR head. No local test execution should be claimed unless actually run.
+
+
+## Discovery refresh count validation — exact-head gate
+
+- Implementation head `859bf10b1bbaececd2045596287c7680bb66d514` passed all four workflows: syntax `38762625902`, Docker packaging/full unit suite/build `38762625612`, runtime smoke `38762625878`, and validation-only multi-architecture validation `38762625568`.
+- Documentation closeout changes require all four workflows to pass again on the final PR head before merge.
