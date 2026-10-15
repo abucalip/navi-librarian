@@ -1249,3 +1249,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Merged by squash; merge commit: `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. PR state verified closed/merged.
 - No local test execution, image publication, deployment, or production runtime verification is claimed. Publishing remains paused.
 - Next useful step: continue separating remaining settings/application-assembly and domain-service dependencies from `navidrome_server.py`, starting with repository status and docs review.
+
+
+## 2026-10-15 — PR #145 merged: modal artwork accessibility and navigation scope
+
+- PR #145: https://github.com/abucalip/navi-librarian/pull/145; exact tested PR head `421d1d2860945548aa01677847ce0953b7c9f263`; squash merge commit `d8abea9502c88312326835c40889b63062adc1b3`.
+- Modal artwork now receives album/artist-specific alternative text when artwork resolves and an empty alt when it does not. Scoped the “YOUR COLLECTION” pseudo-element to the sidebar navigation, preventing it from leaking into the modal's platform links. No API/routing/domain behavior changed.
+- Manual browser report published on PR #145: https://github.com/abucalip/navi-librarian/pull/145#issuecomment-6200647429. All eight checklist items passed against the exact tested head; zero failures.
+- All four required workflows passed on the exact PR head: Python syntax `38794301415`, container runtime smoke `38794301446`, Docker packaging `38794301460`, and validation-only Docker image validation `38794301405` (publishing paused).
+- Status: implemented, CI passed, manual browser checklist passed, merged. The report notes that no real screen reader was tested and artwork used a placeholder in isolated checks. No image publication, deployment, or production runtime verification is claimed.
+- Next UI follow-up noted by the PR: assess the remaining C4 recommendation-count live-region font-size issue.
