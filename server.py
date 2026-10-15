@@ -1,16 +1,25 @@
 import subprocess
 from mcp.server.fastmcp import FastMCP
 
+from read_only_command_policy import is_allowed_read_only_command
+
 mcp = FastMCP("prox-ro")
+
 
 @mcp.tool()
 def run(command: str) -> str:
-    """Run one allowlisted read-only command on the Proxmox host (e.g. 'pveversion -v',
-    'pct config 121', 'pct exec 121 -- docker ps', 'smartctl -A /dev/sda')."""
+    """Run an explicitly allowlisted read-only diagnostic command on Proxmox.
+
+    Accepted forms are intentionally narrow; arbitrary shell commands are refused.
+    """
+    if not is_allowed_read_only_command(command):
+        return "Rejected: command is not on the read-only allowlist."
+
     r = subprocess.run(
         ["ssh", "-i", "/Users/hamdibaala/.ssh/claude_ro", "-o", "IdentitiesOnly=yes",
          "-o", "BatchMode=yes", "claude-ro@prox", command],
         capture_output=True, text=True, timeout=60)
     return (r.stdout + r.stderr)[:20000]
+
 
 mcp.run()
