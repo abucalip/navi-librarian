@@ -4609,11 +4609,14 @@ def discovery_acquire_album(
         if existing_response is not None:
             return existing_response
         _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
-    try:
-        return _discovery_acquire_album_impl(artist, album, metadata_json, auto_queue)
-    finally:
-        with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-            _DISCOVERY_ACQUIRE_ACTIVE.discard(identity)
+    return _acquisition_orchestration.run_reserved_acquisition(
+        identity,
+        transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        active_requests=_DISCOVERY_ACQUIRE_ACTIVE,
+        acquire=lambda: _discovery_acquire_album_impl(
+            artist, album, metadata_json, auto_queue
+        ),
+    )
 
 
 @mcp.tool()
