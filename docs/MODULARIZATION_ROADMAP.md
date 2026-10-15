@@ -490,3 +490,12 @@ After discovery-router injection (PR #108), the next narrow step is to inject th
 - Added direct-import regression cases proving malformed paths refuse cleanup before transfer lookup and leave local files untouched.
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety `38750890697`; Docker packaging/full unit suite/build `38750890576`; container runtime smoke `38750890609`; validation-only multi-architecture image validation `38750890533`. The full unit-test and build job passed; no separate local test run is claimed.
 - No live slskd operation, production deletion test, image publication, deployment, or production runtime verification. This change does not diagnose or claim to fix the deferred acquisition-dismissal HTTP 409.
+
+
+## 2026-10-15 — Transfer source identity audit (pending CI)
+
+- Backend-only audit found cleanup trusted the _transfer_directory field when present without checking it against the directory encoded in the same transfer filename. A stale or inconsistent metadata pair could therefore authorize cancellation of a same-basename transfer from another remote folder.
+- The proposed fix validates any supplied filename as a safe relative path and requires its directory to agree with _transfer_directory; the same check is used during pre-cancellation inspection and post-cancellation verification. Basename-only filenames remain supported when an explicit directory is supplied.
+- Added direct-import regressions for mismatched directories, absolute filenames, and Windows drive-qualified filenames; each must refuse before issuing a cancellation and preserve local files.
+- Branch: fix/validate-transfer-source-identity. Exact-head CI and tests are pending. No local test execution, live slskd operation, deletion test against production data, publication, deployment, or runtime verification is claimed.
+- Acquisition-dismissal HTTP 409 remains outside this task; this change is a separate remote-transfer identity validation finding.
