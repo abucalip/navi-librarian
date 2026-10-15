@@ -508,9 +508,10 @@
 
 
 
-## 2026-10-15 — Lazy auth service dependency
+## 2026-10-15 — PR #112 lazy auth service dependency verification
 
-- Based on main `41c050b86aded92dafb101165ed14aadd1e6c720`, branch `refactor/lazy-auth-service-dependency`.
-- The app assembly resolves the legacy librarian service lazily for authentication settings and signing-key storage. Persistent storage and MCP adapter ownership are intentionally unchanged.
-- Added a subprocess regression for import-time decoupling and converted auth route integration tests to fake-service injection while retaining existing auth behavior assertions.
-- At implementation record time, tests and CI are pending; do not merge until all four required workflows pass on the exact final PR head and the final diff is reviewed. No publication/deployment/runtime verification.
+- Branch: `refactor/lazy-auth-service-dependency`; verified exact head `ded9aef759c87ccf07d71cd777b366af424cc06c`, based on main `41c050b86aded92dafb101165ed14aadd1e6c720`.
+- The app assembly resolves the legacy librarian service lazily for auth settings and signing-key storage. Persistent storage and MCP adapter ownership are unchanged.
+- Added a subprocess regression for import-time decoupling and converted auth integration tests to fake-service injection while retaining existing auth behavior assertions.
+- All four required workflows passed on the exact head: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`.
+- No separate local tests, image publication, deployment, or production runtime verification. Review PR #112 and merge only after verifying the documentation-updated final head.
