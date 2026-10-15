@@ -15,6 +15,9 @@ from service_settings import (
     navidrome_config as _service_navidrome_config,
     set_listenbrainz_settings as _service_set_listenbrainz_settings,
     set_navidrome_settings as _service_set_navidrome_settings,
+    get_slskd_settings as _service_get_slskd_settings,
+    set_slskd_settings as _service_set_slskd_settings,
+    slskd_config as _service_slskd_config,
 )
 import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
@@ -3263,41 +3266,16 @@ def discovery_test_listenbrainz_connection() -> str:
 
 
 def _slskd_config():
-    settings = _discovery_settings_read()
-    api_key = settings.get("slskd_api_key", "")
-    base_url = str(settings.get("slskd_url") or "").strip().rstrip("/")
-    parsed = urlparse(base_url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise ValueError("slskd URL must be a valid HTTP or HTTPS URL.")
-    if not api_key:
-        raise ValueError("Add the slskd API key in Discovery Settings first.")
-    return base_url, api_key, settings
+    """Compatibility adapter for validated slskd configuration."""
+    return _service_slskd_config(_discovery_settings_read)
 
 
 @mcp.tool()
 def discovery_get_slskd_settings() -> str:
     """Read acquisition settings without returning the stored API key."""
-    settings = _discovery_settings_read()
-    return json.dumps({
-        "music_library_path": settings.get("music_library_path", str(MUSIC_DIR)),
-        "slskd_url": settings.get("slskd_url", _DISCOVERY_SETTINGS_DEFAULTS["slskd_url"]),
-        "api_key_configured": bool(settings.get("slskd_api_key")),
-        "auto_acquire_for_me": bool(settings.get("auto_acquire_for_me", True)),
-        "slskd_downloads_path": settings.get(
-            "slskd_downloads_path", _DISCOVERY_SETTINGS_DEFAULTS["slskd_downloads_path"]
-        ),
-        "quality_priority": settings.get(
-            "quality_priority", _DISCOVERY_SETTINGS_DEFAULTS["quality_priority"]
-        ),
-        "quality_labels": {
-            "mp3_320": "MP3 320 kbps",
-            "mp3_193_319": "MP3 193–319 kbps",
-            "mp3_192": "MP3 192 kbps",
-            "flac_cd": "FLAC (CD quality preferred; metadata may not verify this)",
-            "flac_16_44": "FLAC 16-bit / 44.1 kHz",
-            "flac_hires": "FLAC Hi-Res (24-bit or above 44.1 kHz)",
-        },
-    }, ensure_ascii=False, indent=2)
+    return _service_get_slskd_settings(
+        _discovery_settings_read, MUSIC_DIR, _DISCOVERY_SETTINGS_DEFAULTS
+    )
 
 
 @mcp.tool()
@@ -3310,62 +3288,23 @@ def discovery_set_slskd_settings(
     music_library_path: str | None = None,
 ) -> str:
     """Save acquisition settings and paths. Blank API key preserves the saved key."""
-    from urllib.parse import urlparse
-    url = (slskd_url or "").strip().rstrip("/")
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        return json.dumps({"ok": False, "error": "Enter a valid HTTP or HTTPS slskd URL."})
-    try:
-        quality = json.loads(quality_priority_json)
-    except (ValueError, TypeError):
-        return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
-    allowed = {"mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"}
-    if not isinstance(quality, list) or len(quality) != 6 or set(quality) != allowed:
-        return json.dumps({
-            "ok": False,
-            "error": "Quality priority must contain each supported tier exactly once.",
-        })
-    values = {
-        "slskd_url": url,
-        "quality_priority": quality,
-    }
-    if music_library_path is not None:
-        music_path = str(Path(music_library_path).expanduser())
-        if not Path(music_path).is_absolute():
-            return json.dumps({
-                "ok": False,
-                "error": "The music library path must be an absolute path visible to this app.",
-            })
-        if not Path(music_path).is_dir():
-            return json.dumps({
-                "ok": False,
-                "error": "The music library path must exist and be a directory visible to this app.",
-            })
-        values["music_library_path"] = music_path
-    if auto_acquire_for_me is not None:
-        values["auto_acquire_for_me"] = bool(auto_acquire_for_me)
-    if slskd_downloads_path is not None:
-        download_path = str(Path(slskd_downloads_path).expanduser())
-        if not Path(download_path).is_absolute():
-            return json.dumps({
-                "ok": False,
-                "error": "The slskd downloads path must be an absolute path visible to this app.",
-            })
-        values["slskd_downloads_path"] = download_path
-    if api_key.strip():
-        values["slskd_api_key"] = api_key.strip()
-    _discovery_settings_write(values)
-    global MUSIC_DIR
-    if music_library_path is not None:
-        MUSIC_DIR = Path(values["music_library_path"])
-    return json.dumps({
-        "ok": True,
-        "music_library_path": str(MUSIC_DIR),
-        "slskd_url": url,
-        "api_key_configured": bool(_discovery_settings_read().get("slskd_api_key")),
-        "quality_priority": quality,
-        "message": "Settings saved. The API key is never returned by this tool.",
-    }, ensure_ascii=False)
+    def set_music_dir(path):
+        global MUSIC_DIR
+        MUSIC_DIR = path
+
+    return _service_set_slskd_settings(
+        _discovery_settings_read,
+        _discovery_settings_write,
+        lambda: MUSIC_DIR,
+        set_music_dir,
+        _DISCOVERY_SETTINGS_DEFAULTS,
+        slskd_url,
+        api_key,
+        quality_priority_json,
+        auto_acquire_for_me,
+        slskd_downloads_path,
+        music_library_path,
+    )
 
 
 @mcp.tool()

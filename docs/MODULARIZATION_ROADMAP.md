@@ -1,3 +1,22 @@
+## 2026-10-15 — slskd settings policy extraction (PR #96)
+
+- PR #96 extracts slskd configuration validation, safe settings serialization, and settings update policy into `service_settings.py`. The legacy MCP functions remain adapters; connection checks, SQLite persistence/schema, and global `MUSIC_DIR` ownership remain in `navidrome_server.py`.
+- Added direct-import tests for missing/invalid configuration, secret redaction and blank-key preservation, exact quality-tier validation (including malformed non-string values), path validation before writes, and music-path callback updates. Migrated quality-priority policy assertions off the AST-executed settings adapter while preserving the AST-based persistence fixture.
+- Exact implementation head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed all four workflows: syntax `38665710740`, Docker packaging/full suite `38665710718` (208 tests), runtime smoke `38665710761`, validation-only multi-architecture `38665710769`. Publishing remains paused; no deployment/runtime verification.
+- Before merge, verify all four workflows on the final documentation-updated PR head and review the complete diff. Continue with a caller-driven audit of remaining settings persistence and service integration boundaries; do not remove MCP while web callers still import the legacy module.
+
+---
+
+## 2026-10-15 — PR #95 merged; slskd settings-policy extraction next
+
+- PR #95 merged at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68` from exact head `92d304d06713ec0f73253a5db48cf835ff93a063`; all four required workflows passed on that head (syntax `38665121156`, Docker packaging/full suite `38665121160`, runtime smoke `38665121170`, validation-only multi-architecture `38665121255`). Publishing remains paused.
+- The next narrow seam is `_slskd_config`, `discovery_get_slskd_settings`, and `discovery_set_slskd_settings`. Move validation/serialization/update policy into `service_settings.py` with injected settings read/write and current/set music-directory callbacks.
+- Preserve the MCP-decorated function names/signatures and JSON response strings, including blank API-key preservation, supported quality tiers, default quality labels, absolute download-path behavior, existing music-library directory validation, and path-update timing. Keep live HTTP connection checks and persistence/schema ownership in `navidrome_server.py`.
+- Direct tests must cover secret redaction, blank-key preservation, invalid URL/quality/path no-write behavior, defaults, and the callback updating the runtime music directory only after a successful persisted write. Keep the Docker image/module list synchronized.
+- No local test run, publication, deployment, or production runtime verification is claimed for PR #95.
+
+---
+
 ## 2026-10-15 — Service settings policy extraction (PR #95)
 
 - Extracted six settings-policy/configuration functions into importable `service_settings.py` with injected persistence/path callbacks. The AST-coupled test harness was replaced with direct imports against the real module.

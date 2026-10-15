@@ -1,3 +1,23 @@
+## 2026-10-15 — PR #96: slskd settings policy extraction
+
+- PR #96: [refactor: extract slskd settings policy](https://github.com/abucalip/navi-librarian/pull/96), branch `refactor/slskd-settings-policy-direct-import`. Implementation moves slskd config validation, safe settings serialization, and settings update policy to `service_settings.py` with injected read/write and music-directory callbacks; MCP adapters and network connection testing remain in `navidrome_server.py`.
+- Direct-import regressions cover API-key redaction/preservation, URL and quality validation, malformed quality items, path validation/no-write behavior, settings defaults, and runtime music-directory callback. Quality-priority tests now call the extracted policy directly while retaining AST-based SQLite persistence checks.
+- Exact head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed all four required workflows: syntax/acquisition safety `38665710740`, Docker packaging/full unit suite `38665710718` (208 tests passed), runtime smoke `38665710761`, and validation-only multi-architecture image validation `38665710769`. The first CI cycle exposed an AST test harness coupling; it was fixed by migrating the affected policy tests to direct imports.
+- Publishing remains paused. No image publication, deployment, or production runtime verification. No local test execution is claimed.
+- Next: review and verify the documentation-updated exact PR head; then decide whether to merge PR #96. Continue settings/service boundaries without removing MCP dependencies prematurely.
+
+---
+
+## 2026-10-15 — PR #95 merged; next settings boundary in progress
+
+- PR #95 merged to `main` at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68` from exact tested head `92d304d06713ec0f73253a5db48cf835ff93a063`.
+- All four required workflows passed on that exact PR head: Python syntax/acquisition safety `38665121156`, Docker packaging/full unit suite `38665121160`, container runtime smoke `38665121170`, and validation-only multi-architecture image validation `38665121255` (publishing paused). No local test run, image publication, deployment, or production runtime verification is claimed.
+- The settings-policy extraction preserved MCP/web adapters and moved six Navidrome/ListenBrainz/Last.fm policy functions into direct-import `service_settings.py`.
+- Current task on branch `refactor/slskd-settings-policy-direct-import`: extract slskd configuration validation, safe settings serialization, and settings-update policy behind injected callbacks. Keep HTTP connection testing, persistence implementation, global path ownership, route payload/error contracts, and MCP adapter signatures in the legacy layer.
+- Acceptance: direct-import tests for secret redaction, blank-key preservation, exact quality-tier validation, invalid path/URL/no-write behavior, default serialization, and path callback updates; focused/full test suite and all four exact-head CI workflows. Do not publish or deploy.
+
+---
+
 ## 2026-10-15 — Service settings policy extracted (PR #95)
 
 - Added `service_settings.py` with injected settings-read/write and runtime-path callbacks. Moved Navidrome config validation, ListenBrainz username validation, safe Navidrome settings serialization/update, Last.fm configured-status serialization, and ListenBrainz settings update policy out of the monolith.
