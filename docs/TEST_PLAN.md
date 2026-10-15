@@ -1,3 +1,13 @@
+## 2026-10-15 — Dismissed-acquisition preflight tests
+
+- Direct-import coverage exercises non-dismissed bypass, valid metadata forwarding, malformed/non-object metadata normalization to `{}`, and refusal when reactivation fails.
+- On implementation SHA `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf`, all four required workflows passed: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and validation-only multi-architecture `38661745743` (publishing paused).
+- Keep AST integration tests `test_explicit_get_reactivates_safely_dismissed_job` and `test_dismissed_job_stays_blocked_if_reactivation_fails`; they protect the top-level Get flow and response behavior. Preserve shared transition-lock ownership.
+- The docs follow-up changes the PR head; all four workflows must be green on that final exact head before merge.
+
+---
+
+
 ## 2026-10-15 — Acquisition reservation lifecycle verified
 
 - PR #90 merged at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`; all four workflows passed, with 199 unit tests.

@@ -1,3 +1,14 @@
+## 2026-10-15 — PR #92 implementation verified; final-head CI gate remains
+
+- PR #92: https://github.com/abucalip/navi-librarian/pull/92; branch `refactor/extract-dismissed-reactivation-preflight`.
+- Implementation revision `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf` fixes the first draft's AST-harness namespace mismatch. All four required workflows passed on that implementation revision: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests passed), runtime smoke `38661745535`, and validation-only multi-architecture `38661745743` (publishing paused).
+- Extracted dismissal detection, retry-metadata normalization, and conditional reactivation decision into `_acquisition_orchestration.reactivate_dismissed_acquisition_if_needed`; the coordinator still holds the shared transition lock across preflight, existing-job checks, and reservation.
+- Direct tests cover non-dismissed bypass, valid metadata, malformed/non-object metadata fallback, and failed-reactivation refusal. AST-level Get success/failure integration tests remain unchanged.
+- Documentation follow-up is included in PR #92; require all four workflows to pass on the final documentation-inclusive PR head before merge. No publication, deployment, or production runtime verification.
+
+---
+
+
 ## 2026-10-15 — PR #90 merged; acquisition reservation lifecycle verified
 
 - PR #90 merged to `main` at `4756ad6a7669ab77e284309ca9cd0f178e7f032a` from exact tested head `c0b4a0ebcc5fa4ef8b71441fb38d55aed8fce097`.

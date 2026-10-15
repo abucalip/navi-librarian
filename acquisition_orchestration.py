@@ -114,6 +114,33 @@ def import_source_unless_dismissed(
         return import_source()
 
 
+def reactivate_dismissed_acquisition_if_needed(
+    artist: str,
+    album: str,
+    metadata_json: str,
+    *,
+    is_dismissed: Callable[[str, str], bool],
+    reactivate: Callable[[str, str, dict[str, Any]], Any],
+    json_module: Any,
+) -> bool:
+    """Allow a fresh request unless a dismissed row cannot be safely reactivated.
+
+    The caller owns the shared transition lock across this preflight and subsequent
+    acquisition reservation. A successful reactivation must clear stale source
+    details in the injected persistence callback before new discovery may proceed.
+    """
+    if not is_dismissed(artist, album):
+        return True
+
+    try:
+        metadata = json_module.loads(metadata_json or "{}")
+        if not isinstance(metadata, dict):
+            metadata = {}
+    except (ValueError, TypeError):
+        metadata = {}
+    return bool(reactivate(artist, album, metadata))
+
+
 def existing_acquisition_response(
     artist: str,
     album: str,

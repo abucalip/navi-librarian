@@ -1,3 +1,15 @@
+## 2026-10-15 — PR #92 dismissed-acquisition preflight verification
+
+- Branch: `refactor/extract-dismissed-reactivation-preflight`, based on `c30dc6b4255b4cfa11ce95b46c92200144cdfd40`.
+- Extracted dismissal detection, metadata normalization, and the conditional reactivation decision into the injected orchestration helper. The server retains the shared transition lock and existing refusal response; state-store conditional update and stale-source clearing are unchanged.
+- Added four direct-import regression cases and retained the AST-level explicit-Get success and failed-reactivation refusal cases.
+- The first PR head `68a680f9f728a2f9069b799f8dc845fb46bc05fb` failed the acquisition-safety workflow because the adapter was referenced as `acquisition_orchestration` instead of the module's actual alias `_acquisition_orchestration`. Corrected this on `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf`; all four workflows then passed: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and multi-architecture validation `38661745743` with publishing paused.
+- The docs follow-up creates a newer PR head; final merge gate remains all four workflows green on that exact final SHA. No image publication, deployment, or production runtime verification.
+- Next: verify the documentation-inclusive final PR head, review the full diff and checks, then merge only if all gates pass.
+
+---
+
+
 ## 2026-10-15 — PR #90 merged: atomic acquisition reservation
 
 - PR: https://github.com/abucalip/navi-librarian/pull/90

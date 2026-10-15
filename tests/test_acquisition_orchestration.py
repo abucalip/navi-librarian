@@ -12,11 +12,60 @@ from acquisition_orchestration import (
     import_source_unless_dismissed,
     queue_candidate_unless_dismissed,
     request_skip_acquisition_source,
+    reactivate_dismissed_acquisition_if_needed,
     reserve_acquisition_request,
     run_reserved_acquisition,
     switch_source_unless_dismissed,
 )
 from acquisition_lifecycle import should_resume_monitor, skip_request_error
+
+
+class DismissedAcquisitionPreflightTests(unittest.TestCase):
+    def test_non_dismissed_request_does_not_call_reactivation(self):
+        calls = []
+        result = reactivate_dismissed_acquisition_if_needed(
+            "Artist", "Album", '{"mbid": "release-id"}',
+            is_dismissed=lambda *_args: False,
+            reactivate=lambda *args: calls.append(args),
+            json_module=json,
+        )
+        self.assertTrue(result)
+        self.assertEqual(calls, [])
+
+    def test_dismissed_request_passes_decoded_metadata_to_reactivation(self):
+        calls = []
+        result = reactivate_dismissed_acquisition_if_needed(
+            "Artist", "Album", '{"mbid": "release-id"}',
+            is_dismissed=lambda *_args: True,
+            reactivate=lambda *args: calls.append(args) or True,
+            json_module=json,
+        )
+        self.assertTrue(result)
+        self.assertEqual(calls, [("Artist", "Album", {"mbid": "release-id"})])
+
+    def test_invalid_or_non_object_metadata_falls_back_to_empty_object(self):
+        for raw in ("{", '["not", "an", "object"]', "null", "42"):
+            with self.subTest(raw=raw):
+                calls = []
+                result = reactivate_dismissed_acquisition_if_needed(
+                    "Artist", "Album", raw,
+                    is_dismissed=lambda *_args: True,
+                    reactivate=lambda *args: calls.append(args) or True,
+                    json_module=json,
+                )
+                self.assertTrue(result)
+                self.assertEqual(calls, [("Artist", "Album", {})])
+
+    def test_failed_reactivation_refuses_request(self):
+        calls = []
+        result = reactivate_dismissed_acquisition_if_needed(
+            "Artist", "Album", "{}",
+            is_dismissed=lambda *_args: True,
+            reactivate=lambda *args: calls.append(args) or False,
+            json_module=json,
+        )
+        self.assertFalse(result)
+        self.assertEqual(calls, [("Artist", "Album", {})])
 
 
 class AcquisitionSkipTransitionTests(unittest.TestCase):
