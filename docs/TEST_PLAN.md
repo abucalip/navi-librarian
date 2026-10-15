@@ -1,8 +1,9 @@
-## Settings persistence extraction — current PR
+## Settings persistence extraction — PR #143 merged
 
-- Run `python -m unittest tests.test_settings_persistence tests.test_service_settings -v`, then `python -m unittest discover -s tests -v`.
-- Direct-import tests cover persisted Unicode round trips, corrupt JSON handling, append-only legacy quality-tier migration, configured absolute music-path application, and restrictive SQLite file mode. Confirm legacy `_discovery_settings_init/read/write` wrappers and the MCP-facing settings functions remain available.
-- Required final-head gates: Python syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture image validation. Publishing remains paused. No merge until all four pass on the same final PR head.
+- PR #143 exact final head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
+- Direct-import regressions cover Unicode round trips, corrupt JSON fallback, append-only legacy quality-tier migration, configured absolute music-path application, and restrictive SQLite file mode. Legacy `_discovery_settings_init/read/write` wrappers and MCP-facing settings functions remain available.
+- All four required exact-head workflows passed: Docker packaging/full suite/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`.
+- No separate local test execution, publishing, deployment, or production runtime verification is claimed. Publishing remains paused.
 
 ## MCP registration isolation — current PR
 
