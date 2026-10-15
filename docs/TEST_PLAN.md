@@ -720,3 +720,10 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - Direct-import regressions cover route inventory, injected Navidrome ping success and sanitized failure, dashboard category balance, three list reads at count 150, case-insensitive deduplication, candidate filtering, and invalid count rejection. The first CI run exposed a wrong expected pool size; the test was corrected before the passing final head.
 - No separate local test execution, publication, deployment, or production runtime verification is claimed.
 
+
+
+## Lazy auth service dependency regression (PR in progress)
+
+- Authentication integration tests inject a fake librarian service rather than patching a module-level `app.main.librarian` binding.
+- A subprocess test asserts that importing `app.main` does not import `navidrome_server.py`. Existing tests continue to cover first-run setup, duplicate setup refusal, password/username validation, login failures/success, rate limiting, logout cookie clearing, session reuse/tampering, HTTPS cookie policy, public assets, and protected page/API behavior.
+- Verify focused auth integration/security tests, the full unit suite, syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture checks on the exact final PR head. No image publication, deployment, or production runtime verification.
