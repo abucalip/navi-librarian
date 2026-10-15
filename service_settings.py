@@ -155,7 +155,9 @@ def set_slskd_settings(
     except (ValueError, TypeError):
         return json.dumps({"ok": False, "error": "Quality priority must be valid JSON."})
     if (
-        not isinstance(quality, list) or len(quality) != len(SLSKD_QUALITY_TIERS)
+        not isinstance(quality, list)
+        or any(not isinstance(tier, str) for tier in quality)
+        or len(quality) != len(SLSKD_QUALITY_TIERS)
         or set(quality) != SLSKD_QUALITY_TIERS
     ):
         return json.dumps({
