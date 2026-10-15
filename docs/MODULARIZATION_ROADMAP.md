@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #95 merged; slskd settings-policy extraction next
+
+- PR #95 merged at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68` from exact head `92d304d06713ec0f73253a5db48cf835ff93a063`; all four required workflows passed on that head (syntax `38665121156`, Docker packaging/full suite `38665121160`, runtime smoke `38665121170`, validation-only multi-architecture `38665121255`). Publishing remains paused.
+- The next narrow seam is `_slskd_config`, `discovery_get_slskd_settings`, and `discovery_set_slskd_settings`. Move validation/serialization/update policy into `service_settings.py` with injected settings read/write and current/set music-directory callbacks.
+- Preserve the MCP-decorated function names/signatures and JSON response strings, including blank API-key preservation, supported quality tiers, default quality labels, absolute download-path behavior, existing music-library directory validation, and path-update timing. Keep live HTTP connection checks and persistence/schema ownership in `navidrome_server.py`.
+- Direct tests must cover secret redaction, blank-key preservation, invalid URL/quality/path no-write behavior, defaults, and the callback updating the runtime music directory only after a successful persisted write. Keep the Docker image/module list synchronized.
+- No local test run, publication, deployment, or production runtime verification is claimed for PR #95.
+
+---
+
 ## 2026-10-15 — Service settings policy extraction (PR #95)
 
 - Extracted six settings-policy/configuration functions into importable `service_settings.py` with injected persistence/path callbacks. The AST-coupled test harness was replaced with direct imports against the real module.
