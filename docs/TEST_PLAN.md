@@ -3,7 +3,7 @@
 - `tests/test_service_settings.py` now imports `service_settings.py` directly instead of parsing and executing selected functions from `navidrome_server.py`.
 - Regressions cover password/API-key redaction, Navidrome credential validation, blank-password preservation, invalid URL/user/path refusal without writes, library-directory update callback behavior, and ListenBrainz username validation/no-write behavior.
 - The legacy adapter signatures remain unchanged; SQLite and global runtime path ownership are not extracted.
-- All four required workflows passed on implementation revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a`. An earlier intermediate revision exposed a test callback mismatch; that defect was fixed and the corrected code revision passed all four workflows. No local tests were run. The exact code revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a` passed all four workflows after a CI-discovered test-injection mismatch was fixed. This docs update requires another exact-head CI run; publishing remains paused.
+- Final PR head `b0a9d4df97723bc05983fb362a9b3060587f0df9` passed all four required workflows: syntax/acquisition safety (`38664285319`), Docker packaging/full unit suite and build (`38664285227`), container runtime smoke (`38664285195`), and validation-only multi-architecture image validation (`38664285194`). An earlier implementation revision exposed a callback-injection mismatch; it was corrected before final-head verification. No local tests were run. Publishing remains paused; no deployment or production runtime verification is claimed.
 
 ---
 
