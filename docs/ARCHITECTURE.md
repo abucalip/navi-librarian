@@ -1,3 +1,10 @@
+## 2026-10-15 — Last.fm settings policy boundary
+
+- Last.fm API-key update policy is being extracted into `service_settings.py` behind injected read/write callbacks. The legacy `discovery_set_lastfm_settings` function remains the MCP/web adapter and owns no duplicated persistence logic.
+- SQLite persistence/schema and network connectivity testing remain in `navidrome_server.py`. Responses report only whether a key is configured; never return the key itself.
+
+---
+
 ## 2026-10-15 — slskd settings policy extracted (PR #96)
 
 - `service_settings.py` now owns the pure slskd configuration validation, safe settings serialization, and update policy behind injected persistence/path callbacks. `navidrome_server.py` retains MCP adapters and remains the owner of SQLite persistence, connection tests, and runtime `MUSIC_DIR`.
