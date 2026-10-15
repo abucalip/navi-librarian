@@ -18,7 +18,9 @@ def clean_acquisition_source(
     Preflight every local file before changing anything. Refuse cleanup if
     source identity or local file ownership is ambiguous.
     """
+    import os
     import re
+    import stat
     from urllib.parse import quote
 
     def normalized_path(value):
@@ -127,6 +129,7 @@ def clean_acquisition_source(
     target = targets[0] if targets else None
 
     planned_deletions = []
+    target_identity = None
 
     # Preflight the entire local folder. Nothing has been cancelled or
     # deleted yet. Any unexpected entry aborts cleanup.
@@ -141,6 +144,11 @@ def clean_acquisition_source(
             ):
                 return False
 
+            target_stat = target.stat(follow_symlinks=False)
+            if not stat.S_ISDIR(target_stat.st_mode):
+                return False
+            target_identity = (target_stat.st_dev, target_stat.st_ino)
+
             for actual in target.iterdir():
                 # Never follow symlinks, recurse into directories, or remove
                 # special files.
@@ -153,9 +161,13 @@ def clean_acquisition_source(
                 expected = expected_by_name.get(key)
 
                 try:
-                    actual_size = actual.stat(follow_symlinks=False).st_size
+                    actual_stat = actual.stat(follow_symlinks=False)
                 except OSError:
                     return False
+
+                if not stat.S_ISREG(actual_stat.st_mode):
+                    return False
+                actual_size = actual_stat.st_size
 
                 if expected is not None:
                     # Exact-name tracks may be incomplete downloads, but
@@ -163,7 +175,7 @@ def clean_acquisition_source(
                     if actual_size > expected["size"]:
                         return False
 
-                    planned_deletions.append(actual)
+                    planned_deletions.append((actual_name, actual_stat.st_dev, actual_stat.st_ino))
                     continue
 
                 # Collision-suffixed files are identifiable only when
@@ -197,7 +209,7 @@ def clean_acquisition_source(
                     # safely claim that cleanup is complete.
                     return False
 
-                planned_deletions.append(actual)
+                planned_deletions.append((actual_name, actual_stat.st_dev, actual_stat.st_ino))
 
         except (OSError, RuntimeError):
             return False
@@ -336,24 +348,91 @@ def clean_acquisition_source(
             # Cancellation is not confirmed; do not delete local files.
             return False
 
-    # Transfers are now confirmed stopped. Remove only the preflighted files.
+    # Transfers are now confirmed stopped. Re-open the verified directory
+    # without following any path-component symlinks, then delete relative to
+    # that pinned directory descriptor. This prevents a folder swapped for a
+    # symlink during the transfer callbacks from redirecting unlink() outside
+    # the intended album directory.
+    open_fds = []
     try:
-        for path in planned_deletions:
-            if path.is_symlink() or not path.is_file():
-                return False
+        target_fd = None
+        parent_fd = None
+        target_name = None
 
-            path.unlink()
-
-        # Remove the folder only if it is now empty.
-        # Never recursively delete a directory.
         if target is not None:
-            try:
-                target.rmdir()
-            except OSError:
-                # Do not report success if anything appeared or remained.
+            parts = target.relative_to(root).parts
+            if not parts or target_identity is None:
                 return False
 
-    except OSError:
+            directory_flags = (
+                os.O_RDONLY
+                | getattr(os, "O_DIRECTORY", 0)
+                | getattr(os, "O_NOFOLLOW", 0)
+            )
+            current_fd = os.open(root, directory_flags)
+            open_fds.append(current_fd)
+
+            for component in parts[:-1]:
+                next_fd = os.open(component, directory_flags, dir_fd=current_fd)
+                open_fds.append(next_fd)
+                current_fd = next_fd
+
+            parent_fd = current_fd
+            target_name = parts[-1]
+            target_fd = os.open(target_name, directory_flags, dir_fd=parent_fd)
+            open_fds.append(target_fd)
+
+            opened_stat = os.fstat(target_fd)
+            current_stat = os.stat(
+                target_name, dir_fd=parent_fd, follow_symlinks=False
+            )
+            if (
+                not stat.S_ISDIR(opened_stat.st_mode)
+                or (opened_stat.st_dev, opened_stat.st_ino) != target_identity
+                or (current_stat.st_dev, current_stat.st_ino) != target_identity
+                or not stat.S_ISDIR(current_stat.st_mode)
+            ):
+                return False
+
+            # Validate every planned file identity before the first unlink.
+            for name, device, inode in planned_deletions:
+                current_file = os.stat(name, dir_fd=target_fd, follow_symlinks=False)
+                if (
+                    not stat.S_ISREG(current_file.st_mode)
+                    or (current_file.st_dev, current_file.st_ino) != (device, inode)
+                ):
+                    return False
+
+            for name, device, inode in planned_deletions:
+                current_file = os.stat(name, dir_fd=target_fd, follow_symlinks=False)
+                if (
+                    not stat.S_ISREG(current_file.st_mode)
+                    or (current_file.st_dev, current_file.st_ino) != (device, inode)
+                ):
+                    return False
+                os.unlink(name, dir_fd=target_fd)
+
+            # Remove only the same now-empty directory entry, relative to its
+            # pinned parent. Never recursively delete a directory.
+            current_stat = os.stat(
+                target_name, dir_fd=parent_fd, follow_symlinks=False
+            )
+            if (
+                (current_stat.st_dev, current_stat.st_ino) != target_identity
+                or not stat.S_ISDIR(current_stat.st_mode)
+            ):
+                return False
+            os.rmdir(target_name, dir_fd=parent_fd)
+        elif planned_deletions:
+            return False
+
+    except (OSError, RuntimeError, ValueError):
         return False
+    finally:
+        for fd in reversed(open_fds):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
 
     return True
