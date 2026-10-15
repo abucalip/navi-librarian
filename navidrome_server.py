@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+import listenbrainz_client as _listenbrainz_client
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
@@ -362,50 +363,12 @@ def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
 
 
 def _listenbrainz_recent(days=30, page_limit=3):
-    """Fetch recent public ListenBrainz listens in smaller, bounded pages."""
-    import time
-    import httpx
-
-    min_ts = int(time.time()) - days * 86400
-    max_ts = None
-    listens = []
-    page_size = 100
-
-    headers = {"User-Agent": "NavidromeLibrarian/1.0"}
-
-    with httpx.Client(timeout=30, follow_redirects=True) as client:
-        for _ in range(page_limit):
-            params = {"min_ts": min_ts, "count": page_size}
-            if max_ts is not None:
-                params["max_ts"] = max_ts
-
-            response = client.get(
-                f"https://api.listenbrainz.org/1/user/{_listenbrainz_username()}/listens",
-                params=params,
-                headers=headers,
-            )
-            response.raise_for_status()
-
-            page = response.json().get("payload", {}).get("listens", [])
-            if not page:
-                break
-
-            listens.extend(page)
-
-            if len(page) < page_size:
-                break
-
-            oldest = min(
-                int(item.get("listened_at", 0))
-                for item in page
-            )
-            if oldest <= min_ts:
-                break
-
-            max_ts = oldest - 1
-            time.sleep(0.2)
-
-    return listens
+    """Compatibility adapter for bounded ListenBrainz listen retrieval."""
+    return _listenbrainz_client.recent_listens(
+        _listenbrainz_username(),
+        days=days,
+        page_limit=page_limit,
+    )
 
 
 def _artist_identity(candidate):
