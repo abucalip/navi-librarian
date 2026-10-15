@@ -5,8 +5,8 @@
 - Added a deterministic integration regression before implementation. It blocks the first password-digest call after the final available slot is reserved, then verifies the concurrent request receives HTTP 429 while the in-flight invalid login receives HTTP 401.
 - Implementation adds a dedicated lock and atomically reserves attempt slots before password verification; successful authentication clears the client's attempt bucket under the same lock. Expensive password verification remains outside the lock.
 - Regression-first test commit: `d829d6450ac39257a0177cf768e70a3de8937e7a`; implementation commit: `e7ff4b454d9478d4ca147913d356db545bfb2fed`.
-- CI passed on exact pre-closeout head `d3f25518e1d3ecb8a15c848e84e80c0d369df4da`: Docker packaging `38776404115`, container runtime smoke `38776404108`, Python syntax `38776404131`, and Docker image validation (publishing paused) `38776403893`.
-- This documentation correction creates a new PR head, so all four workflows must pass again on that final head before merge. No local test execution is claimed. Publishing, deployment, and production runtime verification remain separate and paused.
+- The final PR head `a15fa4e9b588e7fa96d36242f51b55b23fba9e70` passed all four required workflows: Python syntax `38776917077`, Docker packaging/test-and-build `38776916979`, container runtime smoke `38776917024`, and Docker image validation `38776917027` (publishing paused).
+- PR #134 was squash-merged to `main` at `ef6ce0ff4faa9fffca66a7e43294eee6a0847dbd`. No local test execution is claimed. Image publication, deployment, and production runtime verification remain separate and paused.
 
 ---
 
