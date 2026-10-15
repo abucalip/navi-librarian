@@ -1,9 +1,9 @@
 import subprocess
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from read_only_command_policy import is_allowed_read_only_command
 
-mcp = FastMCP("prox-ro")
+mcp = MCPServer("prox-ro")
 
 
 @mcp.tool()
