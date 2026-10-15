@@ -1,3 +1,11 @@
+## 2026-10-15 — Proxmox MCP handler wiring regression in progress
+
+- Audit finding: PR #114 added direct tests for the command allowlist, but those tests did not exercise the actual server.run handler. A future wiring regression could bypass the policy while the policy-only suite stayed green.
+- Narrow follow-up: make importing server.py side-effect-safe by starting FastMCP only as a script, then test the handler itself with SSH mocked. Rejected commands must never invoke subprocess; accepted commands must preserve the existing SSH invocation and output truncation.
+- No live Proxmox command, local test run, publication, or deployment is performed by this change. Exact-head CI remains the merge gate.
+
+---
+
 ## 2026-10-15 — PR #114 merged: Proxmox MCP command allowlist
 
 - **Finding/fix:** the separate host-side `server.py` MCP described `run(command)` as allowlisted but forwarded arbitrary text to SSH. Added `read_only_command_policy.py` with exact-match allowlisting for the documented diagnostic forms; arbitrary commands, shell composition, substitutions, newlines, and unsafe arguments are refused before SSH invocation.
