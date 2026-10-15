@@ -1,3 +1,9 @@
+## 2026-10-15 — Metadata cache service extraction in progress
+
+- The persistent MusicBrainz metadata cache is being moved behind metadata_cache.py with an injected database path and clock. navidrome_server.py retains _metadata_cache_get / _metadata_cache_set compatibility adapters and the existing SQLite filename and non-fatal cache-failure behavior.
+- Direct-import regressions cover Unicode JSON round-trips, missing/expired entries, malformed cached JSON, and storage errors. Docker packaging includes the new module.
+- Branch: refactor/extract-metadata-cache. CI, merge, publication, deployment, and runtime verification are pending; do not infer them from the code or documentation changes.
+
 ## 2026-10-15 — PR #147 merged: strict slskd settings boolean validation
 
 - PR: https://github.com/abucalip/navi-librarian/pull/147
