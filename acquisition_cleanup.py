@@ -375,8 +375,18 @@ def clean_acquisition_source(
             | getattr(os, "O_DIRECTORY", 0)
             | getattr(os, "O_NOFOLLOW", 0)
         )
-        root_fd = os.open(root, directory_flags)
+        # Walk the absolute root from / one component at a time. O_NOFOLLOW
+        # on only the final path would still allow a replaced parent component
+        # to redirect the open outside the previously verified root.
+        root_fd = os.open(os.path.sep, directory_flags)
         directory_fds.append(root_fd)
+        for component in root.parts[1:]:
+            child_fd = os.open(component, directory_flags, dir_fd=root_fd)
+            os.close(root_fd)
+            directory_fds.pop()
+            root_fd = child_fd
+            directory_fds.append(root_fd)
+
         opened_root_stat = os.fstat(root_fd)
         if (opened_root_stat.st_dev, opened_root_stat.st_ino) != root_identity:
             return False
