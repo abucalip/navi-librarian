@@ -925,3 +925,8 @@ Run `python -m unittest tests.test_data_directory -v` and `python -m unittest di
 ## Subsonic collection normalization extraction — pending verification
 
 Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m unittest discover -s tests -v` suite. The direct-import regression must cover `None`, a scalar value, an empty list, and a multi-item list, while the legacy `navidrome_server.items()` adapter remains compatible. Verify Python syntax/acquisition safety, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture build on the exact final PR head. No results are claimed until the workflows complete.
+
+
+## Subsonic collection normalization extraction — completed (PR #153)
+
+PR #153 merged at `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc` from exact tested head `c834383b7484f3c149679d62812f1c81f6133625`. Direct-import regression cases cover `None`, scalar, empty-list, and populated-list values. All four required exact-head CI workflows passed: Python syntax check, Docker packaging validation/full suite/build, container runtime smoke, and validation-only multi-architecture image validation. No separate local test execution, image publication, deployment, or production runtime verification is claimed.
