@@ -69,5 +69,25 @@ class AppAuthenticationTests(unittest.TestCase):
                 auth.load_auth_secret(directory)
 
 
+    @unittest.skipUnless(hasattr(os, "symlink"), "symlinks are unavailable")
+    def test_signing_secret_refuses_symlink_without_chmodding_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            outside = Path(directory).parent / (Path(directory).name + "-outside-key")
+            outside.write_bytes(b"x" * 32)
+            self.addCleanup(lambda: outside.unlink(missing_ok=True))
+            if os.name == "posix":
+                outside.chmod(0o644)
+            key_path = Path(directory) / "app_auth.key"
+            key_path.symlink_to(outside)
+
+            with self.assertRaisesRegex(RuntimeError, "missing or invalid"):
+                auth.load_auth_secret(directory)
+
+            self.assertTrue(key_path.is_symlink())
+            self.assertEqual(outside.read_bytes(), b"x" * 32)
+            if os.name == "posix":
+                self.assertEqual(outside.stat().st_mode & 0o777, 0o644)
+
+
 if __name__ == "__main__":
     unittest.main()

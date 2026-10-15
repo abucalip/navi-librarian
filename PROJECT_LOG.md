@@ -1,3 +1,11 @@
+## 2026-10-15 — Authentication signing-key symlink safety (PR preparation)
+
+- Regression-first change: `ddcac7d1e9aa72196267881d7fe0d42ab98004a8` adds a test proving that an existing `app_auth.key` symlink is refused without changing the target file's bytes or mode.
+- Implementation commit: `a143e8353e9e0a899e70c854a22bc7d50d5e03c0`. Existing keys are opened without following symlinks, verified as regular files through `fstat`, and permission tightening is descriptor-based to avoid path redirection.
+- Branch: `fix/auth-key-symlink-safety`. Exact final-head CI, merge, publication, deployment, and production runtime verification remain pending; no local test execution is claimed.
+
+---
+
 ## 2026-10-15 — PR #136 merged: acquisition monitor payload preparation
 
 - PR #136: https://github.com/abucalip/navi-librarian/pull/136. Final PR head `c963bb6a1510d86ebb2cfe5bb9514fccbc478efa`; squash merge `5f28823d0c279d49947912f9fbce0a160a7a5bc3`.

@@ -1,3 +1,11 @@
+## 2026-10-15 — Authentication signing-key symlink hardening in review
+
+- Safety audit found `load_auth_secret()` followed an existing `app_auth.key` symlink and could read the target and change its permissions. Added a regression that requires symlink refusal and verifies the target content and mode remain unchanged; the test was committed before the implementation change.
+- Implementation opens an existing key with `O_NOFOLLOW`, verifies the opened object is a regular file, and uses descriptor-based permission tightening. Failure remains closed with a generic invalid-key error.
+- Branch `fix/auth-key-symlink-safety`; exact-head CI and full-suite results are pending. No local tests, merge, publication, deployment, or runtime verification are claimed.
+
+---
+
 ## 2026-10-15 — PR #136 merged: acquisition monitor payload preparation
 
 - PR: https://github.com/abucalip/navi-librarian/pull/136; final head: `c963bb6a1510d86ebb2cfe5bb9514fccbc478efa`; squash merge: `5f28823d0c279d49947912f9fbce0a160a7a5bc3`.

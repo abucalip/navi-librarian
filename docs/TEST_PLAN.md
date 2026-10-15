@@ -1,3 +1,10 @@
+## Authentication signing-key symlink refusal
+
+- `tests/test_app_auth.py::test_signing_secret_refuses_symlink_without_chmodding_target` verifies an existing `app_auth.key` symlink is rejected and its target contents and permissions remain unchanged.
+- Run `python -m unittest tests.test_app_auth -v`, the full unit suite, syntax checks, container runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. No local test execution should be claimed unless actually performed.
+
+---
+
 ## Concurrent authentication rate-limit regression — PR #134
 
 - `tests/test_auth_routes_integration.py::test_concurrent_login_attempts_cannot_race_past_rate_limit` holds one password-verification call while another request reaches the last available per-client attempt slot.
