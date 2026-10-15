@@ -591,3 +591,11 @@
 - Root cause: the refresh route used `int(payload.get("count", 20))`; Python accepts booleans as integers, numeric strings as parseable integers, and truncates floats. Replaced coercion with strict JSON integer validation before service invocation.
 - Added route regression cases for malformed types and out-of-range values. The default count and valid integer behavior remain unchanged.
 - Branch: `fix/discovery-refresh-strict-count`. Implementation head `859bf10b1bbaececd2045596287c7680bb66d514` passed Python syntax `38762625902`, container runtime smoke `38762625878`, Docker packaging/full unit suite/build `38762625612`, and validation-only multi-architecture image validation `38762625568`. Re-run all four after the documentation closeout changes and before merge.
+
+
+## 2026-10-15 — PR #129 merged: discovery refresh input validation
+
+- Merged PR #129 at `b3db4d1d3ac3367a306435e0e3e50e7e3286ce22` from exact final PR head `d6f57b95f1cd77f58d1636f471a8f80bc9776f61`.
+- Replaced coercive `int(...)` handling with strict JSON integer validation on the discovery refresh count. Regression tests cover malformed types and range failures; default count and valid integer behavior remain unchanged.
+- All four required workflows passed on that exact head: syntax `38762802954`, Docker packaging/full suite/build `38762802863`, container runtime smoke `38762803101`, and validation-only multi-architecture validation `38762803211`.
+- No separate local test run, image publication, deployment, or production runtime verification.
