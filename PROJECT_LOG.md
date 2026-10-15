@@ -1,9 +1,9 @@
-## 2026-10-15 — Music path default policy extraction started
+## 2026-10-15 — Music path default policy extraction merged
 
-- Branch: refactor/extract-music-path-defaults, based on main 25b0c5664262bb258c1172e6f90d2bff0d272b18.
-- Isolate environment override and host mount fallback policy in music_paths.py; retain legacy helper and initialization semantics.
-- Direct-import regression coverage and Docker packaging update included in the branch.
-- Focused tests and all four required exact-head workflows pending. Merge, publication, deployment, and runtime verification are not claimed.
+- PR #151: https://github.com/abucalip/navi-librarian/pull/151; tested head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`.
+- Extracted pure music path selection, retained the legacy helper and initialization semantics, added four direct-import regression tests, and updated Docker packaging.
+- All four required CI workflows passed on the exact tested head: `38805068326`, `38805068317`, `38805068315`, and `38805068337` (syntax/safety regressions, Docker packaging/full unit suite/build, runtime smoke, validation-only multi-architecture build).
+- Publishing remains paused. Deployment and production runtime verification are not claimed.
 
 ## 2026-10-15 — PR #150 merged: Navidrome API client extraction
 
