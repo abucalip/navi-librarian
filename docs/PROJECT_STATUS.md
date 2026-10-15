@@ -1,3 +1,13 @@
+## 2026-10-15 — PR #95 merged; next settings boundary in progress
+
+- PR #95 merged to `main` at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68` from exact tested head `92d304d06713ec0f73253a5db48cf835ff93a063`.
+- All four required workflows passed on that exact PR head: Python syntax/acquisition safety `38665121156`, Docker packaging/full unit suite `38665121160`, container runtime smoke `38665121170`, and validation-only multi-architecture image validation `38665121255` (publishing paused). No local test run, image publication, deployment, or production runtime verification is claimed.
+- The settings-policy extraction preserved MCP/web adapters and moved six Navidrome/ListenBrainz/Last.fm policy functions into direct-import `service_settings.py`.
+- Current task on branch `refactor/slskd-settings-policy-direct-import`: extract slskd configuration validation, safe settings serialization, and settings-update policy behind injected callbacks. Keep HTTP connection testing, persistence implementation, global path ownership, route payload/error contracts, and MCP adapter signatures in the legacy layer.
+- Acceptance: direct-import tests for secret redaction, blank-key preservation, exact quality-tier validation, invalid path/URL/no-write behavior, default serialization, and path callback updates; focused/full test suite and all four exact-head CI workflows. Do not publish or deploy.
+
+---
+
 ## 2026-10-15 — Service settings policy extracted (PR #95)
 
 - Added `service_settings.py` with injected settings-read/write and runtime-path callbacks. Moved Navidrome config validation, ListenBrainz username validation, safe Navidrome settings serialization/update, Last.fm configured-status serialization, and ListenBrainz settings update policy out of the monolith.
