@@ -1,10 +1,11 @@
-## 2026-10-15 — PR #88 merged: acquisition lifecycle AST audit closeout
+## 2026-10-15 — PR #89 merged: reserved acquisition cleanup
 
-- PR: https://github.com/abucalip/navi-librarian/pull/88
-- Exact tested PR head: `57fef1d176a1d1c7de081aa024af3d6018abab56`; squash merge / updated `main`: `bd8a162d98e3ddadf439f6a3f437e7327531a8f8`.
-- Reconciled status, test plan, roadmap, and log with PR #87's merge and CI evidence. The audit concluded the remaining AST tests are integration boundaries and should remain until equivalent direct-import coverage tests the same sequencing/concurrency/persistence behavior.
-- All four required workflows passed on the exact documentation PR head: syntax `38659188156`, Docker packaging `38659188159`, runtime smoke `38659188223`, and multi-architecture validation with publishing paused `38659188194`.
-- Next: extract reserved-acquisition callback cleanup behind an injected orchestration helper while preserving the atomic reservation and concurrency test. No publication, deployment, or production runtime verification.
+- PR: https://github.com/abucalip/navi-librarian/pull/89
+- Exact tested PR head: `c778a8c4b6083229aa5e59928f0598f21c5327b9`; squash merge / updated `main`: `c4334c4984dcb988733bd0b1f2464b9030849a70`.
+- Extracted callback execution and final reservation cleanup into `acquisition_orchestration.run_reserved_acquisition`. The callback still runs outside the shared transition lock; cleanup reacquires the lock and removes only the relevant identity.
+- Direct tests cover result and exception propagation plus cleanup on both paths without disturbing unrelated active identities. Full suite: 197 tests.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38659433212`, Docker packaging/full suite `38659433201`, runtime smoke `38659433218`, and multi-architecture validation with publishing paused `38659433230`.
+- No publication, deployment, or production runtime verification. Next: extract the atomic active-request identity check/add while retaining lock ownership and the end-to-end concurrency regression.
 
 ---
 
