@@ -1,3 +1,14 @@
+## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+
+## 2026-10-15 — Proxmox MCP command allowlist safety fix in progress
+
+- Found a mismatch between `server.py`'s promise to run allowlisted read-only commands and its implementation, which forwarded arbitrary input to SSH. This was treated as a security/data-safety priority ahead of routine modularization.
+- PR #114 adds a strict standalone exact-match command policy and direct-import regression tests for permitted diagnostic forms and rejected shell composition/arbitrary commands. The MCP tool signature and accepted-command SSH execution shape remain unchanged.
+- Branch `fix/proxmox-mcp-command-allowlist-current-main`; code head `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`. Four required workflows were in progress at the last check. No local tests or live Proxmox command were run. The file is not included in the application Docker image; no publication or deployment.
+- Next gate: inspect the final diff, verify all four workflows on the exact final PR head, then merge only if all pass. PR #44/#45's deferred HTTP 409 decision remains unchanged.
+
+---
+
 ## 2026-10-15 — PR #108 merged: discovery router service injection
 
 - Replaced discovery router's import-time `navidrome_server` import with the shared lazy `get_librarian` dependency; kept route behavior and domain/MCP ownership unchanged.
