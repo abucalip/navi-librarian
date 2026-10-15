@@ -3,7 +3,7 @@
 - The discovery router is being aligned with the acquisition router's lazy service-injection pattern through `Depends(get_librarian)`.
 - Tests use a fake service for recommendations, discovery-list retrieval, refresh, and feedback; candidate-filter regression includes an excluded album.
 - This removes only the router's direct import-time coupling. Domain behavior and MCP wrappers remain in the legacy service boundary.
-- PR #108 is not merge-ready until the branch is reconciled with current main, final diff reviewed, and all four required workflows pass on the exact final head. Publishing/deployment remain out of scope.
+- The branch is now synchronized with current main. PR #108 remains unverified until the final diff is reviewed and all four required workflows pass on the exact final head. Publishing/deployment remain out of scope.
 
 ---
 
