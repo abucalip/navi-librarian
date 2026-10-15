@@ -1,3 +1,10 @@
+## 2026-10-15 — Settings persistence extraction (PR preparation)
+
+- Extracted SQLite settings storage, database initialization/permissions, legacy quality-tier migration, saved music-directory application, and legacy downloads-path migration into `settings_persistence.py` using injected defaults and path callbacks.
+- `navidrome_server.py` retains `_discovery_settings_init`, `_discovery_settings_read`, and `_discovery_settings_write` compatibility wrappers; settings-service and MCP-facing interfaces are unchanged. Docker packaging includes the module.
+- Added direct-import tests for Unicode round trips, malformed persisted JSON, quality-order migration, music-path application, and restrictive database permissions.
+- Branch `refactor/extract-settings-persistence`; implementation and exact-head CI verification are pending. Do not merge until all four required workflows pass on the final PR head. No local test run, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
 - Moved the 27 existing MCP tool registrations into the new mcp_registry.py; navidrome_server.py no longer imports MCPServer, constructs an MCP server, or decorates service functions at import time.
