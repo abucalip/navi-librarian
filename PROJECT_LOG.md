@@ -1,9 +1,10 @@
-## 2026-10-15 — Settings persistence extraction (PR preparation)
+## 2026-10-15 — PR #143 merged: settings persistence extraction
 
-- Moved the settings SQLite table lifecycle, read/write persistence, file-mode restriction, saved music-path application, and legacy quality/download-path migrations from `navidrome_server.py` to `settings_persistence.py`.
-- The extracted store takes its database path, defaults, music-directory callbacks, and clock as dependencies. Legacy `_discovery_settings_*` wrappers remain in place, preserving callers and MCP compatibility.
-- Added direct-import regression tests for round-trip Unicode values, malformed JSON fallback, legacy quality tier ordering, music path application, and database permissions; updated Docker packaging.
-- Branch: `refactor/extract-settings-persistence`. Exact-head test/CI results, merge, publication, deployment, and runtime verification are pending; none are claimed.
+- PR #143: https://github.com/abucalip/navi-librarian/pull/143. Exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
+- Moved settings SQLite lifecycle, read/write persistence, restrictive file permissions, saved music-path application, and legacy quality/download-path migrations into `settings_persistence.py`. Legacy `_discovery_settings_*` wrappers preserve callers and MCP compatibility. Docker packaging includes the new module.
+- Added direct-import regression tests for Unicode round trips, malformed JSON fallback, quality-tier order migration, saved music-path application, and restrictive database permissions. Updated the AST-based quality-priority test harness to inject the extracted dependency after the initial CI run exposed that fixture gap.
+- All four required workflows passed on exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`: Docker packaging/full suite/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`. Publishing remains paused.
+- No separate local test execution, image publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
