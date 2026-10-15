@@ -1,3 +1,17 @@
+## 2026-10-16 — Three integration client extractions completed
+
+The following independent seams were extracted sequentially and merged to GitHub main. Each PR kept a compatibility adapter in `navidrome_server.py`, added direct-import/adapter regressions, and updated Docker packaging.
+
+- **ListenBrainz:** PR #163; tested head `4c494a2679884579df5d6bc204287637e45e2ccd`; merge `7be68c74b8a97ed4d9c50e6a7e22e296b25e79e2`. Bounded recent-listen paging and cursor logic moved to `listenbrainz_client.py`. Exact-head CI: compile `38822823853`, full suite/build `38822823922`, runtime smoke `38822823751`, non-publishing multi-architecture validation `38822823989` — all passed.
+- **Last.fm:** PR #164; tested head `957f3a56afe15e4dd665b041f1fbf7803921d3b6`; merge `9f174c6086c0d2b9749e53e38cbe8e1eb337e22f`. Cached provider requests, API-key handling, cache-key identity, and request pacing moved to `lastfm_client.py`. Exact-head CI: compile `38823469617`, full suite/build `38823470035`, runtime smoke `38823469896`, non-publishing multi-architecture validation `38823469762` — all passed.
+- **MusicBrainz rating:** PR #165; tested head `4888bd08fdf05007cc74ad7005a196fd678305b5`; merge `a0cd3d8ff5dcdf6acb7d678c9fc8f1aa0d537629`. Cached rating/vote/year lookup moved to `musicbrainz_rating_client.py`, preserving TTL, pacing, 404 caching, and output shape. Exact-head CI: compile `38823643925`, full suite/build `38823643703`, runtime smoke `38823643931`, non-publishing multi-architecture validation `38823643848` — all passed.
+
+Assistant-side local test execution was not performed; the full unit suite was run by CI on each exact final PR head. Publishing and deployment remain separate and unverified.
+
+**Priority gate before further routine extraction:** review the outstanding acquisition-dismissal HTTP 409 safety/diagnostic issue. Do not claim a fix without reproducing the failure, identifying its root cause, and verifying safe behavior.
+
+---
+
 ## 2026-10-15 — PR #160 merged: discovery refresh orchestration extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/160. Exact tested head: `5aafc1a9c5835e2d9e2959a36e7419d09913403a`; squash merge commit: `dba172d5747607e65e8fadd32442b12d32054749`.
