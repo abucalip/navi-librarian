@@ -167,6 +167,7 @@ class ServiceSettingsTests(unittest.TestCase):
             {"slskd_url": "file:///bad"},
             {"quality_priority_json": "not-json"},
             {"quality_priority_json": '["mp3_320"]'},
+            {"quality_priority_json": '[{"unexpected": "unhashable"}]'},
             {"slskd_downloads_path": "relative/downloads"},
             {"music_library_path": "relative/music"},
             {"music_library_path": "/definitely/not/a/real/library/path"},
