@@ -1,12 +1,17 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — Acquisition cleanup directory-swap hardening (in progress)
 
-- **PR:** [#98 — refactor: extract acquisition request coordinator](https://github.com/abucalip/navi-librarian/pull/98) — open, not merged.
-- **Branch:** `refactor/acquisition-request-coordinator`
-- **Exact tested PR head:** `edd5131c9005a5bb09b4a8c6f593c41fadc62699`
-- **Changes:** extracted the top-level `discovery_acquire_album` decision sequence behind injected dependencies; preserved the MCP/web adapter and lock/reservation/recovery behavior; added direct-import regression tests and Docker packaging; updated status, roadmap, architecture, and test plan.
-- **CI on exact head:** syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture image validation `38722709298` — all successful. The first AST-harness dependency mismatch was fixed before the final passing run.
-- **Limitations:** no separate local test run, image publication, deployment, or production runtime verification. Publishing remains paused.
-- **Next action:** review PR #98's final diff and current check state; merge only if still green, then resume the highest-priority remaining safety/test audit.
+- Audited `acquisition_cleanup.py` before routine modularization. Path-based deletion occurred after transfer lookup callbacks, leaving a possible symlink-swap window between preflight and unlink.
+- Added no-follow directory traversal, descriptor-relative unlink/rmdir, device/inode identity checks, and a regression that replaces the album directory with a symlink during transfer lookup. The test expects cleanup to fail closed while preserving both the outside target and the original album track.
+- Branch: `fix/acquisition-cleanup-directory-race`. Exact final commit and CI results will be recorded after docs are committed and required workflows finish. No local test run, publication, deployment, or production runtime verification is claimed.
+
+---
+
+## 2026-10-15 — PR #98 merged: acquisition request coordinator
+
+- **PR:** [#98 — refactor: extract acquisition request coordinator](https://github.com/abucalip/navi-librarian/pull/98) — merged.
+- **Squash merge commit:** `ae6635573aa57eb9303909701e6f0a5834066495`; exact tested PR head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- Extracted the top-level `discovery_acquire_album` decision sequence behind injected dependencies, preserved the MCP/web adapter contract, and added direct-import regression tests and Docker packaging.
+- All four workflows passed on that exact PR head: syntax/acquisition safety `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, and validation-only multi-architecture validation `38723927057`. No local test run, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
