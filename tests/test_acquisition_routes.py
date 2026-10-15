@@ -60,6 +60,25 @@ class AcquisitionRoutesTests(unittest.TestCase):
             auto_queue=True,
         )
 
+    def test_acquire_preserves_explicit_false_auto_queue(self):
+        with patch.object(self.service, "discovery_acquire_album", create=True, return_value='{"ok": true}') as call:
+            acquisitions.acquire_album({
+                "artist": "Artist", "album": "Album", "auto_queue": False
+            }, self.service)
+        self.assertIs(call.call_args.kwargs["auto_queue"], False)
+
+    def test_acquire_rejects_non_boolean_auto_queue_before_service_call(self):
+        for invalid in ("false", "true", 0, 1, None, [], {}):
+            with self.subTest(auto_queue=invalid):
+                with patch.object(self.service, "discovery_acquire_album", create=True) as call:
+                    with self.assertRaises(HTTPException) as raised:
+                        acquisitions.acquire_album({
+                            "artist": "Artist", "album": "Album", "auto_queue": invalid
+                        }, self.service)
+                self.assertEqual(raised.exception.status_code, 400)
+                self.assertEqual(raised.exception.detail, "auto_queue must be a boolean")
+                call.assert_not_called()
+
     def test_acquire_requires_artist_and_album(self):
         with self.assertRaises(HTTPException) as raised:
             acquisitions.acquire_album({"artist": "Artist"}, self.service)
