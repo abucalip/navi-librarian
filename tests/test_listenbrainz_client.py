@@ -54,12 +54,12 @@ class ListenBrainzClientTests(unittest.TestCase):
         self.assertEqual(len(client.requests), 2)
         first_url, first_params, first_headers = client.requests[0]
         self.assertEqual(first_url, "https://api.listenbrainz.org/1/user/test-user/listens")
-        self.assertEqual(first_params, {"min_ts": 1_699_395_700, "count": 100})
+        self.assertEqual(first_params, {"min_ts": 1_699_395_300, "count": 100})
         self.assertEqual(first_headers, {"User-Agent": "NavidromeLibrarian/1.0"})
         self.assertEqual(client.requests[1][1], {
             "min_ts": 1_699_395_700,
             "count": 100,
-            "max_ts": 1_699_999_901,
+            "max_ts": 1_699_999_900,
         })
         self.assertEqual(pauses, [0.2])
         self.assertTrue(all(response.raised for response in client.responses))
