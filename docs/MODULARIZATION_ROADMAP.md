@@ -1,6 +1,11 @@
-## Metadata cache / domain-service boundary — in progress
+## Navidrome API transport boundary — in progress (2026-10-15)
 
-The next narrow domain-service seam is the persistent metadata cache currently embedded in navidrome_server.py. Extract SQLite TTL reads/writes into metadata_cache.py using an injected database path and clock; retain the legacy helper names as adapters, keep the same database/table schema and non-fatal failure semantics, add direct-import regression tests, and include the module in Docker packaging. This is a service extraction only: no cache key, TTL, metadata lookup, or recommendation policy should change. Verify all required CI workflows on the exact final PR head before merge.
+The persistent metadata cache extraction is complete in PR #148. The next narrow domain-service seam is the Subsonic-compatible Navidrome HTTP transport currently embedded in `navidrome_server.py`. Move token creation, request construction, HTTP execution, and response-status interpretation into `navidrome_client.py`, with the existing settings provider injected by the caller. Keep `api_call(method, **params)` as the legacy adapter so discovery/MCP callers and API error semantics remain unchanged. Add direct-import tests for authentication parameters, request options, successful responses, and error messages; include the module in Docker packaging. Verify all four required CI workflows on the exact final PR head before merge.
+
+## Metadata cache / domain-service boundary — completed (PR #148 merged, 2026-10-15)
+
+The SQLite TTL cache now lives in `metadata_cache.py` with injected database path and clock. Legacy `_metadata_cache_get` / `_metadata_cache_set` adapters preserve the existing table/schema, cache keys, TTL behavior, and non-fatal storage-error semantics. Direct-import regressions and Docker packaging were included; PR #148 merged at `99e8da326fb0e2c4a8cf22acf9000e28647ec20f` after the four required workflows passed on the exact final PR head.
+
 
 ## Settings persistence boundary — completed (PR #143 merged, 2026-10-15)
 
