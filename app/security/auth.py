@@ -67,15 +67,15 @@ def make_session_token(username, secret, now=None, session_seconds=AUTH_SESSION_
 
 
 def session_username(token, secret, settings_reader, now=None):
-    if not token or "." not in token:
+    if not isinstance(token, str) or not token or "." not in token:
         return None
     encoded, supplied_signature = token.rsplit(".", 1)
-    expected_signature = base64.urlsafe_b64encode(
-        hmac.new(secret, encoded.encode("ascii"), hashlib.sha256).digest()
-    ).rstrip(b"=").decode("ascii")
-    if not hmac.compare_digest(supplied_signature, expected_signature):
-        return None
     try:
+        expected_signature = base64.urlsafe_b64encode(
+            hmac.new(secret, encoded.encode("ascii"), hashlib.sha256).digest()
+        ).rstrip(b"=").decode("ascii")
+        if not hmac.compare_digest(supplied_signature, expected_signature):
+            return None
         payload_bytes = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
         payload = json.loads(payload_bytes.decode("utf-8"))
         settings = settings_reader()
