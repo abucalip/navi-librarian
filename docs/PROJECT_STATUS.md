@@ -1,10 +1,8 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — PR #98 merged; acquisition cleanup race hardening in progress
 
-- PR #98 ([acquisition request coordinator extraction](https://github.com/abucalip/navi-librarian/pull/98)) remains **open**, branch `refactor/acquisition-request-coordinator`, exact tested head `edd5131c9005a5bb09b4a8c6f593c41fadc62699`.
-- Extracted the `discovery_acquire_album` decision sequence into `acquisition_request_coordinator.py`; the MCP/web adapter continues to supply state, locks, persistence access, watcher lifecycle, and acquisition implementation.
-- All four required workflows passed on that exact PR head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, and validation-only multi-architecture image validation `38722709298`. First CI caught a missing dependency in the AST adapter harness; it was fixed without removing integration coverage, and corrected/final-head checks passed.
-- No local tests were run separately. No image publication, deployment, or production runtime verification; publishing remains paused.
-- **Next action:** review the final PR diff and merge PR #98 only after confirming the current PR head and required checks still match the evidence above.
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from final tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- Exact-head CI passed: syntax `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, and validation-only multi-architecture image validation `38723927057`. Publishing remains paused; no deployment or production runtime verification.
+- Current safety task: prevent acquisition dismissal cleanup from following a directory path replaced with a symlink after preflight. A regression test simulates replacement during transfer lookup and asserts an outside file remains untouched. This branch is not yet merged; final exact-head CI is required.
 
 ---
 
