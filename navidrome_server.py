@@ -23,6 +23,7 @@ from service_settings import (
 import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 import acquisition_orchestration
+from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
@@ -4478,55 +4479,20 @@ def discovery_acquire_album(
     auto_queue: bool = True,
 ) -> str:
     """Prevent concurrent duplicate acquisition searches for the same album."""
-    if not artist.strip() or not album.strip():
-        return json.dumps({"ok": False, "error": "Artist and album are required."})
-    identity = (_music_key(artist), _music_key(album))
-    with _DISCOVERY_IMPORT_TRANSITION_LOCK:
-        if not _acquisition_orchestration.reactivate_dismissed_acquisition_if_needed(
-            artist, album, metadata_json,
-            is_dismissed=_discovery_is_dismissed,
-            reactivate=_discovery_reactivate_dismissed_acquisition,
-            json_module=json,
-        ):
-            return json.dumps({
-                "ok": False, "status": "dismissed", "artist": artist, "album": album,
-                "message": (
-                    "This acquisition is still dismissed and could not be safely "
-                    "reopened. Refresh Acquisitions and check its status."
-                ),
-            }, ensure_ascii=False)
-        with _DISCOVERY_IMPORT_LOCK:
-            watcher_active = identity in _DISCOVERY_IMPORT_ACTIVE
-        existing_job = next((
-            job for job in _discovery_list_acquisition_jobs()
-            if job["artist_key"] == identity[0] and job["album_key"] == identity[1]
-        ), None)
-        existing_status = (existing_job or {}).get("status")
-        existing_response = _acquisition_orchestration.existing_acquisition_response(
-            artist, album, identity, existing_job, existing_status, watcher_active,
-            start_watcher=_discovery_start_import_watcher,
-            watcher_lock=_DISCOVERY_IMPORT_LOCK,
-            active_watchers=_DISCOVERY_IMPORT_ACTIVE,
-            lifecycle=_acquisition_lifecycle,
-            json_module=json,
-        )
-        if existing_response is not None:
-            return existing_response
-        if not _acquisition_orchestration.reserve_acquisition_request(
-            identity, active_requests=_DISCOVERY_ACQUIRE_ACTIVE
-        ):
-            return json.dumps({
-                "ok": False, "status": "already_in_progress",
-                "artist": artist, "album": album,
-                "message": "An acquisition request or download is already active for this album.",
-            }, ensure_ascii=False)
-    return _acquisition_orchestration.run_reserved_acquisition(
-        identity,
+    return _acquire_album_request(
+        artist, album, metadata_json, auto_queue,
+        music_key=_music_key,
         transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,
+        watcher_lock=_DISCOVERY_IMPORT_LOCK,
+        active_watchers=_DISCOVERY_IMPORT_ACTIVE,
         active_requests=_DISCOVERY_ACQUIRE_ACTIVE,
-        acquire=lambda: _discovery_acquire_album_impl(
-            artist, album, metadata_json, auto_queue
-        ),
+        list_jobs=_discovery_list_acquisition_jobs,
+        is_dismissed=_discovery_is_dismissed,
+        reactivate=_discovery_reactivate_dismissed_acquisition,
+        start_watcher=_discovery_start_import_watcher,
+        lifecycle=_acquisition_lifecycle,
+        json_module=json,
+        acquire_impl=_discovery_acquire_album_impl,
     )
 
 
