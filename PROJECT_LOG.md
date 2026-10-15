@@ -1,3 +1,14 @@
+## 2026-10-15 — PR #96 slskd settings-policy extraction
+
+- PR #96 opened: [refactor: extract slskd settings policy](https://github.com/abucalip/navi-librarian/pull/96), branch `refactor/slskd-settings-policy-direct-import`.
+- Extracted `_slskd_config`, slskd settings serialization, and update validation into `service_settings.py` with injected settings and music-directory callbacks. Legacy MCP function names/signatures and JSON payloads remain adapters. SQLite persistence, network connection testing, and runtime path ownership remain in `navidrome_server.py`.
+- Added direct-import coverage for blank-key preservation, secret redaction, URL and quality tier validation, invalid path/no-write behavior, and callback updates. Migrated quality-priority policy tests away from AST-executing the adapter; retained AST persistence helpers for SQLite-specific coverage.
+- Exact tested head `9ccc28c7ad5fb51b7409b4f9beb5dfb1a6039c5f` passed all four required workflows: syntax/acquisition safety `38665710740`, Docker packaging/full suite `38665710718` (208 tests passed), runtime smoke `38665710761`, and validation-only multi-architecture `38665710769`. The first CI attempt revealed a test harness that lacked the new adapter dependency; after moving the tests to the direct-import policy, all four workflows passed.
+- No local tests, publication, deployment, or production runtime verification. Publishing remains paused.
+- Final docs update requires a new exact-head CI cycle before merge. PR #96 is open, not merged.
+
+---
+
 ## 2026-10-15 — PR #95 merge verification correction and next task
 
 - Correction to the earlier session-closeout note below: PR #95 was subsequently verified on its actual final head `92d304d06713ec0f73253a5db48cf835ff93a063`, not the earlier documentation-recorded head `b0a9d4df97723bc05983fb362a9b3060587f0df9`. All four required workflows passed on `92d304d06713ec0f73253a5db48cf835ff93a063`: syntax/acquisition safety `38665121156`, Docker packaging/full unit suite `38665121160`, runtime smoke `38665121170`, and validation-only multi-architecture `38665121255`.
