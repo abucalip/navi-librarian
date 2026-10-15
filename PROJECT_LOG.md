@@ -435,3 +435,14 @@
 - Extracted six settings-policy functions into `service_settings.py` with injected storage/path callbacks; legacy MCP/web function signatures remain adapters. Direct-import regression tests replace AST-executed tests. Docker packaging includes the new module.
 - No local tests were run. No image publication, deployment, or production runtime verification. PR #95 is not merged.
 - **Next action:** review PR #95's full diff and exact-head checks, then make an explicit merge decision; continue service-boundary modularization only after preserving the web/MCP compatibility contract.
+
+
+## 2026-10-15 — PR #103 merged: acquisition import source-root race hardening
+
+- **PR:** https://github.com/abucalip/navi-librarian/pull/103; tested final head `9de78c268af1b640a2a08afecb25a22502322a85`; squash merge `cf40df35a76d669421dcddbafd21ea22652bd0b1`.
+- **Change:** pin the source directory and destination parent with no-follow directory descriptors; perform staging, moves, and rollback relative to pinned descriptors so replacing the source path with a symlink cannot redirect imports. Preserve collision-suffixed matching, cross-filesystem fallback, no-overwrite checks, and recovery behavior. Added direct-import regression coverage for source-root replacement, collision suffixes, cross-filesystem fallback, and rollback.
+- **Exact-head CI:** all four required workflows passed on `9de78c268af1b640a2a08afecb25a22502322a85`: Python syntax `38726626891`, Docker packaging/full unit suite/build `38726626846`, container runtime smoke `38726626956`, and validation-only multi-architecture image validation `38726626910`. Image publishing remains paused.
+- **Verification boundary:** no separate assistant-local test run, live slskd test, production filesystem operation, image publication, deployment, or production runtime verification is claimed.
+- **State:** implemented, exact-head CI passed, merged. Main was observed at `5cf853cbd85cd9aec88ea6276522e86f83b7935c` immediately after merge; documentation closeout follows in a separate PR.
+- **Next:** continue the highest-priority remaining acquisition-coordination/test audit from the current GitHub main and roadmap; inspect current PRs and checks before choosing the next code change.
+
