@@ -4381,12 +4381,10 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
 
 
 def _discovery_refresh_all():
-    results = []
-    results.append(_discovery_refresh_personal(20))
-    results.append(_discovery_refresh_other("classics"))
-    results.append(_discovery_refresh_other("artist_deep_dive"))
-    results.append(_discovery_refresh_other("new_releases"))
-    return results
+    return discovery_refresh.refresh_all(
+        _discovery_refresh_personal,
+        _discovery_refresh_other,
+    )
 
 
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
