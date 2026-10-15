@@ -69,6 +69,40 @@ class AcquisitionImportTests(unittest.TestCase):
         self.assertEqual((self.source / "02 - Track.flac").read_bytes(), b"567")
         self.assertEqual(list(self.music.glob(".navidrome-import-*")), [])
 
+    def test_import_preserves_collision_suffixed_source_matching(self):
+        self.candidate = {
+            "files": [{"filename": "Album/01 - Track.flac", "size": 4}]
+        }
+        (self.source / "01 - Track.flac").unlink()
+        (self.source / "02 - Track.flac").unlink()
+        (self.source / "01 - Track_1.flac").write_bytes(b"1234")
+
+        import_matched_album_files(self.source, self.destination, self.candidate)
+
+        self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertFalse((self.source / "01 - Track_1.flac").exists())
+
+    def test_cross_filesystem_fallback_copies_then_removes_only_verified_source(self):
+        import errno
+        import os
+        original_rename = os.rename
+        calls = {"count": 0}
+
+        def force_first_cross_device_move(src, dst, *args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise OSError(errno.EXDEV, "simulated cross-filesystem move")
+            return original_rename(src, dst, *args, **kwargs)
+
+        with patch("os.rename", side_effect=force_first_cross_device_move):
+            import_matched_album_files(self.source, self.destination, self.candidate)
+
+        self.assertEqual((self.destination / "01 - Track.flac").read_bytes(), b"1234")
+        self.assertEqual((self.destination / "02 - Track.flac").read_bytes(), b"567")
+        self.assertFalse((self.source / "01 - Track.flac").exists())
+        self.assertFalse((self.source / "02 - Track.flac").exists())
+        self.assertFalse((self.destination / ".navidrome-import.json").exists())
+
     def test_source_directory_replaced_by_symlink_after_matching_cannot_move_outside_files(self):
         outside = self.root / "outside"
         outside.mkdir()
