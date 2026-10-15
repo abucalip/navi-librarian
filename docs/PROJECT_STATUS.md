@@ -1,3 +1,10 @@
+## 2026-10-15 — Music path default policy extraction in progress
+
+- Branch: refactor/extract-music-path-defaults, based on main at 25b0c5664262bb258c1172e6f90d2bff0d272b18.
+- Isolate environment override and host mount fallback selection in pure music_paths.py, injecting environment and directory-existence lookup for direct-import tests.
+- Preserve _default_music_dir() and MUSIC_DIR initialization, including NAVIDROME_MUSIC_DIR expansion, /media/library/music preference, /Volumes/media/library/music fallback, and production default. Add module to Docker packaging.
+- Focused tests and all four required exact-head CI workflows are pending. No passing result, merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-15 — PR #150 merged: Navidrome API client extraction
 
 - PR: https://github.com/abucalip/navi-librarian/pull/150. Tested PR head: `be9a2558bd87eb8e7e2fbf25593936aa8c671a1a`; squash merge commit: `efc2acb93e3edb570e77419daa866f4a228c85d2`.
