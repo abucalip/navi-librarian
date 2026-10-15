@@ -4,7 +4,7 @@
 - Objective: move pure expected track-count extraction to slskd_search.py while preserving navidrome_server._discovery_expected_track_count as the legacy adapter.
 - Regression tests cover all supported aliases, nested metadata, track-object lists, invalid/non-positive values, unrelated lists, and recursive cycles.
 - Implementation commits: c39cc55cc7347e7003525dac9c14497e8bef214d, 595188c0bc12757602ecc4dad605742b2972746d, 52eb9f74101e4bab7c70ca1de56d635346d2db29. Documentation commits follow.
-- Verification and merge status pending; do not infer test success from code changes.
+- PR #155 opened: https://github.com/abucalip/navi-librarian/pull/155. Initial implementation head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows: syntax 38814552978, Docker packaging/full unit suite/build 38814552986, runtime smoke 38814552931, and validation-only multi-architecture validation 38814552973. Later documentation commits changed the PR head; exact-final-head CI must be rechecked before merge. No separate local test run, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-15 — Multi-extraction workflow closeout; PR #149 blocked on UI gate
 
