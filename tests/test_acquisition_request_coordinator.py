@@ -20,24 +20,6 @@ class AcquisitionRequestCoordinatorTests(unittest.TestCase):
         self.dismissed = False
         self.reactivation_result = True
 
-    def coordinator(self, **overrides):
-        deps = {
-            "music_key": lambda value: value.casefold().strip(),
-            "transition_lock": self.transition_lock,
-            "watcher_lock": self.watcher_lock,
-            "active_watchers": self.active_watchers,
-            "active_requests": self.active_requests,
-            "list_jobs": lambda: self.jobs,
-            "is_dismissed": lambda *_args: self.dismissed,
-            "reactivate": lambda *_args: self.reactivation_result,
-            "start_watcher": self.start_watcher,
-            "lifecycle": SimpleNamespace(should_resume_monitor=should_resume_monitor),
-            "json_module": json,
-            "acquire_impl": self.acquire_impl,
-        }
-        deps.update(overrides)
-        return acquire_album_request
-
     def start_watcher(self, artist, album, candidate, settings):
         self.watcher_calls.append((artist, album, candidate, settings))
         with self.watcher_lock:
@@ -48,7 +30,7 @@ class AcquisitionRequestCoordinatorTests(unittest.TestCase):
         return json.dumps({"ok": True, "status": "queued"})
 
     def call(self, artist="Artist", album="Album", metadata_json="{}", auto_queue=True, **overrides):
-        return self.coordinator(**overrides)(
+        return acquire_album_request(
             artist, album, metadata_json, auto_queue,
             **self._dependencies(overrides),
         )
