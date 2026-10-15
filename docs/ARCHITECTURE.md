@@ -1,7 +1,8 @@
-## 2026-10-15 — Import source-root path boundary (verification pending)
+## 2026-10-15 — Import source-root safety merged (PR #103)
 
-- `acquisition_import.py` crosses a matcher callback before staging files. The source folder and destination parent must be treated as mutable pathnames after that boundary.
-- The current implementation opens both directory chains with no-follow flags, validates device/inode identities, performs track moves and rollback relative to pinned directory descriptors, and preserves cross-filesystem copy fallback. The exact-head regression and CI results remain the acceptance gate.
+- PR #103 merged at `cf40df35a76d669421dcddbafd21ea22652bd0b1` from exact tested head `9de78c268af1b640a2a08afecb25a22502322a85`.
+- Import pins source and destination-parent directory chains with no-follow flags, validates matched file identities, and uses descriptor-relative staging, publication, and rollback. Cross-filesystem copy fallback remains supported.
+- The source-root symlink-swap, collision-suffix, cross-filesystem, and rollback regressions pass with all four exact-head workflows. No production-folder test or deployment is claimed.
 
 ---
 
