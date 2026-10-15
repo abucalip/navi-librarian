@@ -756,3 +756,11 @@ The remaining AST-based lifecycle tests in `tests/test_acquisition_safety.py` ex
 - PR #118 moves the duplicate album-eligibility, exact artist-credit, and Various Artists regression checks out of the AST harness in `tests/test_acquisition_safety.py`; their existing direct-import coverage in `tests/test_discovery_recommendations.py` remains authoritative.
 - The direct-import suite now retains the removed edge cases: live/remix/EP/compilation rejection, exact artist-credit false matches and empty credits, plus all five Various Artists aliases. The legacy AST harness now focuses on orchestration/lifecycle paths that still require the monolithic adapter's shared state and stubbed I/O. No runtime code or MCP behavior changed.
 - Branch: `test/migrate-discovery-eligibility-direct-import`. Code/test head `873f47328de0808c8d18e034d5a7d04e39a083f2` passed all four required workflows: syntax `38745139119`; Docker packaging/full suite/build `38745139114` (238 tests passed); runtime smoke `38745139370`; validation-only multi-architecture image validation `38745139332`. Final PR head `4db6654678f9ce091caf43b650c04039c15dd6ef` also passed all four: syntax `38745425843`, Docker packaging/full suite/build `38745426466`, runtime smoke `38745425909`, and validation-only multi-architecture image validation `38745426093`. PR #118 merged to `main` at `9b1ba91923321a835e8bd3a210dd6aaf01caefc2`. No local test run, image publication, or deployment is claimed.
+
+
+## 2026-10-15 — Acquisition cleanup rejects ambiguous remote paths
+
+- Hardened `acquisition_cleanup.py` so remote filenames/transfer directories reject absolute paths, Windows drive-qualified paths, repeated separators, and explicit dot segments instead of silently normalizing them into a different source path. Parent traversal remains rejected.
+- Added direct-import regression cases proving these malformed remote filenames refuse cleanup before transfer lookup and leave the intended local track untouched.
+- Exact-head CI and full-suite results are pending; no local test run, live slskd operation, production deletion, publication, or deployment is claimed.
+- This is cleanup input validation only. It does not diagnose or claim to fix the deferred acquisition-dismissal HTTP 409.
