@@ -1,7 +1,6 @@
 """Direct-import regressions for slskd transfer listing and directory identity."""
 
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from slskd_transfers import download_transfer_files
@@ -95,7 +94,7 @@ class SlskdTransferListingTests(unittest.TestCase):
             {"filename": "01.mp3", "_transfer_directory": "Album"},
         ])
         self.assertEqual(download_transfer_files(
-            "http://slskd", {}, "peer", http_client=FakeHTTP(FakeResponse(payload="invalid") )
+            "http://slskd", {}, "peer", http_client=FakeHTTP(FakeResponse(payload="invalid"))
         ), [])
 
     def test_http_errors_propagate(self):
