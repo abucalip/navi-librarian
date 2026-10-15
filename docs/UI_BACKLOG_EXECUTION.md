@@ -589,6 +589,12 @@ route); `contentinfo` present in the ARIA tree; 8/8 pages render their expected 
 horizontal overflow at 1440/1200/1100/900/760/620/390/360px; keyboard order is nav then content
 with no footer interruption; no console or page errors.
 
+### Manual browser report and merge (PR #156)
+
+The user-published manual report is attached to PR #156's conversation and pins the run to exact head `47d33cbecadf64ed4b434764883cec6ae99d30bc`. All eight checklist items passed with zero failures. The report covers first-run login/setup, dashboard/artwork, discovery, navigation/album details, settings secrecy/persistence, Get/request behavior without triggering a real download, acquisition cards/status, and absence of unexpected browser/server errors. Exact-head CI passed: syntax `38815023255`, Docker packaging `38815023085`, runtime smoke `38815023444`, validation-only image/multi-architecture validation `38815023661`. PR #156 merged at `c560c28063f26a1a72d7016c951bf265d2ddd158`.
+
+Limitations remain explicit: Chromium only, no real screen reader test. The skip-link gap above remains open and is not part of C5. Image publishing/deployment and production runtime verification were not performed.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)

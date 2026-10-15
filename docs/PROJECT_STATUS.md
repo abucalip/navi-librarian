@@ -1,10 +1,21 @@
+## 2026-10-15 — PR #156 merged: footer landmark and reading-order fix
+
+- PR: https://github.com/abucalip/navi-librarian/pull/156. Tested head: `47d33cbecadf64ed4b434764883cec6ae99d30bc`; squash merge: `c560c28063f26a1a72d7016c951bf265d2ddd158`.
+- All four required workflows passed on the exact tested head: Python syntax `38815023255`; Docker packaging `38815023085`; isolated container runtime smoke `38815023444`; validation-only Docker image/multi-architecture validation `38815023661` (publishing paused).
+- Manual browser checklist report was published in PR #156 by the user for that exact head. All eight checklist items passed; zero failures. The report records browser checks across eight routes and widths 1440/1200/1100/900/760/620/390/360px, with no overflow, console errors, or page errors.
+- Fix moved `<footer>` outside `<main>`, making `contentinfo` a landmark and keeping footer order below content on all eight routes. No CSS change was needed.
+- Limitations/backlog: no real screen reader was tested; the missing skip link remains separately documented in `docs/UI_BACKLOG_EXECUTION.md`. No publishing, deployment, or production runtime verification is claimed.
+- Next action: re-check current GitHub main, open PRs and CI; choose the highest-priority remaining safety/verification gap before routine modularization.
+
+---
+
 ## 2026-10-15 — Backend session closeout: PRs #155 and #157 merged
 
 - PR #155 extracted expected slskd track-count metadata into `slskd_search.py`; exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; squash merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
 - PR #157 extracted slskd transfer listing/normalization into `slskd_transfers.py`; legacy `_slskd_download_transfer_files` remains the adapter. Exact tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`; squash merge `17922f878f0ea391b47652012a38530e9eb044fc`.
 - All four required workflows passed on PR #157's exact final head: syntax/acquisition safety `38816375215`, Docker packaging/full unit suite/image build `38816375266`, isolated runtime smoke `38816375339`, and validation-only multi-architecture validation `38816375410`.
 - A packaging-only commit `08c0703ed1dea19eae1aa84f8a18b4a3ea8f8666` had added the module to Docker COPY before the module was merged. PR #157 supplied the missing module and tests; current `main` now contains both the Docker reference and module. The packaging gap is resolved and verified by the final Docker build.
-- Current open PRs include #156 (UI footer/accessibility; its documented manual browser checklist is still NOT RUN), #44 and #45 (deferred acquisition-dismissal investigation), and #23 (older roadmap documentation). Do not continue routine modularization until the higher-priority required UI verification gate for #156 is completed and recorded.
+- At the time of this historical closeout, PR #156's manual browser checklist was still recorded as NOT RUN. It was subsequently completed and published for exact head `47d33cbecadf64ed4b434764883cec6ae99d30bc`; PR #156 merged at `c560c28063f26a1a72d7016c951bf265d2ddd158`. See the newer PR #156 closeout entry above.
 - Publishing remains paused. No image publication, deployment, or production runtime verification is claimed.
 
 ---
