@@ -1,3 +1,9 @@
+## 2026-10-15 — PR #148 merged
+
+- Merged metadata-cache service extraction to `main` via squash merge commit `99e8da326fb0e2c4a8cf22acf9000e28647ec20f` (PR head `972376953444502fb1a372648adc8c58157403c9`).
+- All four required PR-head workflows passed on the exact final head: Python syntax/acquisition safety, Docker packaging and full unit suite, isolated container runtime smoke, and validation-only multi-architecture Docker build.
+- Publishing remains paused; no image publication, deployment, or production runtime verification is claimed. Next modularization step: inspect remaining application-assembly and domain-service dependencies in `navidrome_server.py` and choose the smallest seam consistent with the roadmap.
+
 ## 2026-10-15 — Metadata cache extraction CI follow-up
 
 - Initial PR-head CI exposed a regression-test fixture issue: the malformed-JSON test inserted directly before creating the cache table. The fixture now initializes the table through the public cache service before inserting malformed JSON.
