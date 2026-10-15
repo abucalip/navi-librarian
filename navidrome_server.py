@@ -22,6 +22,7 @@ from service_settings import (
 )
 import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
+from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 import acquisition_orchestration
 from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
@@ -4308,18 +4309,9 @@ def _discovery_acquire_album_impl(
                 # A timeout or server error can happen after slskd accepted
                 # the queue request. Monitor this peer before considering a
                 # fallback, otherwise two sources could download the album.
-                candidate_for_monitor = dict(candidate)
-                candidate_for_monitor["files"] = selected_files
-                candidate_for_monitor["quality_summary"] = list(
-                    candidate.get("quality_summary") or []
+                candidate_for_monitor = _prepare_candidate_for_monitor(
+                    candidate, clear_candidates[clear_candidates.index(candidate) + 1:10]
                 )
-                candidate_for_monitor["fallback_candidates"] = [
-                    {**item, "files": [
-                        {"filename": file["filename"], "size": file["size"]}
-                        for file in item.get("files", [])
-                    ]}
-                    for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
-                ]
                 _discovery_start_import_watcher(
                     artist, album, candidate_for_monitor, settings
                 )
@@ -4342,16 +4334,9 @@ def _discovery_acquire_album_impl(
                 })
                 continue
 
-            candidate_for_monitor = dict(candidate)
-            candidate_for_monitor["files"] = selected_files
-            candidate_for_monitor["quality_summary"] = list(candidate.get("quality_summary") or [])
-            candidate_for_monitor["fallback_candidates"] = [
-                {**item, "files": [
-                    {"filename": file["filename"], "size": file["size"]}
-                    for file in item.get("files", [])
-                ]}
-                for item in clear_candidates[clear_candidates.index(candidate) + 1:10]
-            ]
+            candidate_for_monitor = _prepare_candidate_for_monitor(
+                candidate, clear_candidates[clear_candidates.index(candidate) + 1:10]
+            )
             start_state = _slskd_candidate_start_state(
                 base_url, headers, candidate_for_monitor, timeout=8
             )
@@ -4409,19 +4394,9 @@ def _discovery_acquire_album_impl(
             }, ensure_ascii=False)
 
         if uncertain is not None:
-            candidate_for_monitor = dict(uncertain)
-            candidate_for_monitor["files"] = [
-                {"filename": item["filename"], "size": item["size"]}
-                for item in uncertain["files"]
-            ]
-            candidate_for_monitor["quality_summary"] = list(uncertain.get("quality_summary") or [])
-            candidate_for_monitor["fallback_candidates"] = [
-                {**item, "files": [
-                    {"filename": file["filename"], "size": file["size"]}
-                    for file in item.get("files", [])
-                ]}
-                for item in clear_candidates[clear_candidates.index(uncertain) + 1:10]
-            ]
+            candidate_for_monitor = _prepare_candidate_for_monitor(
+                uncertain, clear_candidates[clear_candidates.index(uncertain) + 1:10]
+            )
             _discovery_start_import_watcher(
                 artist, album, candidate_for_monitor, settings
             )
