@@ -514,4 +514,4 @@
 - The app assembly resolves the legacy librarian service lazily for auth settings and signing-key storage. Persistent storage and MCP adapter ownership are unchanged.
 - Added a subprocess regression for import-time decoupling and converted auth integration tests to fake-service injection while retaining existing auth behavior assertions.
 - All four required workflows passed on the exact head: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`.
-- No separate local tests, image publication, deployment, or production runtime verification. Review PR #112 and merge only after verifying the documentation-updated final head.
+- No separate local tests, image publication, deployment, or production runtime verification. PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local tests, image publication, deployment, or production runtime verification. Publishing remains paused.
