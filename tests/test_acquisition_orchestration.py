@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from acquisition_orchestration import (
-    existing_acquisition_response, import_source_unless_dismissed,
+    existing_acquisition_response, import_source_unless_dismissed, run_reserved_acquisition,
     queue_candidate_unless_dismissed, request_skip_acquisition_source,
     switch_source_unless_dismissed,
 )
@@ -310,6 +310,66 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
 
     def test_no_existing_job_or_active_request_allows_new_search(self):
         self.assertIsNone(self.run_decision())
+
+
+
+class AcquisitionReservationLifecycleTests(unittest.TestCase):
+    def test_reserved_callback_result_is_preserved_and_reservation_released(self):
+        identity = ("artist", "album")
+        active = {identity}
+        events = []
+
+        class TrackingLock:
+            def __enter__(self):
+                events.append("lock-enter")
+            def __exit__(self, exc_type, exc, tb):
+                events.append("lock-exit")
+
+        expected = {"ok": True, "status": "queued"}
+        result = run_reserved_acquisition(
+            identity,
+            transition_lock=TrackingLock(),
+            active_requests=active,
+            acquire=lambda: events.append("acquire") or expected,
+        )
+
+        self.assertIs(result, expected)
+        self.assertEqual(active, set())
+        self.assertEqual(events, ["acquire", "lock-enter", "lock-exit"])
+
+    def test_reserved_callback_exception_is_propagated_and_reservation_released(self):
+        identity = ("artist", "album")
+        active = {identity}
+        failure = RuntimeError("acquisition failed")
+
+        def fail():
+            raise failure
+
+        with self.assertRaisesRegex(RuntimeError, "acquisition failed") as caught:
+            run_reserved_acquisition(
+                identity,
+                transition_lock=threading.RLock(),
+                active_requests=active,
+                acquire=fail,
+            )
+
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(active, set())
+
+    def test_cleanup_only_removes_the_reservation_for_its_identity(self):
+        identity = ("artist", "album")
+        other = ("artist", "other album")
+        active = {identity, other}
+
+        result = run_reserved_acquisition(
+            identity,
+            transition_lock=threading.RLock(),
+            active_requests=active,
+            acquire=lambda: "done",
+        )
+
+        self.assertEqual(result, "done")
+        self.assertEqual(active, {other})
 
 
 if __name__ == "__main__":
