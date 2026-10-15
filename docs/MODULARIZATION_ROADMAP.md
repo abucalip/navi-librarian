@@ -1,11 +1,13 @@
-## 2026-10-15 — Dismissed-acquisition preflight seam
+## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight seam
 
-- PR #92 extracts dismissal/reactivation preflight and retry-metadata normalization into `acquisition_orchestration.reactivate_dismissed_acquisition_if_needed`.
-- Implementation SHA `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf` passed all four required workflows: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and validation-only multi-architecture `38661745743`.
-- The server retains shared transition-lock ownership and the existing refusal response. State-store conditional update and stale-source clearing remain unchanged. Keep top-level AST success/refusal cases.
-- Documentation follow-up is part of the PR; verify all four workflows on the final exact PR head before merge.
+- PR #92 merged at `60698f7bf1413e4c643309e200d1ace2e268bee3` from exact tested head `1f0ce2174e1e60f3aab7c898dd534b8b1f11e858`.
+- Dismissal/reactivation preflight and retry-metadata normalization now live in `acquisition_orchestration.reactivate_dismissed_acquisition_if_needed`.
+- The server retains shared transition-lock ownership and the existing refusal response. State-store conditional update and stale-source clearing remain unchanged. Direct helper tests supplement—not replace—the top-level AST success/refusal cases.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38661883721`, Docker packaging/full suite `38661883755` (203 tests), runtime smoke `38661883730`, and multi-architecture validation `38661883723` with publishing paused.
+- Next: continue the remaining acquisition lifecycle AST-coupled test audit before routine modularization proceeds. Publishing, deployment, and production runtime verification remain separate uncompleted states.
 
 ---
+
 
 
 ## 2026-10-15 — PR #90 merged; request reservation seam extracted
