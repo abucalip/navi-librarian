@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #150 merged: Navidrome API client extraction
+
+- PR: https://github.com/abucalip/navi-librarian/pull/150. Tested PR head: `be9a2558bd87eb8e7e2fbf25593936aa8c671a1a`; squash merge commit: `efc2acb93e3edb570e77419daa866f4a228c85d2`.
+- Extracted Subsonic-compatible authentication, HTTP request execution, and API error interpretation into `navidrome_client.py`. The legacy `navidrome_server.api_call(method, **params)` remains as a compatibility adapter; Docker packaging and direct-import regression tests were updated.
+- All four required workflows passed on the exact final PR head: Python syntax `38802307579`, Docker packaging/full unit suite/build `38802307812`, container runtime smoke `38802307700`, and validation-only multi-architecture image validation `38802307683`.
+- State: implemented, tested, CI passed, merged. Image publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next: continue with the smallest remaining application-assembly/domain-service boundary after reviewing current main and open PRs; preserve the legacy MCP interface until retirement is separately justified and verified.
+
 ## 2026-10-15 — Navidrome API client extraction in progress
 
 - Branch: `refactor/extract-navidrome-api-client`. Extracted Subsonic-compatible HTTP transport/authentication into `navidrome_client.py`; `navidrome_server.api_call(method, **params)` remains a compatibility adapter using the existing `_navidrome_config` provider.
