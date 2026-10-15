@@ -2,7 +2,7 @@
 
 - Direct-import regression tests cover recommendation service injection and candidate filtering, discovery-list retrieval, list refresh, feedback normalization, and validation status codes.
 - Required exact-head workflow gates remain: Python syntax/acquisition safety; Docker packaging plus full unit suite/build; container runtime smoke; validation-only multi-architecture image validation. No local execution is claimed.
-- Check all four workflows on the final PR head after documentation reconciliation; inspect the final diff and ensure MCP route behavior remains compatible. Publishing remains paused.
+- The branch has been synchronized with current main. Check all four workflows on the final PR head; inspect the final diff and ensure MCP route behavior remains compatible. Publishing remains paused.
 
 ---
 
