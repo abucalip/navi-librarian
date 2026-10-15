@@ -21,22 +21,41 @@ def load_auth_secret(data_dir):
     try:
         fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
-        secret = path.read_bytes()
-        if len(secret) < 32:
-            raise RuntimeError("The app authentication key is missing or invalid.")
+        # Open the existing key without following a symlink. Read and tighten
+        # permissions through the descriptor so a path swap cannot redirect
+        # either operation to a different file.
         try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
-        return secret
+            fd = os.open(
+                str(path),
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            )
+            with os.fdopen(fd, "rb") as handle:
+                if not __import__("stat").S_ISREG(os.fstat(handle.fileno()).st_mode):
+                    raise RuntimeError(
+                        "The app authentication key is missing or invalid."
+                    )
+                secret = handle.read()
+                if len(secret) < 32:
+                    raise RuntimeError(
+                        "The app authentication key is missing or invalid."
+                    )
+                try:
+                    os.fchmod(handle.fileno(), 0o600)
+                except OSError:
+                    pass
+                return secret
+        except (OSError, RuntimeError) as exc:
+            raise RuntimeError(
+                "The app authentication key is missing or invalid."
+            ) from exc
     else:
         secret = secrets.token_bytes(32)
         with os.fdopen(fd, "wb") as handle:
             handle.write(secret)
-        try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
+            try:
+                os.fchmod(handle.fileno(), 0o600)
+            except OSError:
+                pass
         return secret
 
 
