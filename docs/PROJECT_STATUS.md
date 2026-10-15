@@ -4,7 +4,7 @@
 - Move the existing `discovery_acquire_album` coordination sequence into `acquisition_request_coordinator.py` behind injected identity, locks, watcher/request sets, persisted-job reader, dismissal/reactivation callbacks, watcher startup, lifecycle policy, JSON module, and acquisition implementation.
 - Keep `discovery_acquire_album` as the MCP/web compatibility adapter; preserve the shared transition-lock boundary, watcher lock ordering, active-request reservation, response contracts, no-requeue recovery behavior, and reservation cleanup on exceptions. Docker packaging includes the new module.
 - Added direct-import tests for invalid input, failed dismissed reactivation, incomplete/valid saved source recovery, reservation cleanup, and concurrent duplicate requests. The original AST integration cases remain to verify the legacy adapter.
-- Exact-head CI and full diff review pending. No local tests, publication, deployment, or production runtime verification claimed.
+- First CI attempt found the AST adapter harness did not inject the new coordinator dependency, causing four errors and one concurrency-test timeout; the harness now binds the real imported coordinator. Corrected-head CI and full diff review remain pending. No local tests, publication, deployment, or production runtime verification claimed.
 
 ---
 ## 2026-10-15 — PR #97 merged: Last.fm settings-policy extraction
