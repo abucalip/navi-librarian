@@ -8,6 +8,7 @@ import time
 import unicodedata
 import discovery_store
 import listenbrainz_client as _listenbrainz_client
+import lastfm_client as _lastfm_client_module
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
@@ -2183,51 +2184,16 @@ def discovery_set_feedback(
         return json.dumps({"ok": False, "error": str(exc)})
 
 
-_LASTFM_REQUEST_LOCK = __import__("threading").Lock()
-_LASTFM_LAST_REQUEST_AT = 0.0
+_lastfm_client = _lastfm_client_module.LastFmClient(
+    settings_reader=lambda: _discovery_settings_read(),
+    cache_get=lambda key, ttl_seconds: _metadata_cache_get(key, ttl_seconds),
+    cache_set=lambda key, value: _metadata_cache_set(key, value),
+)
 
 
 def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
-    global _LASTFM_LAST_REQUEST_AT
-    api_key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
-    if not api_key:
-        return None
-    cache_identity = json.dumps(
-        {"method": method, "params": params},
-        sort_keys=True, ensure_ascii=False,
-    )
-    cache_key = "discovery:lastfm:" + hashlib.sha256(
-        cache_identity.encode("utf-8")
-    ).hexdigest()
-    cached = _metadata_cache_get(cache_key, ttl_seconds)
-    if cached is not None:
-        return cached
-    try:
-        with _LASTFM_REQUEST_LOCK:
-            wait = 0.2 - (time.monotonic() - _LASTFM_LAST_REQUEST_AT)
-            if wait > 0:
-                time.sleep(wait)
-            _LASTFM_LAST_REQUEST_AT = time.monotonic()
-        response = httpx.get(
-            "https://ws.audioscrobbler.com/2.0/",
-            params={
-                "method": method,
-                "api_key": api_key,
-                "format": "json",
-                "autocorrect": 1,
-                **params,
-            },
-            headers={"User-Agent": "NavidromeLibrarian/1.0"},
-            timeout=15,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if payload.get("error"):
-            return None
-        _metadata_cache_set(cache_key, payload)
-        return payload
-    except (httpx.HTTPError, ValueError, TypeError):
-        return None
+    """Compatibility adapter for the extracted Last.fm client."""
+    return _lastfm_client.cached_call(method, ttl_seconds=ttl_seconds, **params)
 
 
 def _discovery_library_snapshot():
