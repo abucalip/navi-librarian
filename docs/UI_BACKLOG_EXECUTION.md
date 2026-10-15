@@ -84,12 +84,18 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
   `.status-line` treatment now covers every status element, with `aria-live` on all of
   them and a per-state leading glyph so state is never carried by colour alone. See
   section 5 for the before/after measurements.
+- **Per-section layouts** (item 2) — started in PR #128 on branch `ui/acquisition-layout`.
+  Scoped to one section per PR, as `AGENTS.md` requires. The acquisition section moved off
+  the shared four-column artwork grid onto a wider status-board layout. Other sections are
+  deliberately unchanged; the remaining sections in this item are still open.
 
 **Remaining, in the guide's priority order:**
 
 1. ~~**State craft**~~ — done in PR #121.
-2. **Per-section layouts** — refine artist exploration, library, acquisition, and settings
-   into distinct task-appropriate compositions sharing the established design language.
+2. **Per-section layouts** — in progress. Acquisition done in PR #128. Still to consider:
+   artist exploration, library, and settings. The guide's instruction is "do not force
+   every page into the same dashboard grid"; six sections still share one grid, so the
+   candidates are the discovery sections and settings rather than acquisition again.
 3. **Get/request button consolidation** — align modal, artwork-overlay, and card-action
    variants into one consistent interaction pattern without changing API or acquisition
    semantics.
@@ -98,6 +104,11 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
+
+**Smaller real gap, not in the guide's numbered list:** the settings tab widget applies
+`role="tab"` and `role="tabpanel"` without `aria-controls`, `aria-labelledby`, or roving
+`tabindex`, so all four tabs are separate Tab stops. Genuine but minor; not a focus-reach
+defect (see the withdrawal note above).
 
 **Newly found, not yet in the guide's numbered list:** keyboard focus reaches only three
 interactive controls on the dashboard (see section 5), which is an accessibility defect

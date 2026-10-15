@@ -94,6 +94,15 @@ p { line-height: 1.55; }
 #recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 11px/1.5 var(--mono); letter-spacing: .02em; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
+/* Acquisition cards are status records, not artwork tiles: they carry a progress
+   ring, transport lines and a quality profile, and no artwork at all. Forcing them
+   into the four-column artwork grid squeezed that content into a 278px column.
+   They get a wider, deliberately less dense layout suited to reading status. */
+.cards.acquisition-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.cards.acquisition-grid > .card { display: flex; flex-direction: column; }
+.cards.acquisition-grid > .card h3 { font-size: 22px; }
+.cards.acquisition-grid .card-meta { font: 400 12px/1.55 var(--body); }
+.cards.acquisition-grid .download-progress { margin: 13px 13px 0; }
 .dashboard-carousel { display: flex; gap: 15px; overflow-x: auto; padding: 3px 2px 15px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
 .dashboard-carousel > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -145,8 +154,8 @@ p { line-height: 1.55; }
 .card .card-actions .get-album:hover { background: #f3d66b; border-color: #f3d66b; }
 .get-album.requested, .card .card-art .get-album.requested, .card .card-actions .get-album.requested { background: #c83232; border-color: #f05b5b; color: #fff; cursor: default; box-shadow: 0 3px 12px rgba(120,0,0,.35); }
 .get-album.requested:hover, .card .card-art .get-album.requested:hover, .card .card-actions .get-album.requested:hover { background: #c83232; border-color: #f05b5b; transform: none; }
-@media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
+@media (max-width: 1100px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid #353834; border-radius: var(--radius); transition: border-color .15s ease, transform .15s ease; }
 .card:hover { border-color: #686044; transform: translateY(-2px); }
 .card-art {
@@ -202,13 +211,13 @@ pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: #c6c7bd; f
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
 footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--subtle); font: 10px/1.6 var(--mono); }
-@media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
-@media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
+@media (max-width: 1200px) { .cards:not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
+@media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
 @media (max-width: 620px) {
   header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); }
   nav::before { display: none; } nav button { width: auto; flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; } nav button.active { box-shadow: inset 0 -3px var(--yellow); } nav button.active::after { display: none; }
-  main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
+  main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .cards.acquisition-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
-@media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .cards:not(.acquisition-grid) { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
