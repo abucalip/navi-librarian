@@ -1,13 +1,16 @@
-## 2026-10-15 — PR #92 dismissed-acquisition preflight verification
+## 2026-10-15 — PR #92 merged: dismissed-acquisition preflight extraction
 
-- Branch: `refactor/extract-dismissed-reactivation-preflight`, based on `c30dc6b4255b4cfa11ce95b46c92200144cdfd40`.
-- Extracted dismissal detection, metadata normalization, and the conditional reactivation decision into the injected orchestration helper. The server retains the shared transition lock and existing refusal response; state-store conditional update and stale-source clearing are unchanged.
-- Added four direct-import regression cases and retained the AST-level explicit-Get success and failed-reactivation refusal cases.
-- The first PR head `68a680f9f728a2f9069b799f8dc845fb46bc05fb` failed the acquisition-safety workflow because the adapter was referenced as `acquisition_orchestration` instead of the module's actual alias `_acquisition_orchestration`. Corrected this on `f99b0f5a720a557ff1c0cd42d00e383b517bcaaf`; all four workflows then passed: syntax/acquisition safety `38661745614`, Docker packaging/full suite `38661745516` (203 tests), runtime smoke `38661745535`, and multi-architecture validation `38661745743` with publishing paused.
-- The docs follow-up creates a newer PR head; final merge gate remains all four workflows green on that exact final SHA. No image publication, deployment, or production runtime verification.
-- Next: verify the documentation-inclusive final PR head, review the full diff and checks, then merge only if all gates pass.
+- PR: https://github.com/abucalip/navi-librarian/pull/92
+- Branch: `refactor/extract-dismissed-reactivation-preflight`; exact tested head: `1f0ce2174e1e60f3aab7c898dd534b8b1f11e858`; squash merge / updated main commit: `60698f7bf1413e4c643309e200d1ace2e268bee3`.
+- Extracted dismissal detection, retry-metadata normalization, and conditional reactivation decision into the injected orchestration helper. The server retains the shared transition lock and existing refusal response; state-store conditional update and stale-source clearing are unchanged.
+- Added four direct-import regression cases and retained AST-level explicit-Get success and failed-reactivation refusal cases.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety `38661883721`, Docker packaging/full suite `38661883755` (203 tests), runtime smoke `38661883730`, and multi-architecture validation `38661883723` with publishing paused.
+- Initial namespace-alias defect was caught by the acquisition-safety workflow and fixed before final verification. The final documentation-inclusive PR head passed all four workflows.
+- No image publication, deployment, or production runtime verification. PR merged; project status, test plan, roadmap, and log updated on main.
+- Next priority: continue the acquisition lifecycle AST-coupled test audit; keep direct helper tests paired with top-level integration tests for transition boundaries.
 
 ---
+
 
 
 ## 2026-10-15 — PR #90 merged: atomic acquisition reservation
