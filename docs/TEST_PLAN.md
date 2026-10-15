@@ -1,3 +1,12 @@
+## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+
+- PR #98 exact tested head: `edd5131c9005a5bb09b4a8c6f593c41fadc62699` ([PR](https://github.com/abucalip/navi-librarian/pull/98)); still open at session close.
+- Direct-import tests cover blank input, refusal after failed dismissed-job reactivation, incomplete saved-source refusal, valid watcher recovery without requeue, reservation release after success/exception, and concurrent duplicate suppression. Existing AST adapter integration tests remain.
+- All four required workflows passed on that exact head: syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture image validation `38722709298`. The initial AST-harness binding failure was fixed before the passing final-head run.
+- No separate local test run, publishing, deployment, or production runtime verification.
+
+---
+
 ## 2026-10-15 — PR #97 verification complete
 
 - Added direct-import regression coverage for Last.fm key trimming, blank-input preservation, and response redaction while preserving the existing success JSON contract.
