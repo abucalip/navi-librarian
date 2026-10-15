@@ -529,11 +529,12 @@
 - No separate local tests, image publication, deployment, or production runtime verification. PR #112 merged by squash at `16c39ff11438f7a4237afa58f225777afcde6b82` after all four required workflows passed on exact head `5c92f1106917fdb69f61faf959d060c0d5d64065`. No separate local tests, image publication, deployment, or production runtime verification. Publishing remains paused.
 
 
-## 2026-10-15 — Proxmox MCP handler wiring regression in progress
+## 2026-10-15 — Proxmox MCP SDK compatibility and handler regression in progress
 
-- Audit finding: PR #114 added direct tests for the command allowlist, but those tests did not exercise the actual server.run handler. A future wiring regression could bypass the policy while the policy-only suite stayed green.
-- Narrow follow-up: make importing server.py side-effect-safe by starting FastMCP only as a script, then test the handler itself with SSH mocked. Rejected commands must never invoke subprocess; accepted commands must preserve the existing SSH invocation and output truncation.
-- No live Proxmox command, local test run, publication, or deployment is performed by this change. Exact-head CI remains the merge gate.
+- CI on the first PR head exposed a real entry-point defect: server.py still imported the removed mcp.server.fastmcp.FastMCP API while requirements pin mcp==2.3.0 and navidrome_server.py uses mcp.server.mcpserver.MCPServer. The host-side Proxmox MCP therefore could not import under the declared dependency.
+- Follow-up: align the host-side entry point with MCPServer, start it only when server.py is executed as a script, and test the actual command handler with SSH mocked. Rejected commands must never invoke subprocess; accepted commands preserve the SSH invocation/output contract and truncation.
+- First exact-head CI exposed this defect: syntax/acquisition-safety and Docker packaging/full suite failed during test import; runtime smoke passed; multi-architecture validation was still running. Correct the issue and re-run all four workflows on the final head.
+- No local tests or live Proxmox command, publication, or deployment are claimed.
 
 ---
 
