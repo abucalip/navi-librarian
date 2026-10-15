@@ -1,12 +1,8 @@
-## 2026-10-15 — Session closeout: acquisition request coordinator PR #98
+## 2026-10-15 — PR #98 merged; acquisition cleanup race fix in progress
 
-- **PR:** [#98 — refactor: extract acquisition request coordinator](https://github.com/abucalip/navi-librarian/pull/98) — open, not merged.
-- **Branch:** `refactor/acquisition-request-coordinator`
-- **Exact tested PR head:** `edd5131c9005a5bb09b4a8c6f593c41fadc62699`
-- **Changes:** extracted the top-level `discovery_acquire_album` decision sequence behind injected dependencies; preserved the MCP/web adapter and lock/reservation/recovery behavior; added direct-import regression tests and Docker packaging; updated status, roadmap, architecture, and test plan.
-- **CI on exact head:** syntax/acquisition safety `38722709201`, Docker packaging/full unit suite `38722709129`, runtime smoke `38722709465`, validation-only multi-architecture image validation `38722709298` — all successful. The first AST-harness dependency mismatch was fixed before the final passing run.
-- **Limitations:** no separate local test run, image publication, deployment, or production runtime verification. Publishing remains paused.
-- **Next action:** review PR #98's final diff and current check state; merge only if still green, then resume the highest-priority remaining safety/test audit.
+- PR #98 merged at `ae6635573aa57eb9303909701e6f0a5834066495` from exact tested head `9a326a095f9572cd8d50984981084d1f3f119cb4`.
+- All four required workflows passed on that exact head: syntax `38723927107`, Docker packaging/full unit suite `38723927072`, runtime smoke `38723927058`, validation-only multi-architecture image validation `38723927057`. No image publication, deployment, or production runtime verification.
+- Follow-up priority: harden destructive acquisition cleanup against a symlink swap between read-only preflight and deletion; regression test and final-head CI are pending on branch `fix/acquisition-cleanup-symlink-race`.
 
 ---
 
