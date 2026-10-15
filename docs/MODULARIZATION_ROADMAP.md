@@ -1,6 +1,6 @@
-## Music path default policy — in progress
+## Music path default policy — completed (PR #151)
 
-Move environment override and mount-path fallback policy into music_paths.py as a pure function with injected environment and directory-existence lookup. Keep navidrome_server._default_music_dir() and MUSIC_DIR initialization unchanged. Direct-import regression tests cover override expansion, server-mount precedence, Mac fallback, and final server-path default. Docker packaging and exact-head CI are pending.
+Extracted environment override and mount-path fallback into pure `music_paths.py`, retaining `navidrome_server._default_music_dir()` and existing initialization. Direct-import regressions and Docker packaging are in place. All four required workflows passed on exact PR head `07cf1ab7dab46a1409236f7134881011dc31cac2`; merge commit `6a7678bd04ef539ae5f4c118b6707524fd569280`. Publishing remains paused; deployment is unverified.
 
 ## Navidrome API transport boundary — completed (PR #150 merged, 2026-10-15)
 
