@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #85 merged; watcher-recovery policy reuse in progress
+## 2026-10-15 — PR #86 merged; existing-acquisition recovery extraction in progress
 
-- PR #85 merged to `main` at `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac` from exact tested head `95d7eb19352dd2a680ae55355026656e76ceeaeb`.
-- The conditional dismissed-job reactivation transition now lives in `acquisition_state.reactivate_dismissed_job`; direct tests cover stale-source clearing, retry metadata, and safe refusal. All four workflows passed on the exact PR head (syntax `38658355926`, packaging/full suite `38658355948`, runtime smoke `38658355942`, validation-only multi-architecture `38658355919`; 189 tests passed on code/test revision `5bb30bfb836185e6cd21dd7993d2bff678bd7edb`).
-- Current task on branch `refactor/reuse-lifecycle-monitor-recovery-policy`: reuse `acquisition_lifecycle.should_resume_monitor` in the stale-download recovery guard, keeping AST integration assertions that invalid saved details neither start a watcher nor requeue the album.
-- Verification for the current task is pending. Publishing remains paused; no deployment or production runtime verification.
+- PR #86 merged to `main` at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64` from exact tested head `5663d3d76f9a5c1503160b776b3b1e8674656a64`; all four required workflows passed (syntax `38658600290`, packaging/full suite `38658600316`, runtime smoke `38658600300`, validation-only multi-architecture `38658600309`; publishing paused).
+- Current branch `refactor/extract-existing-acquisition-recovery` extracts the existing-job recovery/conflict response decisions from `discovery_acquire_album` into `acquisition_orchestration.existing_acquisition_response` with injected watcher, lock, state-set, lifecycle, and JSON dependencies.
+- New direct tests cover incomplete saved source refusal, watcher resume without requeue, watcher-start failure, importing/imported/active short-circuits, and allowing a new search when no existing job conflicts.
+- The server still owns the shared transition lock and its legacy MCP adapter. Focused/full tests, syntax checks, final diff review, and exact-head CI remain pending. No publication, deployment, or production runtime verification.
 
 ---
 

@@ -1,9 +1,9 @@
-## 2026-10-15 — Watcher-recovery policy reuse
+## 2026-10-15 — Existing acquisition recovery coordination
 
-- PR #85's conditional dismissed-job state extraction is merged at `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`; exact PR-head workflows passed (runs `38658355926`, `38658355948`, `38658355942`, `38658355919`).
-- For stale `downloading` jobs, use the existing `should_resume_monitor` policy instead of duplicating its status/source-inventory/active-watcher predicate inline.
-- Keep the AST integration test proving incomplete saved source details return `recovery_unavailable` without calling the acquisition implementation or starting a watcher. Direct policy tests alone do not cover those coordinator side effects.
-- Required: focused/full suite, syntax checks, final diff review, and all four workflows on the exact final PR head.
+- PR #86 merged at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64`; all four required workflows passed on its exact PR head.
+- Direct-import tests for `existing_acquisition_response` must verify: incomplete source inventory returns `recovery_unavailable` without starting a watcher; valid persisted source resumes monitoring without queueing; watcher-start failure returns `monitor_recovery_failed`; importing/imported and active requests short-circuit; no conflicting job permits a new search.
+- Retain the top-level AST integration tests for simultaneous request reservation and persistence-before-import, because those exercise the full server adapter and shared-lock sequencing.
+- Required before merge: focused orchestration tests, full unit suite, syntax/acquisition safety checks, final diff review, and all four workflows on the exact final PR head.
 
 ---
 

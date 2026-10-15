@@ -4597,63 +4597,17 @@ def discovery_acquire_album(
             if job["artist_key"] == identity[0] and job["album_key"] == identity[1]
         ), None)
         existing_status = (existing_job or {}).get("status")
-        if existing_status in {"importing", "imported"}:
-            return json.dumps({
-                "ok": False, "status": existing_status, "artist": artist, "album": album,
-                "message": "This album is already being imported or is in the library.",
-            }, ensure_ascii=False)
-        if existing_status == "downloading" and not watcher_active:
-            # Recover the persisted monitor after a process restart rather than
-            # treating a stale in-memory watcher flag as proof the job is active.
-            candidate = (existing_job or {}).get("candidate") or {}
-            settings = (existing_job or {}).get("settings") or {}
-            if _acquisition_lifecycle.should_resume_monitor(
-                existing_status, candidate, watcher_active
-            ):
-                try:
-                    _discovery_start_import_watcher(
-                        existing_job["artist"], existing_job["album"],
-                        candidate, settings,
-                    )
-                except Exception as exc:
-                    return json.dumps({
-                        "ok": False, "status": "monitor_recovery_failed",
-                        "artist": artist, "album": album,
-                        "message": (
-                            "The saved download could not be resumed safely. "
-                            "Inspect slskd and acquisition status before retrying."
-                        ),
-                        "error": type(exc).__name__,
-                    }, ensure_ascii=False)
-                with _DISCOVERY_IMPORT_LOCK:
-                    recovery_started = identity in _DISCOVERY_IMPORT_ACTIVE
-                return json.dumps({
-                    "ok": True, "status": (
-                        "recovery_started" if recovery_started else "already_in_progress"
-                    ),
-                    "artist": artist, "album": album,
-                    "message": (
-                        "Resumed monitoring the saved download without queueing "
-                        "another source."
-                    ),
-                }, ensure_ascii=False)
-            return json.dumps({
-                "ok": False, "status": "recovery_unavailable",
-                "artist": artist, "album": album,
-                "message": (
-                    "The saved download has no usable source details. Inspect "
-                    "slskd and acquisition status before retrying."
-                ),
-            }, ensure_ascii=False)
-        if (
-            identity in _DISCOVERY_ACQUIRE_ACTIVE
-            or watcher_active
-            or existing_status == "downloading"
-        ):
-            return json.dumps({
-                "ok": False, "status": "already_in_progress", "artist": artist, "album": album,
-                "message": "An acquisition request or download is already active for this album.",
-            }, ensure_ascii=False)
+        existing_response = _acquisition_orchestration.existing_acquisition_response(
+            artist, album, identity, existing_job, existing_status, watcher_active,
+            active_requests=_DISCOVERY_ACQUIRE_ACTIVE,
+            start_watcher=_discovery_start_import_watcher,
+            watcher_lock=_DISCOVERY_IMPORT_LOCK,
+            active_watchers=_DISCOVERY_IMPORT_ACTIVE,
+            lifecycle=_acquisition_lifecycle,
+            json_module=json,
+        )
+        if existing_response is not None:
+            return existing_response
         _DISCOVERY_ACQUIRE_ACTIVE.add(identity)
     try:
         return _discovery_acquire_album_impl(artist, album, metadata_json, auto_queue)

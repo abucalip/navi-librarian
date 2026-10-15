@@ -1,8 +1,9 @@
-## 2026-10-15 — Reactivation state extraction merged; watcher recovery follow-up
+## 2026-10-15 — PR #86 merged; acquisition recovery coordinator extraction
 
-- PR #85 merged at `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`; exact PR head `95d7eb19352dd2a680ae55355026656e76ceeaeb` passed all four workflows. Full unit suite reported 189 tests on code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb`; publishing remained paused.
-- Next focused change: use `acquisition_lifecycle.should_resume_monitor` for the stale-download watcher-recovery eligibility check, preserving the AST test that asserts incomplete saved source inventory cannot trigger a watcher or a duplicate queue attempt.
-- Keep recovery coordination, shared-lock races, and persistence-before-import integration checks in the AST suite where they exercise behavior beyond deterministic policy helpers.
+- PR #86 merged at `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64` from exact tested head `5663d3d76f9a5c1503160b776b3b1e8674656a64`; all four required workflows passed and publishing remained paused.
+- Extract the existing-job response branch from `discovery_acquire_album` into `acquisition_orchestration.py` behind injected dependencies. Keep the server wrapper, transition lock, active-request reservation, and MCP compatibility.
+- Direct coverage must preserve fail-closed recovery for incomplete saved details, no duplicate queue on stale watcher recovery, and clear failure reporting if watcher startup raises. Keep end-to-end reservation and persistence-before-import tests.
+- Do not merge until focused/full tests, final diff review, and all four exact-head workflows pass.
 
 ---
 
