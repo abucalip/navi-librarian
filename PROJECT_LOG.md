@@ -1,8 +1,9 @@
-## 2026-10-15 — PR #134 concurrent login rate-limit race
+## 2026-10-15 — PR #134 merged: concurrent login rate-limit race
 
-- PR: https://github.com/abucalip/navi-librarian/pull/134. Added a deterministic integration regression before changing implementation, then reserved login-attempt slots atomically under a dedicated lock.
-- Pre-closeout head `d3f25518e1d3ecb8a15c848e84e80c0d369df4da` passed all four required workflows: Docker packaging `38776404115`, container runtime smoke `38776404108`, Python syntax `38776404131`, and Docker image validation `38776403893` (publishing paused).
-- Follow-up documentation commits correct stale CI status and SHA references. Re-run all four workflows on the exact final PR head before merge. No local test run, publication, deployment, or production runtime verification is claimed.
+- PR: https://github.com/abucalip/navi-librarian/pull/134. Added a deterministic integration regression before implementation, then reserved each login attempt atomically under a dedicated lock while keeping password verification outside the lock.
+- Regression-first test commit: `d829d6450ac39257a0177cf768e70a3de8937e7a`; implementation commit: `e7ff4b454d9478d4ca147913d356db545bfb2fed`.
+- Final tested PR head: `a15fa4e9b588e7fa96d36242f51b55b23fba9e70`; all four required workflows passed: Python syntax `38776917077`, Docker packaging/test-and-build `38776916979`, container runtime smoke `38776917024`, and Docker image validation `38776917027` (publishing paused).
+- Squash merge: `ef6ce0ff4faa9fffca66a7e43294eee6a0847dbd`. No local test execution, image publication, deployment, or production runtime verification is claimed.
 
 ---
 
