@@ -1,3 +1,7 @@
+## Metadata cache / domain-service boundary — in progress
+
+The next narrow domain-service seam is the persistent metadata cache currently embedded in navidrome_server.py. Extract SQLite TTL reads/writes into metadata_cache.py using an injected database path and clock; retain the legacy helper names as adapters, keep the same database/table schema and non-fatal failure semantics, add direct-import regression tests, and include the module in Docker packaging. This is a service extraction only: no cache key, TTL, metadata lookup, or recommendation policy should change. Verify all required CI workflows on the exact final PR head before merge.
+
 ## Settings persistence boundary — completed (PR #143 merged, 2026-10-15)
 
 The settings persistence implementation has been extracted from `navidrome_server.py` into `settings_persistence.py`. The store owns SQLite initialization, restrictive database permissions, persistence reads/writes, saved music-path application, and existing legacy quality/download-path migrations, using injected defaults and path callbacks. Legacy `_discovery_settings_*` wrappers preserve callers and MCP behavior; Docker packaging includes the module. Direct-import regression tests cover persistence round trips, malformed data, migration order, music-path application, and permissions.

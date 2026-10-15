@@ -1,3 +1,12 @@
+## 2026-10-15 — Metadata cache extraction CI follow-up
+
+- Initial PR-head CI exposed a regression-test fixture issue: the malformed-JSON test inserted directly before creating the cache table. The fixture now initializes the table through the public cache service before inserting malformed JSON.
+- Corrected test commit: d6e28b665a3b16cbd3aba68744e1943a73d1cda1. All required workflows must be rechecked on this exact updated head; the initial failed run is not evidence of a passing suite.
+
+## 2026-10-15 — Metadata cache extraction (pending CI)
+
+Direct-import tests in tests/test_metadata_cache.py cover Unicode JSON round-trips, cache misses/expiry, malformed cached JSON, and non-fatal storage failures for the extracted MetadataCache. Run this focused test, the full unit suite, syntax checks, Docker packaging, runtime smoke, and validation-only multi-architecture build on the exact PR head before merge. No result is claimed until those checks complete.
+
 ## 2026-10-15 — Completed: slskd settings boolean validation
 
 - `PUT /api/settings/slskd` accepts explicit JSON booleans for `auto_acquire_for_me`, rejects strings (including `"false"`), numbers, null, arrays, and objects with HTTP 400 before service invocation, and preserves the existing value when the field is omitted.

@@ -9,6 +9,7 @@ import time
 import unicodedata
 import discovery_store
 from settings_persistence import SettingsPersistence
+from metadata_cache import MetadataCache
 from service_settings import (
     get_lastfm_settings as _service_get_lastfm_settings,
     set_lastfm_settings as _service_set_lastfm_settings,
@@ -58,52 +59,17 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Persistent MusicBrainz metadata cache.
 METADATA_CACHE_DB = DATA_DIR / "navidrome_metadata_cache.sqlite3"
+_metadata_cache = MetadataCache(METADATA_CACHE_DB)
 
 
 def _metadata_cache_get(key, ttl_seconds):
-    """Return cached JSON data if it exists and has not expired."""
-    try:
-        with sqlite3.connect(METADATA_CACHE_DB, timeout=5) as db:
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS metadata_cache (
-                    cache_key TEXT PRIMARY KEY,
-                    value_json TEXT NOT NULL,
-                    cached_at REAL NOT NULL
-                )
-            """)
-            row = db.execute(
-                "SELECT value_json, cached_at FROM metadata_cache "
-                "WHERE cache_key = ?",
-                (key,),
-            ).fetchone()
-
-        if row is None or time.time() - row[1] > ttl_seconds:
-            return None
-
-        return json.loads(row[0])
-    except (sqlite3.Error, ValueError, TypeError):
-        # A cache problem must never prevent recommendations from working.
-        return None
+    """Compatibility adapter for the extracted metadata cache service."""
+    return _metadata_cache.get(key, ttl_seconds)
 
 
 def _metadata_cache_set(key, value):
-    """Store JSON-compatible metadata; cache failures are non-fatal."""
-    try:
-        with sqlite3.connect(METADATA_CACHE_DB, timeout=5) as db:
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS metadata_cache (
-                    cache_key TEXT PRIMARY KEY,
-                    value_json TEXT NOT NULL,
-                    cached_at REAL NOT NULL
-                )
-            """)
-            db.execute(
-                "INSERT OR REPLACE INTO metadata_cache "
-                "(cache_key, value_json, cached_at) VALUES (?, ?, ?)",
-                (key, json.dumps(value, ensure_ascii=False), time.time()),
-            )
-    except (sqlite3.Error, TypeError, ValueError):
-        pass
+    """Compatibility adapter for the extracted metadata cache service."""
+    _metadata_cache.set(key, value)
 
 # Environment variables provide first-run defaults; service settings are persistent.
 
