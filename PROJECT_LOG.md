@@ -1,8 +1,13 @@
-## 2026-10-15 — PR #96 merged; next service boundary
+## 2026-10-15 — PR #97 merged: Last.fm settings policy
 
-- PR #96 merged at `d71a63247d4aa5f3eb8edbb53ec680a439275b3a` from exact tested head `8090feba1fd50240323a31a5069914cecacdbd0f`. All four required workflows passed on that exact head (syntax `38665829193`, runtime smoke `38665829229`, Docker packaging/full suite `38665829243`, validation-only multi-architecture `38665829217`). Publishing remains paused.
-- Began the next narrow extraction on `refactor/lastfm-settings-policy-direct-import`: move Last.fm API-key save/preserve/redaction policy behind injected settings callbacks. SQLite ownership and MCP adapter remain in `navidrome_server.py`.
-- All four required workflows passed on exact head `9d3390e4f369cc11fbac852b9dc3481b865bb2f5`: syntax/acquisition safety `38721093901`, Docker packaging/full suite `38721093899`, runtime smoke `38721093983`, and validation-only multi-architecture `38721093945`. No publication, deployment, or production runtime verification.
+- **PR:** [#97 — refactor: extract Last.fm settings policy](https://github.com/abucalip/navi-librarian/pull/97)
+- **Branch:** `refactor/lastfm-settings-policy-direct-import`
+- **Exact tested PR head:** `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`
+- **Merge commit:** `ad239a59b77612b812ca842406fee7b47cf80889`
+- **Changes:** moved Last.fm API-key trimming, blank-key preservation, settings-write invocation, and configured-status serialization to `service_settings.py`; retained the MCP/web adapter contract and SQLite ownership in `navidrome_server.py`; added direct-import regression coverage; updated architecture, roadmap, status, test plan, and log.
+- **Exact-head CI:** syntax/acquisition safety `38721333335`, container runtime smoke `38721333332`, validation-only multi-architecture `38721333418`, Docker packaging/full unit suite `38721333353` — all completed successfully on the exact PR head.
+- **Boundaries:** no separate local test run, image publication, deployment, or production runtime verification. Publishing remains paused.
+- **Next:** inspect current GitHub main, roadmap, open PRs, and relevant tests; prioritize unresolved safety/test/verification gaps before another routine extraction.
 
 ---
 
