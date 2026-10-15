@@ -92,7 +92,10 @@
           <option value="artist">Artist A–Z</option>
         </select>
       </div>
-      <p id="recommendationCount" class="muted" aria-live="polite">
+      <!-- role="status" gives this region an implicit aria-live="polite" and makes the
+           announcement reliable across assistive tech; the explicit attribute is kept for
+           older screen readers that do not infer it from the role. -->
+      <p id="recommendationCount" class="muted" role="status" aria-live="polite">
         Generate recommendations to get started.
       </p>
       <div id="recommendationCards" class="cards"></div>
