@@ -106,7 +106,7 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
             "/Album/01.flac",
             "Album/./01.flac",
             "Album//01.flac",
-            r"C:\\Album\\01.flac",
+            r"C:\Album\01.flac",
         ):
             with self.subTest(filename=filename):
                 self.candidate["files"][0]["filename"] = filename
