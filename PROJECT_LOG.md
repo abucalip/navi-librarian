@@ -506,3 +506,11 @@
 - No separate local test run, image publication, deployment, or production runtime verification is claimed.
 - `app/main.py` still imports `navidrome_server.py` for authentication settings and `DATA_DIR`/auth-secret initialization. Next: audit that remaining authentication/configuration dependency and identify a narrow injectable seam without changing cookie, session, setup/login, or persistent settings behavior.
 
+
+
+## 2026-10-15 — Lazy auth service dependency
+
+- Based on main `41c050b86aded92dafb101165ed14aadd1e6c720`, branch `refactor/lazy-auth-service-dependency`.
+- The app assembly resolves the legacy librarian service lazily for authentication settings and signing-key storage. Persistent storage and MCP adapter ownership are intentionally unchanged.
+- Added a subprocess regression for import-time decoupling and converted auth route integration tests to fake-service injection while retaining existing auth behavior assertions.
+- At implementation record time, tests and CI are pending; do not merge until all four required workflows pass on the exact final PR head and the final diff is reviewed. No publication/deployment/runtime verification.
