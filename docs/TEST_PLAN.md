@@ -1,3 +1,11 @@
+## Concurrent authentication rate-limit regression — PR #134
+
+- `tests/test_auth_routes_integration.py::test_concurrent_login_attempts_cannot_race_past_rate_limit` holds one password-verification call while another request reaches the last available per-client attempt slot.
+- Expected HTTP outcomes are one `401` for the in-flight bad password and one `429` for the request that would exceed the limit. This catches check-then-record races without timing-only assertions.
+- Run `python -m unittest tests.test_app_auth tests.test_auth_routes_integration` and all four required CI workflows on the exact PR head before merge. CI is pending at documentation time; no local test execution is claimed.
+
+---
+
 ## Authentication malformed-token regression
 
 - `tests/test_app_auth.py::test_malformed_non_ascii_session_token_is_rejected_without_exception` verifies a non-ASCII session-token segment returns `None` rather than leaking `UnicodeEncodeError` from the authentication boundary.
