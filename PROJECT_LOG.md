@@ -1,10 +1,16 @@
-## 2026-10-15 — Backend session: expected slskd track-count extraction
+## 2026-10-15 — Backend session: slskd transfer listing extraction
 
-- Branch: refactor/extract-expected-track-count, based on current GitHub main.
-- Objective: move pure expected track-count extraction to slskd_search.py while preserving navidrome_server._discovery_expected_track_count as the legacy adapter.
-- Regression tests cover all supported aliases, nested metadata, track-object lists, invalid/non-positive values, unrelated lists, and recursive cycles.
-- Implementation commits: c39cc55cc7347e7003525dac9c14497e8bef214d, 595188c0bc12757602ecc4dad605742b2972746d, 52eb9f74101e4bab7c70ca1de56d635346d2db29. Documentation commits follow.
-- PR #155 opened: https://github.com/abucalip/navi-librarian/pull/155. Initial implementation head 91426f97bc1dcfe328843f6b24021d48b013bb3b passed all four required workflows: syntax 38814552978, Docker packaging/full unit suite/build 38814552986, runtime smoke 38814552931, and validation-only multi-architecture validation 38814552973. Later documentation commits changed the PR head; exact-final-head CI must be rechecked before merge. No separate local test run, publication, deployment, or production runtime verification is claimed.
+- Current GitHub `main` at session start was `d732241de9edfd3c643a8fa89fb25c42b2a93c67`, the squash merge of PR #155. Branch `refactor/extract-slskd-transfer-normalization` was created from current `main`.
+- Objective: move the slskd transfer-list HTTP request and recursive response normalization into `slskd_transfers.py`, preserving `_slskd_download_transfer_files` as the legacy adapter.
+- Added a focused service with injected HTTP client and regression coverage for URL encoding/request timeout, 404-as-empty, nested directory inheritance, invalid payload records, input immutability, HTTP error propagation, and adapter behavior. Added Docker packaging.
+- PR and exact-head CI are pending. No publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-15 — PR #155 merged: expected slskd track count
+
+- PR #155: https://github.com/abucalip/navi-librarian/pull/155. Exact tested head `19c729db8a6ed5f9461fb5d9afc16fecdccfe1d6`; squash merge `d732241de9edfd3c643a8fa89fb25c42b2a93c67`.
+- Extracted expected track-count metadata parsing to `slskd_search.py`, preserving `_discovery_expected_track_count` as the compatibility adapter and adding direct-import/adapter regressions.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety `38814733899`, Docker packaging/full suite/image build `38814734001`, runtime smoke `38814733916`, and validation-only multi-architecture validation `38814733954`.
+- No separate local test execution, image publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-15 — Multi-extraction workflow closeout; PR #149 blocked on UI gate
 
