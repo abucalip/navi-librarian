@@ -1,8 +1,10 @@
-## 2026-10-15 — Acquisition import source-root safety follow-up (verification pending)
+## 2026-10-15 — PR #103 merged: acquisition import source-root safety
 
-- A caller-driven safety audit found a path-replacement window between the completed-folder matcher and `import_matched_album_files` filesystem moves. A source directory swapped for a symlink could redirect path-based moves to files outside the verified folder.
-- Branch `fix/acquisition-import-source-race` pins source and destination-parent directory descriptors, moves files relative to those descriptors, and adds regressions for source-root swaps, collision-suffixed names, cross-filesystem fallback, and rollback.
-- Verification is pending. No local test run, production-folder test, publication, deployment, or runtime verification is claimed.
+- **PR:** [#103 — fix: pin acquisition import source directory](https://github.com/abucalip/navi-librarian/pull/103) — merged.
+- **Squash merge commit:** `cf40df35a76d669421dcddbafd21ea22652bd0b1`; exact tested PR head `9de78c268af1b640a2a08afecb25a22502322a85`.
+- **Changes:** pinned source and destination-parent directory chains with no-follow descriptors; added descriptor-relative staging, track moves, cross-filesystem copy fallback, and rollback; added source-root swap, collision-suffix, cross-filesystem, and rollback regressions.
+- **Exact-head CI:** syntax/acquisition safety `38726626891`, Docker packaging/full unit suite/build `38726626846`, container runtime smoke `38726626956`, validation-only multi-architecture image validation `38726626910` — all successful.
+- **Limitations:** no separate local test run, production-folder test, image publication, deployment, or production runtime verification. Publishing remains paused.
 
 ---
 
