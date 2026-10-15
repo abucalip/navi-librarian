@@ -516,9 +516,7 @@ async function openAlbumModal(card) {
   setStatusState($('albumModalStatus'), 'loading');
   tracklist.replaceChildren();
   artwork.removeAttribute('src');
-  get.disabled = false;
-  get.classList.remove('requested');
-  get.textContent = 'get';
+  setGetButtonState(get, 'idle', artist, album);
   get.onclick = () => searchAlbum(artist, album, metadata, get);
   backdrop.hidden = false;
   $('albumModalClose').focus();
@@ -606,12 +604,7 @@ async function loadDashboardPicks() {
       ensureAlbumYearBadge(card);
       addTextElement(card, 'p', 'card-artist', artist);
       const art = card.querySelector('.card-art');
-      const get = document.createElement('button');
-      get.className = 'get-album';
-      get.textContent = 'get';
-      get.title = 'Get this album';
-      get.setAttribute('aria-label', 'Get ' + album);
-      get.addEventListener('click', () => searchAlbum(artist, album, item, get));
+      const get = createGetButton(artist, album, item);
       art.append(get);
       target.append(card);
     }
@@ -745,13 +738,7 @@ function applyRecommendationFilters() {
     makeAlbumCardInteractive(card, artist, album, item);
     attachArtwork(card, artist, album);
     const artContainer = card.querySelector('.card-art');
-    const getButton = document.createElement('button');
-    getButton.className = 'get-album';
-    getButton.textContent = 'get';
-    getButton.title = 'Get this album';
-    getButton.setAttribute('aria-label', 'Get ' + album);
-    getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
-    artContainer.append(getButton);
+    artContainer.append(createGetButton(artist, album, item));
     const dismissButton = document.createElement('button');
     dismissButton.className = 'deep-dive-dismiss';
     dismissButton.textContent = '×';
@@ -1110,13 +1097,7 @@ async function loadDiscovery(name, options = {}) {
       };
 
       const artContainer = card.querySelector('.card-art');
-      const getButton = document.createElement('button');
-      getButton.className = 'get-album';
-      getButton.textContent = 'get';
-      getButton.title = 'Get this album';
-      getButton.setAttribute('aria-label', 'Get ' + album);
-      getButton.addEventListener('click', () => searchAlbum(artist, album, item, getButton));
-      artContainer.append(getButton);
+      artContainer.append(createGetButton(artist, album, item));
 
       const notForMe = document.createElement('button');
       notForMe.className = 'deep-dive-dismiss';
@@ -1225,33 +1206,92 @@ async function pollDiscoveryUntilReady(name) {
   }, 5000);
 }
 
-async function searchAlbum(artist, album, metadata, button = null) {
-  if (button && button.disabled) return;
-  if (button) {
+// One get/request control, used by the modal, the artwork overlay and the card
+// actions. Consolidates five former creation sites that each repeated the same
+// label, title and aria attributes and could drift apart.
+//
+// States: idle -> pending -> requested, or idle -> pending -> failed. "pending" is
+// applied while the request is in flight so the control never claims success before
+// the server confirms; "requested" is applied only after a successful response.
+function createGetButton(artist, album, metadata) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'get-album';
+  setGetButtonState(button, 'idle', artist, album);
+  button.addEventListener('click', () => searchAlbum(artist, album, metadata, button));
+  return button;
+}
+
+function setGetButtonState(button, state, artist, album) {
+  if (!button) return;
+  button.classList.remove('is-pending', 'requested', 'is-failed');
+  button.removeAttribute('aria-busy');
+  if (state === 'pending') {
+    button.disabled = true;
+    button.classList.add('is-pending');
+    button.textContent = '…';
+    button.title = album ? 'Requesting ' + album : 'Requesting';
+    button.setAttribute('aria-label', button.title);
+    button.setAttribute('aria-busy', 'true');
+  } else if (state === 'requested') {
     button.disabled = true;
     button.classList.add('requested');
     button.textContent = 'requested';
-    button.title = 'Acquisition requested';
-    button.setAttribute('aria-label', 'Acquisition requested for ' + album);
+    button.title = album ? 'Acquisition requested: ' + album : 'Acquisition requested';
+    button.setAttribute('aria-label', button.title);
+  } else if (state === 'failed') {
+    // Usable again immediately: the user can retry without a reload.
+    button.disabled = false;
+    button.classList.add('is-failed');
+    button.textContent = 'retry';
+    button.title = album ? 'Request failed. Try again: ' + album : 'Request failed. Try again';
+    button.setAttribute('aria-label', button.title);
+  } else {
+    button.disabled = false;
+    button.textContent = 'get';
+    button.title = 'Get this album';
+    button.setAttribute('aria-label', album ? 'Get ' + album : 'Get this album');
   }
+}
+
+async function searchAlbum(artist, album, metadata, button = null) {
+  if (button && button.disabled && !button.classList.contains('is-failed')) return;
+  // Pending, not requested. The former code marked the button as requested before
+  // awaiting the response, which claimed success the server had not confirmed.
+  setGetButtonState(button, 'pending', artist, album);
   try {
     const data = await sendJSON('/api/acquire', 'POST',
       {artist, album, metadata, auto_queue:true});
-    const statusTarget = document.querySelector('.page:not(.hidden) .status');
-    if (statusTarget && data.message) statusTarget.textContent = data.message;
+    // This endpoint can answer 200 with ok:false and an explanatory message, for
+    // example when no slskd API key is configured. Treating every 2xx as success
+    // would mark the button "requested" for a request that was never made.
+    if (data && data.ok === false) {
+      setGetButtonState(button, 'failed', artist, album);
+      reportAcquisitionOutcome(data.message || data.error || 'The request could not be placed.', 'error');
+      return;
+    }
+    setGetButtonState(button, 'requested', artist, album);
+    reportAcquisitionOutcome(data && data.message, 'success');
     // Keep the user on the current page. Acquisition cards are shown only in the Acquisitions view.
     await loadAcquisitions();
   } catch (error) {
-    if (button) {
-      button.disabled = false;
-      button.classList.remove('requested');
-      button.textContent = 'get';
-      button.title = 'Get this album';
-      button.setAttribute('aria-label', 'Get ' + album);
-    }
-    const statusTarget = document.querySelector('.page:not(.hidden) .status');
-    if (statusTarget) statusTarget.textContent = error.message;
+    setGetButtonState(button, 'failed', artist, album);
+    reportAcquisitionOutcome(error.message, 'error');
   }
+}
+
+// Route acquisition feedback to a status region that actually exists. Two former
+// problems are fixed here: the selector was '.page:not(.hidden) .status', which matched
+// nothing outside Settings, and the Recommendations section has no .status-line at all,
+// so its messages had nowhere to land either.
+function reportAcquisitionOutcome(message, kind) {
+  if (!message) return;
+  const page = document.querySelector('section.page:not(.hidden)');
+  if (!page) return;
+  const target = page.querySelector('.status-line') || page.querySelector('.muted[aria-live]');
+  if (!target) return;
+  target.textContent = message;
+  setStatusState(target, kind);
 }
 async function loadNavidromeSettings() {
   try {
