@@ -1,3 +1,12 @@
+## 2026-10-15 — Discovery router injection in progress
+
+- `app/api/discovery.py` now uses `Depends(get_librarian)` from the shared lazy dependency module, matching the acquisition router's service-injection pattern.
+- This removes the discovery router's direct import-time dependency on `navidrome_server.py`; it does not remove the legacy module from app assembly, settings routes, or MCP runtime.
+- Recommendation candidate filtering and all discovery calls still delegate to existing librarian functions. Request validation, response parsing, exception-to-HTTP mapping, and persistence remain at their existing boundaries.
+- Exact-head CI is pending; this is an in-progress PR, not a verified or merged change.
+
+---
+
 ## 2026-10-15 — Web/MCP dependency boundary audit
 
 - Direct server coupling remains in `app/main.py`, `app/api/acquisitions.py`, `app/api/discovery.py`, and `app/api/settings.py`. These are adapters around the existing `discovery_*` service surface, and preserving that surface is important for MCP compatibility.
