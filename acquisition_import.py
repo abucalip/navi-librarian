@@ -152,7 +152,7 @@ def import_matched_album_files(
     staging_name = ".navidrome-import-" + uuid.uuid4().hex
     staging_created = False
     staging_published = False
-    moved: list[str] = []
+    moved: list[tuple[str, str]] = []
     manifest_written = False
 
     def assert_directory_path_identity(path, resolved_path, identity, label):
@@ -205,22 +205,25 @@ def import_matched_album_files(
         for expected_name, actual_path_value in matched.items():
             expected_name = str(expected_name)
             actual_path = Path(actual_path_value)
+            actual_name = actual_path.name
             if (
                 not expected_name
                 or Path(expected_name).name != expected_name
                 or expected_name in {".", ".."}
-                or actual_path.name != expected_name
+                or not actual_name
+                or Path(actual_name).name != actual_name
+                or actual_name in {".", ".."}
                 or actual_path.parent != source_root
             ):
                 raise OSError("Matched import track is not a direct child of the source folder")
 
             file_fd = os.open(
-                expected_name, os.O_RDONLY | _NOFOLLOW, dir_fd=source_fd
+                actual_name, os.O_RDONLY | _NOFOLLOW, dir_fd=source_fd
             )
             try:
                 opened = os.fstat(file_fd)
                 named = os.stat(
-                    expected_name, dir_fd=source_fd, follow_symlinks=False
+                    actual_name, dir_fd=source_fd, follow_symlinks=False
                 )
                 if (
                     not stat.S_ISREG(opened.st_mode)
@@ -230,6 +233,7 @@ def import_matched_album_files(
                 ):
                     raise OSError(f"Expected track changed before staging: {expected_name}")
                 source_files[expected_name] = {
+                    "source_name": actual_name,
                     "device": opened.st_dev,
                     "inode": opened.st_ino,
                     "size": opened.st_size,
@@ -268,8 +272,9 @@ def import_matched_album_files(
             assert_directory_path_identity(
                 source_path, source_root, source_identity, "Import source"
             )
+            source_name = snapshot["source_name"]
             file_fd = os.open(
-                expected_name, os.O_RDONLY | _NOFOLLOW, dir_fd=source_fd
+                source_name, os.O_RDONLY | _NOFOLLOW, dir_fd=source_fd
             )
             try:
                 opened = os.fstat(file_fd)
@@ -283,12 +288,12 @@ def import_matched_album_files(
 
                 try:
                     os.rename(
-                        expected_name,
+                        source_name,
                         expected_name,
                         src_dir_fd=source_fd,
                         dst_dir_fd=staging_fd,
                     )
-                    moved.append(expected_name)
+                    moved.append((expected_name, source_name))
                     staged_stat = os.stat(
                         expected_name, dir_fd=staging_fd, follow_symlinks=False
                     )
@@ -320,7 +325,7 @@ def import_matched_album_files(
                     # replacement entry during cross-filesystem copy fallback.
                     quarantine_name = ".navidrome-import-source-" + uuid.uuid4().hex
                     os.rename(
-                        expected_name,
+                        source_name,
                         quarantine_name,
                         src_dir_fd=source_fd,
                         dst_dir_fd=source_fd,
@@ -333,10 +338,10 @@ def import_matched_album_files(
                         or (quarantined.st_dev, quarantined.st_ino)
                         != (snapshot["device"], snapshot["inode"])
                     ):
-                        if _entry_stat(source_fd, expected_name) is None:
+                        if _entry_stat(source_fd, source_name) is None:
                             os.rename(
                                 quarantine_name,
-                                expected_name,
+                                source_name,
                                 src_dir_fd=source_fd,
                                 dst_dir_fd=source_fd,
                             )
@@ -378,9 +383,9 @@ def import_matched_album_files(
         if staging_created and not staging_published and parent_fd is not None:
             rollback_complete = True
             if staging_fd is not None:
-                for name in reversed(moved):
-                    staged_stat = _entry_stat(staging_fd, name)
-                    source_stat_now = _entry_stat(source_fd, name) if source_fd is not None else None
+                for staged_name, source_name in reversed(moved):
+                    staged_stat = _entry_stat(staging_fd, staged_name)
+                    source_stat_now = _entry_stat(source_fd, source_name) if source_fd is not None else None
                     if staged_stat is None:
                         if source_stat_now is None:
                             rollback_complete = False
@@ -390,8 +395,8 @@ def import_matched_album_files(
                         continue
                     try:
                         os.rename(
-                            name,
-                            name,
+                            staged_name,
+                            source_name,
                             src_dir_fd=staging_fd,
                             dst_dir_fd=source_fd,
                         )
@@ -401,17 +406,17 @@ def import_matched_album_files(
                             continue
                         try:
                             staged_file_fd = os.open(
-                                name, os.O_RDONLY | _NOFOLLOW, dir_fd=staging_fd
+                                staged_name, os.O_RDONLY | _NOFOLLOW, dir_fd=staging_fd
                             )
                             try:
                                 staged_file_stat = os.fstat(staged_file_fd)
                                 _copy_fd_to_directory(
                                     staged_file_fd,
                                     source_fd,
-                                    name,
+                                    source_name,
                                     staged_file_stat,
                                 )
-                                os.unlink(name, dir_fd=staging_fd)
+                                os.unlink(staged_name, dir_fd=staging_fd)
                             finally:
                                 os.close(staged_file_fd)
                         except OSError:
