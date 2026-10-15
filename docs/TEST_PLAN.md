@@ -1,3 +1,7 @@
+## Expected slskd track-count extraction — verification gate
+
+Run `python -m unittest tests.test_slskd_search -v`, `python -m unittest discover -s tests -v`, syntax/acquisition-safety checks, Docker packaging/full suite/image build, isolated container runtime smoke, and validation-only multi-architecture image validation on the exact final PR head. Confirm the legacy navidrome_server._discovery_expected_track_count adapter preserves behavior and the already-packaged slskd_search.py remains in the image. No test result is claimed until the corresponding check actually completes.
+
 ## Standard multi-extraction session protocol
 
 A session may complete two or three small extractions, but each extraction must pass its own independent acceptance and verification gates. The default is one extraction per PR; combine extractions only when they are tightly coupled and explain why independent review/testing is not practical. Do not treat throughput as a quota.
