@@ -5,6 +5,8 @@ module can be tested directly without importing the MCP/FastAPI application.
 The implementation intentionally preserves the legacy cleanup preflight and
 refusal behavior; it never recursively deletes a directory.
 """
+import os
+import stat
 from pathlib import Path
 
 
@@ -18,9 +20,7 @@ def clean_acquisition_source(
     Preflight every local file before changing anything. Refuse cleanup if
     source identity or local file ownership is ambiguous.
     """
-    import os
     import re
-    import stat
     from urllib.parse import quote
 
     def normalized_path(value):
@@ -95,6 +95,12 @@ def clean_acquisition_source(
     if not root.is_dir():
         return False
 
+    try:
+        root_stat = root.stat()
+        root_identity = (root_stat.st_dev, root_stat.st_ino)
+    except OSError:
+        return False
+
     wanted = safe_folder_name(candidate.get("folder"))
     if not wanted:
         return False
@@ -144,7 +150,7 @@ def clean_acquisition_source(
             ):
                 return False
 
-            target_stat = target.stat(follow_symlinks=False)
+            target_stat = target.lstat()
             if not stat.S_ISDIR(target_stat.st_mode):
                 return False
             target_identity = (target_stat.st_dev, target_stat.st_ino)
@@ -175,7 +181,12 @@ def clean_acquisition_source(
                     if actual_size > expected["size"]:
                         return False
 
-                    planned_deletions.append((actual_name, actual_stat.st_dev, actual_stat.st_ino))
+                    planned_deletions.append({
+                        "name": actual.name,
+                        "device": actual_stat.st_dev,
+                        "inode": actual_stat.st_ino,
+                        "size": actual_stat.st_size,
+                    })
                     continue
 
                 # Collision-suffixed files are identifiable only when
@@ -209,7 +220,12 @@ def clean_acquisition_source(
                     # safely claim that cleanup is complete.
                     return False
 
-                planned_deletions.append((actual_name, actual_stat.st_dev, actual_stat.st_ino))
+                planned_deletions.append({
+                    "name": actual.name,
+                    "device": actual_stat.st_dev,
+                    "inode": actual_stat.st_ino,
+                    "size": actual_stat.st_size,
+                })
 
         except (OSError, RuntimeError):
             return False
@@ -348,78 +364,89 @@ def clean_acquisition_source(
             # Cancellation is not confirmed; do not delete local files.
             return False
 
-    # Transfers are now confirmed stopped. Re-open the verified directory
-    # without following any path-component symlinks, then delete relative to
-    # that pinned directory descriptor. This prevents a folder swapped for a
-    # symlink during the transfer callbacks from redirecting unlink() outside
-    # the intended album directory.
-    open_fds = []
+    # Transfers are now confirmed stopped. Re-open the directory chain with
+    # no-follow flags and pin it by file descriptor before deleting anything.
+    # All unlink operations are relative to that pinned directory, so a path
+    # replaced by a symlink cannot redirect deletion outside the album folder.
+    directory_fds = []
     try:
-        target_fd = None
-        parent_fd = None
-        target_name = None
+        directory_flags = (
+            os.O_RDONLY
+            | getattr(os, "O_DIRECTORY", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+        )
+        # Walk the absolute root from / one component at a time. O_NOFOLLOW
+        # on only the final path would still allow a replaced parent component
+        # to redirect the open outside the previously verified root.
+        root_fd = os.open(os.path.sep, directory_flags)
+        directory_fds.append(root_fd)
+        for component in root.parts[1:]:
+            child_fd = os.open(component, directory_flags, dir_fd=root_fd)
+            os.close(root_fd)
+            directory_fds.pop()
+            root_fd = child_fd
+            directory_fds.append(root_fd)
+
+        opened_root_stat = os.fstat(root_fd)
+        if (opened_root_stat.st_dev, opened_root_stat.st_ino) != root_identity:
+            return False
 
         if target is not None:
-            parts = target.relative_to(root).parts
-            if not parts or target_identity is None:
+            relative_parts = target.relative_to(root).parts
+            if not relative_parts or target_identity is None:
                 return False
 
-            directory_flags = (
-                os.O_RDONLY
-                | getattr(os, "O_DIRECTORY", 0)
-                | getattr(os, "O_NOFOLLOW", 0)
-            )
-            current_fd = os.open(root, directory_flags)
-            open_fds.append(current_fd)
+            parent_fd = root_fd
+            for component in relative_parts[:-1]:
+                child_fd = os.open(component, directory_flags, dir_fd=parent_fd)
+                directory_fds.append(child_fd)
+                parent_fd = child_fd
 
-            for component in parts[:-1]:
-                next_fd = os.open(component, directory_flags, dir_fd=current_fd)
-                open_fds.append(next_fd)
-                current_fd = next_fd
-
-            parent_fd = current_fd
-            target_name = parts[-1]
+            target_name = relative_parts[-1]
             target_fd = os.open(target_name, directory_flags, dir_fd=parent_fd)
-            open_fds.append(target_fd)
+            directory_fds.append(target_fd)
 
-            opened_stat = os.fstat(target_fd)
-            current_stat = os.stat(
+            opened_target_stat = os.fstat(target_fd)
+            if (opened_target_stat.st_dev, opened_target_stat.st_ino) != target_identity:
+                return False
+
+            named_target_stat = os.stat(
                 target_name, dir_fd=parent_fd, follow_symlinks=False
             )
             if (
-                not stat.S_ISDIR(opened_stat.st_mode)
-                or (opened_stat.st_dev, opened_stat.st_ino) != target_identity
-                or (current_stat.st_dev, current_stat.st_ino) != target_identity
-                or not stat.S_ISDIR(current_stat.st_mode)
+                not stat.S_ISDIR(named_target_stat.st_mode)
+                or (named_target_stat.st_dev, named_target_stat.st_ino) != target_identity
             ):
                 return False
 
-            # Validate every planned file identity before the first unlink.
-            for name, device, inode in planned_deletions:
-                current_file = os.stat(name, dir_fd=target_fd, follow_symlinks=False)
+            # Refuse partial cleanup if the directory contents changed since
+            # preflight. Then verify every file identity before unlinking.
+            planned_names = {item["name"] for item in planned_deletions}
+            if set(os.listdir(target_fd)) != planned_names:
+                return False
+
+            for item in planned_deletions:
+                current = os.stat(
+                    item["name"], dir_fd=target_fd, follow_symlinks=False
+                )
                 if (
-                    not stat.S_ISREG(current_file.st_mode)
-                    or (current_file.st_dev, current_file.st_ino) != (device, inode)
+                    not stat.S_ISREG(current.st_mode)
+                    or current.st_dev != item["device"]
+                    or current.st_ino != item["inode"]
+                    or current.st_size != item["size"]
                 ):
                     return False
 
-            for name, device, inode in planned_deletions:
-                current_file = os.stat(name, dir_fd=target_fd, follow_symlinks=False)
-                if (
-                    not stat.S_ISREG(current_file.st_mode)
-                    or (current_file.st_dev, current_file.st_ino) != (device, inode)
-                ):
-                    return False
-                os.unlink(name, dir_fd=target_fd)
+            for item in planned_deletions:
+                os.unlink(item["name"], dir_fd=target_fd)
 
-            # Remove only the same now-empty directory entry, relative to its
-            # pinned parent. Never recursively delete a directory.
-            current_stat = os.stat(
+            # Remove only the same directory inode, and only when empty.
+            named_target_stat = os.stat(
                 target_name, dir_fd=parent_fd, follow_symlinks=False
             )
             if (
-                (current_stat.st_dev, current_stat.st_ino) != target_identity
-                or not stat.S_ISDIR(current_stat.st_mode)
+                not stat.S_ISDIR(named_target_stat.st_mode)
+                or (named_target_stat.st_dev, named_target_stat.st_ino) != target_identity
             ):
                 return False
             os.rmdir(target_name, dir_fd=parent_fd)
@@ -429,7 +456,7 @@ def clean_acquisition_source(
     except (OSError, RuntimeError, ValueError):
         return False
     finally:
-        for fd in reversed(open_fds):
+        for fd in reversed(directory_fds):
             try:
                 os.close(fd)
             except OSError:
