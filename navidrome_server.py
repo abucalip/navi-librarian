@@ -8,6 +8,14 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+from service_settings import (
+    get_lastfm_settings as _service_get_lastfm_settings,
+    get_navidrome_settings as _service_get_navidrome_settings,
+    listenbrainz_username as _service_listenbrainz_username,
+    navidrome_config as _service_navidrome_config,
+    set_listenbrainz_settings as _service_set_listenbrainz_settings,
+    set_navidrome_settings as _service_set_navidrome_settings,
+)
 import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 import acquisition_orchestration
@@ -3138,37 +3146,19 @@ _discovery_settings_read()
 
 
 def _navidrome_config():
-    """Return validated Navidrome connection settings without exposing secrets."""
-    settings = _discovery_settings_read()
-    base_url = str(settings.get("navidrome_url") or "").strip().rstrip("/")
-    username = str(settings.get("navidrome_user") or "").strip()
-    password = str(settings.get("navidrome_password") or "")
-    parsed = urlparse(base_url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise ValueError("Enter a valid HTTP or HTTPS Navidrome URL in Settings.")
-    if not username or not password:
-        raise ValueError("Configure the Navidrome username and password in Settings.")
-    return base_url, username, password
+    """Compatibility adapter for validated Navidrome configuration."""
+    return _service_navidrome_config(_discovery_settings_read)
 
 
 def _listenbrainz_username():
-    """Return the configured public ListenBrainz username."""
-    username = str(_discovery_settings_read().get("listenbrainz_username") or "").strip()
-    if not username or not __import__("re").fullmatch(r"[A-Za-z0-9_.-]{1,80}", username):
-        raise ValueError("Configure a valid ListenBrainz username in Settings.")
-    return username
+    """Compatibility adapter for validated ListenBrainz username."""
+    return _service_listenbrainz_username(_discovery_settings_read)
 
 
 @mcp.tool()
 def discovery_get_navidrome_settings() -> str:
     """Return Navidrome settings without exposing the saved password."""
-    settings = _discovery_settings_read()
-    return json.dumps({
-        "navidrome_url": settings.get("navidrome_url", ""),
-        "username": settings.get("navidrome_user", ""),
-        "password_configured": bool(settings.get("navidrome_password")),
-        "music_library_path": settings.get("music_library_path", str(MUSIC_DIR)),
-    }, ensure_ascii=False)
+    return _service_get_navidrome_settings(_discovery_settings_read, MUSIC_DIR)
 
 
 @mcp.tool()
@@ -3179,32 +3169,20 @@ def discovery_set_navidrome_settings(
     music_library_path: str | None = None,
 ) -> str:
     """Save Navidrome connection settings; a blank password preserves the saved password."""
-    url = (navidrome_url or "").strip().rstrip("/")
-    parsed = urlparse(url)
-    user = (username or "").strip()
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        return json.dumps({"ok": False, "error": "Enter a valid HTTP or HTTPS Navidrome URL."})
-    if not user:
-        return json.dumps({"ok": False, "error": "Enter a Navidrome username."})
-    current = _discovery_settings_read()
-    saved_password = str(password or "") or str(current.get("navidrome_password") or "")
-    if not saved_password:
-        return json.dumps({"ok": False, "error": "Enter a Navidrome password."})
-    values = {"navidrome_url": url, "navidrome_user": user, "navidrome_password": saved_password}
-    if music_library_path is not None:
-        music_path = str(Path(music_library_path).expanduser())
-        if not Path(music_path).is_absolute() or not Path(music_path).is_dir():
-            return json.dumps({"ok": False, "error": "The music library path must be an existing absolute directory visible to this app."})
-        values["music_library_path"] = music_path
-    _discovery_settings_write(values)
-    global MUSIC_DIR
-    if music_library_path is not None:
-        MUSIC_DIR = Path(values["music_library_path"])
-    return json.dumps({
-        "ok": True, "navidrome_url": url, "username": user,
-        "password_configured": True, "music_library_path": str(MUSIC_DIR),
-        "message": "Navidrome settings saved. The password is never returned.",
-    }, ensure_ascii=False)
+    def set_music_dir(path):
+        global MUSIC_DIR
+        MUSIC_DIR = path
+
+    return _service_set_navidrome_settings(
+        _discovery_settings_read,
+        _discovery_settings_write,
+        lambda: MUSIC_DIR,
+        set_music_dir,
+        navidrome_url,
+        username,
+        password,
+        music_library_path,
+    )
 
 
 @mcp.tool()
@@ -3223,8 +3201,7 @@ def discovery_test_navidrome_connection() -> str:
 @mcp.tool()
 def discovery_get_lastfm_settings() -> str:
     """Return Last.fm configuration status without exposing the API key."""
-    settings = _discovery_settings_read()
-    return json.dumps({"api_key_configured": bool(settings.get("lastfm_api_key"))})
+    return _service_get_lastfm_settings(_discovery_settings_read)
 
 
 @mcp.tool()
@@ -3265,11 +3242,7 @@ def discovery_get_listenbrainz_settings() -> str:
 @mcp.tool()
 def discovery_set_listenbrainz_settings(username: str) -> str:
     """Save a ListenBrainz username."""
-    value = str(username or "").strip()
-    if not value or not __import__("re").fullmatch(r"[A-Za-z0-9_.-]{1,80}", value):
-        return json.dumps({"ok": False, "error": "Enter a valid ListenBrainz username (letters, numbers, dot, underscore or hyphen)."})
-    _discovery_settings_write({"listenbrainz_username": value})
-    return json.dumps({"ok": True, "username": value, "message": "ListenBrainz settings saved."})
+    return _service_set_listenbrainz_settings(_discovery_settings_write, username)
 
 
 @mcp.tool()

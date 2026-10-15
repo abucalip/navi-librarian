@@ -1,3 +1,14 @@
+## 2026-10-15 — Service settings policy extracted (PR #95)
+
+- Added `service_settings.py` with injected settings-read/write and runtime-path callbacks. Moved Navidrome config validation, ListenBrainz username validation, safe Navidrome settings serialization/update, Last.fm configured-status serialization, and ListenBrainz settings update policy out of the monolith.
+- Existing MCP/web function names and signatures remain in `navidrome_server.py` as adapters. SQLite persistence/schema, `MUSIC_DIR` ownership, connection checks, other service settings, and route behavior remain unchanged. Added the module to the Docker image.
+- Replaced AST-executed tests in `tests/test_service_settings.py` with direct-import tests covering credential/key redaction, blank-password preservation, URL and username validation, invalid-input no-write behavior, and library path validation.
+- All four required workflows passed on the final PR head `b0a9d4df97723bc05983fb362a9b3060587f0df9`: Python syntax/acquisition safety (run `38664285319`), Docker packaging/full unit suite/build (run `38664285227`), container runtime smoke (run `38664285195`), and validation-only multi-architecture image validation (run `38664285194`). The implementation revision `3cca45ed09bd4364cf1bfe78b026d4ea2cd48f0a` initially exposed a callback-injection test mismatch; the correction passed all four workflows. No local tests were run.
+- PR #95 remains open and mergeable, not merged. Publishing remains paused; no image publication, deployment, or production runtime verification is claimed.
+- Next: review PR #95's final diff and exact-head CI before deciding to merge; then continue the caller-driven service-boundary extraction without removing MCP dependencies prematurely.
+
+---
+
 ## 2026-10-15 — Web dependency audit of the legacy server
 
 - Reviewed current GitHub `main` after PR #93, including `app/main.py`, all three service API routers, `server.py`, `navidrome_server.py`, `tests/test_service_settings.py`, the Dockerfile, requirements, and the architecture/development/requirements docs.
