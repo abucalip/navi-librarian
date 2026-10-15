@@ -1,10 +1,11 @@
-## 2026-10-15 — Authentication boundary audit: malformed session token
+## 2026-10-15 — PR #133 merged: malformed authentication session tokens
 
-- Found a correctness gap in `app/security/auth.py`: `session_username()` encoded the untrusted token segment as ASCII before entering its exception guard. A malformed non-ASCII token could raise `UnicodeEncodeError` rather than fail closed, turning a bad session cookie into a server error on protected requests.
-- Added the regression first in `tests/test_app_auth.py`, then moved signature verification and token parsing inside the guarded block and reject non-string token inputs. Valid signed sessions, expiry checks, and username matching are unchanged.
-- Branch: `fix/auth-malformed-session-token`; implementation commit `c3d55096b6df4ab462132f78f004cfefd1343bb7`; regression-test commit `318f4e7077356aee2994f6401db42cb087395e0e`.
-- Tests/CI have not yet been run on this branch; exact-head CI is required. No merge, publication, deployment, or runtime verification claimed.
-- Next: run focused authentication tests and all required workflows on the final PR head, then merge only if they pass.
+- PR: https://github.com/abucalip/navi-librarian/pull/133
+- Found and fixed a correctness gap where a non-ASCII untrusted session-token segment could raise `UnicodeEncodeError` before the authentication parser's exception guard. Added the regression test before changing implementation; malformed/non-string tokens now fail closed.
+- Exact tested PR head: `60df367eb4004fe439d1abcd61957c5986111b90`. All four required workflows passed on that exact SHA: container runtime smoke `38775004963`, Docker image validation (publishing paused) `38775004827`, Python syntax `38775004824`, and Docker packaging/test-and-build `38775004877`.
+- Squash merge: `ae49bacf3c793fac70688f55c2d1d7c9ed54cc13`. Post-merge workflows were queued at closeout; merge does not imply those checks have completed.
+- Status: implemented, regression added first, exact-head CI passed, merged. No local test run, image publication, deployment, or production runtime verification is claimed.
+- Next: continue the backend safety/verification audit before routine modularization.
 
 ---
 
