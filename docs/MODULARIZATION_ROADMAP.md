@@ -535,3 +535,8 @@ Extract the settings connection-check logic into `service_settings.py` behind in
 ## Completed — settings connection checks (2026-10-15, PR #140)
 
 Navidrome, Last.fm, and ListenBrainz connection-check logic is extracted into `service_settings.py` with injected dependencies; legacy public entry points remain adapters. Regression tests cover response mapping, missing configuration/profile, and Last.fm key redaction. All four required workflows passed on PR head `cacdbc809f35040f0cc1bc70a39251ff80b7315e`; merged as `aabd7d1347d8e4c363d8b97bb6c106310f1135bb`. Continue with the remaining application-assembly/domain-service boundaries; do not treat this as completion of all modularization.
+
+
+## 2026-10-15 — Data-directory resolution extraction in progress
+
+The next small application-assembly seam is pure resolution of `NAVIDROME_LIBRARIAN_DATA_DIR` versus the source-directory fallback. `data_directory.py` resolves the path without creating it; `navidrome_server.py` retains the legacy `DATA_DIR` symbol and the existing `mkdir` side effect, so data persistence and permissions remain owned by the existing service. Direct-import tests cover explicit path expansion, empty configuration, and fallback behavior. Docker packaging is updated. Verify the focused tests, full suite, syntax, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
