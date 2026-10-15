@@ -1,3 +1,13 @@
+## 2026-10-15 — Discovery refresh orchestration extraction in review
+
+- Branch: `refactor/extract-discovery-refresh-assembly`.
+- Moved the ordered “refresh all discovery lists” callback orchestration into `discovery_refresh.refresh_all`. The legacy `navidrome_server._discovery_refresh_all()` remains as an adapter, with the same callbacks, personal count (20), list order, returned list, and exception propagation.
+- Added a direct-import regression test asserting callback order, count, and returned values. The module was already included in Docker packaging; no packaging change is needed.
+- Current PR-head CI, full-suite outcome, merge, and exact final verification are pending. No test is claimed as passing until CI reports it on the final PR head.
+- No MCP registrations, signatures, tool names, response shapes, provider calls, lock ownership, or persistence behavior were changed. No publishing, deployment, or runtime verification is claimed.
+
+---
+
 ## 2026-10-15 — PR #156 merged: footer placement and accessibility verification
 
 - PR #156: https://github.com/abucalip/navi-librarian/pull/156; exact tested head `47d33cbecadf64ed4b434764883cec6ae99d30bc`; squash merge `c560c28063f26a1a72d7016c951bf265d2ddd158`.
