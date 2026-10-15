@@ -3,7 +3,7 @@
 - Started the next narrow web service-boundary extraction after PR #107: `app/api/discovery.py` now injects the legacy librarian service via the shared lazy `get_librarian` dependency.
 - Added direct-import API tests for recommendations (including candidate filtering), discovery lists, refresh, feedback, and validation.
 - PR: https://github.com/abucalip/navi-librarian/pull/108
-- Verification is pending: no local test run and no successful exact-head CI evidence yet. Reconcile with current main, run/observe all four required workflows, review the final diff, and only then merge. No image publication/deployment/runtime verification.
+- Verification is pending: no local test run. The branch was synchronized with current main in merge commit `5c715fae8e78f0616f94ce98f2c58ffa05629e54`; four required workflows were queued on that head. Review the final diff and wait for all four exact-head results before merging. No image publication/deployment/runtime verification.
 
 ---
 
