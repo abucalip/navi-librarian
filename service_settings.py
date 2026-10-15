@@ -46,7 +46,7 @@ def get_navidrome_settings(settings_read, music_dir):
 def set_navidrome_settings(
     settings_read,
     settings_write,
-    music_dir,
+    get_music_dir,
     set_music_dir,
     navidrome_url,
     username,
@@ -66,7 +66,7 @@ def set_navidrome_settings(
     if not saved_password:
         return json.dumps({"ok": False, "error": "Enter a Navidrome password."})
     values = {"navidrome_url": url, "navidrome_user": user, "navidrome_password": saved_password}
-    next_music_dir = music_dir
+    next_music_dir = get_music_dir()
     if music_library_path is not None:
         music_path = str(Path(music_library_path).expanduser())
         if not Path(music_path).is_absolute() or not Path(music_path).is_dir():
