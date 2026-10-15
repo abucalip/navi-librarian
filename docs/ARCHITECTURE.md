@@ -1,3 +1,9 @@
+## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+
+The separate root-level `server.py` is a host-side Proxmox MCP entry point and is not copied into the Librarian application image. Its `run(command)` tool must not forward arbitrary caller input to SSH: SSH remote commands are interpreted by a shell. PR #114 introduces a separate strict allowlist module for a small set of read-only diagnostic forms, with all other inputs refused before subprocess invocation. This does not change the web app, acquisition domain logic, or the separate MCP server used by the Librarian product.
+
+---
+
 ## 2026-10-15 — PR #108 merged: discovery router service injection
 
 - `app/api/discovery.py` uses `Depends(get_librarian)` from the shared lazy dependency module, matching the acquisition router. Importing the discovery router no longer imports `navidrome_server.py` directly.

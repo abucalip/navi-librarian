@@ -1,3 +1,13 @@
+## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+
+## Proxmox MCP command allowlist — PR #114 in progress
+
+- Direct-import tests accept only explicitly approved diagnostic command forms and reject arbitrary commands, shell operators, command substitution, newlines, invalid container IDs, and unsafe device paths.
+- `server.py` must refuse rejected input before invoking SSH. Preserve the `run(command: str)` MCP tool signature, SSH target/options, timeout, and output truncation for accepted commands.
+- Exact PR head at initial verification: `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`. The four required workflows were in progress at the last check. No local test execution or live Proxmox command is claimed. Recheck all four workflows on the final documentation-updated head before merge.
+
+---
+
 ## 2026-10-15 — PR #108 verified and merged
 
 - Migrated discovery route unit tests from patching `discovery.librarian` to explicit fake-service injection, consistent with the new lazy dependency seam.

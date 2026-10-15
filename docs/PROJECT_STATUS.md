@@ -1,3 +1,13 @@
+## 2026-10-15 — Proxmox MCP command allowlist hardening (PR #114 in progress)
+
+- **Finding:** the separate host-side `server.py` MCP described its `run(command)` input as allowlisted but passed arbitrary text to SSH. Because the remote command is interpreted by a shell, this was an unintended command-execution surface.
+- **Change in progress:** add `read_only_command_policy.py` with exact-match allowlisting for the documented diagnostic command forms and reject all other input before SSH. Add direct-import positive/negative policy tests. Preserve the MCP tool schema and SSH invocation for accepted commands.
+- **PR:** https://github.com/abucalip/navi-librarian/pull/114; branch `fix/proxmox-mcp-command-allowlist-current-main`; current code head `b96f54d64a0e81ca937be3c9ef9a348fffadf9cc`.
+- **Verification at this point:** all four required workflows were started for the code head and were in progress at the last check. No local test execution or live Proxmox command is claimed. The host-side `server.py` is not copied into the application Docker image; no deployment is involved.
+- **Gate:** review final diff and require all four workflows on the final PR head before merge. Do not proceed to routine modularization while this safety gap remains unresolved.
+
+---
+
 ## 2026-10-15 — PR #108 merged: discovery router service injection
 
 - **PR:** https://github.com/abucalip/navi-librarian/pull/108; exact tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`; squash merge `be51f0ce17fe8eccd1b57714e869db69a5f1ba78`.
