@@ -7,15 +7,6 @@
 
 ---
 
-## 2026-10-15 — Acquisition state transition follow-up (in progress)
-
-- Extract the dismissed-job conditional reactivation SQL into `acquisition_state.py`, alongside save/list persistence, using injected schema, database path, identity normalization, and clock dependencies.
-- Preserve the server function as a compatibility adapter and keep transition-lock ownership in the coordinator.
-- Direct tests must prove source candidate/settings are cleared on success and that absent/non-dismissed rows are not mutated. Retain AST tests for coordinator-level successful/failed reactivation and lock sequencing.
-- Do not merge until focused/full tests, final diff review, and all four exact-head workflows pass.
-
----
-
 ## 2026-10-15 — Watcher-start concurrency regression verified
 
 - PR #84 exact tested head: `398486476aacdbbefefeaee5cb79182cc0835fb8`; all four required workflows passed (syntax 38656927551, Docker packaging/full suite 38656927436, runtime smoke 38656927801, multi-architecture validation-only 38656927516).
