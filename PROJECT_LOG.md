@@ -1,11 +1,10 @@
-## 2026-10-15 — PR #85 merged: dismissed-acquisition reactivation state
+## 2026-10-15 — PR #86 merged: lifecycle policy reuse in watcher recovery
 
-- PR: https://github.com/abucalip/navi-librarian/pull/85
-- Exact tested PR head: `95d7eb19352dd2a680ae55355026656e76ceeaeb`; squash merge / updated `main`: `c234ec8a2dfee98da85e4d10ccf27c3a2d0fc5ac`.
-- Extracted the conditional dismissed-job SQLite transition into `acquisition_state.reactivate_dismissed_job`; kept the legacy MCP/server adapter and coordinator-owned transition lock.
-- Direct-import tests cover retry metadata/timestamp persistence, stale candidate/settings clearing, and no mutation for missing or non-dismissed rows. The full suite reported 189 tests on code/test head `5bb30bfb836185e6cd21dd7993d2bff678bd7edb`.
-- All four required workflows passed on the exact final PR head: syntax `38658355926`, Docker packaging/full suite `38658355948`, runtime smoke `38658355942`, and multi-architecture image validation with publishing paused `38658355919`.
-- No publication, deployment, or production runtime verification. Next: reuse the lifecycle policy in stale-watcher recovery while retaining the coordinator-level no-requeue integration test.
+- PR: https://github.com/abucalip/navi-librarian/pull/86
+- Exact tested PR head: `5663d3d76f9a5c1503160b776b3b1e8674656a64`; squash merge / updated `main`: `3cb6f752d3e5b16fa5e49ea5d82e731dc3742d64`.
+- Reused `acquisition_lifecycle.should_resume_monitor` in the stale-download recovery guard, retaining the AST test that proves incomplete saved source details do not start a watcher or requeue the album.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety `38658600290`, Docker packaging/full unit suite `38658600316`, runtime smoke `38658600300`, and multi-architecture image validation with publishing paused `38658600309`.
+- No publication, deployment, or production runtime verification. Next: extract the existing-acquisition recovery/conflict response branch behind injected dependencies while preserving top-level concurrency and persistence tests.
 
 ---
 
