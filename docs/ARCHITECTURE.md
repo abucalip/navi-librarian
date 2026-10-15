@@ -1,3 +1,10 @@
+## 2026-10-15 — Settings-policy boundary follow-up
+
+- PR #95 moved Navidrome, ListenBrainz, and Last.fm settings policy to direct-import `service_settings.py`; legacy MCP/web adapters and persistence ownership remain in `navidrome_server.py`.
+- The next extraction moves only slskd configuration validation and settings read/update policy behind injected callbacks. HTTP connection testing, SQLite persistence, and the global music-path owner stay in the legacy module. This remains an incremental boundary; the web app still imports `navidrome_server.py` and MCP retirement is not in scope.
+
+---
+
 ## 2026-10-15 — Service settings policy extracted
 
 - `service_settings.py` now owns injected, directly testable policy for Navidrome configuration validation/settings serialization/update, ListenBrainz username validation/settings update, and Last.fm configured-status serialization.
