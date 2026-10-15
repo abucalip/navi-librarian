@@ -60,7 +60,6 @@ class AcquisitionStateStoreTests(unittest.TestCase):
         self.assertEqual(job["details"]["quality_summary"], ["mp3_320"])
         self.assertEqual(job["updated_at"], 200.0)
 
-
     def test_reactivate_dismissed_job_clears_stale_source_and_persists_retry_metadata(self):
         save_job(
             "Artist", "Album", "dismissed", {"message": "cleaned"},
