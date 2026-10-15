@@ -111,3 +111,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The UI assets are now extracted into dedicated paths, enabling focused frontend iteration without allowing parallel agents to silently change server contracts or safety-critical behavior.
 
 **Consequence:** Root `CLAUDE.md` is the operational instruction source for Claude. This decision supersedes only the single-agent ownership wording in D-009; it does not change GitHub authority, the local-testing-only rule, branch/PR requirements, or the distinction between merge, publication, deployment, and runtime verification.
+
+## D-014 — Keep MCP registration outside the shared web service module
+
+**Decision:** Keep the legacy MCP tool names and callables, but register them only in mcp_registry.py when the MCP entry point is explicitly run. The shared navidrome_server.py module must not import or initialize the MCP SDK merely because the web application needs its service functions.
+
+**Reason:** The web application and MCP server share domain functions today, but importing the service should not itself load the MCP runtime. This is a safe incremental boundary before eventual MCP retirement.
+
+**Consequence:** Keep an explicit ordered registry and regression tests for all existing tool names and callable references. Do not remove the MCP dependency, tool surface, or runtime entry point until web callers and release gates demonstrate that removal is safe.
