@@ -1,3 +1,12 @@
+## 2026-10-15 — Web dependency audit: settings-policy boundary
+
+- The web layer currently imports `navidrome_server.py` directly in `app/main.py` and in the acquisitions, discovery, and settings routers. Main uses legacy persistence/configuration, Navidrome API access, discovery-list retrieval, and album eligibility; routers delegate to the corresponding legacy settings/discovery/acquisition functions.
+- The legacy module both owns domain orchestration and registers MCP tools, so the web process imports MCP setup as a side effect. Separately, `server.py` starts a read-only MCP server and `requirements.txt` pins `mcp==2.3.0`; the Docker image does not include `server.py`. These are distinct compatibility/deployment facts, not authorization to remove MCP.
+- The first small seam is settings policy currently covered by AST execution in `tests/test_service_settings.py`. Move the six functions to a directly importable module using injected persistence and path dependencies. Keep database lifecycle, global `MUSIC_DIR` updates, connection tests, and the existing MCP-facing adapters in the legacy layer for now.
+- Do not make a broad import inversion in the same change. Expand service/domain separation incrementally with direct tests for each extracted behavior.
+
+---
+
 ## 2026-10-15 — Dismissal-serialized import guard merged (PR #78)
 
 - `acquisition_orchestration.import_source_unless_dismissed` owns the transition-lock/dismissal/callback guard. `navidrome_server.py` retains the compatibility adapter and the filesystem-safe import coordinator.
