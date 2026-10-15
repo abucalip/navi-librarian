@@ -88,6 +88,11 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
   Scoped to one section per PR, as `AGENTS.md` requires. The acquisition section moved off
   the shared four-column artwork grid onto a wider status-board layout. Other sections are
   deliberately unchanged; the remaining sections in this item are still open.
+- **Get/request button consolidation** (item 3) — implemented on branch
+  `ui/get-request-consolidation`. The modal, artwork-overlay and card-action variants now
+  share one `.get-album` base, three duplicated creation sites collapsed into one
+  `createGetButton()` helper, and the control gained an explicit state machine. Three real
+  defects were fixed as part of the work; see section 5a.
 
 **Remaining, in the guide's priority order:**
 
@@ -96,14 +101,50 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
    artist exploration, library, and settings. The guide's instruction is "do not force
    every page into the same dashboard grid"; six sections still share one grid, so the
    candidates are the discovery sections and settings rather than acquisition again.
-3. **Get/request button consolidation** — align modal, artwork-overlay, and card-action
-   variants into one consistent interaction pattern without changing API or acquisition
-   semantics.
+3. ~~**Get/request button consolidation**~~ — done on `ui/get-request-consolidation`.
 4. **Type/token cleanup** — consolidate duplicated values into shared tokens and tighten
    the type scale without broad visual churn.
 5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
+
+## 5a. Item 3 findings
+
+Three defects found while consolidating the get/request control. All three were live on
+`main`.
+
+1. **Acquisition outcomes were silently discarded.** `searchAlbum()` wrote success and error
+   messages to `document.querySelector('.page:not(.hidden) .status')`. After the state-craft
+   work no status element carries the bare `status` class except `#connection`, which lives
+   inside the Settings section, so on every discovery page that selector matched **nothing**.
+   A user who requested an album saw no confirmation and no error. Measured: `matches=0` on
+   dashboard, recommendations, classics, artistDeepDive and acquisitions; `matches=1` only
+   on settings.
+2. **Success was claimed before the server confirmed.** The control was set to `'requested'`
+   *before* awaiting `/api/acquire`. `AGENTS.md` requires not reporting success until the
+   server confirms, especially for acquisition actions. There was also no pending state, so
+   the button asserted an outcome it could not yet know.
+3. **A 200 response with `ok: false` was treated as success.** `/api/acquire` can answer
+   HTTP 200 with `{"ok": false, "message": "..."}` — for example when no slskd API key is
+   configured. Any 2xx was treated as a completed request.
+
+Measured while driving the real helper against a live instance with no slskd key configured,
+which exercises the `ok: false` path:
+
+| Observation | `main` | branch |
+|---|---|---|
+| Message reaches a visible status region | **no** (selector matched nothing) | **yes** — the section's own status region, given an error state |
+| Button claims `requested` for a request never placed | **yes** | **no** — shows `retry` with a failed state |
+| Pending state while in flight | absent | `…` label, `disabled`, `aria-busy="true"` |
+| Aria label reflects the real state | only on success/error | on every state, including pending |
+| Distinct `.get-album` CSS declarations | 3 near-duplicate blocks | 1 shared base plus per-variant geometry |
+| JS creation sites repeating label/title/aria | 3 manual copies | 1 `createGetButton()` helper |
+
+Verified on the branch: all three variants resolve to identical computed style
+(`borderRadius`, `backgroundColor`, `borderColor`, `fontFamily`, `textTransform`); the
+control is reachable by Tab with a visible 2px focus outline; 8/8 pages render their
+expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/360px; and no
+console or page errors.
 
 **Correction — a withdrawn finding.** An earlier revision of this file, and the
 `PROJECT_STATUS.md` / `PROJECT_LOG.md` entries derived from it, claimed a keyboard-focus
