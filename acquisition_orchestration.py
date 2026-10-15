@@ -112,3 +112,82 @@ def import_source_unless_dismissed(
         if is_dismissed(artist, album):
             return "dismissed"
         return import_source()
+
+
+def existing_acquisition_response(
+    artist: str,
+    album: str,
+    identity: tuple[str, str],
+    existing_job: dict[str, Any] | None,
+    existing_status: str | None,
+    watcher_active: bool,
+    *,
+    active_requests: set[tuple[str, str]],
+    start_watcher: Callable[..., Any],
+    watcher_lock: Any,
+    active_watchers: set[tuple[str, str]],
+    lifecycle: Any,
+    json_module: Any,
+) -> str | None:
+    """Return a response for an existing acquisition, or None when a new search may proceed.
+
+    The caller holds the shared acquisition-transition lock across this decision.
+    The watcher lock is acquired only to read the watcher reservation after startup,
+    preserving the server's existing lock order and avoiding duplicate queue attempts.
+    """
+    if existing_status in {"importing", "imported"}:
+        return json_module.dumps({
+            "ok": False, "status": existing_status, "artist": artist, "album": album,
+            "message": "This album is already being imported or is in the library.",
+        }, ensure_ascii=False)
+
+    if existing_status == "downloading" and not watcher_active:
+        candidate = (existing_job or {}).get("candidate") or {}
+        settings = (existing_job or {}).get("settings") or {}
+        if lifecycle.should_resume_monitor(existing_status, candidate, watcher_active):
+            try:
+                start_watcher(
+                    existing_job["artist"], existing_job["album"], candidate, settings,
+                )
+            except Exception as exc:
+                return json_module.dumps({
+                    "ok": False, "status": "monitor_recovery_failed",
+                    "artist": artist, "album": album,
+                    "message": (
+                        "The saved download could not be resumed safely. "
+                        "Inspect slskd and acquisition status before retrying."
+                    ),
+                    "error": type(exc).__name__,
+                }, ensure_ascii=False)
+            with watcher_lock:
+                recovery_started = identity in active_watchers
+            return json_module.dumps({
+                "ok": True, "status": (
+                    "recovery_started" if recovery_started else "already_in_progress"
+                ),
+                "artist": artist, "album": album,
+                "message": (
+                    "Resumed monitoring the saved download without queueing "
+                    "another source."
+                ),
+            }, ensure_ascii=False)
+        return json_module.dumps({
+            "ok": False, "status": "recovery_unavailable",
+            "artist": artist, "album": album,
+            "message": (
+                "The saved download has no usable source details. Inspect "
+                "slskd and acquisition status before retrying."
+            ),
+        }, ensure_ascii=False)
+
+    if (
+        identity in active_requests
+        or watcher_active
+        or existing_status == "downloading"
+    ):
+        return json_module.dumps({
+            "ok": False, "status": "already_in_progress", "artist": artist, "album": album,
+            "message": "An acquisition request or download is already active for this album.",
+        }, ensure_ascii=False)
+
+    return None
