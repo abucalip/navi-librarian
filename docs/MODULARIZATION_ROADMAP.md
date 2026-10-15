@@ -1,8 +1,9 @@
-## 2026-10-15 — Next narrow settings boundary: Last.fm save policy
+## 2026-10-15 — PR #97 merged: Last.fm save policy
 
-- Move only Last.fm API-key normalization, blank-input preservation, configured-status response serialization, and settings-write invocation into `service_settings.py` with injected read/write callbacks.
-- Keep `discovery_set_lastfm_settings` as the compatibility/MCP adapter; SQLite schema and persistence implementation remain in `navidrome_server.py`. Preserve the exact JSON response contract and never return the key.
-- Acceptance: direct-import regression for trimmed replacement key, blank-key preservation, redaction, focused/full tests and four exact-head workflows. All four workflows passed on `9d3390e4f369cc11fbac852b9dc3481b865bb2f5` (runs `38721093901`, `38721093899`, `38721093983`, `38721093945`). Do not remove MCP dependencies or publish images.
+- Merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
+- Last.fm API-key normalization, blank-input preservation, configured-status serialization, and settings-write invocation now live in `service_settings.py` behind injected callbacks. MCP/web adapter compatibility and SQLite ownership remain in `navidrome_server.py`.
+- All four required workflows passed on the exact PR head: syntax `38721333335`, Docker packaging/full unit suite `38721333353`, runtime smoke `38721333332`, validation-only multi-architecture `38721333418`. Publishing remains paused; no deployment/runtime verification.
+- Next: resume the highest-priority remaining test/coordination audit from the roadmap and inspect callers/tests on current main before selecting the next narrow change.
 
 ---
 
