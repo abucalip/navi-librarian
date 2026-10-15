@@ -1,3 +1,10 @@
+## 2026-10-15 — Acquisition request coordinator extraction (pending verification)
+
+- `tests/test_acquisition_request_coordinator.py` directly imports `acquisition_request_coordinator.py`; the legacy AST tests remain because they assert the `discovery_acquire_album` adapter's end-to-end behavior.
+- Verify blank artist/album refusal, failed dismissed reactivation, incomplete saved source refusal without watcher/requeue, valid saved source watcher recovery without requeue, reservation release on success and exception, and concurrent duplicate-request suppression.
+- Verify shared transition-lock scope, watcher-lock ordering, unchanged JSON response fields/messages, Docker packaging, focused and full unit suites, syntax checks, and all four exact-head CI workflows. Publishing remains paused.
+
+---
 ## 2026-10-15 — PR #97 verification complete
 
 - Added direct-import regression coverage for Last.fm key trimming, blank-input preservation, and response redaction while preserving the existing success JSON contract.
