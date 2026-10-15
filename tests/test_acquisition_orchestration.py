@@ -8,8 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from acquisition_orchestration import (
-    existing_acquisition_response, import_source_unless_dismissed, run_reserved_acquisition,
-    queue_candidate_unless_dismissed, request_skip_acquisition_source,
+    existing_acquisition_response,
+    import_source_unless_dismissed,
+    queue_candidate_unless_dismissed,
+    request_skip_acquisition_source,
+    run_reserved_acquisition,
     switch_source_unless_dismissed,
 )
 from acquisition_lifecycle import should_resume_monitor, skip_request_error
@@ -310,7 +313,6 @@ class ExistingAcquisitionRecoveryTests(unittest.TestCase):
 
     def test_no_existing_job_or_active_request_allows_new_search(self):
         self.assertIsNone(self.run_decision())
-
 
 
 class AcquisitionReservationLifecycleTests(unittest.TestCase):
