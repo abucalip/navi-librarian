@@ -109,3 +109,12 @@
 - Manual browser report published by the operator for the exact final tested head; checklist reports zero failed items. All four required GitHub Actions workflows passed on that same SHA: syntax, runtime smoke, Docker packaging/full unit suite/build, and validation-only multi-architecture image validation.
 - Merged after both the exact-head CI and manual verification gates passed. Image publishing remains paused; no deployment or production runtime verification claimed.
 - Next session: inspect current main, open PRs, and the modularization roadmap before choosing the next smallest safe application-assembly/domain-service seam.
+
+
+## 2026-10-15 — Focused verification audit before modularization
+
+- Audited GitHub main, recent commits, open PRs, exact-head check-runs, requirements, workflow, test plan, modularization roadmap, and UI backlog. Main at audit was `678bfa001181d53190004d1c437b1344225082cf`; all four required workflows passed on that exact SHA (syntax `38818751753`, Docker packaging/full suite/build `38818751792`, runtime smoke `38818751871`, validation-only multi-architecture `38818751791`).
+- Open PRs are stale relative to main: #23 is 341 commits behind, #44 is 259 behind and has no exact-head check runs, and #45 is 256 behind despite four older successful checks on its own head. No stale PR was merged or modified during this audit.
+- Kept the acquisition dismissal HTTP 409 investigation deferred as directed. PR #44 remains draft diagnostics only; it is not a verified fix. Publishing/deployment/runtime verification remain separate and paused.
+- Highest-priority next gap: automated regression coverage for ACQ-01/02/03 Get/request and Dismiss UI state transitions, while retaining backend ACQ-04/06 safe-cleanup tests. Acceptance criteria are specified in `docs/TEST_PLAN.md`. UI automation must mock acquisition API calls and never delete production files; complete manual browser verification against the exact final PR-head SHA after CI passes.
+- Audit documentation only. No app code/tests were changed or run in this session. The next action is to implement this single focused regression-coverage task, not another routine backend extraction.

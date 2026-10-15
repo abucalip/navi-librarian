@@ -961,3 +961,24 @@ Run `python -m unittest tests.test_navidrome_client -v` and the full `python -m 
 ## Subsonic collection normalization extraction — completed (PR #153)
 
 PR #153 merged at `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc` from exact tested head `c834383b7484f3c149679d62812f1c81f6133625`. Direct-import regression cases cover `None`, scalar, empty-list, and populated-list values. All four required exact-head CI workflows passed: Python syntax check, Docker packaging validation/full suite/build, container runtime smoke, and validation-only multi-architecture image validation. No separate local test execution, image publication, deployment, or production runtime verification is claimed.
+
+
+## Verification audit — highest-priority gap: acquisition UI request/dismiss regression
+
+Audit baseline: GitHub main `678bfa001181d53190004d1c437b1344225082cf` (2026-10-15). Requirements ACQ-01, ACQ-02, and ACQ-03 still call for regression verification. The repository currently has no dedicated automated front-end test files, so browser evidence alone does not protect these transitions from later regressions.
+
+Before routine modularization, add focused regression coverage for the Get/request and acquisition-card Dismiss lifecycle. Keep UI state tests separate from filesystem safety tests; do not invoke destructive cleanup against production paths.
+
+### Acceptance criteria
+
+1. **No navigation / one request (ACQ-01):** clicking Get does not change the active discovery page or route and issues exactly one acquisition request for that click.
+2. **Pending and success state (ACQ-02):** while the request is pending, the control visibly uses the red `requested` state and prevents duplicate submissions. On success, the state remains requested and duplicate clicks cannot create another request.
+3. **Failure recovery (ACQ-02):** on a failed or rejected request, the UI shows a useful error, restores a usable/retryable control, and does not falsely display a successful requested state.
+4. **Persistent Dismiss control (ACQ-03):** every acquisition card exposes Dismiss in each supported lifecycle state (including downloading, completed, failed/stalled), including after the acquisition view is reloaded.
+5. **Dismiss success/failure:** after a successful server response, the corresponding card is removed; when the server refuses or errors, the card is not silently removed and the user receives a useful failure indication.
+6. **Safety boundary (ACQ-04/ACQ-06):** UI tests mock the API and never delete real files. The existing backend cleanup tests must continue to prove configured-root/path validation and preservation of unrelated files; cleanup failure must remain conservative.
+7. **Verification evidence:** run focused automated regressions and the full `python -m unittest discover -s tests -v` suite plus all four required exact-final-head workflows. Because this is UI-facing, complete the documented manual browser checklist against that same final PR-head SHA after CI passes. Record skips explicitly; do not claim screen-reader verification unless performed.
+
+### Audit disposition
+
+This is the selected next work item. The dismissal HTTP 409 root-cause investigation remains deferred unless the user reports recurrence; this acceptance gate does not claim that issue is fixed. Publishing/deployment remain separate and paused.
