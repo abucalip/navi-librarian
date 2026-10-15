@@ -101,6 +101,20 @@ class AcquisitionDismissalCleanupSafetyTests(unittest.TestCase):
         self.assertTrue(self.track.exists())
         self.assertEqual(calls, [])
 
+    def test_ambiguous_remote_paths_are_rejected_before_transfer_lookup(self):
+        for filename in (
+            "/Album/01.flac",
+            "Album/./01.flac",
+            "Album//01.flac",
+            r"C:\Album\01.flac",
+        ):
+            with self.subTest(filename=filename):
+                self.candidate["files"][0]["filename"] = filename
+                result, calls = self.clean([[]])
+                self.assertFalse(result)
+                self.assertTrue(self.track.exists())
+                self.assertEqual(calls, [])
+
     def test_duplicate_named_folders_are_rejected_as_ambiguous(self):
         self.track.unlink()
         self.folder.rmdir()
