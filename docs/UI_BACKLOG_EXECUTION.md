@@ -99,10 +99,15 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
 
-**Newly found, not yet in the guide's numbered list:** keyboard focus reaches only three
-interactive controls on the dashboard (see section 5), which is an accessibility defect
-rather than a styling one. It belongs with item 5 or as its own item; decide when that
-work is scheduled.
+**Correction — a withdrawn finding.** An earlier revision of this file, and the
+`PROJECT_STATUS.md` / `PROJECT_LOG.md` entries derived from it, claimed a keyboard-focus
+reach defect: "25 Tab presses reached only three dashboard controls." **That claim was
+wrong and is withdrawn.** It was a measurement artifact, not a defect. See section 5.
+
+The real, smaller gap found on re-inspection is that the settings tab widget implements
+`role="tab"` and `role="tabpanel"` without `aria-controls`, `aria-labelledby`, or roving
+`tabindex`, which is the ARIA tabs pattern only half-applied. That is genuine but minor
+and is not a focus-reach defect.
 
 ## 5. Observed evidence for item 1 (State craft)
 
@@ -208,6 +213,13 @@ checklist in `docs/LOCAL_UI_TESTING.md`. It never runs destructive acquisition a
 
 Recorded here because the verifier itself is not published.
 
+> **A caution about focus measurements.** Any keyboard-focus check must first report how
+> many focusable elements the page actually contains, and must only claim a reach problem
+> when that count exceeds the number of stops observed. The runs recorded here have no
+> Navidrome connection, so no discovery cards render; the app shell is deliberately sparse.
+> A low focus-target count in this environment is expected and is **not** evidence of a
+> defect. See the withdrawn finding in section 5.
+
 - **Reduced motion is implemented correctly.** `static/app.css` has exactly one
   `prefers-reduced-motion: reduce` block, and under that preference the computed
   `transitionDuration` on interactive elements becomes `1e-05s`. `static/login.css` has
@@ -215,9 +227,24 @@ Recorded here because the verifier itself is not published.
 - **Contrast is not a problem.** The lowest-contrast status text measured 7.09:1, well
   above the 4.5:1 WCAG AA threshold for body text. The state-craft defect was hierarchy,
   not legibility.
-- **Keyboard focus reach is a real defect.** On the dashboard, 25 Tab presses reached
-  only three distinct elements: the first navigation button, the logout button, and the
-  shuffle button. Focus does not reach the remaining navigation, the discovery cards, or
-  the card action buttons. Not addressed by the state-craft change.
+- **Keyboard focus reach: WITHDRAWN — not a defect.** An earlier revision of this file
+  claimed that 25 Tab presses reached only three dashboard controls, and that focus could
+  not reach the remaining navigation, the discovery cards, or the card action buttons.
+  **This was wrong.** Re-measured against an authenticated session with the app shell
+  rendered: Tab reaches all nine navigation buttons in order, then the dashboard shuffle
+  button, then cycles back to the start. Every stop shows a visible focus ring
+  (`outline: solid 2px` in the accent colour).
+
+  The original number came from a checking loop that collected *distinct* focus targets
+  over 25 presses on a page with about ten focusables, while **no discovery data was
+  present** (the isolated runs have no Navidrome connection, so no cards render). The
+  loop therefore reported a data-starvation artifact as an accessibility defect. The
+  mistake was reporting a count without first confirming that the page had more than that
+  many focusable elements to reach.
+
+  Cards were also checked in source and are keyboard-operable already:
+  `makeAlbumCardInteractive()` sets `tabindex="0"` and `role="button"`, and a document-level
+  `keydown` handler opens the modal on Enter or Space. The album modal declares
+  `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
 - **No horizontal overflow** at 1440, 390, or 360 px in the measured states.
 - **No browser console or page errors** during an authenticated pass over all eight pages.
