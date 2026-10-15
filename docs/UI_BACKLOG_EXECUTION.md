@@ -311,6 +311,71 @@ the blob is `display: none` below 620px; `prefers-reduced-motion` reduces the tr
 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; and no console or page errors.
 
+## 5d. Landmark naming findings
+
+C2 of the external critique: add `aria-label` to `<nav>` and give page sections accessible
+names. Audited with Playwright's ARIA snapshot, which reports what assistive technology
+actually receives rather than what the markup implies.
+
+### Before
+
+The landmark tree rendered as three bare, unnamed entries:
+
+```
+- banner:
+- main:
+  - navigation:
+```
+
+| Element | Unnamed, before |
+|---|---|
+| `<nav>` | 1 of 2 — the sidebar had no name; the modal's links did |
+| `<section class="page">` | **8 of 8** |
+| `<section>` overall | 8 of 9 — only the album modal was named |
+
+A `<section>` only becomes a `region` landmark when it has an accessible name. So the eight
+page sections were **not landmarks at all**: a screen-reader user could not jump between pages
+by region, and each announced as an anonymous group.
+
+### After
+
+```
+- banner:
+- main:
+  - navigation "Main":
+  - region "Ten from the collection":
+```
+
+- `<nav>` sidebar: `aria-label="Main"`, so the two nav landmarks are distinguishable.
+- All 8 page sections: `aria-labelledby` pointing at their own `<h2>`, so all 8 are now
+  `region` landmarks. Measured **9 of 9** named, up from 1 of 9.
+- Each section has a unique name; checked for duplicates.
+
+### Why `aria-labelledby` rather than `aria-label`
+
+The critique suggested accessible names; `aria-labelledby` pointing at the existing visible
+heading is the better mechanism because the name **cannot drift from the visible text**. A
+hardcoded `aria-label="Settings"` would silently disagree with the `<h2>` the moment anyone
+rewords the heading. This required adding ids to the eight `<h2>` elements; all nine
+`aria-labelledby` references were verified to resolve to an existing id.
+
+### Deliberately NOT labelled
+
+The critique named only `<nav>` and the sections. `banner`, `main` and `contentinfo` are left
+unlabelled on purpose: **a landmark type that appears once is unambiguous by role alone**, so
+a label there is noise. Labels are needed only where a type repeats, which is why both `<nav>`
+elements have one.
+
+This means the audit's `UNNAMED` result for `<header>`, `<main>` and `<footer>` is **not a
+defect**, and should not be "fixed" by a later session.
+
+### Verification
+
+Measured on the branch: the landmark tree shows `navigation "Main"` and named regions; all 9
+sections named; the visible region on each of the 8 pages resolves to its expected heading
+name; no two sections share a name; 79 ids with zero duplicates; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
@@ -359,6 +424,37 @@ Each session handles exactly one backlog item and produces exactly one PR.
 Do not re-read `PROJECT_STATUS.md`, `PROJECT_LOG.md`, `TEST_PLAN.md`, or the other project
 docs unless the item genuinely requires it. GitHub is the record of what happened; this
 file is the compressed index into it.
+
+**Impeccable is mandatory every session, not optional.** `AGENTS.md` frames it as "when
+available in ZCode", and that latitude is what caused two sessions (C1, C2) to proceed
+without opening it. Treat it as required:
+
+1. Read the relevant reference file(s) below **before** choosing an approach — not after, to
+   justify a decision already made.
+2. Record in the PR body which guidance was **applied** and which was **rejected**, with the
+   reason. A PR that cites no Impeccable guidance is incomplete.
+
+The reference files live at `.pi/skills/impeccable/reference/`. Select by kind of work:
+
+| Kind of work | Read |
+|---|---|
+| Contrast, WCAG, ARIA, landmarks, semantic HTML, keyboard access | `audit.md` |
+| Error, empty, loading, edge-case and boundary states | `harden.md` |
+| Hierarchy, spacing, type scale, motion, general refinement | `polish.md` |
+| Adding or changing motion | `animate.md` |
+| Fonts, type scale, sizing | `typeset.md` |
+| Section composition, grids, layout rhythm | `layout.md` |
+| Interface copy, empty-state wording, error text | `clarify.md` |
+| Removing clutter, simplifying a busy screen | `distill.md` |
+| Evaluating an existing component in isolation | `component-review.md` |
+
+If two apply, read both. `audit.md` carries a severity model (P0-P3) and a health-score
+template that are useful even when the task is not a full audit.
+
+**Do not treat Impeccable as a mandate.** `AGENTS.md` is explicit that only recommendations
+fitting this product and its existing components should be applied, and that broad redesign
+commands are out of scope. Where it conflicts with `docs/FRONTEND_DESIGN_GUIDE.md` or with
+`AGENTS.md`, the project documents win and the conflict is recorded in the PR.
 
 **Work:**
 1. Confirm current `main` and the highest PR number (`gh pr list --state all --limit 1`).
