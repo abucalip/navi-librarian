@@ -57,14 +57,14 @@ async function requestJSON(url) {
 async function checkConnection() {
   const el = $('connection');
   el.textContent = 'Checking Navidrome…';
-  el.className = 'status';
+  setStatusState(el, 'loading');
   try {
     const data = await requestJSON('/api/health');
     el.textContent = 'Connected to Navidrome';
-    el.className = 'status ok';
+    setStatusState(el, 'success');
   } catch (error) {
     el.textContent = error.message;
-    el.className = 'status error';
+    setStatusState(el, 'error');
   }
 }
 
@@ -248,8 +248,12 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             status.textContent = visibleCards
               ? visibleCards + ' acquisition record(s).'
               : 'No acquisition records to show.';
+            if (status === $('acquisitionsStatus')) {
+              setStatusState(status, visibleCards ? 'progress' : 'empty');
+            }
           } catch (error) {
             status.textContent = error.message;
+            if (status === $('acquisitionsStatus')) setStatusState(status, 'error');
             dismiss.disabled = false;
           }
         });
@@ -293,10 +297,12 @@ async function refreshActiveDownloadBadge() {
 
 async function loadAcquisitions() {
   $('acquisitionsStatus').textContent = 'Connecting to acquisition status…';
+  setStatusState($('acquisitionsStatus'), 'loading');
   try {
     renderAcquisitions(await requestJSON('/api/acquisitions'));
   } catch (error) {
     $('acquisitionsStatus').textContent = error.message;
+    setStatusState($('acquisitionsStatus'), 'error');
   }
 }
 
@@ -317,6 +323,7 @@ function startAcquisitionStream() {
   };
   acquisitionStream.onerror = () => {
     $('acquisitionsStatus').textContent = 'Reconnecting to live download updates…';
+    setStatusState($('acquisitionsStatus'), 'loading');
   };
 }
 function stopAcquisitionStream() {
@@ -506,6 +513,7 @@ async function openAlbumModal(card) {
   $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
   setAlbumPlatformLinks(artist, album);
   $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
+  setStatusState($('albumModalStatus'), 'loading');
   tracklist.replaceChildren();
   artwork.removeAttribute('src');
   get.disabled = false;
@@ -545,11 +553,16 @@ async function openAlbumModal(card) {
         tracklist.append(row);
       });
       $('albumModalStatus').textContent = tracks.length + ' tracks';
+      setStatusState($('albumModalStatus'), 'success');
     } else {
       $('albumModalStatus').textContent = details.message || 'Tracklist unavailable for this release.';
+      setStatusState($('albumModalStatus'), 'empty');
     }
   } catch (error) {
-    if (activeAlbumModal && activeAlbumModal.card === card) $('albumModalStatus').textContent = 'Could not load tracklist: ' + error.message;
+    if (activeAlbumModal && activeAlbumModal.card === card) {
+      $('albumModalStatus').textContent = 'Could not load tracklist: ' + error.message;
+      setStatusState($('albumModalStatus'), 'error');
+    }
   }
 }
 
@@ -883,8 +896,29 @@ async function sendJSON(url, method='POST', body={}) {
   return data;
 }
 
-function discoveryStatus(name, message) {
-  $(discoveryViews[name][1]).textContent = message;
+function discoveryStatus(name, message, kind) {
+  const el = $(discoveryViews[name][1]);
+  el.textContent = message;
+  setStatusState(el, kind === undefined ? classifyStatus(message) : kind);
+}
+
+// Derive a state kind from the text a caller already passes, so every existing
+// message gains the right treatment without threading a second argument through
+// every call site. Colour is never the only signal: the CSS pairs each kind with
+// a distinct leading glyph as well.
+function classifyStatus(message) {
+  const text = String(message || '').trim();
+  if (!text) return 'idle';
+  if (/\b(error|could not|failed|unavailable|refus|denied|invalid|timed out|timed-out)\b/i.test(text)) return 'error';
+  if (/\.\.\.|\u2026|loading|connecting|generating|rotating|building|checking|saving|refreshing|reconnecting/i.test(text)) return 'loading';
+  if (/\bno\b|\bnone\b|nothing|empty/i.test(text)) return 'empty';
+  return 'progress';
+}
+
+function setStatusState(el, kind) {
+  if (!el) return;
+  el.classList.remove('is-loading', 'is-empty', 'is-error', 'is-success', 'is-progress');
+  if (kind && kind !== 'idle') el.classList.add('is-' + kind);
 }
 
 function deepDiveGenre(item) {
@@ -1101,8 +1135,11 @@ async function loadDiscovery(name, options = {}) {
       (destinationByItem.get(item) || target).append(card);
     }
 
-    if (!items.length && !autoRefreshStarted.has(name)) addTextElement(target, 'p', '',
-      'No results. Try refreshing this list.');
+    if (!items.length && !autoRefreshStarted.has(name)) {
+      const empty = addTextElement(target, 'p', 'status-line',
+        'No results. Try refreshing this list.');
+      setStatusState(empty, 'empty');
+    }
   } catch (error) {
     discoveryStatus(name, error.message);
   }
@@ -1224,7 +1261,8 @@ async function loadNavidromeSettings() {
     $('musicLibraryPath').value = data.music_library_path || '';
     $('navidromePassword').value = '';
     $('navidromeStatus').textContent = data.password_configured ? 'Password configured.' : 'Password not configured.';
-  } catch (error) { $('navidromeStatus').textContent = error.message; }
+    setStatusState($('navidromeStatus'), classifyStatus($('navidromeStatus').textContent));
+  } catch (error) { $('navidromeStatus').textContent = error.message; setStatusState($('navidromeStatus'), 'error'); }
 }
 $('saveNavidrome').addEventListener('click', async () => {
   try {
@@ -1236,8 +1274,9 @@ $('saveNavidrome').addEventListener('click', async () => {
     });
     $('navidromePassword').value = '';
     $('navidromeStatus').textContent = result.message || 'Settings saved.';
+    setStatusState($('navidromeStatus'), 'success');
     await loadNavidromeSettings();
-  } catch (error) { $('navidromeStatus').textContent = error.message; }
+  } catch (error) { $('navidromeStatus').textContent = error.message; setStatusState($('navidromeStatus'), 'error'); }
 });
 
 async function loadLastfmSettings() {
@@ -1245,15 +1284,17 @@ async function loadLastfmSettings() {
     const data = await requestJSON('/api/settings/lastfm');
     $('lastfmApiKey').value = '';
     $('lastfmStatus').textContent = data.api_key_configured ? 'API key configured.' : 'API key not configured (optional).';
-  } catch (error) { $('lastfmStatus').textContent = error.message; }
+    setStatusState($('lastfmStatus'), classifyStatus($('lastfmStatus').textContent));
+  } catch (error) { $('lastfmStatus').textContent = error.message; setStatusState($('lastfmStatus'), 'error'); }
 }
 $('saveLastfm').addEventListener('click', async () => {
   try {
     const result = await sendJSON('/api/settings/lastfm', 'PUT', {api_key: $('lastfmApiKey').value});
     $('lastfmApiKey').value = '';
     $('lastfmStatus').textContent = result.message || 'Settings saved.';
+    setStatusState($('lastfmStatus'), 'success');
     await loadLastfmSettings();
-  } catch (error) { $('lastfmStatus').textContent = error.message; }
+  } catch (error) { $('lastfmStatus').textContent = error.message; setStatusState($('lastfmStatus'), 'error'); }
 });
 
 async function loadListenbrainzSettings() {
@@ -1261,26 +1302,28 @@ async function loadListenbrainzSettings() {
     const data = await requestJSON('/api/settings/listenbrainz');
     $('listenbrainzUsername').value = data.username || '';
     $('listenbrainzStatus').textContent = 'Public profile username.';
-  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+    setStatusState($('listenbrainzStatus'), 'idle');
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; setStatusState($('listenbrainzStatus'), 'error'); }
 }
 $('saveListenbrainz').addEventListener('click', async () => {
   try {
     const result = await sendJSON('/api/settings/listenbrainz', 'PUT', {username: $('listenbrainzUsername').value.trim()});
     $('listenbrainzStatus').textContent = result.message || 'Settings saved.';
-  } catch (error) { $('listenbrainzStatus').textContent = error.message; }
+    setStatusState($('listenbrainzStatus'), 'success');
+  } catch (error) { $('listenbrainzStatus').textContent = error.message; setStatusState($('listenbrainzStatus'), 'error'); }
 });
 
 async function testServiceConnection(endpoint, statusId) {
   const status = $(statusId);
   status.textContent = 'Testing connection…';
-  status.className = 'status';
+  setStatusState(status, 'loading');
   try {
     const data = await sendJSON(endpoint, 'POST');
     status.textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
-    status.className = data.ok ? 'status ok' : 'status error';
+    setStatusState(status, data.ok ? 'success' : 'error');
   } catch (error) {
     status.textContent = error.message;
-    status.className = 'status error';
+    setStatusState(status, 'error');
   }
 }
 $('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
@@ -1309,8 +1352,10 @@ async function loadSlskdSettings() {
 
     $('slskdStatus').textContent =
       `API key ${data.api_key_configured ? 'configured' : 'not configured'}.`;
+    setStatusState($('slskdStatus'), classifyStatus($('slskdStatus').textContent));
   } catch (error) {
     $('slskdStatus').textContent = error.message;
+    setStatusState($('slskdStatus'), 'error');
   }
 }
 
@@ -1430,6 +1475,7 @@ $('saveSlskd').addEventListener('click', async () => {
   const priorities = qualityPriorityValues();
   if (priorities.length !== qualityOptions.length || new Set(priorities).size !== qualityOptions.length) {
     $('slskdStatus').textContent = 'Each of the six quality preferences must appear exactly once.';
+    setStatusState($('slskdStatus'), 'error');
     return;
   }
 
@@ -1444,9 +1490,11 @@ $('saveSlskd').addEventListener('click', async () => {
     await sendJSON('/api/settings/slskd', 'PUT', payload);
     $('slskdApiKey').value = '';
     $('slskdStatus').textContent = 'Settings saved.';
+    setStatusState($('slskdStatus'), 'success');
     await loadSlskdSettings();
   } catch (error) {
     $('slskdStatus').textContent = error.message;
+    setStatusState($('slskdStatus'), 'error');
   }
 });
 

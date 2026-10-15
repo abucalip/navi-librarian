@@ -8,12 +8,16 @@ Repository: `abucalip/navi-librarian`.
 
 Improve the Librarian UI's clarity, speed, accessibility, responsive behavior, and reliability while preserving the established API, authentication, and domain behavior. The product helps a user explore their Navidrome library and listening taste, discover music, and request acquisitions through existing backend services. Keep the interface smooth and stable; do not duplicate discovery, recommendation, acquisition, or import logic in browser code.
 
-Before starting a task:
+## Before you start a task
+
 1. Read this file and **`docs/FRONTEND_DESIGN_GUIDE.md`**, the canonical visual-design and prioritized-backlog reference. Do not rely on PR comments or agent memory as a substitute.
-2. Read the relevant sections of `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/TEST_PLAN.md`.
-3. Inspect current GitHub `main`, open PRs, recent commits, and checks that affect your work.
-4. Inspect the relevant template, stylesheet, script, API caller, and tests before deciding on an implementation.
-5. Write down a narrow objective and acceptance criteria in your own working notes or PR description, and identify the relevant design-backlog item.
+2. Read `docs/UI_BACKLOG_EXECUTION.md`, which records the verified front-end baseline, the
+   current backlog state, and the session protocol. It is an index into the project docs,
+   not a replacement for them; read the additional docs below only when the task needs them.
+3. Read the relevant sections of `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_WORKFLOW.md`, and `docs/TEST_PLAN.md`.
+4. Inspect current GitHub `main`, open PRs, recent commits, and checks that affect your work.
+5. Inspect the relevant template, stylesheet, script, API caller, and tests before deciding on an implementation.
+6. Write down a narrow objective and acceptance criteria in your own working notes or PR description, and identify the relevant design-backlog item.
 
 ## Files you may change
 
@@ -24,8 +28,12 @@ Normal implementation scope:
 - `static/login.js`
 - `app/templates/*.html`
 - narrowly scoped front-end tests/fixtures under `tests/`
+- `docs/UI_BACKLOG_EXECUTION.md`, the front-end session bootstrap reference, which must
+  be updated in the same PR as the work it records
 
 Do not expand this scope silently. If a task requires a new frontend file outside these paths, explain why in the PR and coordinate first. Reading backend code or tests is allowed to understand behavior; reading a file does not grant permission to edit it.
+
+Documentation changes outside `docs/UI_BACKLOG_EXECUTION.md` follow the same rule as code: propose them rather than editing them unasked.
 
 ## Protected ownership boundaries
 

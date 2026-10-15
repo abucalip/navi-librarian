@@ -56,7 +56,32 @@ p { line-height: 1.55; }
 .settings-tab-panel button { margin-right: 6px; }
 #saveNavidrome, #saveLastfm, #saveListenbrainz, #saveSlskd { color: #191a1a; background: var(--yellow); border-color: var(--yellow); }
 .muted { color: var(--muted); }
+/* Shared state line: one treatment for loading, empty, error, success and
+   progress text across every section. Quiet by default so it never competes
+   with content; a leading glyph carries the state so meaning never rests on
+   colour alone. Not a pill and not a card, per the design guide's anti-patterns. */
+.status-line {
+  display: flex; align-items: baseline; gap: 8px;
+  margin: 13px 0 16px; max-width: 760px;
+  color: var(--muted); font: 400 13px/1.5 var(--body);
+}
+.status-line::before {
+  content: "\2022"; flex: 0 0 auto; color: var(--subtle);
+  font: 500 12px/1.5 var(--mono);
+}
+.status-line[hidden] { display: none; }
+.status-line.is-loading::before { content: "\2026"; color: var(--subtle); }
+.status-line.is-empty::before { content: "\2014"; color: var(--subtle); }
+.status-line.is-error { color: var(--red); }
+.status-line.is-error::before { content: "!"; color: var(--red); }
+.status-line.is-success { color: var(--green); }
+.status-line.is-success::before { content: "\2713"; color: var(--green); }
+.status-line.is-progress { color: var(--text); }
+.status-line.is-progress::before { content: "\203A"; color: var(--yellow); }
+@media (max-width: 620px) { .status-line { font-size: 13px; } }
 .status { font-weight: 600; }
+/* Legacy service-test classes, kept as aliases so any stale markup still reads
+   correctly. New code should use the .status-line state classes instead. */
 .ok { color: var(--green); }
 .error { color: var(--red); }
 .controls { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 18px 0 14px; }

@@ -75,14 +75,19 @@ of re-deriving them.
 
 From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 
-**Completed:** item — login-page alignment (PR #66). The guide marks this closed and says
-not to reopen it without new evidence. Its verification recorded keyboard focus modality
-and the first-run setup variant as **skips, not passes**.
+**Completed:**
+
+- Login-page alignment (PR #66). The guide marks this closed and says not to reopen it
+  without new evidence. Its verification recorded keyboard focus modality and the
+  first-run setup variant as **skips, not passes**.
+- **State craft** (item 1) — implemented in PR #121 on branch `ui/state-craft`. A shared
+  `.status-line` treatment now covers every status element, with `aria-live` on all of
+  them and a per-state leading glyph so state is never carried by colour alone. See
+  section 5 for the before/after measurements.
 
 **Remaining, in the guide's priority order:**
 
-1. **State craft** — consistent, purposeful loading / empty / error / success / recovery
-   presentation across the app, preserving correct semantics and actionable feedback.
+1. ~~**State craft**~~ — done in PR #121.
 2. **Per-section layouts** — refine artist exploration, library, acquisition, and settings
    into distinct task-appropriate compositions sharing the established design language.
 3. **Get/request button consolidation** — align modal, artwork-overlay, and card-action
@@ -94,27 +99,46 @@ and the first-run setup variant as **skips, not passes**.
    viewport widths.
 6. **Continue visual audit** — re-prioritize based on evidence after the above.
 
+**Newly found, not yet in the guide's numbered list:** keyboard focus reaches only three
+interactive controls on the dashboard (see section 5), which is an accessibility defect
+rather than a styling one. It belongs with item 5 or as its own item; decide when that
+work is scheduled.
+
 ## 5. Observed evidence for item 1 (State craft)
 
-Recorded here so the item-1 session starts from evidence rather than a fresh audit. These
-are observations at the baseline SHA, not yet a chosen problem statement.
+### Before the change (main at `4098361`)
 
-- **Status elements are styled inconsistently.** Eleven status paragraphs exist. Only
-  three carry a class: `dashboard-picks-status` (`index.html:37`),
-  `album-modal-status` (`index.html:208`), and the settings ones use ad-hoc rules.
-  `newReleasesStatus` (`index.html:92`), `personalStatus` (`index.html:107`),
-  `classicsStatus` (`index.html:118`), `artistDeepDiveStatus` (`index.html:129`), and
-  `acquisitionsStatus` (`index.html:190`) carry **no class at all**, so they inherit plain
-  `<p>` styling and are visually indistinguishable from body copy.
-- **`aria-live` is applied inconsistently.** `newReleasesStatus`, `navidromeStatus`,
-  `slskdStatus`, `lastfmStatus`, `listenbrainzStatus`, and `albumModalStatus` have
-  `aria-live="polite"`. `personalStatus`, `classicsStatus`, `artistDeepDiveStatus`, and
-  `acquisitionsStatus` do **not**, even though the JS writes dynamic progress text into
-  them (for example `static/app.js:295` and `static/app.js:319`).
-- **Status text is plain unstructured prose** — "3 item(s)", "Loading…",
-  "Building the first list in the background…", error messages. There is no shared
-  vocabulary or visual distinction between loading, empty, error, and success, so a user
-  cannot tell a transient state from a failure without reading the sentence.
+Observed by the local headless verifier driving an authenticated session, and confirmed
+by reading source.
+
+- **Status elements are styled inconsistently.** Eleven status paragraphs existed. Only
+  three carried a class: `dashboard-picks-status`, `album-modal-status`, and `.status` on
+  `#connection`. The rest carried **no class at all**, so they inherited plain `<p>`
+  styling and rendered at body size and weight (15px/400), visually indistinguishable
+  from descriptive prose. Measured: **9 of 10 status elements unclassed at body
+  size/weight**.
+- **`aria-live` was applied inconsistently.** Six had it; four that the JS writes dynamic
+  progress text into did not (`personalStatus`, `classicsStatus`, `artistDeepDiveStatus`,
+  `acquisitionsStatus`). Measured: **5 of 10 without `aria-live`**.
+- **Status text was unstructured prose** with no shared vocabulary or visual distinction
+  between loading, empty, error, and success, so a transient state was indistinguishable
+  from a failure without reading the sentence.
+- **Contrast was fine** (7.09:1 worst case), so this was a hierarchy defect, not a
+  legibility one.
+
+### After the change (branch `ui/state-craft`)
+
+- One shared `.status-line` treatment in `static/app.css` derived from existing tokens.
+- Every status element carries the class: **10 of 10**.
+- Every status element announces updates: **10 of 10** with `aria-live`.
+- Each state has a distinct leading glyph, so state is never carried by colour alone:
+  `…` loading, `—` empty, `!` error, `✓` success, `›` progress, `•` neutral.
+- `static/app.js` derives the state kind via `classifyStatus()` and applies it via
+  `setStatusState()`, so existing call sites needed no second argument threaded through.
+- Verified: zero browser console or page errors, no horizontal overflow at 1440, 390, or
+  360 px.
+- Deliberately **not** a pill or a badge, because `docs/FRONTEND_DESIGN_GUIDE.md` section 3
+  lists colourful status pills among the anti-patterns to avoid.
 
 ## 6. Session protocol
 
@@ -164,10 +188,36 @@ SHA, the PR must say so and record those checks as skips. Skipped is not passed.
 
 ## 8. Automation status
 
-A headless-browser path for automated rendered verification is authorized and under
-exploration. Until it exists and is proven, treat rendered verification as manual.
+A headless-browser verifier exists and works, but it is deliberately **not** in this
+repository. It lives on the operator's machine at `~/.ui-verify/` (`ui-verify.sh`,
+`drive.py`) and is a verification utility, not an application dependency. Nothing in
+`app/` imports it and it is absent from `requirements*.txt`. Keep it that way.
 
-Any headless-browser tool introduced must not become an application dependency: no entry
-in `requirements*.txt`, no build system, and nothing imported by `app/`. It belongs only
-in the test/verification layer. If it cannot be added under those constraints, it must be
-installed outside the repository checkout and the PR must record how it was invoked.
+It resolves a PR head SHA from GitHub, downloads that exact archive, installs the app's
+requirements into an isolated venv outside the repo, boots the app on a private port with
+its own data directory, then drives headless Chromium and writes a Markdown report pinned
+in filename and content to the tested SHA.
+
+It measures things that are mechanically checkable: page rendering, per-page headings,
+class and `aria-live` coverage on status elements, computed contrast, keyboard focus
+reach, horizontal overflow at several widths, reduced-motion enforcement, and console
+errors. It cannot judge whether a design is good, so it does not replace the human
+checklist in `docs/LOCAL_UI_TESTING.md`. It never runs destructive acquisition actions.
+
+### Findings from the initial verifier run (main at `4098361`)
+
+Recorded here because the verifier itself is not published.
+
+- **Reduced motion is implemented correctly.** `static/app.css` has exactly one
+  `prefers-reduced-motion: reduce` block, and under that preference the computed
+  `transitionDuration` on interactive elements becomes `1e-05s`. `static/login.css` has
+  no such block, which is acceptable because the login page is nearly static.
+- **Contrast is not a problem.** The lowest-contrast status text measured 7.09:1, well
+  above the 4.5:1 WCAG AA threshold for body text. The state-craft defect was hierarchy,
+  not legibility.
+- **Keyboard focus reach is a real defect.** On the dashboard, 25 Tab presses reached
+  only three distinct elements: the first navigation button, the logout button, and the
+  shuffle button. Focus does not reach the remaining navigation, the discovery cards, or
+  the card action buttons. Not addressed by the state-craft change.
+- **No horizontal overflow** at 1440, 390, or 360 px in the measured states.
+- **No browser console or page errors** during an authenticated pass over all eight pages.
