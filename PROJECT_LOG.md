@@ -590,4 +590,4 @@
 
 - Root cause: the refresh route used `int(payload.get("count", 20))`; Python accepts booleans as integers, numeric strings as parseable integers, and truncates floats. Replaced coercion with strict JSON integer validation before service invocation.
 - Added route regression cases for malformed types and out-of-range values. The default count and valid integer behavior remain unchanged.
-- Branch: `fix/discovery-refresh-strict-count`. Focused/full tests and exact-final-head CI are pending; do not claim verification until results are observed.
+- Branch: `fix/discovery-refresh-strict-count`. Implementation head `859bf10b1bbaececd2045596287c7680bb66d514` passed Python syntax `38762625902`, container runtime smoke `38762625878`, Docker packaging/full unit suite/build `38762625612`, and validation-only multi-architecture image validation `38762625568`. Re-run all four after the documentation closeout changes and before merge.
