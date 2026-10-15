@@ -3,11 +3,11 @@ import json
 import os
 import random
 import shutil
-import secrets
 import sqlite3
 import time
 import unicodedata
 import discovery_store
+import navidrome_client as _navidrome_client
 from settings_persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from service_settings import (
@@ -94,41 +94,12 @@ MUSIC_DIR = _default_music_dir()
 
 
 def api_call(method, **params):
-    """Call the Subsonic-compatible API using configured token authentication."""
-    base_url, username, password = _navidrome_config()
-    salt = secrets.token_hex(12)
-    token = hashlib.md5(
-        (password + salt).encode("utf-8")
-    ).hexdigest()
-
-    query = {
-        "u": username,
-        "t": token,
-        "s": salt,
-        "v": "1.16.1",
-        "c": "navidrome-librarian",
-        "f": "json",
+    """Compatibility adapter for the extracted Navidrome API client."""
+    return _navidrome_client.api_call(
+        method,
+        _navidrome_config,
         **params,
-    }
-
-    with httpx.Client(timeout=30, follow_redirects=False) as client:
-        response = client.get(
-            f"{base_url}/rest/{method}.view",
-            params=query,
-        )
-        response.raise_for_status()
-        data = response.json()
-
-    root = data.get("subsonic-response", {})
-
-    if root.get("status") != "ok":
-        error = root.get("error", {})
-        raise RuntimeError(
-            f"Navidrome API error {error.get('code')}: "
-            f"{error.get('message', 'Unknown error')}"
-        )
-
-    return root
+    )
 
 
 def items(value):
