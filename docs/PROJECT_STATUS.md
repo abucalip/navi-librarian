@@ -1,9 +1,10 @@
-## 2026-10-15 — Settings persistence extraction (PR preparation)
+## 2026-10-15 — PR #143 merged: settings persistence extraction
 
-- Extracted SQLite settings storage, database initialization/permissions, legacy quality-tier migration, saved music-directory application, and legacy downloads-path migration into `settings_persistence.py` using injected defaults and path callbacks.
-- `navidrome_server.py` retains `_discovery_settings_init`, `_discovery_settings_read`, and `_discovery_settings_write` compatibility wrappers; settings-service and MCP-facing interfaces are unchanged. Docker packaging includes the module.
-- Added direct-import tests for Unicode round trips, malformed persisted JSON, quality-order migration, music-path application, and restrictive database permissions.
-- Branch `refactor/extract-settings-persistence`; implementation and exact-head CI verification are pending. Do not merge until all four required workflows pass on the final PR head. No local test run, publication, deployment, or runtime verification is claimed.
+- PR #143: https://github.com/abucalip/navi-librarian/pull/143. Exact final PR head `e28cd12d3736fd2eb368b53c98e3cbddb5438166`; squash merge `409f634a20ba67c5a39dfec0e5bf57995a3fefbe`.
+- Extracted SQLite settings initialization, restrictive file permissions, reads/writes, saved music-path application, and legacy quality/download-path migrations into `settings_persistence.py`. The legacy `_discovery_settings_*` wrappers remain in `navidrome_server.py`; service and MCP-facing interfaces are preserved. Docker packaging includes the module.
+- Added direct-import regression tests for Unicode persistence, malformed JSON fallback, append-only quality-tier migration, music-path application, and restrictive database permissions. Corrected the AST-based quality-priority test fixture to inject the extracted persistence dependency.
+- All four required workflows passed on the exact final PR head: Docker packaging/full tests/build `38791730058`, Python syntax `38791730078`, container runtime smoke `38791729963`, and validation-only multi-architecture image validation `38791730017`. Publishing remains paused.
+- No separate local test run, image publication, deployment, or production runtime verification is claimed. Next: continue reviewing remaining application-assembly/domain-service seams against the roadmap and higher-priority verification gaps.
 
 ## 2026-10-15 — MCP tool registration separated from shared service imports
 
