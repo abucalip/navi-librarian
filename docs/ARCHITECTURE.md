@@ -289,3 +289,8 @@ PR #110 moved `/api/health` and `/api/dashboard-picks` into `app/api/dashboard.p
 `app/main.py` no longer imports `navidrome_server.py` to define the web app. Authentication settings access and signing-key initialization call the existing service lazily through `get_librarian`. SQLite persistence, `DATA_DIR` ownership, settings migrations, MCP wrappers, and auth semantics remain unchanged. Direct integration coverage verifies app import does not initialize the legacy server and auth routes work with an injected fake service.
 
 PR #112 exact head `ded9aef759c87ccf07d71cd777b366af424cc06c` passed all four required workflows: syntax `38737672741`, Docker packaging/full suite/build `38737672443`, runtime smoke `38737672507`, and validation-only multi-architecture image validation `38737672689`. No publication, deployment, or production runtime verification.
+
+
+## Listening profile aggregation — extraction in progress
+
+The pure aggregation of ListenBrainz history into the existing recent-listening profile payload lives in `listening_profile.py`. The `recent_listening_profile(days)` legacy MCP-facing function remains responsible for input validation, provider retrieval/error mapping, and JSON serialization, and delegates only aggregation. The module is packaged in Docker and has direct-import tests for payload shape, counts, empty history, and stable tie order. Exact-head CI and merge are pending; publishing/deployment remain paused.

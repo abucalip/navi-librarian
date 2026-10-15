@@ -1,3 +1,9 @@
+## 2026-10-16 — Listening profile aggregation extraction (PR pending)
+
+- Branch `refactor/extract-listening-profile`, base `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`.
+- Added `listening_profile.py` for pure aggregation and retained `recent_listening_profile(days)` as the compatibility adapter. Added direct-import tests and Docker packaging.
+- Focused/full tests and all four required workflows on the exact final PR head remain pending. No merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-16 — Multi-extraction session: PRs #163, #164, and #165 merged
 
 Three independent integration-client extractions were completed sequentially, refreshing GitHub main after each merge.
