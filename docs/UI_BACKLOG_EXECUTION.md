@@ -131,7 +131,7 @@ their claims were re-verified against `main` at `30e7c04`.
 | C1 | **Fix `--subtle` contrast.** It fails WCAG AA at 3.94:1 and is used on functional metadata. | One token | Verified, not fixed |
 | C2 | **Add `aria-label` to `<nav>`; give page sections accessible names.** | Small | Verified, not fixed |
 | C3 | **Set the modal artwork `alt` dynamically.** It is hardcoded and never updated. | Small | Verified, not fixed |
-| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Verified, not fixed |
+| C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Implemented in refreshed PR #149; manual browser report published (operator-confirmed); exact-head CI pending |
 | C5 | **Move `<footer>` out of `<main>`.** It sits mid-document before five sections. | One line | Verified, not fixed |
 | C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | Not started |
 | C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | Item 1, partial |
@@ -535,6 +535,10 @@ Measured on the branch: computed style is 13px, weight 400, `IBM Plex Sans`, `ta
 tree; 8/8 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; no console or page errors; `--mono` still has 18 other
 uses so the token is not orphaned.
+
+The operator confirms the required manual browser checklist has since been completed and its
+report published. Automated CI must still pass on the refreshed exact PR head; this note does
+not claim that CI has passed.
 
 ## 5. Observed evidence for item 1 (State craft)
 
