@@ -107,6 +107,31 @@ class AcquisitionRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 409)
         self.assertEqual(raised.exception.detail, "No alternate source")
 
+    def test_dismiss_forwards_trimmed_identity_and_returns_success(self):
+        with patch.object(
+            self.service,
+            "discovery_dismiss_acquisition",
+            create=True,
+            return_value='{"ok": true, "status": "dismissed"}',
+        ) as call:
+            result = acquisitions.dismiss_acquisition({
+                "artist": " Artist ", "album": " Album "
+            }, self.service)
+
+        self.assertEqual(result, {"ok": True, "status": "dismissed"})
+        call.assert_called_once_with(artist="Artist", album="Album")
+
+    def test_dismiss_requires_artist_and_album_before_service_call(self):
+        for payload in ({"artist": "Artist"}, {"album": "Album"}, {}):
+            with self.subTest(payload=payload):
+                with patch.object(
+                    self.service, "discovery_dismiss_acquisition", create=True
+                ) as call:
+                    with self.assertRaises(HTTPException) as raised:
+                        acquisitions.dismiss_acquisition(payload, self.service)
+                self.assertEqual(raised.exception.status_code, 400)
+                call.assert_not_called()
+
     def test_dismiss_maps_missing_entry_and_conflict(self):
         with patch.object(self.service, "discovery_dismiss_acquisition", create=True, return_value='{"ok": false, "error": "Acquisition not found."}'):
             with self.assertRaises(HTTPException) as raised:
