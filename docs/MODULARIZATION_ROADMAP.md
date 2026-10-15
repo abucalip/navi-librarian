@@ -1,3 +1,11 @@
+## 2026-10-15 — Acquisition request coordinator extraction in progress
+
+- Branch `refactor/acquisition-request-coordinator` extracts the `discovery_acquire_album` coordination sequence into `acquisition_request_coordinator.py` with injected dependencies; the MCP/web function remains a compatibility adapter.
+- Preserve transition-lock scope across dismissed-job reactivation, existing-state inspection, and active-request reservation; preserve watcher lock ordering and reservation cleanup. Keep top-level AST integration tests alongside direct-import coordinator tests.
+- Direct tests cover blank input, refusal when dismissed reactivation fails, incomplete saved-source refusal, watcher recovery without requeue, reservation cleanup after success/exception, and concurrent duplicate-request suppression.
+- Acceptance remains pending: review full diff, run focused/full tests and syntax checks through the required workflows, verify all four workflows on the exact final PR head, and confirm Docker packaging. No publishing/deployment.
+
+---
 ## 2026-10-15 — PR #97 merged: Last.fm save policy
 
 - Merged at `ad239a59b77612b812ca842406fee7b47cf80889` from exact tested PR head `91e33bf1dc15d7b5ef4712e5c06e8869509f79c7`.
