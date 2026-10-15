@@ -465,8 +465,6 @@ def recent_listening_profile(days: int = 30) -> str:
 
     Reads public listening history. Does not modify music files.
     """
-    from collections import Counter
-
     if not 1 <= days <= 90:
         return "days must be between 1 and 90."
 
@@ -477,40 +475,12 @@ def recent_listening_profile(days: int = 30) -> str:
             "error": f"Could not retrieve ListenBrainz history: {exc}"
         }, ensure_ascii=False, indent=2)
 
-    artists = Counter()
-    albums = Counter()
-
-    for listen in listens:
-        meta = listen.get("track_metadata", {})
-        artist = meta.get("artist_name", "")
-        album = meta.get("release_name", "")
-        track = meta.get("track_name", "")
-
-        if artist:
-            artists[artist] += 1
-        if artist and album:
-            albums[(artist, album)] += 1
-
-    return json.dumps({
-        "source": "ListenBrainz",
-        "username": _listenbrainz_username(),
-        "period_days": days,
-        "listens_retrieved": len(listens),
-        "distinct_artists": len(artists),
-        "top_artists": [
-            {"artist": artist, "listens": count}
-            for artist, count in artists.most_common(15)
-        ],
-        "top_albums": [
-            {"artist": artist, "album": album, "listens": count}
-            for (artist, album), count in albums.most_common(10)
-        ],
-        "note": (
-            "History retrieval is bounded to three pages of up to 100 "
-            "listens each. If the limit is reached, results may be incomplete."
-        ),
-        "read_only": True,
-    }, ensure_ascii=False, indent=2)
+    from listening_profile import build_listening_profile
+    return json.dumps(
+        build_listening_profile(listens, _listenbrainz_username(), days),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def recommend_new_music(count: int = 10) -> str:
