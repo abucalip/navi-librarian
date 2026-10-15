@@ -1,3 +1,10 @@
+## 2026-10-15 — Last.fm settings-policy extraction (in progress)
+
+- Direct-import regression checks that a nonblank Last.fm API key is trimmed, a blank key preserves the existing value, and serialized responses never contain the key.
+- Preserve the existing success JSON contract and keep SQLite persistence in the legacy adapter. Verify focused and full tests plus all four required workflows on the exact PR head before merge. No publication/deployment.
+
+---
+
 ## 2026-10-15 — PR #96 slskd settings policy validation
 
 - `service_settings.py` is the direct-import owner for slskd config validation and settings read/update policy; MCP wrappers remain in `navidrome_server.py`.
