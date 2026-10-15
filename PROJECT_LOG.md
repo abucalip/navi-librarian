@@ -1,3 +1,11 @@
+## 2026-10-15 — PR #95 merge verification correction and next task
+
+- Correction to the earlier session-closeout note below: PR #95 was subsequently verified on its actual final head `92d304d06713ec0f73253a5db48cf835ff93a063`, not the earlier documentation-recorded head `b0a9d4df97723bc05983fb362a9b3060587f0df9`. All four required workflows passed on `92d304d06713ec0f73253a5db48cf835ff93a063`: syntax/acquisition safety `38665121156`, Docker packaging/full unit suite `38665121160`, runtime smoke `38665121170`, and validation-only multi-architecture `38665121255`.
+- PR #95 merged to main at `2193306ce6ee2ff3ed087b2f490594f2d5ee2c68`. No image publication, deployment, or production runtime verification.
+- Next implementation: extract slskd settings/config policy into direct-import `service_settings.py`, retaining the existing MCP/web wrappers and leaving network checks, SQLite persistence, and runtime path ownership where they are.
+
+---
+
 ## 2026-10-15 — Service settings policy extraction (PR #95)
 
 - Implemented on branch `refactor/service-settings-policy-direct-import`, PR #95. New `service_settings.py` owns six injected settings-policy/configuration functions. Existing MCP/web wrappers in `navidrome_server.py` retain names/signatures and delegate to the module.
