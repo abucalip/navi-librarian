@@ -97,47 +97,6 @@ def _copy_fd_to_directory(
         raise
 
 
-def _copy_path_to_directory(
-    source_path: Path,
-    destination_fd: int,
-    destination_name: str,
-) -> None:
-    """Restore a staged file across filesystems without overwriting a source entry."""
-    source_fd = os.open(source_path, os.O_RDONLY | _NOFOLLOW)
-    temp_name = ".navidrome-import-rollback-" + uuid.uuid4().hex
-    try:
-        source_stat = os.fstat(source_fd)
-        if not stat.S_ISREG(source_stat.st_mode):
-            raise OSError("Rollback source is not a regular file")
-        _copy_fd_to_directory(source_fd, destination_fd, temp_name, source_stat)
-        # link() is atomic and fails if the destination name already exists.
-        os.link(
-            temp_name,
-            destination_name,
-            src_dir_fd=destination_fd,
-            dst_dir_fd=destination_fd,
-            follow_symlinks=False,
-        )
-        os.unlink(temp_name, dir_fd=destination_fd)
-
-        current_source_stat = source_path.lstat()
-        if (
-            not stat.S_ISREG(current_source_stat.st_mode)
-            or (current_source_stat.st_dev, current_source_stat.st_ino)
-            != (source_stat.st_dev, source_stat.st_ino)
-        ):
-            raise OSError("Rollback source changed before cleanup")
-        source_path.unlink()
-    except Exception:
-        try:
-            os.unlink(temp_name, dir_fd=destination_fd)
-        except OSError:
-            pass
-        raise
-    finally:
-        os.close(source_fd)
-
-
 def import_matched_album_files(
     source: str | Path,
     destination: str | Path,
@@ -346,6 +305,7 @@ def import_matched_album_files(
                     _copy_fd_to_directory(
                         file_fd, staging_fd, expected_name, opened
                     )
+                    moved.append(expected_name)
                     staged_stat = os.stat(
                         expected_name, dir_fd=staging_fd, follow_symlinks=False
                     )
@@ -385,7 +345,6 @@ def import_matched_album_files(
                             f"Expected track changed during staging: {expected_name}"
                         )
                     os.unlink(quarantine_name, dir_fd=source_fd)
-                    moved.append(expected_name)
 
             finally:
                 os.close(file_fd)
@@ -441,11 +400,20 @@ def import_matched_album_files(
                             rollback_complete = False
                             continue
                         try:
-                            _copy_path_to_directory(
-                                parent_root / staging_name / name,
-                                source_fd,
-                                name,
+                            staged_file_fd = os.open(
+                                name, os.O_RDONLY | _NOFOLLOW, dir_fd=staging_fd
                             )
+                            try:
+                                staged_file_stat = os.fstat(staged_file_fd)
+                                _copy_fd_to_directory(
+                                    staged_file_fd,
+                                    source_fd,
+                                    name,
+                                    staged_file_stat,
+                                )
+                                os.unlink(name, dir_fd=staging_fd)
+                            finally:
+                                os.close(staged_file_fd)
                         except OSError:
                             rollback_complete = False
 
