@@ -1,9 +1,9 @@
-## 2026-10-15 — PR #108 discovery router injection in progress
+## 2026-10-15 — PR #108 merged: discovery router service injection
 
-- The discovery router is being aligned with the acquisition router's lazy service-injection pattern through `Depends(get_librarian)`.
-- Tests use a fake service for recommendations, discovery-list retrieval, refresh, and feedback; candidate-filter regression includes an excluded album.
-- This removes only the router's direct import-time coupling. Domain behavior and MCP wrappers remain in the legacy service boundary.
-- The branch is now synchronized with current main. PR #108 remains unverified until the final diff is reviewed and all four required workflows pass on the exact final head. Publishing/deployment remain out of scope.
+- Merged PR #108 at `be51f0ce17fe8eccd1b57714e869db69a5f1ba78` from exact tested head `a5170e50080c0ca94b4068155ace83fd33c6f029`.
+- Discovery routes now use the shared lazy `get_librarian` dependency. Domain behavior and MCP wrappers remain in the legacy service boundary.
+- Updated legacy discovery route tests to inject fake services instead of patching a removed module-level `librarian` attribute.
+- All four required exact-head workflows passed: syntax/acquisition safety (`38733725606`), Docker packaging/full suite/build (`38733725816`, 227 tests), container runtime smoke (`38733725595`), and validation-only multi-architecture image validation (`38733725591`). Publishing/deployment remain paused.
 
 ---
 
