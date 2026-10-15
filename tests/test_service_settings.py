@@ -116,5 +116,71 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(self.writes, before)
 
 
+
+    def test_slskd_settings_redact_key_and_use_defaults(self):
+        from service_settings import get_slskd_settings
+        result = json.loads(get_slskd_settings(
+            self.read_settings, Path("/music"),
+            {
+                "slskd_url": "http://slskd:5030",
+                "slskd_downloads_path": "/downloads",
+                "quality_priority": ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
+            },
+        ))
+        self.assertFalse(result["api_key_configured"])
+        self.assertNotIn("api_key", result)
+        self.assertIn("quality_labels", result)
+
+    def test_slskd_config_requires_valid_url_and_api_key(self):
+        from service_settings import slskd_config
+        self.state.update({"slskd_url": "http://slskd:5030", "slskd_api_key": "slskd-secret"})
+        self.assertEqual(slskd_config(self.read_settings)[:2], ("http://slskd:5030", "slskd-secret"))
+        self.state["slskd_url"] = "file:///bad"
+        with self.assertRaisesRegex(ValueError, "valid HTTP or HTTPS"):
+            slskd_config(self.read_settings)
+        self.state.update({"slskd_url": "http://slskd:5030", "slskd_api_key": ""})
+        with self.assertRaisesRegex(ValueError, "API key"):
+            slskd_config(self.read_settings)
+
+    def test_slskd_save_preserves_key_and_validates_all_inputs_before_write(self):
+        from service_settings import set_slskd_settings
+        defaults = {
+            "slskd_url": "http://slskd:5030",
+            "slskd_downloads_path": "/downloads",
+            "quality_priority": ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
+        }
+        self.state.update({"slskd_api_key": "slskd-secret", "slskd_url": "http://slskd:5030"})
+        with tempfile.TemporaryDirectory() as directory:
+            result = json.loads(set_slskd_settings(
+                self.read_settings, self.write_settings, lambda: Path("/music"),
+                self.set_music_dir, defaults, "http://slskd:5030/", "",
+                '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
+                True, "/downloads", directory,
+            ))
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.state["slskd_api_key"], "slskd-secret")
+        self.assertNotIn("slskd-secret", json.dumps(result))
+        self.assertEqual(result["music_library_path"], directory)
+        self.assertEqual(self.music_dir, Path(directory))
+        before = list(self.writes)
+        for kwargs in (
+            {"slskd_url": "file:///bad"},
+            {"quality_priority_json": "not-json"},
+            {"quality_priority_json": '["mp3_320"]'},
+            {"slskd_downloads_path": "relative/downloads"},
+            {"music_library_path": "relative/music"},
+            {"music_library_path": "/definitely/not/a/real/library/path"},
+        ):
+            args = {
+                "settings_read": self.read_settings, "settings_write": self.write_settings,
+                "get_music_dir": lambda: Path("/music"), "set_music_dir": self.set_music_dir,
+                "defaults": defaults,
+            }
+            args.update(kwargs)
+            result = json.loads(set_slskd_settings(**args))
+            self.assertFalse(result["ok"], kwargs)
+            self.assertEqual(self.writes, before, kwargs)
+
+
 if __name__ == "__main__":
     unittest.main()
