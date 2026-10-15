@@ -430,3 +430,18 @@ PR #57 was squash-merged at ae1e8b8f582c0ca0b882566d883d9a68bb2ca589 from exact 
 
 After discovery-router injection (PR #108), the next narrow step is to inject the existing service into all settings routes through `get_librarian`. Keep settings policy, SQLite persistence, runtime path mutation, and network connection checks in the existing service module; do not duplicate or relocate domain behavior. Verify endpoint paths/methods, payload/default mapping, validation and sanitized error contracts, plus all four required CI workflows on the exact PR head. `app/main.py` still imports the legacy server and remains a separate follow-up boundary.
 
+
+## 2026-10-15 — PR #109 merged: settings router service injection
+
+- PR #109: https://github.com/abucalip/navi-librarian/pull/109; exact tested head `a6c919a4d6c45f98394ee683095888f27513f1d6`; squash merge / current main at closeout `9a2aaea98cff38a1ad3da130d0958f945bec9673`.
+- The settings router now uses the shared lazy `get_librarian` dependency for all twelve endpoints. Route/method contracts, service calls, payload mapping, quality defaults, optional path trimming, validation responses, and sanitized connection errors are preserved.
+- All four required workflows passed on the exact final PR head: Python syntax `38734569394`, Docker packaging/full suite `38734569197`, container runtime smoke `38734569168`, and validation-only multi-architecture image validation `38734569302`. Image publishing remains paused.
+- No separate local test run, publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-15 — Dashboard/health router injection in progress
+
+- Following merged PR #109, `/api/health` and `/api/dashboard-picks` are the next small HTTP boundary in `app/main.py`. The branch moves both handlers into `app/api/dashboard.py` and injects `get_librarian`.
+- Regression tests cover the endpoint/method inventory, injected Navidrome ping and sanitized failure, dashboard category balance, list-call arguments, deduplication, album-candidate filtering, and count validation.
+- Read-only AST audit found the remaining lifecycle AST tests still verify the legacy `discovery_acquire_album` adapter wiring; keep them until equivalent direct coverage proves the adapter's lock/state/watcher dependency mapping.
+- PR #109 merged at `9a2aaea98cff38a1ad3da130d0958f945bec9673` after all four required workflows passed on exact PR head `a6c919a4d6c45f98394ee683095888f27513f1d6`. Publishing remains paused.
+
