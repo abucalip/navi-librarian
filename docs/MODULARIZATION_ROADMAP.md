@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (scripted dependency audit adopted)  
-Baseline: GitHub `main` at `73897c11bd82f2c0869bad58094d09088b2c6dd2`
+Last reviewed: 2026-10-16 (AST test inventory completed; dependency map CI run pending)  
+Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
 
@@ -15,11 +15,11 @@ These are audit targets, not permission to refactor without inspecting current `
 
 ### 1. Application assembly and test coupling — scripted audit in progress
 
-Use `scripts/dep_map.py` to produce the deterministic AST import map at `docs/architecture/dependency-map.json`. Review the generated graph against actual callers, runtime wiring, package/Docker inclusion, and open PRs; static imports do not capture dynamic imports or dependency injection.
+Run `scripts/dep_map.py` in CI against this baseline and retain the JSON as the `modularization-dependency-map` artifact. Review the generated graph against actual callers, runtime wiring, package/Docker inclusion, and open PRs; static imports do not capture dynamic imports or dependency injection. The workflow change adds this repeatable audit artifact without changing application code.
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. Inventory tests that read or parse `navidrome_server.py` as source (AST/source-string coupling), distinguish structural assertions from behavior tests, and move behavior coverage to direct imports of the extracted `acquisition_*` / `discovery_*` modules without weakening safety coverage.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`: three tests parse/compile functions from `navidrome_server.py`. Migrate these incrementally to direct imports; preserve the acquisition-safety lifecycle, concurrency, persistence, and recovery cases.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
 4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
 5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
