@@ -164,3 +164,22 @@ def summarize_transfer_progress(expected_by_name, tracked_by_name):
         "transferred_size_bytes": transferred_bytes,
         "file_byte_snapshot": file_byte_snapshot,
     }
+
+
+def estimate_transfer_speed(current_files, prior_snapshot, now):
+    """Estimate bytes/second from two actual-counter snapshots.
+
+    Missing baselines and intervals shorter than half a second return None.
+    Counter resets are treated as zero progress; inferred completion bytes
+    must not be included in current_files.
+    """
+    if not prior_snapshot:
+        return None
+    elapsed = now - prior_snapshot["at"]
+    if elapsed < 0.5:
+        return None
+    delta = sum(
+        max(0, value - int(prior_snapshot["files"].get(name, 0)))
+        for name, value in current_files.items()
+    )
+    return int(delta / elapsed)
