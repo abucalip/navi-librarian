@@ -89,8 +89,9 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
   them and a per-state leading glyph so state is never carried by colour alone. See section
   5 for the before/after measurements.
 - **Per-section layouts** (item 2) — acquisition merged as PR #128; artist deep dive merged as
-  PR #184. Scoped to one section per PR, as `AGENTS.md` requires. Four discovery sections and
-  Settings remain; see the Remaining list below.
+  PR #184; recommendations (Discover music) opened as PR #215. Scoped to one section per PR, as
+  `AGENTS.md` requires. Three discovery sections and Settings remain; see the Remaining list
+  below.
 - **Get/request button consolidation** (item 3) — merged as PR #131. The modal, artwork-overlay and card-action variants now
   share one `.get-album` base, three duplicated creation sites collapsed into one
   `createGetButton()` helper, and the control gained an explicit state machine. Three real
@@ -99,25 +100,29 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 **Remaining, in the guide's priority order:**
 
 1. ~~**State craft**~~ — done in PR #121.
-2. **Per-section layouts** — **partially done.** Acquisition (PR #128) and artist deep dive
-   (PR #184) are differentiated. Still sharing the plain `.cards` grid: Recommendations, New
-   Releases, Personal Discoveries and Classics, plus Settings, which has its own layout but no
-   composition work. The guide's instruction is "do not force every page into the same
-   dashboard grid", so each remaining section needs its own justification rather than a sweep.
+2. **Per-section layouts** — **partially done.** Acquisition (PR #128), artist deep dive
+   (PR #184) and recommendations (PR #215) are differentiated. Still on the plain `.cards`
+   grid: New Releases, Personal Discoveries and Classics, plus Settings, which has its own
+   layout but no composition work. The guide's instruction is "do not force every page into the
+   same dashboard grid", so each remaining section needs its own justification rather than a
+   sweep. Recommendations was picked because its defect was the control stack rather than the
+   grid, and a ranked album list is genuinely served by an album grid; see section 5l.
 3. ~~**Get/request button consolidation**~~ — done, merged (PR #131).
-4. **Type/token cleanup** — **not started.** Measured: 12+ distinct hardcoded hex values appear
-   outside the token block, several repeatedly (`#191a1a` x5, `#f3d66b` x4, `#202221` x4,
-   `#686044` x3, `#353834` x3, `#30322e` x3). These duplicate or extend the existing token set
-   and are the natural scope of this item. Read `typeset.md` (and `audit.md` for the theming
-   dimension) before starting.
-5. **Responsive controls** — **not started.** Measured against `audit.md`'s 44x44 touch-target
-   criterion: `.genre-row-arrow` is 38x34, `.album-modal-close` is 38x38, the modal
-   platform-link icons are 30x30, and `.card-actions .get-album` is 42x42 — all under 44 in at
-   least one axis. Narrow-width layout itself is sound (zero overflow at 360px on every route),
-   so this item is about target size and touch/gesture behaviour, not breakpoints.
+4. ~~**Type/token cleanup**~~ — **done, merged as PR #194.** See section 5k. The item title
+   overstated the work: of 33 distinct hex literals outside the token block only 3 exactly
+   duplicated an existing token, so this was naming colours that already existed rather than
+   deduplicating.
+5. ~~**Responsive controls**~~ — **done, merged as PR #194.** See section 5k.
 6. **Continue visual audit** — the external critique's list is exhausted; this now means
    finding the next issue by evidence. Candidate starting points: the 30x30 platform-link icons
-   and the `#686044` hover-border value that appears three times.
+   and the `#686044` hover-border value that appears three times — both closed by PR #194, so
+   this item now needs a fresh starting point.
+
+**Correction (2026-10-16, PR #215).** Items 4 and 5 were still listed here as "not started"
+after PR #194 (`10b14c1`, "a11y: token cleanup and 44x44 touch targets") had merged them, and
+section 5k already recorded the work. They are marked done above so the next session does not
+redo them. The stale bullets are the reason this file must be updated in the same PR as the
+work it indexes.
 
 **Contrast fix (C1 of the external critique).** The `--subtle` token was raised
 from `#77796f` to `#94958b`, merged as PR #142. The critique recommended
@@ -925,6 +930,79 @@ hashes. Item 5: all six interactive controls at or above 44x44 in both axes; arr
 synthesized touch; an out-of-mark tap lands on the intended link; no horizontal scroll. Both: 8/8
 pages render their expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/
 360px; no console or page errors.
+
+## 5l. Discover music control composition (item 2)
+
+Backlog item 2, scoped to one section: `#recommendations` ("Discover music"). Branch
+`ui/recommendations-control-hierarchy`, PR #215.
+
+### The defect was the control stack, not the grid
+
+The section stacked two adjacent control rows of equal visual weight — `.controls` (an `Albums`
+count plus the primary Generate action) and `.discovery-controls` (search, discovery category,
+sort) — with nothing distinguishing the inputs that produce a request from the controls that
+only act on an already-generated set. Measured from source at `d54b25a`: `.controls` used
+`margin: 18px 0 14px` and `.discovery-controls` `margin: 17px 0 8px`, so every vertical interval
+in the panel sat within a few pixels of every other one, and the refinement controls are inert
+until a set exists.
+
+It was also the only discovery section with no descriptive line. `newReleases`,
+`personalDiscoveries`, `classics` and `artistDeepDive` each explain themselves immediately below
+their heading.
+
+The four-column album grid was deliberately left alone. A ranked album list is genuinely served
+by an album grid, and `FRONTEND_DESIGN_GUIDE.md` §3 allows a treatment only when it improves
+hierarchy, comprehension, feedback or interaction. This is why the section was picked over the
+other three still on `.cards`: the evidence pointed at the controls, not the layout.
+
+### What changed
+
+| Before | After |
+|---|---|
+| `h2` then straight into controls | `h2`, then a description paragraph |
+| `.controls` (count + Generate) | `.controls.request-controls` — phase 1, primary action leads |
+| `.discovery-controls` placed before the count | `.results-toolbar` after the count: count, name, then `.discovery-controls` |
+| refinement row unnamed | `role="group"` + `aria-labelledby` = "Refine results" |
+| every interval within a few px | `20px 0 30px` between the phases, `8-9px` within each |
+| no client behaviour change | ids and listeners unchanged; `static/app.js` untouched |
+
+The rhythm rules are scoped (`.controls.request-controls`, `.results-toolbar`, and
+`.results-toolbar .discovery-controls`) so the shared `.controls` rule keeps its existing spacing
+in `newReleases`. `.discovery-controls` appears exactly once in the document, which is what
+keeps that override safe.
+
+### Verification
+
+`tests/test_recommendations_ui_contract.py` adds 8 source-contract regressions: the description
+precedes any control; the request group's contents and its position ahead of the toolbar; toolbar
+order (count → label → controls); the group's `aria-labelledby` resolving to a unique `<p>` in the
+same block; `.discovery-controls` appearing exactly once; document id uniqueness; every `$('id')`
+in `app.js` still resolving to a template id; and the section-scoped CSS rules, including that the
+shared `.controls` rule is unchanged.
+
+| Check | Result |
+|---|---|
+| `node --check static/app.js` | passed |
+| `python -m compileall app static` | passed |
+| new contract tests on the branch | **8 passed** |
+| the same tests against the pre-change files | **6 failed** — the tests are a real guard |
+| full unit suite | **413 ran, 0 failures, 0 errors, 1 skipped** |
+| `detect --json static/app.css app/templates/index.html` | 6 findings, identical set before and after |
+| `detect --json --scope layout ...` | `[]` |
+
+`pytest` is not installed in this environment, so the suite was run through a `unittest` loader
+rather than `python -m pytest tests/ -q`; same tests, different runner.
+
+**Rendered verification is the operator's step against the PR head SHA**, per the PR body. The
+measurements above are source-measured, not browser-measured.
+
+### Carried forward, not fixed here
+
+A failed generation is still invisible. `initializePage` auto-clicks Generate, and on failure the
+handler writes the error into `#recommendationDebug`, which lives inside the collapsed
+`<details>` "Recommendation diagnostics", so the user sees neither the failure nor a recovery
+path. That is a state-craft (item 1) defect in this section, not a layout one, and fixing it here
+would straddle two backlog items in one PR. It is the recommended next PR.
 
 ## 5. Observed evidence for item 1 (State craft)
 

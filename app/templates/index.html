@@ -66,40 +66,51 @@
   <section id="recommendations" class="page hidden" aria-labelledby="recommendationsHeading">
     <div class="panel">
       <h2 id="recommendationsHeading">Discover music</h2>
-      <div class="controls">
+      <p>Generate a set of album suggestions, then narrow it by discovery category, reorder it, or search for an artist, album, or genre.</p>
+      <!-- Phase 1 of this page's task: build the set. The primary action leads and the album
+           count is its only parameter, so the two stay in one tight group. -->
+      <div class="controls request-controls">
         <label for="count">Albums</label>
         <select id="count">
           <option>5</option><option selected>10</option><option>15</option><option>20</option>
-      </select>
+        </select>
         <button id="loadRecommendations">Generate recommendations</button>
       </div>
-      <div class="discovery-controls">
-        <input
-          id="recommendationSearch"
-          type="search"
-          placeholder="Search artist, album, or genre…"
-          aria-label="Search recommendations"
-        >
-        <select id="categoryFilter" aria-label="Filter by discovery category">
-          <option value="all">All categories</option>
-          <option value="adjacent">Adjacent</option>
-          <option value="cross_genre">Cross-genre</option>
-          <option value="adventurous">Adventurous</option>
-          <option value="unclassified">Unclassified</option>
-        </select>
-        <select id="recommendationSort" aria-label="Sort recommendations">
-          <option value="original">Recommended order</option>
-          <option value="popularity">Most popular artists</option>
-          <option value="score">Highest discovery score</option>
-          <option value="artist">Artist A–Z</option>
-        </select>
+      <!-- Phase 2: the results, and the controls that narrow them. Search, category and sort
+           only mean anything against a set that already exists, so they belong to the result
+           count rather than to the request above it. Keeping them in one block also keeps the
+           count — which is the live region announcing the filtered total — next to the
+           controls that change it. -->
+      <div class="results-toolbar">
+        <!-- role="status" gives this region an implicit aria-live="polite" and makes the
+             announcement reliable across assistive tech; the explicit attribute is kept for
+             older screen readers that do not infer it from the role. -->
+        <p id="recommendationCount" class="muted" role="status" aria-live="polite">
+          Generate recommendations to get started.
+        </p>
+        <p class="results-toolbar-label" id="recommendationFiltersLabel">Refine results</p>
+        <div class="discovery-controls" role="group" aria-labelledby="recommendationFiltersLabel">
+          <input
+            id="recommendationSearch"
+            type="search"
+            placeholder="Search artist, album, or genre…"
+            aria-label="Search recommendations"
+          >
+          <select id="categoryFilter" aria-label="Filter by discovery category">
+            <option value="all">All categories</option>
+            <option value="adjacent">Adjacent</option>
+            <option value="cross_genre">Cross-genre</option>
+            <option value="adventurous">Adventurous</option>
+            <option value="unclassified">Unclassified</option>
+          </select>
+          <select id="recommendationSort" aria-label="Sort recommendations">
+            <option value="original">Recommended order</option>
+            <option value="popularity">Most popular artists</option>
+            <option value="score">Highest discovery score</option>
+            <option value="artist">Artist A–Z</option>
+          </select>
+        </div>
       </div>
-      <!-- role="status" gives this region an implicit aria-live="polite" and makes the
-           announcement reliable across assistive tech; the explicit attribute is kept for
-           older screen readers that do not infer it from the role. -->
-      <p id="recommendationCount" class="muted" role="status" aria-live="polite">
-        Generate recommendations to get started.
-      </p>
       <div id="recommendationCards" class="cards"></div>
       <details>
         <summary>Recommendation diagnostics</summary>
