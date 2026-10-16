@@ -519,6 +519,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         "listens": listens, "recent_artists": recent_artists,
         "recent_artist_mbid_counts": recent_artist_mbid_counts,
         "albums": albums, "failures": failures,
+        "library_albums": library_albums,
         "library_by_title": library_by_title, "genre_cache": genre_cache,
         "regional_candidates_added": regional_candidates_added,
         "regional_results_seen": regional_results_seen,
