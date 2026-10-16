@@ -564,3 +564,8 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - Added direct-import regressions for complete credentials, each missing/empty required field, absent settings, and unrelated keys. Existing truthiness semantics are intentionally preserved.
 - Scope is limited to application assembly policy; no routes, cookies, session behavior, persistence, or auth-secret handling changed.
 - All four required workflows passed on the exact final PR head: Python syntax `38940305016`; Docker packaging/full unit suite/build `38940304930`; container runtime smoke `38940304907`; validation-only multi-architecture image validation `38940305045` (publishing paused). Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Auth settings reader extraction (PR verification pending)
+
+The lazy persisted-settings read used by authentication now delegates through `AuthSettingsReader`, with `app.main._auth_settings()` retained as the compatibility adapter. Direct-import regressions cover fresh reads (no caching) and propagation of settings-store failures. Verification and merge remain pending until focused/full tests and all four required workflows pass on the exact final PR head. Publishing remains paused.

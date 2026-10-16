@@ -1874,3 +1874,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Added direct-import regressions for complete credentials, each missing/empty required field, absent settings, and unrelated keys. Existing truthiness semantics are intentionally preserved.
 - Scope is limited to application assembly policy; no routes, cookies, session behavior, persistence, or auth-secret handling changed.
 - All four required workflows passed on the exact final PR head: Python syntax `38940305016`; Docker packaging/full unit suite/build `38940304930`; container runtime smoke `38940304907`; validation-only multi-architecture image validation `38940305045` (publishing paused). Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Auth settings reader extraction (verification pending)
+
+- Extracted the lazy, uncached read of persisted auth settings into `app/security/auth_settings.py` via an injected settings getter. `app.main._auth_settings()` remains as the compatibility adapter used by middleware and auth routes.
+- Added direct-import tests for fresh reads and error propagation. This must remain uncached so setup and credential changes are visible on subsequent reads.
+- Acceptance: focused tests, full unit suite, syntax checks, and all four required workflows must pass on the exact final PR head before merge. No local test execution, CI pass, merge, publication, deployment, or runtime verification is claimed yet.

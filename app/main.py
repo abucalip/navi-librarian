@@ -36,6 +36,7 @@ from app.security.app_login_middleware import create_app_login_middleware
 from app.security.auth_cookie import set_auth_cookie as _set_auth_cookie_impl
 from app.security.auth_configuration import auth_is_configured
 from app.security.auth_secret import AuthSecretProvider
+from app.security.auth_settings import AuthSettingsReader
 
 
 
@@ -68,8 +69,13 @@ def _auth_secret():
     return _AUTH_SECRET
 
 
+_AUTH_SETTINGS_READER = AuthSettingsReader(
+    settings_getter=lambda: get_librarian()._discovery_settings_read(),
+)
+
+
 def _auth_settings():
-    return get_librarian()._discovery_settings_read()
+    return _AUTH_SETTINGS_READER.get()
 
 
 def _auth_configured():
