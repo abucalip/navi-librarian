@@ -1,6 +1,6 @@
 import unittest
 
-from listening_profile import build_listening_profile
+from listening_profile import build_listening_profile, refresh_and_persist_background_profile
 
 
 class ListeningProfileTests(unittest.TestCase):
@@ -49,3 +49,42 @@ class ListeningProfileTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BackgroundListeningProfileRefreshTests(unittest.TestCase):
+    def test_success_marks_and_persists_profile(self):
+        writes = []
+        result = refresh_and_persist_background_profile(
+            lambda days: '{"listens_retrieved": 17, "top_artists": []}',
+            lambda name, payload: writes.append((name, payload)),
+        )
+        self.assertEqual(result, {"ok": True, "listens_retrieved": 17})
+        self.assertEqual(writes, [("listening_profile", {
+            "listens_retrieved": 17, "top_artists": [], "background_refresh": True,
+        })])
+
+    def test_error_payload_is_not_persisted(self):
+        writes = []
+        result = refresh_and_persist_background_profile(
+            lambda days: '{"error": "provider unavailable"}',
+            lambda *args: writes.append(args),
+        )
+        self.assertEqual(result, {
+            "ok": False, "error": "Listening profile returned an error payload"
+        })
+        self.assertEqual(writes, [])
+
+    def test_invalid_json_returns_sanitized_error_class(self):
+        result = refresh_and_persist_background_profile(
+            lambda days: "{broken",
+            lambda *args: self.fail("must not persist"),
+        )
+        self.assertEqual(result, {"ok": False, "error": "JSONDecodeError"})
+
+    def test_provider_exception_returns_sanitized_error_class(self):
+        def fail(**kwargs):
+            raise RuntimeError("secret-bearing provider details")
+        result = refresh_and_persist_background_profile(
+            fail, lambda *args: self.fail("must not persist")
+        )
+        self.assertEqual(result, {"ok": False, "error": "RuntimeError"})
