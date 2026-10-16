@@ -13,7 +13,7 @@ class DependencyMapTests(unittest.TestCase):
     def test_imports_of_records_absolute_and_relative_imports(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'sample.py'
-            source.write_text('import json\\nfrom app.api import settings\\nfrom . import sibling\\n', encoding='utf-8')
+            source.write_text('import json\nfrom app.api import settings\nfrom . import sibling\n', encoding='utf-8')
             imports = dep_map.imports_of(source)
         self.assertEqual([item['module'] for item in imports], ['json', 'app.api', ''])
         self.assertEqual([item['kind'] for item in imports], ['import', 'from', 'from'])
@@ -24,7 +24,7 @@ class DependencyMapTests(unittest.TestCase):
             root = Path(directory)
             (root / 'app' / 'api').mkdir(parents=True)
             source = root / 'app' / 'main.py'
-            source.write_text('from app.api import settings\\n', encoding='utf-8')
+            source.write_text('from app.api import settings\n', encoding='utf-8')
             modules = {
                 'app.main': source,
                 'app.api': root / 'app' / 'api' / '__init__.py',
