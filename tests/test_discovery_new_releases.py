@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_new_releases import build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
+from discovery_new_releases import build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
@@ -204,3 +204,34 @@ class NewReleaseResponseTests(unittest.TestCase):
         )
         self.assertEqual(len(result["items"]), 200)
         self.assertEqual(candidates, before)
+
+
+class NewReleaseLookupConstructionTests(unittest.TestCase):
+    def test_builds_stable_cache_key_and_date_bounded_query(self):
+        cache_key, query = build_new_release_lookup(
+            "Björk", artist_key="bjork", earliest_year=2024, current_year=2026
+        )
+        self.assertEqual(cache_key, "mb:new-releases:v1:2024:bjork")
+        self.assertEqual(
+            query,
+            'artist:"Björk" AND primarytype:album AND firstreleasedate:[2024 TO 2026]',
+        )
+
+    def test_escapes_quotes_and_backslashes_in_artist_name(self):
+        cache_key, query = build_new_release_lookup(
+            'The \\ "Band"',
+            artist_key="theband",
+            earliest_year=2025,
+            current_year=2026,
+        )
+        self.assertEqual(cache_key, "mb:new-releases:v1:2025:theband")
+        self.assertIn('artist:"The \\\\ \\"Band\\""', query)
+
+    def test_same_normalized_artist_and_window_share_cache_key(self):
+        first, _ = build_new_release_lookup(
+            "Björk", artist_key="bjork", earliest_year=2024, current_year=2026
+        )
+        second, _ = build_new_release_lookup(
+            "BJÖRK", artist_key="bjork", earliest_year=2024, current_year=2026
+        )
+        self.assertEqual(first, second)
