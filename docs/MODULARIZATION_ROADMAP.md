@@ -753,9 +753,22 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
 
-## 2026-10-16 — PR #214 refreshed: Deezer tracklist shaping extraction
+## 2026-10-16 — PR #214 merged: Deezer tracklist shaping
 
-- Recreated this candidate directly on current `main` after the original branch diverged; the refreshed diff is based on the latest main revision and preserves intervening merged work.
-- Extracted only the pure track-row-to-response transformation into `app/services/deezer_tracklist.py`. The metadata router retains provider I/O, matching, response assembly, and error handling.
-- Direct-import regression tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
-- Exact-head CI and final diff review are pending. Do not merge until all four required workflows pass on the refreshed PR head. No publication or deployment.
+- Extracted pure track-row-to-response shaping into `app/services/deezer_tracklist.py`; `app/api/metadata.py` retains provider I/O, matching, response assembly, and error handling.
+- Direct-import tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
+- Exact tested head `59c8d13ba57930400675e4f9ff90ccba919b63aa`; all four workflows passed: Python syntax run 1144, Docker packaging/full suite/build run 1051, container runtime smoke run 860, and validation-only multi-architecture validation run 904.
+- Merged at `51c4e03ac3a65cd74a25c6aced897bfa4d74a989`. No publication or deployment.
+
+## 2026-10-16 — PR #215 merged: Discover recommendations control hierarchy
+
+- Front-end-only layout change separates recommendation request inputs from result-refinement controls without changing JavaScript behavior or API contracts.
+- Exact tested head `e8d2e2d462092dcf8cc92beffaa33181aa6758bc`; all four required workflows passed: syntax run 1143, Docker packaging/full suite/build run 1050, container runtime smoke run 859, validation-only multi-architecture validation run 903.
+- The operator completed the manual browser checklist and published the report before merge. Merge commit `7317a006e495099fbb733d8d73e425396ec1eaa4`. No publication or deployment.
+
+## 2026-10-16 — PR #216 in progress: Deezer artwork selection
+
+- Extracted pure album-artwork relevance selection/payload shaping and exact-artist photo fallback shaping into `app/services/deezer_artwork.py`. `app/api/metadata.py` retains request sequencing, cache ownership, provider-failure/retry behavior, and HTTP validation.
+- Added direct-import tests for the relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year handling, exact artist identity, missing photos, and empty results; route regressions cover album selection and artist-photo fallback.
+- Initial implementation head `5fd8edb4a5e0962218ec9a144b7ce57a7de25614` passed all four workflows: Python syntax run 1147, Docker packaging/full suite/build run 1054, container runtime smoke run 863, and validation-only multi-architecture image validation run 907. The assistant did not run the test suite locally.
+- Documentation closeout updates are being added on this branch; rerun all four workflows on the resulting final PR head before merge. Publishing/deployment remain paused.

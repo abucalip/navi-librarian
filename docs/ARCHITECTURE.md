@@ -382,9 +382,13 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 - Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
 
-## 2026-10-16 — PR #214 refreshed: Deezer tracklist shaping extraction
+## 2026-10-16 — PR #214 merged: Deezer tracklist shaping
 
-- Recreated this candidate directly on current `main` after the original branch diverged; the refreshed diff is based on the latest main revision and preserves intervening merged work.
-- Extracted only the pure track-row-to-response transformation into `app/services/deezer_tracklist.py`. The metadata router retains provider I/O, matching, response assembly, and error handling.
-- Direct-import regression tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
-- Exact-head CI and final diff review are pending. Do not merge until all four required workflows pass on the refreshed PR head. No publication or deployment.
+- Extracted pure track-row-to-response shaping into `app/services/deezer_tracklist.py`; `app/api/metadata.py` retains provider I/O, matching, response assembly, and error handling.
+- Direct-import tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
+- Exact tested head `59c8d13ba57930400675e4f9ff90ccba919b63aa`; all four workflows passed: Python syntax run 1144, Docker packaging/full suite/build run 1051, container runtime smoke run 860, and validation-only multi-architecture validation run 904.
+- Merged at `51c4e03ac3a65cd74a25c6aced897bfa4d74a989`. No publication or deployment.
+
+## Deezer artwork selection boundary (PR #216 in progress)
+
+`app/services/deezer_artwork.py` owns pure selection and response shaping for relevant Deezer album artwork and exact-name artist-photo fallback. `app/api/metadata.py` remains responsible for provider I/O, the cache and its TTLs, transient failure/retry behavior, and endpoint response flow. The new helper imports the existing album relevance/year policy rather than duplicating it. Direct-import and route-level regressions are added; CI verification is pending.

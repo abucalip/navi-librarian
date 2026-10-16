@@ -99,6 +99,46 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertIn("No exact catalog match", result["message"])
         client.get.assert_called_once()
 
+
+    def test_artwork_uses_extracted_album_selection_and_preserves_payload(self):
+        response = _Response({"data": [{
+            "artist": {"name": "Artist"}, "title": "Album",
+            "cover_xl": "http://images.test/cover.jpg", "release_date": "2001-04-03",
+        }]})
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.return_value = response
+            result = metadata.album_artwork("Artist", "Album")
+        self.assertEqual(result, {
+            "artwork_url": "https://images.test/cover.jpg",
+            "image_kind": "album",
+            "source": "Deezer",
+            "matched_artist": "Artist",
+            "matched_album": "Album",
+            "year": 2001,
+        })
+        client.get.assert_called_once()
+
+    def test_artwork_falls_back_to_exact_artist_photo_when_album_match_is_weak(self):
+        album_response = _Response({"data": [{
+            "artist": {"name": "Other Artist"}, "title": "Different Album",
+            "cover_xl": "https://images.test/unrelated.jpg",
+        }]})
+        artist_response = _Response({"data": [
+            {"name": "Artist Tribute", "picture_xl": "https://images.test/wrong.jpg"},
+            {"name": "Artist", "picture_big": "http://images.test/artist.jpg"},
+        ]})
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = [album_response, artist_response]
+            result = metadata.album_artwork("Artist", "Album")
+        self.assertEqual(result, {
+            "artwork_url": "https://images.test/artist.jpg",
+            "image_kind": "artist",
+            "source": "Deezer",
+            "matched_artist": "Artist",
+            "year": None,
+        })
+        self.assertEqual(client.get.call_count, 2)
+
     def test_artwork_returns_cached_result_and_rejects_empty_request(self):
         with self.assertRaises(HTTPException) as raised:
             metadata.album_artwork("", "")
