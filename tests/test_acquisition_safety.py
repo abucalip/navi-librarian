@@ -1,14 +1,11 @@
 """Regression tests for acquisition safety and legacy lifecycle integration.
 
-Pure discovery and slskd policies are covered through direct-import tests in their
-own modules. The remaining AST harness is limited to legacy orchestration that
-still needs the monolithic adapter's shared state and injected I/O stubs.
+Behavior is tested through the production coordinator, orchestration guards,
+and import-completion service with injected state and I/O dependencies.
 """
-import ast
 import json
 import tempfile
 import threading
-import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration as _acquisition_orchestration
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
@@ -23,49 +20,23 @@ from slskd_search import (
 from slskd_quality import quality_tier as _slskd_quality_tier_impl
 from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
 
-from acquisition_completion import (
-    filename_key as _module_filename_key,
-    match_completed_album_files as _module_match_completed_album_files,
-)
+from acquisition_import_service import import_completed_source_locked
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-
-SOURCE = Path(__file__).resolve().parents[1] / "navidrome_server.py"
-
 
 class FakeHTTPError(Exception):
     pass
 
 
 def load_helpers():
-    tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
-    wanted = {
-        "_slskd_candidate_start_state",
-        "_discovery_import_completed_source",
-        "_discovery_import_completed_source_locked",
-    }
-    selected = [
-        node for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name in wanted
-    ]
-    found = {node.name for node in selected}
-    if found != wanted:
-        raise AssertionError(f"Missing acquisition helpers: {sorted(wanted - found)}")
-    # The public MCP decorator is an app-registration detail; exercise the actual
-    # function body without importing/initializing MCPServer.
-    for node in selected:
-        node.decorator_list = []
-
+    """Build isolated state/dependency fixtures without parsing legacy source."""
     namespace = {
         "Path": Path,
         "_acquisition_lifecycle": _acquisition_lifecycle,
         "_acquisition_orchestration": _acquisition_orchestration,
         "_acquire_album_request": _module_acquire_album_request,
         "_module_candidate_start_state": _module_candidate_start_state,
-        "unicodedata": unicodedata,
-        "_discovery_filename_key": _module_filename_key,
-        "_discovery_match_completed_album_files": _module_match_completed_album_files,
         "json": json,
         "threading": threading,
         "_DISCOVERY_IMPORT_TRANSITION_LOCK": threading.RLock(),
@@ -98,31 +69,6 @@ def load_helpers():
         "_slskd_candidate_start_state": lambda *args, **kwargs: True,
         "_music_key": lambda value: str(value or "").strip().casefold(),
     }
-    # Pure slskd helpers use their extracted production modules; only lifecycle
-    # and orchestration functions remain compiled from the legacy adapter.
-    namespace["_slskd_album_path_match"] = _slskd_album_path_match_impl
-    namespace["_slskd_search_queries"] = _slskd_search_queries_impl
-    namespace["_slskd_search_response_items"] = _slskd_search_response_items_impl
-    namespace["_slskd_quality_tier"] = _slskd_quality_tier_impl
-    namespace["_slskd_track_identity"] = lambda filename: _slskd_track_identity_impl(
-        filename, namespace["_music_key"]
-    )
-    namespace["_slskd_path_match_diagnostics"] = lambda payload, artist, album, limit=10: (
-        _slskd_path_match_diagnostics_impl(
-            payload, artist, album, limit,
-            music_key=namespace["_music_key"],
-            album_path_match=namespace["_slskd_album_path_match"],
-        )
-    )
-    namespace["_slskd_extract_candidates"] = lambda payload, artist, album, priority, expected_track_count=None: (
-        _slskd_extract_candidates_impl(
-            payload, artist, album, priority, expected_track_count,
-            music_key=namespace["_music_key"],
-            album_path_match=namespace["_slskd_album_path_match"],
-            quality_tier=namespace["_slskd_quality_tier"],
-            track_identity=namespace["_slskd_track_identity"],
-        )
-    )
     namespace["_discovery_list_acquisition_jobs"] = lambda: namespace["jobs"]
     namespace["_discovery_is_dismissed"] = lambda artist, album: any(
         row.get("artist_key") == namespace["_music_key"](artist)
@@ -140,12 +86,7 @@ def load_helpers():
     namespace["_discovery_acquire_album_impl"] = lambda *args: json.dumps({
         "ok": True, "status": "implementation_called"
     })
-    module = ast.Module(body=selected, type_ignores=[])
-    exec(compile(ast.fix_missing_locations(module), str(SOURCE), "exec"), namespace)
     return namespace
-
-
-HELPERS = load_helpers()
 
 
 class AcquisitionLifecycleTests(unittest.TestCase):
@@ -216,9 +157,20 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             music.mkdir()
             source = root / "downloaded-album"
             source.mkdir()
-            result = self.ns["_discovery_import_completed_source"](
-                "Artist", "Album", source, music,
-                {"username": "peer", "files": [{"filename": "Album/01.flac", "size": 4}]},
+            result = _acquisition_orchestration.import_source_unless_dismissed(
+                "Artist", "Album",
+                transition_lock=self.ns["_DISCOVERY_IMPORT_TRANSITION_LOCK"],
+                is_dismissed=self.ns["_discovery_is_dismissed"],
+                import_source=lambda: import_completed_source_locked(
+                    "Artist", "Album", source, music,
+                    {"username": "peer", "files": [{"filename": "Album/01.flac", "size": 4}]},
+                    safe_folder_name=self.ns["_discovery_safe_folder_name"],
+                    update_status=lambda *args, **kwargs: (
+                        status_calls.append(args) or False
+                    ),
+                    import_matched_album_files=lambda *args, **kwargs: import_calls.append(args),
+                    now=lambda: 123.0,
+                ),
             )
 
         self.assertEqual(result, "failed")
