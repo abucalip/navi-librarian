@@ -1126,6 +1126,10 @@ def recommend_new_music(count: int = 10) -> str:
                 candidate.get("lastfm_popularity_bonus", 1.0), 3
             ),
             "suggested_tracks": candidate["tracks"][:3],
+            "ownership_check": (
+                "No exact normalized album-title match found in the indexed "
+                "Navidrome inventory; alternate editions may still exist."
+            ),
             "reason": (
                 {
                     "adjacent": "Genre tags connect this artist to your "
