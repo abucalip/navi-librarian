@@ -1,6 +1,6 @@
-## 2026-10-16 — Dashboard-pick service extraction (PR preparation)
+## 2026-10-16 — Dashboard-pick service extraction merged (PR #189)
 
-The next low-coupling web/domain boundary is the dashboard pick assembler. The candidate pool construction and category balancing now live in `app/services/dashboard.py`, injected with discovery-list reads, album eligibility, and shuffle behavior. The route retains request validation and the established JSON response. Direct-import and route integration regressions are added. This is an independent extraction; do not combine it with acquisition lifecycle/locking changes. Verify the final PR head with the focused/full suite, syntax, runtime smoke, and non-publishing multi-architecture workflow before merge. Acquisition dismissal HTTP 409 remains deferred.
+PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`. Dashboard candidate aggregation and category balancing moved to `app/services/dashboard.py`, with injected list-reading, eligibility, and shuffle dependencies. Route validation and response contract remain in `app/api/dashboard.py`. All four required exact-head workflows passed: syntax 1052, Docker packaging/full suite/build 959, runtime smoke 768, and validation-only multi-architecture 812. No local test run, publication, or deployment is claimed. Acquisition dismissal HTTP 409 remains deferred.
 
 ## 2026-10-16 — slskd connection probe extraction merged (PR #187)
 
