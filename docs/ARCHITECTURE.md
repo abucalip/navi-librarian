@@ -312,3 +312,8 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Discovery library snapshot — completed (PR #168)
 
 `discovery_library_snapshot.py` owns cached artist/album inventory assembly with injected Navidrome API, collection-normalization, and discovery-store callbacks. The legacy `_discovery_library_snapshot()` wrapper remains in `navidrome_server.py`. Direct-import tests cover cache reuse/schema compatibility, album-ID deduplication, pagination, and the 50,000-album safety stop. All four required workflows passed on exact head `fc69943301c5065a54a0128c8b82ae214cd69dd1`; PR #168 merged at `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`. Publishing/deployment remain paused and unverified.
+
+
+## Last.fm artist genre parsing — extraction in progress
+
+`LastFmClient.artist_genres()` now owns cached top-tag retrieval, normalization, case-insensitive deduplication, and the existing eight-tag limit. `navidrome_server._lastfm_artist_genres()` remains a compatibility adapter. Exact-head CI and merge are pending; Last.fm cache/pacing behavior and discovery grouping remain unchanged.
