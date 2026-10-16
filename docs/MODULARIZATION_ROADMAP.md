@@ -1,8 +1,8 @@
-## 2026-10-16 — Classics-list builder audit and extraction (in progress)
+## 2026-10-16 — Classics-list critical-rating extraction completed (PR #229)
 
 The first independently testable seam is critical-rating enrichment, not the whole builder. `discovery_classics_ratings.enrich_critical_ratings(candidates, rating_lookup, shortlist_limit=80, year_limit=30)` owns stable listener-ranked shortlist selection and candidate metadata updates; the adapter retains cached MusicBrainz access, library inventory, Last.fm gathering, scoring/jitter, genre enrichment, diversity selection, and response assembly. Tests inject a deterministic lookup and assert ordering, bounds, missing-rating behavior, and metadata updates. Keep this narrow; do not extract the whole provider/cache-backed pipeline with a large callback surface.
 
-Verification status is pending until exact-head CI and diff review complete.
+PR #229 merged at `925eb16cba7d2387cd0a17c7690e36d35f17e8f1` from exact tested head `28c364dca41971ea90667c175663de17b41ca7ab`. All four required workflows passed: syntax/acquisition safety run 1194, Docker packaging/full suite/build run 1102, runtime smoke run 911, and validation-only multi-architecture run 955. Provider/cache access remains in the adapter. Publishing/deployment remain paused.
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
 - **PR #225:** cached discovery-list filtering/projection moved to `discovery_list_payload.build_cached_discovery_list_response()`; exact head `573fe05d31dae422c25188688cd2fa949339e487`, squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. All four workflows passed: syntax/acquisition safety 1187, Docker/full suite/build 1095 (477 tests), runtime smoke 904, validation-only multi-architecture 948.
