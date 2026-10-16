@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (dependency map and AST test inventory completed)  
-GitHub source of truth: `main` at audit merge `26009d1321c2169859f06c75c0a8abb409425325`
+Last reviewed: 2026-10-16 (transfer lookup test migration merged)  
+GitHub source of truth: `main` includes transfer-test migration merge `60cf07ffa05416355053660c1823f6af5b18716b` and closeout documentation commit `1773db29515c8c6c144217b3029b9bbbce5a2610`
 
 ## Current focus
 
