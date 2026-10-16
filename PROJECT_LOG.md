@@ -1,3 +1,10 @@
+## 2026-10-16 — PR #231 merged: classics genre enrichment
+
+- Branch: `extract/classics-genre-enrichment`; exact tested head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge `b23d76712a04dcbfc461ceb7245a0676738fca7a`.
+- Extracted bounded genre annotation to `discovery_classics_genres.enrich_classic_genres()`; injected Last.fm lookup and family classification remain adapter responsibilities. Added direct-import tests for the limit, order, normalized lookup deduplication, fallback metadata, and invalid limits; added Docker packaging.
+- All four required exact-head workflows passed: Python syntax run 1208, Docker packaging/full unit suite/build run 1116, container runtime smoke run 925, and validation-only multi-architecture validation run 969 (publishing paused). Assistant-side local tests were not run.
+- No publication, deployment, or production runtime verification. Next: resume the remaining acquisition-coordination boundary audit; do not start broader extractions before reviewing safety and independent testability.
+
 ## 2026-10-16 — PR #230 merged: watcher progress accounting
 
 - Branch: `refactor/extract-watcher-progress-accounting`; exact tested head `47fb2a5bb18d4101dde910dd30e5bad2ed13e2e7`; squash merge `57f9776b1b517c7c86119b2a11d7f919b8cab631`.
