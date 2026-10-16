@@ -1,3 +1,12 @@
+## 2026-10-16 — PRs #186 and #187 merged
+
+- **PR #186 — empty-state copy/state kinds:** manual browser report published in PR comments for tested head `0c12a43cd40211d522868dab7caa70c8a5fbf6e6`; checklist passed with zero failures. All four GitHub Actions workflows passed on that exact tested head (syntax run 1041, Docker packaging run 948, runtime smoke run 757, validation-only image run 801). Squash merge: `d42618b63f141049d5b0e6558e81174ef5c1418f`.
+- **PR #187 — slskd connection probe extraction:** extracted `slskd_client.test_connection()`, retained `discovery_test_slskd_connection()` as the compatibility adapter, added direct-import regression tests and Docker packaging. All four required GitHub Actions workflows passed on final PR head `920590871883aa8c75c29a1b16131bd88519072d` (syntax run 1041, Docker packaging/full suite/build run 948, runtime smoke run 757, validation-only image run 801). Squash merge: `b7ae6458adda3650f178fc64457914beb66ece9c`.
+- Assistant-side local tests were not independently run. CI is the verification evidence; no image publication, deployment, or production runtime verification is claimed.
+- Acquisition dismissal HTTP 409 remains deferred per user direction; neither PR changed acquisition cleanup behavior.
+- GitHub main tip at closeout: `b7ae6458adda3650f178fc64457914beb66ece9c`.
+- **Next action:** refresh main, open PRs and exact-head CI, then select the next two or three low-coupling extractions under the roadmap. Keep publishing paused.
+
 ## 2026-10-16 — slskd connectivity probe extraction in progress (PR #187)
 
 - Branch `refactor/extract-slskd-connection-check`, based on GitHub main `d66257586b69c4cb03641f5ce67050c3f4defd76`; current implementation head before this documentation update: `73be3bf8fa1211edff3689bfd1a9c820bf6770d6`.
