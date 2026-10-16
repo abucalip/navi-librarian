@@ -1,3 +1,13 @@
+## 2026-10-16 — Acquisition coordinator policy/orchestration audit
+
+- Audited GitHub `main` at `cd5d0240c1ac696417727de938736a1b15f7582b`. `_discovery_acquire_album_impl()` spans lines 2341–2618 and is 278 lines by the existing AST size measurement.
+- Traced its responsibilities to extracted owners: `slskd_search_polling.collect_search_responses()` handles search polling; `_slskd_extract_candidates()` handles candidate policy; `acquisition_lifecycle.queue_failure_action()` classifies queue errors; existing adapters/services handle dismissal-serialized queueing, source-start checks, safe cleanup/source switching, and watcher startup.
+- Remaining inline rules are interleaved with the orchestration: cap attempts at ten clear candidates; distinguish source rejection from fatal HTTP authorization/configuration errors; monitor uncertain queue outcomes rather than risk duplicate downloads; clean a definitively stopped source before fallback; and terminate when cleanup cannot be confirmed. These are safety-critical transitions, but no smaller cohesive policy API was identified that would reduce coupling rather than duplicate the orchestration.
+- **Decision: retain `_discovery_acquire_album_impl()` as orchestration.** No application code changed and no tests were run for this audit. The size guard already tracks its 278-line size; do not extract it for size alone.
+- Next: trace and migrate the remaining AST-coupled import-safety test in `tests/test_acquisition_safety.py` only after identifying a direct-import production owner and preserving destination path, filesystem mount identity, no-overwrite, and importing-status persistence-failure coverage. Operational MCP functions remain blocked on explicit owner decision.
+
+---
+
 ## 2026-10-16 — Mutable MUSIC_DIR coupling audit
 
 - Audited every MUSIC_DIR occurrence in the current navidrome_server.py source fetched from GitHub main (3,031 source lines; 3,032 split fields including the trailing empty element): initialization at line 88; persistence callback wiring at 218; raw library tag scan at 230; settings defaults and downloads fallback at 1517/1531; central and nested writers at 1545–1546, 1591–1592, and 1665–1666; settings-get adapters at 1580 and 1651; and acquisition recovery/watcher dependency injection at 2271/2286. Line references are audit-time references and should be refreshed before a later code change.
