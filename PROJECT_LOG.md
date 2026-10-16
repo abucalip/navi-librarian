@@ -5,7 +5,7 @@
 - Extracted pure biography selection into `app/services/artist_bio.py`, preserving provider I/O, concurrent retrieval, cache ownership, validation, and response schema in `app/api/metadata.py`.
 - Direct-import tests cover matching QIDs, mismatched page identity, disambiguation, ranking/filtering, empty payloads, and truncation. All four required workflows passed: syntax 1059, Docker/full suite/build 966, runtime smoke 775, validation-only multi-architecture 819.
 - No assistant-side local test execution, publication, deployment, or production runtime verification is claimed.
-- Main tip at closeout: `b829fa953d979563a8ace6e5529eace8cb80ac43`.
+- PR #190 code merge SHA: `b829fa953d979563a8ace6e5529eace8cb80ac43`; documentation closeout commits followed on main.
 - Next: refresh GitHub main/open PRs/CI before selecting another independent extraction.
 
 ## 2026-10-16 — Artist-biography resolution extraction opened
