@@ -1,3 +1,19 @@
+## 2026-10-16 — Personal recommendation allocator integrated (verification pending)
+
+- Connected `recommend_new_music()` to the pure allocator through prepared immutable candidates and stable IDs. The server adapter still owns normalized Navidrome ownership lookup, legacy recommendation payload construction, ownership-review payloads, and diagnostic projection.
+- Preserved the original album insertion index as `source_order`, category targets, regional style reservations, one-album-per-artist rule, recent-family cap, 60-check budget, and the legacy final-fallback tie order. Added the two allocator modules to the Docker image's explicit top-level COPY list.
+- This is an implementation candidate only. No local test execution is available in this workflow. Review and exact-head CI must establish behavior parity before merge. Publishing/deployment remain paused.
+- Verification update: the first PR CI attempt failed two allocator assertions (a style-reservation fixture incorrectly set its category target to zero, and a duplicate-status fixture filled the requested count before fallback reached the duplicate). Corrected those test fixtures. A subsequent server-adapter review also moved `ownership_check` back onto selected recommendations only, preserving the distinct ownership-review payload shape. CI for the current head remains pending; no test pass is claimed.
+
+
+## 2026-10-16 — Personal allocator extraction investigation (not PR-ready)
+
+- Continued from the merged allocation contract in PR #221. The exploratory branch now adds a pure allocator and direct-import tests, and refines the immutable candidate contract with source-order metadata so stable ties can preserve legacy fallback ordering.
+- Code review found a parity-sensitive detail: legacy regional-style reservations use original candidate insertion order for equal scores, while final fallback first groups score-sorted candidates by category and then applies a stable global score sort. The allocator now records source_order and models the final-fallback tie rule; tests were added for the contract and fallback ordering.
+- No adapter integration has been made. The server's response shaping, ownership-review payloads, diagnostics, and selected-artist accounting remain in the legacy loops. No tests have been executed locally and no CI result exists for the exploratory branch; these changes are not ready for a PR.
+- **Next action:** integrate through a thin server adapter only after tracing and regression-testing legacy decision/payload parity. Add the allocator module to Docker packaging, run focused and full tests, then verify all four required workflows on the exact PR head. If parity cannot be achieved without coupling policy to response/provider logic, stop and refine the boundary.
+- Publishing and deployment remain paused; no production action occurred.
+
 ## 2026-10-16 — PR #194 merged: token cleanup and touch targets
 
 - Refreshed PR #194 against current main and merged the reviewed CSS/documentation diff. Exact tested PR head: `0cf2e4329015fd9159213fbe25561decb16dbdb8`; squash merge commit: `10b14c1ed37bfc20930bf642f511065404dfb379`.

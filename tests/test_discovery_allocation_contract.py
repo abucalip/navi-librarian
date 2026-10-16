@@ -37,6 +37,18 @@ class AllocationContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported recommendation category"):
             candidate(category="unknown")
 
+    def test_candidate_allows_empty_normalized_album_key(self):
+        # Punctuation-only titles can normalize to an empty identity key;
+        # preserve the legacy deduplication behavior instead of aborting a request.
+        self.assertEqual(candidate(album_key="").album_key, "")
+
+    def test_candidate_validates_source_order_for_stable_policy_ties(self):
+        self.assertEqual(candidate(source_order=7).source_order, 7)
+        with self.assertRaisesRegex(ValueError, "source_order"):
+            candidate(source_order=-1)
+        with self.assertRaisesRegex(ValueError, "source_order"):
+            candidate(source_order=1.5)
+
     def test_candidate_rejects_non_finite_scores_and_unclassified_ownership_values(self):
         with self.assertRaisesRegex(ValueError, "finite"):
             candidate(score=float("nan"))
