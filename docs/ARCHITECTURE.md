@@ -397,6 +397,6 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 
 `app/services/deezer_album_details.py` owns the pure projection of a matched Deezer album row into the established matched-artist, matched-album, year, and artwork URL fields. `app/api/metadata.py` retains provider I/O, exact catalog matching, tracklist retrieval, error handling, and response assembly. PR #217 merged at `37f04d0a863f69f5596f6a46406cc8bd64bde039` from exact tested head `b631f4c6367c68357cbd91f75b986770edfeee0e`; all four workflows passed (syntax 1151, Docker/full suite/build 1058, runtime smoke 867, validation-only multi-architecture 911).
 
-## Exact Deezer release-year selection boundary (PR #218 in progress)
+## Exact Deezer release-year selection boundary (PR #218 merged)
 
-`exact_album_release_year()` in `app/services/deezer_album_matching.py` selects the first plausible year among normalized exact artist-and-album matches. The metadata route retains provider access and the MusicBrainz-first response contract. Direct-import and route regressions are added; final CI verification is pending.
+`exact_album_release_year()` in `app/services/deezer_album_matching.py` selects the first plausible year among normalized exact artist-and-album matches. The metadata route retains provider access and the MusicBrainz-first response contract. PR #218 merged at `6dc6adae89169638da9a158c79ccee5d2e1ddfb7` from exact tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; all four workflows passed (syntax 1153, Docker/full suite/build 1060, runtime smoke 869, validation-only multi-architecture 913).
