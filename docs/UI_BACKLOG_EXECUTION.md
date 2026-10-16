@@ -80,21 +80,18 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 - Login-page alignment (PR #66). The guide marks this closed and says not to reopen it
   without new evidence. Its verification recorded keyboard focus modality and the
   first-run setup variant as **skips, not passes**.
-- **Navigation rail redesign** (not a numbered backlog item; requested directly) — on
-  branch `ui/nav-blob`. The sidebar active state is now a sliding indicator driven by
-  `translateY`, adapted from the Forever Components `navigation/gooey-tab-bar`. The blob
-  covers the seven content items; Acquisitions and Settings are intended to move elsewhere
-  later, as is Log out. See section 5b for the technique and the two failures encountered.
-- **State craft** (item 1) — implemented in PR #121 on branch `ui/state-craft`. A shared
+- **Navigation rail redesign** (not a numbered backlog item; requested directly) — merged as
+  PR #132. The sidebar active state is a sliding indicator driven by `translateY`, adapted from
+  the Forever Components `navigation/gooey-tab-bar`. The blob covers the seven content items;
+  Acquisitions and Settings are intended to move elsewhere later, as is Log out. See section 5b.
+- **State craft** (item 1) — merged as PR #121. A shared
   `.status-line` treatment now covers every status element, with `aria-live` on all of
-  them and a per-state leading glyph so state is never carried by colour alone. See
-  section 5 for the before/after measurements.
-- **Per-section layouts** (item 2) — started in PR #128 on branch `ui/acquisition-layout`.
-  Scoped to one section per PR, as `AGENTS.md` requires. The acquisition section moved off
-  the shared four-column artwork grid onto a wider status-board layout. Other sections are
-  deliberately unchanged; the remaining sections in this item are still open.
-- **Get/request button consolidation** (item 3) — implemented on branch
-  `ui/get-request-consolidation`. The modal, artwork-overlay and card-action variants now
+  them and a per-state leading glyph so state is never carried by colour alone. See section
+  5 for the before/after measurements.
+- **Per-section layouts** (item 2) — acquisition merged as PR #128; artist deep dive merged as
+  PR #184. Scoped to one section per PR, as `AGENTS.md` requires. Four discovery sections and
+  Settings remain; see the Remaining list below.
+- **Get/request button consolidation** (item 3) — merged as PR #131. The modal, artwork-overlay and card-action variants now
   share one `.get-album` base, three duplicated creation sites collapsed into one
   `createGetButton()` helper, and the control gained an explicit state machine. Three real
   defects were fixed as part of the work; see section 5a.
@@ -102,19 +99,28 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 **Remaining, in the guide's priority order:**
 
 1. ~~**State craft**~~ — done in PR #121.
-2. **Per-section layouts** — in progress. Acquisition done in PR #128. Still to consider:
-   artist exploration, library, and settings. The guide's instruction is "do not force
-   every page into the same dashboard grid"; six sections still share one grid, so the
-   candidates are the discovery sections and settings rather than acquisition again.
+2. **Per-section layouts** — **partially done.** Acquisition (PR #128) and artist deep dive
+   (PR #184) are differentiated. Still sharing the plain `.cards` grid: Recommendations, New
+   Releases, Personal Discoveries and Classics, plus Settings, which has its own layout but no
+   composition work. The guide's instruction is "do not force every page into the same
+   dashboard grid", so each remaining section needs its own justification rather than a sweep.
 3. ~~**Get/request button consolidation**~~ — done, merged (PR #131).
-4. **Type/token cleanup** — consolidate duplicated values into shared tokens and tighten
-   the type scale without broad visual churn.
-5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow
-   viewport widths.
-6. **Continue visual audit** — re-prioritize based on evidence after the above.
+4. **Type/token cleanup** — **not started.** Measured: 12+ distinct hardcoded hex values appear
+   outside the token block, several repeatedly (`#191a1a` x5, `#f3d66b` x4, `#202221` x4,
+   `#686044` x3, `#353834` x3, `#30322e` x3). These duplicate or extend the existing token set
+   and are the natural scope of this item. Read `typeset.md` (and `audit.md` for the theming
+   dimension) before starting.
+5. **Responsive controls** — **not started.** Measured against `audit.md`'s 44x44 touch-target
+   criterion: `.genre-row-arrow` is 38x34, `.album-modal-close` is 38x38, the modal
+   platform-link icons are 30x30, and `.card-actions .get-album` is 42x42 — all under 44 in at
+   least one axis. Narrow-width layout itself is sound (zero overflow at 360px on every route),
+   so this item is about target size and touch/gesture behaviour, not breakpoints.
+6. **Continue visual audit** — the external critique's list is exhausted; this now means
+   finding the next issue by evidence. Candidate starting points: the 30x30 platform-link icons
+   and the `#686044` hover-border value that appears three times.
 
-**Contrast fix (C1 of the external critique, see PR #141).** The `--subtle` token was raised
-from `#77796f` to `#94958b` on branch `fix/subtle-contrast`. The critique recommended
+**Contrast fix (C1 of the external critique).** The `--subtle` token was raised
+from `#77796f` to `#94958b`, merged as PR #142. The critique recommended
 approximately `#8a8b81`; that clears AA on three of the four backgrounds `--subtle` renders
 on but leaves only 4.53:1 on `--surface`, so a value with real margin was chosen instead.
 See section 5c.
@@ -133,10 +139,15 @@ their claims were re-verified against `main` at `30e7c04`.
 | C3 | **Set the modal artwork `alt` dynamically.** It is hardcoded and never updated. | Small | Verified, not fixed |
 | C4 | **Fix `#recommendationCount`.** 11px mono on an `aria-live` region users must read. | One rule | Implemented in refreshed PR #149; four workflows passed on head `084aebb`; refreshed-head browser verification pending |
 | C5 | **Move `<footer>` out of `<main>`.** It sits mid-document before five sections. | One line | Verified, not fixed |
-| C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | Not started |
-| C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | Item 1, partial |
+| C6 | **Differentiate Artist Deep Dive.** The critique's single highest-leverage move. | Item 2 | **Done** — PR #184. See 5h. |
+| C7 | **Write per-section empty-state copy.** Three cases per section: loading, empty-success, error. | Copy work | **Done** — PR #186. See 5i. |
 
-C1–C5 are all small and independently verifiable. C6 is the rest of backlog item 2.
+**C1–C7 are all closed.** Two further gaps found while working the list are also closed:
+
+| Gap | Found during | Status |
+|---|---|---|
+| Settings-tab ARIA pattern (`aria-labelledby`, roving `tabindex`, arrow keys) | C2 audit | **Done** — PR #188. See 5j. |
+| Missing skip link | C5 audit | **Done** — PR #188. See 5j. |
 
 ## 4a. External critique findings
 
