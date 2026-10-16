@@ -1,3 +1,13 @@
+## 2026-10-16 — PR #190 merged: artist-biography resolution
+
+- PR: https://github.com/abucalip/navi-librarian/pull/190
+- Branch: `refactor/extract-artist-bio-resolution`; exact tested head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`; squash merge `b829fa953d979563a8ace6e5529eace8cb80ac43`.
+- Extracted pure biography selection into `app/services/artist_bio.py`, preserving provider I/O, concurrent retrieval, cache ownership, validation, and response schema in `app/api/metadata.py`.
+- Direct-import tests cover matching QIDs, mismatched page identity, disambiguation, ranking/filtering, empty payloads, and truncation. All four required workflows passed: syntax 1059, Docker/full suite/build 966, runtime smoke 775, validation-only multi-architecture 819.
+- No assistant-side local test execution, publication, deployment, or production runtime verification is claimed.
+- Main tip at closeout: `b829fa953d979563a8ace6e5529eace8cb80ac43`.
+- Next: refresh GitHub main/open PRs/CI before selecting another independent extraction.
+
 ## 2026-10-16 — Artist-biography resolution extraction opened
 
 - Branch `refactor/extract-artist-bio-resolution`, based on refreshed main `7bfcbebfa66e7d00d20f78e25d8b998b7a617bd0` after PR #189.
