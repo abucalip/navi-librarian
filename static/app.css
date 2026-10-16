@@ -73,6 +73,20 @@ nav button.active .nav-count { background: var(--surface); color: var(--yellow);
 .nav-count[hidden] { display: none; }
 /* Parity with the previous active treatment, minus the inset bar the blob now implies. */
 nav button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+/* Skip link: visually hidden until it receives keyboard focus, then presented over the header.
+   Uses a transform rather than display so it stays focusable, and stays inside the viewport
+   when shown so it cannot be clipped. */
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 100;
+  padding: 10px 14px; border-radius: 4px;
+  background: var(--yellow); color: #191a1a; border: 2px solid #f6e8a8;
+  font: 700 13px/1 var(--mono); text-transform: uppercase; letter-spacing: .04em;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible, .skip-link:focus { transform: translateY(0); outline: 2px solid var(--yellow); outline-offset: 3px; }
+/* main is focusable only as a skip-link target, never as a tab stop of its own. */
+main:focus { outline: none; }
 .panel { min-width: 0; margin: 0 0 36px; padding: 0; background: transparent; border: 0; border-radius: 0; }
 .panel h2 { margin: 0 0 9px; font: 600 34px/1.05 var(--display); letter-spacing: .01em; }
 .panel h2::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 11px; background: var(--red); }
