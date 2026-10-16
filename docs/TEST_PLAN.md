@@ -1,10 +1,6 @@
-## 2026-10-16 — Dashboard-pick service extraction (PR preparation)
+## 2026-10-16 — Dashboard-pick service extraction verification (PR #189)
 
-- Focused direct-import suite: `python -m unittest tests.test_dashboard_service tests.test_dashboard_routes -v`.
-- Full suite: `python -m unittest discover -s tests -v`.
-- Required exact-final-head CI: Python syntax/acquisition-safety regressions; Docker packaging/full suite/image build; isolated container runtime smoke; validation-only multi-architecture image validation with publishing disabled.
-- Preserve the `GET /api/dashboard-picks` route, 1–20 count validation, three list reads at count 150, category labels, case-insensitive deduplication, eligibility filtering, balanced picks, random fill, response fields, and graceful skipping of failed lanes.
-- Current state: implementation and test files are on the branch; test/CI results are pending. Do not claim local tests or merge before evidence is observed.
+Exact PR head `d28aaa33f7096ba764232d6bd435cc68d5d85f98` passed all four required GitHub Actions workflows: Python syntax/acquisition-safety regressions (run 1052), Docker packaging plus full unit suite/image build (run 959), isolated container runtime smoke (run 768), and validation-only multi-architecture image validation (run 812). Direct-import tests in `tests/test_dashboard_service.py` cover balanced categories, source call count/arguments, case-insensitive deduplication, eligibility filtering, failed-lane tolerance, and malformed/missing-identity rows. Existing `tests/test_dashboard_routes.py` remains in place for endpoint contract and input validation. PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5`. Assistant-side local tests were not run independently; no publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — slskd connection probe verification closeout (PR #187)
 
