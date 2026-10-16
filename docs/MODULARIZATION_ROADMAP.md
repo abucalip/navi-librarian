@@ -1,6 +1,6 @@
-## 2026-10-16 — Watcher progress-accounting seam (PR pending)
+## 2026-10-16 — Watcher progress-accounting seam completed (PR #230)
 
-A narrow, deterministic helper `acquisition_progress_accounting.observe_progress()` owns only the byte-counter comparison and progress-marker/timer update. The watcher retains its two-minute stall policy, 15-second switch countdown, source-switch/reset orchestration, slskd polling, filesystem verification, and import safety decisions. Direct-import tests cover progress increase, unchanged/decreasing observations, and the exact timeout boundary. This is implementation in progress; do not count the extraction complete until the final diff and all four required workflows pass on the exact PR head.
+The narrow helper `acquisition_progress_accounting.observe_progress()` owns only the byte-counter comparison and progress-marker/timer update. The watcher retains its two-minute stall policy, 15-second switch countdown, source-switch/reset orchestration, slskd polling, filesystem verification, and import safety decisions. Direct-import tests cover progress increase, unchanged/decreasing observations, and the exact timeout boundary. PR #230 merged at `57f9776b1b517c7c86119b2a11d7f919b8cab631` from tested head `47fb2a5bb18d4101dde910dd30e5bad2ed13e2e7`. All four required exact-head workflows passed: syntax 1202, Docker packaging/full unit suite/build 1110, runtime smoke 919, and validation-only multi-architecture 963. Local test execution was not performed; publishing/deployment remain paused.
 
 ## 2026-10-16 — Classics-list critical-rating extraction completed (PR #229)
 
