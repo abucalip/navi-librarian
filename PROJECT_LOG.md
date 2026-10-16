@@ -767,10 +767,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - PR #272 was squash-merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. All four required workflows passed on the exact final PR head `7b1257e0ceb9368063de025a2758f48a344efbcb`: Python syntax/acquisition safety (`38969292510`), Docker packaging/full unit suite/build (`38969292338`), isolated container runtime smoke (`38969292382`), and validation-only multi-architecture image validation (`38969292490`, non-publishing). The full suite passed 554 tests. Publishing, deployment, and production runtime verification were not performed.
 
 
-## 2026-10-16 — Final acquisition safety AST coupling migration (PR pending)
+## 2026-10-16 — PR #274 merged: final acquisition safety AST coupling removed
 
 - Based on current GitHub main `5a74b12d489ae30cfad923af7b68985ebede87dc`. Branch: `test/remove-acquisition-safety-ast`.
 - Removed the `ast.parse()` of the legacy server source test harness from `tests/test_acquisition_safety.py`. The test fixture now creates isolated state directly; the import persistence-failure regression composes the production `acquisition_orchestration.import_source_unless_dismissed()` guard with `acquisition_import_service.import_completed_source_locked()`.
 - Preserved assertions that failed persistence prevents the importer callback and destination creation. Existing direct tests continue to cover dismissal/lock behavior, request concurrency, recovery/retry refusal, source validation, rollback, symlink escapes, no-overwrite, and unrelated-file preservation. No production code changed.
-- CI/focused/full tests have not yet been verified on the final PR head. No merge, publication, deployment, or production runtime verification is claimed.
-- Next: inspect the full diff, verify all four required workflows on the exact final PR head, and merge only if safety coverage passes.
+- Exact final PR head `ad6864ea1f5f70b7f9d8b852bbc4bb02e7c2d395` passed all four required workflows: Python syntax/acquisition safety (`38970088355`), Docker packaging/full unit suite/build (`38970088327`), container runtime smoke (`38970088307`), and validation-only multi-architecture image validation (`38970088322`, publishing paused). The full suite passed 554 tests. PR #274 squash-merged as `cae95e74c9910c512392de80b337eb4b21de67a5`.
+- No production code changed. Publishing, deployment, and production runtime verification were not performed.
+- Next: obtain the owner decision on MCP-exposed `restart_server` and `apply_server_patch`; no changes to those capabilities before authorization.
