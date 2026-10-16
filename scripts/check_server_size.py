@@ -6,7 +6,7 @@ import argparse
 import ast
 from pathlib import Path
 
-SERVER_LINE_LIMIT = 3032
+SERVER_LINE_LIMIT = 3031
 TOP_LEVEL_FUNCTION_LINE_LIMIT = 280
 FUNCTION_EXCEPTIONS = {
     "recommend_new_music": {
