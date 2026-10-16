@@ -1847,3 +1847,9 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact PR head: syntax `38938867862`, container runtime smoke `38938867737`, Docker packaging/full unit suite/build `38938867879`, validation-only multi-architecture image validation `38938867550` (publishing paused).
 - Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.
 - **Next action:** refresh GitHub main, open PRs, docs, and CI before selecting the next independently testable roadmap boundary.
+
+
+## 2026-10-16 — New Releases provider lookup extraction (PR in progress)
+
+- Extracted one artist's cache/read-through MusicBrainz request into `discovery_new_releases.fetch_artist_release_groups()`; artist iteration, query policy, and global candidate selection remain in the server adapter.
+- Added direct-import tests for cache hits, request parameters/timeout, pacing, cache writes, malformed payload normalization, and safe error-type reporting. Exact-head CI is pending; no merge, publication, deployment, or runtime verification is claimed.

@@ -1,4 +1,5 @@
 import unittest
+from discovery_new_releases import fetch_artist_release_groups
 
 from discovery_new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
@@ -129,6 +130,70 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
         )
         self.assertEqual(owned, {("bjork", "fossora")})
         self.assertEqual(qualified, [])
+
+
+
+
+class NewReleaseProviderLookupTests(unittest.TestCase):
+    def test_cache_hit_skips_network_and_delay(self):
+        calls = []
+        payload = [{"id": "cached"}]
+        result, error = fetch_artist_release_groups(
+            "key", "query", cache_get=lambda key, **kw: payload,
+            cache_set=lambda *a: calls.append(("set", a)),
+            http_get=lambda *a, **kw: calls.append(("http", kw)),
+            sleep=lambda seconds: calls.append(("sleep", seconds)),
+            headers={"User-Agent": "test"}, pause_before_request=True,
+        )
+        self.assertEqual(result, payload)
+        self.assertIsNone(error)
+        self.assertEqual(calls, [])
+
+    def test_cache_miss_fetches_with_existing_request_contract_and_caches(self):
+        calls = []
+        response = type("Response", (), {
+            "raise_for_status": lambda self: None,
+            "json": lambda self: {"release-groups": [{"id": "fresh"}]},
+        })()
+        result, error = fetch_artist_release_groups(
+            "key", "artist-query", cache_get=lambda key, **kw: None,
+            cache_set=lambda key, value: calls.append(("set", key, value)),
+            http_get=lambda url, **kw: (calls.append(("http", url, kw)) or response),
+            sleep=lambda seconds: calls.append(("sleep", seconds)),
+            headers={"User-Agent": "test"}, pause_before_request=True,
+        )
+        self.assertEqual(result, [{"id": "fresh"}])
+        self.assertIsNone(error)
+        self.assertEqual(calls[0], ("sleep", 1.1))
+        self.assertEqual(calls[1][2]["params"], {"query": "artist-query", "fmt": "json", "limit": 100})
+        self.assertEqual(calls[1][2]["timeout"], 20)
+        self.assertEqual(calls[2], ("set", "key", [{"id": "fresh"}]))
+
+    def test_malformed_payload_is_normalized_and_cached_as_empty(self):
+        cached = []
+        response = type("Response", (), {
+            "raise_for_status": lambda self: None,
+            "json": lambda self: {"release-groups": "wrong-shape"},
+        })()
+        result, error = fetch_artist_release_groups(
+            "key", "query", cache_get=lambda *a, **kw: None,
+            cache_set=lambda key, value: cached.append(value),
+            http_get=lambda *a, **kw: response, sleep=lambda _: None,
+            headers={}, pause_before_request=False,
+        )
+        self.assertEqual(result, [])
+        self.assertIsNone(error)
+        self.assertEqual(cached, [[]])
+
+    def test_expected_provider_errors_return_type_without_leaking_message(self):
+        result, error = fetch_artist_release_groups(
+            "key", "query", cache_get=lambda *a, **kw: None,
+            cache_set=lambda *a: self.fail("must not cache failures"),
+            http_get=lambda *a, **kw: (_ for _ in ()).throw(ValueError("secret detail")),
+            sleep=lambda _: None, headers={}, pause_before_request=False,
+        )
+        self.assertIsNone(result)
+        self.assertEqual(error, "ValueError")
 
 
 if __name__ == "__main__":
