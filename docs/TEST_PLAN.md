@@ -1214,3 +1214,8 @@ Focused regression command: `python -m unittest tests.test_auth_configuration -v
 ## Auth-secret provider extraction (PR #240 merged)
 
 Focused command: `python -m unittest tests.test_auth_secret -v`. Direct-import tests cover lazy loading, successful caching, retry after exceptions or `None`, and concurrent first access. On exact final PR head `e3542c6a8fa3b2fc3ddf07a0268563ae5946064a`, all four workflows passed: syntax/acquisition safety `38941505550`, Docker packaging/full unit suite/build `38941505440`, container runtime smoke `38941505508`, and validation-only multi-architecture image validation `38941505516`. An initial run exposed a legacy integration-test dependency on `app.main._AUTH_SECRET`; the compatibility seam was restored before final verification. Assistant-side local test commands were not run. Image publication remains paused.
+
+
+## Auth settings reader extraction — verification pending
+
+Run `python -m unittest tests.test_auth_settings tests.test_auth_configuration tests.test_auth_secret -v`, then `python -m unittest discover -s tests -v` and Python syntax checks. Verify all four required workflows on the exact final PR head: syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and validation-only multi-architecture validation (`push: false`). Confirm auth setup/login/session behavior remains unchanged; do not claim browser or runtime verification unless performed.
