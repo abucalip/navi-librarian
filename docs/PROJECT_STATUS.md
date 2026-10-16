@@ -1849,7 +1849,11 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - **Next action:** refresh GitHub main, open PRs, docs, and CI before selecting the next independently testable roadmap boundary.
 
 
-## 2026-10-16 — New Releases provider lookup extraction (PR in progress)
+## 2026-10-16 — PR #238 merged: New Releases provider lookup
 
-- Extracted one artist's cache/read-through MusicBrainz request into `discovery_new_releases.fetch_artist_release_groups()`; artist iteration, query policy, and global candidate selection remain in the server adapter.
-- Added direct-import tests for cache hits, request parameters/timeout, pacing, cache writes, malformed payload normalization, and safe error-type reporting. Exact-head CI is pending; no merge, publication, deployment, or runtime verification is claimed.
+- Squash merge commit: `59430bba44bd32a9dfbbe51f19c3e2e8a1441c13`; exact tested PR head: `a26614489d1407792ba959461537f4e8d87fee06`.
+- Extracted the cache/read-through MusicBrainz request into `discovery_new_releases.fetch_artist_release_groups()`. The server adapter retains artist iteration, the pacing decision, query construction, candidate selection/merging, and response assembly.
+- Direct-import regressions cover cache hits, request parameters/timeout, pacing, cache writes, malformed payload normalization, and safe error-type reporting.
+- All four required workflows passed on the exact PR head: Python syntax run `38939659986`; Docker packaging/full unit suite/build run `38939659632`; container runtime smoke run `38939659664`; validation-only multi-architecture image validation run `38939660017` (publishing paused).
+- No assistant-side local test commands were run independently. No image publication, deployment, or production runtime verification is claimed.
+- **Next action:** refresh main and inspect the remaining acquisition lifecycle/application-assembly boundaries before choosing another independently testable extraction.
