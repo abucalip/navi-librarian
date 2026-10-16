@@ -1,5 +1,7 @@
 ## 2026-10-16 — Cached discovery-list projection extraction (verification pending)
 
+- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+
 - Candidate seam: the cached-list branch of `discovery_get_list()`, leaving request validation, feedback reads, persistence, and For Me library-inventory handling in the server adapter.
 - Proposed owner: `discovery_list_payload.build_cached_discovery_list_response()`; dependencies are injected for list reading, identity normalization, and album eligibility.
 - Direct-import regression tests and Docker inclusion have been added. Exact-head CI and final diff review remain pending; this is not merged or verified.
