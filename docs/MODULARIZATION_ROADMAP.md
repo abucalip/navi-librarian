@@ -1,3 +1,7 @@
+## 2026-10-16 — New Releases global candidate merge complete (PR #234)
+
+PR #234 merged as `c44ea572354b4714e5e2577f5eb21b091be97cc8` from exact tested head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`. The pure merge helper deduplicates cross-artist candidate identities, selects the newest release, and preserves existing winners on ties. Direct-import regression tests added. All four required workflows passed on that exact head (syntax 38935716487, Docker/full suite/build 38935717026, runtime smoke 38935716420, validation-only multi-architecture 38935716622). No assistant-side local test run or publication/deployment/runtime verification claimed. Reassess the remaining discovery, slskd, and acquisition boundaries from current main before choosing the next extraction.
+
 ## 2026-10-16 — New Releases global candidate merge (PR #234 in progress)
 
 PR #233 completed the pure library qualification boundary and merged at `08e20f502e10f829bf9ae7920106b7e8427668eb` from tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`; all four required workflows passed. The next seam extracts cross-artist identity deduplication/newest-release winner selection into `discovery_new_releases.merge_release_candidates()`. Provider/cache/rate-limit behavior, per-artist eligibility, final sorting, and response assembly stay in the adapter. PR #234 CI pending; no publication/deployment/runtime verification.
