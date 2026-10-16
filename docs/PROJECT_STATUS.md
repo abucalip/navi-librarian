@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (classics builder boundary audited)  
-GitHub source of truth: `main` at review baseline `b9a97b5e37aff297c836d2039763de7b166441ba`
+Last reviewed: 2026-10-16 (scripted modularization audit adopted)  
+GitHub source of truth: `main` at review baseline `73897c11bd82f2c0869bad58094d09088b2c6dd2`
 
 ## Current focus
 
@@ -9,9 +9,10 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Audit `app/main.py` and API dependencies on `navidrome_server.py`, package inclusion, compatibility adapters, and AST-coupled acquisition tests.
-2. Treat acquisition-coordinator extraction as conditional, high-risk work; proceed only if the audit reveals a narrow safe seam.
-3. Do not force additional classics-builder or size-only slskd extractions.
+1. Run `scripts/dep_map.py`, review its import graph, and commit the generated map for the exact audited source revision.
+2. Inventory AST/source-reading tests that depend on `navidrome_server.py`; migrate behavior assertions to direct-import module tests without weakening safety coverage.
+3. Add the reviewed app-to-legacy-server import boundary guard. Only then evaluate `service_settings.py` wrapper removal and the acquisition coordinator's policy-vs-orchestration seam.
+4. Do not force additional classics-builder or size-only slskd extractions.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`.
 
