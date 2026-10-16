@@ -1,3 +1,13 @@
+## 2026-10-16 — PR #240 merged: lazy auth-secret provider
+
+- Exact tested PR head: `e3542c6a8fa3b2fc3ddf07a0268563ae5946064a`; squash merge commit: `78547fd47c1b155255c1da6ef57120b76513a0fc`.
+- Extracted lazy, lock-protected persistent signing-secret loading into `app/security/auth_secret.py`. `app/main.py` injects the existing data-directory getter and `load_auth_secret`; session-token creation, middleware, routes, cookie policy, and persistence ownership remain unchanged.
+- Direct-import tests cover lazy loading, successful-result caching, retry after exceptions and `None`, and concurrent first access.
+- All four required workflows passed on the exact PR head: Python syntax run `38941505550`; Docker packaging/full unit suite/build run `38941505440`; container runtime smoke run `38941505508`; validation-only multi-architecture image validation run `38941505516`. The Docker packaging workflow completed successfully, including the full unit suite.
+- Assistant-side local test commands were not run independently. Publishing remains paused. No image publication, deployment, or production runtime verification is claimed.
+
+Focused regression command: `python -m unittest tests.test_auth_secret -v`. The exact PR-head CI evidence is listed above; no separate assistant-side local test run is claimed.
+
 ## New Releases query construction extraction — completed (PR #236)
 
 Direct-import tests cover date-bounded query shape, quote/backslash escaping, and cache-key stability. Exact tested head `990e3ddfe08b6b1590860e8fd07d0ac13882be3e` passed all four required workflows: syntax/acquisition safety `38938238608`, Docker packaging/full unit suite/build `38938238694`, container runtime smoke `38938238678`, and validation-only multi-architecture validation `38938238904`. Assistant-side local tests were not run. Publishing/deployment remain paused.
