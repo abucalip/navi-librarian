@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-16 (scripted modularization audit adopted)
+Last updated: 2026-10-16 (recommendation and operational-surface audit adopted)
 
 ## Authority and responsibilities
 
@@ -21,7 +21,8 @@ Read documentation according to this map; **consulting a document does not mean 
 4. Consult `docs/TEST_PLAN.md` for mandatory gates and the tests relevant to the change.
 5. Read the applicable architecture/decision sections and inspect actual implementation, callers, tests, configuration, and package/Docker inclusion.
 6. Search the root `PROJECT_LOG.md` for the relevant module, PR, regression, or decision. Do not read the full chronological log unless the task requires it.
-7. Read this workflow in full when changing the workflow itself; otherwise consult the applicable section.
+7. For large legacy responsibilities, inspect actual current line ranges, every production caller, tests that mock the function, and nearby extracted modules before selecting a seam. Specifically check inventory overlap before duplicating library snapshot behavior.
+8. Read this workflow in full when changing the workflow itself; otherwise consult the applicable section.
 
 If a document is stale or contradicts current code or GitHub evidence, verify the discrepancy and update the canonical document. Never use a shorter reading path to skip code inspection, tests, safety checks, or CI.
 
@@ -40,7 +41,7 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 
 ## Extraction selection
 
-- A session may complete two or three small extractions, but there is no quota. Default to one independently reviewable extraction per PR.
+- A session may complete two or three small extractions, but there is no quota. Default to one independently reviewable extraction per PR. Independent audit gates may run in parallel as separate PRs when their changed files and prerequisites do not overlap; verify the dependency graph first, and refresh main between dependent merges.
 - Trace the proposed seam through implementation, callers, tests, configuration, packaging, and compatibility interfaces before editing.
 - Prefer pure or explicitly dependency-injected policy with direct-import tests and a narrow adapter. Do not extract a whole builder or create a broad callback surface just to reduce file size.
 - Stop when the boundary is unclear, tests fail, higher-priority correctness/security/verification work exists, or the extraction adds more complexity than it removes.
@@ -73,7 +74,7 @@ Keep one canonical home for each kind of information:
 
 When an extraction is completed, remove it from the active roadmap and record it in `PROJECT_LOG.md`. Do not duplicate full PR/CI narratives across the roadmap and status. Update architecture docs only when the actual boundary or decision changes. Keep the status concise; search historical records as needed.
 
-At meaningful session closeout, update `docs/PROJECT_STATUS.md` and root `PROJECT_LOG.md`, plus only the relevant roadmap, requirements, test, workflow, architecture, or deployment documents. Record facts only: branch, PR, exact SHA, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and the single most useful next action.
+At meaningful session closeout, update `docs/PROJECT_STATUS.md` and root `PROJECT_LOG.md`, plus only the relevant roadmap, requirements, test, workflow, architecture, or deployment documents. Record facts only: branch, PR, exact SHA, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and the single most useful next action. For audit-driven work, also record the exact measured line/function sizes and whether the thresholds were verified against the audited SHA.
 
 ## Release and production safety
 
