@@ -1,3 +1,10 @@
+## 2026-10-16 — Independent extraction session: PRs #205 and #207
+
+- **PR #205:** https://github.com/abucalip/navi-librarian/pull/205 — extracted per-artist MusicBrainz release-group candidate filtering to `discovery_new_releases.select_artist_release_candidates()`. Exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871); squash merge `32b39be400ec046e8310a87260346b1959141609`.
+- **PR #207:** https://github.com/abucalip/navi-librarian/pull/207 — extracted Artist Deep Dives score/rank/diversity policy to `discovery_recommendations.rank_and_diversify_deep_dive_candidates()`. Exact tested head `20e565582579f4097eed3803748c87bb3d932a98`; all four workflows passed (syntax 1114, Docker/full suite/build 1021, runtime smoke 830, validation-only multi-architecture 874); squash merge `a5b0d865060c3d069a865be7a1cb43c1a072ae91`.
+- Both are backend-only and preserve provider access, cache/rate-limit behavior, legacy server entry points, and MCP response contracts. Direct-import tests added. Assistant-side local test commands were not run; no publication, deployment, live provider integration, or production runtime verification is claimed. PR #206 was superseded and closed before PR #207 was opened from updated main. Acquisition-dismissal HTTP 409 remains deferred; publishing remains paused.
+
+
 ## 2026-10-16 — Independent extraction session: PRs #202 and #203
 
 - **PR #202:** https://github.com/abucalip/navi-librarian/pull/202 — extracted pure library-overview payload shaping to `navidrome_client.library_overview_payload()`; exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`, squash merge `7a95364a31f360bb20dd8d2919a9bfea93ec893c`. All four required exact-head workflows passed: syntax 1104, Docker packaging/full unit suite/build 1011, runtime smoke 820, validation-only multi-architecture 864.
