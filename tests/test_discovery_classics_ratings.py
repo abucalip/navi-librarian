@@ -48,6 +48,22 @@ class ClassicsCriticalRatingTests(unittest.TestCase):
         enrich_critical_ratings(candidates, lambda mbid, *, include_year: calls.append(mbid))
         self.assertEqual(calls, ["first", "second"])
 
+    def test_default_limits_match_legacy_eighty_and_thirty_bounds(self):
+        candidates = [
+            {"mbid": str(index), "lastfm_listeners": 1000 - index}
+            for index in range(82)
+        ]
+        calls = []
+        enrich_critical_ratings(
+            candidates,
+            lambda mbid, *, include_year: calls.append((mbid, include_year)) or None,
+        )
+        self.assertEqual(len(calls), 80)
+        self.assertEqual(calls[0], ("0", True))
+        self.assertEqual(calls[29], ("29", True))
+        self.assertEqual(calls[30], ("30", False))
+        self.assertEqual(calls[-1], ("79", False))
+
     def test_negative_limits_are_rejected(self):
         with self.assertRaises(ValueError):
             enrich_critical_ratings([], lambda *args, **kwargs: None, shortlist_limit=-1)
