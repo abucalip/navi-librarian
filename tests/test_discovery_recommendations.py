@@ -64,4 +64,43 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   )
   self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Indie rock"]), "other")
 
+
+ def test_deep_dive_ranking_weights_candidate_evidence_and_filters_candidates(self):
+  from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+  rows = [
+   {"artist":"A","album":"Known","lastfm_listeners":1000000,"candidate_pool_score":0.0,
+    "anchor_artist":"Anchor","anchor_album_count":5,"genre_families":["jazz"]},
+   {"artist":"B","album":"Less Known","lastfm_listeners":10,"candidate_pool_score":2.0,
+    "anchor_artist":"Anchor B","anchor_album_count":6,"genre_families":["brazilian"]},
+   {"artist":"C","album":"Compilation","lastfm_listeners":10,"candidate_pool_score":0.0,
+    "genre_families":["rock"]},
+  ]
+  ranked, diversified = rank_and_diversify_deep_dive_candidates(
+   rows, music_key=music_key, is_album_candidate=is_album_candidate,
+   jitter=lambda _low,_high: 0.0, limit=10,
+  )
+  self.assertEqual([item["album"] for item in ranked], ["Less Known", "Known"])
+  self.assertEqual(len(diversified), 2)
+  self.assertGreater(ranked[0]["discovery_score"], ranked[1]["discovery_score"])
+
+ def test_deep_dive_diversity_caps_artist_anchor_and_genre(self):
+  from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+  rows = [
+   {"artist":"Same","album":f"Album {i}","lastfm_listeners":0,"anchor_artist":"Anchor",
+    "anchor_album_count":3,"genre_families":["jazz"]}
+   for i in range(6)
+  ]
+  rows += [
+   {"artist":f"Other {i}","album":"Record","lastfm_listeners":0,"anchor_artist":f"Anchor {i}",
+    "anchor_album_count":3,"genre_families":["jazz"]}
+   for i in range(14)
+  ]
+  ranked, diversified = rank_and_diversify_deep_dive_candidates(
+   rows, music_key=music_key, is_album_candidate=is_album_candidate,
+   jitter=lambda _low,_high: 0.0, limit=150,
+  )
+  self.assertEqual(len(ranked), 20)
+  self.assertLessEqual(sum(item["artist"]=="Same" for item in diversified), 2)
+  self.assertLessEqual(sum(item.get("primary_genre_family")=="jazz" for item in diversified), 12)
+
 if __name__=="__main__": unittest.main()
