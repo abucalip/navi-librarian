@@ -889,3 +889,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - The AST-coupled test inventory records the migration to direct imports without weakening acquisition concurrency, recovery, persistence, or filesystem-safety coverage. The recommendation adapter and acquisition lifecycle coordinator remain justified orchestration; no narrower boundary emerged from this audit.
 - **Decision: modularization roadmap complete.** No further concrete correctness, safety, or testability gap was identified. No size-only or speculative extraction is scheduled. Reopen only for a concrete defect or requirement.
 - Verification evidence available in GitHub: PR #288 exact head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c` passed all four required workflows (syntax `38978049684`, Docker packaging/full unit suite/build `38978049670`, runtime smoke `38978049793`, validation-only multi-architecture `38978049589`, publishing paused). This audit did not run local tests or re-run those workflows on the documentation-only commit. No publishing, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-17 — Service configuration defaults audit
+
+- Started focused branch `fix/remove-personal-network-defaults` from current main `bf27b86069e5acb420f7e5663783a01fa4e36076`.
+- Removed the personal ListenBrainz username fallback and the private `192.168.1.12` Navidrome/slskd URL fallbacks from Python settings defaults, the slskd settings tool signature, Compose defaults, and `.env.example`. Unconfigured service URLs/usernames now rely on existing validation to report configuration errors rather than silently targeting a personal account or private host.
+- Added regression assertions that blank Navidrome/slskd URLs and a blank ListenBrainz username fail validation.
+- Added `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with the audit findings and next-session proposal: remove fixed regional targets, make supplementary discovery responsive to recent listening, reduce artist-specific overrides, and test ranking variability/refresh/cache behavior while preserving ownership and eligibility safeguards.
+- **Verification status:** tests have not been run yet. CI, merge, publishing, deployment, and runtime verification are not claimed. Publishing remains paused.
