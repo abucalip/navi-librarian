@@ -1,3 +1,16 @@
+## 2026-10-16 — Navidrome response-shaping extractions (PRs #196 and #198)
+
+- **PR #196:** https://github.com/abucalip/navi-librarian/pull/196 — branch refactor/extract-navidrome-search-shaping; exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836; squash merge 277499ec949353f5f24542a8033a481283814782.
+- Extracted pure search-result payload shaping into navidrome_client.search_result_payload(). Kept search validation, API request, JSON formatting, and legacy tool interface in search_music(). Added direct-import tests for per-category output, field filtering, and all-category ordering.
+- Exact-head workflows all passed: Python syntax run 1088; Docker packaging/full unit suite/build run 995; container runtime smoke run 804; validation-only multi-architecture build run 848.
+
+- **PR #198:** https://github.com/abucalip/navi-librarian/pull/198 — branch refactor/extract-navidrome-album-details-main; exact tested head a718780edcb85eb8f4453e44a2d5a4925a512314; squash merge 92cdd6309244e78e78bd0f6f8d2e38ea929e434b.
+- Extracted pure album/track payload shaping into navidrome_client.album_details_payload(). Kept API access, JSON serialization, and legacy tool interface in get_album_details(). Added direct-import tests for scalar track records and missing fields.
+- Exact-head workflows all passed: Python syntax run 1090; Docker packaging/full unit suite/build run 997; container runtime smoke run 806; validation-only multi-architecture build run 850.
+
+- Both changes are backend-only, require no manual UI checklist, and preserve the existing MCP-facing response shapes. The full unit suite was run in the packaging workflows; assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed. PR #197 was closed as superseded before its clean-main replacement PR #198.
+- Acquisition-dismissal HTTP 409 remains deferred per explicit user direction. Keep publishing paused.
+- Next action: refresh GitHub main/open PRs/exact-head CI and select the next independent low-coupling extraction.
 ## 2026-10-16 — PR #192 merged: settings tabs and skip-link accessibility
 
 - PR: https://github.com/abucalip/navi-librarian/pull/192
