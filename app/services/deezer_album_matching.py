@@ -48,3 +48,13 @@ def artwork_match_score(item: dict[str, Any], artist: str, album: str) -> int:
     elif album_key and (album_key in candidate_album or candidate_album in album_key):
         score += 4
     return score
+
+def exact_album_release_year(
+    albums: Iterable[dict[str, Any]], artist: str, album: str
+) -> int | None:
+    """Return the first plausible year from exact artist-and-album matches."""
+    for item in exact_album_matches(albums, artist, album):
+        year = release_year(item.get("release_date"))
+        if year is not None:
+            return year
+    return None
