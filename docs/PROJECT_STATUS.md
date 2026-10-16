@@ -1,3 +1,11 @@
+## 2026-10-16 — slskd connectivity probe extraction in progress (PR #187)
+
+- Branch `refactor/extract-slskd-connection-check`, based on GitHub main `d66257586b69c4cb03641f5ce67050c3f4defd76`; current implementation head before this documentation update: `73be3bf8fa1211edff3689bfd1a9c820bf6770d6`.
+- Extracted the slskd connection probe into `slskd_client.test_connection()`; `discovery_test_slskd_connection()` remains the compatibility adapter. Added direct-import tests for success, 401/403, HTTP/configuration errors, and API-key redaction; Docker packaging includes the module.
+- Assistant-side test execution and exact-head CI are not yet verified. Publishing, deployment, and production runtime verification are not claimed. No live slskd request or credential was used.
+- Acquisition dismissal HTTP 409 remains deferred per user direction; no cleanup behavior changed.
+- Next action: verify the final PR-head checks and review the complete diff before merge; do not begin a conflicting server-file extraction before this gate is resolved.
+
 ## 2026-10-16 — Two slskd progress calculation extractions merged
 
 - **PR #182 — progress summary:** extracted matched transfer byte/track aggregation into `slskd_transfers.summarize_transfer_progress()`; kept HTTP retrieval, transfer matching invocation, speed snapshots/locking, and public progress schema in the legacy service. Exact tested head `045131f58365dd0e6538c1712f37f56f639c65ad`; squash merge `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`. Exact-head CI passed: Python syntax run 1016, Docker packaging/full suite/build run 923, container runtime smoke run 732, validation-only multi-architecture run 776.

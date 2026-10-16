@@ -1,3 +1,12 @@
+## 2026-10-16 — slskd connectivity probe extraction opened (PR #187)
+
+- Branch: `refactor/extract-slskd-connection-check`; base main `d66257586b69c4cb03641f5ce67050c3f4defd76`.
+- Current code head before this log update: `73be3bf8fa1211edff3689bfd1a9c820bf6770d6`.
+- Added `slskd_client.py` with an injected config reader/HTTP getter; preserved the legacy MCP/web adapter and response JSON; added `tests/test_slskd_client.py`; updated Docker packaging.
+- Exact-head local tests have not been run. CI results are pending/unverified; no publishing, deployment, or production runtime verification is claimed.
+- PR: https://github.com/abucalip/navi-librarian/pull/187.
+- Next: verify all four exact-head CI workflows and review before merge. Keep the dismissal HTTP 409 deferred and preserve all cleanup safety checks.
+
 ## 2026-10-16 — Open-PR refresh after extraction session
 
 - PR #184, `ui: make Artist Deep Dive artist-led and drop its dead controls`, appeared during this session. Its branch `ui/artist-deep-dive` is based on `9f05bed`; comparison against the refreshed main showed it 7 commits behind and one commit ahead of its merge base.
