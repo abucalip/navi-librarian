@@ -1,3 +1,12 @@
+## 2026-10-16 — Initial new-music inventory characterization
+
+- Added `tests/test_recommend_new_music_characterization.py` with deterministic mocked provider/cache responses. It pins the public response shape for a clear inventory, exclusion of an exact artist+album ownership match, duplicate album-ID deduplication before ownership indexing, and fail-closed behavior when Navidrome inventory retrieval raises.
+- The first CI attempt on `4e52318afed32ccbfdcc61e43799a4bf72d76702` exposed one incorrect expected allocator decision (`exact_owned`); the assertion was corrected to the production contract (`already_owned`). The corrected code-only PR head `97798f8bb12bdfba9ad735ca4b5e900e634e1ca0` passed all four required workflows: Python syntax/acquisition safety and dependency map (`38961591461`), Docker packaging/full unit suite/build (`38961591460`), isolated container runtime smoke (`38961591458`), and validation-only multi-architecture image validation (`38961591546`, publishing remains disabled / `push: false`). The full suite ran 534 tests. No separate assistant-side local test command ran.
+- PR #255 was squash-merged as `4d21627f4d01c7129298fa2753c518006db5ba45`. This is test-only; no production behavior changed. No publishing, deployment, or production runtime verification was performed.
+- Remaining before extracting the candidate-gathering pipeline: characterize stable candidate ordering/scoring and provider failure behavior, and finish comparing the inventory semantics with `discovery_library_snapshot.py`. This PR is the initial characterization slice, not the complete acceptance gate.
+
+---
+
 ## 2026-10-16 — Migrated slskd transfer lookup tests to direct imports
 
 - Replaced the AST harness in `tests/test_slskd_transfer_lookup.py` with direct imports of `slskd_transfers.download_transfer_files()`. Coverage retains the missing-peer 404 behavior, propagation of other HTTP errors, URL-escaped usernames and timeout, and successful parsing with remote-directory metadata.
