@@ -15,7 +15,7 @@ class ClassicsCandidateCollectionTests(unittest.TestCase):
                 {"artist": "Artist A", "album": "EP", "lastfm_listeners": 5},
             ],
             "Artist B": [
-                {"artist": "artist b", "album": "shared", "lastfm_listeners": 20},
+                {"artist": "Artist A", "album": "shared", "lastfm_listeners": 20},
                 {"artist": "Artist B", "album": "Unique", "lastfm_listeners": 7},
             ],
         }
@@ -51,7 +51,7 @@ class ClassicsCandidateCollectionTests(unittest.TestCase):
         result = self.collect()
         shared = result[("artist a", "shared")]
         self.assertEqual(shared["lastfm_listeners"], 20)
-        self.assertEqual(shared["artist"], "artist b")
+        self.assertEqual(shared["artist"], "Artist A")
         self.assertEqual(shared["discovery_type"], "classic")
         self.assertEqual(shared["discovery_source"], "Last.fm artist top albums")
         self.assertEqual(shared["artist_library_album_count"], 5)
