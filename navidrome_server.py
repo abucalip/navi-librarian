@@ -1701,10 +1701,8 @@ def _build_new_releases_list():
             exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
             is_various_artists=_discovery_is_various_artists,
         )
-        for identity, candidate in artist_candidates.items():
-            old = candidates.get(identity)
-            if old is None or candidate["first_release_date"] > old.get("first_release_date", ""):
-                candidates[identity] = candidate
+        from discovery_new_releases import merge_release_candidates
+        candidates = merge_release_candidates(candidates, artist_candidates)
 
     items_out = sorted(
         candidates.values(),

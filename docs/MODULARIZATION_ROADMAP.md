@@ -1,3 +1,7 @@
+## 2026-10-16 — New Releases global candidate merge (PR #234 in progress)
+
+PR #233 completed the pure library qualification boundary and merged at `08e20f502e10f829bf9ae7920106b7e8427668eb` from tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`; all four required workflows passed. The next seam extracts cross-artist identity deduplication/newest-release winner selection into `discovery_new_releases.merge_release_candidates()`. Provider/cache/rate-limit behavior, per-artist eligibility, final sorting, and response assembly stay in the adapter. PR #234 CI pending; no publication/deployment/runtime verification.
+
 ## 2026-10-16 — PR #232 merged: classics candidate collection
 
 - Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.

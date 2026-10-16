@@ -103,3 +103,17 @@ def prepare_new_release_library_scope(
     ]
     qualified_artists.sort(key=lambda item: int(item.get("album_count") or 0), reverse=True)
     return owned, qualified_artists
+
+
+def merge_release_candidates(existing: dict[tuple[str, str], dict[str, Any]], incoming: Mapping[tuple[str, str], dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+    """Merge per-artist candidates, keeping the newest release per identity.
+
+    Inputs are not mutated. Existing candidates win equal-date ties, preserving
+    the server adapter's prior stable merge behavior.
+    """
+    merged = dict(existing)
+    for identity, candidate in incoming.items():
+        old = merged.get(identity)
+        if old is None or str(candidate.get("first_release_date") or "") > str(old.get("first_release_date") or ""):
+            merged[identity] = candidate
+    return merged

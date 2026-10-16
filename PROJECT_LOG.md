@@ -1,3 +1,8 @@
+## 2026-10-16 — PR #233 merged; PR #234 global merge extraction started
+
+- PR #233 merged at `08e20f502e10f829bf9ae7920106b7e8427668eb` from tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`; all four required workflows passed on that exact head (syntax 38934044235, Docker/full suite/build 38934044270, runtime smoke 38934044253, validation-only multi-architecture 38934044237). No local test execution or production verification claimed.
+- PR #234 (`extract/new-releases-global-merge`) isolates pure cross-artist identity merging. It preserves the newest candidate per identity and stable existing-winner tie behavior; tests cover newer wins, ties, non-mutation, empty inputs, and missing dates. Exact-head CI pending.
+
 ## 2026-10-16 — PR #232 merged: classics candidate collection
 
 - Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.
