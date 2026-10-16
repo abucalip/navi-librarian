@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #270 exact-head CI passed; awaiting merge)
-Documentation branch base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
+Last reviewed: 2026-10-16 (PR #270 merged as `d84d74c1cfa295e3c3fd2ff1594fa1758dc69949`)
+Documentation branch base: GitHub `main` at commit `d84d74c1cfa295e3c3fd2ff1594fa1758dc69949`
 
 ## Current focus
 
@@ -9,9 +9,9 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Merge PR #270 after final diff review; all four required workflows passed on exact head `0f2c90a576062c78273f3f4fb35ffa6cfb9716e5`.
-2. After merge, re-evaluate the remaining broader-search AST-coupled test without weakening real search/retry, concurrency, or filesystem-safety coverage.
-3. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
+1. Continue the remaining broader-query fallback AST-coupled acquisition test audit only where the real search/retry production boundary can be tested directly; preserve concurrency and filesystem-safety coverage.
+2. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
+3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
 
