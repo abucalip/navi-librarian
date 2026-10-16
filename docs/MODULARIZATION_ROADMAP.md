@@ -1,3 +1,14 @@
+## 2026-10-16 — Independent discovery policy extractions completed (PRs #205 and #207)
+
+- **PR #205** extracted per-artist MusicBrainz release-group filtering/candidate construction to `discovery_new_releases.py`; exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`, squash merge `32b39be400ec046e8310a87260346b1959141609`. All four required workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).
+- **PR #207** extracted Artist Deep Dives scoring/ranking/diversity policy to `discovery_recommendations.rank_and_diversify_deep_dive_candidates()`; exact tested head `20e565582579f4097eed3803748c87bb3d932a98`, squash merge `a5b0d865060c3d069a865be7a1cb43c1a072ae91`. All four required workflows passed (syntax 1114, Docker/full suite/build 1021, runtime smoke 830, validation-only multi-architecture 874).
+- Both are independently reviewable, backend-only changes. Provider I/O and orchestration remain in the server adapter; direct-import regressions were added. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+## Next step
+
+Refresh current GitHub main, open PRs, and exact-head CI. Continue with one small, low-coupling remaining application-assembly/domain-service seam; do not treat extraction count as a quota. Keep acquisition-dismissal HTTP 409 deferred unless it recurs or the user reopens it.
+
+
 ## 2026-10-16 — Library overview and source redaction extractions completed (PRs #202 and #203)
 
 - **PR #202** merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`. Pure library-overview response shaping moved to `navidrome_client.library_overview_payload()`; the server retains API I/O and the compatibility/MCP response wrapper. All four exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
