@@ -91,7 +91,7 @@ PR #143 exact final head `e28cd12d3736fd2eb368b53c98e3cbddb5438166` passed all f
 - PR #114 merged at `6ab848d444373dfa37e6d46528a2840a53a8f763` from exact tested head `cd8319696180875a3cb6f0dc151d88e0c8c490d7`.
 - The host-side Proxmox MCP now accepts only explicitly approved diagnostic command forms and rejects arbitrary shell execution before SSH. Direct-import regressions cover accepted and rejected inputs.
 - All four required exact-head workflows passed: syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, and validation-only multi-architecture validation `38740491281`. Publishing/deployment remain paused; the host-side MCP is not part of the application image.
-- **Next:** continue the highest-priority audit of safety and verification gaps before routine modularization. Keep the acquisition-dismissal HTTP 409 investigation deferred unless it recurs.
+- **Next (superseded 2026-10-16):** continue the modularization roadmap using current main/open-PR/CI evidence. Per the user's direction, keep the acquisition-dismissal HTTP 409 investigation deferred until modularization is complete; do not reopen PRs #44/#45 or claim a fix without reproduction and root-cause evidence.
 
 
 ---
