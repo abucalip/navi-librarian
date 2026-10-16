@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_new_releases import merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
+from discovery_new_releases import build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
@@ -154,3 +154,53 @@ class NewReleaseGlobalMergeTests(unittest.TestCase):
         old = {("artist", "album"): {"first_release_date": ""}}
         new = {("artist", "album"): {"first_release_date": "2024-01-01"}}
         self.assertEqual(merge_release_candidates(old, new)[("artist", "album")]["first_release_date"], "2024-01-01")
+
+
+class NewReleaseResponseTests(unittest.TestCase):
+    def test_response_sorts_newest_first_caps_items_and_preserves_contract(self):
+        candidates = {
+            ("a", "old"): {"artist": "Artist A", "album": "Old", "first_release_date": "2025-01-01"},
+            ("b", "new"): {"artist": "Artist B", "album": "New", "first_release_date": "2026-06-01"},
+            ("c", "tie-z"): {"artist": "Zed", "album": "Same", "first_release_date": "2026-06-01"},
+            ("d", "tie-a"): {"artist": "Alpha", "album": "Same", "first_release_date": "2026-06-01"},
+        }
+        errors = [{"artist": str(i), "error": "HTTPError"} for i in range(25)]
+        result = build_new_release_response(
+            candidates,
+            qualified_library_artists=140,
+            artists_scanned=120,
+            lookup_errors=errors,
+            earliest_year=2024,
+            cutoff_date="2024-10-16",
+            generated_at=123.5,
+        )
+        self.assertEqual(
+            [(item["artist"], item["album"]) for item in result["items"]],
+            [("Zed", "Same"), ("Artist B", "New"), ("Alpha", "Same"), ("Artist A", "Old")],
+        )
+        self.assertEqual(result["generated_at"], 123.5)
+        self.assertEqual(result["year_from"], 2024)
+        self.assertEqual(result["date_from"], "2024-10-16")
+        self.assertEqual(result["qualified_library_artists"], 140)
+        self.assertEqual(result["artists_scanned"], 120)
+        self.assertEqual(len(result["lookup_errors"]), 20)
+        self.assertEqual(result["source"], "MusicBrainz release groups matched against the Navidrome library")
+        self.assertEqual(len(result["limitations"]), 4)
+
+    def test_response_caps_visible_items_at_200_without_mutating_candidates(self):
+        candidates = {
+            (str(i), str(i)): {"artist": f"Artist {i}", "album": f"Album {i}", "first_release_date": f"2025-{(i % 12) + 1:02d}-01"}
+            for i in range(205)
+        }
+        before = dict(candidates)
+        result = build_new_release_response(
+            candidates,
+            qualified_library_artists=205,
+            artists_scanned=120,
+            lookup_errors=[],
+            earliest_year=2024,
+            cutoff_date="2024-10-16",
+            generated_at=1.0,
+        )
+        self.assertEqual(len(result["items"]), 200)
+        self.assertEqual(candidates, before)
