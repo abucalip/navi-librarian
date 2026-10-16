@@ -1,6 +1,6 @@
-## 2026-10-16 — Auth-secret provider extraction (PR pending)
+## 2026-10-16 — PR #240 merged: lazy auth-secret provider
 
-Extracted lazy, thread-safe app-auth signing-secret loading into `app/security/auth_secret.py`, injected with the existing data-directory getter and `load_auth_secret`. Direct-import tests cover lazy initialization, successful caching, retry after exceptions/None, and concurrent first use. Exact-head CI and review remain pending; no local tests, publication, deployment, or production runtime verification are claimed. Publishing remains paused.
+PR #240 squash-merged at `78547fd47c1b155255c1da6ef57120b76513a0fc` from exact final tested head `e3542c6a8fa3b2fc3ddf07a0268563ae5946064a`. Extracted lazy, lock-protected signing-secret loading to `app/security/auth_secret.py`, with injected data-directory lookup and existing secret loader; retained `app.main._AUTH_SECRET` for integration-test compatibility. Direct-import tests cover laziness, caching, retry after exceptions/None, and concurrent first use. Initial CI caught the removed compatibility attribute; it was restored and the corrected head passed all four workflows: syntax/acquisition safety `38941505550`, Docker/full suite/build `38941505440`, runtime smoke `38941505508`, and validation-only multi-architecture `38941505516`. Assistant-side local tests were not run. Publishing remains paused; no deployment or production runtime verification claimed.
 
 ## 2026-10-16 — PR #236 merged: New Releases lookup construction
 
