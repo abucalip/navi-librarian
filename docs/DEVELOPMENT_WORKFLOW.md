@@ -54,6 +54,9 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 
 ## Required verification gates
 
+The Python syntax workflow also runs `scripts/check_server_size.py`; its thresholds and named temporary exception are reviewed architecture controls. Size-only changes are not an extraction goal, and the exception must be reduced as the recommendation adapter is decomposed.
+
+
 For each code PR, follow `docs/TEST_PLAN.md`. At minimum:
 - focused regression tests and `python -m unittest discover -s tests -v`;
 - Python syntax checks and applicable API/Docker/package checks;
