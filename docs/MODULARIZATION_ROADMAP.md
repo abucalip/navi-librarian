@@ -857,11 +857,6 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 
 
 
-## 2026-10-16 — New Releases date-window policy extraction in progress
-
-Extract the deterministic 730-day cutoff and derived year bounds into `discovery_new_releases.new_release_window(today)`. Keep the system clock, MusicBrainz provider/cache access, rate limiting, candidate selection, and response assembly in the adapter. Verify exact 730-day and leap-day behavior with direct-import tests, then require all four exact-head workflows before merge. No publication/deployment.
-
-
 ## 2026-10-16 — New Releases date-window policy extraction completed (PR #237)
 
 - Extracted deterministic cutoff/year-bound calculation into `discovery_new_releases.new_release_window(today)`; adapter retains clock access and provider/cache orchestration.
