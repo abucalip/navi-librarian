@@ -616,3 +616,16 @@ Move the small shared response-normalization rule into `navidrome_client.items()
 ## Subsonic response collection normalization — completed (PR #153 merged, 2026-10-15)
 
 Moved the shared response-normalization rule into `navidrome_client.items()` and retained `navidrome_server.items()` as the compatibility adapter. Direct-import tests cover missing, scalar, empty, and populated collection values. All four required workflows passed on exact PR head `c834383b7484f3c149679d62812f1c81f6133625`; squash merge commit `b7d8ec989e2a3d398b2ca4d14a30c59ae60543cc`. Publishing and deployment remain separate and are not claimed.
+
+
+## Completed — Last.fm artist genre parsing (PR #174, 2026-10-16)
+
+`LastFmClient.artist_genres()` now owns cached `artist.getTopTags` retrieval, normalization, case-insensitive deduplication, and the existing eight-tag limit. `navidrome_server._lastfm_artist_genres()` remains the compatibility adapter. Exact tested head `08c260e2a166a744bbde4009196b53d238afb647`; squash merge `4dd8b926a7a6cf76e248420860d7c29c892da3c0`. All four required exact-head workflows passed. No publication, deployment, or production runtime verification claimed.
+
+## Completed — Last.fm top albums (PR #175, 2026-10-16)
+
+`LastFmClient.artist_top_albums()` now owns cached `artist.getTopAlbums` retrieval and response normalization. `navidrome_server._lastfm_top_albums()` remains the compatibility adapter and retains discovery-specific album eligibility filtering. Direct-import regressions cover scalar/list payloads, empty titles, normalized metadata, request parameters and limit, timeout/cache TTL, cache hits/missing payloads, and adapter filtering. Exact tested head `6b5e32b1144e9f3517247110ea4383b287ce33f4`; squash merge `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. All four required exact-head workflows passed. Publishing remains paused; no deployment or production runtime verification claimed.
+
+## Next step
+
+Refresh current GitHub main, inspect open PRs and the current requirements/test plan, then select the next smallest safe extraction from the remaining application-assembly/domain-service seams. Keep the acquisition dismissal HTTP 409 investigation deferred unless it recurs or the user explicitly reopens it.
