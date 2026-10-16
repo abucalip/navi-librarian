@@ -178,8 +178,25 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                 break
 
     if len(selected) < request.count and checked < request.max_checks:
+        category_order = {
+            "adjacent": 0,
+            "cross_genre": 1,
+            "adventurous": 2,
+            "unclassified": 3,
+        }
+        # The legacy fallback first concatenates category lists (each already
+        # score-sorted), then performs a stable global score sort. Preserve
+        # that category/source ordering for equal-score candidates.
+        fallback_base = sorted(
+            candidates,
+            key=lambda item: (
+                category_order[item.category],
+                -item.score,
+                item.source_order,
+            ),
+        )
         remaining: Iterable[AllocationCandidate] = sorted(
-            candidates, key=lambda item: item.score, reverse=True
+            fallback_base, key=lambda item: item.score, reverse=True
         )
         for candidate in remaining:
             consider(candidate, allow_over_quota=True,
