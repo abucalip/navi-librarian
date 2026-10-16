@@ -595,6 +595,87 @@ The user-published manual report is attached to PR #156's conversation and pins 
 
 Limitations remain explicit: Chromium only, no real screen reader test. The skip-link gap above remains open and is not part of C5. Image publishing/deployment and production runtime verification were not performed.
 
+## 5h. Artist Deep Dive findings
+
+C6 of the external critique, which called this its single highest-leverage move. Three
+defects measured, none of which was the one the critique described.
+
+### The critique's premise was outdated
+
+It said the section's content "groups by artist with genre context; a flat album grid erases
+that structure entirely". That was true when it was written, but the code already groups:
+`loadDiscovery` builds one `.genre-row` per genre family with an `<h3>` heading, an album
+count, and per-row scroll arrows, and it deduplicates to one album per artist before grouping.
+
+So the fix is not "add grouping". The three real defects are below. This is recorded because
+the critique's stated diagnosis would have led to rebuilding something that already exists.
+
+### Defect 1 — the hierarchy inverted the task
+
+Measured on a rendered deep-dive card:
+
+| Element | Size | Family |
+|---|---|---|
+| Album (the `<h3>`) | 20px | Barlow Condensed |
+| Artist (`.card-artist`) | 12px | IBM Plex Sans, muted |
+
+The section's own copy, in `index.html`, reads "**Explore missing albums by artists in your
+library**". The task is artist-led. `layout.md` requires hierarchy to "follow product priority,
+not framework defaults" — the album-led order was inherited from the album-grid sections, where
+it is correct, and carried into a section whose task is the opposite.
+
+**Fixed:** the artist takes the card heading and the album becomes the supporting line. Gated
+on `isDeepDive`, so every other section keeps album-led hierarchy.
+
+### Defect 2 — a category tag repeated on every card
+
+The card rendered a `card-category` tag reading "artist deep dive" on every item. In a section
+where every card is a deep dive, and where the row heading already names the genre, the tag
+conveyed nothing while adding a bordered element to each card. `layout.md`: "Group by meaning.
+Use proximity before adding containers or decoration."
+
+**Fixed:** the tag is omitted for this section only. Other sections keep theirs, where the
+category genuinely varies per card.
+
+### Defect 3 — dead controls in the tab order
+
+Each genre row rendered two scroll arrows unconditionally. Measured on a row of two albums:
+`scrollWidth === clientWidth`, so the row does not overflow and the arrows do nothing. Clicking
+measured `scrollLeft` staying at `0`.
+
+The arrows were nonetheless **visible and keyboard-focusable**, so a short row put two inert
+buttons in the tab order that a keyboard user would land on and activate for no effect.
+
+**Fixed:** the arrows are hidden and given `tabindex="-1"` unless the track actually overflows,
+re-evaluated through a `ResizeObserver` and on content change because neither the final width
+nor the content is known at construction time. Observers are disconnected on every re-render so
+repeated loads do not accumulate them.
+
+### Verification
+
+Measured on the branch with a fitting row (2 albums) and an overflowing row (14 albums):
+
+| Row | `overflow` | arrows hidden | arrow `tabindex` |
+|---|---|---|---|
+| 2 albums | false | **true** | `-1`, `-1` |
+| 14 albums | true | false | removed (focusable) |
+
+Tab from a fitting row's arrow moves to the card, not to another inert arrow. The deep-dive card
+heading now reads "Keith Jarrett" with "The Köln Concert" beneath it, and renders zero category
+tags. 8/8 pages render their expected heading; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors.
+
+### Note on the payload used
+
+The isolated environment has no Navidrome library, so deep-dive data was injected by
+reconstructing the exact DOM the app's own renderer produces. The structure and the style
+results are real; the content is not. The real `loadDiscovery` path was exercised only for the
+empty case.
+
+### Manual browser checklist status
+
+**Pending on the refreshed exact PR-head SHA.** Prior browser-agent measurements used reconstructed/injected deep-dive DOM rather than a real Navidrome library. They are not a substitute for the documented human checklist. After exact-head CI passes, run the full checklist in the isolated local helper, with sandbox paths and slskd disabled; record the exact SHA, viewport checks, keyboard behavior, console/network/server errors, and any skips. Do not merge before this gate is complete.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
