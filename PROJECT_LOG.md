@@ -499,3 +499,12 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - This was a contract-design stage, not the allocation extraction. Selection loops, public signature, response construction, and provider/library operations remain unchanged. No publishing, deployment, or production runtime verification.
 - Next: if the interface still fits once policy behavior is mapped to it, make the actual allocator a separate PR with comprehensive policy-parity tests. Do not add callbacks/shared mutable state to force the extraction; refine or stop if the boundary proves inadequate.
 
+
+
+## 2026-10-16 — PR #233 merged: New Releases library qualification
+
+- PR #233 merged to `main` from exact final PR head `2512a638001e922f5c507994b2f1e667bab9615a`; squash merge commit `08e20f502e10f829bf9ae7920106b7e8427668eb`.
+- Extracted `prepare_new_release_library_scope()` to `discovery_new_releases.py`, with direct-import tests for the six-track full-album threshold, Various Artists/blank-name exclusions, stable descending album-count order, and normalized owned-album identities. Provider/cache/rate-limit operations, date policy, adapter cap, error reporting, and candidate merging remain in the adapter.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety run `38934216294`; Docker packaging/full unit suite/build run `38934216395`; container runtime smoke run `38934216347`; validation-only multi-architecture build (`push: false`) run `38934216280`.
+- Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed; publishing remains paused.
+- **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
