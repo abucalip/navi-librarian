@@ -1,3 +1,14 @@
+## 2026-10-16 — PR #288 merged: Docker recommendation import packaging fixed
+
+- Follow-up audit after PR #286 found a second missing Docker dependency: `navidrome_server.py` imports `discovery_candidate_gathering.py`, but the explicit Docker COPY list omitted it.
+- PR #288 added the module and generalized `tests/test_docker_packaging.py` to AST-inspect the legacy server and require every imported root-level Python module to appear in the Docker COPY sources. This also guards the earlier `acquisition_import_service.py` omission fixed by PR #286.
+- Exact PR head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c`; merge commit `047822df81b134084383ed370205b1a3554c706a`.
+- All four required workflows passed on that exact head: syntax `38978049684`, Docker packaging/full unit suite/build `38978049670`, runtime smoke `38978049793`, and validation-only multi-architecture `38978049589` (publishing paused). No local tests, deployment, or production-runtime verification are claimed.
+- Post-merge review compared current `navidrome_server.py` root-level imports with the Docker COPY list: all 48 distinct imported root modules are included. This does not yet prove transitive or dynamic imports are fully packaged; the final modularization audit remains open.
+- Next: inspect transitive imports of packaged root modules and the exact-main dependency-map artifact, then review dynamic/runtime imports and compatibility/safety coverage. Do not declare modularization complete or invent size-only extractions before that audit finishes.
+
+---
+
 ## 2026-10-16 — Follow-up audit found another missing Docker module
 
 - After PR #286 merged as `1cf9d66ad57364eec855b2425263e9a59b011d9a`, continued the modularization completion audit by comparing `navidrome_server.py` imports with the explicit root-level Docker COPY list.
