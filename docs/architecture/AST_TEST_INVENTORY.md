@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` after PR #274 merge `cae95e74c9910c512392de80b337eb4b21de67a5` (2026-10-16).
+Audit baseline: GitHub `main` at `d6e32aadfbca6e1d746ced657bdc124b9d472251` (2026-10-16).
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 

@@ -295,6 +295,7 @@ def recommend_new_music(count: int = 10) -> str:
 
     from discovery_recommendations import (
         classify_diversity_style,
+        classify_recommendation_category,
         genre_families,
         primary_recent_family,
         recent_style_families,
@@ -370,61 +371,10 @@ def recommend_new_music(count: int = 10) -> str:
     for candidate in albums.values():
         tags = genre_cache.get(candidate.get("artist_mbid"), [])
         candidate["diversity_style"] = classify_diversity_style(candidate, tags)
-        families = genre_families(tags)
-        families.update(candidate.get("regional_families", []))
-        # Correct known regional artists when MusicBrainz genre tags are incomplete.
-        artist_key = _music_key(candidate.get("primary_artist") or candidate.get("artist", ""))
-        regional_names = {
-            # Keys must match _music_key(), which removes spaces and punctuation.
-            "chebmami": "north-african-middle-eastern",
-            "vieuxfarkatoure": "african",
-            "alifarkatoure": "african",
-            "bombino": "african",
-            "tinariwen": "african",
-            "mdoumoctar": "african",
-            "imarhan": "african",
-            "khaled": "north-african-middle-eastern",
-            "chebkhaled": "north-african-middle-eastern",
-            "faudel": "north-african-middle-eastern",
-            "rachidtaha": "north-african-middle-eastern",
-            "idir": "north-african-middle-eastern",
-            "souadmassi": "north-african-middle-eastern",
-            "hamidelkasri": "north-african-middle-eastern",
-            "takfarinas": "north-african-middle-eastern",
-            "bouchenak": "north-african-middle-eastern",
-            "liliboniche": "north-african-middle-eastern",
-            "orchestrenationaldebarbes": "north-african-middle-eastern",
-            "chebsahraoui": "north-african-middle-eastern",
-            "شابصحراوي": "north-african-middle-eastern",
-        }
-        if artist_key in regional_names:
-            families.add(regional_names[artist_key])
-        core_overlap = families & core_families
-        exploration_overlap = families & exploration_families
-
-        adventurous_tags = (
-            "idm", "experimental", "avant-garde", "avant garde",
-            "free improvisation", "free jazz", "drone", "noise",
-            "musique concrète", "musique concrete",
-            "electroacoustic", "dark ambient", "glitch",
-            "deconstructed club",
+        category, families = classify_recommendation_category(
+            candidate, tags, core_families, exploration_families,
+            music_key_fn=_music_key,
         )
-        adventurous_signal = any(
-            signal in tag.casefold()
-            for tag in tags
-            for signal in adventurous_tags
-        )
-
-        if not tags and not families:
-            category = "unclassified"
-        elif adventurous_signal:
-            category = "adventurous"
-        elif len(core_overlap) >= 2:
-            category = "cross_genre"
-        elif core_overlap or exploration_overlap:
-            category = "adjacent"
-        else:
-            category = "adventurous"
 
         candidate["genres"] = tags
         candidate["genre_families"] = sorted(families)
@@ -641,62 +591,10 @@ def recommend_new_music(count: int = 10) -> str:
 
     for candidate in albums.values():
         tags = genre_cache.get(candidate.get("artist_mbid"), [])
-        families = genre_families(tags)
-        families.update(candidate.get("regional_families", []))
-
-        # Keep diagnostic classifications consistent with the selection pass.
-        artist_key = _music_key(candidate.get("primary_artist") or candidate.get("artist", ""))
-        regional_names = {
-            "chebmami": "north-african-middle-eastern",
-            "vieuxfarkatoure": "african",
-            "alifarkatoure": "african",
-            "bombino": "african",
-            "tinariwen": "african",
-            "mdoumoctar": "african",
-            "imarhan": "african",
-            "khaled": "north-african-middle-eastern",
-            "chebkhaled": "north-african-middle-eastern",
-            "faudel": "north-african-middle-eastern",
-            "rachidtaha": "north-african-middle-eastern",
-            "idir": "north-african-middle-eastern",
-            "souadmassi": "north-african-middle-eastern",
-            "hamidelkasri": "north-african-middle-eastern",
-            "takfarinas": "north-african-middle-eastern",
-            "bouchenak": "north-african-middle-eastern",
-            "liliboniche": "north-african-middle-eastern",
-            "orchestrenationaldebarbes": "north-african-middle-eastern",
-            "chebsahraoui": "north-african-middle-eastern",
-            "شابصحراوي": "north-african-middle-eastern",
-        }
-        if artist_key in regional_names:
-            families.add(regional_names[artist_key])
-
-        adventurous_tags = (
-            "idm", "experimental", "avant-garde", "avant garde",
-            "free improvisation", "free jazz", "drone", "noise",
-            "musique concrète", "musique concrete",
-            "electroacoustic", "dark ambient", "glitch",
-            "deconstructed club",
+        category, families = classify_recommendation_category(
+            candidate, tags, core_families, exploration_families,
+            music_key_fn=_music_key,
         )
-        adventurous_signal = any(
-            signal in tag.casefold()
-            for tag in tags
-            for signal in adventurous_tags
-        )
-
-        core_overlap = families & core_families
-        exploration_overlap = families & exploration_families
-
-        if not tags and not families:
-            category = "unclassified"
-        elif adventurous_signal:
-            category = "adventurous"
-        elif len(core_overlap) >= 2:
-            category = "cross_genre"
-        elif core_overlap or exploration_overlap:
-            category = "adjacent"
-        else:
-            category = "adventurous"
 
         title_key = _music_key(candidate["album"])
         same_title = library_by_title.get(title_key, [])

@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #276 merged as `fb5085f7b62b4b9616372c4d044fd974320b2f76`)
-Documentation base: GitHub `main` at commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`
+Last reviewed: 2026-10-16 (modularization audit on `d6e32aadfbca6e1d746ced657bdc124b9d472251`)
+Documentation base: GitHub `main` at commit `d6e32aadfbca6e1d746ced657bdc124b9d472251`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling; PR #276 retired the unused, risky MCP operations `restart_server` and `apply_server_patch` while preserving the other 25 MCP tools and the MCP runtime. PR #276 merged as `fb5085f7b62b4b9616372c4d044fd974320b2f76`; all four required workflows passed on exact final PR head `67320d555d2ce5f26868b57f8d46a5b46b295f81`, including 554 unit tests. See `PROJECT_LOG.md`.
+Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling and PR #276 retired the two risky operational MCP tools. The current-main audit found the dependency-map artifact covers 168 repository modules and a 73-module app import closure; `app.api.dependencies` is the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,768 server lines; `recommend_new_music()` is 568 AST lines and `_discovery_acquire_album_impl()` 278. PR in review centralizes duplicated recommendation category policy. See `PROJECT_LOG.md`.
 
 ## Next action
 
-1. Run the modularization completion audit against current main: dependency-map artifact, remaining legacy references, and exact size-ratchet measurements.
-2. Confirm the MCP registry retains only intended tools and the removed names have no remaining references.
+1. Verify and merge the shared recommendation-category policy extraction only after all four required workflows pass on its exact final PR head.
+2. Then refresh the dependency map and repeat the completion audit; current map is artifact `12077720422` from main SHA `d6e32aadfbca6e1d746ced657bdc124b9d472251`.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
