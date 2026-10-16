@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (request lifecycle tests migrated to coordinator)  
+Last reviewed: 2026-10-16 (recommendation-provider and operational-surface audit adopted)  
 Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
@@ -10,6 +10,44 @@ This file is the **active plan**, not an extraction diary. It lists only work th
 Do not add a roadmap entry merely because a function or file is large. Extract only a cohesive responsibility with a clear owner, meaningful direct-import tests, and a compatibility boundary that is simpler than the current design.
 
 ## Current priorities
+
+### 0. Characterize and extract the new-music candidate-gathering pipeline
+
+The audit identifies `recommend_new_music()` in `navidrome_server.py` (approximately lines 282–1340; about 1,058 lines in the audited revision) as a major live responsibility used by the `/discovery` route and an MCP tool. Its tail already composes `discovery_personal_allocator`, `discovery_allocation_contract`, and `discovery_recommendation_payload`; the front half still combines ListenBrainz fetches, regional MusicBrainz queries, library inventory paging, family scoring, and Last.fm bonuses. Existing tests reportedly mock the whole function, so internal policy has no characterization baseline. Reconfirm all line references and call paths against current `main` before implementation.
+
+Required sequence:
+1. Add deterministic characterization tests using fake provider responses and a fixed listen/library fixture. Pin the current candidate/output behavior and meaningful intermediate policy outcomes before moving code. Do not treat mocked-function tests as internal coverage.
+2. Trace `discovery_library_snapshot.py` and its callers first. Reuse its inventory boundary where semantics match; document any meaningful mismatch before implementing a second inventory path.
+3. Extract candidate gathering/provider orchestration behind injected provider callables, keeping provider I/O, policy, and payload shaping distinct. Preserve the public signature, route/MCP compatibility, ordering, failure behavior, and existing allocator/payload contracts.
+4. Add direct-import tests for the extracted seam and adapter-level compatibility tests. Verify output parity against characterization fixtures before expanding behavior.
+
+Acceptance: fixed-provider characterization coverage exists before extraction; inventory overlap is explicitly resolved; candidate gathering is independently testable; route and MCP compatibility remain intact.
+
+### 0a. Measurable size ratchet
+
+The audit baseline reports `navidrome_server.py` at 3,514 lines and `recommend_new_music()` at roughly 1,058 lines. Verify those measurements against the exact `main` revision when implementing the ratchet; do not silently treat approximate audit line references as current facts.
+
+Add a lightweight CI check that fails when:
+- `navidrome_server.py` exceeds the verified baseline line ceiling; and
+- a top-level function exceeds a recorded per-function line ceiling, with any legacy exception explicitly named, justified, and temporary.
+
+Keep the thresholds in a small, reviewable configuration or script, report offending function names and measured sizes, and test both pass and fail cases. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. The ratchet complements, but does not replace, the import-boundary guard or tests. As `recommend_new_music()` is decomposed, tighten its exception/limit rather than normalizing its current size as acceptable architecture.
+
+### 0b. Operational MCP functions — owner decision required
+
+`restart_server` and `apply_server_patch` are MCP-exposed operational capabilities. The audit reports no references to either name in `tests/`; `apply_server_patch` rewrites the server's own source, while `restart_server` launches a helper that kills the process and relaunches it on hardcoded port 8000.
+
+**Do not refactor, broaden, or silently remove these capabilities before the product owner decides what authorizes them and whether they should remain exposed.** This is a product/security decision, not an agent-level modularization choice. Ask the owner to decide:
+- which authenticated/authorized caller may invoke each operation and under what deployment conditions;
+- whether source rewriting and process-killing/relaunch behavior are still required;
+- whether either MCP tool should be disabled or retired.
+
+After that decision, if retained, move them to a dedicated operations module with explicit authorization checks and safety tests: unique-match rejection, no-op on mismatch, and occupied-port/restart failure handling. Do not execute either operation against a live service as part of tests.
+
+### 0c. Mutable settings coupling
+
+Track the module-global `MUSIC_DIR` and every writer/reader before changing settings wrappers. It is mutable state changed by settings code and therefore a hidden dependency for wrapper extraction. Document the call sites and tests; consider replacing it with a small explicit settings object only if that removes coupling without breaking compatibility. Do not combine this with unrelated extractions.
+
 
 These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
@@ -21,8 +59,9 @@ Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
 2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. Remaining source-executed cases are broader-search orchestration and the import-status persistence guard, which still depend on the legacy implementation boundary.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
-4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
-5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
+4. Audit all `MUSIC_DIR` reads/writes before evaluating the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
+5. Audit `_discovery_acquire_album_impl()` with a short binary policy-vs-orchestration note containing exact line references: identify whether candidate selection, source-switch thresholds, retries, or state-transition rules remain inline. If only orchestration of extracted behavior remains, retain it; extract only a demonstrable policy seam.
+6. In parallel only where file/dependency overlap is absent, run separate PRs for the AST-test migration, app-import boundary guard, and settings-wrapper audit. Each PR must still branch from a suitable current base, pass exact-head CI, and refresh main before dependent work.
 
 Acceptance criteria:
 - The committed dependency map corresponds to the exact source revision audited and is regenerated when relevant imports change.
@@ -43,12 +82,14 @@ Search polling, quality, transfer matching, progress, and connectivity responsib
 ## Definition of done
 
 Modularization is complete when:
-- cohesive domain responsibilities have clear owners and usable direct-import tests;
+- cohesive domain responsibilities have clear owners and usable direct-import tests, including characterization coverage for recommendation internals before extracting candidate gathering;
 - remaining server code is primarily justified orchestration, provider access, dependency wiring, or compatibility adapters;
 - imports and package/Docker inclusion are intentional;
 - critical acquisition/import/deletion paths retain regression coverage for success and unsafe failure;
 - application assembly and AST-based tests have been audited for accidental coupling;
 - no higher-priority correctness, security, automated verification, or delivery gap is being bypassed;
+- a CI size ratchet prevents unreviewed growth in `navidrome_server.py` and top-level functions, with explicit temporary exceptions only where necessary;
+- operational MCP capabilities have an explicit owner decision and, if retained, authorization and safety coverage;
 - the remaining work would not make the architecture simpler or safer enough to justify its cost.
 
 The number of extractions is not a goal or quota. A documented decision to retain a responsibility in an adapter is a valid outcome.
