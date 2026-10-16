@@ -43,7 +43,7 @@ Before declaring modularization complete, inspect all Python references under `a
 grep -r "navidrome_server" app/ --include="*.py"
 ```
 
-Expected result: no domain/API imports of `navidrome_server.py`; only explicitly documented MCP compatibility shims may remain. Review the matches, do not treat a grep exit code alone as proof. Add this allowlist-aware check to CI after the intentional compatibility import locations are confirmed from current code. The AST map and grep are complementary checks.
+Expected result: no domain-policy imports of `navidrome_server.py`; only explicitly documented compatibility adapters may remain. On the current audit baseline, `app/api/dependencies.py` intentionally performs a lazy import in `get_librarian()` to preserve the web API's legacy-service adapter, and the MCP/server compatibility surface also remains. Review every match and its import timing; do not treat a grep exit code alone as proof. Add an allowlist-aware check to CI after the approved adapter locations are confirmed. The AST map traverses imports inside functions and therefore reports this lazy edge in the static `app.main` closure even though `tests/test_auth_routes_integration.py` verifies that importing the web app does not initialize `navidrome_server`.
 
 ## UI changes
 
