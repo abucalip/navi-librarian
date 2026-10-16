@@ -1,3 +1,9 @@
+## 2026-10-16 — Personal recommendation allocator integrated (verification pending)
+
+- Connected `recommend_new_music()` to the pure allocator through prepared immutable candidates and stable IDs. The server adapter still owns normalized Navidrome ownership lookup, legacy recommendation payload construction, ownership-review payloads, and diagnostic projection.
+- Preserved the original album insertion index as `source_order`, category targets, regional style reservations, one-album-per-artist rule, recent-family cap, 60-check budget, and the legacy final-fallback tie order. Added the two allocator modules to the Docker image's explicit top-level COPY list.
+- This is an implementation candidate only. No local test execution is available in this workflow; no CI result has been observed yet. Review and exact-head CI must establish behavior parity before merge. Publishing/deployment remain paused.
+
 ## 2026-10-16 — Personal allocator extraction investigation (not PR-ready)
 
 - Continued from the merged allocation contract in PR #221. The exploratory branch now adds a pure allocator and direct-import tests, and refines the immutable candidate contract with source-order metadata so stable ties can preserve legacy fallback ordering.
