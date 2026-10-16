@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (pure-helper test migration merged)  
+Last reviewed: 2026-10-16 (request lifecycle tests migrated to coordinator)  
 Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
@@ -19,7 +19,7 @@ The dependency map was generated in CI and reviewed from artifact `12068042162` 
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. Only `tests/test_acquisition_safety.py` still compiles acquisition orchestration/lifecycle functions from `navidrome_server.py`; preserve concurrency, persistence, recovery, and safety coverage while mapping those cases to real owners.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. Remaining source-executed cases are broader-search orchestration and the import-status persistence guard, which still depend on the legacy implementation boundary.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
 4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
 5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
