@@ -3,7 +3,9 @@
 import unittest
 from unittest.mock import patch
 
-from slskd_transfers import (\n    download_transfer_files, queue_download_files, match_expected_transfer_records,\n)
+from slskd_transfers import (
+    download_transfer_files, queue_download_files, match_expected_transfer_records,
+)
 
 
 class FakeResponse:
