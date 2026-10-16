@@ -1,3 +1,10 @@
+## 2026-10-16 — Last.fm similar-artist parsing extraction merged
+
+- PR #178 merged as `f18574b74a564031c5268cf04c956475d64dc30c`; tested PR head `a97be052d3a1e74843feaacd6403d10ce5aad6af`.
+- Moved cached Last.fm similar-artist parsing into `LastFmClient.similar_artists()` and retained the legacy adapter. Added regression tests for response shape/normalization, malformed values, request contract, cache TTL/hits/misses, and adapter delegation.
+- Exact-head CI successes: Python syntax check run 1003, Docker packaging validation run 910, container runtime smoke run 719, and Docker image validation with publishing paused run 763. Local full unit suite not independently run; publishing/deployment not performed.
+- Next action: refresh GitHub state before selecting another extraction. Acquisition-dismissal HTTP 409 remains deferred by user direction.
+
 ## 2026-10-16 — Last.fm similar-artist parsing extraction (in progress)
 
 - Branch: `refactor/extract-lastfm-similar-artists-current`, based on main `86b2ac60416ed725755fc6c57200e1c3123b7606`.
