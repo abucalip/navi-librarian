@@ -54,3 +54,25 @@ def items(value):
     if value is None:
         return []
     return value if isinstance(value, list) else [value]
+
+
+def search_result_payload(result, category, collection_items=items):
+    """Shape Subsonic search results for the legacy search_music response."""
+    fields = {"artist": "artist", "album": "album", "track": "song"}
+    output = {}
+    for kind, key in fields.items():
+        if category not in ("all", kind):
+            continue
+        output[key] = [
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "artist": item.get("artist"),
+                "album": item.get("album"),
+                "year": item.get("year"),
+                "duration": item.get("duration"),
+                "playCount": item.get("playCount"),
+            }
+            for item in collection_items(result.get(key))
+        ]
+    return output
