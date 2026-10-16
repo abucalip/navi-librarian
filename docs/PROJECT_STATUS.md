@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-16 (PR #272 merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`)
-Documentation base: GitHub `main` at commit `9b97f447adc602a3be3b5ac496633430f3eb3cb4`
+Documentation base: GitHub `main` at commit `5a74b12d489ae30cfad923af7b68985ebede87dc`
 
 ## Current focus
 
