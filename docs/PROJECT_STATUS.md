@@ -1,3 +1,10 @@
+## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
+
+- PR #224 merged as `f795239589e6dd78f0f5e6d98cf2eadc897d6f49` from exact final tested head `6d2e0ccc8d24cd11b727255f171fd405384a8729`.
+- Extracted pure base payload projection to `discovery_recommendation_payload.py`. The server adapter still supplies recent-listen counts and applies the distinct `ownership_check` (selected) / `ownership_note` (manual review) annotations.
+- All four required workflows passed on that exact head: syntax + acquisition safety run 1177; Docker packaging/full suite (473 tests)/build run 1085; runtime smoke run 894; validation-only multi-architecture image validation run 938 (`push: false`).
+- No independent local test run, image publication, deployment, or production runtime verification is claimed. Publishing remains paused.
+
 ## 2026-10-16 — Personal recommendation payload projection extraction (verification pending)
 
 - Started from current GitHub main after PR #223. Moved the pure base recommendation response projection from the nested `recommend_new_music()` helper into `discovery_recommendation_payload.py`; the adapter still computes recent-listen counts and adds selection-specific ownership annotations.
