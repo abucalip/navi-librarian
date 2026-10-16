@@ -1,3 +1,7 @@
+## New Releases global candidate merge — merged (PR #234)
+
+PR #234 merged at `c44ea572354b4714e5e2577f5eb21b091be97cc8` from exact tested head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`. Direct-import regressions cover newest-release winner per identity, stable existing winner on equal dates, input non-mutation, and empty/missing-date cases. All four required workflows passed on that exact head: syntax 38935716487, Docker/full suite/build 38935717026, runtime smoke 38935716420, validation-only multi-architecture 38935716622. Assistant-side local test commands were not run.
+
 ## New Releases global candidate merge — verification pending (PR #234)
 
 Focused tests in `tests/test_discovery_new_releases.py` cover newest-release winner per identity, stable existing winner on equal dates, input non-mutation, and empty/missing-date cases. Run `python -m unittest tests.test_discovery_new_releases -v` and the full suite; require all four workflows on exact final PR head. Assistant-side local tests have not been run.
