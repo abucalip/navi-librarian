@@ -1,3 +1,11 @@
+## 2026-10-16 — Dashboard-pick assembly extraction opened
+
+- Branch `refactor/extract-dashboard-pick-service`, based on refreshed GitHub main `2b9eb6a88c752aa1d2e65687641d05629aa89427`.
+- `app/services/dashboard.py` now owns dashboard candidate aggregation, case-insensitive artist/album deduplication, album eligibility filtering, balanced category picks, and random fill. `app/api/dashboard.py` remains the HTTP adapter and preserves the endpoint path, count validation, service calls, and response schema.
+- Added `tests/test_dashboard_service.py` for direct-import behavior. Existing `tests/test_dashboard_routes.py` remains in place to cover route inventory, injected service calls, sanitized health failures, category balance, filtering/deduplication, and invalid counts.
+- Verification is pending until the final PR head. No assistant-side test execution, merge, image publication, deployment, or production runtime verification is claimed.
+- Acquisition-dismissal HTTP 409 remains deferred and unchanged.
+- Next: open PR, inspect full diff, and wait for all four required workflows on the exact final PR head.
 ## 2026-10-16 — PRs #186 and #187 merged
 
 - **PR #186 — UI empty-state copy/state kinds:** published local manual report for tested head `0c12a43cd40211d522868dab7caa70c8a5fbf6e6`; all manual checklist items passed, zero failures. All four GitHub Actions workflows succeeded on that exact head (syntax 1041, Docker packaging 948, runtime smoke 757, validation-only image 801). Squash merge `d42618b63f141049d5b0e6558e81174ef5c1418f`.
