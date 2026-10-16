@@ -35,6 +35,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.pages import create_pages_router
 from app.security.app_login_middleware import create_app_login_middleware
 from app.security.auth_cookie import set_auth_cookie as _set_auth_cookie_impl
+from app.security.auth_configuration import auth_is_configured
 
 
 
@@ -71,12 +72,7 @@ def _auth_settings():
 
 
 def _auth_configured():
-    settings = _auth_settings()
-    return bool(
-        settings.get("app_auth_username")
-        and settings.get("app_auth_salt")
-        and settings.get("app_auth_hash")
-    )
+    return auth_is_configured(_auth_settings())
 
 
 def _make_session_token(username, now=None):
