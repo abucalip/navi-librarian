@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-16 (legacy operational MCP tool retirement proposed in PR)
-Documentation base: GitHub `main` at commit `fc73958eac7b3e1b95ab29493fb023f63b76bd41`
+Last reviewed: 2026-10-16 (PR #276 merged as `fb5085f7b62b4b9616372c4d044fd974320b2f76`)
+Documentation base: GitHub `main` at commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling. The next focused change retires two unused, risky MCP operations (`restart_server` and `apply_server_patch`) at the owner's direction while preserving the other 25 MCP tools and the MCP runtime. Exact-head CI is pending.
+Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling; PR #276 retired the unused, risky MCP operations `restart_server` and `apply_server_patch` while preserving the other 25 MCP tools and the MCP runtime. PR #276 merged as `fb5085f7b62b4b9616372c4d044fd974320b2f76`; all four required workflows passed on exact final PR head `67320d555d2ce5f26868b57f8d46a5b46b295f81`, including 554 unit tests. See `PROJECT_LOG.md`.
 
 ## Next action
 
-1. Verify and merge the focused retirement PR only after all four required workflows pass on its exact final head.
-2. Then run the modularization completion audit against current main: dependency-map artifact, remaining legacy references, and size-ratchet measurements.
+1. Run the modularization completion audit against current main: dependency-map artifact, remaining legacy references, and exact size-ratchet measurements.
+2. Confirm the MCP registry retains only intended tools and the removed names have no remaining references.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
