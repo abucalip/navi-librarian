@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #265 merged; measurable size ratchet enforced)  
+Last reviewed: 2026-10-16 (mutable MUSIC_DIR coupling audited; no extraction justified)  
 Baseline: GitHub `main` after PR #265 merge commit `57ec3a594df22bba77895934535530c37d833087`
 
 ## Purpose
@@ -42,12 +42,22 @@ The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_m
 
 After that decision, if retained, move them to a dedicated operations module with explicit authorization checks and safety tests: unique-match rejection, no-op on mismatch, and occupied-port/restart failure handling. Do not execute either operation against a live service as part of tests.
 
-### 0c. Mutable settings coupling
+### 0c. Mutable settings coupling — audited; no state-object extraction justified
 
-Track the module-global `MUSIC_DIR` and every writer/reader before changing settings wrappers. It is mutable state changed by settings code and therefore a hidden dependency for wrapper extraction. Document the call sites and tests; consider replacing it with a small explicit settings object only if that removes coupling without breaking compatibility. Do not combine this with unrelated extractions.
+The current MUSIC_DIR audit found this dependency pattern in navidrome_server.py:
+
+- **Initialization:** MUSIC_DIR is initialized from the environment/default-path helper, then SettingsPersistence.read() runs during module initialization and may apply an absolute persisted music_library_path.
+- **Central persistence adapter:** SettingsPersistence receives a getter for MUSIC_DIR and a setter callback. Its read() applies an absolute saved path through the setter; its migration logic reads the current path to derive legacy downloads-path candidates.
+- **Writers:** _set_music_dir(), plus nested setters in discovery_set_navidrome_settings() and discovery_set_slskd_settings(), mutate the same module global. Both public settings writers validate/persist the new path through service_settings.py and then update the runtime path.
+- **Readers:** the default settings mapping derives music_library_path and fallback slskd downloads path from the initial path; find_missing_mbids() passes the current path to tag scanning; settings-get adapters serialize the current path; acquisition/import adapters pass the current path into recovery and watcher service dependencies.
+- **Tests and extracted boundaries:** tests/test_service_settings.py tests settings policy with injected getter/setter callbacks and temporary directories. settings_persistence.py has its own callback-based persistence boundary. Existing acquisition modules accept music_dir explicitly at invocation time, so the legacy adapter is where the global is read.
+
+**Decision:** do not introduce a settings object or extract the remaining wrappers now. The existing persistence and service-settings modules already accept explicit path callbacks, while navidrome_server.py acts as the mutable runtime owner and compatibility adapter. A new object would duplicate the same getter/setter wiring without eliminating the legacy boundary. The nested settings setters are thin adapters, not independent policy. Revisit only if a broader app-state lifecycle change gives the object a clear owner and can prove that long-running watcher/recovery work observes path changes with the same semantics.
+
+This audit did not change application code. The next active task is the policy-vs-orchestration audit of _discovery_acquire_album_impl(); do not extract it unless a discrete policy responsibility is demonstrated.
 
 
-These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
+These are audit targets, not permission to refactor without inspecting current main. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
 ### 1. Application assembly and test coupling — map generated; lifecycle AST migration remains
 
