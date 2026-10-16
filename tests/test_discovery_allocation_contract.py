@@ -114,8 +114,9 @@ class AllocationContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "disjoint"):
             AllocationResult(**base, selected_candidate_ids=("c1",),
                              ownership_review_candidate_ids=("c1",))
+        duplicate_ids = dict(base, requested_count=2)
         with self.assertRaisesRegex(ValueError, "unique"):
-            AllocationResult(**base, selected_candidate_ids=("c1", "c1"),
+            AllocationResult(**duplicate_ids, selected_candidate_ids=("c1", "c1"),
                              ownership_review_candidate_ids=())
         with self.assertRaisesRegex(ValueError, "exceed"):
             AllocationResult(**base, selected_candidate_ids=("c1", "c2"),
