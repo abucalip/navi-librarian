@@ -1197,3 +1197,8 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - All four exact-head workflows passed: syntax `38916419736`, Docker packaging/full unit suite/build `38916419709`, runtime smoke `38916419958`, and validation-only multi-architecture image validation `38916419701` (non-publishing). Assistant-side local test commands were not run independently.
 - These tests validate the interface model only, not shortlist-selection semantics. A future allocator extraction must add policy regressions for regional/style reservations, category quotas, duplicate/per-artist limits, exact-owned vs title-conflict behavior, family-cap relaxation, unclassified/final fallback ordering, diagnostics, and check-cap behavior.
 
+
+
+## New Releases date-window policy extraction — verification pending
+
+Direct-import regressions in `tests/test_discovery_new_releases.py` cover the exact 730-day cutoff, earliest query year, current year, and leap-day arithmetic. Run the focused test file, full unit suite, syntax checks, and all four required workflows on the exact final PR head before merge. Publishing remains paused.

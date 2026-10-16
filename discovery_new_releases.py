@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from datetime import date, timedelta
 from typing import Any
+
+
+def new_release_window(today: date) -> tuple[str, int, int]:
+    """Return the ISO cutoff, earliest query year, and current year for a 730-day window."""
+    cutoff_date = (today - timedelta(days=730)).isoformat()
+    return cutoff_date, int(cutoff_date[:4]), today.year
 
 
 def build_new_release_lookup(
@@ -100,8 +107,7 @@ def prepare_new_release_library_scope(
 
     This pure inventory policy preserves the existing six-track threshold,
     Various Artists exclusion, stable album-count ordering, and untruncated
-    qualified-artist count. Provider access, date-window policy, and the 120
-    artist request bound remain with the caller.
+    qualified-artist count. Provider access and the 120-artist request bound remain with the caller.
     """
     owned = {
         (music_key(item.get("artist", "")), music_key(item.get("album", "")))

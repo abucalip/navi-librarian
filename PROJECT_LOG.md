@@ -534,3 +534,9 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - All four required workflows passed on the exact final PR head: syntax/acquisition safety run `38934216294`; Docker packaging/full unit suite/build run `38934216395`; container runtime smoke run `38934216347`; validation-only multi-architecture build (`push: false`) run `38934216280`.
 - Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed; publishing remains paused.
 - **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
+
+
+## 2026-10-16 — New Releases date-window policy extraction in progress
+
+- Branch `extract/new-release-window-policy` isolates deterministic cutoff/year-bound calculation in `discovery_new_releases.new_release_window(today)`; the adapter still obtains the current date and owns provider/cache orchestration.
+- Direct-import regressions cover the 730-day cutoff and leap-day arithmetic. Focused/full tests and exact-head CI are pending; no merge, publication, deployment, or runtime verification is claimed.

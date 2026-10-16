@@ -1838,3 +1838,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required workflows passed on the exact final PR head: syntax/acquisition safety run `38934216294`; Docker packaging/full unit suite/build run `38934216395`; container runtime smoke run `38934216347`; validation-only multi-architecture build (`push: false`) run `38934216280`.
 - Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed; publishing remains paused.
 - **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
+
+
+## 2026-10-16 — New Releases date-window policy extraction in progress
+
+- Branch `extract/new-release-window-policy` extracts the deterministic 730-day cutoff and derived query-year bounds into `discovery_new_releases.new_release_window(today)`.
+- The server adapter still supplies the current date and owns provider/cache calls, throttling, candidate selection, and response assembly. Direct-import regressions cover the 730-day boundary and leap-day arithmetic.
+- Verification, PR, merge, and exact-head CI status are pending. Publishing and deployment remain paused; no runtime verification is claimed.
