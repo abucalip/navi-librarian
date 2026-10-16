@@ -1,5 +1,6 @@
-"""Pure aggregation for recent listening history."""
+"""Aggregation and background refresh policy for listening history."""
 
+import json
 from collections import Counter
 from typing import Any, Iterable
 
@@ -41,3 +42,18 @@ def build_listening_profile(
         ),
         "read_only": True,
     }
+
+
+def refresh_and_persist_background_profile(
+    recent_profile, write_list
+) -> dict[str, Any]:
+    """Refresh and persist the background profile, returning sanitized failures."""
+    try:
+        payload = json.loads(recent_profile(days=30))
+        if isinstance(payload, dict) and not payload.get("error"):
+            payload["background_refresh"] = True
+            write_list("listening_profile", payload)
+            return {"ok": True, "listens_retrieved": payload.get("listens_retrieved", 0)}
+        return {"ok": False, "error": "Listening profile returned an error payload"}
+    except Exception as exc:
+        return {"ok": False, "error": type(exc).__name__}
