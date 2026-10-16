@@ -1,6 +1,6 @@
-## 2026-10-16 — Classics genre enrichment extraction (PR in progress)
+## 2026-10-16 — Classics genre enrichment extraction (PR #231 merged)
 
-Direct-import tests cover bounded enrichment, candidate order preservation, normalized artist lookup deduplication, unclassified-genre fallback, zero/negative limits, and candidates beyond the 300-item default. Last.fm access and genre-family classification are injected. Exact-head CI and merge status are pending; no local execution is claimed.
+Direct-import tests cover bounded enrichment, candidate order preservation, normalized artist lookup deduplication, unclassified-genre fallback, zero/negative limits, and candidates beyond the 300-item default. Last.fm access and genre-family classification are injected. All four required workflows passed on exact PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`: syntax run 1208, Docker packaging/full unit suite/build run 1116, container runtime smoke run 925, and validation-only multi-architecture validation run 969. Assistant-side local execution was not performed. Squash merge: `b23d76712a04dcbfc461ceb7245a0676738fca7a`.
 
 ## 2026-10-16 — Watcher progress-accounting extraction (PR #230 merged)
 
