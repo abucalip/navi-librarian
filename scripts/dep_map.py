@@ -79,7 +79,8 @@ def main() -> int:
         or path == ROOT / 'navidrome_server.py'
     ]
     graph: dict[str, dict[str, object]] = {}
-    for path in targets:
+    # Include every repository-local module so the app.main closure is transitive.
+    for path in python_files:
         name = module_name(path, ROOT)
         imports = imports_of(path)
         graph[name] = {"path": path.relative_to(ROOT).as_posix(),
@@ -96,14 +97,15 @@ def main() -> int:
         pending.extend(child for child in graph.get(current, {}).get('local_imports', []) if child not in closure)
     result = {
         "schema_version": 1,
-        "scope": "app/main.py, app/api/**/*.py, navidrome_server.py",
+        "scope": "all repository Python modules; audit targets are app/main.py, app/api/**/*.py, navidrome_server.py",
+        "audit_targets": sorted(module_name(path, ROOT) for path in targets),
         "notes": ["AST import edges only; dynamic imports and dependency injection require manual review.",
                   "Closure traverses repository-local modules discovered by the AST scan."],
         "modules": graph,
         "app_main_import_closure": sorted(closure),
         "legacy_server_in_app_main_closure": "navidrome_server" in closure,
     }
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\\n"
+    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
         output.parent.mkdir(parents=True, exist_ok=True)
