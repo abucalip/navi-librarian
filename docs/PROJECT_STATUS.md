@@ -1,3 +1,9 @@
+## 2026-10-16 — Watcher progress accounting extraction (PR pending)
+
+- Started from current GitHub main after PR #229. Extracted the pure byte-counter progress/timer transition into `acquisition_progress_accounting.observe_progress()`; watcher polling, stall thresholds/countdown, source switching, transfer state interpretation, and safe import remain in `acquisition_watcher.py`.
+- Added direct-import contract tests for increased, unchanged, and decreasing counters and the exact 120-second boundary. Docker packaging includes the helper. No test execution or CI result is claimed yet.
+- Branch: `refactor/extract-watcher-progress-accounting`. Publishing/deployment remain paused.
+
 ## 2026-10-16 — PR #229 merged: classics critical-rating extraction
 
 - Audited `_build_classics_list()` and isolated the critical-rating enrichment stage as `discovery_classics_ratings.enrich_critical_ratings()`. The helper receives candidates and the existing cached/provider lookup callable; it preserves listener-descending stable shortlist ordering, the 80-candidate request bound, `include_year` for the first 30, rating/vote defaults, and year overwrite only when supplied.
