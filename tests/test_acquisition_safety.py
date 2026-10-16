@@ -148,8 +148,6 @@ def load_helpers():
 HELPERS = load_helpers()
 
 
-class SlskdSearchQueryTests(unittest.TestCase):
-
 class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
         self.ns = load_helpers()
