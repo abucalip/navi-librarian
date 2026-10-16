@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from slskd_transfers import download_transfer_files, queue_download_files
+from slskd_transfers import (\n    download_transfer_files, queue_download_files, match_expected_transfer_records,\n)
 
 
 class FakeResponse:
@@ -35,6 +35,35 @@ class FakeHTTP:
 
 
 class SlskdTransferListingTests(unittest.TestCase):
+    def test_matches_expected_transfers_by_casefolded_windows_or_posix_basename(self):
+        expected = [
+            {"filename": "01.flac", "size": 100},
+            {"filename": "02.flac", "size": 200},
+        ]
+        tracked = [
+            {"filename": r"Artist\\Album\\01.FLAC", "state": "InProgress"},
+            {"filename": "Artist/Album/01.flac", "state": "Completed"},
+            {"filename": "02.flac", "state": "downloading"},
+            {"filename": "unrequested.flac", "state": "Completed"},
+        ]
+        expected_by_name, tracked_by_name = match_expected_transfer_records(expected, tracked)
+        self.assertEqual(set(expected_by_name), {"01.flac", "02.flac"})
+        self.assertEqual(tracked_by_name, {
+            "01.flac": tracked[1],
+            "02.flac": tracked[2],
+        })
+
+    def test_duplicate_transfer_records_prefer_active_over_unknown_state(self):
+        expected = [{"filename": "track.flac"}]
+        unknown = {"filename": "track.flac", "state": "queued"}
+        active = {"filename": "track.flac", "state": "downloading"}
+        expected_by_name, tracked_by_name = match_expected_transfer_records(
+            expected, [unknown, active]
+        )
+        self.assertEqual(expected_by_name["track.flac"], expected[0])
+        self.assertIs(tracked_by_name["track.flac"], active)
+
+
     def test_queue_posts_selected_files_and_returns_success_response(self):
         response = FakeResponse(payload={"queued": True})
         calls = []
