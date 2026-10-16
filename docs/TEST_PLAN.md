@@ -1199,11 +1199,6 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 
 
 
-## New Releases date-window policy extraction — verification pending
-
-Direct-import regressions in `tests/test_discovery_new_releases.py` cover the exact 730-day cutoff, earliest query year, current year, and leap-day arithmetic. Run the focused test file, full unit suite, syntax checks, and all four required workflows on the exact final PR head before merge. Publishing remains paused.
-
-
 ## New Releases date-window policy extraction — PR #237 merged
 
 - Added direct-import regression coverage for the exact 730-day cutoff, earliest query year/current year, and leap-day arithmetic in `tests/test_discovery_new_releases.py`.
