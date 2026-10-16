@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #267 merged; acquisition coordinator audited; retain orchestration)  
+Last reviewed: 2026-10-16 (PR #270 import-completion service extraction under verification)
 Documentation branch base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Current focus
@@ -9,9 +9,9 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Audit `_discovery_acquire_album_impl()` on current main and record exact evidence for whether candidate selection, source-switch thresholds, retry rules, or state transitions remain inline; retain it if it is orchestration only.
-2. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
-3. Do not force additional classics-builder or size-only slskd extractions.
+1. Verify PR #270's exact final head; only merge after all four required workflows pass.
+2. After merge, re-evaluate the remaining broader-search AST-coupled test without weakening real search/retry, concurrency, or filesystem-safety coverage.
+3. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
 
