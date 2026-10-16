@@ -5,6 +5,7 @@ import unittest
 from app.services.deezer_album_matching import (
     artwork_match_score,
     exact_album_matches,
+    exact_album_release_year,
     normalize_catalog_name,
     release_year,
 )
@@ -31,6 +32,19 @@ class DeezerAlbumMatchingTests(unittest.TestCase):
         for value in ("", None, "1899-01-01", "2101-01-01", "20xx-01-01", "12"):
             with self.subTest(value=value):
                 self.assertIsNone(release_year(value))
+
+    def test_exact_album_release_year_skips_invalid_and_non_exact_candidates(self):
+        albums = [
+            {"artist": {"name": "Artist Tribute"}, "title": "Album",
+             "release_date": "1990-01-01"},
+            {"artist": {"name": "Artist"}, "title": "Album", "release_date": "unknown"},
+            {"artist": {"name": "ARTIST"}, "title": "ALBUM",
+             "release_date": "2004-06-01"},
+            {"artist": {"name": "Artist"}, "title": "Album",
+             "release_date": "2010-01-01"},
+        ]
+        self.assertEqual(exact_album_release_year(albums, "Artist", "Album"), 2004)
+        self.assertIsNone(exact_album_release_year(albums, "Other", "Album"))
 
     def test_artwork_score_preserves_exact_and_partial_weights(self):
         exact = {"artist": {"name": "Artist"}, "title": "Album"}
