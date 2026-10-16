@@ -13,6 +13,7 @@ import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
+from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
 from settings_persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from service_settings import (
@@ -3608,22 +3609,11 @@ def discovery_queue_slskd_candidate(
     """Queue a user-reviewed slskd candidate and import it into the library when complete."""
     try:
         files = json.loads(files_json)
-        if not isinstance(files, list) or not files:
-            return json.dumps({"ok": False, "error": "files_json must be a non-empty JSON list."})
-        try:
-            quality_summary = json.loads(quality_summary_json or "[]")
-            if not isinstance(quality_summary, list):
-                quality_summary = []
-        except (ValueError, TypeError):
-            quality_summary = []
-        normalized = []
-        for item in files:
-            if not isinstance(item, dict) or not item.get("filename"):
-                return json.dumps({"ok": False, "error": "Each file requires a filename."})
-            normalized.append({
-                "filename": str(item["filename"]),
-                "size": int(item.get("size") or 0),
-            })
+        normalized, quality_summary, validation_error = _normalize_reviewed_candidate_files(
+            files, quality_summary_json
+        )
+        if validation_error:
+            return json.dumps({"ok": False, "error": validation_error})
         base_url, api_key, settings = _slskd_config()
         response = httpx.post(
             f"{base_url}/api/v0/transfers/downloads/{username}",
