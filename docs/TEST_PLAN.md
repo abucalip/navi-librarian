@@ -1,3 +1,7 @@
+## 2026-10-16 — slskd connection probe (PR #187, pending verification)
+
+Focused regression file: `tests/test_slskd_client.py`. It covers successful request parameters/response shape, 401/403 authentication failure, HTTP errors, invalid/missing configuration, and API-key redaction. Run `python -m unittest tests.test_slskd_client -v`, `python -m unittest discover -s tests -v`, syntax checks, and all four exact-final-head workflows (syntax/acquisition safety; Docker packaging/full suite/build; isolated runtime smoke; validation-only multi-architecture build). These tests and CI are not yet verified for the final PR head. Do not publish or deploy.
+
 ## 2026-10-16 — Progress-calculation extraction verification (PRs #182–#183)
 
 - **PR #182**, final tested head `045131f58365dd0e6538c1712f37f56f639c65ad`: syntax/acquisition-safety run 1016, Docker packaging/full unit suite/build run 923, container runtime smoke run 732, and validation-only multi-architecture run 776 all succeeded. Merged as `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`.
