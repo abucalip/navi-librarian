@@ -1,3 +1,7 @@
+## slskd connectivity probe — extraction in progress (PR #187)
+
+`slskd_client.test_connection(config_reader, http_get=...)` owns the connection probe request and the established JSON status mapping. `navidrome_server.discovery_test_slskd_connection()` remains the compatibility adapter and supplies the existing configuration reader. The API-key header is used only for the outbound request and is not returned in responses. Direct-import regressions and Docker packaging are added. Exact-head CI and merge are pending; no live slskd call was made.
+
 ## slskd live progress calculations — extracted (PRs #182–#183)
 
 `slskd_transfers.summarize_transfer_progress()` owns pure aggregation of matched expected/tracked records into completed-track count, total/transferred bytes, and actual-counter snapshots. Completed states may infer a file's transferred bytes for display totals, but those inferred bytes are deliberately excluded from speed snapshots. `slskd_transfers.estimate_transfer_speed()` calculates the delta-based bytes/second estimate from current counters and a prior snapshot/time. `navidrome_server.py` still owns the HTTP call, expected/tracked matching invocation, snapshot key, shared snapshot storage/lock, and public progress response.
