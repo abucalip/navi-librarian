@@ -68,9 +68,11 @@ class SlskdTransferListingTests(unittest.TestCase):
 
     def test_legacy_queue_adapter_preserves_queue_contract(self):
         from navidrome_server import _discovery_queue_candidate_unless_dismissed
-        from unittest.mock import MagicMock
         response = FakeResponse(payload={"queued": True})
-        with patch("navidrome_server.httpx.post", return_value=response) as post:
+        with patch("navidrome_server.httpx.post", return_value=response) as post, patch(
+            "navidrome_server.acquisition_orchestration.queue_candidate_unless_dismissed",
+            side_effect=lambda artist, album, **kwargs: kwargs["queue_source"](),
+        ):
             result = _discovery_queue_candidate_unless_dismissed(
                 "Artist", "Album", "http://slskd", {"X-API-KEY": "test"},
                 "peer", [{"filename": "01.flac"}],
