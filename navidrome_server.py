@@ -294,9 +294,9 @@ def recommend_new_music(count: int = 10) -> str:
         return "count must be between 1 and 20."
 
     from discovery_recommendations import (
-        classify_diversity_style,
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
+        classify_diversity_style,
         classify_recommendation_category,
         genre_families,
         primary_recent_family,
