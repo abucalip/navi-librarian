@@ -1,3 +1,10 @@
+## 2026-10-16 — PR #229 merged: classics critical-rating extraction
+
+- Branch: `refactor/extract-classics-rating-enrichment`; tested head `28c364dca41971ea90667c175663de17b41ca7ab`; squash merge `925eb16cba7d2387cd0a17c7690e36d35f17e8f1`.
+- Extracted listener-ranked shortlist and critical-rating enrichment to `discovery_classics_ratings.py`; added five direct-import regression tests, Docker packaging, and documentation updates.
+- All four required exact-head workflows passed: Python syntax/acquisition safety run 1194; Docker packaging/full suite/build run 1102; runtime smoke run 911; validation-only multi-architecture run 955. Local test execution was not performed.
+- Publishing/deployment remain paused; no runtime deployment is claimed.
+
 ## 2026-10-16 — Classics-list rating enrichment extraction started
 
 - Branch: `refactor/extract-classics-rating-enrichment`, based on GitHub main at `80935c5bc97cc56bc6fd54efc7416c3a2ed6978e`.
