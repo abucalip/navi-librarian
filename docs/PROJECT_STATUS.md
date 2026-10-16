@@ -1,3 +1,9 @@
+## 2026-10-16 — Classics critical-rating extraction (verification pending)
+
+- Audited `_build_classics_list()` and isolated the critical-rating enrichment stage as `discovery_classics_ratings.enrich_critical_ratings()`. The helper receives candidates and the existing cached/provider lookup callable; it preserves listener-descending stable shortlist ordering, the 80-candidate request bound, `include_year` for the first 30, rating/vote defaults, and year overwrite only when supplied.
+- Added direct-import contract tests for shortlist order/bounds, year lookup cap, missing ratings, stable ties, and invalid limits; added Docker packaging and delegated the existing builder stage without changing the surrounding pipeline.
+- Contract is independently testable with one provider dependency and explicit in-place candidate mutation. CI and full diff review are pending; no tests are claimed as run locally. No merge, publication, deployment, or runtime verification claimed.
+- Next: inspect exact branch diff, open PR, and verify all four required workflows on the final PR-head SHA.
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
 - **PR #225 — cached discovery-list payload shaping:** exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. Extracted cached-list filtering and response projection to `discovery_list_payload.build_cached_discovery_list_response()`; server-side validation, feedback persistence/read, For Me inventory lookup, and dependency wiring remain in the adapter. All four exact-head workflows passed: syntax/acquisition safety 1187; Docker packaging/full suite (477 tests)/build 1095; runtime smoke 904; validation-only multi-architecture 948.

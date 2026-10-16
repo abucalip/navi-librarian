@@ -1774,22 +1774,9 @@ def _build_classics_list():
         if _discovery_is_album_candidate(item)
     }
 
-    # Add critical-rating evidence for a rotating shortlist. Rating lookups are
-    # cached; listener counts are used only to bound the number of requests.
-    rating_shortlist = sorted(
-        candidates.values(),
-        key=lambda item: int(item.get("lastfm_listeners") or 0),
-        reverse=True,
-    )[:80]
-    for index, candidate in enumerate(rating_shortlist):
-        rating = _musicbrainz_critical_rating(
-            candidate.get("mbid"), include_year=index < 30
-        )
-        if rating:
-            candidate["musicbrainz_rating"] = rating.get("rating")
-            candidate["musicbrainz_rating_votes"] = rating.get("votes", 0)
-            if rating.get("year"):
-                candidate["year"] = rating["year"]
+    # Keep provider/cache access in the adapter; isolate shortlist policy.
+    from discovery_classics_ratings import enrich_critical_ratings
+    enrich_critical_ratings(candidates.values(), _musicbrainz_critical_rating)
 
     # Build a broad candidate pool before choosing the visible collection list.
     # Popularity is only a weak tie-breaker; critical recognition and rotating

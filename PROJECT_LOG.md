@@ -1,3 +1,10 @@
+## 2026-10-16 — Classics-list rating enrichment extraction started
+
+- Branch: `refactor/extract-classics-rating-enrichment`, based on GitHub main at `80935c5bc97cc56bc6fd54efc7416c3a2ed6978e`.
+- Extracted the critical-rating shortlist/enrichment stage into `discovery_classics_ratings.py`; kept provider/cache access in `_musicbrainz_critical_rating` and retained the surrounding `_build_classics_list()` pipeline.
+- Added direct-import regression tests and Docker packaging. Docs updated in status, roadmap, and test plan.
+- Exact-head review and CI remain pending. No local test execution, merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
 - **PR #225:** https://github.com/abucalip/navi-librarian/pull/225 — cached discovery-list projection extracted to `discovery_list_payload.build_cached_discovery_list_response()`. Exact tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. Four required workflows passed: syntax/acquisition safety 1187, Docker/full suite (477 tests)/build 1095, runtime smoke 904, validation-only multi-architecture 948.
