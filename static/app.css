@@ -337,9 +337,12 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
    views that have none). Notyf paints the toast background inline from its options, so the
    surface colour is set in JS and only the parts CSS can own are styled here. */
 .notyf { z-index: 200; }
-.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-left-width: 3px; border-radius: var(--radius); color: var(--text); font: 13px/1.5 var(--body); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
-.notyf__toast--success { border-left-color: var(--green); }
-.notyf__toast--error { border-left-color: var(--red); }
+/* One uniform border. The state used to ride on a 3px left border in green or red, which is the
+   "side-tab" accent craft-floor.md refuses on alerts, and which the design detector flags as a
+   category tell. It was also redundant: the icon disc below already carries the state by shape
+   and hue, and the message text carries it again. The element is rewritten rather than softened —
+   a thinner tab would be the same mistake, quieter. */
+.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-radius: var(--radius); color: var(--text); font: 13px/1.5 var(--body); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .notyf__message { font: inherit; }
 /* Notyf draws each icon as a white disc with currentColor bars. Recolouring the disc to
    the state colour and leaving the bars on the dark inline colour keeps the success and
