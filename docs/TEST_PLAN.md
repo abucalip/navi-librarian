@@ -1075,3 +1075,10 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Branch refactor/extract-acquisition-progress-snapshots extracts the per-process, per-acquisition byte-snapshot map and lock into acquisition_progress_snapshots.py. navidrome_server.py retains live slskd polling and compatibility behavior; the extracted manager delegates speed math to the existing slskd_transfers.estimate_transfer_speed implementation.
 - Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. Docker packaging includes the new module.
 - Required next gates: syntax/acquisition-safety, Docker packaging/full unit suite/build, runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. Assistant-side local tests have not been run; no publication or deployment.
+
+
+## 2026-10-16 — Acquisition search diagnostics extraction in review
+
+- Branch refactor/extract-acquisition-search-diagnostics moves the bounded candidate diagnostic projection, recognized audio-file counting, and no-match explanation formatting into acquisition_search_diagnostics.py.
+- The server still owns slskd search orchestration, path-match diagnostics, persistence, and response serialization. Direct-import tests preserve diagnostic fields, 10-candidate cap, audio extension handling, and query ordering. Docker packaging includes the module.
+- Required exact-head gates: syntax/acquisition-safety, Docker packaging/full suite/build, runtime smoke, and validation-only multi-architecture workflow. Assistant-side local tests have not been run; publishing/deployment remain paused.
