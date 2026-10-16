@@ -109,8 +109,8 @@ def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
     Returns at most 250 lines per request.
     """
     import json
-    import re
     from pathlib import Path
+    from server_source_redaction import redact_assignment
 
     source_path = Path(__file__).resolve()
     lines = source_path.read_text(encoding="utf-8").splitlines()
@@ -125,19 +125,9 @@ def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
         })
 
     end_line = min(end_line, len(lines))
-    secret_pattern = re.compile(
-        r"(password|passwd|secret|api[_-]?key|access[_-]?token|"
-        r"client[_-]?secret)",
-        re.IGNORECASE,
-    )
-    assignment_pattern = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=")
-
     result = []
     for number in range(start_line, end_line + 1):
-        line = lines[number - 1]
-        match = assignment_pattern.match(line)
-        if match and secret_pattern.search(match.group(1)):
-            line = match.group(1) + " = '[REDACTED]'"
+        line = redact_assignment(lines[number - 1])
         result.append(f"{number:4}: {line}")
 
     return json.dumps({
