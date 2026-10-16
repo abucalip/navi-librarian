@@ -5,22 +5,22 @@ Last updated: 2026-10-16
 ## Authority and responsibilities
 
 - **GitHub is the single source of truth** for code, commits, branches, PRs, documentation, and release history. Do not use a local checkout as the source for authoritative changes.
-- **Ownership boundaries:** ZCode owns front-end implementation within the permitted paths in root \`AGENTS.md\`; it must read \`AGENTS.md\`, \`docs/FRONTEND_DESIGN_GUIDE.md\`, and relevant project docs. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification.
+- **Ownership boundaries:** ZCode owns front-end implementation within the permitted paths in root `AGENTS.md`; it must read `AGENTS.md`, `docs/FRONTEND_DESIGN_GUIDE.md`, and relevant project docs. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification.
 - All authoritative changes go through focused GitHub branches and PRs. Local environments are for testing identifiable GitHub revisions only.
 - Production is separate from GitHub state: merge, CI, image publication, deployment, and runtime verification are distinct states.
 
 ## Efficient session start and documentation retrieval
 
-Start every task by checking current GitHub \`main\`, recent commits, open PRs, and relevant CI. Establish one concrete objective and acceptance criteria.
+Start every task by checking current GitHub `main`, recent commits, open PRs, and relevant CI. Establish one concrete objective and acceptance criteria.
 
 Read documentation according to this map; **consulting a document does not mean rereading every historical entry**:
 
-1. Read \`docs/PROJECT_STATUS.md\` for current state and the next action.
-2. Read all of \`docs/MODULARIZATION_ROADMAP.md\` when choosing extraction work.
-3. Consult \`docs/REQUIREMENTS.md\` for requirements affected by the change.
-4. Consult \`docs/TEST_PLAN.md\` for mandatory gates and the tests relevant to the change.
+1. Read `docs/PROJECT_STATUS.md` for current state and the next action.
+2. Read all of `docs/MODULARIZATION_ROADMAP.md` when choosing extraction work.
+3. Consult `docs/REQUIREMENTS.md` for requirements affected by the change.
+4. Consult `docs/TEST_PLAN.md` for mandatory gates and the tests relevant to the change.
 5. Read the applicable architecture/decision sections and inspect actual implementation, callers, tests, configuration, and package/Docker inclusion.
-6. Search the root \`PROJECT_LOG.md\` for the relevant module, PR, regression, or decision. Do not read the full chronological log unless the task requires it.
+6. Search the root `PROJECT_LOG.md` for the relevant module, PR, regression, or decision. Do not read the full chronological log unless the task requires it.
 7. Read this workflow in full when changing the workflow itself; otherwise consult the applicable section.
 
 If a document is stale or contradicts current code or GitHub evidence, verify the discrepancy and update the canonical document. Never use a shorter reading path to skip code inspection, tests, safety checks, or CI.
@@ -29,12 +29,12 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 
 1. Inspect current repository state and relevant documentation/code/tests.
 2. Define a narrow objective, acceptance criteria, and risk/dependency notes.
-3. Branch from current GitHub \`main\`, unless another GitHub base is explicitly justified.
+3. Branch from current GitHub `main`, unless another GitHub base is explicitly justified.
 4. Implement the smallest reviewable change and add regression tests. Preserve existing behavior, response shapes, side effects, persistence, and compatibility interfaces unless an approved requirement says otherwise.
 5. Run focused tests, the full unit suite, syntax checks, and applicable API/Docker checks where execution is available. Report unavailable/skipped tests honestly.
 6. Review the complete diff, changed-file list, call sites, package inclusion, unsafe failure cases, secrets, and unintended changes.
 7. Open or update a focused PR. Verify required CI against the exact final PR-head SHA after the last code or documentation commit.
-8. Merge only when acceptance criteria, diff review, and required gates pass. After merge, refresh \`main\`, PRs, and CI before beginning dependent work.
+8. Merge only when acceptance criteria, diff review, and required gates pass. After merge, refresh `main`, PRs, and CI before beginning dependent work.
 9. Record the exact branch/PR/SHA, tests and CI, limitations, merge state, and next action in the project docs.
 10. For releases, separately verify publication, image tag/digest, Compose configuration, persistent storage, logs, connectivity, and application behavior. Preserve rollback references and obtain authorization for consequential production actions.
 
@@ -50,14 +50,14 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 
 ## Required verification gates
 
-For each code PR, follow \`docs/TEST_PLAN.md\`. At minimum:
-- focused regression tests and \`python -m unittest discover -s tests -v\`;
+For each code PR, follow `docs/TEST_PLAN.md`. At minimum:
+- focused regression tests and `python -m unittest discover -s tests -v`;
 - Python syntax checks and applicable API/Docker/package checks;
 - direct-import tests for extracted logic and adapter/compatibility tests for the old interface;
 - full diff and changed-file review;
 - all four required workflows on the exact final PR-head SHA: Python syntax/acquisition safety, Docker packaging/full unit suite/build, isolated container runtime smoke, and validation-only multi-architecture image validation.
 
-The multi-architecture workflow must remain non-publishing (\`push: false\`). A successful import, build, startup, or workflow definition alone is not proof of correctness. Never claim a test passed unless it ran.
+The multi-architecture workflow must remain non-publishing (`push: false`). A successful import, build, startup, or workflow definition alone is not proof of correctness. Never claim a test passed unless it ran.
 
 UI changes require the full manual browser checklist after automated CI succeeds, against the exact tested SHA; record the result. Non-UI changes require relevant automated/API/integration checks, not invented UI evidence.
 
@@ -66,14 +66,14 @@ UI changes require the full manual browser checklist after automated CI succeeds
 Keep one canonical home for each kind of information:
 - roadmap: outstanding extraction work and exit criteria;
 - project status: current snapshot, blockers, and one next action;
-- root \`PROJECT_LOG.md\`: completed work and durable evidence;
+- root `PROJECT_LOG.md`: completed work and durable evidence;
 - requirements: user-visible behavior and invariants;
 - test plan: verification requirements;
 - architecture/decision docs: current boundaries and rationale.
 
-When an extraction is completed, remove it from the active roadmap and record it in \`PROJECT_LOG.md\`. Do not duplicate full PR/CI narratives across the roadmap and status. Update architecture docs only when the actual boundary or decision changes. Keep the status concise; search historical records as needed.
+When an extraction is completed, remove it from the active roadmap and record it in `PROJECT_LOG.md`. Do not duplicate full PR/CI narratives across the roadmap and status. Update architecture docs only when the actual boundary or decision changes. Keep the status concise; search historical records as needed.
 
-At meaningful session closeout, update \`docs/PROJECT_STATUS.md\` and root \`PROJECT_LOG.md\`, plus only the relevant roadmap, requirements, test, workflow, architecture, or deployment documents. Record facts only: branch, PR, exact SHA, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and the single most useful next action.
+At meaningful session closeout, update `docs/PROJECT_STATUS.md` and root `PROJECT_LOG.md`, plus only the relevant roadmap, requirements, test, workflow, architecture, or deployment documents. Record facts only: branch, PR, exact SHA, tests actually run, CI evidence, UI results when applicable, merge/publication/deployment/runtime state, limitations, and the single most useful next action.
 
 ## Release and production safety
 
