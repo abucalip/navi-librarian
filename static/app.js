@@ -127,8 +127,16 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
     updateActiveDownloadBadge(data);
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
     status.textContent = jobs.length
-      ? `${jobs.length} acquisition record(s).`
-      : 'No acquisition records yet.';
+      ? pluralize(jobs.length, 'acquisition record', 'acquisition records') + '.'
+      : 'No acquisition records yet. Requests you make from a discovery page appear here.';
+    // renderAcquisitions used to set only the text, so the element kept the is-loading class
+    // applied by loadAcquisitions and an empty list rendered with the loading ellipsis: the
+    // message said "no records" while the glyph said "still working". The kind now travels
+    // with the message. A detached override element is excluded because a caller rendering a
+    // single identity owns its own node.
+    if (status === $('acquisitionsStatus')) {
+      setStatusState(status, jobs.length ? 'progress' : 'empty');
+    }
     for (const job of jobs) {
       if (onlyIdentity && [job.artist || '', job.album || ''].join('::').toLocaleLowerCase() !== onlyIdentity) continue;
       const dismissalKey = [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
@@ -277,7 +285,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             card.remove();
             const visibleCards = target.querySelectorAll('.card').length;
             status.textContent = visibleCards
-              ? visibleCards + ' acquisition record(s).'
+              ? pluralize(visibleCards, 'acquisition record', 'acquisition records') + '.'
               : 'No acquisition records to show.';
             if (status === $('acquisitionsStatus')) {
               setStatusState(status, visibleCards ? 'progress' : 'empty');
@@ -1117,7 +1125,7 @@ async function loadDiscovery(name, options = {}) {
     }
 
     if (items.length || data.generated_at) {
-      discoveryStatus(name, `${items.length} item(s)`);
+      discoveryStatus(name, pluralize(items.length, 'item', 'items'));
     }
 
     for (const item of items) {
@@ -1211,9 +1219,20 @@ async function loadDiscovery(name, options = {}) {
       (destinationByItem.get(item) || target).append(card);
     }
 
+    // Each section explains its own precondition and names the action that resolves it,
+    // rather than sharing one generic string. clarify.md requires an empty state to explain
+    // the state and offer the next useful action, and these sections need different things
+    // before they can return results: new releases needs a full album already in the
+    // library, the artist and library views need a connected Navidrome, and the personal
+    // view needs listening history. One shared sentence could only ever name the symptom.
     if (!items.length && !autoRefreshStarted.has(name)) {
-      const empty = addTextElement(target, 'p', 'status-line',
-        'No results. Try refreshing this list.');
+      const emptyCopy = {
+        new_releases: 'No new releases found. This view lists albums from the last 24 months by artists who already have a full album in your library, so it needs a connected Navidrome library to find candidates.',
+        personal: 'No personal discoveries yet. These recommendations are based on your listening history, so they need Last.fm or ListenBrainz configured in Settings before there is anything to work from.',
+        classics: 'No albums to add yet. This view looks for acclaimed albums missing from your library, so it needs a connected Navidrome library to compare against.',
+        artist_deep_dive: 'No deep dives yet. This view finds missing albums by artists already in your library, so it needs a connected Navidrome library to find them.'
+      }[name] || 'No results for this list yet.';
+      const empty = addTextElement(target, 'p', 'status-line', emptyCopy);
       setStatusState(empty, 'empty');
     }
   } catch (error) {
@@ -1379,6 +1398,13 @@ async function searchAlbum(artist, album, metadata, button = null) {
 // problems are fixed here: the selector was '.page:not(.hidden) .status', which matched
 // nothing outside Settings, and the Recommendations section has no .status-line at all,
 // so its messages had nowhere to land either.
+// Complete messages rather than a parenthesised pseudo-plural. clarify.md asks for
+// translatable whole sentences and for pluralization to be handled rather than faked, and
+// "1 item(s)" reads as a fragment to a person as well as to a translator.
+function pluralize(count, singular, plural) {
+  return count + ' ' + (count === 1 ? singular : plural);
+}
+
 function reportAcquisitionOutcome(message, kind) {
   if (!message) return;
   const page = document.querySelector('section.page:not(.hidden)');
