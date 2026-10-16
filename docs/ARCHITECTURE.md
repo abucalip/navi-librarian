@@ -1,3 +1,7 @@
+## Classics candidate collection — extraction in progress
+
+`discovery_classics_candidates.collect_classic_candidates()` owns the classics list's candidate collection policy: descending library-artist order, top-album retrieval through an injected callback, normalized artist/album identity deduplication, owned-album exclusion, winner selection by Last.fm listeners, candidate metadata, eligibility filtering, and the existing fifth-artist pause cadence. `navidrome_server._build_classics_list()` retains library snapshot retrieval, Last.fm client/cache access, music-key and album-eligibility adapters, scoring, genre enrichment, exploration refresh, diversity selection, and response assembly. Direct-import tests and Docker packaging are added; final-head CI/merge pending.
+
 ## New Releases candidate selection — extracted (PR #205)
 
 `discovery_new_releases.select_artist_release_candidates()` owns pure per-artist release-group eligibility, candidate shaping, exact-credit/Various Artists filtering, owned-album exclusion, and duplicate-date precedence. `_build_new_releases_list()` retains inventory, MusicBrainz requests, caching, rate limiting, lookup error reporting, and global merge. PR #205 merged at `32b39be400ec046e8310a87260346b1959141609` from exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required exact-head workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).

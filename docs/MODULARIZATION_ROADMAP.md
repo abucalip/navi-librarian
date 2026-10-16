@@ -1,3 +1,7 @@
+## 2026-10-16 — Classics candidate collection extraction in progress
+
+The next narrow classics-list seam moves candidate collection and duplicate resolution out of `_build_classics_list()` into `discovery_classics_candidates.collect_classic_candidates()`. Provider/cache access, inventory retrieval, scoring/jitter, genre enrichment, diversity, and response assembly remain in the adapter. Contract tests cover candidate ordering, top-album limit, ownership and eligibility filtering, duplicate winner, metadata, and request pacing. Branch: `extract/classics-candidate-collection`. Final-head CI and merge are pending; publishing remains paused.
+
 ## 2026-10-16 — Classics genre enrichment extracted (PR #231 merged)
 
 PR #231 moved the bounded genre annotation stage to `discovery_classics_genres.enrich_classic_genres(ranked, genre_lookup, family_classifier, limit=300)`. It retains normalized-artist lookup deduplication, order, the 300-candidate boundary, and empty/`other` fallback metadata. Last.fm provider/cache access and family classification remain injected; scoring, refresh jitter, and diversity selection remain in the builder. All four required workflows passed on exact PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge `b23d76712a04dcbfc461ceb7245a0676738fca7a`. Publishing and deployment remain paused.

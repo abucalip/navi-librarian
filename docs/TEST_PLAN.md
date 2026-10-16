@@ -1,3 +1,7 @@
+## Classics candidate collection extraction — verification pending
+
+Focused tests: `python -m unittest tests.test_discovery_classics_candidates -v`. Coverage asserts descending artist order, top-album limit 8, normalized duplicate identity and highest-listener winner, owned-album exclusion, album eligibility filtering, legacy metadata, empty results, and fifth-artist pacing. Then run `python -m unittest discover -s tests -v`, syntax checks, and all four required exact-head workflows: syntax/acquisition safety, Docker packaging/full suite/build, isolated container runtime smoke, and validation-only multi-architecture validation (`push: false`). No test result is claimed before execution.
+
 ## 2026-10-16 — Classics genre enrichment extraction (PR #231 merged)
 
 Direct-import tests cover bounded enrichment, candidate order preservation, normalized artist lookup deduplication, unclassified-genre fallback, zero/negative limits, and candidates beyond the 300-item default. Last.fm access and genre-family classification are injected. All four required workflows passed on exact PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`: syntax run 1208, Docker packaging/full unit suite/build run 1116, container runtime smoke run 925, and validation-only multi-architecture validation run 969. Assistant-side local execution was not performed. Squash merge: `b23d76712a04dcbfc461ceb7245a0676738fca7a`.

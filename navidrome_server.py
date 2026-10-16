@@ -1746,33 +1746,17 @@ def _build_classics_list():
         (_music_key(item["artist"]), _music_key(item["album"]))
         for item in snapshot["albums"]
     }
-    candidates = {}
-    # Work through every artist in the library. Cached Last.fm responses make
-    # subsequent daily runs substantially cheaper than the initial build.
-    for index, artist_record in enumerate(
-        sorted(library_artists, key=lambda item: item["album_count"], reverse=True)
-    ):
-        artist = artist_record["name"]
-        for album in _lastfm_top_albums(artist, limit=8):
-            key = (_music_key(album["artist"]), _music_key(album["album"]))
-            if key in owned:
-                continue
-            old = candidates.get(key)
-            if old is None or album["lastfm_listeners"] > old["lastfm_listeners"]:
-                candidates[key] = {
-                    **album,
-                    "discovery_type": "classic",
-                    "discovery_source": "Last.fm artist top albums",
-                    "artist_library_album_count": artist_record["album_count"],
-                }
-        # Avoid a long unbounded burst to Last.fm on the first build.
-        if index and index % 5 == 0:
-            time.sleep(0.15)
-
-    candidates = {
-        key: item for key, item in candidates.items()
-        if _discovery_is_album_candidate(item)
-    }
+    # Candidate collection policy is independently tested; provider/cache access
+    # and pacing remain supplied by this adapter.
+    from discovery_classics_candidates import collect_classic_candidates
+    candidates = collect_classic_candidates(
+        library_artists,
+        owned,
+        top_albums_lookup=_lastfm_top_albums,
+        music_key=_music_key,
+        is_album_candidate=_discovery_is_album_candidate,
+        pause=lambda: time.sleep(0.15),
+    )
 
     # Keep provider/cache access in the adapter; isolate shortlist policy.
     from discovery_classics_ratings import enrich_critical_ratings
