@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (dependency map reviewed; AST inventory completed)  
-GitHub source of truth: `main` at audit baseline `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
+Last reviewed: 2026-10-16 (dependency map and AST test inventory completed)  
+GitHub source of truth: `main` at audit merge `26009d1321c2169859f06c75c0a8abb409425325`
 
 ## Current focus
 
