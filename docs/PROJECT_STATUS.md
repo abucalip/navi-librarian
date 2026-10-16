@@ -1,4 +1,4 @@
-## 2026-10-16 — Classics critical-rating extraction (verification pending)
+## 2026-10-16 — PR #229 merged: classics critical-rating extraction
 
 - Audited `_build_classics_list()` and isolated the critical-rating enrichment stage as `discovery_classics_ratings.enrich_critical_ratings()`. The helper receives candidates and the existing cached/provider lookup callable; it preserves listener-descending stable shortlist ordering, the 80-candidate request bound, `include_year` for the first 30, rating/vote defaults, and year overwrite only when supplied.
 - Added direct-import contract tests for shortlist order/bounds, year lookup cap, missing ratings, stable ties, and invalid limits; added Docker packaging and delegated the existing builder stage without changing the surrounding pipeline.
