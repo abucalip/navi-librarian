@@ -1,3 +1,10 @@
+## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
+
+- PR #224 squash-merged at `f795239589e6dd78f0f5e6d98cf2eadc897d6f49` from exact tested head `6d2e0ccc8d24cd11b727255f171fd405384a8729`.
+- Pure personal-recommendation payload projection moved to `discovery_recommendation_payload.py`; the server retains recent-listen count lookup and selection-specific ownership annotations.
+- Exact-head CI passed syntax/acquisition safety run 1177, Docker packaging/full suite (473 tests)/build run 1085, runtime smoke run 894, and validation-only multi-architecture build run 938. Assistant-side local tests were not run.
+- No image publication, deployment, or production runtime verification. Publishing remains paused.
+
 ## 2026-10-16 — Personal recommendation payload projection extraction (in progress)
 
 - Branch `refactor/personal-recommendation-payload`, based on current GitHub main after PR #223. Extracted the base personal-recommendation payload mapping to `discovery_recommendation_payload.py`; selection-specific `ownership_check` / `ownership_note` annotations remain in the adapter.
