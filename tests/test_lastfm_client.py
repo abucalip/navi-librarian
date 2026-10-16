@@ -97,5 +97,82 @@ class LastFmClientTests(unittest.TestCase):
         call.assert_called_once_with("artist.getSimilar", ttl_seconds=60, artist="A")
 
 
+
+    def test_album_popularity_fetches_normalizes_tags_and_caches_legacy_key(self):
+        payload = {
+            "album": {
+                "name": "Post",
+                "stats": {"listeners": "123", "playcount": "456"},
+                "tags": {"tag": {"name": "Trip Hop"}},
+            }
+        }
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
+        result, error = client.album_popularity("Björk", "Post")
+        self.assertIsNone(error)
+        self.assertEqual(result, {"listeners": 123, "playcount": 456, "tags": ["trip hop"]})
+        cache_key = "lastfm:album-info-v2:bjork:post"
+        self.assertIn(cache_key, self.cache)
+        self.assertEqual(self.cache[cache_key], result)
+        request = next(row for row in self.calls if row[0] == "http_get")
+        self.assertEqual(request[2]["params"], {
+            "method": "album.getInfo", "api_key": "key", "artist": "Björk",
+            "album": "Post", "autocorrect": 1, "format": "json",
+        })
+        self.assertEqual(request[2]["timeout"], 12)
+
+    def test_album_popularity_accepts_direct_stats_and_cache_hits(self):
+        cached = {"listeners": 9, "playcount": 10, "tags": []}
+        client = self.make_client(cache_get=lambda _key, _ttl: cached)
+        self.assertEqual(client.album_popularity("Artist", "Album"), (cached, None))
+        self.assertFalse(any(row[0] == "http_get" for row in self.calls))
+
+        payload = {"album": {"listeners": "7", "playcount": 8, "tags": {"tag": []}}}
+        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse(payload))
+        self.assertEqual(client.album_popularity("Artist", "Album"), (
+            {"listeners": 7, "playcount": 8, "tags": []}, None
+        ))
+
+    def test_album_popularity_reports_provider_and_missing_stats_errors(self):
+        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse({
+            "error": 6, "message": "Album not found"
+        }))
+        self.assertEqual(client.album_popularity("Artist", "Album"), (
+            None, "Last.fm API error 6: Album not found"
+        ))
+        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"album": {"name": "Empty"}}))
+        self.assertEqual(client.album_popularity("Artist", "Album"), (
+            None, "Last.fm returned no album statistics for a lookup."
+        ))
+
+    def test_album_popularity_404_is_silent_but_other_http_errors_are_reported(self):
+        not_found = httpx.HTTPStatusError(
+            "not found", request=httpx.Request("GET", "https://example.test"),
+            response=httpx.Response(404),
+        )
+        client = self.make_client(http_get=lambda *_a, **_k: (_ for _ in ()).throw(not_found))
+        self.assertEqual(client.album_popularity("Artist", "Album"), (None, None))
+        server_error = httpx.HTTPStatusError(
+            "server error", request=httpx.Request("GET", "https://example.test"),
+            response=httpx.Response(503),
+        )
+        client = self.make_client(http_get=lambda *_a, **_k: (_ for _ in ()).throw(server_error))
+        self.assertEqual(client.album_popularity("Artist", "Album"), (
+            None, "Last.fm returned HTTP 503."
+        ))
+
+    def test_album_popularity_legacy_adapter_preserves_error_state(self):
+        import navidrome_server
+        with patch.object(navidrome_server, "LASTFM_LAST_ERROR", "previous"), patch.object(
+            navidrome_server._lastfm_client, "album_popularity",
+            return_value=(None, "Last.fm returned HTTP 503."),
+        ) as lookup:
+            self.assertIsNone(navidrome_server._lastfm_album_popularity("Artist", "Album"))
+            self.assertEqual(navidrome_server.LASTFM_LAST_ERROR, "Last.fm returned HTTP 503.")
+        lookup.assert_called_once_with("Artist", "Album")
+
 if __name__ == "__main__":
     unittest.main()

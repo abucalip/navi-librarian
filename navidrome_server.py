@@ -299,77 +299,12 @@ LASTFM_LAST_ERROR = None
 
 
 def _lastfm_album_popularity(artist, album):
-    """Return cached Last.fm album listeners/playcount, or None if unavailable."""
+    """Compatibility adapter for cached Last.fm album popularity lookup."""
     global LASTFM_LAST_ERROR
-    api_key = str(_discovery_settings_read().get("lastfm_api_key") or "").strip()
-    if not api_key or not artist or not album:
-        return None
-
-    cache_key = (
-        "lastfm:album-info-v2:"
-        + _music_key(artist)
-        + ":"
-        + _music_key(album)
-    )
-    cached = _metadata_cache_get(cache_key, ttl_seconds=30 * 24 * 60 * 60)
-    if cached is not None:
-        return cached
-
-    try:
-        response = httpx.get(
-            "https://ws.audioscrobbler.com/2.0/",
-            params={
-                "method": "album.getInfo",
-                "api_key": api_key,
-                "artist": artist,
-                "album": album,
-                "autocorrect": 1,
-                "format": "json",
-            },
-            headers={"User-Agent": "NavidromeLibrarian/1.0"},
-            timeout=12,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if payload.get("error"):
-            LASTFM_LAST_ERROR = (
-                f"Last.fm API error {payload.get('error')}: "
-                f"{payload.get('message', 'Unknown API error')}"
-            )
-            return None
-        data = payload.get("album", {})
-        # album.getInfo exposes listeners/playcount directly on the album
-        # object; accept a nested stats object too for response compatibility.
-        stats = data.get("stats") or data
-        if not data or not (
-            stats.get("listeners") is not None
-            or stats.get("playcount") is not None
-        ):
-            LASTFM_LAST_ERROR = "Last.fm returned no album statistics for a lookup."
-            return None
-        raw_tags = items((data.get("tags") or {}).get("tag"))
-        result = {
-            "listeners": int(stats.get("listeners") or 0),
-            "playcount": int(stats.get("playcount") or 0),
-            "tags": [
-                item.get("name", "").strip().casefold()
-                for item in raw_tags
-                if isinstance(item, dict) and item.get("name", "").strip()
-            ],
-        }
-        _metadata_cache_set(cache_key, result)
-        return result
-    except httpx.HTTPStatusError as exc:
-        # Album-not-found is normal for niche/poorly indexed releases.
-        if exc.response.status_code != 404:
-            LASTFM_LAST_ERROR = (
-                f"Last.fm returned HTTP {exc.response.status_code}."
-            )
-        return None
-    except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
-        LASTFM_LAST_ERROR = f"{type(exc).__name__}: Last.fm lookup failed."
-        return None
-
+    result, error = _lastfm_client.album_popularity(artist, album)
+    if error is not None:
+        LASTFM_LAST_ERROR = error
+    return result
 
 def recent_listening_profile(days: int = 30) -> str:
     """Summarize recent ListenBrainz listening by artist and album.
