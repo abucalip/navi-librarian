@@ -1,13 +1,13 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #286 merged; Docker packaging defect fixed)
-Documentation base: GitHub `main` at commit `1cf9d66ad57364eec855b2425263e9a59b011d9a`
+Last reviewed: 2026-10-16 (follow-up packaging audit after PR #286)
+Documentation base: GitHub `main` at commit `f6041231db515f2287596445c0025c9af90901ee`
 
 ## Current focus
 
 The recommendation policy seams and acquisition AST-test migration are complete. No further extraction currently has a sufficiently narrow boundary to justify added indirection. The completion audit checked the current lazy web-to-legacy import in `app/api/dependencies.py`, the CI import-boundary guard, the AST inventory, and Docker's explicit root-module copy list.
 
-That audit found a concrete packaging defect: `navidrome_server.py` lazily imports `acquisition_import_service` during import completion, but `Dockerfile` did not copy `acquisition_import_service.py` into the image. PR #286 adds the module to the image and a regression test that checks the explicit Docker COPY sources. The isolated runtime smoke test may not exercise this delayed import path.
+PR #286 fixed the first packaging defect by including `acquisition_import_service.py`. Continuing the same audit found a second missing dependency: `navidrome_server.py` imports `discovery_candidate_gathering.py`, which was also absent from the explicit Docker COPY list. The packaging regression is being generalized to compare all root-level modules imported by `navidrome_server.py` against the Docker COPY sources. The isolated runtime smoke test may not exercise this delayed import path.
 
 ## Next action
 
@@ -19,8 +19,8 @@ The `MUSIC_DIR` read/write audit remains closed: existing persistence callbacks 
 
 ## Delivery and verification state
 
-- **Implemented / merged:** PR #286 adds `acquisition_import_service.py` to the Docker image and introduces `tests/test_docker_packaging.py`.
-- **CI:** all four required workflows passed on exact PR head `de68aa4cd5cbd657bcdd1c59cdde4e2b7e1df283`: syntax (`38977669838`), Docker packaging/full unit suite/build (`38977669928`), container runtime smoke (`38977669818`), and non-publishing multi-architecture validation (`38977669844`). The unit-test and Docker-build steps both succeeded. No local test commands were run.
+- **Implemented / merged:** PR #286 fixed the missing `acquisition_import_service.py` Docker copy; its exact head passed all four required workflows. The broader completion audit then found another missing module, `discovery_candidate_gathering.py`, and the regression is being generalized to cover root-level server imports.
+- **Current fix / CI:** a focused PR is being prepared; its tests and all four required workflows are pending. No local test commands were run.
 - **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
