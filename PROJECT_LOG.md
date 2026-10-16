@@ -315,8 +315,16 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
 
 
-## 2026-10-16 — Acquisition search diagnostics extraction in review
+## 2026-10-16 — Acquisition search diagnostics extraction completed (PR #200)
 
-- Branch refactor/extract-acquisition-search-diagnostics moves the bounded candidate diagnostic projection, recognized audio-file counting, and no-match explanation formatting into acquisition_search_diagnostics.py.
-- The server still owns slskd search orchestration, path-match diagnostics, persistence, and response serialization. Direct-import tests preserve diagnostic fields, 10-candidate cap, audio extension handling, and query ordering. Docker packaging includes the module.
-- Required exact-head gates: syntax/acquisition-safety, Docker packaging/full suite/build, runtime smoke, and validation-only multi-architecture workflow. Assistant-side local tests have not been run; publishing/deployment remain paused.
+- PR #200 squash-merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c.
+- acquisition_search_diagnostics.py now owns the bounded candidate diagnostic projection, recognized audio-file count, and no-match explanation. Search execution, path-match diagnostics, persistence, queueing, and JSON/API serialization remain in navidrome_server.py.
+- The first CI attempt exposed a compatibility issue in the AST-based acquisition safety test harness: its extracted function namespace did not include a module-level helper alias. The import was moved into the function, preserving production behavior and allowing the legacy test harness to execute it. The exact final head passed all four workflows: syntax/acquisition safety run 1099; Docker packaging/full suite/build run 1006; runtime smoke run 815; validation-only multi-architecture run 859.
+- Direct-import tests cover diagnostic field projection and 10-item cap, copied quality summaries, recognized audio extensions, and no-match message/query ordering. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Independent extraction session closeout: PRs #199 and #200
+
+- PR #199 extracted thread-safe acquisition progress snapshots; exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066 passed all four required workflows and merged as a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41.
+- PR #200 extracted slskd search diagnostic shaping; after correcting the AST-test import seam, exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c passed all four required workflows and merged as 9b3cf481a46282d2f980709091d57aea36144029.
+- Both are backend-only. No local test run, live slskd operation, publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
