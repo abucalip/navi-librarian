@@ -1,8 +1,9 @@
-## 2026-10-16 — Classics genre enrichment extraction (PR in progress)
+## 2026-10-16 — PR #231 merged: classics genre enrichment
 
-- Selected the bounded genre-enrichment stage following PR #229's critical-rating seam. The new `discovery_classics_genres.enrich_classic_genres()` keeps Last.fm cache/provider access injected, deduplicates lookups by normalized artist, preserves candidate order, applies the existing 300-item bound, and retains empty/`other` fallback metadata beyond the bound.
-- Added direct-import tests for ordering, classification fallback, normalized lookup deduplication, and limits; added the module to Docker packaging. The builder remains the adapter for provider access and response assembly.
-- PR/CI status will be recorded after the branch is reviewed. No local test run, merge, publication, deployment, or runtime verification is claimed at this point.
+- Merged PR #231 from `extract/classics-genre-enrichment`; exact tested PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge commit `b23d76712a04dcbfc461ceb7245a0676738fca7a`.
+- Extracted bounded genre enrichment into `discovery_classics_genres.enrich_classic_genres()`. Last.fm provider/cache access and family classification remain injected; the helper owns normalized artist lookup deduplication, the 300-candidate limit, and empty/`other` fallback metadata.
+- Added direct-import regression tests and Docker packaging. All four required exact-head workflows passed: Python syntax run 1208, Docker packaging/full unit suite/build run 1116, container runtime smoke run 925, and validation-only multi-architecture validation run 969 (publishing paused). Assistant-side local test execution was not performed.
+- No image publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #230 merged: watcher progress accounting
 
