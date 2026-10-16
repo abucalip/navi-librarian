@@ -1,3 +1,14 @@
+## 2026-10-16 — Shared raw Navidrome album inventory pagination
+
+- Added `discovery_library_snapshot.fetch_album_inventory()`, a direct-import raw pagination helper with injected API/items callables, non-empty album-ID deduplication, and `AlbumInventoryLimitError.albums_retrieved`. Both `build_library_snapshot()` and `recommend_new_music()` now use it.
+- Preserved the adapters' distinct contracts: snapshot cache, artist inventory, normalization, and persistence remain in `build_library_snapshot()`; the recommendation path still fetches fresh raw records and returns separate JSON error payloads for API failure and safety-limit exhaustion.
+- Added `tests/test_discovery_album_inventory.py` for pagination, deduplication, raw record shape, safety-limit reporting, and API exception propagation. Extended recommendation characterization to pin the safety-limit response.
+- PR #261 final head `4c8b621a26b9d8c4bceb8fa7e4be6d8956146fd1` passed all four required workflows: Python syntax/acquisition safety and dependency map (`38962780709`), Docker packaging/full unit suite/build (`38962780687`), isolated container runtime smoke (`38962780674`), and validation-only multi-architecture image validation (`38962780692`, `push: false`). Full suite: 543 tests passed. No separate assistant-side local test command ran.
+- PR #261 was squash-merged as `a9bc864df85a8fb643864cb128d6b70f10eb7dce`. No publishing, deployment, or production runtime verification was performed.
+- Next: extract candidate gathering/provider orchestration from `recommend_new_music()` behind injected provider dependencies and verify output parity against the characterization fixtures.
+
+---
+
 ## 2026-10-16 — Characterized Last.fm scoring and regional MusicBrainz failure
 
 - PR #259 added deterministic tests for the current capped Last.fm popularity bonus and the behavior when regional MusicBrainz release-group searches return HTTP 503. The test asserts the personalized ListenBrainz candidate remains available and the regional failure is reported; the test HTTP client is fake.
