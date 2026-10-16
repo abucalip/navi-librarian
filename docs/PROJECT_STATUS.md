@@ -1,8 +1,10 @@
-## 2026-10-16 — Auth-secret provider extraction (PR pending)
+## 2026-10-16 — PR #240 merged: lazy auth-secret provider
 
-- Extracted lazy, thread-safe persistent signing-secret loading into `app/security/auth_secret.py`; app assembly injects the data-directory lookup and existing `load_auth_secret` implementation.
-- Preserves lazy loading, successful-result caching, lock-protected first use, and retry after exceptions or a `None` result. Added direct-import tests for laziness, cache behavior, retries, and concurrent first use.
-- Verification pending on this branch. Do not claim CI, merge, publication, deployment, or runtime verification until verified. Publishing remains paused.
+- Exact tested PR head: `e3542c6a8fa3b2fc3ddf07a0268563ae5946064a`; squash merge commit: `78547fd47c1b155255c1da6ef57120b76513a0fc`.
+- Extracted lazy, lock-protected persistent signing-secret loading into `app/security/auth_secret.py`. `app/main.py` injects the existing data-directory getter and `load_auth_secret`; session-token creation, middleware, routes, cookie policy, and persistence ownership remain unchanged.
+- Direct-import tests cover lazy loading, successful-result caching, retry after exceptions and `None`, and concurrent first access.
+- All four required workflows passed on the exact PR head: Python syntax run `38941505550`; Docker packaging/full unit suite/build run `38941505440`; container runtime smoke run `38941505508`; validation-only multi-architecture image validation run `38941505516`. The Docker packaging workflow completed successfully, including the full unit suite.
+- Assistant-side local test commands were not run independently. Publishing remains paused. No image publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #236 merged: New Releases lookup construction
 
