@@ -1,74 +1,47 @@
 """Regression tests for six-tier acquisition quality priorities and reordering UI."""
-import ast
 import json
-import os
-import re
-import sqlite3
 import tempfile
-import time
 from service_settings import set_slskd_settings
 from settings_persistence import SettingsPersistence
+from slskd_quality import quality_tier
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SERVER_SOURCE = ROOT / "navidrome_server.py"
 APP_SOURCE = ROOT / "static" / "app.js"
 
 
 def load_quality_helpers(db_path, music_dir):
-    tree = ast.parse(SERVER_SOURCE.read_text(encoding="utf-8"), filename=str(SERVER_SOURCE))
-    wanted = {
-        "_slskd_quality_tier",
-        "_discovery_settings_init",
-        "_discovery_settings_read",
-        "_discovery_settings_write",
+    defaults = {
+        "navidrome_url": "http://localhost:4533",
+        "navidrome_user": "",
+        "navidrome_password": "",
+        "lastfm_api_key": "",
+        "listenbrainz_username": "",
+        "music_library_path": str(music_dir),
+        "slskd_url": "http://localhost:5030",
+        "quality_priority": [
+            "mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"
+        ],
+        "auto_acquire_for_me": True,
+        "slskd_downloads_path": str(Path(music_dir) / "downloads" / "slskd" / "complete"),
     }
-    selected = [
-        node for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name in wanted
-    ]
-    found = {node.name for node in selected}
-    if found != wanted:
-        raise AssertionError(f"Missing settings/quality helpers: {sorted(wanted - found)}")
-    for node in selected:
-        node.decorator_list = []
-
-    namespace = {
-        "json": json,
-        "os": os,
-        "re": re,
-        "sqlite3": sqlite3,
-        "time": time,
-        "Path": Path,
-        "DISCOVERY_DB": Path(db_path),
-        "MUSIC_DIR": Path(music_dir),
-        "_DISCOVERY_SETTINGS_DEFAULTS": {
-            "navidrome_url": "http://localhost:4533",
-            "navidrome_user": "",
-            "navidrome_password": "",
-            "lastfm_api_key": "",
-            "listenbrainz_username": "",
-            "music_library_path": str(music_dir),
-            "slskd_url": "http://localhost:5030",
-            "quality_priority": [
-                "mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"
-            ],
-            "auto_acquire_for_me": True,
-            "slskd_downloads_path": str(Path(music_dir) / "downloads" / "slskd" / "complete"),
-        },
-    }
-    namespace["_settings_persistence"] = SettingsPersistence(
-        namespace["DISCOVERY_DB"],
-        namespace["_DISCOVERY_SETTINGS_DEFAULTS"],
-        lambda: namespace["MUSIC_DIR"],
-        lambda path: namespace.update({"MUSIC_DIR": path}),
+    music_dir_state = {"path": Path(music_dir)}
+    persistence = SettingsPersistence(
+        db_path,
+        defaults,
+        lambda: music_dir_state["path"],
+        lambda path: music_dir_state.update({"path": path}),
         clock=lambda: 123.0,
     )
-    module = ast.Module(body=selected, type_ignores=[])
-    exec(compile(ast.fix_missing_locations(module), str(SERVER_SOURCE), "exec"), namespace)
-    return namespace
-
+    return {
+        "_slskd_quality_tier": quality_tier,
+        "_discovery_settings_read": persistence.read,
+        "_discovery_settings_write": persistence.write,
+        "_DISCOVERY_SETTINGS_DEFAULTS": defaults,
+        "MUSIC_DIR": music_dir_state["path"],
+        "music_dir_state": music_dir_state,
+    }
 
 class QualityPriorityTests(unittest.TestCase):
     def setUp(self):
