@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm similar-artist parsing extraction completed
+
+- PR #178 merged as `f18574b74a564031c5268cf04c956475d64dc30c`, from tested head `a97be052d3a1e74843feaacd6403d10ce5aad6af`.
+- `LastFmClient.similar_artists()` now owns cached `artist.getSimilar` response normalization; `_lastfm_similar_artists()` remains the compatibility adapter.
+- Exact-head CI succeeded for syntax, Docker packaging, container runtime smoke, and validation-only Docker image build (publishing paused). Local full-suite execution was not independently verified in this session.
+- Continue with a fresh main/PR/CI inspection before selecting the next small extraction. Keep publishing paused; acquisition-dismissal HTTP 409 remains deferred.
+
+---
+
 ## 2026-10-16 — Last.fm similar-artist parsing extraction in progress
 
 - Based on refreshed GitHub `main` at `86b2ac60416ed725755fc6c57200e1c3123b7606`, after PR #175/#176 closeout.
