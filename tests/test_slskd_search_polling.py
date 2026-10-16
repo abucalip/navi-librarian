@@ -110,7 +110,7 @@ class SlskdSearchPollingTests(unittest.TestCase):
         self.assertEqual(result["reported_response_count"], 1)
         self.assertEqual(len(result["payload_by_peer"]), 1)
         message = no_match_message(
-            response_count=0, audio_file_count=0,
+            response_count=1, audio_file_count=1,
             reported_response_count=result["reported_response_count"],
             reported_file_count=result["reported_file_count"],
             search_attempts=result["search_attempts"],
