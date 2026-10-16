@@ -1,3 +1,9 @@
+## 2026-10-16 — Personal recommendation payload projection extraction (in progress)
+
+- Branch `refactor/personal-recommendation-payload`, based on current GitHub main after PR #223. Extracted the base personal-recommendation payload mapping to `discovery_recommendation_payload.py`; selection-specific `ownership_check` / `ownership_note` annotations remain in the adapter.
+- Added direct-import tests for legacy fields, defaults, score rounding, category reason text, ListenBrainz-vs-Last.fm score handling, and the three-track limit. Docker packaging includes the new module.
+- Tests and exact-head CI have not yet been verified. Next: review the complete diff, open a focused PR, and run all four required workflows on its exact final head.
+
 ## 2026-10-16 — PR #223 merged: personal recommendation allocation
 
 - PR #223 squash-merged as `1ccb11485bf1efce3ff201fb7337407c3e668c47` from exact final tested head `b604940e4b7a20160d4f3710b009c6ca718c57c5`.
