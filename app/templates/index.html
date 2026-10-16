@@ -12,7 +12,9 @@
   <h1>Navidrome Librarian</h1>
   <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
 </header>
-<main>
+<!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation. -->
+<a class="skip-link" href="#content">Skip to content</a>
+<main id="content" tabindex="-1">
   <!-- This sidebar is one of two <nav> landmarks in the document; the other is the album
        modal's platform links. Where a landmark type repeats, each instance needs its own
        name so assistive tech can tell them apart instead of announcing "navigation"
@@ -157,12 +159,12 @@
     <h2 id="settingsHeading">Settings</h2>
     <p>Configure the services used by Navidrome Librarian. Secrets are never displayed after saving.</p>
     <div class="settings-tabs" role="tablist" aria-label="Service settings">
-      <button type="button" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
-      <button type="button" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
+      <button type="button" id="tabNavidrome" class="settings-tab active" role="tab" aria-selected="true" aria-controls="settingsNavidrome" data-settings-tab="navidrome">Navidrome</button>
+      <button type="button" id="tabSlskd" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
+      <button type="button" id="tabLastfm" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
+      <button type="button" id="tabListenbrainz" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
     </div>
-    <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel">
+    <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabNavidrome">
       <h3>Navidrome connection</h3>
       <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://192.168.1.12:4533"></label>
       <label>Username <input id="navidromeUser" type="text" autocomplete="username"></label>
@@ -173,7 +175,7 @@
       <p><button id="saveNavidrome">Save settings</button> <button id="checkConnection">Test connection</button></p>
       <p id="navidromeStatus" class="status-line" aria-live="polite"></p>
     </div>
-    <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" hidden>
+    <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabSlskd" hidden>
       <h3>slskd connection</h3>
       <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
       <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://192.168.1.12:5030"></label>
@@ -187,14 +189,14 @@
       <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
       <p id="slskdStatus" class="status-line" aria-live="polite"></p>
     </div>
-    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" hidden>
+    <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabLastfm" hidden>
       <h3>Last.fm API</h3>
       <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
       <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
       <p id="lastfmStatus" class="status-line" aria-live="polite"></p>
       <p><button id="saveLastfm">Save settings</button> <button id="testLastfm">Test connection</button></p>
     </div>
-    <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" hidden>
+    <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabListenbrainz" hidden>
       <h3>ListenBrainz profile</h3>
       <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
       <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
