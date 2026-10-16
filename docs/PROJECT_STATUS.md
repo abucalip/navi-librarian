@@ -1,3 +1,15 @@
+## 2026-10-16 — Three-extraction session closeout (PRs #170–#172)
+
+- Session started from GitHub `main` at `098c5d9d8536070c1115ec2a7c25b99490efb312`. Final code `main` after the three sequential merges: `d5153a3fe0625bc52b5896e87846b55cabe58e81`.
+- **PR #170 — MusicBrainz tag audit:** tested head `3ce122d2e950aaf9b8ddd56f8dfecc927255ba07`; squash merge `dbbdda35792fd569cfdeec2c4c7b42fc106f84e3`. Extracted the bounded, read-only missing-MBID scan into `music_tag_audit.py`; kept `find_missing_mbids()` as the JSON/error-string compatibility adapter and added direct-import regressions. All four required workflows passed on the exact head: syntax `38827001217`, full suite/build `38827001215`, runtime smoke `38827001195`, validation-only multi-architecture `38827001227`.
+- **PR #171 — Recommendation style rules:** tested head `24e2e27f7af3bd3be6b96d725bc72b577f8f78d9`; squash merge `6d00562405320affcb1a04b4359397b332cd5bf5`. Moved pure genre-family, recent-style-family, primary-family, and regional diversity-style classification helpers into `discovery_recommendations.py`. An initial CI run caught an incorrect test fixture; the fixture was corrected and all four workflows passed on the final exact head: syntax `38827709662`, full suite/build `38827709650` (319 tests passed), runtime smoke `38827709649`, validation-only multi-architecture `38827709610`.
+- **PR #172 — Last.fm album popularity:** tested head `d2808d44825e949ff71ed8471d25cee6570b54f1`; squash merge `d5153a3fe0625bc52b5896e87846b55cabe58e81`. Moved cached `album.getInfo` retrieval, parsing, and diagnostics into `LastFmClient.album_popularity()`; retained `_lastfm_album_popularity()` as the compatibility adapter, including the legacy cache key, 30-day TTL, 12-second timeout, response shape, error messages, and silent 404 handling. An initial CI run caught a test-fixture logging issue; after correction all four workflows passed on the final exact head: syntax `38827973048`, full suite/build `38827972941` (324 tests passed), runtime smoke `38827972940`, validation-only multi-architecture `38827972938`.
+- Each extraction was reviewed sequentially against refreshed GitHub `main`; all final-head CI gates passed. Assistant-side local test execution was not performed. These backend-only changes did not require manual browser checks. No image publication, deployment, or production runtime verification is claimed.
+- Only PR #23 remains open as the modularization roadmap. PRs #44 and #45 remain closed. Per the user's explicit direction, the currently unreproducible acquisition-dismissal HTTP 409 investigation remains deferred until modularization is complete; no fix is claimed and cleanup safety checks were not weakened.
+- Next action: inspect the refreshed roadmap and current `main` for the next small, independent extraction. Keep the 409 investigation deferred as directed and keep publishing paused.
+
+---
+
 ## 2026-10-16 — Listening profile aggregation extraction completed (PR #167)
 
 - Branch `refactor/extract-listening-profile`; exact tested head `ca8f9e4b7decb3404c78f1ee8b8d3078815fd71f`; squash merge `6b656dc7218280aa0d37e738a881061ceefde55e`.
