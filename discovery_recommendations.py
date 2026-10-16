@@ -282,7 +282,6 @@ def primary_recent_family(tags: Iterable[str], family_counts: Mapping[str, int])
     )
 
 
-
 def apply_lastfm_popularity_bonus(
     candidates: Iterable[dict[str, Any]],
     recent_family_counts: Mapping[str, int],
