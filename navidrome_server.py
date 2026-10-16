@@ -36,7 +36,6 @@ from acquisition_candidate_start import candidate_start_state as _module_candida
 from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 import acquisition_orchestration
 from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
-import acquisition_search_diagnostics as _acquisition_search_diagnostics
 from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -3232,6 +3231,7 @@ def _discovery_acquire_album_impl(
     auto_queue: bool = True,
 ) -> str:
     """Search slskd; queue the best clear match, fall back to faster/next sources if it does not start, and import on completion."""
+    import acquisition_search_diagnostics as _acquisition_search_diagnostics
     import uuid
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})
