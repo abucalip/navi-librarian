@@ -5,11 +5,11 @@ Documentation/code branch base: GitHub `main` at commit `de94d9bbb9790129ed86dc9
 
 ## Current focus
 
-Backend modularization remains in progress. Recent work has extracted discrete discovery and application-assembly responsibilities, including New Releases policy/provider helpers and authentication configuration/secret/settings helpers. See the root `PROJECT_LOG.md` for exact PRs, tested SHAs, test evidence, and merge commits.
+Backend modularization remains in progress. PR #272 moves broader-query fallback behavior tests to direct-import coverage while retaining the AST harness for higher-risk lifecycle and compatibility behavior. Its code head `8a464edf8313594ddde69f0be90135fce4782f07` passed all four required workflows; a documentation closeout commit is pending exact-head verification. See root `PROJECT_LOG.md` for run IDs and test evidence.
 
 ## Next action
 
-1. Verify the direct-import broader-query fallback migration on the exact PR head; preserve concurrency, queue/lifecycle, and filesystem-safety coverage.
+1. Verify the documentation closeout revision's exact-head CI for PR #272, then merge if all four required workflows pass; preserve concurrency, queue/lifecycle, and filesystem-safety coverage.
 2. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
