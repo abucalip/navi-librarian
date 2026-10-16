@@ -705,6 +705,13 @@ Refresh GitHub main, open PRs, and CI. Continue the remaining acquisition lifecy
 Merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from tested head f7157cb28d5e753a97bb9c24eea209b767d74066. The process-local map and lock used to estimate slskd transfer speed now live in acquisition_progress_snapshots.py. The service retains polling, identity construction, monotonic clock selection, and the existing estimator. Direct-import tests cover initial/previous snapshots, key isolation, and exception behavior; all four required workflows passed on the exact head. Publishing and deployment remain paused.
 
 
-## 2026-10-16 — Acquisition search diagnostics extraction (PR pending)
+## 2026-10-16 — Acquisition search diagnostics extraction completed (PR #200)
 
-Pure shaping for candidate diagnostics, audio-file counts, and the user-facing empty-search message is isolated in acquisition_search_diagnostics.py. Search execution, persistence, path-match diagnostics, and API serialization remain in the server adapter. Verify direct-import regressions and all four required workflows on the exact final PR head before merge. No publishing or deployment.
+Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c. Pure shaping for candidate diagnostics, audio-file counts, and the user-facing empty-search message is isolated in acquisition_search_diagnostics.py. Search execution, persistence, path-match diagnostics, and API serialization remain in the server adapter. All four required exact-head workflows passed (syntax 1099, full suite/build 1006, runtime smoke 815, validation-only multi-architecture 859). Publishing and deployment remain paused.
+
+
+## 2026-10-16 — Independent extraction session closeout: PRs #199 and #200
+
+- PR #199 extracted thread-safe acquisition progress snapshots; exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066 passed all four required workflows and merged as a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41.
+- PR #200 extracted slskd search diagnostic shaping; after correcting the AST-test import seam, exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c passed all four required workflows and merged as 9b3cf481a46282d2f980709091d57aea36144029.
+- Both are backend-only. No local test run, live slskd operation, publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
