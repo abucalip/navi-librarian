@@ -536,12 +536,6 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
 
 
-## 2026-10-16 — New Releases date-window policy extraction in progress
-
-- Branch `extract/new-release-window-policy` isolates deterministic cutoff/year-bound calculation in `discovery_new_releases.new_release_window(today)`; the adapter still obtains the current date and owns provider/cache orchestration.
-- Direct-import regressions cover the 730-day cutoff and leap-day arithmetic. Focused/full tests and exact-head CI are pending; no merge, publication, deployment, or runtime verification is claimed.
-
-
 ## 2026-10-16 — PR #237 merged: New Releases date-window policy
 
 - Merged PR #237; merge commit `2d11e52b78004ee51a6ce70a6a6ac6c2b451f397`, tested PR head `8d42c9f5f320fd7b4c0653fa09da8eda12f03f78`.
