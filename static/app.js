@@ -986,9 +986,19 @@ function genreRowLabel(key) {
   return labels[key] || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
+/** ResizeObservers watching genre-row overflow, disconnected on every re-render. */
+const genreRowObservers = [];
+
+function disconnectGenreRowObservers() {
+  while (genreRowObservers.length) genreRowObservers.pop().disconnect();
+}
+
 async function loadDiscovery(name, options = {}) {
   discoveryStatus(name, options.rotate ? 'Rotating suggestions…' : 'Loading…');
   const target = $(discoveryViews[name][0]);
+  // Observers outlive the nodes they watch unless disconnected here, so a section that is
+  // reloaded repeatedly would accumulate them.
+  disconnectGenreRowObservers();
   target.replaceChildren();
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
@@ -1061,6 +1071,7 @@ async function loadDiscovery(name, options = {}) {
         arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
+        const arrowList = [];
         for (const [symbol, direction] of [['<', -1], ['>', 1]]) {
           const arrow = document.createElement('button');
           arrow.className = 'genre-row-arrow';
@@ -1069,7 +1080,30 @@ async function loadDiscovery(name, options = {}) {
           arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');
           arrow.addEventListener('click', () => track.scrollBy({left: direction * Math.max(250, track.clientWidth * 0.8), behavior: 'smooth'}));
           arrows.append(arrow);
+          arrowList.push(arrow);
         }
+        // A row that fits renders no usable scroll action. The arrows used to stay visible and
+        // keyboard-focusable anyway, so a row of one to three albums put two dead controls in
+        // the tab order that did nothing when activated. They are hidden and removed from the
+        // tab order unless the track actually overflows, re-evaluated on resize and on content
+        // change because neither is known at construction time.
+        const syncArrows = () => {
+          const overflows = track.scrollWidth > track.clientWidth + 1;
+          arrows.hidden = !overflows;
+          for (const arrow of arrowList) {
+            if (overflows) arrow.removeAttribute('tabindex');
+            else arrow.setAttribute('tabindex', '-1');
+          }
+        };
+        track.addEventListener('scroll', syncArrows, {passive: true});
+        if (typeof ResizeObserver === 'function') {
+          const observer = new ResizeObserver(syncArrows);
+          observer.observe(track);
+          genreRowObservers.push(observer);
+        } else {
+          window.addEventListener('resize', syncArrows);
+        }
+        requestAnimationFrame(syncArrows);
         heading.append(arrows);
         row.append(heading, track);
         target.append(row);
@@ -1090,15 +1124,26 @@ async function loadDiscovery(name, options = {}) {
       makeAlbumCardInteractive(card, artist, album, item);
       attachArtwork(card, artist, album);
 
-      addTextElement(card, 'p', 'card-category',
-        (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
+      // The category tag carries no information here: every card in this section is a deep
+      // dive, and the row heading already names the genre. Rendering it on all of them was
+      // repetition, not labelling, so proximity does the grouping instead of a tag per card.
+      if (!isDeepDive) {
+        addTextElement(card, 'p', 'card-category',
+          (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
+      }
       const title = document.createElement('h3');
-      title.append(document.createTextNode(album));
+      // This section's task is artist-led: its own copy reads "Explore missing albums by
+      // artists in your library". The artist therefore takes the card's heading role and the
+      // album becomes the supporting line, rather than the reverse inherited from the
+      // album-grid sections.
+      title.append(document.createTextNode(isDeepDive ? artist : album));
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
       if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       ensureAlbumYearBadge(card);
-      addTextElement(card, 'p', 'card-artist', artist);
+      // Mirrors the swap above: with the artist in the heading, the supporting line carries
+      // the album so no information is lost or duplicated.
+      addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);
 
       const needsBio = isDeepDive ||
         /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
