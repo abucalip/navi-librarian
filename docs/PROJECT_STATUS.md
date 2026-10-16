@@ -1,9 +1,10 @@
-## 2026-10-16 — PRs #208 and #209 merged; session-cookie policy extraction in progress
+## 2026-10-16 — Session closeout: PRs #208–#210 merged
 
-- **PR #208** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax run 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
-- **PR #209** merged as `669379aaed12092b1f826d46e0c3f8675e6ea6eb` from exact tested head `1b248dcb20d7a0f8622f32de6ae0bcfc3e5795ed`. All four required workflows passed (syntax run 1123, Docker/full suite/build 1030, runtime smoke 839, validation-only multi-architecture 883).
-- Both extractions are backend-only and preserve existing route behavior. These merges do not imply image publication, deployment, or production runtime verification.
-- **Current focused candidate:** move the existing session-cookie attributes and HTTPS / first forwarded-protocol decision into `app/security/auth_cookie.py`, keeping `app/main.py` as a compatibility adapter. Direct-import tests cover cookie name/value/lifetime, HttpOnly/SameSite/path, HTTPS, and first-proxy-header behavior. Exact-head CI is pending; do not merge until all four required workflows pass.
+- **PR #208 — page/asset routes:** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
+- **PR #209 — login-gate middleware:** merged as `669379aaed12092b1f826d46e0c3f8675e6ea6eb` from exact tested head `1b248dcb20d7a0f8622f32de6ae0bcfc3e5795ed`. All four required workflows passed (syntax 1123, Docker/full suite/build 1030, runtime smoke 839, validation-only multi-architecture 883).
+- **PR #210 — session-cookie policy:** merged as `21cd2bc19e9af66bb155b0d036f3b1f9ffb8d28f` from exact tested head `a394b6ea75fff91fcd4828f1946c14b98bbcf827`. All four required workflows passed (syntax 1125, Docker/full suite/build 1032, runtime smoke 841, validation-only multi-architecture 885).
+- Regression tests added for page routes/assets, authentication-gate decisions, and session-cookie security attributes. These are code merges only; publishing, deployment, and production runtime verification are not claimed.
+- **Session outcome:** no further extraction started. Next session should refresh GitHub state and read the current requirements/workflow/test-plan/roadmap before choosing another candidate. Keep PR #194 unchanged as previously requested; review other open PRs against current priorities rather than assuming they are ready to merge.
 
 ## 2026-10-16 — Independent extraction session closeout: PRs #205 and #207
 
