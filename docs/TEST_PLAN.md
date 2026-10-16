@@ -1,3 +1,10 @@
+## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+
+- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+
+- New direct-import tests in `tests/test_discovery_list_payload.py` cover missing cache response shape; dismissal, saved-item, and non-album filtering; personal recommendations/diagnostics fields; and count versus pre-feedback total.
+- Required before merge: focused test, full `python -m unittest discover -s tests -v`, syntax check, Docker packaging/runtime checks, and all four required exact-final-head workflows. Results are pending; do not infer success from code creation or PR creation.
+
 ## 2026-10-16 — PR #224 verification: personal recommendation payload projection
 
 - Direct-import tests in `tests/test_discovery_recommendation_payload.py` cover legacy field mapping, defaults, score rounding, category-specific reason strings and low-confidence suffix, ListenBrainz-vs-Last.fm score behavior, track truncation, and optional metadata preservation.

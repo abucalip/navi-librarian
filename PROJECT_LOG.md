@@ -1,3 +1,12 @@
+## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+
+- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+
+- Branch: `refactor/extract-discovery-list-payload`, based on GitHub main.
+- Moved cached-list filtering and response projection from `discovery_get_list()` to `discovery_list_payload.build_cached_discovery_list_response()`. Feedback persistence, validation, For Me inventory lookup, and adapter dependencies remain in the server.
+- Added direct-import tests for empty cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior; Docker packaging updated.
+- Tests and exact-head CI are not yet verified. No publication/deployment/runtime claim. Next: inspect full diff, run all four exact-head workflows, and merge only if every required gate passes.
+
 ## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
 
 - PR #224 squash-merged at `f795239589e6dd78f0f5e6d98cf2eadc897d6f49` from exact tested head `6d2e0ccc8d24cd11b727255f171fd405384a8729`.
