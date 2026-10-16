@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #280 merged as `3dc999b872bdf12db30c43ee73b5e726c4ea494b`)
-Documentation base: GitHub `main` at commit `3dc999b872bdf12db30c43ee73b5e726c4ea494b`
+Last reviewed: 2026-10-16 (PR #281 merged as `93519c403ac2c301c46acddf6a64d59059d3f683`)
+Documentation base: GitHub `main` at commit `93519c403ac2c301c46acddf6a64d59059d3f683`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #278 centralized recommendation category policy and PR #280 extracted Last.fm scoring, reducing `recommend_new_music()` from 568 to 416 AST lines. The current-main dependency map (artifact `12076948070`, SHA-256 `5f56d6735f0416674aa853435f1ce1d126d015d930ad604c96226341ce185682`) covers 170 repository modules and a 73-module app import closure; `app.api.dependencies` remains the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,616 server lines; `_discovery_acquire_album_impl()` remains 278 lines. PR in review extracts familiarity/exploration scoring. See `PROJECT_LOG.md`.
+Backend modularization remains in progress. PR #281 extracted familiarity/exploration scoring after PRs #278/#280 centralized category and Last.fm policies, reducing `recommend_new_music()` from 568 to 396 AST lines. The current-main dependency map (artifact `12078000327`, SHA-256 `cd9c931dd7e3ccb740f1ab24c01686a27c8f6b51ed7be58c87e301b6b6e0b58e`) covers 171 repository modules and a 73-module app import closure; `app.api.dependencies` remains the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,596 server lines; `_discovery_acquire_album_impl()` remains 278 lines. PR #282 tightens the recommendation exception to 450 lines. See `PROJECT_LOG.md`.
 
 ## Next action
 
-1. Verify and merge the familiarity/exploration scoring extraction only after all four required workflows pass on its exact final PR head.
-2. Then recheck the size ratchet; no thresholds should be raised to accommodate changes.
+1. Verify and merge PR #282 only after all four required workflows pass on its exact final PR head; it tightens the temporary recommendation exception from 575 to 450 lines.
+2. Then review the remaining `recommend_new_music()` body for independently testable policy seams; retain orchestration/diagnostic projection if no narrower boundary justifies extraction.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
