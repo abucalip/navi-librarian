@@ -1,3 +1,7 @@
+## 2026-10-16 — Classics genre enrichment extraction (PR in progress)
+
+Direct-import tests cover bounded enrichment, candidate order preservation, normalized artist lookup deduplication, unclassified-genre fallback, zero/negative limits, and candidates beyond the 300-item default. Last.fm access and genre-family classification are injected. Exact-head CI and merge status are pending; no local execution is claimed.
+
 ## 2026-10-16 — Watcher progress-accounting extraction (PR #230 merged)
 
 Direct-import tests in `tests/test_acquisition_progress_accounting.py` cover progress increase resetting the timer and clearing a stall marker, unchanged/decreasing counters preserving the previous progress time, and the exact 120-second boundary. The helper is included in Docker packaging. On exact tested head `47fb2a5bb18d4101dde910dd30e5bad2ed13e2e7`, all four required workflows passed: syntax/acquisition safety run 1202, Docker packaging/full unit suite/build run 1110, container runtime smoke run 919, and validation-only multi-architecture validation run 963. Assistant-side local test execution was not performed; publishing and deployment remain paused.
