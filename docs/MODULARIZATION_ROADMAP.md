@@ -27,7 +27,7 @@ Complete these gates in order; do not jump straight to another extraction:
 Acceptance criteria:
 - The committed dependency map corresponds to the exact source revision audited and is regenerated when relevant imports change.
 - AST-coupled tests are listed by filename and purpose; behavior tests target production modules directly, with adapter tests retained where compatibility requires them.
-- No domain API depends on `navidrome_server.py` except a documented, intentional compatibility seam; static graph and source grep are reviewed together.
+- No domain/API imports of `navidrome_server.py` remain except explicitly documented compatibility adapters. The current graph has one direct edge: `app/api/dependencies.py` lazily imports the legacy service inside `get_librarian()`; this is a runtime service-adapter dependency, not an import-time app initialization. The boundary guard must allow only reviewed adapter locations, not only MCP shims.
 - Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
 
 ### 2. Acquisition coordinator — conditional, high risk
