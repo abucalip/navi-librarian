@@ -1,9 +1,9 @@
-## 2026-10-16 — PR #269 in review: import-completion service extraction
+## 2026-10-16 — PR #270 in review: import-completion service extraction
 
 - Based on GitHub main after PR #268 merge `d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`. Added `acquisition_import_service.import_completed_source_locked()` with injected path naming, authoritative status persistence, hardened import operation, and clock dependencies. The legacy `_discovery_import_completed_source_locked()` is now a narrow adapter; the outer transition-lock/dismissal guard is unchanged.
 - Added direct-import tests for failure to persist `importing` (no filesystem mutation), successful status ordering and mount identity arguments, symlinked artist destination refusal, existing destination preservation, and unavailable library roots. The existing AST-based compatibility test remains in place and now executes the thin adapter, so this extraction does not remove lock/dismissal coverage.
-- PR #269 head before documentation closeout: `af51a2ce160ff82591ab0a3dcb63eb54ca2b792b`. At that point syntax and container smoke workflows passed; Docker packaging and non-publishing multi-architecture validation were still running. No local tests were run. Recheck all four workflows on the final head before merge.
-- Status: implemented in PR; not merged. Publishing remains paused; no deployment/runtime verification.
+- PR #270 was rebased onto current main (`d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`) on branch `refactor/acquisition-import-service-main`; final PR head is tracked by GitHub. Four required workflows are running against the exact PR head. No local tests were run. Recheck all four workflows on the final head before merge.
+- Status: implemented in PR #270; not merged. PR #269 was closed as superseded to avoid merging its stale base. Publishing remains paused; no deployment/runtime verification.
 
 
 ---
