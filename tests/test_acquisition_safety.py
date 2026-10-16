@@ -7,9 +7,6 @@ import json
 import tempfile
 import threading
 import unittest
-import json
-import tempfile
-import threading
 from pathlib import Path
 
 import acquisition_lifecycle as _acquisition_lifecycle
