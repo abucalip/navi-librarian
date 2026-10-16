@@ -1,3 +1,10 @@
+## 2026-10-16 — Personal recommendation allocator boundary investigation (incomplete)
+
+- Continued the allocator work after PR #221's contract merge. Added a pure policy allocator and focused tests, then refined the candidate contract with `source_order` because stable tie ordering differs between regional-style reservations and the legacy final fallback.
+- The final fallback now models the legacy order: category-grouped score-sorted candidates are stably globally sorted by score. A focused test pins equal-score category ordering; a contract test validates source-order metadata.
+- Not integrated into `navidrome_server.py`; response shaping, ownership-review output, candidate diagnostics, and selected-artist accounting still belong to the legacy flow. No local tests were run, no CI was run for this branch, and no PR was opened. Do not treat this as completed or tested.
+- Next: implement and verify a thin adapter with policy-parity regressions; if that requires callbacks/shared mutable state or moves response/provider logic into the allocator, refine the boundary. Include Docker packaging and all four required exact-head workflows before proposing merge. Publishing/deployment remain paused.
+
 ## 2026-10-16 — PR #194 merged: token cleanup and touch targets
 
 - Refreshed PR #194 against current main and merged the reviewed CSS/documentation diff. Exact tested PR head: `0cf2e4329015fd9159213fbe25561decb16dbdb8`; squash merge commit: `10b14c1ed37bfc20930bf642f511065404dfb379`.
