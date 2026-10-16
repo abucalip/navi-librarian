@@ -1,3 +1,10 @@
+## 2026-10-16 — Recommendation provider orchestration extraction (verification pending)
+
+- Added `discovery_candidate_gathering.py` with an immutable `RecommendationProviders` dependency bundle for ListenBrainz, MusicBrainz, cache, Navidrome inventory, album eligibility, HTTP, and sleep dependencies. `recommend_new_music(count=10)` remains the public adapter; scoring, ownership decisions, allocation, and payload shaping remain downstream.
+- Verification and exact PR-head SHA: pending. No local test command was run. Do not treat this extraction as verified until characterization, full unit suite, and all four required workflows pass on the exact final PR head.
+
+---
+
 ## 2026-10-16 — Shared raw Navidrome album inventory pagination
 
 - Added `discovery_library_snapshot.fetch_album_inventory()`, a direct-import raw pagination helper with injected API/items callables, non-empty album-ID deduplication, and `AlbumInventoryLimitError.albums_retrieved`. Both `build_library_snapshot()` and `recommend_new_music()` now use it.
