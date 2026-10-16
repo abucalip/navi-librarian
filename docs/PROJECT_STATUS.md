@@ -1591,3 +1591,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - State: both extractions implemented, tested by required exact-head CI, and merged. Publishing remains paused; no deployment or production runtime verification is claimed.
 - Acquisition Dismiss HTTP 409 remains explicitly deferred.
 - Next session: refresh current main and open PRs, read the required workflow/testing docs, then select the next smallest roadmap-aligned extraction. Do not resume the deferred 409 investigation unless asked or it recurs.
+
+
+## 2026-10-16 — Modularization closeout: PRs #193 and #195
+
+- **PR #193** extracted exact MusicBrainz release-year lookup, artist-credit/title matching, request pacing, and positive/negative cache ownership into `musicbrainz_album_year.py`. The legacy `app.api.metadata._musicbrainz_album_year()` remains a compatibility adapter. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; squash merge `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`.
+- **PR #195** extracted reviewed slskd file-list and quality-summary normalization into `acquisition_candidate_queue.py`. `discovery_queue_slskd_candidate()` retains JSON response mapping, slskd network I/O, and watcher startup. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; squash merge `5629d259468a0f748fb5d3fdb78819a0fb00d73c`.
+- All four required exact-head workflows passed for each PR: Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image build. PR #193 run IDs: `38881961573`, `38881961574`, `38881961553`, `38881961580`. PR #195 run IDs: `38882195745`, `38882195774`, `38882195700`, `38882195820`.
+- No separate assistant-side local test run, image publication, deployment, or production runtime verification is claimed. Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred; neither extraction changes cleanup behavior.
+- Next: refresh GitHub main, open PRs, and CI; continue the remaining acquisition lifecycle/orchestration modularization without touching the deferred 409 investigation.
