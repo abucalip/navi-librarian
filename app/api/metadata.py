@@ -16,7 +16,7 @@ from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
-from app.services.deezer_album_matching import exact_album_matches, release_year
+from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
 from musicbrainz_album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
 
 router = APIRouter()
@@ -116,12 +116,12 @@ def album_year(artist: str = "", album: str = ""):
             query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
             response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
             response.raise_for_status()
-            for item in exact_album_matches(response.json().get("data") or [], artist, album):
-                matched_year = release_year(item.get("release_date"))
-                if matched_year is not None:
-                    year = matched_year
-                    source = "Deezer"
-                    break
+            matched_year = exact_album_release_year(
+                response.json().get("data") or [], artist, album
+            )
+            if matched_year is not None:
+                year = matched_year
+                source = "Deezer"
         except Exception:
             pass
 
