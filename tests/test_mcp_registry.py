@@ -21,8 +21,10 @@ class FakeMCPServer:
 
 class MCPRegistryTests(unittest.TestCase):
     def test_tool_registry_is_unique_and_registers_all_legacy_tools(self):
-        self.assertEqual(len(TOOL_NAMES), 27)
+        self.assertEqual(len(TOOL_NAMES), 25)
         self.assertEqual(len(TOOL_NAMES), len(set(TOOL_NAMES)))
+        self.assertNotIn("restart_server", TOOL_NAMES)
+        self.assertNotIn("apply_server_patch", TOOL_NAMES)
 
         functions = {
             name: (lambda name=name: name)
