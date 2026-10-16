@@ -3,7 +3,8 @@
 import unittest
 from types import SimpleNamespace
 
-from slskd_search import response_items
+from slskd_search import response_items, search_queries
+from acquisition_search_diagnostics import no_match_message
 from slskd_search_polling import collect_search_responses
 
 
@@ -95,18 +96,26 @@ class SlskdSearchPollingTests(unittest.TestCase):
 
     def test_retries_broader_query_when_exact_query_has_no_payload(self):
         client = FakeSlskdClient("fallback")
-        result = self.run_search(client, ["Exact Artist Album", "Artist Album"])
+        queries = search_queries("Tinariwen", "Idrache (Traces of the Past)")
+        result = self.run_search(client, queries)
 
         self.assertEqual([item["payload"]["searchText"] for item in client.posted],
-                         ["Exact Artist Album", "Artist Album"])
+                         queries)
         self.assertEqual([item["payload"]["searchTimeout"] for item in client.posted],
                          [15000, 6000])
         self.assertEqual([item["query"] for item in result["search_attempts"]],
-                         ["Exact Artist Album", "Artist Album"])
+                         queries)
         self.assertEqual(result["search_attempts"][0]["collected_peer_response_count"], 0)
         self.assertEqual(result["search_attempts"][1]["collected_peer_response_count"], 1)
         self.assertEqual(result["reported_response_count"], 1)
         self.assertEqual(len(result["payload_by_peer"]), 1)
+        message = no_match_message(
+            response_count=0, audio_file_count=0,
+            reported_response_count=result["reported_response_count"],
+            reported_file_count=result["reported_file_count"],
+            search_attempts=result["search_attempts"],
+        )
+        self.assertIn("Queries tried: " + " -> ".join(queries), message)
 
     def test_legacy_404_405_endpoints_are_tolerated(self):
         client = FakeSlskdClient("legacy")
