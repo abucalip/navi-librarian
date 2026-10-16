@@ -757,11 +757,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 
 ---
 
-## 2026-10-16 — Broader-query fallback test decoupling (PR pending)
+## 2026-10-16 — PR #272 merged: broader-query fallback test decoupling
 
 - Based on GitHub main commit `de94d9bbb9790129ed86dc9fefd28a1850a9c721`. Branch: `test/direct-search-fallback-regression`.
 - Moved the broader-query fallback regression out of the AST harness in `tests/test_acquisition_safety.py` into direct-import coverage in `tests/test_slskd_search_polling.py`. The direct test uses the production query generator and polling implementation, asserts the exact Tinariwen query pair, request timeouts (15,000 ms then 6,000 ms), per-attempt collected response counts (0 then 1), aggregate counts, and ordered query diagnostics via `acquisition_search_diagnostics.no_match_message()`.
 - The AST harness no longer compiles `_discovery_acquire_album_impl()`; it remains for the import/dismissal adapter and other acquisition lifecycle cases. No production acquisition code, candidate eligibility, queueing, concurrency, persistence, or filesystem-safety behavior was changed or removed.
 - First CI attempts exposed two test-only defects: an empty class left after removing the AST test, and an assertion that overlooked the third generated query variant. Both were corrected; the fallback search stops after the second query returns a usable payload.
 - Final code/test head `8a464edf8313594ddde69f0be90135fce4782f07` passed all four required workflows: Python syntax/acquisition safety (`38969125353`), Docker packaging/full unit suite/build (`38969125409`), isolated container runtime smoke (`38969125262`), and validation-only multi-architecture image validation (`38969125387`, publishing paused). The full suite passed 554 tests in both unit-test workflows. The latest code head has no production behavior changes. No live slskd search/download, filesystem mutation, deployment, or production runtime verification was performed.
-- A documentation-only closeout commit updates this record and the roadmap/status; required CI must be checked again on the resulting exact PR head before merge.
+- PR #272 was squash-merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. All four required workflows passed on the exact final PR head `7b1257e0ceb9368063de025a2758f48a344efbcb`: Python syntax/acquisition safety (`38969292510`), Docker packaging/full unit suite/build (`38969292338`), isolated container runtime smoke (`38969292382`), and validation-only multi-architecture image validation (`38969292490`, non-publishing). The full suite passed 554 tests. Publishing, deployment, and production runtime verification were not performed.
