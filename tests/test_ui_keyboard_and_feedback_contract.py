@@ -51,11 +51,14 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
         # Modified arrows belong to the browser and the OS, not to the carousel.
         self.assertIn("if (event.altKey || event.ctrlKey || event.metaKey) return;", helper)
 
-    def test_both_scroll_tracks_are_wired_to_the_helper(self):
+    def test_scroll_helper_is_wired_to_the_genre_rows_only(self):
+        # The dashboard list is a ring now, not a scroller, so it must not take the scroll
+        # helper's tab stop; its keyboard contract is the ring's own (see DashboardRingTests).
         dashboard = function_source(
             self.js, "async function loadDashboardPicks(", "$('shuffleDashboard')"
         )
-        self.assertIn("makeScrollTrackFocusable(target);", dashboard)
+        self.assertNotIn("makeScrollTrackFocusable(target)", dashboard)
+        self.assertIn("buildDashboardRing(target);", dashboard)
         self.assertIn(
             "makeScrollTrackFocusable(track, genreRowLabel(genre) + ' albums');", self.js
         )
@@ -73,10 +76,161 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
 
     def test_focus_ring_is_drawn_on_the_scroll_container(self):
         self.assertIn(
-            ".dashboard-carousel:focus-visible, .genre-row-track:focus-visible "
+            ".genre-row-track:focus-visible "
             "{ outline: 2px solid var(--yellow); outline-offset: 2px; border-radius: 4px; }",
             self.css,
         )
+
+
+class DashboardRingTests(unittest.TestCase):
+    """The dashboard list is a coverflow ring, steered rather than merely animated."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.js = APP_JS.read_text(encoding="utf-8")
+        cls.css = APP_CSS.read_text(encoding="utf-8")
+        cls.index = INDEX_HTML.read_text(encoding="utf-8")
+
+    def _ring(self, signature, next_signature):
+        return function_source(self.js, signature, next_signature)
+
+    def test_ring_is_opt_in_so_the_flat_list_survives_a_failure(self):
+        build = self._ring("function buildDashboardRing(scene) {", "async function loadDashboardPicks(")
+        # The class is added only once the stage exists; without it the existing flat flex
+        # row is still what renders.
+        self.assertIn("scene.classList.add('is-ring');", build)
+        self.assertIn(".dashboard-carousel > .card { flex: 0 0 218px;", self.css)
+        self.assertIn(".dashboard-carousel.is-ring { display: block;", self.css)
+
+    def test_ring_needs_at_least_three_albums(self):
+        build = self._ring("function buildDashboardRing(scene) {", "async function loadDashboardPicks(")
+        self.assertIn("if (cards.length < 3) return;", build)
+
+    def test_geometry_radius_spaces_neighbours_edge_to_edge(self):
+        build = self._ring("function buildDashboardRing(scene) {", "async function loadDashboardPicks(")
+        self.assertIn("Math.tan(Math.PI / RING.count)", build)
+        for name in ("--ring-step", "--ring-radius", "--ring-card-width"):
+            self.assertIn(name, build)
+
+    def test_ambient_rotation_yields_to_reading_acting_and_being_unseen(self):
+        ambient = self._ring("function ringAmbientVelocity() {", "function ringSettled()")
+        self.assertIn("if (document.hidden || !RING.onscreen || RING.dragging) return 0;", ambient)
+        self.assertIn("if (RING.pointerOver || RING.focusWithin) return 0;", ambient)
+        self.assertIn("if (RING_REDUCED_MOTION.matches) return 0;", ambient)
+        self.assertIn("return RING_BASE_VELOCITY;", ambient)
+
+    def test_loop_stops_when_idle_instead_of_spinning_forever(self):
+        start = self._ring("function ringStart() {", "// Exactly one card is legible")
+        self.assertIn("if (!RING.raf && RING.stage && !ringIdle())", start)
+        frame = self._ring("function ringFrame() {", "function ringStart() {")
+        # The boost is driven to exactly zero, so ringSettled() can actually become true.
+        self.assertIn("Math.abs(RING.boost) < 0.02 ? 0 : RING.boost * RING_BOOST_DECAY", frame)
+        self.assertIn("if (!ringIdle()) ringStart();", frame)
+
+    def test_the_ring_settles_onto_a_card_rather_than_between_two(self):
+        # Found by browser testing: stopping at an arbitrary angle leaves no card facing the
+        # viewer, puts a gap at the centre of the ring, and makes the middle unclickable.
+        target = self._ring("function ringTargetAngle() {", "function ringSnapped()")
+        self.assertIn("Math.round(RING.angle / RING.step) * RING.step", target)
+        snapped = self._ring("function ringSnapped() {", "// Done means stopped")
+        self.assertIn("Math.abs(RING.angle - ringTargetAngle()) < 0.05", snapped)
+        idle = self._ring("// Done means stopped", "function ringWrite()")
+        self.assertIn("return ringSettled() && ringSnapped();", idle)
+        frame = self._ring("function ringFrame() {", "function ringStart() {")
+        self.assertIn("const delta = ringTargetAngle() - RING.angle;", frame)
+        self.assertIn("RING.angle + delta * 0.18", frame)
+
+    def test_a_gesture_holds_the_drift_off_so_the_ring_can_settle(self):
+        # On touch there is no hover to pause the ring, so a swipe would otherwise leave it
+        # drifting and never settled on a card.
+        ambient = self._ring("function ringAmbientVelocity() {", "function ringSettled()")
+        self.assertIn("if (performance.now() < RING.pausedUntil) return 0;", ambient)
+        up = self._ring("function ringPointerUp() {", "function ringKeyDown(event) {")
+        self.assertIn("RING.pausedUntil = performance.now() + RING_SETTLE_HOLD_MS;", up)
+        keys = self._ring("function ringKeyDown(event) {", "// Zoom the ring out until it fits")
+        self.assertIn("RING.pausedUntil = performance.now() + RING_SETTLE_HOLD_MS;", keys)
+
+    def test_reduced_motion_removes_the_ambient_loop_but_keeps_steering(self):
+        # A reduced-motion path that also disabled the keys would leave one album reachable
+        # and the other nine stranded.
+        self.assertIn("if (RING_REDUCED_MOTION.matches) return 0;", self.js)
+        keys = self._ring("function ringKeyDown(event) {", "// Zoom the ring out until it fits")
+        self.assertIn("'ArrowRight'", keys)
+        self.assertIn("'ArrowLeft'", keys)
+        self.assertNotIn("RING_REDUCED_MOTION", keys)
+
+    def test_drag_and_keys_accelerate_and_then_ease_out(self):
+        move = self._ring("function ringPointerMove(event) {", "function ringPointerUp() {")
+        self.assertIn("RING.boost + degrees * 0.3", move)
+        self.assertIn("RING_BOOST_MAX", move)
+        # The reference component's stated limitation is that rotation snaps on release.
+        self.assertIn("RING.boost * RING_BOOST_DECAY", self.js)
+
+    def test_only_the_front_card_is_operable(self):
+        apply_front = self._ring("function ringApplyFront(index) {", "function ringPointerDown(event)")
+        self.assertIn("card.classList.toggle('is-front', isFront);", apply_front)
+        self.assertIn("card.tabIndex = isFront ? 0 : -1;", apply_front)
+        self.assertIn("else card.setAttribute('aria-hidden', 'true');", apply_front)
+        self.assertIn("if (RING.inert) card.inert = !isFront;", apply_front)
+
+    def test_pointer_capture_is_taken_only_once_a_drag_is_certain(self):
+        # Found by browser testing: an element that has captured a pointer also receives the
+        # click derived from that sequence, so capturing on pointerdown retargeted every click
+        # at the scene and made the front card and its Get button unclickable.
+        down = self._ring("function ringPointerDown(event) {", "function ringPointerMove(event) {")
+        self.assertNotIn("setPointerCapture", down)
+        move = self._ring("function ringPointerMove(event) {", "function ringPointerUp() {")
+        self.assertIn("if (RING.dragDistance > 6) {", move)
+        self.assertIn("scene.setPointerCapture(event.pointerId)", move)
+
+    def test_a_drag_does_not_open_the_album_dialog(self):
+        down = self._ring("function ringPointerDown(event) {", "function ringPointerMove(event) {")
+        move = self._ring("function ringPointerMove(event) {", "function ringPointerUp() {")
+        self.assertIn("RING.suppressClick = false;", down)
+        self.assertIn("if (RING.dragDistance > 6) {", move)
+        self.assertIn("RING.suppressClick = true;", move)
+        self.assertIn("if (!RING.suppressClick) return;", self.js)
+
+    def test_clipping_stays_outside_the_3d_context(self):
+        # overflow on the element that establishes preserve-3d flattens its children.
+        self.assertIn("transform-style: preserve-3d;", self.css)
+        self.assertIn(".dashboard-carousel.is-ring { display: block; padding: 16px 0 0; overflow: hidden;", self.css)
+        self.assertIn(".ring-scene { perspective: 2000px; }", self.css)
+
+    def test_narrow_viewports_fall_back_to_the_flat_list(self):
+        # Browser testing showed that scaling the scene to fit 390px shrank an album title to a
+        # few pixels and the Get button below a usable touch target.
+        self.assertIn("const RING_MIN_WIDTH = 700;", self.js)
+        build = self._ring("function buildDashboardRing(scene) {", "async function loadDashboardPicks(")
+        self.assertIn("if (window.innerWidth < RING_MIN_WIDTH) return;", build)
+
+    def test_flattening_restores_the_state_the_ring_imposed(self):
+        # Rear cards are inert and aria-hidden while the ring is up; leaving that in place would
+        # make nine of ten albums unreachable once the list goes back to flat.
+        flat = self._ring("function ringFlatten() {", "// Crossing the breakpoint")
+        self.assertIn("card.removeAttribute('aria-hidden');", flat)
+        self.assertIn("card.removeAttribute('inert');", flat)
+        self.assertIn("card.tabIndex = 0;", flat)
+        self.assertIn("card.classList.remove('ring-card', 'is-front');", flat)
+
+    def test_the_resize_listener_outlives_the_ring_it_rebuilds(self):
+        # Registered for the page, not with the ring's abort signal: teardown would otherwise
+        # remove the listener needed to build the ring again.
+        build = self._ring("function buildDashboardRing(scene) {", "// Put the list back the way it was")
+        self.assertNotIn("addEventListener('resize'", build)
+        self.assertIn("window.addEventListener('resize', ringSyncLayout);", self.js)
+        sync = self._ring("function ringSyncLayout() {", "window.addEventListener('resize', ringSyncLayout);")
+        self.assertIn("if (wide && !RING.stage) buildDashboardRing(scene);", sync)
+        self.assertIn("else if (!wide && RING.stage) ringFlatten();", sync)
+
+    def test_ring_joins_the_existing_token_and_control_vocabulary(self):
+        self.assertIn(".dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--yellow);", self.css)
+        # Depth is an offset plus a soft blur, not a halo.
+        self.assertIn("box-shadow: 0 22px 48px rgba(0,0,0,.52);", self.css)
+        self.assertIn('aria-label="Random album recommendations"', self.index)
+        self.assertIn('role="group"', self.index)
+        # The gesture is named in copy a user can read.
+        self.assertIn("Drag the ring, or focus it and use", self.index)
 
 
 class AlbumModalFocusTests(unittest.TestCase):
