@@ -33,9 +33,9 @@ Run the AST dependency map from the repository root and review its output with t
 python scripts/dep_map.py --output docs/architecture/dependency-map.json
 ```
 
-Commit the generated map only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
+The Python syntax workflow also generates `dependency-map.json` and uploads it as the `modularization-dependency-map` artifact (14-day retention). Review that artifact against the exact source revision before treating the graph gate as complete. Commit a repository copy only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
 
-Inventory tests that read `navidrome_server.py` as source or parse it with `ast`. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
+Use `docs/architecture/AST_TEST_INVENTORY.md` as the current inventory of tests that read `navidrome_server.py` as source or parse it with `ast`; update the inventory as coupling changes. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
 
 Before declaring modularization complete, inspect all Python references under `app/`:
 
