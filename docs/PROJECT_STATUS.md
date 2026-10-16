@@ -1,3 +1,9 @@
+## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+
+- Started from GitHub main after PR #224. Extracted cached-list filtering and response projection into `discovery_list_payload.build_cached_discovery_list_response()`; the server retains input validation, feedback persistence/read, For Me inventory logic, and dependency wiring.
+- Added direct-import tests for empty-cache shape, dismissal/saved/non-album filtering, personal diagnostics/legacy fields, and visible-count behavior. Docker packaging includes the helper.
+- Verification pending: complete diff review and all four required workflows on the final PR head. No merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
 
 - PR #224 merged as `f795239589e6dd78f0f5e6d98cf2eadc897d6f49` from exact final tested head `6d2e0ccc8d24cd11b727255f171fd405384a8729`.
