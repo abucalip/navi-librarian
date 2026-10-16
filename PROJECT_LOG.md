@@ -1,3 +1,13 @@
+## 2026-10-16 — PR #189 merged: dashboard-pick service
+
+- PR: https://github.com/abucalip/navi-librarian/pull/189
+- Branch: `refactor/extract-dashboard-pick-service`; exact tested head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`; squash merge/main commit `f5f355f8bdc0599bb240933e248177c7b0517ff5`.
+- `app/services/dashboard.py` now owns three-lane dashboard candidate assembly, album eligibility, case-insensitive artist/album deduplication, category balancing, and random fill. The API route retains count validation, the lazy librarian dependency, and the response contract.
+- Direct-import service tests added; route tests retained. Exact-head workflows passed: syntax/acquisition safety 1052, Docker packaging/full unit suite/build 959, container runtime smoke 768, and non-publishing multi-architecture validation 812.
+- No assistant-side local test run, image publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
+- Process note: a test-file creation omitted the branch argument and briefly committed the new test on main; the file was immediately removed by `039b5ed14834aeb63627f141c1bafa1d96c8589b`, verified absent on main, and then created on the PR branch. The intended file is included in the merged PR.
+- Next: refresh GitHub main/open PRs/CI before selecting another independent extraction.
+
 ## 2026-10-16 — Dashboard-pick assembly extraction opened
 
 - Branch `refactor/extract-dashboard-pick-service`, based on refreshed GitHub main `2b9eb6a88c752aa1d2e65687641d05629aa89427`.
