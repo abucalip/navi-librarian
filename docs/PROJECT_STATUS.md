@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #257 merged; ranking/provider characterization expanded)  
-Documentation branch base: GitHub `main` at `2bbe5c28887e16c249c119634c7b33396351f540`
+Last reviewed: 2026-10-16 (PR #259 merged; inventory mismatch characterized)  
+Documentation branch base: GitHub `main` at `4a82ce01cf37d0e9cff27a9f67f9a037cad23e2e`
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Add characterization for scoring/bonus effects and regional MusicBrainz provider failures; finish the inventory-semantics comparison with `discovery_library_snapshot.py` before extracting candidate gathering.
+1. Extract a shared raw Navidrome album-pagination helper, preserving both callers' cache and error contracts; add direct-import tests, then use it as the first small seam before extracting the wider candidate-gathering pipeline.
 2. Add the measurable CI size ratchet only after verifying the line/function-size baseline against current `main`.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
