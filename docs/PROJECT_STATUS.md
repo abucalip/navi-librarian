@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-16 (mutable MUSIC_DIR coupling audited; no extraction justified)  
-Documentation branch base: GitHub `main` after merge commit `57ec3a594df22bba77895934535530c37d833087`
+Documentation branch base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Current focus
 
