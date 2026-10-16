@@ -35,6 +35,7 @@ import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 import acquisition_orchestration
+from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
 from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -2720,7 +2721,6 @@ def _discovery_list_acquisition_jobs():
 
 
 # Per-process snapshots used to calculate an instantaneous speed from byte deltas.
-from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
 _DISCOVERY_PROGRESS_SNAPSHOTS = _ProgressSnapshots()
 
 
