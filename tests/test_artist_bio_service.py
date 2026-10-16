@@ -53,7 +53,7 @@ class ArtistBioResolutionTests(unittest.TestCase):
 
     def test_long_extract_is_bounded_without_truncating_mid_word(self):
         entities = [{"id": "Q8", "label": "Artist", "description": "A musician"}]
-        extract = "Artist is a musician. " + ("longword " * 60)
+        extract = "Artist is " + ("longword " * 60) + "."
         result = resolve_artist_bio(
             "Artist", entities,
             {"wikibase_item": "Q8", "type": "standard", "extract": extract},
