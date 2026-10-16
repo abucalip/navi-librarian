@@ -1,3 +1,13 @@
+## 2026-10-16 — PR #192 merged: settings tabs and skip-link accessibility
+
+- PR: https://github.com/abucalip/navi-librarian/pull/192
+- Supersedes conflicted PR #188, which was closed without merging. Branch: `a11y/refresh-188-from-main`; base main `470b232977b45ee1cf1bf1b399c2c43843062c1f`; exact tested head `75c13b0099285747c9da75c5c3879e6594e5fe36`; squash merge/current main `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
+- Reapplied four focused changes on current-main files: skip link and main target, accessible names for four settings tab panels, keyboard-operable roving tabindex tabs, and UI backlog evidence. Existing current-main content was retained.
+- All four exact-head workflows passed: Python syntax run 1069; Docker packaging/full unit suite/build run 976; container runtime smoke run 785; validation-only Docker image validation run 829.
+- User-published manual browser report comment in PR #192 tested the exact head and recorded all checklist items passing with zero failures. No assistant-side local test run, publication, deployment, or production runtime verification is claimed.
+- PR #188 closed as superseded after #192 merged. Acquisition dismissal HTTP 409 remains deferred by explicit user direction.
+- Next: refresh GitHub main, open PRs, and CI before selecting further work; do not claim deployment or production runtime verification.
+
 ## 2026-10-16 — PR #190 merged: artist-biography resolution
 
 - PR: https://github.com/abucalip/navi-librarian/pull/190
