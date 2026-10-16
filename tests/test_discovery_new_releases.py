@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_new_releases import select_artist_release_candidates
+from discovery_new_releases import prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
@@ -84,6 +84,52 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
             group("New Record", "2025-08-01", mbid="newer"),
         ])
         self.assertEqual(result[("bjork", "newrecord")]["mbid"], "newer")
+
+
+    def test_library_scope_uses_full_album_threshold_and_excludes_various_artists(self):
+        artists = [
+            {"name": "Short Album Artist", "album_count": 9},
+            {"name": "Björk", "album_count": 3},
+            {"name": "Low Count", "album_count": 1},
+            {"name": "Various Artists", "album_count": 50},
+            {"name": "", "album_count": 100},
+        ]
+        albums = [
+            {"artist": "Short Album Artist", "album": "EP", "song_count": 5},
+            {"artist": "Björk", "album": "Full Album", "song_count": 6},
+            {"artist": "Low Count", "album": "Long Album", "song_count": 12},
+            {"artist": "Björk", "album": "Another Album", "song_count": 10},
+            {"artist": "Various Artists", "album": "Compilation", "song_count": 20},
+        ]
+        owned, qualified = prepare_new_release_library_scope(
+            artists, albums, music_key=music_key, is_various_artists=is_various_artists
+        )
+        self.assertEqual([item["name"] for item in qualified], ["Björk", "Low Count"])
+        self.assertEqual(len(owned), 5)
+
+    def test_library_scope_preserves_stable_order_for_equal_album_counts(self):
+        artists = [
+            {"name": "First", "album_count": 4},
+            {"name": "Second", "album_count": 4},
+            {"name": "Third", "album_count": 7},
+        ]
+        albums = [
+            {"artist": name, "album": "Owned", "song_count": 6}
+            for name in ("First", "Second", "Third")
+        ]
+        _, qualified = prepare_new_release_library_scope(
+            artists, albums, music_key=music_key, is_various_artists=is_various_artists
+        )
+        self.assertEqual([item["name"] for item in qualified], ["Third", "First", "Second"])
+
+    def test_library_scope_returns_owned_normalized_identities_even_without_qualified_artists(self):
+        owned, qualified = prepare_new_release_library_scope(
+            [{"name": "Unknown", "album_count": 1}],
+            [{"artist": "Björk", "album": "Fossora", "song_count": 2}],
+            music_key=music_key, is_various_artists=is_various_artists,
+        )
+        self.assertEqual(owned, {("bjork", "fossora")})
+        self.assertEqual(qualified, [])
 
 
 if __name__ == "__main__":
