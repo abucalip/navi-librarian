@@ -1,13 +1,13 @@
 # Project status
 
-Last reviewed: 2026-10-16 (follow-up packaging audit after PR #286)
-Documentation base: GitHub `main` at commit `f6041231db515f2287596445c0025c9af90901ee`
+Last reviewed: 2026-10-16 (PR #288 merged; direct Docker import audit refreshed)
+Documentation base: GitHub `main` at commit `047822df81b134084383ed370205b1a3554c706a`
 
 ## Current focus
 
 The recommendation policy seams and acquisition AST-test migration are complete. No further extraction currently has a sufficiently narrow boundary to justify added indirection. The completion audit checked the current lazy web-to-legacy import in `app/api/dependencies.py`, the CI import-boundary guard, the AST inventory, and Docker's explicit root-module copy list.
 
-PR #286 fixed the first packaging defect by including `acquisition_import_service.py`. Continuing the same audit found a second missing dependency: `navidrome_server.py` imports `discovery_candidate_gathering.py`, which was also absent from the explicit Docker COPY list. The packaging regression is being generalized to compare all root-level modules imported by `navidrome_server.py` against the Docker COPY sources. The isolated runtime smoke test may not exercise this delayed import path.
+PR #286 added `acquisition_import_service.py`, and PR #288 added `discovery_candidate_gathering.py`. The Docker packaging regression now AST-inspects `navidrome_server.py` and checks that every imported root-level Python module is listed among the Docker COPY sources. A follow-up comparison on current main found all 48 distinct root-level modules imported by `navidrome_server.py` are now included. The isolated runtime smoke test may not exercise this delayed import path.
 
 ## Next action
 
@@ -19,8 +19,8 @@ The `MUSIC_DIR` read/write audit remains closed: existing persistence callbacks 
 
 ## Delivery and verification state
 
-- **Implemented / merged:** PR #286 fixed the missing `acquisition_import_service.py` Docker copy; its exact head passed all four required workflows. The broader completion audit then found another missing module, `discovery_candidate_gathering.py`, and the regression is being generalized to cover root-level server imports.
-- **Current fix / CI:** a focused PR is being prepared; its tests and all four required workflows are pending. No local test commands were run.
+- **Implemented / merged:** PR #286 added `acquisition_import_service.py`; PR #288 added `discovery_candidate_gathering.py` and generalized the Docker packaging regression.
+- **CI:** all four required workflows passed on exact PR #288 head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c`: syntax (`38978049684`), Docker packaging/full unit suite/build (`38978049670`), runtime smoke (`38978049793`), and non-publishing multi-architecture validation (`38978049589`). No local test commands were run.
 - **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
