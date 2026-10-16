@@ -1611,3 +1611,10 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All four required exact-head workflows passed for each PR: Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image build. PR #193 run IDs: `38881961573`, `38881961574`, `38881961553`, `38881961580`. PR #195 run IDs: `38882195745`, `38882195774`, `38882195700`, `38882195820`.
 - No separate assistant-side local test run, image publication, deployment, or production runtime verification is claimed. Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred; neither extraction changes cleanup behavior.
 - Next: refresh GitHub main, open PRs, and CI; continue the remaining acquisition lifecycle/orchestration modularization without touching the deferred 409 investigation.
+
+
+## 2026-10-16 — Acquisition progress snapshot extraction in review
+
+- Branch refactor/extract-acquisition-progress-snapshots extracts the per-process, per-acquisition byte-snapshot map and lock into acquisition_progress_snapshots.py. navidrome_server.py retains live slskd polling and compatibility behavior; the extracted manager delegates speed math to the existing slskd_transfers.estimate_transfer_speed implementation.
+- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. Docker packaging includes the new module.
+- Required next gates: syntax/acquisition-safety, Docker packaging/full unit suite/build, runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. Assistant-side local tests have not been run; no publication or deployment.
