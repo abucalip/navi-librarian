@@ -15,6 +15,8 @@ def exact_album_matches(
     """Keep only catalog rows whose artist and album both match exactly."""
     artist_key = normalize_catalog_name(artist)
     album_key = normalize_catalog_name(album)
+    if not artist_key or not album_key:
+        return []
     return [
         item for item in albums
         if normalize_catalog_name((item.get("artist") or {}).get("name")) == artist_key
