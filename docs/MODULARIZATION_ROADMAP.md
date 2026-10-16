@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm similar-artist parsing extraction in progress
+
+- Based on GitHub `main` after PR #174 at `4dd8b926a7a6cf76e248420860d7c29c892da3c0`, deliberately independent of PR #175.
+- `LastFmClient.similar_artists()` now owns cached `artist.getSimilar` response normalization; `_lastfm_similar_artists()` remains the legacy compatibility adapter.
+- Added direct-import and adapter regressions for scalar/list payloads, invalid/blank records, similarity values, request parameters, 60-day TTL/cache behavior, and missing payloads.
+- Verify full suite, syntax, packaging, runtime smoke, and non-publishing multi-architecture CI on the exact final PR head before merge. Keep publishing paused and the acquisition-dismissal HTTP 409 deferred.
+
+---
+
 ## 2026-10-16 — Three additional extractions completed (PRs #170–#172)
 
 These were implemented and merged sequentially, refreshing GitHub `main` between each PR.
