@@ -554,9 +554,9 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - **Next action:** refresh main and inspect the remaining acquisition lifecycle/application-assembly boundaries before choosing another independently testable extraction.
 
 
-## 2026-10-16 — Authentication configuration predicate extraction (PR pending)
+## 2026-10-16 — Authentication configuration predicate extraction (PR #239 merged)
 
 - Isolated the pure three-field owner-auth configuration check in `app/security/auth_configuration.py`; `app/main.py` retains the settings read and compatibility wrapper.
 - Added direct-import regressions for complete credentials, each missing/empty required field, absent settings, and unrelated keys. Existing truthiness semantics are intentionally preserved.
 - Scope is limited to application assembly policy; no routes, cookies, session behavior, persistence, or auth-secret handling changed.
-- CI and exact-head review are pending. No local tests, publication, deployment, or runtime verification claimed.
+- All four required workflows passed on the exact final PR head: Python syntax `38940305016`; Docker packaging/full unit suite/build `38940304930`; container runtime smoke `38940304907`; validation-only multi-architecture image validation `38940305045` (publishing paused). Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
