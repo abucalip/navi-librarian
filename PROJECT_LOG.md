@@ -283,3 +283,12 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - Both extractions preserve legacy entry points and include direct regression coverage. No assistant-side local test run, image publication, deployment, or production runtime verification is claimed.
 - Publishing remains paused. Acquisition dismissal HTTP 409 remains deferred by explicit instruction.
 - Next action: on the next session, refresh GitHub main and open PRs, reread the required project workflow/testing/roadmap docs, and choose the next smallest safe extraction.
+
+
+## 2026-10-16 — Two modularization extractions merged (PRs #193 and #195)
+
+- PR #193: `musicbrainz_album_year.py` now owns exact MusicBrainz release-year lookup, artist-credit/title matching, request pacing, and positive/negative caching. The metadata route retains its compatibility adapter and response behavior. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; squash merge `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`.
+- PR #195: `acquisition_candidate_queue.py` now owns pure normalization/validation for reviewed slskd file records and quality summaries. The legacy adapter retains network I/O, response mapping, and watcher startup. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; squash merge `5629d259468a0f748fb5d3fdb78819a0fb00d73c`.
+- All four required exact-head workflows passed on each tested SHA. PR #193: syntax/acquisition safety `38881961573`, Docker packaging/full suite/build `38881961574`, runtime smoke `38881961553`, validation-only multi-architecture `38881961580`. PR #195: syntax/acquisition safety `38882195745`, Docker packaging/full suite/build `38882195774`, runtime smoke `38882195700`, validation-only multi-architecture `38882195820`.
+- No assistant-side local test execution, publication, deployment, or production runtime verification is claimed. Acquisition dismissal HTTP 409 remains deferred.
+- Next: refresh main and open PRs/CI, then continue the remaining acquisition lifecycle/orchestration seams.
