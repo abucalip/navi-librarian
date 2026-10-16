@@ -885,117 +885,12 @@ def recommend_new_music(count: int = 10) -> str:
 
     # Broad musical families suggested by the recent listening profile.
     # These are ranking heuristics, not definitive genre classifications.
-    def genre_families(tags):
-        families = set()
-        for tag in tags:
-            g = tag.casefold()
-            if any(x in g for x in ("jazz", "bebop", "hard bop", "swing")):
-                families.add("jazz")
-            if any(x in g for x in ("hip hop", "hip-hop", "rap")):
-                families.add("hip-hop")
-            if any(x in g for x in ("alternative", "indie rock", "post-punk",
-                                    "art rock", "garage rock")):
-                families.add("alternative")
-            if any(x in g for x in ("brazilian", "samba", "bossa nova",
-                                    "mpb", "tropicalia", "tropicália")):
-                families.add("brazilian")
-            if any(x in g for x in ("african", "afrobeat", "ethiopian",
-                                    "ethiopian jazz", "highlife", "soukous",
-                                    "senegalese", "malian", "afropop",
-                                    "mbalax", "desert blues")):
-                families.add("african")
-            if any(x in g for x in ("r&b", "rnb", "neo-soul", "soul")):
-                families.add("rnb-soul")
-            if any(x in g for x in ("electronic", "electronica", "electropop",
-                                    "downtempo", "trip hop", "trip-hop")):
-                families.add("electronic")
-            if "funk" in g:
-                families.add("funk")
-            if any(x in g for x in (
-                "middle eastern", "arabic", "raï", "rai", "north african",
-                "north-african", "maghrebi", "maghreb", "chaabi",
-                "gnawa", "gnaoua", "malouf", "andalusi", "andalusian",
-                "algerian", "moroccan", "tunisian", "mawwal", "tarab",
-                "maqam", "levantine", "khaliji", "khaleeji", "dabke",
-                "oud music", "arab pop", "arabic pop", "shaabi",
-            )):
-                families.add("north-african-middle-eastern")
-        return families
-
-    def recent_style_families(tags):
-        """Map tags to finer listening-profile families without changing categories."""
-        text_tags = [tag.casefold() for tag in tags]
-        result = set()
-        joined = " ".join(text_tags)
-        if any(
-            ("jazz" in tag and "jazz rap" not in tag)
-            or tag in {"bebop", "swing"}
-            for tag in text_tags
-        ):
-            result.add("jazz")
-        if any(term in joined for term in ("soul", "r&b", "rnb", "neo-soul")):
-            result.add("soul")
-        if any(
-            any(term in tag for term in (
-                "rock", "punk", "grunge", "metal", "shoegaze", "post-punk"
-            ))
-            and "electronic rock" not in tag
-            for tag in text_tags
-        ):
-            result.add("rock")
-        if any(term in joined for term in (
-            "bossa nova", "samba", "mpb", "tropicalia", "tropicália", "brazilian"
-        )):
-            result.add("bossa_nova_brazilian")
-        if any(term in joined for term in ("hip hop", "hip-hop", "rap")):
-            result.add("hip-hop")
-        if any(term in joined for term in (
-            "electronic", "electronica", "house", "techno", "edm",
-            "synth-pop", "synthpop", "idm", "trip hop", "trip-hop"
-        )):
-            result.add("electronic")
-        if any(term in joined for term in (
-            "african", "afrobeat", "afrobeats", "afropop", "highlife",
-            "malian", "tuareg", "desert blues", "soukous", "mbalax"
-        )):
-            result.add("african")
-        if any(term in joined for term in (
-            "raï", "rai", "gnawa", "chaabi", "maghreb", "north african",
-            "algerian", "moroccan", "tunisian", "amazigh"
-        )):
-            result.add("north_african")
-        if "funk" in joined:
-            result.add("funk")
-        if any(term in joined for term in ("pop", "dance-pop", "synthpop")):
-            result.add("pop")
-        return result
-
-    def primary_recent_family(tags, family_counts):
-        """Choose a representative family from more album-specific tags first."""
-        families = recent_style_families(tags)
-        has_hiphop_tag = any(
-            any(term in tag for term in ("hip hop", "hip-hop", "rap"))
-            for tag in tags
-        )
-        has_specific_jazz_tag = any(
-            any(term in tag for term in (
-                "acid jazz", "afro-jazz", "afro jazz", "jazz fusion",
-                "free jazz", "latin jazz", "ethiopian jazz", "ethio-jazz",
-            ))
-            for tag in tags
-        )
-        priority = ["bossa_nova_brazilian", "rock", "hip-hop", "soul",
-                    "electronic", "african", "north_african", "funk", "pop"]
-        if "jazz" in families and (not has_hiphop_tag or has_specific_jazz_tag):
-            priority.insert(1, "jazz")
-        for family in priority:
-            if family in families:
-                return family
-        return max(
-            families,
-            key=lambda family: family_counts.get(family, 0),
-            default=None,
-        )
+    from discovery_recommendations import (
+        classify_diversity_style,
+        genre_families,
+        primary_recent_family,
+        recent_style_families,
+    )
 
     # Count musical families from actual recent scrobbles. The profile is
     # dynamic: jazz, soul, rock, Brazilian music, and other families rise or
@@ -1063,57 +958,6 @@ def recommend_new_music(count: int = 10) -> str:
 
     # Classify candidates using available MusicBrainz genres and a separate
     # regional/style label used to encourage variety in the final shortlist.
-    def classify_diversity_style(candidate, tags):
-        artist_key = _music_key(
-            candidate.get("primary_artist") or candidate.get("artist", "")
-        )
-        tag_text = " ".join(tags).casefold()
-        regional_style_hints = candidate.get("regional_styles", [])
-        for style_hint in (
-            "north_african", "afrobeats", "afro_jazz",
-            "malian_desert_blues",
-        ):
-            if style_hint in regional_style_hints:
-                return style_hint
-
-        north_african_names = {
-            "chebmami", "khaled", "chebkhaled", "faudel", "rachidtaha",
-            "idir", "souadmassi", "hamidelkasri", "takfarinas", "bouchenak",
-            "liliboniche", "orchestrenationaldebarbes", "chebsahraoui",
-            "شابصحراوي",
-        }
-        desert_blues_names = {
-            "vieuxfarkatoure", "alifarkatoure", "bombino", "tinariwen",
-            "mdoumoctar", "imarhan",
-        }
-
-        if (
-            artist_key in north_african_names
-            or any(term in tag_text for term in (
-                "raï", "rai", "chaabi", "gnawa", "amazigh",
-                "north african", "north-african", "maghreb", "algerian",
-            ))
-        ):
-            return "north_african"
-        if any(term in tag_text for term in (
-            "afrobeats", "afro-beats", "afropop", "afro-pop",
-        )):
-            return "afrobeats"
-        if any(term in tag_text for term in (
-            "afro-jazz", "afro jazz", "african jazz", "ethio-jazz",
-            "ethiojazz", "south african jazz",
-        )):
-            return "afro_jazz"
-        if (
-            artist_key in desert_blues_names
-            or any(term in tag_text for term in (
-                "desert blues", "malian blues", "malian guitar", "tuareg",
-                "assouf", "wassoulou",
-            ))
-        ):
-            return "malian_desert_blues"
-        return "other"
-
     candidates_by_category = {
         "adjacent": [],
         "cross_genre": [],
