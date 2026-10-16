@@ -1,3 +1,10 @@
+## 2026-10-16 — slskd queue and progress-matching extraction verification
+
+- **PR #180**, exact final head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`: syntax/acquisition-safety run 1008, Docker packaging/full unit suite/build run 915, container runtime smoke run 724, and validation-only multi-architecture image validation run 768 all succeeded. Merged as `7c670f2eac838934bc9afa7f40f892ff595ca4ca`.
+- **PR #181**, exact final head `cf78b4188a549d6e1b2b98c76a63a6bc0826d129`: syntax/acquisition-safety run 1010, Docker packaging/full unit suite/build run 917, container runtime smoke run 726, and validation-only multi-architecture image validation run 770 all succeeded. Merged as `3df14d3c59bb7e5a689d797028e45468c6a87ee7`.
+- PR #180 direct-import tests cover request URL, headers, payload, timeout, returned response, HTTP failure propagation, and legacy adapter delegation. PR #181 tests cover case-folded basename matching across Windows/POSIX separators, exclusion of unrequested records, and duplicate-state precedence.
+- The CI packaging jobs passed the full unit suite on both exact heads. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed. Neither PR changed acquisition cleanup or dismissal semantics; the HTTP 409 remains deferred.
+
 ## 2026-10-16 — Last.fm similar-artist extraction verification closeout
 
 PR #178 head `a97be052d3a1e74843feaacd6403d10ce5aad6af` was merged as `f18574b74a564031c5268cf04c956475d64dc30c`. GitHub Actions succeeded for Python syntax (run 1003), Docker packaging validation (run 910), container runtime smoke (run 719), and validation-only Docker image build with publishing paused (run 763). These are CI results for the exact PR head. A separate assistant-side local full unit-test run was not performed; do not record one as passed. No publication/deployment/runtime-on-production verification is claimed.
