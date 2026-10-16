@@ -1,3 +1,6 @@
+## 2026-10-16 — Classics critical-rating helper (verification pending)
+
+Added direct-import tests in `tests/test_discovery_classics_ratings.py` for listener-ranked shortlist ordering, the default 80-item cap (configurable in focused tests), the first-30 year-lookup policy, stable tie order, missing-rating no-op behavior, rating/vote/year updates, and invalid negative limits. The provider is injected so tests require no network or credentials. Run the focused test, full unit suite, syntax/acquisition safety, Docker packaging/full suite/build, runtime smoke, and validation-only multi-architecture workflows on the exact final PR head before merge.
 ## 2026-10-16 — Verification closeout: PRs #225 and #226
 
 - **PR #225 — cached discovery-list payload:** direct-import tests cover missing cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior. Exact head `573fe05d31dae422c25188688cd2fa949339e487` passed syntax/acquisition safety 1187, Docker packaging/full suite (477 tests)/build 1095, runtime smoke 904, and validation-only multi-architecture image validation 948. Squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
