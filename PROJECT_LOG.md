@@ -160,3 +160,8 @@ Next: prioritize the outstanding acquisition-dismissal HTTP 409 investigation/di
 - Added source-contract tests for Get's no-navigation/one-request behavior, pending/requested/retryable state transitions, and Dismiss visibility, successful card removal, and refusal/error handling. Added API adapter tests for successful Dismiss mapping and required artist/album validation.
 - Existing destructive-cleanup regressions remain unchanged and required; no safety validation or production data was altered.
 - Automated execution and exact-head CI have not yet been verified. UI tests are source-contract assertions, not browser execution; the manual checklist remains required after CI. No live slskd, production deletion, image publication, deployment, or runtime verification is claimed. The reported HTTP 409 remains deferred unless it recurs.
+
+
+## 2026-10-16 — Last.fm artist tags extraction started
+
+Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cached `artist.getTopTags` response normalization into `LastFmClient.artist_genres()` while preserving `_lastfm_artist_genres()` as the compatibility adapter. Added direct-import and adapter regression cases; final-head CI and merge are pending. No local tests, publication, deployment, or production runtime verification are claimed. The acquisition dismissal HTTP 409 remains deferred until modularization is complete.
