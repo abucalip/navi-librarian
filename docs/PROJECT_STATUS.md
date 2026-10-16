@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #272 merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`)
-Documentation base: GitHub `main` at commit `5a74b12d489ae30cfad923af7b68985ebede87dc`
+Last reviewed: 2026-10-16 (PR #274 merged as `cae95e74c9910c512392de80b337eb4b21de67a5`)
+Documentation base: GitHub `main` at commit `cae95e74c9910c512392de80b337eb4b21de67a5`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #272 migrated broader-query fallback tests to direct imports and merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. The next focused PR removes the final AST/source-layout coupling from `tests/test_acquisition_safety.py` while retaining production-owner coverage for import persistence, dismissal locking, concurrency/recovery, and filesystem safety. Exact-head CI is pending.
+Backend modularization remains in progress. PR #272 migrated broader-query fallback tests, and PR #274 removed the final AST/source-layout coupling from `tests/test_acquisition_safety.py`. PR #274 merged as `cae95e74c9910c512392de80b337eb4b21de67a5`; all four required workflows passed on exact tested PR head `ad6864ea1f5f70b7f9d8b852bbc4bb02e7c2d395`, including the 554-test suite. The AST inventory is now complete; see `PROJECT_LOG.md` for evidence.
 
 ## Next action
 
-1. Verify and merge the final acquisition AST-coupling migration only after all four required workflows pass on its exact final PR head.
-2. Then request the owner decision on MCP-exposed `restart_server` and `apply_server_patch`; do not refactor or remove them before that decision.
+1. Obtain the owner’s explicit decision on MCP-exposed `restart_server` and `apply_server_patch`; do not refactor or remove them before that product/security decision.
+2. After the decision, either document retirement and a compatibility migration gate, or create a focused operations-module PR with authorization and safety tests.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
