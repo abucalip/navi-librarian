@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Migrate the three AST-coupled tests listed in `docs/architecture/AST_TEST_INVENTORY.md`, starting with `tests/test_slskd_transfer_lookup.py` and preserving acquisition safety/lifecycle coverage.
+1. Migrate the two remaining AST-coupled tests in `docs/architecture/AST_TEST_INVENTORY.md`, starting with pure-helper coverage and preserving acquisition safety/lifecycle guarantees.
 2. Add an allowlist-aware app-import boundary guard that recognizes the reviewed lazy adapter in `app/api/dependencies.py` and preserves the app-import isolation regression.
 3. Then evaluate `service_settings.py` wrappers and the acquisition coordinator's policy-vs-orchestration seam.
 4. Do not force additional classics-builder or size-only slskd extractions.
