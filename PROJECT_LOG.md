@@ -1,11 +1,14 @@
-## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
 
-- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
+- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
 
-- Branch: `refactor/extract-discovery-list-payload`, based on GitHub main.
-- Moved cached-list filtering and response projection from `discovery_get_list()` to `discovery_list_payload.build_cached_discovery_list_response()`. Feedback persistence, validation, For Me inventory lookup, and adapter dependencies remain in the server.
-- Added direct-import tests for empty cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior; Docker packaging updated.
-- Tests and exact-head CI are not yet verified. No publication/deployment/runtime claim. Next: inspect full diff, run all four exact-head workflows, and merge only if every required gate passes.
+## 2026-10-16 — PR #225 merged: cached discovery-list payload shaping
+
+- PR #225: https://github.com/abucalip/navi-librarian/pull/225 — exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`, squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
+- Extracted cached-list filtering and response projection to `discovery_list_payload.build_cached_discovery_list_response()`; feedback persistence, validation, For Me inventory lookup, and dependency wiring remain in the server.
+- Direct-import tests cover empty cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior. All four exact-head workflows passed: syntax/acquisition safety 1187; Docker/full suite (477 tests)/build 1095; runtime smoke 904; validation-only multi-architecture 948. The first CI run exposed one incorrect test assertion, corrected before final verification.
+- No independent local test run, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
 
