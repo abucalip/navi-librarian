@@ -153,6 +153,7 @@ p { line-height: 1.55; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
 .genre-row-arrows { display: flex; gap: 6px; margin-left: auto; }
+.genre-row-arrows[hidden] { display: none; }
 .genre-row-arrow { display: grid; place-items: center; width: 38px; height: 34px; padding: 0; border: 0; background: transparent; color: var(--yellow); font: 700 36px/.8 var(--display); text-shadow: 0 1px 0 #9a8127; }
 .genre-row-arrow:hover { background: transparent; color: #ffe477; transform: scale(1.12); }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #686044 #222424; scrollbar-width: thin; scroll-behavior: smooth; }
