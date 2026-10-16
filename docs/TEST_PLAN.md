@@ -1121,8 +1121,15 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Exact final tested head `aa1099e8ed43b9afcce483a50be31226a66218f4`; all four workflows passed: Python syntax run 1148, Docker packaging/full suite/build run 1055, container runtime smoke run 864, and validation-only multi-architecture image validation run 908. Assistant-side local tests were not run.
 - Squash merge commit `ad61b1b91a5c351a73c02e37d7639bc47c61a52f`. Publishing, deployment, and production runtime verification remain unclaimed.
 
-## 2026-10-16 — PR #217 in progress: Deezer matched album payload shaping
+## 2026-10-16 — PR #217 merged: Deezer matched album payload shaping
 
 - Extracted the pure projection of a matched Deezer album row into `app/services/deezer_album_details.py`. The metadata route retains provider requests, exact matching, tracklist retrieval, error handling, and endpoint response assembly.
 - Direct-import tests cover cover-size preference, HTTP-to-HTTPS normalization, release-year parsing, and missing fields; the route regression asserts the existing artwork field.
-- Branch: `refactor/extract-deezer-album-details-shaping`. Assistant-side local tests have not been run; final diff review and all four exact-head workflows are pending. Publishing/deployment remain paused.
+- Exact final tested head `b631f4c6367c68357cbd91f75b986770edfeee0e`; all four workflows passed: Python syntax run 1151, Docker packaging/full suite/build run 1058, container runtime smoke run 867, and validation-only multi-architecture image validation run 911. Assistant-side local tests were not run.
+- Squash merge commit `37f04d0a863f69f5596f6a46406cc8bd64bde039`. Publishing, deployment, and production runtime verification remain unclaimed.
+
+## 2026-10-16 — PR #218 in progress: exact Deezer release-year selection
+
+- Extracted the pure rule that returns the first plausible release year among exact artist+album matches into `exact_album_release_year()` in `app/services/deezer_album_matching.py`. Provider requests and the `MusicBrainz`-first response contract remain in the metadata route.
+- Direct-import regressions cover skipping non-exact/invalid-year results and preserving result order; a route-level regression covers the Deezer fallback source/year contract.
+- Branch: `refactor/extract-deezer-exact-release-year`. Assistant-side local tests have not been run; final diff review and all four exact-head workflows are pending. Publishing/deployment remain paused.
