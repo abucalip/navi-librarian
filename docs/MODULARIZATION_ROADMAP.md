@@ -556,6 +556,18 @@ The current web application still imports the monolith as its domain API. Treat 
 4. **Application assembly.** Remove `app/main.py`'s remaining dependency on the monolith for settings/auth persistence, health checks, and dashboard discovery behavior. Keep middleware and public/protected route behavior unchanged.
 5. **MCP retirement.** Only after web callers and tests no longer depend on the monolith, audit all imports, entry points, dependencies, tests, docs, and compatibility needs. Remove MCP registration/runtime dependencies only when each web-required behavior has an independent tested owner.
 
+## Current boundary-audit priorities — 2026-10-16
+
+This section records the latest focused audit; it supplements the historical dependency inventory below. Re-check current callers before acting on older inventory items.
+
+1. **Discovery first:** trace `_build_classics_list()` through its callers and tests. Prefer extracting one provider-backed candidate-gathering/enrichment stage behind explicit provider/cache dependencies. Keep ranking, tie/order behavior, output payload, cache ownership, and rate limiting unchanged. Add direct-import tests before wiring the adapter. Reassess the other list builders/provider integration after that narrow seam is verified.
+2. **Acquisition second, conditionally:** inspect `_discovery_acquire_album_impl()` and its callers/tests as the remaining high-risk coordination boundary. Extract only a small, independently testable policy stage if it can be separated from lock ownership, persistence transitions, queue outcomes, and watcher startup without excessive callbacks/shared mutable state. Preserve race and conditional-transition behavior, dismissal/import exclusion, uncertain queue outcomes, stale-watcher recovery, cleanup refusal, mount identity, rollback, no-overwrite, and path-traversal/symlink safety coverage.
+3. **slskd only on evidence:** search polling, quality classification, transfer matching, progress aggregation, and connection checks already have dedicated modules. Remaining server functions are primarily adapters/dependency wiring. Do not extract further unless a concrete duplicated policy or independently owned orchestration stage is identified.
+4. **Completion audit:** reconcile current `app/main.py` and API dependencies on `navidrome_server.py`, settings/application assembly, and AST-coupled acquisition tests against the current main branch. Replace AST-coupled coverage incrementally with direct-import tests only when equivalent lifecycle/safety coverage is retained. Keep compatibility wrappers until all callers are migrated; MCP retirement remains a separate final gate.
+5. **No extraction quota:** if the candidate requires broad shared state, many callbacks, or risks changing behavior without a narrow test contract, document the seam as intentionally retained and move to the next item.
+
+**Audit status:** read-only review only. No tests or CI were run for this audit. Publishing remains paused; acquisition-dismissal HTTP 409 remains deferred.
+
 ### Acceptance gates for each extraction
 
 - Direct-import regression tests exercise the extracted implementation; no parallel copy of domain behavior in the web layer.
