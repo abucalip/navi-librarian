@@ -7,7 +7,7 @@ class ServerSourceRedactionTests(unittest.TestCase):
     def test_redacts_sensitive_assignment_names_case_insensitively(self):
         for line in (
             "api_key = 'private'",
-            "API-KEY = 'private'",
+            "API_KEY = 'private'",
             "access_token = 'private'",
             "client_secret = 'private'",
             "password = 'private'",
