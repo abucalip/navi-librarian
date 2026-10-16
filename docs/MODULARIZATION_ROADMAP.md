@@ -1,3 +1,7 @@
+## 2026-10-16 — slskd connection probe extraction merged (PR #187)
+
+PR #187 merged as `b7ae6458adda3650f178fc64457914beb66ece9c` from exact final PR head `920590871883aa8c75c29a1b16131bd88519072d`. `slskd_client.test_connection()` owns the connection probe with injected configuration and HTTP access; `discovery_test_slskd_connection()` remains the compatibility adapter. Direct-import tests cover success, 401/403, HTTP/configuration failures, and API-key redaction. All four required exact-head GitHub Actions workflows passed (syntax run 1041, Docker packaging/full suite/build run 948, runtime smoke run 757, validation-only image run 801). Assistant-side local tests were not independently run. No publishing/deployment/runtime-on-production verification is claimed.
+
 ## 2026-10-16 — slskd connection probe boundary in progress (PR #187)
 
 The configured slskd connection probe is being extracted into `slskd_client.test_connection()`. The legacy `discovery_test_slskd_connection()` remains the adapter; settings lookup remains injected, and no acquisition lifecycle or filesystem behavior is changed. Direct-import tests cover success, authentication failures, HTTP/configuration errors, and secret redaction. Docker packaging includes the new module. Final-head CI and merge remain pending; publishing/deployment are paused.
