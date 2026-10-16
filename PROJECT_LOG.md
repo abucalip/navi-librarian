@@ -1,3 +1,12 @@
+## 2026-10-16 — Read-only audit: remaining modularization priorities
+
+- Audited discovery, slskd, and acquisition seams after the latest merged extraction PRs. No code was changed and no tests/CI were run in this audit.
+- Discovery is the clearest next candidate: trace `_build_classics_list()` and extract one provider-backed candidate-gathering/enrichment stage with explicit provider/cache dependencies and direct-import regression tests. Preserve ranking/order, response shape, cache ownership, and rate limiting.
+- Acquisition remains high risk around `_discovery_acquire_album_impl()`; do not force an extraction unless a narrow policy/coordination boundary is found. Preserve race, persistence, queue uncertainty, dismissal/import exclusion, recovery, cleanup, and filesystem-safety coverage.
+- slskd core helpers are already modular; further extraction requires evidence of a real policy/orchestration ownership gap, not just a smaller monolith.
+- Before declaring modularization complete, reconcile app-assembly dependencies and AST-coupled acquisition tests with current callers and direct-import coverage. Publishing remains paused; acquisition-dismissal HTTP 409 remains deferred.
+- **Next:** inspect the classics builder’s callers/tests and define a small extraction contract. No test, CI, publication, deployment, or runtime verification is claimed by this audit.
+
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
 - **PR #225:** https://github.com/abucalip/navi-librarian/pull/225 — cached discovery-list projection extracted to `discovery_list_payload.build_cached_discovery_list_response()`. Exact tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. Four required workflows passed: syntax/acquisition safety 1187, Docker/full suite (477 tests)/build 1095, runtime smoke 904, validation-only multi-architecture 948.
