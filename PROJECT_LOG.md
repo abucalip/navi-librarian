@@ -5,12 +5,12 @@
 - All four required exact-head workflows passed: Python syntax/acquisition safety run 1194; Docker packaging/full suite/build run 1102; runtime smoke run 911; validation-only multi-architecture run 955. Local test execution was not performed.
 - Publishing/deployment remain paused; no runtime deployment is claimed.
 
-## 2026-10-16 — Classics-list rating enrichment extraction started
+## 2026-10-16 — Classics-list rating enrichment extraction implementation notes
 
 - Branch: `refactor/extract-classics-rating-enrichment`, based on GitHub main at `80935c5bc97cc56bc6fd54efc7416c3a2ed6978e`.
 - Extracted the critical-rating shortlist/enrichment stage into `discovery_classics_ratings.py`; kept provider/cache access in `_musicbrainz_critical_rating` and retained the surrounding `_build_classics_list()` pipeline.
 - Added direct-import regression tests and Docker packaging. Docs updated in status, roadmap, and test plan.
-- Exact-head review and CI remain pending. No local test execution, merge, publication, deployment, or runtime verification is claimed.
+- Final verification and merge are recorded in the subsequent PR #229 closeout entry above. Local test execution was not performed; publishing/deployment remain paused.
 
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
