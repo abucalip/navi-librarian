@@ -1,3 +1,9 @@
+## 2026-10-16 — Personal recommendation allocator adapter integrated (verification pending)
+
+- Integrated the pure allocator into `recommend_new_music()` using immutable candidate records, stable candidate IDs, precomputed ownership status, and original insertion order. Server-side payload construction and diagnostic shaping remain outside the allocator.
+- Added the contract and allocator modules to the Docker COPY list. The change has not been tested locally and exact-head CI is pending; do not treat this as tested or complete.
+- Next: review the full diff and run all four required workflows on the exact PR head. If CI reveals policy parity defects, fix those before merge. Publishing/deployment remain paused.
+
 ## 2026-10-16 — Personal recommendation allocator boundary investigation (incomplete)
 
 - Continued the allocator work after PR #221's contract merge. Added a pure policy allocator and focused tests, then refined the candidate contract with `source_order` because stable tie ordering differs between regional-style reservations and the legacy final fallback.
