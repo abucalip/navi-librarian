@@ -117,3 +117,48 @@ def merge_release_candidates(existing: dict[tuple[str, str], dict[str, Any]], in
         if old is None or str(candidate.get("first_release_date") or "") > str(old.get("first_release_date") or ""):
             merged[identity] = candidate
     return merged
+
+
+def build_new_release_response(
+    candidates: Mapping[tuple[str, str], dict[str, Any]],
+    *,
+    qualified_library_artists: int,
+    artists_scanned: int,
+    lookup_errors: list[dict[str, str]],
+    earliest_year: int,
+    cutoff_date: str,
+    generated_at: float,
+) -> dict[str, Any]:
+    """Sort selected candidates and shape the established New Releases payload.
+
+    This is deliberately a pure response boundary: discovery/provider calls,
+    date-window calculation, candidate eligibility, and error collection remain
+    in the server adapter. Explicit metadata inputs make the response contract
+    directly testable without clocks, network access, or a Navidrome server.
+    """
+    items_out = sorted(
+        candidates.values(),
+        key=lambda item: (
+            str(item.get("first_release_date") or ""),
+            str(item.get("artist") or "").casefold(),
+            str(item.get("album") or "").casefold(),
+        ),
+        reverse=True,
+    )
+    return {
+        "list": "new_releases",
+        "source": "MusicBrainz release groups matched against the Navidrome library",
+        "generated_at": generated_at,
+        "year_from": earliest_year,
+        "date_from": cutoff_date,
+        "qualified_library_artists": qualified_library_artists,
+        "artists_scanned": artists_scanned,
+        "items": items_out[:200],
+        "lookup_errors": lookup_errors[:20],
+        "limitations": [
+            "Only artists with at least one library album containing six or more tracks qualify.",
+            "The release window is the previous 730 days.",
+            "MusicBrainz release-group coverage and release dates may be incomplete.",
+            "The initial refresh is bounded to the 120 library artists with the largest album counts.",
+        ],
+    }
