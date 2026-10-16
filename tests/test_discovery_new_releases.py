@@ -85,7 +85,6 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
         ])
         self.assertEqual(result[("bjork", "newrecord")]["mbid"], "newer")
 
-
     def test_library_scope_uses_full_album_threshold_and_excludes_various_artists(self):
         artists = [
             {"name": "Short Album Artist", "album_count": 9},
