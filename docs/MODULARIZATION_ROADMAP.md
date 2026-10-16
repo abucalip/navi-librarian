@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (mutable MUSIC_DIR coupling audited; no extraction justified)  
+Last reviewed: 2026-10-16 (PR #268 merged; import-completion service extraction in review)  
 Audit base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Purpose
@@ -54,7 +54,7 @@ The current MUSIC_DIR audit found this dependency pattern in navidrome_server.py
 
 **Decision:** do not introduce a settings object or extract the remaining wrappers now. The existing persistence and service-settings modules already accept explicit path callbacks, while navidrome_server.py acts as the mutable runtime owner and compatibility adapter. A new object would duplicate the same getter/setter wiring without eliminating the legacy boundary. The nested settings setters are thin adapters, not independent policy. Revisit only if a broader app-state lifecycle change gives the object a clear owner and can prove that long-running watcher/recovery work observes path changes with the same semantics.
 
-This audit did not change application code. The next active task is the policy-vs-orchestration audit of _discovery_acquire_album_impl(); do not extract it unless a discrete policy responsibility is demonstrated.
+This audit did not change application code. The acquisition coordinator audit is now complete; no discrete policy boundary justified extracting it. The active task is PR #269: move import-completion destination validation and the importing-status persistence guard to a direct-import service with injected dependencies. The compatibility wrapper and dismissal/transition lock remain in the legacy adapter; direct-import safety tests were added. Do not merge until exact-head CI is complete.
 
 
 These are audit targets, not permission to refactor without inspecting current main. Reconfirm each target against current callers, tests, and open PRs before implementation.
@@ -77,9 +77,13 @@ Acceptance criteria:
 - No domain/API imports of `navidrome_server.py` remain except explicitly documented compatibility adapters. The current graph has one direct edge: `app/api/dependencies.py` lazily imports the legacy service inside `get_librarian()`; this is a runtime service-adapter dependency, not an import-time app initialization. The boundary guard must allow only reviewed adapter locations, not only MCP shims.
 - Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
 
-### 2. Acquisition coordinator — conditional, high risk
+### 2. Acquisition coordinator — audited; retain orchestration
 
-After the import-map and AST-test gates, answer one binary question: does `_discovery_acquire_album_impl()` contain policy (candidate selection, conditional source-switch thresholds, retry/state-transition rules) or only orchestration of already-extracted modules? If only orchestration, retain it. Extract only a demonstrated policy seam with direct-import tests.
+Audit against GitHub `main` at `cd5d0240c1ac696417727de938736a1b15f7582b` (2026-10-16), with `_discovery_acquire_album_impl()` at lines 2341–2618 (278 lines by AST size, consistent with the CI size report). The function validates input and settings, calls `slskd_search_polling.collect_search_responses()`, delegates candidate extraction to `_slskd_extract_candidates()`, and delegates queue-error classification to `acquisition_lifecycle.queue_failure_action()`. It then coordinates the existing queue-unless-dismissed adapter, start-state probe, cleanup guard, watcher startup, and public response/status updates.
+
+The remaining inline decisions are tightly coupled to that sequence: only the first ten clear candidates are attempted; a rejected queue source can fall through to the next peer, a fatal authorization/configuration response terminates, and uncertain queue/start outcomes are monitored rather than blindly retried. A definitively stopped source is cleaned before trying another peer, and cleanup refusal terminates fallback. These are consequential state transitions, but the function does not expose a cohesive independent policy API that can be moved without reproducing the orchestration or widening the dependency surface. The existing extracted modules already own the independently testable search, candidate, queue-error, source-switch, cleanup, and watcher responsibilities.
+
+**Decision: retain `_discovery_acquire_album_impl()` as orchestration.** No application code changed. Do not extract it for size alone. Revisit only if a focused characterization effort identifies a smaller policy function with independent callers and direct-import tests. PR #269 is extracting the import-completion service while retaining the AST harness's compatibility-adapter coverage. After merge, revisit the remaining broader-search orchestration test; keep it source-executed unless a production module boundary can preserve real search/retry behavior.
 
 Preserve concurrency and lock behavior, conditional state transitions, persistence, queue uncertainty, recovery, dismissal/import exclusion, watcher startup, mount identity, rollback, no-overwrite behavior, cleanup refusal, and path safety. Add tests for both safe success and unsafe refusal. Do not bundle this work with unrelated refactors.
 
