@@ -106,7 +106,11 @@ class LastFmClientTests(unittest.TestCase):
                 "tags": {"tag": {"name": "Trip Hop"}},
             }
         }
-        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse(payload))
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
         result, error = client.album_popularity("Björk", "Post")
         self.assertIsNone(error)
         self.assertEqual(result, {"listeners": 123, "playcount": 456, "tags": ["trip hop"]})
