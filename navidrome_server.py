@@ -1126,10 +1126,6 @@ def recommend_new_music(count: int = 10) -> str:
                 candidate.get("lastfm_popularity_bonus", 1.0), 3
             ),
             "suggested_tracks": candidate["tracks"][:3],
-            "ownership_check": (
-                "No exact normalized album-title match found in the indexed "
-                "Navidrome inventory; alternate editions may still exist."
-            ),
             "reason": (
                 {
                     "adjacent": "Genre tags connect this artist to your "
@@ -1153,7 +1149,12 @@ def recommend_new_music(count: int = 10) -> str:
 
     for candidate_id in allocation.selected_candidate_ids:
         candidate = candidate_by_id[candidate_id]
-        found.append(recommendation_payload(candidate))
+        result = recommendation_payload(candidate)
+        result["ownership_check"] = (
+            "No exact normalized album-title match found in the indexed "
+            "Navidrome inventory; alternate editions may still exist."
+        )
+        found.append(result)
         artist_recommendation_counts[_artist_identity(candidate)] += 1
         style = candidate.get("diversity_style", "other")
         if style not in diversity_style_targets:
