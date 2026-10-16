@@ -1,11 +1,9 @@
-## 2026-10-16 — Page-route extraction merged; authentication-gate extraction in progress
+## 2026-10-16 — PRs #208 and #209 merged; session-cookie policy extraction in progress
 
-- **PR #208** merged by squash at `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed: syntax/acquisition safety run 1121, Docker packaging/full unit suite/build run 1028, isolated runtime smoke run 837, validation-only multi-architecture run 881. This is a code merge only; publishing/deployment/runtime-on-server are not claimed.
-- **Next focused candidate:** isolate the application login-gate middleware as `app/security/app_login_middleware.py`, with injected auth/session callbacks and direct-import tests for API denial, browser redirect, valid sessions, public routes/assets, and first-run unconfigured behavior. Preserve current behavior exactly. CI is pending; do not merge until all four required workflows pass on the exact final head.
-
-## 2026-10-16 — Page-route extraction in progress (PR pending)
-
-The low-coupling page/asset HTTP handlers are isolated in `app/api/pages.py` behind `create_pages_router()`. Application assembly still resolves the template and bundled cassette path and passes them in; the existing `/` HTML response and `/assets/cassette.png` media type/cache header remain unchanged. Direct-import regressions cover the page body, asset bytes/headers, and hidden schema route. Exact-head CI and review are pending; do not merge until all four required workflows pass on the final head.
+- **PR #208** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax run 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
+- **PR #209** merged as `669379aaed12092b1f826d46e0c3f8675e6ea6eb` from exact tested head `1b248dcb20d7a0f8622f32de6ae0bcfc3e5795ed`. All four required workflows passed (syntax run 1123, Docker/full suite/build 1030, runtime smoke 839, validation-only multi-architecture 883).
+- Both extractions are backend-only and preserve existing route behavior. These merges do not imply image publication, deployment, or production runtime verification.
+- **Current focused candidate:** move the existing session-cookie attributes and HTTPS / first forwarded-protocol decision into `app/security/auth_cookie.py`, keeping `app/main.py` as a compatibility adapter. Direct-import tests cover cookie name/value/lifetime, HttpOnly/SameSite/path, HTTPS, and first-proxy-header behavior. Exact-head CI is pending; do not merge until all four required workflows pass.
 
 ## 2026-10-16 — Independent extraction session: PRs #205 and #207
 

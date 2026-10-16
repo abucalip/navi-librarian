@@ -34,6 +34,7 @@ from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
 from app.api.pages import create_pages_router
 from app.security.app_login_middleware import create_app_login_middleware
+from app.security.auth_cookie import set_auth_cookie as _set_auth_cookie_impl
 
 
 
@@ -87,17 +88,13 @@ def _session_username(token, now=None):
 
 
 def _set_auth_cookie(response, request, username):
-    response.set_cookie(
-        AUTH_COOKIE_NAME,
-        _make_session_token(username),
+    _set_auth_cookie_impl(
+        response,
+        request,
+        username,
+        make_session_token=_make_session_token,
+        cookie_name=AUTH_COOKIE_NAME,
         max_age=AUTH_SESSION_SECONDS,
-        httponly=True,
-        secure=(
-            request.url.scheme == "https"
-            or request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "https"
-        ),
-        samesite="strict",
-        path="/",
     )
 
 
