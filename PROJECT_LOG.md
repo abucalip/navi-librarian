@@ -1,3 +1,17 @@
+## 2026-10-16 — Open-PR refresh after extraction session
+
+- PR #184, `ui: make Artist Deep Dive artist-led and drop its dead controls`, appeared during this session. Its branch `ui/artist-deep-dive` is based on `9f05bed`; comparison against the refreshed main showed it 7 commits behind and one commit ahead of its merge base.
+- The PR description explicitly says the required human manual browser checklist is NOT RUN. Treat its automated/browser-agent measurements as separate evidence, not a substitute for the documented human checklist. Do not merge until the branch is refreshed, required exact-head CI is verified, and the human checklist is recorded on that exact head.
+- This backend session did not modify PR #184. PR #23 remains the modularization roadmap; PRs #44/#45 remain closed per user direction.
+
+## 2026-10-16 — slskd progress summary and speed estimator extracted (PRs #182–#183)
+
+- **PR #182 — progress summary:** extracted matched-record aggregation into `slskd_transfers.summarize_transfer_progress()`; preserved the legacy HTTP and matching adapters, speed snapshot lock, and response schema. Tested head `045131f58365dd0e6538c1712f37f56f639c65ad`; all four required workflows passed (syntax 1016, Docker/full suite/build 923, runtime smoke 732, non-publishing multi-architecture validation 776). Squash merge `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`.
+- **PR #183 — speed estimator:** extracted pure delta-based bytes/second calculation into `slskd_transfers.estimate_transfer_speed()`; snapshot state/identity/locking remain in `navidrome_server.py`. Final tested head `fac29c108a1d630f2ffbc6af8dad8a5e88c5368f`; all four required workflows passed (syntax 1019, Docker/full suite/build 926 with 342 tests, runtime smoke 735, non-publishing multi-architecture validation 779). Initial test assertion was corrected after CI showed the fixture elapsed 1 second; exact final head passed. Squash merge `e4e9bd1fad9536f00f3908d753b66147d30ca03f`.
+- Assistant-side local test commands were not run. No image publication, deployment, or production runtime verification is claimed.
+- Acquisition dismissal HTTP 409 remains deferred per explicit user direction. No cleanup behavior was changed and safety checks were not weakened.
+- Next action: refresh main/open PRs/CI and choose the next focused, low-coupling extraction.
+
 ## 2026-10-16 — Two slskd transfer-boundary extractions merged
 
 - **PR #180 — queue request extraction:** moved the slskd queue POST into `slskd_transfers.queue_download_files()`; retained the dismissal guard and orchestration in `acquisition_orchestration` and `navidrome_server.py`. Exact final tested head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`; syntax run 1008, Docker packaging/full unit suite/build run 915, container runtime smoke run 724, and validation-only Docker image run 768 all succeeded. Squash merge `7c670f2eac838934bc9afa7f40f892ff595ca4ca`.

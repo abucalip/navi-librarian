@@ -2804,45 +2804,13 @@ def _discovery_live_download_progress(job):
         _slskd_transfers_module.match_expected_transfer_records(expected_files, tracked)
     )
 
-    completed_states = {"succeeded", "completed"}
-    completed = 0
-    total_bytes = 0
-    transferred_bytes = 0
-    file_byte_snapshot = {}
-
-    for name, expected in expected_by_name.items():
-        item = tracked_by_name.get(name) or {}
-        state = str(item.get("state") or "").replace("_", "").casefold()
-        is_completed_state = state in completed_states
-        if is_completed_state:
-            completed += 1
-
-        try:
-            size = max(0, int(expected.get("size") or item.get("size") or 0))
-        except (TypeError, ValueError):
-            size = 0
-        transferred = 0
-        raw_transferred = 0
-        has_transfer_counter = False
-        for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
-            if item.get(key) is not None:
-                try:
-                    raw_transferred = max(0, int(item[key]))
-                    transferred = raw_transferred
-                    has_transfer_counter = True
-                    break
-                except (TypeError, ValueError):
-                    pass
-        if is_completed_state and size:
-            transferred = size
-        if size:
-            transferred = min(transferred, size)
-            total_bytes += size
-            transferred_bytes += transferred
-            if transferred >= size and not is_completed_state:
-                completed += 1
-        # Speed uses only actual counters, never an inferred completed-file size.
-        file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
+    progress = _slskd_transfers_module.summarize_transfer_progress(
+        expected_by_name, tracked_by_name
+    )
+    completed = progress["completed_tracks"]
+    total_bytes = progress["total_size_bytes"]
+    transferred_bytes = progress["transferred_size_bytes"]
+    file_byte_snapshot = progress["file_byte_snapshot"]
 
     now = time.monotonic()
     snapshot_key = (
@@ -2850,20 +2818,14 @@ def _discovery_live_download_progress(job):
         str(job.get("album_key") or _music_key(job.get("album"))),
         str(username).casefold(),
     )
-    speed = None
     with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
         prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
         _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
             "at": now, "files": file_byte_snapshot,
         }
-        if prior:
-            elapsed = now - prior["at"]
-            if elapsed >= 0.5:
-                delta = sum(
-                    max(0, value - int(prior["files"].get(name, 0)))
-                    for name, value in file_byte_snapshot.items()
-                )
-                speed = int(delta / elapsed)
+        speed = _slskd_transfers_module.estimate_transfer_speed(
+            file_byte_snapshot, prior, now
+        )
 
     percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
     total_tracks = len(expected_by_name)
