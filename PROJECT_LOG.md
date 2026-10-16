@@ -1,3 +1,22 @@
+## 2026-10-16 — PR #269 in review: import-completion service extraction
+
+- Based on GitHub main after PR #268 merge `d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`. Added `acquisition_import_service.import_completed_source_locked()` with injected path naming, authoritative status persistence, hardened import operation, and clock dependencies. The legacy `_discovery_import_completed_source_locked()` is now a narrow adapter; the outer transition-lock/dismissal guard is unchanged.
+- Added direct-import tests for failure to persist `importing` (no filesystem mutation), successful status ordering and mount identity arguments, symlinked artist destination refusal, existing destination preservation, and unavailable library roots. The existing AST-based compatibility test remains in place and now executes the thin adapter, so this extraction does not remove lock/dismissal coverage.
+- PR #269 head before documentation closeout: `af51a2ce160ff82591ab0a3dcb63eb54ca2b792b`. At that point syntax and container smoke workflows passed; Docker packaging and non-publishing multi-architecture validation were still running. No local tests were run. Recheck all four workflows on the final head before merge.
+- Status: implemented in PR; not merged. Publishing remains paused; no deployment/runtime verification.
+
+---
+
+## 2026-10-16 — Acquisition coordinator policy/orchestration audit
+
+- Audited GitHub `main` at `cd5d0240c1ac696417727de938736a1b15f7582b`. `_discovery_acquire_album_impl()` spans lines 2341–2618 and is 278 lines by the existing AST size measurement.
+- Traced its responsibilities to extracted owners: `slskd_search_polling.collect_search_responses()` handles search polling; `_slskd_extract_candidates()` handles candidate policy; `acquisition_lifecycle.queue_failure_action()` classifies queue errors; existing adapters/services handle dismissal-serialized queueing, source-start checks, safe cleanup/source switching, and watcher startup.
+- Remaining inline rules are interleaved with the orchestration: cap attempts at ten clear candidates; distinguish source rejection from fatal HTTP authorization/configuration errors; monitor uncertain queue outcomes rather than risk duplicate downloads; clean a definitively stopped source before fallback; and terminate when cleanup cannot be confirmed. These are safety-critical transitions, but no smaller cohesive policy API was identified that would reduce coupling rather than duplicate the orchestration.
+- **Decision: retain `_discovery_acquire_album_impl()` as orchestration.** No application code changed and no tests were run for this audit. The size guard already tracks its 278-line size; do not extract it for size alone.
+- Next: trace and migrate the remaining AST-coupled import-safety test in `tests/test_acquisition_safety.py` only after identifying a direct-import production owner and preserving destination path, filesystem mount identity, no-overwrite, and importing-status persistence-failure coverage. Operational MCP functions remain blocked on explicit owner decision.
+
+---
+
 ## 2026-10-16 — Mutable MUSIC_DIR coupling audit
 
 - Audited every MUSIC_DIR occurrence in the current navidrome_server.py source fetched from GitHub main (3,031 source lines; 3,032 split fields including the trailing empty element): initialization at line 88; persistence callback wiring at 218; raw library tag scan at 230; settings defaults and downloads fallback at 1517/1531; central and nested writers at 1545–1546, 1591–1592, and 1665–1666; settings-get adapters at 1580 and 1651; and acquisition recovery/watcher dependency injection at 2271/2286. Line references are audit-time references and should be refreshed before a later code change.
