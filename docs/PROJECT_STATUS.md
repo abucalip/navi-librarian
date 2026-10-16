@@ -1,3 +1,13 @@
+## 2026-10-16 — Modularization boundary audit and next priorities
+
+- Read-only audit covered remaining discovery, slskd, and acquisition boundaries after PRs #225–#226. No code or tests changed in the audit.
+- **First priority — discovery:** trace `_build_classics_list()` through callers/tests and extract one narrow candidate-gathering/enrichment stage behind explicit provider/cache dependencies. Preserve ranking, list order, payload shape, cache ownership, and rate limiting; add direct-import contract tests. Then re-evaluate remaining provider integration and list-builder responsibilities rather than moving whole builders mechanically.
+- **Acquisition:** audit `_discovery_acquire_album_impl()` as the remaining high-risk coordinator. Extract only if a small interface separates policy from lock/persistence/queue/watcher wiring; retain regression coverage for races, conditional state transitions, dismissal/import exclusion, uncertain queue outcomes, recovery, cleanup refusal, mount identity, rollback, no-overwrite, and path safety.
+- **slskd:** search polling, quality, transfer matching, progress, and connectivity helpers are already extracted. Treat remaining server functions as adapters/wiring unless a concrete duplicated policy or independent orchestration gap is demonstrated; no size-only extraction.
+- **Completion accounting:** reconcile current `app/main.py` / API dependencies on `navidrome_server.py`, settings/application assembly, and AST-coupled acquisition tests against current callers and direct-import coverage before declaring modularization complete. Preserve existing compatibility until the separate MCP-retirement gate is met.
+- Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred. This audit ran no tests and verified no new CI; it makes no new claims about publication, deployment, or runtime behavior.
+- **Next action:** trace the classics-list builder and its tests, define the smallest independent extraction contract, then open a focused PR only if behavior can be preserved and verified.
+
 ## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
 - **PR #225 — cached discovery-list payload shaping:** exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. Extracted cached-list filtering and response projection to `discovery_list_payload.build_cached_discovery_list_response()`; server-side validation, feedback persistence/read, For Me inventory lookup, and dependency wiring remain in the adapter. All four exact-head workflows passed: syntax/acquisition safety 1187; Docker packaging/full suite (477 tests)/build 1095; runtime smoke 904; validation-only multi-architecture 948.
