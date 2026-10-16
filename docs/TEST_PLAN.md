@@ -1060,3 +1060,11 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - PR #193 direct-import tests in `tests/test_musicbrainz_album_year.py` cover exact title/artist-credit matching, earliest valid year selection, missing input, and negative-cache reuse. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; all four required workflows passed: syntax/acquisition safety `38881961573`, Docker/full suite/build `38881961574`, runtime smoke `38881961553`, validation-only multi-architecture `38881961580`.
 - PR #195 direct-import tests in `tests/test_acquisition_candidate_queue.py` cover list and filename validation, normalized sizes, optional quality-summary fallback, and malformed-size exception behavior. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; all four required workflows passed: syntax/acquisition safety `38882195745`, Docker/full suite/build `38882195774`, runtime smoke `38882195700`, validation-only multi-architecture `38882195820`.
 - These are GitHub CI results; no separate assistant-side local test execution is claimed. No real slskd operation, destructive filesystem test, publication, deployment, or production runtime verification occurred.
+
+
+## 2026-10-16 — Navidrome response-shaping extraction verification (PRs #196 and #198)
+
+- PR #196 exact head 4b501c64c82a69af1805a7f6195b4fc15ef0c836: syntax/acquisition-safety workflow 1088 passed; Docker packaging/full unit suite/build 995 passed; container runtime smoke 804 passed; validation-only multi-architecture image validation 848 passed.
+- PR #198 exact head a718780edcb85eb8f4453e44a2d5a4925a512314: syntax/acquisition-safety workflow 1090 passed; Docker packaging/full unit suite/build 997 passed; container runtime smoke 806 passed; validation-only multi-architecture image validation 850 passed.
+- Direct-import regressions were added to tests/test_navidrome_client.py for search categories/output fields and album details with scalar tracks/missing fields. CI's packaging workflow ran the full unit suite for both exact heads. Assistant-side local test commands were not run.
+- Backend-only changes; no manual UI checklist required. No live Navidrome integration test, publication, deployment, or production runtime verification is claimed. Publishing remains paused.
