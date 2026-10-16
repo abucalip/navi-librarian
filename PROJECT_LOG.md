@@ -367,3 +367,11 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
 - PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
 - Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — PR #214 refreshed: Deezer tracklist shaping extraction
+
+- Recreated this candidate directly on current `main` after the original branch diverged; the refreshed diff is based on the latest main revision and preserves intervening merged work.
+- Extracted only the pure track-row-to-response transformation into `app/services/deezer_tracklist.py`. The metadata router retains provider I/O, matching, response assembly, and error handling.
+- Direct-import regression tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
+- Exact-head CI and final diff review are pending. Do not merge until all four required workflows pass on the refreshed PR head. No publication or deployment.
