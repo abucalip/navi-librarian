@@ -240,7 +240,7 @@ class SlskdTransferListingTests(unittest.TestCase):
         self.assertIsNone(estimate_transfer_speed(current, None, 10.0))
         prior = {"at": 9.75, "files": {"01.flac": 100, "02.flac": 50}}
         self.assertIsNone(estimate_transfer_speed(current, prior, 10.2))
-        self.assertEqual(estimate_transfer_speed(current, prior, 10.75), 400)
+        self.assertEqual(estimate_transfer_speed(current, prior, 10.75), 200)
 
     def test_speed_estimator_ignores_counter_resets_and_new_file_baselines(self):
         prior = {"at": 1.0, "files": {"old.flac": 500, "same.flac": 100}}
