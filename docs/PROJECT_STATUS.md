@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-16 (AST test inventory completed; dependency map CI pending)  
+Last reviewed: 2026-10-16 (dependency map reviewed; AST inventory completed)  
 GitHub source of truth: `main` at audit baseline `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Current focus
@@ -9,9 +9,9 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Review the `modularization-dependency-map` CI artifact from the current audit PR; application source is unchanged from baseline `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`.
-2. Migrate the three AST-coupled tests listed in `docs/architecture/AST_TEST_INVENTORY.md`, preserving safety/lifecycle coverage.
-3. Then add the allowlist-aware app-import boundary guard before evaluating `service_settings.py` wrappers and the acquisition coordinator.
+1. Migrate the three AST-coupled tests listed in `docs/architecture/AST_TEST_INVENTORY.md`, starting with `tests/test_slskd_transfer_lookup.py` and preserving acquisition safety/lifecycle coverage.
+2. Add an allowlist-aware app-import boundary guard that recognizes the reviewed lazy adapter in `app/api/dependencies.py` and preserves the app-import isolation regression.
+3. Then evaluate `service_settings.py` wrappers and the acquisition coordinator's policy-vs-orchestration seam.
 4. Do not force additional classics-builder or size-only slskd extractions.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`.
