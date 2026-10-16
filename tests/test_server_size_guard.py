@@ -70,11 +70,11 @@ class ServerSizeGuardTests(unittest.TestCase):
 
     def test_recommendation_exception_is_tightened_to_450_lines(self):
         self.assertEqual(FUNCTION_EXCEPTIONS["recommend_new_music"]["max_lines"], 450)
-        source = "def recommend_new_music():\\n" + "    pass\\n" * 449
+        source = "def recommend_new_music():\n" + "    pass\n" * 449
         self.assertEqual(check_source(source, server_line_limit=1000), [])
 
         errors = check_source(
-            source + "    pass\\n",
+            source + "    pass\n",
             server_line_limit=1000,
         )
         self.assertEqual(len(errors), 1)
