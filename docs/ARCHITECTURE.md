@@ -346,3 +346,12 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Last.fm top album retrieval — completed (PR #175)
 
 `LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` requests and normalization of returned album metadata. The legacy `navidrome_server._lastfm_top_albums()` remains a compatibility adapter and continues applying discovery-specific album-candidate eligibility filtering. The extraction preserves request pacing, timeout, the 30-day cache TTL, caller-requested limit, and normalized output contract. Exact tested head `6b5e32b1144e9f3517247110ea4383b287ce33f4`; merged to main at `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. All four required CI workflows passed on the exact head. No publication, deployment, or production runtime verification is claimed.
+
+
+## Reviewed candidate normalization — PR #195
+
+`acquisition_candidate_queue.py` owns pure validation and normalization of user-reviewed slskd file records and optional quality-summary JSON. The legacy `discovery_queue_slskd_candidate()` remains the adapter for response mapping, slskd queue I/O, and watcher startup. Invalid file-list and filename messages, malformed quality-summary fallback, and malformed file-size exception mapping are preserved. PR #195 tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`, merged at `5629d259468a0f748fb5d3fdb78819a0fb00d73c`; all four required exact-head workflows passed.
+
+## MusicBrainz album-year lookup — PR #193
+
+`musicbrainz_album_year.py` owns the exact release-group query, title and artist-credit matching, request pacing, and positive/negative cache. `app/api/metadata.py` retains `_musicbrainz_album_year()` as a compatibility adapter and preserves the album-year endpoint contract. PR #193 tested head `2b426587e6cb4dc011c85099021041d9f9450744`, merged at `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`; all four required exact-head workflows passed. No publication or deployment is claimed.
