@@ -6,7 +6,7 @@ _SECRET_NAME = re.compile(
     r"(password|passwd|secret|api[_-]?key|access[_-]?token|client[_-]?secret)",
     re.IGNORECASE,
 )
-_ASSIGNMENT = re.compile(r"^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=")
+_ASSIGNMENT = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=")
 
 
 def redact_assignment(line):
