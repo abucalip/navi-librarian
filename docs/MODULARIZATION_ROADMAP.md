@@ -27,16 +27,6 @@ Acceptance criteria:
 
 ### 2. Acquisition coordinator — conditional, high risk
 
-Reconcile current `app/main.py` and API dependencies on `navidrome_server.py`, package configuration, compatibility adapters, and AST-coupled acquisition tests.
-
-Acceptance criteria:
-- Identify remaining runtime dependencies from actual imports/callers.
-- Distinguish intentional compatibility seams from accidental coupling.
-- Prefer a dependency map and targeted test improvements over another extraction when no cohesive behavior boundary exists.
-- Do not retire MCP compatibility as part of routine modularization; that requires its own explicit decision and migration gate.
-
-### 2. Acquisition coordinator — conditional, high risk
-
 Audit `_discovery_acquire_album_impl()` only after the application-assembly and AST-test dependency audit. Extract only if a narrow, independently testable policy/coordination boundary is evident.
 
 Preserve concurrency and lock behavior, conditional state transitions, persistence, queue uncertainty, recovery, dismissal/import exclusion, watcher startup, mount identity, rollback, no-overwrite behavior, cleanup refusal, and path safety. Add tests for both safe success and unsafe refusal. Do not bundle this work with unrelated refactors.
