@@ -1053,3 +1053,10 @@ This is the selected next work item. The dismissal HTTP 409 root-cause investiga
 ## Last.fm top album extraction — completed (PR #175, 2026-10-16)
 
 Direct-import regression coverage verifies scalar and list API payloads, empty-title filtering, normalized metadata, request parameters/limit/timeout/cache TTL, cache hits, missing payloads, and compatibility-adapter album eligibility filtering. The exact final PR head `6b5e32b1144e9f3517247110ea4383b287ce33f4` passed all four required workflows: Python syntax check (38829855110), Docker packaging validation including the full unit suite/build (38829855077), container runtime smoke test (38829855100), and validation-only multi-architecture image validation (38829855093). PR #175 was squash-merged at `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. No separate assistant-side local test execution, image publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Extraction regression coverage: PRs #193 and #195
+
+- PR #193 direct-import tests in `tests/test_musicbrainz_album_year.py` cover exact title/artist-credit matching, earliest valid year selection, missing input, and negative-cache reuse. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; all four required workflows passed: syntax/acquisition safety `38881961573`, Docker/full suite/build `38881961574`, runtime smoke `38881961553`, validation-only multi-architecture `38881961580`.
+- PR #195 direct-import tests in `tests/test_acquisition_candidate_queue.py` cover list and filename validation, normalized sizes, optional quality-summary fallback, and malformed-size exception behavior. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; all four required workflows passed: syntax/acquisition safety `38882195745`, Docker/full suite/build `38882195774`, runtime smoke `38882195700`, validation-only multi-architecture `38882195820`.
+- These are GitHub CI results; no separate assistant-side local test execution is claimed. No real slskd operation, destructive filesystem test, publication, deployment, or production runtime verification occurred.
