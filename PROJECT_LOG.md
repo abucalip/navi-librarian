@@ -1,3 +1,11 @@
+## 2026-10-16 — Adopt scripted modularization audit workflow
+
+- Adopted the audit recommendations as a gated workflow rather than treating them as permission for immediate extraction. Added `scripts/dep_map.py`, which emits deterministic AST import edges for repository Python modules and calculates the transitive local import closure from `app.main`; added focused tests for import parsing and local import resolution in `tests/test_dep_map.py`.
+- Updated `docs/MODULARIZATION_ROADMAP.md`, `docs/TEST_PLAN.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/PROJECT_STATUS.md`, and `docs/ARCHITECTURE.md`. The sequence is now: generate/review the map; inventory AST/source-reading tests and move behavior coverage to direct imports without weakening safety coverage; establish an allowlist-aware `navidrome_server` app-import guard; then assess settings wrappers and the acquisition coordinator.
+- Tightened the coordinator decision to one question: does `_discovery_acquire_album_impl()` contain policy (candidate selection, retry/source-switch thresholds, state transitions) or only orchestration? Keep pure orchestration in place; extract only a demonstrated policy seam.
+- The generated `docs/architecture/dependency-map.json` is intentionally not fabricated in this change: it must be produced and reviewed from the exact source revision by running `python scripts/dep_map.py --output docs/architecture/dependency-map.json`.
+- No local test commands were run in this session. The initial PR head `cc2a8bdbe2a0815b3335f6c3bbde2bccfa2ddf94` passed all four required GitHub Actions workflows (Python syntax/acquisition safety, Docker packaging/full suite/build, container runtime smoke, and non-publishing multi-architecture validation). Because this log entry itself is a later commit, the final updated PR head must be checked again before merge. No merge, publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — Classics builder boundary audit: no further extraction justified
 
 - Traced `_build_classics_list()` on main at `b9a97b5e37aff297c836d2039763de7b166441ba`. Its only direct production reference is the classics builder registration in the discovery-list dispatch table; that call is an orchestration entry point, not a reusable policy function.

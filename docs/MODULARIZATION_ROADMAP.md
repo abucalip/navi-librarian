@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16  
-Baseline: GitHub `main` at `b9a97b5e37aff297c836d2039763de7b166441ba`
+Last reviewed: 2026-10-16 (scripted dependency audit adopted)  
+Baseline: GitHub `main` at `73897c11bd82f2c0869bad58094d09088b2c6dd2`
 
 ## Purpose
 
@@ -13,21 +13,26 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
-### 1. Application assembly and test coupling — next audit
+### 1. Application assembly and test coupling — scripted audit in progress
 
-The `_build_classics_list()` trace is complete. Do not schedule another classics extraction unless new evidence shows a cohesive policy boundary.
+Use `scripts/dep_map.py` to produce the deterministic AST import map at `docs/architecture/dependency-map.json`. Review the generated graph against actual callers, runtime wiring, package/Docker inclusion, and open PRs; static imports do not capture dynamic imports or dependency injection.
 
-Audit current `app/main.py` and API dependencies on `navidrome_server.py`, package configuration, compatibility adapters, and AST-coupled acquisition tests.
+Complete these gates in order; do not jump straight to another extraction:
+1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
+2. Inventory tests that read or parse `navidrome_server.py` as source (AST/source-string coupling), distinguish structural assertions from behavior tests, and move behavior coverage to direct imports of the extracted `acquisition_*` / `discovery_*` modules without weakening safety coverage.
+3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
+4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
+5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
 
 Acceptance criteria:
-- Identify runtime dependencies from actual imports and callers.
-- Distinguish intentional compatibility seams from accidental coupling.
-- Prefer a dependency map and targeted test improvements over another extraction when no cohesive behavior boundary exists.
+- The committed dependency map corresponds to the exact source revision audited and is regenerated when relevant imports change.
+- AST-coupled tests are listed by filename and purpose; behavior tests target production modules directly, with adapter tests retained where compatibility requires them.
+- No domain API depends on `navidrome_server.py` except a documented, intentional compatibility seam; static graph and source grep are reviewed together.
 - Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
 
 ### 2. Acquisition coordinator — conditional, high risk
 
-Audit `_discovery_acquire_album_impl()` only after the application-assembly and AST-test dependency audit. Extract only if a narrow, independently testable policy/coordination boundary is evident.
+After the import-map and AST-test gates, answer one binary question: does `_discovery_acquire_album_impl()` contain policy (candidate selection, conditional source-switch thresholds, retry/state-transition rules) or only orchestration of already-extracted modules? If only orchestration, retain it. Extract only a demonstrated policy seam with direct-import tests.
 
 Preserve concurrency and lock behavior, conditional state transitions, persistence, queue uncertainty, recovery, dismissal/import exclusion, watcher startup, mount identity, rollback, no-overwrite behavior, cleanup refusal, and path safety. Add tests for both safe success and unsafe refusal. Do not bundle this work with unrelated refactors.
 
