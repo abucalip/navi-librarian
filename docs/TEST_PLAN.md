@@ -1,3 +1,6 @@
+## 2026-10-16 — Watcher progress-accounting extraction (verification pending)
+
+Added direct-import tests in `tests/test_acquisition_progress_accounting.py` for progress increase resetting the timer and clearing a stall marker, unchanged/decreasing counters preserving the previous progress time, and the exact 120-second boundary. The helper is included in Docker packaging. Focused/full tests and all four exact-head CI workflows remain pending.
 ## 2026-10-16 — Classics critical-rating helper (PR #229 merged)
 
 Added direct-import tests in `tests/test_discovery_classics_ratings.py` for listener-ranked shortlist ordering, the default 80-item cap (configurable in focused tests), the first-30 year-lookup policy, stable tie order, missing-rating no-op behavior, rating/vote/year updates, and invalid negative limits. The provider is injected so tests require no network or credentials. Exact PR head `28c364dca41971ea90667c175663de17b41ca7ab`: syntax/acquisition safety run 1194 passed; Docker packaging, unit tests, and build run 1102 passed; container runtime smoke run 911 passed; validation-only multi-architecture run 955 passed. All reported steps succeeded. Local test execution was not performed.
