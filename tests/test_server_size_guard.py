@@ -1,7 +1,7 @@
 """Regression tests for the legacy server size ratchet."""
 import unittest
 
-from scripts.check_server_size import check_source
+from scripts.check_server_size import FUNCTION_EXCEPTIONS, check_source
 
 
 class ServerSizeGuardTests(unittest.TestCase):
@@ -67,6 +67,18 @@ class ServerSizeGuardTests(unittest.TestCase):
         self.assertIn("recommend_new_music is 5 lines (limit 4)", errors[0])
         self.assertIn("temporary test exception", errors[0])
         self.assertIn("reduce after extraction", errors[0])
+
+    def test_recommendation_exception_is_tightened_to_450_lines(self):
+        self.assertEqual(FUNCTION_EXCEPTIONS["recommend_new_music"]["max_lines"], 450)
+        source = "def recommend_new_music():\\n" + "    pass\\n" * 449
+        self.assertEqual(check_source(source, server_line_limit=1000), [])
+
+        errors = check_source(
+            source + "    pass\\n",
+            server_line_limit=1000,
+        )
+        self.assertEqual(len(errors), 1)
+        self.assertIn("recommend_new_music is 451 lines (limit 450)", errors[0])
 
     def test_reports_invalid_python_source(self):
         errors = check_source(
