@@ -1,11 +1,12 @@
-## 2026-10-16 — Dashboard-pick service extraction (PR preparation)
+## 2026-10-16 — PR #189 merged: dashboard-pick service extraction
 
-- Branch `refactor/extract-dashboard-pick-service`, based on GitHub main `2b9eb6a88c752aa1d2e65687641d05629aa89427`.
-- Moved dashboard pick assembly (three discovery lanes, album eligibility, case-insensitive deduplication, category balancing, and random fill) from `app/api/dashboard.py` into `app/services/dashboard.py`. The HTTP route retains count validation, the lazy service dependency, response shape, and shuffle injection.
-- Added direct-import service regressions while retaining route-level tests for HTTP status/contract and injected-service calls.
-- Focused tests, full unit suite, syntax/package checks, and the four exact-final-head CI workflows are pending. No local tests, merge, publication, deployment, or production runtime verification is claimed.
-- This does not touch acquisition cleanup or the deferred HTTP 409 investigation.
-- Next: finish documentation/diff review, open the PR, and verify all four required workflows on its exact final head.
+- PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested PR head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`.
+- Extracted dashboard-pick assembly into `app/services/dashboard.py`: three discovery lanes, album eligibility, case-insensitive artist/album deduplication, balanced category selection, and random fill. `app/api/dashboard.py` retains HTTP validation, lazy dependency injection, and the endpoint response contract.
+- Direct-import regressions are in `tests/test_dashboard_service.py`; existing route tests remain. All four required exact-head workflows passed: Python syntax/acquisition safety run 1052; Docker packaging/full suite/build run 959; container runtime smoke run 768; validation-only multi-architecture image run 812.
+- Assistant-side local tests were not independently run. No image publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
+- During setup, the new test file was briefly written to main by an omitted branch argument; it was immediately removed in commit `039b5ed14834aeb63627f141c1bafa1d96c8589b`, confirmed absent from main, and committed correctly on the PR branch. The merge contains the intended test file; no accidental test file remains on main.
+- Main tip at closeout: `f5f355f8bdc0599bb240933e248177c7b0517ff5`. Next: refresh main/open PRs/CI and select the next independent low-coupling extraction.
+
 ## 2026-10-16 — PRs #186 and #187 merged
 
 - **PR #186 — empty-state copy/state kinds:** manual browser report published in PR comments for tested head `0c12a43cd40211d522868dab7caa70c8a5fbf6e6`; checklist passed with zero failures. All four GitHub Actions workflows passed on that exact tested head (syntax run 1041, Docker packaging run 948, runtime smoke run 757, validation-only image run 801). Squash merge: `d42618b63f141049d5b0e6558e81174ef5c1418f`.
