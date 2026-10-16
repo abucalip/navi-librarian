@@ -753,3 +753,15 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Final PR head `908783f0a46618c53e4f3e4c4dcf298ec33850fc` passed all four required workflows: Python syntax/acquisition safety (`38959799724`), Docker packaging/full unit suite/build (`38959799777`), container runtime smoke (`38959799720`), and validation-only multi-architecture image validation (`38959799806`, publishing paused). The import-boundary CI step passed. No assistant-side local test command ran.
 - PR #254 merged by squash as `8bfd6a57179aec46a672343745b494dff60fec02`. Verified GitHub reports the PR closed and merged. No image publication, deployment, or production-runtime verification was performed.
 - Next task: characterize `recommend_new_music()` deterministically with fake provider responses and a fixed listen/library fixture; trace `discovery_library_snapshot.py` and resolve inventory overlap before extracting candidate gathering.
+
+
+---
+
+## 2026-10-16 — Broader-query fallback test decoupling (PR pending)
+
+- Based on GitHub main commit `de94d9bbb9790129ed86dc9fefd28a1850a9c721`. Branch: `test/direct-search-fallback-regression`.
+- Moved the broader-query fallback regression out of the AST harness in `tests/test_acquisition_safety.py` into direct-import coverage in `tests/test_slskd_search_polling.py`. The direct test uses the production query generator and polling implementation, asserts the exact Tinariwen query pair, request timeouts (15,000 ms then 6,000 ms), per-attempt collected response counts (0 then 1), aggregate counts, and ordered query diagnostics via `acquisition_search_diagnostics.no_match_message()`.
+- The AST harness no longer compiles `_discovery_acquire_album_impl()`; it remains for the import/dismissal adapter and other acquisition lifecycle cases. No production acquisition code, candidate eligibility, queueing, concurrency, persistence, or filesystem-safety behavior was changed or removed.
+- First CI attempts exposed two test-only defects: an empty class left after removing the AST test, and an assertion that overlooked the third generated query variant. Both were corrected; the fallback search stops after the second query returns a usable payload.
+- Final code/test head `8a464edf8313594ddde69f0be90135fce4782f07` passed all four required workflows: Python syntax/acquisition safety (`38969125353`), Docker packaging/full unit suite/build (`38969125409`), isolated container runtime smoke (`38969125262`), and validation-only multi-architecture image validation (`38969125387`, publishing paused). The full suite passed 554 tests in both unit-test workflows. The latest code head has no production behavior changes. No live slskd search/download, filesystem mutation, deployment, or production runtime verification was performed.
+- A documentation-only closeout commit updates this record and the roadmap/status; required CI must be checked again on the resulting exact PR head before merge.
