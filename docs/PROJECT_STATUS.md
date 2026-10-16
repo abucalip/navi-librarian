@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (transfer lookup test migration merged)  
-GitHub source of truth: `main` includes transfer-test migration merge `60cf07ffa05416355053660c1823f6af5b18716b` and closeout documentation commit `1773db29515c8c6c144217b3029b9bbbce5a2610`
+Last reviewed: 2026-10-16 (pure-helper AST test migration prepared)  
+GitHub source of truth: `main` includes transfer-test migration merge `60cf07ffa05416355053660c1823f6af5b18716b`; pure-helper migration is pending PR verification
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Migrate the two remaining AST-coupled tests in `docs/architecture/AST_TEST_INVENTORY.md`, starting with pure-helper coverage and preserving acquisition safety/lifecycle guarantees.
+1. Finish and verify the pure-helper migration in the active PR; then map remaining acquisition-safety lifecycle tests to direct production interfaces before removing any AST harness.
 2. Add an allowlist-aware app-import boundary guard that recognizes the reviewed lazy adapter in `app/api/dependencies.py` and preserves the app-import isolation regression.
 3. Then evaluate `service_settings.py` wrappers and the acquisition coordinator's policy-vs-orchestration seam.
 4. Do not force additional classics-builder or size-only slskd extractions.
