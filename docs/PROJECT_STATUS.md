@@ -1,3 +1,11 @@
+## 2026-10-16 — Two slskd transfer-boundary extractions merged
+
+- Main code merge #180: `7c670f2eac838934bc9afa7f40f892ff595ca4ca`. Exact tested PR head: `ce0e635cc77c687958d6ad1c1a852e55476c14b2`. Queue HTTP request extracted to `slskd_transfers.queue_download_files()`; legacy adapter and dismissal/orchestration contract retained. Exact-head CI passed: syntax run 1008, Docker packaging/full suite/build run 915, runtime smoke run 724, validation-only image run 768.
+- Main code merge #181: `3df14d3c59bb7e5a689d797028e45468c6a87ee7`. Exact tested PR head: `cf78b4188a549d6e1b2b98c76a63a6bc0826d129`. Expected/tracked transfer matching extracted to `slskd_transfers.match_expected_transfer_records()`; live progress response and byte/speed calculations retained. Exact-head CI passed: syntax run 1010, Docker packaging/full suite/build run 917, runtime smoke run 726, validation-only image run 770.
+- Local assistant-side test commands were not run. Full unit tests ran as part of the CI packaging jobs. Publishing, deployment, and production runtime verification remain unperformed.
+- The reported acquisition-dismissal HTTP 409 remains deferred; no cleanup or dismissal behavior was changed.
+- Next action: refresh GitHub main/open PRs and select the next independent roadmap seam.
+
 ## 2026-10-16 — Last.fm similar-artist extraction merged
 
 - PR #178 merged; merge commit `f18574b74a564031c5268cf04c956475d64dc30c`. PR head verified at `a97be052d3a1e74843feaacd6403d10ce5aad6af`.
