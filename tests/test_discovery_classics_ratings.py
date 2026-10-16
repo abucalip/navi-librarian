@@ -69,3 +69,50 @@ class ClassicsCriticalRatingTests(unittest.TestCase):
             enrich_critical_ratings([], lambda *args, **kwargs: None, shortlist_limit=-1)
         with self.assertRaises(ValueError):
             enrich_critical_ratings([], lambda *args, **kwargs: None, year_limit=-1)
+
+
+class ClassicsGenreEnrichmentTests(unittest.TestCase):
+    def test_enriches_prefix_and_uses_other_for_unclassified_genres(self):
+        from discovery_classics_genres import enrich_classic_genres
+
+        candidates = [
+            {"artist": "Alpha", "id": 1},
+            {"artist": "Beta", "id": 2},
+            {"artist": "Gamma", "id": 3},
+        ]
+        calls = []
+        enrich_classic_genres(
+            candidates,
+            lambda artist: calls.append(artist) or (["jazz"] if artist == "Alpha" else ["unknown"]),
+            lambda tags: ["jazz"] if "jazz" in tags else [],
+            limit=2,
+        )
+        self.assertEqual(calls, ["Alpha", "Beta"])
+        self.assertEqual(candidates[0]["genres"], ["jazz"])
+        self.assertEqual(candidates[0]["genre_families"], ["jazz"])
+        self.assertEqual(candidates[1]["genre_families"], ["other"])
+        self.assertEqual(candidates[2]["genres"], [])
+        self.assertEqual(candidates[2]["genre_families"], ["other"])
+        self.assertEqual([item["id"] for item in candidates], [1, 2, 3])
+
+    def test_deduplicates_normalized_artist_lookups(self):
+        from discovery_classics_genres import enrich_classic_genres
+
+        candidates = [{"artist": "Beyoncé"}, {"artist": "Beyonce"}, {"artist": "Beyoncé"}]
+        calls = []
+        enrich_classic_genres(
+            candidates,
+            lambda artist: calls.append(artist) or ["soul"],
+            lambda tags: ["rnb-soul"],
+        )
+        self.assertEqual(calls, ["Beyoncé"])
+        self.assertTrue(all(item["genres"] == ["soul"] for item in candidates))
+
+    def test_limit_zero_and_negative_limit(self):
+        from discovery_classics_genres import enrich_classic_genres
+
+        candidates = [{"artist": "A"}]
+        enrich_classic_genres(candidates, lambda artist: self.fail("lookup should not run"), lambda tags: [], limit=0)
+        self.assertEqual(candidates[0]["genres"], [])
+        with self.assertRaises(ValueError):
+            enrich_classic_genres(candidates, lambda artist: [], lambda tags: [], limit=-1)

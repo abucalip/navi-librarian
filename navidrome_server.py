@@ -1786,20 +1786,13 @@ def _build_classics_list():
 
     ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
 
-    # Genre metadata helps keep the collection lane from becoming one long
-    # popularity chart. Last.fm tag results are cached between refreshes.
-    genre_cache = {}
-    for item in ranked[:300]:
-        artist_key = _music_key(item.get("artist", ""))
-        if artist_key not in genre_cache:
-            genre_cache[artist_key] = _lastfm_artist_genres(item.get("artist", ""))
-        item["genres"] = genre_cache[artist_key]
-        item["genre_families"] = sorted(_deep_dive_genre_families(item["genres"]))
-        if not item["genre_families"]:
-            item["genre_families"] = ["other"]
-    for item in ranked[300:]:
-        item["genres"] = []
-        item["genre_families"] = ["other"]
+    # Keep provider/cache access in the adapter; isolate bounded genre policy.
+    from discovery_classics_genres import enrich_classic_genres
+    enrich_classic_genres(
+        ranked,
+        _lastfm_artist_genres,
+        _deep_dive_genre_families,
+    )
 
     # Re-sort after enriching the broader pool; add fresh jitter so a manual
     # refresh can rotate recommendations even when upstream API caches are warm.
