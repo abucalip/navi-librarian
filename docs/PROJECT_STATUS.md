@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-16 (recommendation and operational-surface audit adopted)  
-GitHub source of truth: `main` at `d5e3b77aded4f32cd2d188598747b9dac820a9e6` (PR #251 documentation closeout)
+Documentation branch base: current GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff` (verify and refresh after PR review/merge)
 
 ## Current focus
 
