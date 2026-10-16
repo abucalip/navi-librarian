@@ -415,3 +415,8 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Exact Deezer release-year selection boundary (PR #218 merged)
 
 `exact_album_release_year()` in `app/services/deezer_album_matching.py` selects the first plausible year among normalized exact artist-and-album matches. The metadata route retains provider access and the MusicBrainz-first response contract. PR #218 merged at `6dc6adae89169638da9a158c79ccee5d2e1ddfb7` from exact tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; all four workflows passed (syntax 1153, Docker/full suite/build 1060, runtime smoke 869, validation-only multi-architecture 913).
+
+
+## Authentication configuration predicate (PR #239 merged)
+
+`app/security/auth_configuration.py` owns only the pure predicate over persisted owner-auth settings. `app/main.py` still owns reading settings from the service, secret loading, middleware/router assembly, and session-cookie integration. The extraction intentionally preserves truthiness checks and does not alter the authentication flow.

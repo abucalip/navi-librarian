@@ -872,3 +872,8 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - All four required workflows passed on the exact PR head: Python syntax run `38939659986`; Docker packaging/full unit suite/build run `38939659632`; container runtime smoke run `38939659664`; validation-only multi-architecture image validation run `38939660017` (publishing paused).
 - No assistant-side local test commands were run independently. No image publication, deployment, or production runtime verification is claimed.
 - **Next action:** refresh main and inspect the remaining acquisition lifecycle/application-assembly boundaries before choosing another independently testable extraction.
+
+
+## 2026-10-16 — Application-assembly seam: auth configuration predicate (PR #239)
+
+The pure check that determines whether all three persisted owner-auth fields are present is extracted to `app/security/auth_configuration.py`. The app assembly retains settings access and its compatibility wrapper. Direct-import tests preserve existing truthiness behavior. All four required workflows passed on the exact final PR head: syntax `38940305016`, Docker/full suite/build `38940304930`, runtime smoke `38940304907`, validation-only multi-architecture `38940305045`. This completes only the narrow predicate seam; broader application-assembly accounting and auth-flow verification remain.
