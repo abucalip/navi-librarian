@@ -47,10 +47,6 @@ class ListeningProfileTests(unittest.TestCase):
         self.assertEqual([row["artist"] for row in result["top_artists"]], ["First", "Second"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class BackgroundListeningProfileRefreshTests(unittest.TestCase):
     def test_success_marks_and_persists_profile(self):
         writes = []
@@ -88,3 +84,7 @@ class BackgroundListeningProfileRefreshTests(unittest.TestCase):
             fail, lambda *args: self.fail("must not persist")
         )
         self.assertEqual(result, {"ok": False, "error": "RuntimeError"})
+
+
+if __name__ == "__main__":
+    unittest.main()
