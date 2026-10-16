@@ -22,7 +22,9 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         self.assertIn("const isDeepDive = name === 'artist_deep_dive';", self.js)
         self.assertIn("if (!isDeepDive) {", self.js)
         self.assertIn("title.append(document.createTextNode(isDeepDive ? artist : album));", self.js)
-        self.assertIn("addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);", self.js)
+        self.assertIn("if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));", self.js)
+        self.assertIn("const supportingLine = addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);", self.js)
+        self.assertIn("if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));", self.js)
 
     def test_arrows_are_hidden_and_removed_from_tab_order_when_track_fits(self):
         self.assertIn("const overflows = track.scrollWidth > track.clientWidth + 1;", self.js)
