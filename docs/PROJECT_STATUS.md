@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm artist tag extraction in progress
+
+- Starting `main` SHA: `ffa2b441e7543b2778d1835cfc42386e53c37225`.
+- Moving cached artist top-tag response parsing and eight-item deduplication into `LastFmClient.artist_genres()`; retaining `_lastfm_artist_genres()` as the compatibility adapter.
+- Added direct-import tests for scalar/list payloads, duplicate/case handling, maximum count, cache hits, missing payload, and adapter delegation. CI, merge, and deployment status are pending; no tests are claimed as run locally.
+- The acquisition dismissal HTTP 409 remains deferred by explicit user direction. Publishing remains paused.
+
+---
+
 ## 2026-10-16 — Three-extraction session closeout (PRs #170–#172)
 
 - Session started from GitHub `main` at `098c5d9d8536070c1115ec2a7c25b99490efb312`. Final code `main` after the three sequential merges: `d5153a3fe0625bc52b5896e87846b55cabe58e81`.
