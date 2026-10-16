@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PRs #264 and #265 merged; recommendation diagnostics fixed and size ratchet enforced)  
-Documentation branch base: GitHub `main` after merge commit `57ec3a594df22bba77895934535530c37d833087`
+Last reviewed: 2026-10-16 (mutable MUSIC_DIR coupling audited; no extraction justified)  
+Documentation branch base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Current focus
 
@@ -9,10 +9,11 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Audit mutable `MUSIC_DIR`: trace every read/write, settings caller, and test before deciding whether a small explicit settings object reduces coupling.
-2. After that audit, inspect the thin settings wrappers and `_discovery_acquire_album_impl()` policy-vs-orchestration seam; extract only a demonstrated independent policy boundary.
-3. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
-4. Do not force additional classics-builder or size-only slskd extractions.
+1. Audit `_discovery_acquire_album_impl()` on current main and record exact evidence for whether candidate selection, source-switch thresholds, retry rules, or state transitions remain inline; retain it if it is orchestration only.
+2. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
+3. Do not force additional classics-builder or size-only slskd extractions.
+
+The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`. Request coordination lifecycle tests now exercise `acquisition_request_coordinator.acquire_album_request()` directly; the legacy AST harness remains only for behaviors without a suitable extracted owner.
 

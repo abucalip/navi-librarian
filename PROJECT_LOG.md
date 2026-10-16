@@ -1,3 +1,13 @@
+## 2026-10-16 — Mutable MUSIC_DIR coupling audit
+
+- Audited every MUSIC_DIR occurrence in the current navidrome_server.py source fetched from GitHub main (3,031 source lines; 3,032 split fields including the trailing empty element): initialization at line 88; persistence callback wiring at 218; raw library tag scan at 230; settings defaults and downloads fallback at 1517/1531; central and nested writers at 1545–1546, 1591–1592, and 1665–1666; settings-get adapters at 1580 and 1651; and acquisition recovery/watcher dependency injection at 2271/2286. Line references are audit-time references and should be refreshed before a later code change.
+- Traced SettingsPersistence: its injected getter/setter separates SQLite persistence from runtime path ownership. read() applies a saved absolute path, while migration logic uses the current path to identify legacy downloads locations. service_settings.py similarly receives path getter/setter callbacks; tests/test_service_settings.py directly tests settings behavior and path updates.
+- **Decision: no new settings object or wrapper extraction.** The remaining global reads are concentrated in the legacy compatibility/runtime owner, and the existing service and persistence modules already expose explicit callbacks. A new object would add indirection without removing the compatibility boundary; acquisition watcher/recovery adapters currently pass a path snapshot at invocation time, so changing ownership needs a broader lifecycle design and behavior tests, not a mechanical refactor.
+- Documentation-only audit. No application tests or local commands were run. PR #267 was opened at head `e1df4f783c217fadecae57c002b8ad1a9d92766c`; the first workflow/status lookup returned no runs or status checks, so required CI is not yet verified. Recheck the final head before merge. No merge, publication, deployment, or production runtime verification is claimed.
+- Next: audit _discovery_acquire_album_impl() for actual candidate-selection, source-switch, retry, and state-transition policy; keep it intact if it is only orchestration. Operational MCP functions remain blocked on explicit owner decision.
+
+---
+
 ## 2026-10-16 — PR #265 merged: measurable legacy-server size ratchet
 
 - Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,031 source lines (`splitlines()`, matching the guard). On the first PR #265 CI run, AST measurements were `recommend_new_music`: 568 lines and `_discovery_acquire_album_impl`: 278 lines. The initial 3,032 count included the trailing empty element produced by splitting on a newline; the enforced ceiling is corrected to 3,031.
