@@ -409,6 +409,7 @@ def recommend_new_music(count: int = 10) -> str:
 
         candidates_by_category[category].append(candidate)
 
+    lastfm_available = bool(_discovery_settings_read().get("lastfm_api_key"))
     lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),
         recent_family_counts,
