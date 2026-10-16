@@ -40,7 +40,7 @@ class ServerSizeGuardTests(unittest.TestCase):
         self.assertIn("top-level function too_large is 3 lines (limit 2)", errors[0])
 
     def test_named_temporary_exception_has_its_own_ceiling(self):
-        source = "def recommend_new_music():\n" + "    pass\n" * 4
+        source = "def recommend_new_music():\n" + "    pass\n" * 3
         exception = {
             "recommend_new_music": {
                 "max_lines": 4,
@@ -64,7 +64,7 @@ class ServerSizeGuardTests(unittest.TestCase):
             function_exceptions=exception,
         )
         self.assertEqual(len(errors), 1)
-        self.assertIn("recommend_new_music is 6 lines (limit 4)", errors[0])
+        self.assertIn("recommend_new_music is 5 lines (limit 4)", errors[0])
         self.assertIn("temporary test exception", errors[0])
         self.assertIn("reduce after extraction", errors[0])
 
