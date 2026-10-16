@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-16 (recommendation and operational-surface audit adopted)  
+Last reviewed: 2026-10-16 (PR #254 merged; app import boundary enforced)  
 Documentation branch base: GitHub `main` at `3d99647ceec5e69deebacd622588470c5b4c3c65`
 
 ## Current focus
@@ -9,8 +9,8 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Enforce the allowlist-aware app-import boundary guard in PR #254; merge only after the exact final head passes all four required workflows.
-2. Then add deterministic characterization tests for `recommend_new_music()` using fake ListenBrainz, MusicBrainz, library, and Last.fm responses; inspect `discovery_library_snapshot.py` before extracting candidate gathering.
+1. Add deterministic characterization tests for `recommend_new_music()` using fake ListenBrainz, MusicBrainz, library, and Last.fm responses; trace `discovery_library_snapshot.py` first and resolve inventory overlap before extracting candidate gathering.
+2. Add the measurable CI size ratchet only after verifying the line/function-size baseline against current `main`.
 3. Add a CI size ratchet after verifying the 3,514-line audit baseline and recording function-size limits against the exact main SHA.
 4. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates in separate PRs only when no dependency or file overlap exists.
 5. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
