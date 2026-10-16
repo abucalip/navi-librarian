@@ -1,3 +1,9 @@
+## 2026-10-16 — Last.fm similar-artist extraction in progress
+
+`LastFmClient.similar_artists()` direct-import regressions cover scalar/list response shapes, blank names, malformed similarity values/records, request method/artist/limit, 60-day cache TTL, cache hits, provider errors, and the `_lastfm_similar_artists()` compatibility adapter. Required exact-final-head gates remain: syntax/acquisition safety, full unit suite plus Docker build, isolated runtime smoke, and validation-only multi-architecture build (`push: false`). Assistant-side local test execution is not claimed.
+
+---
+
 ## 2026-10-16 — Last.fm top albums extraction in progress (PR #175)
 
 - `LastFmClient.artist_top_albums()` tests cover scalar/list payloads, blank-title filtering, normalized metadata, requested limit, 30-day cache TTL/hits, missing payloads, and compatibility adapter filtering.

@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm similar-artist parsing extraction in progress
+
+- Branch `refactor/extract-lastfm-similar-artists-current`, based on refreshed GitHub `main` at `86b2ac60416ed725755fc6c57200e1c3123b7606` after the #175/#176 closeout.
+- Moved cached `artist.getSimilar` retrieval and record normalization into `LastFmClient.similar_artists()`; retained `_lastfm_similar_artists()` as a compatibility adapter.
+- Added direct-import regressions for list/scalar payloads, blank/malformed records, similarity normalization, cache hits/misses, request parameters, TTL, and adapter delegation. Existing Docker packaging already includes `lastfm_client.py`.
+- Exact-head tests/CI, PR review, and merge pending. Publishing/deployment remain paused. Acquisition-dismissal HTTP 409 remains deferred as directed.
+
+---
+
 ## 2026-10-16 — Last.fm top-albums parsing extraction in progress (PR pending)
 
 - Based on refreshed GitHub `main` after PR #174 merge: `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
