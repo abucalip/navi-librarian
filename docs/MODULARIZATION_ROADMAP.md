@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (follow-up packaging audit at `f6041231db515f2287596445c0025c9af90901ee`)
-Audit base: GitHub `main` at commit `f6041231db515f2287596445c0025c9af90901ee`
+Last reviewed: 2026-10-16 (PR #288 merged; audit base `047822df81b134084383ed370205b1a3554c706a`)
+Audit base: GitHub `main` at commit `047822df81b134084383ed370205b1a3554c706a`
 
 ## Purpose
 
@@ -57,7 +57,7 @@ The current MUSIC_DIR audit found this dependency pattern in navidrome_server.py
 
 **Decision:** do not introduce a settings object or extract the remaining wrappers now. The existing persistence and service-settings modules already accept explicit path callbacks, while navidrome_server.py acts as the mutable runtime owner and compatibility adapter. A new object would duplicate the same getter/setter wiring without eliminating the legacy boundary. The nested settings setters are thin adapters, not independent policy. Revisit only if a broader app-state lifecycle change gives the object a clear owner and can prove that long-running watcher/recovery work observes path changes with the same semantics.
 
-This audit did not justify another extraction: the acquisition coordinator remains orchestration, and the AST-coupled import-safety migration is already complete in PR #274. The next active task is the final modularization completion audit, not another size-driven refactor. PR #286 fixed the first packaging gap by including `acquisition_import_service.py` and passed all four required workflows. A follow-up source audit found that `navidrome_server.py` also imports `discovery_candidate_gathering.py`, which is still missing from the explicit Docker COPY list.
+This audit did not justify another extraction: the acquisition coordinator remains orchestration, and the AST-coupled import-safety migration is already complete in PR #274. The next active task is the final modularization completion audit, not another size-driven refactor. PR #286 fixed the missing `acquisition_import_service.py`; PR #288 fixed the missing `discovery_candidate_gathering.py` and generalized the Docker packaging regression. All four required workflows passed on PR #288's exact head. A post-merge direct-import comparison confirms all 48 root-level modules imported by `navidrome_server.py` are included in the current Docker COPY list.
 
 
 These are audit targets, not permission to refactor without inspecting current main. Reconfirm each target against current callers, tests, and open PRs before implementation.
