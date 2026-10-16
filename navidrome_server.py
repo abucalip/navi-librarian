@@ -206,33 +206,12 @@ def search_music(query: str, category: str = "all") -> str:
     )
     result = root.get("searchResult3", {})
 
-    fields = {
-        "artist": "artist",
-        "album": "album",
-        "track": "song",
-    }
-
-    output = {}
-
-    for kind, key in fields.items():
-        if category not in ("all", kind):
-            continue
-
-        records = items(result.get(key))
-        output[key] = [
-            {
-                "id": item.get("id"),
-                "name": item.get("name"),
-                "artist": item.get("artist"),
-                "album": item.get("album"),
-                "year": item.get("year"),
-                "duration": item.get("duration"),
-                "playCount": item.get("playCount"),
-            }
-            for item in records
-        ]
-
-    return json.dumps(output, ensure_ascii=False, indent=2)
+    from navidrome_client import search_result_payload
+    return json.dumps(
+        search_result_payload(result, category, items),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def get_album_details(album_id: str) -> str:
