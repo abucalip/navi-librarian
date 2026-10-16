@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Fix and verify PR #264: PR #263 CI exposed a missing return of `regional_candidates_added` and `regional_results_seen` from `discovery_candidate_gathering.py`; six characterization tests failed on exact head `a0d0afcdc1c54b73c2227a24735f8a606bb38f6a`. PR #264 restores the diagnostic fields and asserts them; required CI is pending on its final head.
+1. Fix and verify PR #264: PR #263 CI exposed a missing return of `regional_candidates_added` and `regional_results_seen` from `discovery_candidate_gathering.py`; six characterization tests failed on exact head `a0d0afcdc1c54b73c2227a24735f8a606bb38f6a`. PR #264 restores the diagnostic fields in the provider result and unpacks them in the compatibility adapter, with characterization assertions; required CI is pending on its final head.
 2. After PR #264 passes all required workflows and is merged, add the measurable CI size ratchet using the verified current baseline (`navidrome_server.py`: 3,029 lines; largest top-level function `recommend_new_music`: 572 lines).
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
