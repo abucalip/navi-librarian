@@ -1,3 +1,11 @@
+## 2026-10-16 — Session closeout: PRs #223 and #224 merged
+
+- **PR #223 — personal recommendation allocation:** exact final tested head `b604940e4b7a20160d4f3710b009c6ca718c57c5`; squash merge `1ccb11485bf1efce3ff201fb7337407c3e668c47`. All four required workflows passed: syntax/acquisition safety 1171, Docker/full suite/build 1079 (468 tests), runtime smoke 888, validation-only multi-architecture 932.
+- **PR #224 — personal recommendation payload shaping:** exact final tested head `6d2e0ccc8d24cd11b727255f171fd405384a8729`; squash merge `f795239589e6dd78f0f5e6d98cf2eadc897d6f49`. All four required workflows passed: syntax/acquisition safety 1177, Docker/full suite/build 1085 (473 tests), runtime smoke 894, validation-only multi-architecture 938.
+- Both preserve the adapter boundary: provider/library access, ownership lookup, payload annotations, and diagnostics remain in the server. Docker packaging includes the extracted modules. Assistant-side local tests were not run.
+- Publishing/deployment remain paused; no production runtime verification is claimed. The unreproduced acquisition-dismissal HTTP 409 remains deferred per user direction.
+- **Next action:** refresh current main/open PRs/CI and choose the next small, low-coupling seam only if no higher-priority correctness or verification gap remains. Do not treat extraction count as a quota.
+
 ## 2026-10-16 — Session closeout: PRs #208–#210 merged
 
 - **PR #208 — page/asset routes:** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
