@@ -31,16 +31,12 @@ The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_m
 
 **Implemented and merged by PR #265.** The CI guard in `scripts/check_server_size.py` enforces a 3,031-line file ceiling, a 280-line default top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. On the verified source, AST sizes are 568 lines for `recommend_new_music()` and 278 for `_discovery_acquire_album_impl()`. Tests prove accepted and rejected boundaries, including exception diagnostics. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. As `recommend_new_music()` is decomposed, tighten its exception rather than normalizing its current size as acceptable architecture.
 
-### 0b. Operational MCP functions — owner decision required
+### 0b. Legacy operational MCP functions — retired
 
-`restart_server` and `apply_server_patch` are MCP-exposed operational capabilities. The audit reports no references to either name in `tests/`; `apply_server_patch` rewrites the server's own source, while `restart_server` launches a helper that kills the process and relaunches it on hardcoded port 8000.
+The owner requested removal of the early-development `restart_server` and `apply_server_patch` capabilities if safe. The audit found no internal callers; their only runtime exposure was the ordered MCP registry. `restart_server` killed/relaunched the process on hardcoded port 8000, and `apply_server_patch` rewrote the running service's own source file. PR removes both definitions and registry entries while preserving the remaining 25 MCP tools and the MCP runtime.
 
-**Do not refactor, broaden, or silently remove these capabilities before the product owner decides what authorizes them and whether they should remain exposed.** This is a product/security decision, not an agent-level modularization choice. Ask the owner to decide:
-- which authenticated/authorized caller may invoke each operation and under what deployment conditions;
-- whether source rewriting and process-killing/relaunch behavior are still required;
-- whether either MCP tool should be disabled or retired.
+**Status:** removal and regression coverage are in PR review. Do not restore either capability without a new explicit owner decision and a separate security review. The MCP server itself is not being retired.
 
-After that decision, if retained, move them to a dedicated operations module with explicit authorization checks and safety tests: unique-match rejection, no-op on mismatch, and occupied-port/restart failure handling. Do not execute either operation against a live service as part of tests.
 
 ### 0c. Mutable settings coupling — audited; no state-object extraction justified
 
