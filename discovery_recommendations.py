@@ -130,7 +130,6 @@ def genre_families(tags: Iterable[str]) -> set[str]:
     return families
 
 
-
 _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = {
     "chebmami": "north-african-middle-eastern",
     "vieuxfarkatoure": "african",
