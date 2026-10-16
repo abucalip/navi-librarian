@@ -130,6 +130,82 @@ def genre_families(tags: Iterable[str]) -> set[str]:
     return families
 
 
+
+_REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = {
+    "chebmami": "north-african-middle-eastern",
+    "vieuxfarkatoure": "african",
+    "alifarkatoure": "african",
+    "bombino": "african",
+    "tinariwen": "african",
+    "mdoumoctar": "african",
+    "imarhan": "african",
+    "khaled": "north-african-middle-eastern",
+    "chebkhaled": "north-african-middle-eastern",
+    "faudel": "north-african-middle-eastern",
+    "rachidtaha": "north-african-middle-eastern",
+    "idir": "north-african-middle-eastern",
+    "souadmassi": "north-african-middle-eastern",
+    "hamidelkasri": "north-african-middle-eastern",
+    "takfarinas": "north-african-middle-eastern",
+    "bouchenak": "north-african-middle-eastern",
+    "liliboniche": "north-african-middle-eastern",
+    "orchestrenationaldebarbes": "north-african-middle-eastern",
+    "chebsahraoui": "north-african-middle-eastern",
+    "شابصحراوي": "north-african-middle-eastern",
+}
+
+_ADVENTUROUS_RECOMMENDATION_TAGS = (
+    "idm", "experimental", "avant-garde", "avant garde",
+    "free improvisation", "free jazz", "drone", "noise",
+    "musique concrète", "musique concrete",
+    "electroacoustic", "dark ambient", "glitch",
+    "deconstructed club",
+)
+
+
+def classify_recommendation_category(
+    candidate: Mapping[str, Any],
+    tags: Iterable[str],
+    core_families: set[str],
+    exploration_families: set[str],
+    *,
+    music_key_fn: Callable[[Any], str] = music_key,
+) -> tuple[str, set[str]]:
+    """Return the established category and family set for a recommendation candidate.
+
+    This policy is shared by selection and diagnostic projection so regional
+    overrides and adventurous-tag precedence cannot drift between the two paths.
+    """
+    tags = list(tags)
+    families = genre_families(tags)
+    families.update(candidate.get("regional_families", []))
+    artist_key = music_key_fn(
+        candidate.get("primary_artist") or candidate.get("artist", "")
+    )
+    regional_family = _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES.get(artist_key)
+    if regional_family:
+        families.add(regional_family)
+
+    core_overlap = families & core_families
+    exploration_overlap = families & exploration_families
+    adventurous_signal = any(
+        signal in tag.casefold()
+        for tag in tags
+        for signal in _ADVENTUROUS_RECOMMENDATION_TAGS
+    )
+
+    if not tags and not families:
+        category = "unclassified"
+    elif adventurous_signal:
+        category = "adventurous"
+    elif len(core_overlap) >= 2:
+        category = "cross_genre"
+    elif core_overlap or exploration_overlap:
+        category = "adjacent"
+    else:
+        category = "adventurous"
+    return category, families
+
 def recent_style_families(tags: Iterable[str]) -> set[str]:
     """Map tags to finer listening-profile families without changing categories."""
     text_tags = [tag.casefold() for tag in tags]
