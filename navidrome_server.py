@@ -1704,28 +1704,16 @@ def _build_new_releases_list():
         from discovery_new_releases import merge_release_candidates
         candidates = merge_release_candidates(candidates, artist_candidates)
 
-    items_out = sorted(
-        candidates.values(),
-        key=lambda item: (
-            str(item.get("first_release_date") or ""),
-            str(item.get("artist") or "").casefold(),
-            str(item.get("album") or "").casefold(),
-        ),
-        reverse=True,
+    from discovery_new_releases import build_new_release_response
+    return build_new_release_response(
+        candidates,
+        qualified_library_artists=len(qualified_artists),
+        artists_scanned=len(artist_batch),
+        lookup_errors=errors,
+        earliest_year=earliest_year,
+        cutoff_date=cutoff_date,
+        generated_at=time.time(),
     )
-    return {
-        "list": "new_releases", "source": "MusicBrainz release groups matched against the Navidrome library",
-        "generated_at": time.time(), "year_from": earliest_year, "date_from": cutoff_date,
-        "qualified_library_artists": len(qualified_artists),
-        "artists_scanned": len(artist_batch), "items": items_out[:200],
-        "lookup_errors": errors[:20],
-        "limitations": [
-            "Only artists with at least one library album containing six or more tracks qualify.",
-            "The release window is the previous 730 days.",
-            "MusicBrainz release-group coverage and release dates may be incomplete.",
-            "The initial refresh is bounded to the 120 library artists with the largest album counts.",
-        ],
-    }
 
 
 def _build_classics_list():
