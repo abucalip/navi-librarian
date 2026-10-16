@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (dependency map reviewed; AST test inventory completed)  
+Last reviewed: 2026-10-16 (pure-helper test migration merged)  
 Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
@@ -13,13 +13,13 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
-### 1. Application assembly and test coupling — map generated; AST test migration next
+### 1. Application assembly and test coupling — map generated; lifecycle AST migration remains
 
 The dependency map was generated in CI and reviewed from artifact `12068042162` on initial PR head `1f9e6313310c691e9d9844d22136182e51ca6fee`: 159 local Python modules, 71 modules in the static `app.main` closure, and one direct `app/` import edge to `navidrome_server` (`app/api/dependencies.py`). The edge is inside lazy `get_librarian()` and does not imply eager import-time initialization; the app-import isolation regression covers that distinction. The workflow retains the full JSON as a 14-day `modularization-dependency-map` artifact. Static imports still do not capture runtime dependency injection.
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. The transfer lookup test and quality-priority tests now use direct imports. In the current pure-helper migration, acquisition-safety AST compilation remains only for lifecycle/orchestration cases. Preserve concurrency, persistence, recovery, and safety coverage while continuing incrementally.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. Only `tests/test_acquisition_safety.py` still compiles acquisition orchestration/lifecycle functions from `navidrome_server.py`; preserve concurrency, persistence, recovery, and safety coverage while mapping those cases to real owners.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
 4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
 5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
