@@ -770,7 +770,7 @@ The lazy persisted-settings read used by authentication now delegates through `A
 ## 2026-10-16 — Final acquisition safety AST coupling migration (PR pending)
 
 - Based on current GitHub main `5a74b12d489ae30cfad923af7b68985ebede87dc`. Branch: `test/remove-acquisition-safety-ast`.
-- Removed the `ast.parse(nav idrome_server.py)` test harness from `tests/test_acquisition_safety.py`. The test fixture now creates isolated state directly; the import persistence-failure regression composes the production `acquisition_orchestration.import_source_unless_dismissed()` guard with `acquisition_import_service.import_completed_source_locked()`.
+- Removed the `ast.parse()` of the legacy server source test harness from `tests/test_acquisition_safety.py`. The test fixture now creates isolated state directly; the import persistence-failure regression composes the production `acquisition_orchestration.import_source_unless_dismissed()` guard with `acquisition_import_service.import_completed_source_locked()`.
 - Preserved assertions that failed persistence prevents the importer callback and destination creation. Existing direct tests continue to cover dismissal/lock behavior, request concurrency, recovery/retry refusal, source validation, rollback, symlink escapes, no-overwrite, and unrelated-file preservation. No production code changed.
 - CI/focused/full tests have not yet been verified on the final PR head. No merge, publication, deployment, or production runtime verification is claimed.
 - Next: inspect the full diff, verify all four required workflows on the exact final PR head, and merge only if safety coverage passes.
