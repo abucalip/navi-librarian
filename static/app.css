@@ -202,13 +202,22 @@ p { line-height: 1.55; }
 .dashboard-carousel.is-ring:active { cursor: grabbing; }
 .ring-scene { perspective: 2000px; }
 .ring-stage { position: relative; width: var(--ring-card-width, 218px); height: var(--ring-height, 330px); margin: 0 auto; transform-style: preserve-3d; }
-.dashboard-carousel.is-ring .ring-card { position: absolute; top: 50%; left: 0; width: var(--ring-card-width, 218px); backface-visibility: hidden; pointer-events: none; opacity: .4; transform: translateY(-50%) rotateY(calc(var(--ring-index) * var(--ring-step))) translateZ(var(--ring-radius)); transition: opacity .28s cubic-bezier(.16,1,.3,1), border-color .15s ease; }
-.dashboard-carousel.is-ring .ring-card.is-front { opacity: 1; pointer-events: auto; box-shadow: 0 22px 48px rgba(0,0,0,.52); }
+/* Rear cards drop their card chrome entirely rather than only fading the labels. Leaving the
+   .card background and border in place drew a dark plaque under every piece of artwork, since
+   the text area was still occupying space at opacity 0. With the chrome transparent a rear card
+   is just its artwork; no layout property is animated to achieve that. */
+.dashboard-carousel.is-ring .ring-card { position: absolute; top: 50%; left: 0; width: var(--ring-card-width, 218px); backface-visibility: hidden; pointer-events: none; opacity: .4; background: transparent; border-color: transparent; transform: translateY(-50%) rotateY(calc(var(--ring-index) * var(--ring-step))) translateZ(var(--ring-radius)); transition: opacity .28s cubic-bezier(.16,1,.3,1), background-color .28s cubic-bezier(.16,1,.3,1), border-color .28s cubic-bezier(.16,1,.3,1); }
+.dashboard-carousel.is-ring .ring-card .card-art { border-bottom-color: transparent; transition: border-color .28s cubic-bezier(.16,1,.3,1); }
+.dashboard-carousel.is-ring .ring-card.is-front { opacity: 1; pointer-events: auto; background: var(--surface); border-color: var(--edge); box-shadow: 0 22px 48px rgba(0,0,0,.52); }
+.dashboard-carousel.is-ring .ring-card.is-front .card-art { border-bottom-color: var(--border); }
 /* Only the front card carries its copy. At the rear cards' angle and depth the text would be
    unreadable, and the reference pattern's own stated weakness is that its cards say nothing
    about the album at all — here the front card keeps every label and the Get action. */
 .dashboard-carousel.is-ring .ring-card > :not(.card-art) { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
 .dashboard-carousel.is-ring .ring-card.is-front > :not(.card-art) { opacity: 1; }
+/* The "cover not found" copy belongs to the card a user is looking at, not to the ring. */
+.dashboard-carousel.is-ring .ring-card .card-art-placeholder { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
+.dashboard-carousel.is-ring .ring-card.is-front .card-art-placeholder { opacity: 1; }
 .dashboard-carousel.is-ring .ring-card .get-album { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
 .dashboard-carousel.is-ring .ring-card.is-front .get-album { opacity: 1; }
 .dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }

@@ -119,13 +119,36 @@ class DashboardRingTests(unittest.TestCase):
         self.assertIn("if (RING_REDUCED_MOTION.matches) return 0;", ambient)
         self.assertIn("return RING_BASE_VELOCITY;", ambient)
 
-    def test_loop_stops_when_settled_instead_of_spinning_forever(self):
+    def test_loop_stops_when_idle_instead_of_spinning_forever(self):
         start = self._ring("function ringStart() {", "// Exactly one card is legible")
-        self.assertIn("if (!RING.raf && RING.stage && !ringSettled())", start)
+        self.assertIn("if (!RING.raf && RING.stage && !ringIdle())", start)
         frame = self._ring("function ringFrame() {", "function ringStart() {")
         # The boost is driven to exactly zero, so ringSettled() can actually become true.
         self.assertIn("Math.abs(RING.boost) < 0.02 ? 0 : RING.boost * RING_BOOST_DECAY", frame)
-        self.assertIn("if (!ringSettled()) ringStart();", frame)
+        self.assertIn("if (!ringIdle()) ringStart();", frame)
+
+    def test_the_ring_settles_onto_a_card_rather_than_between_two(self):
+        # Found by browser testing: stopping at an arbitrary angle leaves no card facing the
+        # viewer, puts a gap at the centre of the ring, and makes the middle unclickable.
+        target = self._ring("function ringTargetAngle() {", "function ringSnapped()")
+        self.assertIn("Math.round(RING.angle / RING.step) * RING.step", target)
+        snapped = self._ring("function ringSnapped() {", "// Done means stopped")
+        self.assertIn("Math.abs(RING.angle - ringTargetAngle()) < 0.05", snapped)
+        idle = self._ring("// Done means stopped", "function ringWrite()")
+        self.assertIn("return ringSettled() && ringSnapped();", idle)
+        frame = self._ring("function ringFrame() {", "function ringStart() {")
+        self.assertIn("const delta = ringTargetAngle() - RING.angle;", frame)
+        self.assertIn("RING.angle + delta * 0.18", frame)
+
+    def test_a_gesture_holds_the_drift_off_so_the_ring_can_settle(self):
+        # On touch there is no hover to pause the ring, so a swipe would otherwise leave it
+        # drifting and never settled on a card.
+        ambient = self._ring("function ringAmbientVelocity() {", "function ringSettled()")
+        self.assertIn("if (performance.now() < RING.pausedUntil) return 0;", ambient)
+        up = self._ring("function ringPointerUp() {", "function ringKeyDown(event) {")
+        self.assertIn("RING.pausedUntil = performance.now() + RING_SETTLE_HOLD_MS;", up)
+        keys = self._ring("function ringKeyDown(event) {", "// Zoom the ring out until it fits")
+        self.assertIn("RING.pausedUntil = performance.now() + RING_SETTLE_HOLD_MS;", keys)
 
     def test_reduced_motion_removes_the_ambient_loop_but_keeps_steering(self):
         # A reduced-motion path that also disabled the keys would leave one album reachable
@@ -150,11 +173,22 @@ class DashboardRingTests(unittest.TestCase):
         self.assertIn("else card.setAttribute('aria-hidden', 'true');", apply_front)
         self.assertIn("if (RING.inert) card.inert = !isFront;", apply_front)
 
+    def test_pointer_capture_is_taken_only_once_a_drag_is_certain(self):
+        # Found by browser testing: an element that has captured a pointer also receives the
+        # click derived from that sequence, so capturing on pointerdown retargeted every click
+        # at the scene and made the front card and its Get button unclickable.
+        down = self._ring("function ringPointerDown(event) {", "function ringPointerMove(event) {")
+        self.assertNotIn("setPointerCapture", down)
+        move = self._ring("function ringPointerMove(event) {", "function ringPointerUp() {")
+        self.assertIn("if (RING.dragDistance > 6) {", move)
+        self.assertIn("scene.setPointerCapture(event.pointerId)", move)
+
     def test_a_drag_does_not_open_the_album_dialog(self):
         down = self._ring("function ringPointerDown(event) {", "function ringPointerMove(event) {")
         move = self._ring("function ringPointerMove(event) {", "function ringPointerUp() {")
         self.assertIn("RING.suppressClick = false;", down)
-        self.assertIn("if (RING.dragDistance > 6) RING.suppressClick = true;", move)
+        self.assertIn("if (RING.dragDistance > 6) {", move)
+        self.assertIn("RING.suppressClick = true;", move)
         self.assertIn("if (!RING.suppressClick) return;", self.js)
 
     def test_clipping_stays_outside_the_3d_context(self):
@@ -162,6 +196,32 @@ class DashboardRingTests(unittest.TestCase):
         self.assertIn("transform-style: preserve-3d;", self.css)
         self.assertIn(".dashboard-carousel.is-ring { display: block; padding: 16px 0 0; overflow: hidden;", self.css)
         self.assertIn(".ring-scene { perspective: 2000px; }", self.css)
+
+    def test_narrow_viewports_fall_back_to_the_flat_list(self):
+        # Browser testing showed that scaling the scene to fit 390px shrank an album title to a
+        # few pixels and the Get button below a usable touch target.
+        self.assertIn("const RING_MIN_WIDTH = 700;", self.js)
+        build = self._ring("function buildDashboardRing(scene) {", "async function loadDashboardPicks(")
+        self.assertIn("if (window.innerWidth < RING_MIN_WIDTH) return;", build)
+
+    def test_flattening_restores_the_state_the_ring_imposed(self):
+        # Rear cards are inert and aria-hidden while the ring is up; leaving that in place would
+        # make nine of ten albums unreachable once the list goes back to flat.
+        flat = self._ring("function ringFlatten() {", "// Crossing the breakpoint")
+        self.assertIn("card.removeAttribute('aria-hidden');", flat)
+        self.assertIn("card.removeAttribute('inert');", flat)
+        self.assertIn("card.tabIndex = 0;", flat)
+        self.assertIn("card.classList.remove('ring-card', 'is-front');", flat)
+
+    def test_the_resize_listener_outlives_the_ring_it_rebuilds(self):
+        # Registered for the page, not with the ring's abort signal: teardown would otherwise
+        # remove the listener needed to build the ring again.
+        build = self._ring("function buildDashboardRing(scene) {", "// Put the list back the way it was")
+        self.assertNotIn("addEventListener('resize'", build)
+        self.assertIn("window.addEventListener('resize', ringSyncLayout);", self.js)
+        sync = self._ring("function ringSyncLayout() {", "window.addEventListener('resize', ringSyncLayout);")
+        self.assertIn("if (wide && !RING.stage) buildDashboardRing(scene);", sync)
+        self.assertIn("else if (!wide && RING.stage) ringFlatten();", sync)
 
     def test_ring_joins_the_existing_token_and_control_vocabulary(self):
         self.assertIn(".dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--yellow);", self.css)
