@@ -258,3 +258,85 @@ def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) 
     ):
         return "malian_desert_blues"
     return "other"
+
+def rank_and_diversify_deep_dive_candidates(
+    candidates: Iterable[dict[str, Any]],
+    *,
+    music_key: Callable[[Any], str],
+    is_album_candidate: Callable[[Any], bool],
+    jitter: Callable[[float, float], float],
+    limit: int = 150,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Score, rank, and diversify already-enriched deep-dive candidates."""
+    import math
+
+    output = list(candidates)
+    for item in output:
+        popularity = math.log10(max(0, int(item.get("lastfm_listeners") or 0)) + 1)
+        playcount = math.log10(max(0, int(item.get("lastfm_playcount") or 0)) + 1)
+        candidate_score = float(item.get("candidate_pool_score", 0) or 0)
+        candidate_bonus = candidate_score * 2.5
+        anchor_bonus = (
+            min(int(item.get("anchor_album_count", 0) or 0), 15) * 0.05
+            if candidate_score else 0.0
+        )
+        item["discovery_score"] = round(
+            popularity * 0.15 + playcount * 0.03
+            + float(item.get("similar_artist_score", 0)) * 2.0
+            + candidate_bonus + anchor_bonus,
+            4,
+        )
+    for item in output:
+        listeners = max(0, int(item.get("lastfm_listeners") or 0))
+        magnitude = math.log10(listeners + 1)
+        item["exploration_score"] = round(
+            item["discovery_score"] - magnitude * 0.65
+            + max(0.0, 6.0 - magnitude) * 0.35, 4,
+        )
+    for item in output:
+        item["exploration_score"] = round(
+            float(item.get("exploration_score", 0) or 0) + jitter(-1.25, 1.25), 4,
+        )
+    ranked = sorted(
+        (item for item in output if is_album_candidate(item)),
+        key=lambda item: (
+            item["exploration_score"],
+            float(item.get("similar_artist_score", 0) or 0),
+        ),
+        reverse=True,
+    )
+    diversified: list[dict[str, Any]] = []
+    artist_counts: dict[str, int] = {}
+    anchor_counts: dict[str, int] = {}
+    genre_counts: dict[str, int] = {}
+    deferred: list[dict[str, Any]] = []
+    for item in ranked:
+        artist_key = music_key(item.get("artist", ""))
+        anchor_key = music_key(item.get("anchor_artist", ""))
+        families = item.get("genre_families") or ["other"]
+        family = next((value for value in families if genre_counts.get(value, 0) < 12), families[0])
+        if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4) or genre_counts.get(family, 0) >= 12:
+            deferred.append(item)
+            continue
+        item["primary_genre_family"] = family
+        diversified.append(item)
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        genre_counts[family] = genre_counts.get(family, 0) + 1
+        if anchor_key:
+            anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+        if len(diversified) >= limit:
+            break
+    if len(diversified) < limit:
+        for item in deferred:
+            artist_key = music_key(item.get("artist", ""))
+            anchor_key = music_key(item.get("anchor_artist", ""))
+            if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4):
+                continue
+            diversified.append(item)
+            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+            if anchor_key:
+                anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
+            if len(diversified) >= limit:
+                break
+    return ranked, diversified
+
