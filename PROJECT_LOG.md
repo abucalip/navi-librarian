@@ -307,11 +307,12 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - Next: refresh main and open PRs/CI, then continue the remaining acquisition lifecycle/orchestration seams.
 
 
-## 2026-10-16 — Acquisition progress snapshot extraction in review
+## 2026-10-16 — Acquisition progress snapshot extraction completed (PR #199)
 
-- Branch refactor/extract-acquisition-progress-snapshots extracts the per-process, per-acquisition byte-snapshot map and lock into acquisition_progress_snapshots.py. navidrome_server.py retains live slskd polling and compatibility behavior; the extracted manager delegates speed math to the existing slskd_transfers.estimate_transfer_speed implementation.
-- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. Docker packaging includes the new module.
-- Required next gates: syntax/acquisition-safety, Docker packaging/full unit suite/build, runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. Assistant-side local tests have not been run; no publication or deployment.
+- PR #199 squash-merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066.
+- acquisition_progress_snapshots.py now owns the per-process, per-acquisition byte-snapshot map and lock. navidrome_server.py retains live slskd polling and compatibility behavior; the manager delegates speed math to slskd_transfers.estimate_transfer_speed.
+- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. All four exact-head workflows passed: syntax/acquisition safety run 1096; Docker packaging/full suite/build run 1003; runtime smoke run 812; validation-only multi-architecture run 856.
+- Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
 
 
 ## 2026-10-16 — Acquisition search diagnostics extraction in review
