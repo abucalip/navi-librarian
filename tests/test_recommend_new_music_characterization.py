@@ -132,6 +132,8 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         result = self._run_recommendations([])
 
         self.assertEqual(result["source"], "ListenBrainz + MusicBrainz + Last.fm + Navidrome")
+        self.assertEqual(result["regional_candidates_added"], 0)
+        self.assertEqual(result["regional_search_results_seen"], 0)
         self.assertEqual(result["candidate_albums_resolved"], 1)
         self.assertEqual(result["library_albums_indexed"], 0)
         self.assertEqual(result["recommendations_returned"], 1)
