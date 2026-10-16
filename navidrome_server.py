@@ -2818,20 +2818,14 @@ def _discovery_live_download_progress(job):
         str(job.get("album_key") or _music_key(job.get("album"))),
         str(username).casefold(),
     )
-    speed = None
     with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
         prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
         _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
             "at": now, "files": file_byte_snapshot,
         }
-        if prior:
-            elapsed = now - prior["at"]
-            if elapsed >= 0.5:
-                delta = sum(
-                    max(0, value - int(prior["files"].get(name, 0)))
-                    for name, value in file_byte_snapshot.items()
-                )
-                speed = int(delta / elapsed)
+        speed = _slskd_transfers_module.estimate_transfer_speed(
+            file_byte_snapshot, prior, now
+        )
 
     percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
     total_tracks = len(expected_by_name)
