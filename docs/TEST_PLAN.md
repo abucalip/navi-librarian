@@ -1,3 +1,11 @@
+## 2026-10-16 — Dashboard-pick service extraction (PR preparation)
+
+- Focused direct-import suite: `python -m unittest tests.test_dashboard_service tests.test_dashboard_routes -v`.
+- Full suite: `python -m unittest discover -s tests -v`.
+- Required exact-final-head CI: Python syntax/acquisition-safety regressions; Docker packaging/full suite/image build; isolated container runtime smoke; validation-only multi-architecture image validation with publishing disabled.
+- Preserve the `GET /api/dashboard-picks` route, 1–20 count validation, three list reads at count 150, category labels, case-insensitive deduplication, eligibility filtering, balanced picks, random fill, response fields, and graceful skipping of failed lanes.
+- Current state: implementation and test files are on the branch; test/CI results are pending. Do not claim local tests or merge before evidence is observed.
+
 ## 2026-10-16 — slskd connection probe verification closeout (PR #187)
 
 Final PR head `920590871883aa8c75c29a1b16131bd88519072d` passed all four GitHub Actions workflows: Python syntax check (run 1041), Docker packaging/full unit suite/build (run 948), container runtime smoke test (run 757), and validation-only multi-architecture image build with publishing paused (run 801). Direct-import regressions in `tests/test_slskd_client.py` cover successful request parameters and response shape, 401/403 authentication failures, HTTP errors, missing configuration, and API-key redaction. Squash merge: `b7ae6458adda3650f178fc64457914beb66ece9c`. Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.

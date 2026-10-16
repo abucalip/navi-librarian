@@ -1,3 +1,7 @@
+## 2026-10-16 — Dashboard-pick service boundary (PR preparation)
+
+`app/services/dashboard.py` owns the dashboard's three-lane candidate assembly, album eligibility callback, case-insensitive artist/album deduplication, balanced per-category selection, and random fill. `app/api/dashboard.py` retains HTTP count validation, dependency injection, the response contract, and the route-level service adapter. The service receives list-reading, eligibility, and shuffle dependencies, so importing it does not initialize FastAPI, Navidrome, persistence, or MCP. Direct-import regression coverage is in `tests/test_dashboard_service.py`; route integration coverage remains in `tests/test_dashboard_routes.py`. Exact-head CI is pending; no merge or deployment is claimed.
+
 ## slskd connectivity probe — extraction in progress (PR #187)
 
 `slskd_client.test_connection(config_reader, http_get=...)` owns the connection probe request and the established JSON status mapping. `navidrome_server.discovery_test_slskd_connection()` remains the compatibility adapter and supplies the existing configuration reader. The API-key header is used only for the outbound request and is not returned in responses. Direct-import regressions and Docker packaging are added. Exact-head CI and merge are pending; no live slskd call was made.
