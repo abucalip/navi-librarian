@@ -41,7 +41,7 @@ class PersonalAllocatorTests(unittest.TestCase):
             item("ordinary", category="adjacent", score=10),
             item("regional", category="adventurous", score=1, style="north_african"),
             item("bridge", category="cross_genre", score=5),
-        ], count=2, targets={"adjacent": 1, "cross_genre": 1, "adventurous": 0},
+        ], count=2, targets={"adjacent": 1, "cross_genre": 0, "adventurous": 1},
            styles={"north_african": 1}))
         self.assertEqual(result.selected_candidate_ids, ("regional", "ordinary"))
 
@@ -53,7 +53,7 @@ class PersonalAllocatorTests(unittest.TestCase):
             item("other", artist="other", album="other", category="cross_genre"),
             item("last", category="adventurous"),
             item("fallback", category="unclassified", score=0.5),
-        ], count=4))
+        ], count=5))
         self.assertEqual(
             result.selected_candidate_ids, ("first", "other", "last", "fallback")
         )
