@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.dependencies import get_librarian
@@ -32,6 +32,7 @@ from app.api.acquisitions import router as acquisitions_router
 from app.api.discovery import router as discovery_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
+from app.api.pages import create_pages_router
 
 
 
@@ -45,14 +46,6 @@ _APP_ROOT = Path(__file__).resolve().parent.parent
 _STATIC_DIR = _APP_ROOT / "static"
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
-
-
-@app.get("/assets/cassette.png", include_in_schema=False)
-def cassette_icon():
-    """Serve the bundled app icon without relying on an external image host."""
-    icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cassette.png")
-    return FileResponse(icon_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
-
 
 
 # Authentication settings remain in the existing persistent settings store.
@@ -153,10 +146,8 @@ app.include_router(discovery_router)
 app.include_router(metadata_router)
 app.include_router(dashboard_router)
 
-
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return HTMLResponse(PAGE)
-
-
 PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+app.include_router(create_pages_router(
+    page_html=PAGE,
+    cassette_icon_path=_APP_ROOT / "cassette.png",
+))
