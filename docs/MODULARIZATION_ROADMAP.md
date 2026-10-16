@@ -1,3 +1,11 @@
+## 2026-10-16 — Library overview and source redaction extractions completed (PRs #202 and #203)
+
+- **PR #202** merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`. Pure library-overview response shaping moved to `navidrome_client.library_overview_payload()`; the server retains API I/O and the compatibility/MCP response wrapper. All four exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
+- **PR #203** merged at `89e639394122aebe29bfb8602a1135722ea28bbe` from exact tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`. Sensitive assignment redaction moved to `server_source_redaction.redact_assignment()`; source bounds and MCP response assembly remain in `get_server_source()`. Docker packaging includes the helper. All four exact-head workflows passed (syntax 1106, Docker/full suite/build 1013, runtime smoke 822, validation-only multi-architecture 866).
+- Assistant-side local tests were not run; CI packaging jobs ran the full unit suite. No publication, deployment, or production runtime verification is claimed. Publishing remains paused and acquisition-dismissal HTTP 409 remains deferred.
+- Next: refresh main/open PRs/CI and choose the next low-coupling seam; do not treat extraction count as a quota.
+
+
 ## 2026-10-16 — Navidrome response shaping extracted (PRs #196 and #198)
 
 - **PR #196** merged at 277499ec949353f5f24542a8033a481283814782 from exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836. navidrome_client.search_result_payload() now owns pure search response shaping; search_music() remains the compatibility adapter. Direct-import tests cover category filtering, fields, and output ordering.
