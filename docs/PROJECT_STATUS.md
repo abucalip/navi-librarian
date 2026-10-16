@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #264 merged and verified; size ratchet in progress)  
-Documentation branch base: GitHub `main` after merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`
+Last reviewed: 2026-10-16 (PRs #264 and #265 merged; recommendation diagnostics fixed and size ratchet enforced)  
+Documentation branch base: GitHub `main` after merge commit `57ec3a594df22bba77895934535530c37d833087`
 
 ## Current focus
 
@@ -9,11 +9,10 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Review and verify PR #265 (size ratchet) on its exact final head, then merge only if all four required workflows pass.
-2. The verified baseline after PR #264 is `navidrome_server.py`: 3,031 lines. The new guard sets a 3,031-line file ceiling, a 280-line general top-level-function ceiling, and a documented temporary 575-line exception for `recommend_new_music()`; CI reports measured AST function sizes.
-3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
-4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
-5. Do not force additional classics-builder or size-only slskd extractions.
+1. Audit mutable `MUSIC_DIR`: trace every read/write, settings caller, and test before deciding whether a small explicit settings object reduces coupling.
+2. After that audit, inspect the thin settings wrappers and `_discovery_acquire_album_impl()` policy-vs-orchestration seam; extract only a demonstrated independent policy boundary.
+3. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
+4. Do not force additional classics-builder or size-only slskd extractions.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`. Request coordination lifecycle tests now exercise `acquisition_request_coordinator.acquire_album_request()` directly; the legacy AST harness remains only for behaviors without a suitable extracted owner.
 
