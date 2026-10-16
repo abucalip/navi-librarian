@@ -99,3 +99,23 @@ def album_details_payload(album, collection_items=items):
             for song in collection_items(album.get("song"))
         ],
     }
+
+
+def library_overview_payload(artists, albums):
+    """Shape the legacy library overview from normalized artist and album rows."""
+    return {
+        "artist_count": len(artists),
+        "artist_count_note": (
+            "Count reflects artists returned by Navidrome's artist index."
+        ),
+        "recent_albums": [
+            {
+                "id": album.get("id"),
+                "name": album.get("name"),
+                "artist": album.get("artist"),
+                "year": album.get("year"),
+                "songCount": album.get("songCount"),
+            }
+            for album in albums
+        ],
+    }
