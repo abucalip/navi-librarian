@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-16 (recommendation and operational-surface audit adopted)
+Last updated: 2026-10-16 (recommendation/operations audit and server size ratchet adopted)
 
 ## Authority and responsibilities
 

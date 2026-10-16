@@ -1,8 +1,10 @@
-## 2026-10-16 — Add measurable legacy-server size ratchet (PR #265; verification pending)
+## 2026-10-16 — PR #265 merged: measurable legacy-server size ratchet
 
-- Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,031 source lines (`splitlines()`, matching the guard). On the first PR #265 CI run, AST measurements were `recommend_new_music`: 568 lines and `_discovery_acquire_album_impl`: 278 lines. The older 3,032 count included the trailing empty element from splitting on `\\n`; the enforced ceiling is corrected to 3,031.
+- Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,031 source lines (`splitlines()`, matching the guard). On the first PR #265 CI run, AST measurements were `recommend_new_music`: 568 lines and `_discovery_acquire_album_impl`: 278 lines. The initial 3,032 count included the trailing empty element produced by splitting on a newline; the enforced ceiling is corrected to 3,031.
 - Added `scripts/check_server_size.py` with a 3,031-line file ceiling, 280-line default top-level function ceiling, and a named temporary 575-line `recommend_new_music()` exception with reason and follow-up. Added pass/fail regression tests for file/function limits, exception diagnostics, and parse failures; wired compile and guard execution into the Python syntax workflow.
-- PR #265 final head and all four required workflows are pending. No assistant-side local tests were run. Merge only after full suite, syntax, container smoke, and validation-only multi-architecture workflows pass on the exact final head. Publishing remains paused.
+- Final PR head `0ac078656cf8af78cb507a9a7dfa337e1a173db7` passed all four required workflows: Python syntax/acquisition safety (`38965190861`), Docker packaging/full unit suite/build (`38965190744`), container runtime smoke (`38965190728`), and validation-only multi-architecture image validation (`38965190622`, publishing paused). The full unit suite ran 550 tests successfully; the size guard reported 3,031 source lines, `recommend_new_music()` at 568 AST lines, and `_discovery_acquire_album_impl()` at 278 AST lines.
+- PR #265 squash-merged as `57ec3a594df22bba77895934535530c37d833087`. No assistant-side local tests were run. Publishing, deployment, and production runtime verification were not performed.
+- Next: audit mutable `MUSIC_DIR` readers/writers before deciding whether settings-wrapper extraction is worthwhile.
 
 ---
 

@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #264 merged; PR #265 adds the measurable size ratchet)  
-Baseline: GitHub `main` after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`
+Last reviewed: 2026-10-16 (PR #265 merged; measurable size ratchet enforced)  
+Baseline: GitHub `main` after PR #265 merge commit `57ec3a594df22bba77895934535530c37d833087`
 
 ## Purpose
 
@@ -29,7 +29,7 @@ Acceptance: fixed-provider characterization coverage exists before extraction; i
 
 The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_music()`) is stale after extraction. PR #265 measures the current source at 3,031 lines and adds `scripts/check_server_size.py`: a 3,031-line server ceiling, a 280-line general top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. The guard uses AST `end_lineno` measurements, reports offending function names and sizes, and prints the ten largest functions in CI. The exception includes a rationale and follow-up plan; lower it as the recommendation adapter is decomposed.
 
-The CI guard is now implemented in `scripts/check_server_size.py` and enforced by the Python syntax workflow. Its tests prove both accepted and rejected boundaries, including the temporary exception diagnostics. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. The ratchet complements, but does not replace, the import-boundary guard or tests. As `recommend_new_music()` is decomposed, tighten its exception/limit rather than normalizing its current size as acceptable architecture.
+**Implemented and merged by PR #265.** The CI guard in `scripts/check_server_size.py` enforces a 3,031-line file ceiling, a 280-line default top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. On the verified source, AST sizes are 568 lines for `recommend_new_music()` and 278 for `_discovery_acquire_album_impl()`. Tests prove accepted and rejected boundaries, including exception diagnostics. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. As `recommend_new_music()` is decomposed, tighten its exception rather than normalizing its current size as acceptable architecture.
 
 ### 0b. Operational MCP functions — owner decision required
 
@@ -57,7 +57,7 @@ Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
 2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. Remaining source-executed cases are broader-search orchestration and the import-status persistence guard, which still depend on the legacy implementation boundary.
 3. **Completed by PR #254:** `scripts/check_app_legacy_imports.py` enforces the app-to-legacy-server boundary in CI. The only allowlisted direct import is `app/api/dependencies.py:get_librarian`, the existing lazy compatibility adapter. Regression tests reject module-level imports, imports from other functions/paths, `from` imports, and submodule imports. All four required workflows passed on final PR head `908783f0a46618c53e4f3e4c4dcf298ec33850fc`; merged as `8bfd6a57179aec46a672343745b494dff60fec02`.
-4. After the boundary guard is merged, complete the shared raw inventory helper and then extract the provider/candidate-gathering seam with characterization parity. Audit all `MUSIC_DIR` reads/writes before evaluating thin settings wrappers around `service_settings.py`.
+4. **Completed:** shared raw inventory helper (PR #261), provider/candidate-gathering extraction (PR #263), and response-contract regression fix (PR #264). Next, audit all `MUSIC_DIR` reads/writes before evaluating thin settings wrappers around `service_settings.py`.
 5. Audit `_discovery_acquire_album_impl()` with a short binary policy-vs-orchestration note containing exact line references: identify whether candidate selection, source-switch thresholds, retries, or state-transition rules remain inline. If only orchestration of extracted behavior remains, retain it; extract only a demonstrable policy seam.
 6. In parallel only where file/dependency overlap is absent, run separate PRs for the AST-test migration, app-import boundary guard, and settings-wrapper audit. Each PR must still branch from a suitable current base, pass exact-head CI, and refresh main before dependent work.
 
