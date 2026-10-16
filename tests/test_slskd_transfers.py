@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from slskd_transfers import (
     download_transfer_files, queue_download_files, match_expected_transfer_records,
+    summarize_transfer_progress,
 )
 
 
@@ -193,6 +194,45 @@ class SlskdTransferListingTests(unittest.TestCase):
             "http://slskd/api/v0/transfers/downloads/peer",
             headers={"X-API-KEY": "test"}, timeout=8,
         )
+
+
+    def test_progress_summary_uses_expected_sizes_and_real_counters(self):
+        expected = {
+            "01.flac": {"filename": "01.flac", "size": 100},
+            "02.flac": {"filename": "02.flac", "size": 200},
+            "03.flac": {"filename": "03.flac", "size": 50},
+        }
+        tracked = {
+            "01.flac": {"state": "Completed"},
+            "02.flac": {"state": "InProgress", "bytesTransferred": "250", "size": 200},
+            "03.flac": {"state": "Queued", "bytesTransferred": "invalid"},
+        }
+        result = summarize_transfer_progress(expected, tracked)
+        self.assertEqual(result, {
+            "total_tracks": 3,
+            "completed_tracks": 2,
+            "total_size_bytes": 350,
+            "transferred_size_bytes": 300,
+            "file_byte_snapshot": {
+                "01.flac": 0,
+                "02.flac": 250,
+                "03.flac": 0,
+            },
+        })
+
+    def test_progress_summary_clamps_negative_and_oversized_counters(self):
+        result = summarize_transfer_progress(
+            {"a.flac": {"size": "20"}, "b.flac": {"size": -5}},
+            {
+                "a.flac": {"state": "downloading", "bytesDownloaded": 99},
+                "b.flac": {"state": "completed", "bytesDownloaded": -10},
+            },
+        )
+        self.assertEqual(result["completed_tracks"], 2)
+        self.assertEqual(result["total_size_bytes"], 20)
+        self.assertEqual(result["transferred_size_bytes"], 20)
+        self.assertEqual(result["file_byte_snapshot"], {"a.flac": 99, "b.flac": 0})
+
 
 
 if __name__ == "__main__":
