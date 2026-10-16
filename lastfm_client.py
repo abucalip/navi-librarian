@@ -90,6 +90,35 @@ class LastFmClient:
             return None
 
 
+    def artist_top_albums(self, artist: str, limit: int = 8) -> list[dict[str, Any]]:
+        """Return normalized Last.fm top-album records for one artist."""
+        payload = self.cached_call(
+            "artist.getTopAlbums",
+            ttl_seconds=30 * 24 * 60 * 60,
+            artist=artist,
+            limit=limit,
+        )
+        if not payload:
+            return []
+        records = self._items_normalizer((payload.get("topalbums") or {}).get("album"))
+        output = []
+        for album in records:
+            if not isinstance(album, dict):
+                continue
+            title = str(album.get("name") or "").strip()
+            if not title:
+                continue
+            output.append({
+                "artist": artist,
+                "album": title,
+                "mbid": album.get("mbid") or None,
+                "lastfm_listeners": int(album.get("listeners") or 0),
+                "lastfm_playcount": int(album.get("playcount") or 0),
+                "lastfm_url": album.get("url"),
+            })
+        return output
+
+
     def artist_genres(self, artist: str) -> list[str]:
         """Return up to eight distinct cached Last.fm top tags for an artist."""
         payload = self.cached_call(
