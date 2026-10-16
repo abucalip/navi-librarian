@@ -2758,7 +2758,6 @@ def _start_discovery_scheduler():
     thread.start()
 
 
-
 if __name__ == "__main__":
     _start_discovery_scheduler()
     import sys
