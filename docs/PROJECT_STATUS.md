@@ -1,3 +1,8 @@
+## 2026-10-16 — PR #233 merged; New Releases global merge extraction in progress
+
+- PR #233 squash merge: `08e20f502e10f829bf9ae7920106b7e8427668eb`, from exact tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`. All four required workflows passed: syntax/acquisition safety 38934044235, Docker/full suite/build 38934044270, runtime smoke 38934044253, validation-only multi-architecture 38934044237. Local test commands were not run; publishing/deployment/runtime verification remain unclaimed.
+- PR #234 extracts cross-artist candidate merging to `discovery_new_releases.merge_release_candidates()`, preserving newest-date winner and existing winner on ties. Direct-import regressions added. CI pending on exact final head.
+
 ## 2026-10-16 — PR #232 merged: classics candidate collection
 
 - Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.
