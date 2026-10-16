@@ -29,6 +29,46 @@ def build_new_release_lookup(
     return cache_key, query
 
 
+def fetch_artist_release_groups(
+    cache_key: str,
+    query: str,
+    *,
+    cache_get: Callable[..., Any],
+    cache_set: Callable[..., Any],
+    http_get: Callable[..., Any],
+    sleep: Callable[[float], Any],
+    headers: Mapping[str, str],
+    pause_before_request: bool,
+) -> tuple[Any, str | None]:
+    """Read cached release groups or fetch/cache them, returning a safe error type.
+
+    The caller owns artist iteration and provider pacing policy; injected effects keep
+    cache, transport, and delay behavior independently testable without server imports.
+    """
+    import httpx
+
+    payload = cache_get(cache_key, ttl_seconds=30 * 24 * 60 * 60)
+    if payload is not None:
+        return payload, None
+    try:
+        if pause_before_request:
+            sleep(1.1)
+        response = http_get(
+            "https://musicbrainz.org/ws/2/release-group/",
+            params={"query": query, "fmt": "json", "limit": 100},
+            headers=dict(headers),
+            timeout=20,
+        )
+        response.raise_for_status()
+        payload = response.json().get("release-groups", [])
+        if not isinstance(payload, list):
+            payload = []
+        cache_set(cache_key, payload)
+        return payload, None
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        return None, type(exc).__name__
+
+
 def select_artist_release_candidates(
     release_groups: list[Any],
     *,
