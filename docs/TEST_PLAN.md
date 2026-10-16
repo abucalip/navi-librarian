@@ -1107,9 +1107,15 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
 
-## 2026-10-16 — PR #214 refreshed: Deezer tracklist shaping extraction
+## 2026-10-16 — PR #214 merged: Deezer tracklist shaping
 
-- Recreated this candidate directly on current `main` after the original branch diverged; the refreshed diff is based on the latest main revision and preserves intervening merged work.
-- Extracted only the pure track-row-to-response transformation into `app/services/deezer_tracklist.py`. The metadata router retains provider I/O, matching, response assembly, and error handling.
-- Direct-import regression tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
-- Exact-head CI and final diff review are pending. Do not merge until all four required workflows pass on the refreshed PR head. No publication or deployment.
+- Extracted pure track-row-to-response shaping into `app/services/deezer_tracklist.py`; `app/api/metadata.py` retains provider I/O, matching, response assembly, and error handling.
+- Direct-import tests cover track numbering/fallback, title trimming/filtering, missing durations, and invalid numeric conversion.
+- Exact tested head `59c8d13ba57930400675e4f9ff90ccba919b63aa`; all four workflows passed: Python syntax run 1144, Docker packaging/full suite/build run 1051, container runtime smoke run 860, and validation-only multi-architecture validation run 904.
+- Merged at `51c4e03ac3a65cd74a25c6aced897bfa4d74a989`. No publication or deployment.
+
+## 2026-10-16 — PR #216 in progress: Deezer artwork selection
+
+- Extracted the pure album-artwork relevance selection/payload shaping and exact-artist photo fallback shaping into `app/services/deezer_artwork.py`. `app/api/metadata.py` retains request sequencing, cache ownership, provider-failure/retry behavior, and HTTP validation.
+- Added direct-import tests for relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year fallback, exact artist identity, missing photos, and empty results; added route-level regressions for album selection and artist-photo fallback.
+- Current branch: `refactor/extract-deezer-artwork-selection`. Focused/full tests have not been run locally; exact-head CI, final diff review, and merge are pending. Publishing/deployment remain paused.
