@@ -1,3 +1,11 @@
+## slskd live progress calculations — extracted (PRs #182–#183)
+
+`slskd_transfers.summarize_transfer_progress()` owns pure aggregation of matched expected/tracked records into completed-track count, total/transferred bytes, and actual-counter snapshots. Completed states may infer a file's transferred bytes for display totals, but those inferred bytes are deliberately excluded from speed snapshots. `slskd_transfers.estimate_transfer_speed()` calculates the delta-based bytes/second estimate from current counters and a prior snapshot/time. `navidrome_server.py` still owns the HTTP call, expected/tracked matching invocation, snapshot key, shared snapshot storage/lock, and public progress response.
+
+- PR #182 tested head `045131f58365dd0e6538c1712f37f56f639c65ad`, merged `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`; all four required exact-head workflows passed.
+- PR #183 final tested head `fac29c108a1d630f2ffbc6af8dad8a5e88c5368f`, merged `e4e9bd1fad9536f00f3908d753b66147d30ca03f`; all four required exact-head workflows passed. Docker packaging CI ran 342 unit tests successfully.
+- The legacy progress response, snapshot locking, and counter-reset behavior remain in place. No publication, deployment, or production runtime verification is claimed.
+
 ## Recommendation style classification — extracted (PR #171)
 
 `discovery_recommendations.py` owns the pure `genre_families()`, `recent_style_families()`, `primary_recent_family()`, and `classify_diversity_style()` rules used by `recommend_new_music()`. The server imports these helpers inside the recommendation operation; scoring, provider I/O, candidate quotas, persistence, and the legacy MCP response remain in their existing owners. PR #171 merged at `6d00562405320affcb1a04b4359397b332cd5bf5` from exact tested head `24e2e27f7af3bd3be6b96d725bc72b577f8f78d9`. All four required workflows passed on that exact head.
