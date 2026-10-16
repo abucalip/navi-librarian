@@ -13,6 +13,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 
 from app.services.artist_bio import resolve_artist_bio
+from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_album_matching import (
     artwork_match_score,
     exact_album_matches,
@@ -163,15 +164,9 @@ def album_details(artist: str = "", album: str = ""):
         detail_response = _EXTERNAL_HTTP.get(f"https://api.deezer.com/album/{album_id}")
         detail_response.raise_for_status()
         details = detail_response.json()
-        result["tracks"] = [
-            {
-                "track_number": int(track.get("track_position") or index + 1),
-                "title": str(track.get("title") or "").strip(),
-                "duration_seconds": int(track.get("duration") or 0),
-            }
-            for index, track in enumerate(details.get("tracks", {}).get("data") or [])
-            if str(track.get("title") or "").strip()
-        ]
+        result["tracks"] = shape_tracklist(
+            details.get("tracks", {}).get("data") or []
+        )
         if not result["tracks"]:
             result["message"] = "The album was found, but its tracklist is unavailable."
         return result
