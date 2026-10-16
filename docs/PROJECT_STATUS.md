@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-16 (modularization audit on `d6e32aadfbca6e1d746ced657bdc124b9d472251`)
-Documentation base: GitHub `main` at commit `d6e32aadfbca6e1d746ced657bdc124b9d472251`
+Last reviewed: 2026-10-16 (PR #278 merged as `d619a83c064f3cc106356d96bf83747755c8072a`)
+Documentation base: GitHub `main` at commit `d619a83c064f3cc106356d96bf83747755c8072a`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling and PR #276 retired the two risky operational MCP tools. The current-main audit found the dependency-map artifact covers 168 repository modules and a 73-module app import closure; `app.api.dependencies` is the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,768 server lines; `recommend_new_music()` is 568 AST lines and `_discovery_acquire_album_impl()` 278. PR in review centralizes duplicated recommendation category policy. See `PROJECT_LOG.md`.
+Backend modularization remains in progress. PR #278 centralized recommendation category policy and reduced `recommend_new_music()` from 568 to 466 AST lines. The current-main dependency map (artifact `12076627980`, generated on `d619a83c064f3cc106356d96bf83747755c8072a`) covers 169 repository modules and a 73-module app import closure; `app.api.dependencies` is the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,666 server lines; `_discovery_acquire_album_impl()` remains 278 lines. PR in review extracts Last.fm scoring policy. See `PROJECT_LOG.md`.
 
 ## Next action
 
-1. Verify and merge the shared recommendation-category policy extraction only after all four required workflows pass on its exact final PR head.
-2. Then refresh the dependency map and repeat the completion audit; current map is artifact `12077720422` from main SHA `d6e32aadfbca6e1d746ced657bdc124b9d472251`.
+1. Verify and merge the Last.fm scoring-policy extraction only after all four required workflows pass on its exact final PR head.
+2. Then recheck the current dependency map and size ratchet; no thresholds should be raised to accommodate changes.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
