@@ -1,3 +1,7 @@
+## 2026-10-16 — slskd connection probe verification closeout (PR #187)
+
+Final PR head `920590871883aa8c75c29a1b16131bd88519072d` passed all four GitHub Actions workflows: Python syntax check (run 1041), Docker packaging/full unit suite/build (run 948), container runtime smoke test (run 757), and validation-only multi-architecture image build with publishing paused (run 801). Direct-import regressions in `tests/test_slskd_client.py` cover successful request parameters and response shape, 401/403 authentication failures, HTTP errors, missing configuration, and API-key redaction. Squash merge: `b7ae6458adda3650f178fc64457914beb66ece9c`. Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — slskd connection probe (PR #187, pending verification)
 
 Focused regression file: `tests/test_slskd_client.py`. It covers successful request parameters/response shape, 401/403 authentication failure, HTTP errors, invalid/missing configuration, and API-key redaction. Run `python -m unittest tests.test_slskd_client -v`, `python -m unittest discover -s tests -v`, syntax checks, and all four exact-final-head workflows (syntax/acquisition safety; Docker packaging/full suite/build; isolated runtime smoke; validation-only multi-architecture build). These tests and CI are not yet verified for the final PR head. Do not publish or deploy.
