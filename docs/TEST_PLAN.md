@@ -2,12 +2,12 @@
 
 Last updated: 2026-10-16
 
-This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root \`PROJECT_LOG.md\`. Always verify current results for the exact revision being proposed.
+This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
 ## Required checks for backend changes
 
 1. **Focused regressions:** run the tests covering the changed behavior and new direct-import tests for extracted logic.
-2. **Full unit suite:** run \`python -m unittest discover -s tests -v\`.
+2. **Full unit suite:** run `python -m unittest discover -s tests -v`.
 3. **Syntax and static checks:** run the repository's Python syntax/acquisition-safety workflow and applicable syntax checks.
 4. **API and package checks:** exercise relevant API contracts and verify changed modules are included by Docker/package configuration.
 5. **Safety cases:** for acquisition, import, cleanup, and deletion, test intended success and unsafe refusal. Cover canonical-root validation, traversal/symlink escape, ambiguous paths, unrelated-file preservation, no-overwrite behavior, incomplete files, and relevant state/race boundaries.
@@ -23,11 +23,11 @@ After the final code or documentation commit, verify all four workflows on the *
 - Isolated container runtime smoke test.
 - Validation-only multi-architecture image validation.
 
-The multi-architecture workflow must remain non-publishing (\`push: false\`). A workflow existing, a successful compile, or a container starting does not prove all required checks passed. If a workflow is missing, skipped, cancelled, or associated with another SHA, state that explicitly and do not claim the gate is complete.
+The multi-architecture workflow must remain non-publishing (`push: false`). A workflow existing, a successful compile, or a container starting does not prove all required checks passed. If a workflow is missing, skipped, cancelled, or associated with another SHA, state that explicitly and do not claim the gate is complete.
 
 ## UI changes
 
-After automated CI succeeds, run the full manual browser checklist in \`docs/LOCAL_UI_TESTING.md\` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
+After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
 
 ## Reporting states separately
 
@@ -55,4 +55,4 @@ For documentation-only PRs:
 
 ## Historical evidence
 
-Search the root \`PROJECT_LOG.md\` by PR number, module, or responsibility to find past test runs. Historical success is context, not a substitute for running required checks on the current revision.
+Search the root `PROJECT_LOG.md` by PR number, module, or responsibility to find past test runs. Historical success is context, not a substitute for running required checks on the current revision.
