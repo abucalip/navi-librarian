@@ -169,22 +169,12 @@ def library_overview() -> str:
         albums_root.get("albumList2", {}).get("album")
     )
 
-    return json.dumps({
-        "artist_count": len(artists),
-        "artist_count_note": (
-            "Count reflects artists returned by Navidrome's artist index."
-        ),
-        "recent_albums": [
-            {
-                "id": a.get("id"),
-                "name": a.get("name"),
-                "artist": a.get("artist"),
-                "year": a.get("year"),
-                "songCount": a.get("songCount"),
-            }
-            for a in albums
-        ],
-    }, ensure_ascii=False, indent=2)
+    from navidrome_client import library_overview_payload
+    return json.dumps(
+        library_overview_payload(artists, albums),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def search_music(query: str, category: str = "all") -> str:
