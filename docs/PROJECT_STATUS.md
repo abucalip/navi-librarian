@@ -1,21 +1,15 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #288 merged; direct Docker import audit refreshed)
-Documentation base: GitHub `main` at commit `047822df81b134084383ed370205b1a3554c706a`
+Last reviewed: 2026-10-17 (modularization completion audit)
+Documentation base: GitHub `main`; audit reviewed source at PR #288 final code head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c` plus subsequent documentation-only closeout.
 
 ## Current focus
 
-The recommendation policy seams and acquisition AST-test migration are complete. No further extraction currently has a sufficiently narrow boundary to justify added indirection. The completion audit checked the current lazy web-to-legacy import in `app/api/dependencies.py`, the CI import-boundary guard, the AST inventory, and Docker's explicit root-module copy list.
+**Modularization roadmap complete.** The final audit found no remaining concrete correctness, safety, or testability gap that justifies another extraction. Remaining recommendation and acquisition code is documented orchestration/compatibility wiring. No further size-only extraction is planned.
 
-PR #286 added `acquisition_import_service.py`, and PR #288 added `discovery_candidate_gathering.py`. The Docker packaging regression now AST-inspects `navidrome_server.py` and checks that every imported root-level Python module is listed among the Docker COPY sources. A follow-up comparison on current main found all 48 distinct root-level modules imported by `navidrome_server.py` are now included. The isolated runtime smoke test may not exercise this delayed import path.
+The transitive dependency-map review is recorded in `PROJECT_LOG.md`. The app-to-legacy import remains the single intentional lazy edge in `app/api/dependencies.py:get_librarian()`; AST/source-reading tests have been inventoried and behavior tests migrated to direct imports. The Docker regression checks every root-level module imported by `navidrome_server.py` against the explicit COPY list; the final audit found all 48 imported modules included, including the two omissions corrected by PRs #286 and #288.
 
-## Next action
-
-1. Fix the Docker image's missing `acquisition_import_service.py` and add a regression test that prevents this omission from recurring.
-2. Verify all four required workflows on the exact final PR-head SHA, especially the container runtime and packaging checks; do not claim local tests unless run.
-3. After merge, repeat the completion audit against exact current `main`: review the generated dependency map/artifact, app-to-legacy references, dynamic imports, Docker inclusion, and compatibility/safety tests. If no further gap remains, record modularization complete without inventing another extraction.
-
-The `MUSIC_DIR` read/write audit remains closed: existing persistence callbacks and invocation-time path snapshots are sufficient; a separate settings object is not justified. The recommendation diagnostic projection and acquisition coordinator remain orchestration unless a concrete behavior change establishes a smaller testable seam.
+**Next action:** none for modularization. Resume only for a concrete correctness, security, verification, or product requirement. Keep publishing paused until separately authorized.
 
 ## Delivery and verification state
 

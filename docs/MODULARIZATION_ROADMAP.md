@@ -1,15 +1,15 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #288 merged; audit base `047822df81b134084383ed370205b1a3554c706a`)
-Audit base: GitHub `main` at commit `047822df81b134084383ed370205b1a3554c706a`
+Last reviewed: 2026-10-17 (completion audit closed)
+Audit base: GitHub main code at PR #288 final head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c`; later main change was documentation closeout.
 
 ## Purpose
 
-This file is the **active plan**, not an extraction diary. It lists only work that remains useful after checking the current implementation. Completed extraction details and verification evidence belong in the root `PROJECT_LOG.md`; current session state belongs in `docs/PROJECT_STATUS.md`.
+This roadmap is **closed** after the final transitive-import and dependency-map audit. It is retained as an architecture decision record; completed extraction details and verification evidence belong in the root `PROJECT_LOG.md`. Do not reopen it for size-only work or speculative extractions. Reopen only when a concrete correctness, safety, testability, or product requirement establishes a worthwhile change.
 
 Do not add a roadmap entry merely because a function or file is large. Extract only a cohesive responsibility with a clear owner, meaningful direct-import tests, and a compatibility boundary that is simpler than the current design.
 
-## Current priorities
+## Audited work and retained boundaries
 
 ### 0. Recommendation candidate gathering — policy seams extracted; retain orchestration
 
@@ -114,6 +114,20 @@ The number of extractions is not a goal or quota. A documented decision to retai
 For each code PR, follow `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`: focused regressions, full unit suite, syntax/package/API checks where applicable, complete diff review, and all four required workflows on the exact final PR-head SHA. UI changes also require the documented manual browser checks.
 
 Publishing remains paused until the roadmap is complete and publishing is explicitly authorized. CI/build success is not publication, deployment, or production runtime verification. Acquisition-dismissal HTTP 409 remains deferred unless it becomes reproducible or is explicitly re-prioritized.
+
+## Final completion audit — 2026-10-17
+
+**Decision: complete; no further modularization work is scheduled.**
+
+- **Transitive import graph:** reviewed the deterministic AST graph generator `scripts/dep_map.py`, the CI generation/upload step in `.github/workflows/python-syntax.yml`, and the documented dependency-map artifact evidence. The graph covers repository-local modules transitively from `app.main`, including app/API modules and `navidrome_server.py`; its own notes correctly flag dynamic imports and dependency injection as requiring manual review. The map is an audit artifact, not a committed source-of-truth graph.
+- **App-to-legacy boundary:** `scripts/check_app_legacy_imports.py` enforces the only permitted app edge: the lazy import in `app/api/dependencies.py:get_librarian()`. The app-import isolation regression remains documented in the AST inventory. No additional permitted edge was justified.
+- **Docker transitive-risk follow-up:** PR #286 fixed the lazy `acquisition_import_service.py` omission; PR #288 fixed `discovery_candidate_gathering.py` and generalized `tests/test_docker_packaging.py` to compare AST-visible root-module imports from `navidrome_server.py` against Docker COPY sources. The latest documented audit found all 48 imported root-level modules present. Container startup alone is not treated as proof of delayed import coverage.
+- **Test coupling:** `docs/architecture/AST_TEST_INVENTORY.md` records that the behavioral AST/source harnesses were migrated. `tests/test_acquisition_safety.py` retains direct production-owner tests for concurrency, recovery, persistence-before-import, and unsafe refusal; compatibility tests remain separate. No assertions or filesystem-safety coverage were intentionally weakened.
+- **Dynamic imports and runtime behavior:** manually reviewed the documented lazy compatibility import, service wiring, MCP registry, and Docker's explicit copy boundary. Static AST analysis cannot prove all runtime reachability; the four required CI workflows remain the repository's release gate. No local test run, deployment, publication, or production-runtime verification is claimed for this documentation audit.
+- **Retained orchestration:** the remaining `recommend_new_music()` projection/allocation sequence and `_discovery_acquire_album_impl()` are kept as compatibility/orchestration boundaries. Extracting them further would widen shared-state/dependency surfaces without a concrete independent policy or testability gain.
+- **Outcome:** acceptance criteria in Definition of done are satisfied by merged implementation, regression coverage, CI evidence recorded in the project log, explicit package/import boundaries, and documented retain decisions. No new extraction, test, or dependency layer is warranted.
+
+Publishing remains paused pending separate explicit authorization. This completion decision does not imply publication, deployment, or production-runtime verification.
 
 ## History
 
