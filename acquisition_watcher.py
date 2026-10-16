@@ -1,5 +1,7 @@
 """Injected acquisition watcher lifecycle; no app/MCP initialization on import."""
 from pathlib import Path
+
+from acquisition_progress_accounting import observe_progress
 import shutil
 import time
 
@@ -117,11 +119,14 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                     except (TypeError, ValueError):
                         pass
             now_mono = clock.monotonic()
-            if current_bytes > last_progress_bytes:
-                last_progress_bytes = current_bytes
-                last_progress_at = now_mono
-                stall_detected_at = None
-            stalled_for = now_mono - last_progress_at
+            progress = observe_progress(
+                current_bytes, last_progress_bytes, last_progress_at,
+                stall_detected_at, now_mono,
+            )
+            last_progress_bytes = progress["last_progress_bytes"]
+            last_progress_at = progress["last_progress_at"]
+            stall_detected_at = progress["stall_detected_at"]
+            stalled_for = progress["stalled_for"]
             if (stalled_for >= 120 and candidate.get("fallback_candidates")
                     and not (states and states.issubset({"succeeded", "completed"}))):
                 if stall_detected_at is None:
