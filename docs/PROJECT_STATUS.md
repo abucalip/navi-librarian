@@ -1,3 +1,9 @@
+## 2026-10-16 — Personal recommendation payload projection extraction (verification pending)
+
+- Started from current GitHub main after PR #223. Moved the pure base recommendation response projection from the nested `recommend_new_music()` helper into `discovery_recommendation_payload.py`; the adapter still computes recent-listen counts and adds selection-specific ownership annotations.
+- Added direct-import field/default/rounding/reason tests and included the helper in the Docker module list.
+- No local tests were run. Exact-head CI and full diff review remain pending; no merge, publication, deployment, or runtime verification is claimed.
+
 ## 2026-10-16 — PR #223 merged: personal recommendation allocation
 
 - PR #223 merged as `1ccb11485bf1efce3ff201fb7337407c3e668c47` from exact final tested head `b604940e4b7a20160d4f3710b009c6ca718c57c5`.
