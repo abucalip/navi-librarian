@@ -21,8 +21,10 @@ class FakeMCPServer:
 
 class MCPRegistryTests(unittest.TestCase):
     def test_tool_registry_is_unique_and_registers_all_legacy_tools(self):
-        self.assertEqual(len(TOOL_NAMES), 27)
+        self.assertEqual(len(TOOL_NAMES), 25)
         self.assertEqual(len(TOOL_NAMES), len(set(TOOL_NAMES)))
+        self.assertNotIn("restart_server", TOOL_NAMES)
+        self.assertNotIn("apply_server_patch", TOOL_NAMES)
 
         functions = {
             name: (lambda name=name: name)
@@ -45,6 +47,8 @@ class MCPRegistryTests(unittest.TestCase):
                 "import sys; import navidrome_server as service; "
                 "from mcp_registry import TOOL_NAMES; "
                 "assert all(callable(getattr(service, name)) for name in TOOL_NAMES); "
+                "assert not hasattr(service, 'restart_server'); "
+                "assert not hasattr(service, 'apply_server_patch'); "
                 "assert 'mcp.server.mcpserver' not in sys.modules",
             ],
             check=False,

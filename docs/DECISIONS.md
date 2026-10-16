@@ -121,3 +121,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Consequence:** Keep an explicit ordered registry and regression tests for all existing tool names and callable references. Do not remove the MCP dependency, tool surface, or runtime entry point until web callers and release gates demonstrate that removal is safe.
 
 **PR #138 verification record:** implementation/documentation head `fe71a9a19188a018a2ee65d5b313a99413d239f2` passed all four required workflows (syntax/acquisition safety `38783091362`, Docker packaging/full suite/build `38783091326`, runtime smoke `38783091309`, validation-only multi-architecture `38783091337`). The final documentation-updated PR head `05d0eaf9a2e1ca94f3f03251208059540d06772f` passed all four required workflows (syntax `38783296279`, Docker packaging/full suite/build `38783296173`, runtime smoke `38783296256`, validation-only multi-architecture `38783296249`) and PR #138 merged at `197863830471bbd63eed57a11cafd815aede7f00`.
+
+
+## D-015 — Retire legacy source-patching and process-restart MCP tools
+
+**Decision:** Remove `restart_server` and `apply_server_patch` from `navidrome_server.py` and the ordered MCP registry. Preserve the MCP runtime and all other registered tools.
+
+**Reason:** The owner identified these as early-development legacy functions and requested removal if safe. Current-source inspection found no internal callers; they were exposed only as MCP tools. `restart_server` kills/relaunches a process on hardcoded port 8000, and `apply_server_patch` rewrites the running service's source file. Their risk outweighs the value of preserving these two legacy operations.
+
+**Consequence:** Regression tests pin the registry at 25 unique tools and verify both retired functions are absent from the service module and registry. This does not retire MCP or authorize removal of other MCP capabilities. Reintroducing either tool requires a new explicit owner decision and security review.

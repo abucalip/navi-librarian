@@ -1,21 +1,21 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #274 merged as `cae95e74c9910c512392de80b337eb4b21de67a5`)
-Documentation base: GitHub `main` at commit `cae95e74c9910c512392de80b337eb4b21de67a5`
+Last reviewed: 2026-10-16 (legacy operational MCP tool retirement proposed in PR)
+Documentation base: GitHub `main` at commit `fc73958eac7b3e1b95ab29493fb023f63b76bd41`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #272 migrated broader-query fallback tests, and PR #274 removed the final AST/source-layout coupling from `tests/test_acquisition_safety.py`. PR #274 merged as `cae95e74c9910c512392de80b337eb4b21de67a5`; all four required workflows passed on exact tested PR head `ad6864ea1f5f70b7f9d8b852bbc4bb02e7c2d395`, including the 554-test suite. The AST inventory is now complete; see `PROJECT_LOG.md` for evidence.
+Backend modularization remains in progress. PR #274 removed the final AST/source-layout coupling. The next focused change retires two unused, risky MCP operations (`restart_server` and `apply_server_patch`) at the owner's direction while preserving the other 25 MCP tools and the MCP runtime. Exact-head CI is pending.
 
 ## Next action
 
-1. Obtain the owner’s explicit decision on MCP-exposed `restart_server` and `apply_server_patch`; do not refactor or remove them before that product/security decision.
-2. After the decision, either document retirement and a compatibility migration gate, or create a focused operations-module PR with authorization and safety tests.
+1. Verify and merge the focused retirement PR only after all four required workflows pass on its exact final head.
+2. Then run the modularization completion audit against current main: dependency-map artifact, remaining legacy references, and size-ratchet measurements.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
 
-The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`. Request coordination lifecycle tests now exercise `acquisition_request_coordinator.acquire_album_request()` directly; the legacy AST harness remains only for behaviors without a suitable extracted owner.
+The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`; no direct AST/source-layout coupling remains in the audited test suite. Request coordination lifecycle tests exercise `acquisition_request_coordinator.acquire_album_request()` directly.
 
 ## Delivery and verification state
 

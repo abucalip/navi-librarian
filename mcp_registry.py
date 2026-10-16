@@ -31,8 +31,6 @@ TOOL_NAMES = (
     "discovery_queue_slskd_candidate",
     "discovery_get_list",
     "discovery_refresh_list",
-    "restart_server",
-    "apply_server_patch",
 )
 
 
