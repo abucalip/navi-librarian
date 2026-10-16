@@ -1,3 +1,13 @@
+## 2026-10-16 — Documentation consolidation
+
+- Re-established canonical document roles: `docs/MODULARIZATION_ROADMAP.md` is the short active plan; `docs/PROJECT_STATUS.md` is the current snapshot; `docs/TEST_PLAN.md` is the verification baseline; `docs/ARCHITECTURE.md` describes current responsibilities; this file remains the primary detailed project history.
+- Older extraction/verification sections found in the former diary-style roadmap, test plan, and architecture document that were not represented by PR number here were preserved in `docs/archive/MODULARIZATION_HISTORY.md`. Archived records are historical evidence, not current status; verify current state against GitHub `main` and exact CI runs.
+- Updated the workflow to use targeted historical search instead of reading the full log every session.
+- The read-only boundary audit found the next candidate should be a trace of `_build_classics_list()` and its tests, followed by an application-assembly/AST-test dependency audit. Acquisition coordinator extraction remains conditional on a narrow safe seam; slskd work is not justified by file size alone. PR #228's audit findings are incorporated here and in the roadmap; the PR can be closed as superseded once this consolidation is reviewed.
+- This was a documentation-only change; no application tests or CI have been run yet. No publication, deployment, or runtime verification is claimed.
+
+---
+
 ## 2026-10-16 — PR #240 merged: lazy auth-secret provider
 
 PR #240 squash-merged at `78547fd47c1b155255c1da6ef57120b76513a0fc` from exact final tested head `e3542c6a8fa3b2fc3ddf07a0268563ae5946064a`. Extracted lazy, lock-protected signing-secret loading to `app/security/auth_secret.py`, with injected data-directory lookup and existing secret loader; retained `app.main._AUTH_SECRET` for integration-test compatibility. Direct-import tests cover laziness, caching, retry after exceptions/None, and concurrent first use. Initial CI caught the removed compatibility attribute; it was restored and the corrected head passed all four workflows: syntax/acquisition safety `38941505550`, Docker/full suite/build `38941505440`, runtime smoke `38941505508`, and validation-only multi-architecture `38941505516`. Assistant-side local tests were not run. Publishing remains paused; no deployment or production runtime verification claimed.
