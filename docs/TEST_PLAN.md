@@ -1,3 +1,11 @@
+## 2026-10-16 — Progress-calculation extraction verification (PRs #182–#183)
+
+- **PR #182**, final tested head `045131f58365dd0e6538c1712f37f56f639c65ad`: syntax/acquisition-safety run 1016, Docker packaging/full unit suite/build run 923, container runtime smoke run 732, and validation-only multi-architecture run 776 all succeeded. Merged as `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`.
+- Direct-import tests cover completed-state inference, byte-counter aliases, invalid/negative values, size clamping, and actual-counter snapshots. The full suite ran in the packaging workflow.
+- **PR #183**, final tested head `fac29c108a1d630f2ffbc6af8dad8a5e88c5368f`: syntax/acquisition-safety run 1019, Docker packaging/full unit suite/build run 926, container runtime smoke run 735, and validation-only multi-architecture run 779 all succeeded. Merged as `e4e9bd1fad9536f00f3908d753b66147d30ca03f`.
+- The initial PR #183 head failed one newly added assertion because the fixture used a 1-second elapsed interval but expected the half-second rate. Corrected the expected value to 200 bytes/second; the final exact head passed all four workflows, including 342 unit tests.
+- Assistant-side local test commands were not run. No image publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — slskd queue and progress-matching extraction verification
 
 - **PR #180**, exact final head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`: syntax/acquisition-safety run 1008, Docker packaging/full unit suite/build run 915, container runtime smoke run 724, and validation-only multi-architecture image validation run 768 all succeeded. Merged as `7c670f2eac838934bc9afa7f40f892ff595ca4ca`.
