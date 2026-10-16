@@ -1724,3 +1724,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Test execution and exact-head CI are pending PR creation. No publication, deployment, or runtime verification.
 - **Next action:** run the focused direct-import contract tests and required exact-head workflows; only then decide whether to move loops in a separate PR. If actual policy needs callbacks/shared mutable state beyond this interface, stop and refine the seam.
 
+## 2026-10-16 — PR #221 merged: personal allocation interface contract
+
+- PR #221 (`test: define personal recommendation allocation contract`) merged from exact tested head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`; squash merge/current main at closeout `820556799fa9d3ec663e5117b36c68084281b20a`.
+- Added `discovery_allocation_contract.py`, direct-import tests in `tests/test_discovery_allocation_contract.py`, and `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md`. Updated status, test plan, roadmap, and project log.
+- All four required workflows passed on exact PR head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`: Python syntax run `38916419736`; Docker packaging/full unit suite/build run `38916419709`; container runtime smoke run `38916419958`; validation-only multi-architecture image validation run `38916419701` (publishing remains paused). The packaging workflow's unit-test step passed. Assistant-side local test commands were not run independently.
+- **Important scope boundary:** this PR only defines and tests the immutable data contract. It does not move or test the actual shortlist-selection loops, and does not prove allocation policy parity. No provider/library I/O, response assembly, legacy caller, or MCP interface changed.
+- No publication, deployment, or production runtime verification is claimed.
+- **Next action:** use this interface for a separate allocator implementation only if the existing policy can be moved without callbacks or shared mutable state, with direct-import policy-parity tests for style reservations, quotas, duplicates/per-artist limits, ownership/manual review, fallback ordering, diagnostics, and the 60-check cap. If not, refine or abandon the boundary.
+
