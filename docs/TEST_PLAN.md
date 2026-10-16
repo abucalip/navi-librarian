@@ -1,6 +1,6 @@
 # Test plan
 
-Last updated: 2026-10-16 (modularization audit gates added)
+Last updated: 2026-10-16 (recommendation characterization and size-ratchet gates added)
 
 This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
@@ -44,6 +44,12 @@ grep -r "navidrome_server" app/ --include="*.py"
 ```
 
 Expected result: no domain-policy imports of `navidrome_server.py`; only explicitly documented compatibility adapters may remain. On the current audit baseline, `app/api/dependencies.py` intentionally performs a lazy import in `get_librarian()` to preserve the web API's legacy-service adapter, and the MCP/server compatibility surface also remains. Review every match and its import timing; do not treat a grep exit code alone as proof. Add an allowlist-aware check to CI after the approved adapter locations are confirmed. The AST map traverses imports inside functions and therefore reports this lazy edge in the static `app.main` closure even though `tests/test_auth_routes_integration.py` verifies that importing the web app does not initialize `navidrome_server`.
+
+## Recommendation characterization and size ratchet
+
+Before extracting any part of `recommend_new_music()`, add deterministic tests with fake provider callables/responses and a fixed listen/library fixture. Assert stable candidate ordering, ownership exclusions, scoring/bonus effects, provider failure behavior, and the public result shape where those behaviors apply. Existing tests that mock the entire function do not characterize its internals. Compare the library-inventory path with `discovery_library_snapshot.py` before creating another inventory implementation.
+
+A CI size guard should check the verified `navidrome_server.py` line ceiling and recorded top-level-function limits. The baseline must be measured from the exact reviewed GitHub revision; do not blindly hardcode an audit estimate. Tests for the guard must prove both acceptance below thresholds and failure above thresholds, and diagnostics must name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
 
 ## UI changes
 
