@@ -1,3 +1,12 @@
+## 2026-10-17 — Post-closeout hygiene: remove orphan patch scripts and tighten server ceiling
+
+- Starting from `main` after PR #290 merge (`c20e931de22fe30cc3378867cbbebe56b28a91a4`), reviewed the closed modularization roadmap and size-guard/testing documentation.
+- GitHub code search found no references to `patch_recommender.py` or `patch_recommender_v2.py`; neither script is part of the Docker COPY list or current server/app imports. Both are one-off source-rewriting experiments with backup/compile behavior rather than maintained runtime code, so removing them reduces ambiguity and audit surface.
+- Tightened `scripts/check_server_size.py` from 3,031 to 2,650 lines, leaving 53 lines above the current 2,597-line server count measured from the fetched source with `splitlines()`. Updated the guard's docstring/comment to direct new domain logic into modules and added a regression assertion for the ceiling. Updated status, roadmap, test plan, and workflow references.
+- This entry records intent only; PR/commit SHA, focused/full test results, exact-head CI, and merge state will be added after verification. Publishing remains paused; no deployment or runtime verification is claimed.
+
+---
+
 ## 2026-10-16 — PR #288 merged: Docker recommendation import packaging fixed
 
 - Follow-up audit after PR #286 found a second missing Docker dependency: `navidrome_server.py` imports `discovery_candidate_gathering.py`, but the explicit Docker COPY list omitted it.

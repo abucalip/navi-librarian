@@ -1,10 +1,13 @@
 """Regression tests for the legacy server size ratchet."""
 import unittest
 
-from scripts.check_server_size import FUNCTION_EXCEPTIONS, check_source
+from scripts.check_server_size import FUNCTION_EXCEPTIONS, SERVER_LINE_LIMIT, check_source
 
 
 class ServerSizeGuardTests(unittest.TestCase):
+    def test_server_ceiling_is_tightened_with_small_growth_buffer(self):
+        self.assertEqual(SERVER_LINE_LIMIT, 2650)
+
     def test_accepts_source_at_line_and_function_limits(self):
         source = "def small():\n    return 1\n"
         self.assertEqual(
