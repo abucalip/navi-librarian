@@ -703,3 +703,8 @@ Refresh GitHub main, open PRs, and CI. Continue the remaining acquisition lifecy
 ## 2026-10-16 — Acquisition progress snapshot extraction (PR pending)
 
 The process-local map and lock used to estimate slskd transfer speed have been extracted to acquisition_progress_snapshots.py. The service still owns polling, identity construction, monotonic clock selection, and the existing transfer-speed estimator. Direct-import tests protect initial/previous snapshots, key isolation, and exception behavior. Verify all four required CI workflows on the exact final PR head before merge. This is a backend-only change; publishing and deployment remain paused.
+
+
+## 2026-10-16 — Acquisition search diagnostics extraction (PR pending)
+
+Pure shaping for candidate diagnostics, audio-file counts, and the user-facing empty-search message is isolated in acquisition_search_diagnostics.py. Search execution, persistence, path-match diagnostics, and API serialization remain in the server adapter. Verify direct-import regressions and all four required workflows on the exact final PR head before merge. No publishing or deployment.
