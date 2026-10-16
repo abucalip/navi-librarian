@@ -834,6 +834,87 @@ manual browser report in PR #192 tested the same SHA and records all checklist i
 with zero failures. No publication, deployment, or production runtime verification is claimed.
 
 
+## 5k. Token and touch-target findings
+
+Backlog items 4 and 5.
+
+### Item 4 — 33 colour literals, only 3 of which were duplicates
+
+Measured before changing anything. Of 33 distinct hex values after the token block, only three
+exactly duplicated an existing token (`#191a1a` = `--bg`, `#222424` = `--surface`, `#3b3d39` =
+`--border`). The other thirty were real values with no name.
+
+So this was not mostly deduplication, which is what the item title implies. It was naming colours
+that already existed. Adding 22 tokens named by purpose, per the type guidance that "role names
+and tokens should describe purpose rather than values":
+
+| Token | Replaced | Written |
+|---|---|---|
+| `--chrome` | `#1d1f1e` | 2x (header, sidebar) |
+| `--surface-inset` | `#202221` | 4x (inputs, panels) |
+| `--yellow-bright` | `#f3d66b` | 4x (accent hover) |
+| `--edge` | `#353834` | 3x (card edges) |
+| `--surface-well` | `#30322e` | 3x (artwork placeholder, tag fill) |
+| `--scroll-thumb` | `#686044` | 3x |
+
+`--on-yellow` is worth noting specifically: `#191a1a` appears as **text on an accent fill**, not
+as a background. Reusing `--bg` would have been a token that lies about its role.
+
+**Hardcoded hex after the token block: 55 → 8.** The remaining eight are single-use tints and
+shades plus pure black and white. Adding a token for each would be the "system abstraction for one
+local exception" the polish guidance warns against, so they are left deliberately.
+
+**Verified as a pure refactor rather than assumed.** The pre-change CSS was checked out into a
+separate git worktree at `origin/main`, both versions were served side by side, and computed styles
+were compared for 33 selectors across 7 colour properties each:
+
+- **0 differences** across all 231 property comparisons.
+- Screenshots of the settings page from both builds hashed **identically**.
+
+### Item 5 — four controls under the 44x44 minimum
+
+Measured against the 44x44 touch-target criterion:
+
+| Control | Before | After | Method |
+|---|---|---|---|
+| `.genre-row-arrow` | 38x34 | **44x44** | enlarged; glyph unchanged |
+| `.album-modal-close` | 38x38 | **44x44** | enlarged |
+| `.card-actions .get-album` | 42x42 | **44x44** | enlarged |
+| modal platform-link chips | 30x30 | visual 30x30, **hit 44x44** | transparent `::after` inset |
+
+The platform chips keep their 30px visual size so the strip keeps its rhythm, while a transparent
+pseudo-element expands the pressable area. This follows the layout guidance to "keep touch targets
+usable even when their visible marks are small".
+
+`.card-art .get-album` (46px) and `.album-modal-art .get-album` (58px) were already above the
+minimum and are unchanged.
+
+### Verification — the gesture, not just the box
+
+The audit guidance is explicit that "a rendered viewport proves layout, not the gesture", so the
+sizes were not trusted on their own. Exercised in a `has_touch` context with synthesized taps:
+
+- The genre-row arrows **scroll the track under touch**: `scrollLeft` went `2 → 926`.
+- A tap **4px outside the visible edge** of a 30px platform chip still resolved to that link
+  (`closest('a')` matched), proving the expanded hit area is real and not just a wider box.
+- No horizontal page scroll was introduced: `scrollWidth == clientWidth` at every width.
+
+### A measurement error worth recording
+
+An intermediate run reported three controls as `FAIL` with `box=[0,0]`. That was a fault in my
+check, not the CSS: the controls live in sections toggled with a `hidden` class, so they measured
+zero until their section was navigated to. Recording it because a zero-size box in this codebase
+means "not in the visible section", not "broken target" — and the same trap produced a false
+negative during C1.
+
+### Verification summary
+
+Item 4: 0 computed-style differences across 33 selectors x 7 properties; identical screenshot
+hashes. Item 5: all six interactive controls at or above 44x44 in both axes; arrows scroll under
+synthesized touch; an out-of-mark tap lands on the intended link; no horizontal scroll. Both: 8/8
+pages render their expected heading; zero horizontal overflow at 1440/1200/1100/900/760/620/390/
+360px; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)

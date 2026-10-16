@@ -193,7 +193,12 @@ p { line-height: 1.55; }
 .genre-row-count { color: var(--subtle); font: 10px/1.4 var(--mono); }
 .genre-row-arrows { display: flex; gap: 6px; margin-left: auto; }
 .genre-row-arrows[hidden] { display: none; }
-.genre-row-arrow { display: grid; place-items: center; width: 38px; height: 34px; padding: 0; border: 0; background: transparent; color: var(--yellow); font: 700 36px/.8 var(--display); text-shadow: 0 1px 0 #9a8127; }
+/* 44x44 minimum touch target. The glyph stays 36px as designed; a transparent
+   pseudo-element expands the pressable area so the mark is unchanged but the target
+   meets the minimum. layout.md asks to keep touch targets usable even when the visible
+   mark is small, which is what this does rather than growing the arrow. */
+.genre-row-arrow { position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--yellow); font: 700 36px/.8 var(--display); text-shadow: 0 1px 0 #9a8127; }
+.genre-row-arrow::after { content: ""; position: absolute; inset: -3px; }
 .genre-row-arrow:hover { background: transparent; color: #ffe477; transform: scale(1.12); }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: var(--scroll-thumb) var(--scroll-track); scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
@@ -202,13 +207,16 @@ p { line-height: 1.55; }
 .album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.78); backdrop-filter: blur(5px); }
 .album-modal-backdrop[hidden] { display: none; }
 .album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: var(--surface-inset); border: 1px solid var(--edge-strong); border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
-.album-modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 38px; height: 38px; padding: 0; font-size: 23px; }
+.album-modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 44px; height: 44px; padding: 0; font-size: 23px; }
 .album-modal-layout { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: 26px; clear: both; }
 .album-modal-art-column { min-width: 0; align-self: start; }
 .album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: var(--surface-well); border: 1px solid var(--border); }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: 6px; width: 100%; max-width: 100%; min-width: 0; margin: 8px 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 30px; align-items: center; justify-content: center; width: 30px; min-width: 30px; max-width: 30px; height: 30px; min-height: 30px; max-height: 30px; padding: 5px; overflow: hidden; border: 1px solid var(--edge-strong); border-radius: 5px; color: var(--text); background: #292b28; text-decoration: none; transition: border-color .15s, background .15s; }
+.album-modal-art-column .album-platform-links a { position: relative; box-sizing: border-box; display: inline-flex; flex: 0 0 30px; align-items: center; justify-content: center; width: 30px; min-width: 30px; max-width: 30px; height: 30px; min-height: 30px; max-height: 30px; padding: 5px; overflow: visible; border: 1px solid var(--edge-strong); border-radius: 5px; color: var(--text); background: #292b28; text-decoration: none; transition: border-color .15s, background .15s; }
+/* Visual chip stays 30x30 so the strip keeps its rhythm; the pressable area is 44x44.
+   overflow is reset to visible above so the expanded hit area is not clipped. */
+.album-modal-art-column .album-platform-links a::after { content: ""; position: absolute; inset: -7px; }
 .album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 18px; width: 18px; min-width: 18px; max-width: 18px; height: 18px; object-fit: contain; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--yellow); background: #36372f; }
 .album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
@@ -228,7 +236,7 @@ p { line-height: 1.55; }
 .card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: var(--red-text); font: 700 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
 .card .card-art .deep-dive-dismiss:hover { background: transparent; color: var(--red-text-hover); border: 0; transform: scale(1.12); }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
-.card .card-actions .get-album { width: 42px; height: 42px; font-size: 11px; }
+.card .card-actions .get-album { width: 44px; height: 44px; font-size: 11px; }
 /* One get/request control. The modal, artwork-overlay and card-action variants were
    three copies of the same declarations differing only in size and border width; they
    now share one base and set only their own geometry. State is carried by text and a
