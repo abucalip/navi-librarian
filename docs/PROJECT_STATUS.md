@@ -1500,3 +1500,14 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Release: publishing remains intentionally paused; the main-branch validation workflow is validation-only. No image publication, deployment, or production runtime verification is claimed.
 - **Selected highest-priority gap before routine modularization:** regression coverage for acquisition UI Get/request and Dismiss transitions (requirements ACQ-01/02/03), with the ACQ-04/06 backend safety boundary preserved. The repository has no dedicated automated front-end test files. Exact acceptance criteria are recorded in `docs/TEST_PLAN.md` under “Verification audit — highest-priority gap: acquisition UI request/dismiss regression.”
 - Status: audit completed; acceptance criteria documented on a focused documentation branch/PR. No application behavior was changed and no application tests were run for this audit. Next: implement the focused UI regression coverage and run exact-head CI plus the required manual browser checklist before returning to modularization.
+
+
+## 2026-10-16 — Modularization session closeout: PRs #174 and #175
+
+- PR #174 extracted cached Last.fm artist top-tag parsing into `LastFmClient.artist_genres()`, retaining `navidrome_server._lastfm_artist_genres()` as a compatibility adapter. Merged to main at `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
+- PR #175 extracted cached Last.fm top-album retrieval and normalization into `LastFmClient.artist_top_albums()`, retaining `navidrome_server._lastfm_top_albums()` and discovery-specific eligibility filtering. Exact tested PR head: `6b5e32b1144e9f3517247110ea4383b287ce33f4`; squash merge/current main: `f922631e0393063bde02b1e0bd93d30b2d38bd2a`.
+- All four required CI workflows passed on PR #175's exact head: Python syntax, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation. No separate assistant-side local test run is claimed.
+- Documentation updates for these extractions are recorded in the architecture, modularization roadmap, test plan, and project log.
+- State: both extractions implemented, tested by required exact-head CI, and merged. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Acquisition Dismiss HTTP 409 remains explicitly deferred.
+- Next session: refresh current main and open PRs, read the required workflow/testing docs, then select the next smallest roadmap-aligned extraction. Do not resume the deferred 409 investigation unless asked or it recurs.
