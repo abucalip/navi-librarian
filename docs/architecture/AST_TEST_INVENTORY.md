@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff` (2026-10-16); transfer lookup test migrated on the current follow-up branch.
+Audit baseline: GitHub `main` at `60cf07ffa05416355053660c1823f6af5b18716b` (2026-10-16); pure-helper test migration in progress on the current follow-up branch.
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
@@ -8,14 +8,14 @@ This inventory distinguishes tests that parse the legacy server source from test
 
 | Test | Coupling | Coverage currently provided | Recommended disposition |
 |---|---|---|---|
-| `tests/test_acquisition_safety.py` | Reads `navidrome_server.py`, parses it with `ast`, selects 11 named function definitions, and executes them in a stubbed namespace. | Mixes search/path/quality helpers with acquisition policy and safety behavior: broader-query fallback, duplicate-request concurrency, persistence-before-import, incomplete saved details, dismissed-job reactivation, and stale-download watcher recovery. | Split by responsibility. Move pure slskd helper coverage to direct imports from `slskd_search.py`, `slskd_quality.py`, `acquisition_candidate_start.py`, and the relevant completion/import modules. Keep lifecycle, persistence, and concurrency regressions, but test the real extracted acquisition orchestration/coordinator interfaces directly where those behaviors now live. Do not delete or weaken the high-risk cases merely to remove the AST harness. |
-| `tests/test_quality_priority.py` | Parses `navidrome_server.py` with `ast`, extracts `_slskd_quality_tier` and three `_discovery_settings_*` functions, then executes them in a constructed namespace. | FLAC tier classification, filename fallback, legacy quality-priority migration/order, and settings/UI contract. | Replace quality AST extraction with direct tests of `slskd_quality.quality_tier()`; exercise persisted/default settings through `service_settings.py` and the settings API contracts. Keep UI contract assertions as source-level UI tests; they are not legacy-server coupling. |
+| `tests/test_acquisition_safety.py` | Still parses `navidrome_server.py` with `ast` to execute acquisition orchestration/lifecycle functions. Pure slskd search and quality helper names are now supplied from direct imports of `slskd_search.py` and `slskd_quality.py`, not extracted from source. | Broader-query fallback plus duplicate-request concurrency, persistence-before-import, incomplete saved details, dismissed-job reactivation, and stale-download watcher recovery. | Keep high-risk lifecycle cases while tracing each remaining function to its real owner; remove the AST harness only when the production orchestration boundary can be tested directly without stubbing away its behavior. Do not delete or weaken the high-risk cases merely to remove the AST harness. |
+| `tests/test_quality_priority.py` | **Migrated:** no longer reads or parses `navidrome_server.py`; imports `slskd_quality.quality_tier()` and exercises `SettingsPersistence` directly. | FLAC tier classification, filename fallback, legacy quality-priority migration/order, and settings/UI contract. | Complete. Keep UI contract assertions as source-level UI tests; they are not legacy-server coupling. |
 | `tests/test_slskd_transfer_lookup.py` | **Migrated:** directly imports `slskd_transfers.download_transfer_files()`; no longer reads or parses `navidrome_server.py`. | Transfer-list 404/no-active-transfer behavior, propagation of other HTTP errors, URL encoding/timeout, and successful response parsing with remote-directory identity. | Complete. Legacy wrapper compatibility remains separately covered by `tests/test_slskd_transfers.py`. |
 
 ### Migration order
 
-1. Migrate the pure-helper portions of `test_acquisition_safety.py` and `test_quality_priority.py`: direct implementations already exist in `slskd_search.py`, `slskd_quality.py`, and `acquisition_candidate_start.py`.
-2. Migrate the remaining `test_acquisition_safety.py` lifecycle/concurrency/persistence cases only after mapping each case to the real owner. Some behaviors may remain at the legacy orchestration boundary if no direct-import owner exists yet; that is a concrete extraction decision, not permission to stub away safety coverage.
+1. **Done on this branch, pending CI/merge:** quality classification and settings persistence tests use direct imports in `test_quality_priority.py`; pure slskd helper bindings in `test_acquisition_safety.py` now point to extracted modules.
+2. Remaining source parsing is limited to acquisition orchestration/lifecycle cases in `test_acquisition_safety.py`. Migrate those only after mapping each case to the real owner; do not stub away safety coverage.
 
 ## Related legacy-server references that are not AST source coupling
 
