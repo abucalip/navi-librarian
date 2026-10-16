@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #270 merged as `d84d74c1cfa295e3c3fd2ff1594fa1758dc69949`)
-Documentation branch base: GitHub `main` at commit `d84d74c1cfa295e3c3fd2ff1594fa1758dc69949`
+Last reviewed: 2026-10-16 (search fallback direct-import migration prepared on `test/direct-search-fallback-regression`)
+Documentation/code branch base: GitHub `main` at commit `de94d9bbb9790129ed86dc9fefd28a1850a9c721`
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Continue the remaining broader-query fallback AST-coupled acquisition test audit only where the real search/retry production boundary can be tested directly; preserve concurrency and filesystem-safety coverage.
+1. Verify the direct-import broader-query fallback migration on the exact PR head; preserve concurrency, queue/lifecycle, and filesystem-safety coverage.
 2. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
