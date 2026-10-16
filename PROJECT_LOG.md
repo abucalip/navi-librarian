@@ -1,7 +1,7 @@
 ## 2026-10-16 — Add measurable legacy-server size ratchet (PR #265; verification pending)
 
-- Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,032 lines. The largest top-level function by source ranges is `recommend_new_music()` at approximately 575 lines; the guard uses AST-measured `end_lineno` sizes and reports the exact values in CI.
-- Added `scripts/check_server_size.py` with a 3,032-line file ceiling, 280-line default top-level function ceiling, and a named temporary 575-line `recommend_new_music()` exception with reason and follow-up. Added pass/fail regression tests for file/function limits, exception diagnostics, and parse failures; wired compile and guard execution into the Python syntax workflow.
+- Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,031 source lines (`splitlines()`, matching the guard). On the first PR #265 CI run, AST measurements were `recommend_new_music`: 568 lines and `_discovery_acquire_album_impl`: 278 lines. The older 3,032 count included the trailing empty element from splitting on `\\n`; the enforced ceiling is corrected to 3,031.
+- Added `scripts/check_server_size.py` with a 3,031-line file ceiling, 280-line default top-level function ceiling, and a named temporary 575-line `recommend_new_music()` exception with reason and follow-up. Added pass/fail regression tests for file/function limits, exception diagnostics, and parse failures; wired compile and guard execution into the Python syntax workflow.
 - PR #265 final head and all four required workflows are pending. No assistant-side local tests were run. Merge only after full suite, syntax, container smoke, and validation-only multi-architecture workflows pass on the exact final head. Publishing remains paused.
 
 ---
