@@ -1,7 +1,10 @@
-## 2026-10-16 — New Releases query construction extraction in progress
+## 2026-10-16 — PR #236 merged: New Releases lookup construction
 
-- Branch `extract/new-release-query-construction` extracts the pure MusicBrainz artist-query/cache-key builder into `discovery_new_releases.build_new_release_lookup()`; `_build_new_releases_list()` retains provider I/O, cache access, throttling, and error handling.
-- Regression tests cover the unchanged query/date bounds, quote/backslash escaping, and stable cache keys. Exact-head CI and merge are pending; publishing/deployment remain paused.
+- Squash merge commit: `aaa748f2dfdc307d79faf5397a51dbfbcd75ec6c`; exact tested PR head: `990e3ddfe08b6b1590860e8fd07d0ac13882be3e`.
+- Extracted pure MusicBrainz query and versioned cache-key construction into `discovery_new_releases.build_new_release_lookup()`. Provider requests, cache access, throttling, date-window policy, and error handling remain in `_build_new_releases_list()`.
+- Added direct-import regressions for date-bounded query shape, quote/backslash escaping, and cache-key stability.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety `38938238608`; Docker packaging/full unit suite/build `38938238694`; container runtime smoke `38938238678`; validation-only multi-architecture image validation `38938238904` (publishing paused).
+- Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
