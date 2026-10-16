@@ -1,3 +1,11 @@
+## 2026-10-16 — slskd queue and progress transfer matching completed
+
+- **Queue request boundary (PR #180):** `slskd_transfers.queue_download_files()` now owns the slskd queue POST. The existing service adapter and `acquisition_orchestration` retain dismissal locking and decision flow. Tested head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`; merged `7c670f2eac838934bc9afa7f40f892ff595ca4ca`. All four required exact-head workflows passed.
+- **Progress transfer matching (PR #181):** `slskd_transfers.match_expected_transfer_records()` owns case-folded basename matching and duplicate transfer-state precedence. The live-progress service retains byte accounting, speed snapshots, and output schema. Tested head `cf78b4188a549d6e1b2b98c76a63a6bc0826d129`; merged `3df14d3c59bb7e5a689d797028e45468c6a87ee7`. All four required exact-head workflows passed.
+- Both changes include direct-import regression coverage; assistant-side local tests were not run. Publishing/deployment/runtime verification remain separate and unclaimed.
+- Keep acquisition-dismissal HTTP 409 deferred until modularization is complete, as directed. Do not weaken filesystem safety or infer a fix.
+- **Next:** refresh main/open PRs/CI and select one small, independently testable seam.
+
 ## 2026-10-16 — Last.fm similar-artist parsing extraction completed
 
 - PR #178 merged as `f18574b74a564031c5268cf04c956475d64dc30c`, from tested head `a97be052d3a1e74843feaacd6403d10ce5aad6af`.
