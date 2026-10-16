@@ -1,3 +1,12 @@
+## 2026-10-16 — Independent extraction session closeout: PRs #205 and #207
+
+- **PR #205** extracted pure per-artist MusicBrainz release-group eligibility/candidate shaping into `discovery_new_releases.select_artist_release_candidates()`. Exact final tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required workflows passed: syntax 1111, Docker packaging/full unit suite/build 1018, runtime smoke 827, validation-only multi-architecture 871. Squash merge: `32b39be400ec046e8310a87260346b1959141609`.
+- **PR #207** extracted pure Artist Deep Dives scoring, exploration ranking, eligibility filtering, and two-pass artist/anchor/genre diversity into `discovery_recommendations.rank_and_diversify_deep_dive_candidates()`. Exact final tested head `20e565582579f4097eed3803748c87bb3d932a98`; all four required workflows passed: syntax 1114, Docker packaging/full unit suite/build 1021, runtime smoke 830, validation-only multi-architecture 874. Squash merge: `a5b0d865060c3d069a865be7a1cb43c1a072ae91`.
+- Both preserve server-side provider access, cache/rate limiting, and existing compatibility wrappers. Direct-import regression tests were added; assistant-side local tests were not run. No publication, deployment, live provider integration, or production runtime verification is claimed. Publishing remains paused and acquisition-dismissal HTTP 409 remains deferred.
+- PR #206 was closed as superseded when refreshing its branch from current main; its work was recreated and merged as PR #207.
+- **Next action:** refresh main/open PRs/CI and choose the next small, low-coupling seam; do not treat extraction count as a quota.
+
+
 ## 2026-10-16 — Independent extraction session closeout: PRs #202 and #203
 
 - **PR #202** extracted pure Navidrome library-overview payload shaping into `navidrome_client.library_overview_payload()`; `navidrome_server.library_overview()` retains API calls, collection normalization, JSON serialization, and the MCP-facing contract. Exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required workflows passed: syntax/acquisition safety 1104, Docker packaging/full unit suite/build 1011, runtime smoke 820, validation-only multi-architecture 864. Squash merge: `7a95364a31f360bb20dd8d2919a9bfea93ec893c`.
