@@ -7,8 +7,8 @@ from html import escape
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.dependencies import get_librarian
@@ -33,6 +33,7 @@ from app.api.discovery import router as discovery_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
 from app.api.pages import create_pages_router
+from app.security.app_login_middleware import create_app_login_middleware
 
 
 
@@ -100,30 +101,11 @@ def _set_auth_cookie(response, request, username):
     )
 
 
-@app.middleware("http")
-async def require_app_login(request: Request, call_next):
-    path = request.url.path
-    public_paths = {
-        "/login",
-        "/api/auth/status",
-        "/api/auth/setup",
-        "/api/auth/login",
-        "/api/auth/logout",
-    }
-    is_public_asset = path.startswith("/static/") or path == "/assets/cassette.png"
-    if path not in public_paths and not is_public_asset and _auth_configured():
-        username = _session_username(request.cookies.get(AUTH_COOKIE_NAME))
-        if username:
-            return await call_next(request)
-    elif path in public_paths or is_public_asset:
-        return await call_next(request)
-
-    # When no owner exists yet, only the first-run setup screen and auth
-    # endpoints are reachable. Every app/API route remains closed.
-    if path.startswith("/api/"):
-        return JSONResponse({"detail": "Authentication required."}, status_code=401)
-    return RedirectResponse(url="/login", status_code=303)
-
+app.middleware("http")(create_app_login_middleware(
+    auth_configured=_auth_configured,
+    session_username=lambda token: _session_username(token),
+    cookie_name=AUTH_COOKIE_NAME,
+))
 
 LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
 
