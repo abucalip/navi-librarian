@@ -645,11 +645,10 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - This documentation change does not modify application behavior or make the product decision about the operational MCP tools. Test/CI, merge, publishing, deployment, and runtime status must be recorded after PR verification; none is claimed here.
 
 
-## 2026-10-16 — Enforce app-to-legacy-server import boundary (PR #254 pending)
+## 2026-10-16 — Enforce app-to-legacy-server import boundary (PR #254)
 
-- Added `scripts/check_app_legacy_imports.py`, an AST guard over all Python files under `app/`. It permits only the existing lazy import inside `app/api/dependencies.py:get_librarian()` and reports unapproved imports with file/line diagnostics.
-- Added direct tests for the allowlisted adapter, module-level imports, imports from the wrong function/path, `from navidrome_server import ...`, and unparsable source. Wired the guard and compile checks into `.github/workflows/python-syntax.yml`.
-- Branch: `audit/app-legacy-import-boundary`, based on main `19671e84eb93c2acfb06137c9a49c9db00cdfb75`. PR #254 head at initial creation: `9d77a1e922cac05ec9f9ef12c0c71c48a57529b1` (documentation updates may advance it). No assistant-side local tests were run. CI has not yet reported runs for the initial head; required four-workflow verification remains pending. No merge, publication, deployment, or runtime verification is claimed.
+- Initial implementation and branch notes are superseded by the final verified merge record below. PR #254 ultimately passed all four required workflows on final head `908783f0a46618c53e4f3e4c4dcf298ec33850fc` and merged as `8bfd6a57179aec46a672343745b494dff60fec02`.
+- No assistant-side local tests ran. Publishing, deployment, and production runtime verification were not performed.
 
 
 ## 2026-10-16 — Enforced app-to-legacy-server import boundary (PR #254 merged)
