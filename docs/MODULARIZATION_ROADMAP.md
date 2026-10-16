@@ -1,3 +1,7 @@
+## 2026-10-16 — slskd connection probe boundary in progress (PR #187)
+
+The configured slskd connection probe is being extracted into `slskd_client.test_connection()`. The legacy `discovery_test_slskd_connection()` remains the adapter; settings lookup remains injected, and no acquisition lifecycle or filesystem behavior is changed. Direct-import tests cover success, authentication failures, HTTP/configuration errors, and secret redaction. Docker packaging includes the new module. Final-head CI and merge remain pending; publishing/deployment are paused.
+
 ## 2026-10-16 — slskd progress aggregation and speed calculations extracted
 
 - **PR #182:** extracted pure matched-record progress aggregation into `slskd_transfers.summarize_transfer_progress()`. Exact tested head `045131f58365dd0e6538c1712f37f56f639c65ad`; merge `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`. All four required exact-head workflows passed: syntax 1016, Docker packaging/full suite/build 923, runtime smoke 732, validation-only multi-architecture 776.
