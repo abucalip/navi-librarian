@@ -1068,3 +1068,10 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - PR #198 exact head a718780edcb85eb8f4453e44a2d5a4925a512314: syntax/acquisition-safety workflow 1090 passed; Docker packaging/full unit suite/build 997 passed; container runtime smoke 806 passed; validation-only multi-architecture image validation 850 passed.
 - Direct-import regressions were added to tests/test_navidrome_client.py for search categories/output fields and album details with scalar tracks/missing fields. CI's packaging workflow ran the full unit suite for both exact heads. Assistant-side local test commands were not run.
 - Backend-only changes; no manual UI checklist required. No live Navidrome integration test, publication, deployment, or production runtime verification is claimed. Publishing remains paused.
+
+
+## 2026-10-16 — Acquisition progress snapshot extraction in review
+
+- Branch refactor/extract-acquisition-progress-snapshots extracts the per-process, per-acquisition byte-snapshot map and lock into acquisition_progress_snapshots.py. navidrome_server.py retains live slskd polling and compatibility behavior; the extracted manager delegates speed math to the existing slskd_transfers.estimate_transfer_speed implementation.
+- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. Docker packaging includes the new module.
+- Required next gates: syntax/acquisition-safety, Docker packaging/full unit suite/build, runtime smoke, and validation-only multi-architecture workflow on the exact final PR head. Assistant-side local tests have not been run; no publication or deployment.
