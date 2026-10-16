@@ -53,6 +53,7 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 # Authentication settings remain in the existing persistent settings store.
 
+_AUTH_SECRET = None  # Retained as a compatibility seam for auth integration tests.
 _AUTH_SECRET_PROVIDER = AuthSecretProvider(
     data_dir_getter=lambda: get_librarian().DATA_DIR,
     secret_loader=load_auth_secret,
@@ -61,7 +62,10 @@ _AUTH_SECRET_PROVIDER = AuthSecretProvider(
 
 def _auth_secret():
     """Load the persistent signing key only when an auth operation needs it."""
-    return _AUTH_SECRET_PROVIDER.get()
+    global _AUTH_SECRET
+    if _AUTH_SECRET is None:
+        _AUTH_SECRET = _AUTH_SECRET_PROVIDER.get()
+    return _AUTH_SECRET
 
 
 def _auth_settings():
