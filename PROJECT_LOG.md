@@ -1,3 +1,12 @@
+## 2026-10-16 — Follow-up audit found another missing Docker module
+
+- After PR #286 merged as `1cf9d66ad57364eec855b2425263e9a59b011d9a`, continued the modularization completion audit by comparing `navidrome_server.py` imports with the explicit root-level Docker COPY list.
+- Found that `discovery_candidate_gathering.py` is imported by `navidrome_server.py` at line 305 but is absent from the Docker image source list. This affects the recommendation path and was not detected by the earlier audit because it focused on the import-completion module.
+- The follow-up fix adds the missing module and generalizes `tests/test_docker_packaging.py` to AST-inspect `navidrome_server.py` and assert that every imported root-level Python module is copied into the image, including imports nested inside functions.
+- PR and CI evidence are pending; no local tests were run. Continue the packaging/runtime audit after this fix and do not declare modularization complete until the exact-main dependency map, dynamic imports, Docker inclusion, and safety/compatibility tests have been reviewed. Publishing remains paused.
+
+---
+
 ## 2026-10-16 — PR #286 merged: Docker acquisition import service packaging fixed
 
 - Completion audit of GitHub `main` at `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82` found that `navidrome_server.py` lazily imports `acquisition_import_service.import_completed_source_locked()` during import completion, but the explicit root-module COPY list in `Dockerfile` omitted `acquisition_import_service.py`. Startup alone did not exercise this delayed import.
