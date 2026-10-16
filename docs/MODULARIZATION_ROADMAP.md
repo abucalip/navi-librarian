@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (completion audit at current main `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`)
-Audit base: GitHub `main` at commit `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`
+Last reviewed: 2026-10-16 (PR #286 merged; current main `1cf9d66ad57364eec855b2425263e9a59b011d9a`)
+Audit base: GitHub `main` at commit `1cf9d66ad57364eec855b2425263e9a59b011d9a`
 
 ## Purpose
 
@@ -57,7 +57,7 @@ The current MUSIC_DIR audit found this dependency pattern in navidrome_server.py
 
 **Decision:** do not introduce a settings object or extract the remaining wrappers now. The existing persistence and service-settings modules already accept explicit path callbacks, while navidrome_server.py acts as the mutable runtime owner and compatibility adapter. A new object would duplicate the same getter/setter wiring without eliminating the legacy boundary. The nested settings setters are thin adapters, not independent policy. Revisit only if a broader app-state lifecycle change gives the object a clear owner and can prove that long-running watcher/recovery work observes path changes with the same semantics.
 
-This audit did not justify another extraction: the acquisition coordinator remains orchestration, and the AST-coupled import-safety migration is already complete in PR #274. The next active task is the modularization completion audit, not another size-driven refactor. The audit found a packaging gap: `navidrome_server.py` lazily imports `acquisition_import_service`, but the explicit root-module list in `Dockerfile` omits `acquisition_import_service.py`. Fix this and add a regression before declaring the packaging gate complete.
+This audit did not justify another extraction: the acquisition coordinator remains orchestration, and the AST-coupled import-safety migration is already complete in PR #274. The next active task is the final modularization completion audit, not another size-driven refactor. PR #286 fixed the discovered packaging gap by including `acquisition_import_service.py` in the Docker image and adding a regression test; all four required workflows passed on its exact final head.
 
 
 These are audit targets, not permission to refactor without inspecting current main. Reconfirm each target against current callers, tests, and open PRs before implementation.
