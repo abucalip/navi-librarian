@@ -2,7 +2,7 @@
 
 - Starting `main` SHA: `ffa2b441e7543b2778d1835cfc42386e53c37225`.
 - Moving cached artist top-tag response parsing and eight-item deduplication into `LastFmClient.artist_genres()`; retaining `_lastfm_artist_genres()` as the compatibility adapter.
-- Added direct-import tests for scalar/list payloads, duplicate/case handling, maximum count, cache hits, missing payload, and adapter delegation. CI, merge, and deployment status are pending; no tests are claimed as run locally.
+- Added direct-import tests for scalar/list payloads, duplicate/case handling, maximum count, cache hits, missing payload, and adapter delegation. The first syntax/full-suite workflow caught a test-fixture logging error (the custom fake HTTP function did not append its call); the fixture was corrected. All required workflows must pass again on the refreshed exact final head. No local tests are claimed.
 - The acquisition dismissal HTTP 409 remains deferred by explicit user direction. Publishing remains paused.
 
 ---
