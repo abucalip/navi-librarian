@@ -793,3 +793,9 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - The proposed interface supplies prepared candidate values, explicit ownership status, policy targets, and count limits; returns candidate IDs, review IDs, decisions, counts, and checked count. It requires no callbacks or shared mutable state.
 - **Do not move the shortlist-selection loops in this change.** Current `consider()` mixes selection policy with candidate identity tracking, ownership lookup, manual-review payload creation, response shaping, and diagnostics. The contract tests only validate the interface invariants, not allocator semantics. Proceed to a separate extraction only after this contract is tested and the implementation can remain pure; refine/stop if that cannot be achieved without callbacks or mutable shared state.
 
+## 2026-10-16 — Personal recommendation allocation contract probe merged (PR #221)
+
+- PR #221 merged at `820556799fa9d3ec663e5117b36c68084281b20a` from exact tested head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`.
+- Defined immutable prepared-candidate/request/result types in `discovery_allocation_contract.py`; added direct-import contract invariant tests and the boundary decision document. All four exact-head workflows passed (syntax `38916419736`, Docker/full unit suite/build `38916419709`, runtime smoke `38916419958`, validation-only multi-architecture `38916419701`).
+- The shortlist-selection loops remain in `navidrome_server.py`. The interface probe has no callbacks or shared mutable counters, but it is not proof that the actual policy can be extracted unchanged. Next extraction must first demonstrate parity for reservations, quotas, duplicate/artist limits, ownership review, fallback order, diagnostics, and the 60-check cap; stop/refine if this cannot be achieved within the boundary.
+
