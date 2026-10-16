@@ -1,3 +1,7 @@
+## 2026-10-16 — Page-route extraction in progress (PR pending)
+
+The low-coupling page/asset HTTP handlers are isolated in `app/api/pages.py` behind `create_pages_router()`. Application assembly still resolves the template and bundled cassette path and passes them in; the existing `/` HTML response and `/assets/cassette.png` media type/cache header remain unchanged. Direct-import regressions cover the page body, asset bytes/headers, and hidden schema route. Exact-head CI and review are pending; do not merge until all four required workflows pass on the final head.
+
 ## 2026-10-16 — Independent extraction session closeout: PRs #205 and #207
 
 - **PR #205** extracted pure per-artist MusicBrainz release-group eligibility/candidate shaping into `discovery_new_releases.select_artist_release_candidates()`. Exact final tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required workflows passed: syntax 1111, Docker packaging/full unit suite/build 1018, runtime smoke 827, validation-only multi-architecture 871. Squash merge: `32b39be400ec046e8310a87260346b1959141609`.
