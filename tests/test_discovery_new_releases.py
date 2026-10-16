@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_new_releases import build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
+from discovery_new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
@@ -235,3 +235,13 @@ class NewReleaseLookupConstructionTests(unittest.TestCase):
             "BJÖRK", artist_key="bjork", earliest_year=2024, current_year=2026
         )
         self.assertEqual(first, second)
+
+
+class NewReleaseWindowPolicyTests(unittest.TestCase):
+    def test_uses_exactly_730_days_and_returns_query_year_bounds(self):
+        from datetime import date
+        self.assertEqual(new_release_window(date(2026, 10, 16)), ("2024-10-16", 2024, 2026))
+
+    def test_leap_day_boundary_is_calendar_correct(self):
+        from datetime import date
+        self.assertEqual(new_release_window(date(2024, 2, 29)), ("2022-03-01", 2022, 2024))
