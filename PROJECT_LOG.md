@@ -1,3 +1,13 @@
+## 2026-10-16 — PR #270 in review: import-completion service extraction
+
+- Based on GitHub main after PR #268 merge `d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`. Added `acquisition_import_service.import_completed_source_locked()` with injected path naming, authoritative status persistence, hardened import operation, and clock dependencies. The legacy `_discovery_import_completed_source_locked()` is now a narrow adapter; the outer transition-lock/dismissal guard is unchanged.
+- Added direct-import tests for failure to persist `importing` (no filesystem mutation), successful status ordering and mount identity arguments, symlinked artist destination refusal, existing destination preservation, and unavailable library roots. The existing AST-based compatibility test remains in place and now executes the thin adapter, so this extraction does not remove lock/dismissal coverage.
+- PR #270 was rebased onto current main (`d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`) on branch `refactor/acquisition-import-service-main`; final PR head is tracked by GitHub. All four required workflows passed on exact final PR head `0f2c90a576062c78273f3f4fb35ffa6cfb9716e5`: Python syntax/acquisition safety, Docker packaging and full unit suite, container runtime smoke, and non-publishing multi-architecture validation. No separate local tests were run. Publishing remains paused; deployment/runtime on production is unverified.
+- Status at documentation update: implemented and all required CI passed on `0f2c90a576062c78273f3f4fb35ffa6cfb9716e5`; PR #270 awaits merge. PR #269 was closed as superseded to avoid merging its stale base. Publishing remains paused; no deployment/runtime verification.
+
+
+---
+
 ## 2026-10-16 — Acquisition coordinator policy/orchestration audit
 
 - Audited GitHub `main` at `cd5d0240c1ac696417727de938736a1b15f7582b`. `_discovery_acquire_album_impl()` spans lines 2341–2618 and is 278 lines by the existing AST size measurement.

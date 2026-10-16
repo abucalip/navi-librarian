@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (acquisition coordinator audit complete; orchestration retained)  
+Last reviewed: 2026-10-16 (PR #270 exact-head CI passed; awaiting merge)
 Audit base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Purpose
@@ -65,10 +65,10 @@ The dependency map was generated in CI and reviewed from artifact `12068042162` 
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. Remaining source-executed cases are broader-search orchestration and the import-status persistence guard, which still depend on the legacy implementation boundary.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. The import-status persistence guard now has direct-import coverage in PR #270; its AST adapter test remains to preserve lock/dismissal compatibility. Broader-search orchestration remains source-executed until a production boundary can preserve real search/retry behavior.
 3. **Completed by PR #254:** `scripts/check_app_legacy_imports.py` enforces the app-to-legacy-server boundary in CI. The only allowlisted direct import is `app/api/dependencies.py:get_librarian`, the existing lazy compatibility adapter. Regression tests reject module-level imports, imports from other functions/paths, `from` imports, and submodule imports. All four required workflows passed on final PR head `908783f0a46618c53e4f3e4c4dcf298ec33850fc`; merged as `8bfd6a57179aec46a672343745b494dff60fec02`.
-4. **Completed:** shared raw inventory helper (PR #261), provider/candidate-gathering extraction (PR #263), and response-contract regression fix (PR #264). Next, audit all `MUSIC_DIR` reads/writes before evaluating thin settings wrappers around `service_settings.py`.
-5. Audit `_discovery_acquire_album_impl()` with a short binary policy-vs-orchestration note containing exact line references: identify whether candidate selection, source-switch thresholds, retries, or state-transition rules remain inline. If only orchestration of extracted behavior remains, retain it; extract only a demonstrable policy seam.
+4. **Completed:** shared raw inventory helper (PR #261), provider/candidate-gathering extraction (PR #263), response-contract regression fix (PR #264), and `MUSIC_DIR` read/write audit (PR #267). No separate settings wrapper is justified while operational adapters intentionally snapshot the current path at invocation time.
+5. **Completed:** audit `_discovery_acquire_album_impl()`; retain it as orchestration because no discrete policy seam justified extraction. PR #270's import-completion extraction is the active change. After merge, re-evaluate the remaining broader-query fallback AST-coupled test only when real search/retry behavior can be tested through a suitable production boundary.
 6. In parallel only where file/dependency overlap is absent, run separate PRs for the AST-test migration, app-import boundary guard, and settings-wrapper audit. Each PR must still branch from a suitable current base, pass exact-head CI, and refresh main before dependent work.
 
 Acceptance criteria:

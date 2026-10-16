@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` at `d5e3b77aded4f32cd2d188598747b9dac820a9e6` (2026-10-16), after PR #251.
+Audit baseline: GitHub `main` after PR #268 (2026-10-16); import-completion service extraction is under review in PR #270.
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
@@ -8,14 +8,14 @@ This inventory distinguishes tests that parse the legacy server source from test
 
 | Test | Coupling | Coverage currently provided | Recommended disposition |
 |---|---|---|---|
-| `tests/test_acquisition_safety.py` | Still parses `navidrome_server.py` with `ast` to execute acquisition orchestration/lifecycle functions. Pure slskd search and quality helper names are now supplied from direct imports of `slskd_search.py` and `slskd_quality.py`, not extracted from source. | Broader-query fallback and the importing-status persistence guard remain coupled to the legacy implementation. Duplicate-request concurrency, incomplete saved details, dismissed-job reactivation, and stale-download watcher recovery now call `acquisition_request_coordinator.acquire_album_request()` directly with injected state. | Keep high-risk lifecycle cases while tracing each remaining function to its real owner; remove the AST harness only when the production orchestration boundary can be tested directly without stubbing away its behavior. Do not delete or weaken the high-risk cases merely to remove the AST harness. |
+| `tests/test_acquisition_safety.py` | Still parses `navidrome_server.py` with `ast` to execute acquisition orchestration/lifecycle functions. Pure slskd search and quality helper names are now supplied from direct imports of `slskd_search.py` and `slskd_quality.py`, not extracted from source. | Broader-query fallback remains coupled to the legacy acquisition orchestration. The importing-status persistence guard and destination validation now have direct-import coverage through `acquisition_import_service.import_completed_source_locked()` (PR #270); the AST harness still executes the legacy adapter to preserve its dismissal/lock compatibility path. Duplicate-request concurrency, incomplete saved details, dismissed-job reactivation, and stale-download watcher recovery call `acquisition_request_coordinator.acquire_album_request()` directly with injected state. | Keep high-risk lifecycle cases while tracing each remaining function to its real owner; remove the AST harness only when the production orchestration boundary can be tested directly without stubbing away its behavior. Do not delete or weaken the high-risk cases merely to remove the AST harness. |
 | `tests/test_quality_priority.py` | **Migrated:** no longer reads or parses `navidrome_server.py`; imports `slskd_quality.quality_tier()` and exercises `SettingsPersistence` directly. | FLAC tier classification, filename fallback, legacy quality-priority migration/order, and settings/UI contract. | Complete. Keep UI contract assertions as source-level UI tests; they are not legacy-server coupling. |
 | `tests/test_slskd_transfer_lookup.py` | **Migrated:** directly imports `slskd_transfers.download_transfer_files()`; no longer reads or parses `navidrome_server.py`. | Transfer-list 404/no-active-transfer behavior, propagation of other HTTP errors, URL encoding/timeout, and successful response parsing with remote-directory identity. | Complete. Legacy wrapper compatibility remains separately covered by `tests/test_slskd_transfers.py`. |
 
 ### Migration order
 
 1. **Done on this branch, pending CI/merge:** quality classification and settings persistence tests use direct imports in `test_quality_priority.py`; pure slskd helper bindings in `test_acquisition_safety.py` now point to extracted modules.
-2. Remaining source parsing is limited to acquisition orchestration/lifecycle cases in `test_acquisition_safety.py`. Migrate those only after mapping each case to the real owner; do not stub away safety coverage.
+2. Remaining source parsing is limited to acquisition orchestration/lifecycle cases in `test_acquisition_safety.py`. The import-completion implementation is now a direct-import service candidate in PR #270; after its exact-head CI passes, re-evaluate whether the adapter test can be narrowed further. Broader-query fallback should remain coupled until the actual production search orchestration is independently importable. Do not stub away safety coverage.
 
 ## Related legacy-server references that are not AST source coupling
 

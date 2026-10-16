@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from acquisition_import import import_matched_album_files
+from acquisition_import_service import import_completed_source_locked
 
 
 class AcquisitionImportTests(unittest.TestCase):
@@ -169,6 +170,85 @@ class AcquisitionImportTests(unittest.TestCase):
 
         self.assertTrue((self.source / ".NAVIDROME-IMPORT.JSON").exists())
         self.assertFalse(self.destination.exists())
+
+
+class ImportCompletionServiceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.source = self.root / "downloads"
+        self.source.mkdir()
+        self.music = self.root / "music"
+        self.music.mkdir()
+        self.candidate = {"username": "peer", "files": []}
+        self.statuses = []
+        self.import_calls = []
+
+    def run_import(self, music_root=None, status_result=True):
+        def update_status(artist, album, status, details):
+            self.statuses.append((artist, album, status, details))
+            if status == "importing":
+                return status_result
+            return True
+
+        def import_files(source, destination, candidate, **kwargs):
+            self.import_calls.append((source, destination, candidate, kwargs))
+
+        return import_completed_source_locked(
+            "Artist", "Album", self.source,
+            self.music if music_root is None else music_root,
+            self.candidate,
+            safe_folder_name=lambda value: value.replace("/", "_"),
+            update_status=update_status,
+            import_matched_album_files=import_files,
+            now=lambda: 123.0,
+        )
+
+    def test_importing_status_persistence_failure_prevents_filesystem_mutation(self):
+        self.assertEqual(self.run_import(status_result=False), "failed")
+        self.assertEqual([row[2] for row in self.statuses], ["importing"])
+        self.assertEqual(self.import_calls, [])
+        self.assertFalse((self.music / "Artist").exists())
+        self.assertTrue(self.source.is_dir())
+
+    def test_success_persists_importing_before_import_and_then_imported(self):
+        self.assertEqual(self.run_import(), "imported")
+        self.assertEqual([row[2] for row in self.statuses], ["importing", "imported"])
+        self.assertEqual(len(self.import_calls), 1)
+        source, destination, candidate, kwargs = self.import_calls[0]
+        self.assertEqual(source, self.source)
+        self.assertEqual(destination, self.music / "Artist" / "Album")
+        self.assertIs(candidate, self.candidate)
+        self.assertEqual(kwargs["expected_music_root"], self.music.resolve())
+        self.assertEqual(kwargs["expected_device"], self.music.stat().st_dev)
+        self.assertEqual(self.statuses[-1][3]["imported_at"], 123.0)
+
+    def test_symlinked_artist_destination_is_refused(self):
+        outside = self.root / "outside"
+        outside.mkdir()
+        (self.music / "Artist").symlink_to(outside, target_is_directory=True)
+
+        self.assertEqual(self.run_import(), "failed")
+        self.assertEqual(self.statuses[-1][2], "download_complete_move_failed")
+        self.assertEqual(self.import_calls, [])
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_existing_album_destination_is_not_overwritten(self):
+        destination = self.music / "Artist" / "Album"
+        destination.mkdir(parents=True)
+        marker = destination / "keep.txt"
+        marker.write_text("preserve", encoding="utf-8")
+
+        self.assertEqual(self.run_import(), "failed")
+        self.assertEqual(self.statuses[-1][2], "destination_exists")
+        self.assertEqual(self.import_calls, [])
+        self.assertEqual(marker.read_text(encoding="utf-8"), "preserve")
+
+    def test_unavailable_library_mount_refuses_import(self):
+        self.assertEqual(self.run_import(music_root=self.root / "missing"), "failed")
+        self.assertEqual(self.statuses[-1][2], "library_mount_unavailable")
+        self.assertEqual(self.import_calls, [])
 
 
 if __name__ == "__main__":
