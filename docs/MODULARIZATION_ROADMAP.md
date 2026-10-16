@@ -700,9 +700,9 @@ Moved exact release-year lookup and matching into `musicbrainz_album_year.py`; t
 Refresh GitHub main, open PRs, and CI. Continue the remaining acquisition lifecycle/orchestration modularization; keep acquisition-dismissal HTTP 409 deferred as directed.
 
 
-## 2026-10-16 — Acquisition progress snapshot extraction (PR pending)
+## 2026-10-16 — Acquisition progress snapshot extraction completed (PR #199)
 
-The process-local map and lock used to estimate slskd transfer speed have been extracted to acquisition_progress_snapshots.py. The service still owns polling, identity construction, monotonic clock selection, and the existing transfer-speed estimator. Direct-import tests protect initial/previous snapshots, key isolation, and exception behavior. Verify all four required CI workflows on the exact final PR head before merge. This is a backend-only change; publishing and deployment remain paused.
+Merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from tested head f7157cb28d5e753a97bb9c24eea209b767d74066. The process-local map and lock used to estimate slskd transfer speed now live in acquisition_progress_snapshots.py. The service retains polling, identity construction, monotonic clock selection, and the existing estimator. Direct-import tests cover initial/previous snapshots, key isolation, and exception behavior; all four required workflows passed on the exact head. Publishing and deployment remain paused.
 
 
 ## 2026-10-16 — Acquisition search diagnostics extraction (PR pending)
