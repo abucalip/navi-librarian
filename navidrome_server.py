@@ -1885,23 +1885,8 @@ def _deep_dive_genre_families(tags):
     from discovery_recommendations import deep_dive_genre_families
     return deep_dive_genre_families(tags)
 def _lastfm_similar_artists(artist, limit=8):
-    payload = _lastfm_cached_call(
-        "artist.getSimilar", ttl_seconds=60 * 24 * 60 * 60,
-        artist=artist, limit=limit,
-    )
-    if not payload:
-        return []
-    records = items(payload.get("similarartists", {}).get("artist"))
-    output = []
-    for item in records:
-        name = (item.get("name") or "").strip()
-        if name:
-            try:
-                match = float(item.get("match") or 0)
-            except (ValueError, TypeError):
-                match = 0.0
-            output.append({"artist": name, "similarity": match})
-    return output
+    """Compatibility adapter for cached Last.fm similar-artist results."""
+    return _lastfm_client.similar_artists(artist, limit=limit)
 
 
 def _musicbrainz_critical_rating(mbid, include_year=False):
