@@ -10,7 +10,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 ## Next action
 
 1. Review and verify PR #265 (size ratchet) on its exact final head, then merge only if all four required workflows pass.
-2. The verified baseline after PR #264 is `navidrome_server.py`: 3,032 lines. The new guard sets a 3,032-line file ceiling, a 280-line general top-level-function ceiling, and a documented temporary 575-line exception for `recommend_new_music()`; CI reports measured AST function sizes.
+2. The verified baseline after PR #264 is `navidrome_server.py`: 3,031 lines. The new guard sets a 3,031-line file ceiling, a 280-line general top-level-function ceiling, and a documented temporary 575-line exception for `recommend_new_music()`; CI reports measured AST function sizes.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
 5. Do not force additional classics-builder or size-only slskd extractions.
