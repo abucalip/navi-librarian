@@ -1206,6 +1206,6 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Assistant-side local test commands were not run independently. No publishing, deployment, or production runtime verification is claimed.
 
 
-## Authentication configuration predicate extraction (PR pending)
+## Authentication configuration predicate extraction (PR #239 merged)
 
-Focused regression command: `python -m unittest tests.test_auth_configuration -v`. Coverage includes a complete configuration, each missing/empty required field, absent/partial settings, and preservation of the existing truthiness behavior. The full suite and all four required exact-final-head workflows remain mandatory before merge; no local execution is claimed unless separately recorded.
+Focused regression command: `python -m unittest tests.test_auth_configuration -v`. Coverage includes a complete configuration, each missing/empty required field, absent/partial settings, and preservation of the existing truthiness behavior. The Docker packaging workflow (including the full unit suite) and all four required workflows passed on the final tested PR head: syntax `38940305016`, Docker/full suite/build `38940304930`, runtime smoke `38940304907`, and validation-only multi-architecture `38940305045`. Assistant-side local test commands were not run.
