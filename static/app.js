@@ -1490,17 +1490,59 @@ async function testServiceConnection(endpoint, statusId) {
 $('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
 $('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
 
-document.querySelectorAll('[data-settings-tab]').forEach(button => {
-  button.addEventListener('click', () => {
-    const name = button.dataset.settingsTab;
-    document.querySelectorAll('[data-settings-tab]').forEach(tab => {
-      const active = tab === button;
-      tab.classList.toggle('active', active);
-      tab.setAttribute('aria-selected', String(active));
-    });
-    const panels = {navidrome: 'settingsNavidrome', slskd: 'settingsSlskd', lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz'};
-    document.querySelectorAll('.settings-tab-panel').forEach(panel => { panel.hidden = panel.id !== panels[name]; });
+// Complete the tabs pattern. The markup already had role=tablist/tab/tabpanel and
+// aria-controls, but the widget was missing the two halves that make it operable rather than
+// merely announced: panels had no accessible name, and every tab was its own Tab stop with no
+// arrow-key navigation. A keyboard user had to Tab through all four tabs to leave the group,
+// which is the behaviour the pattern exists to avoid.
+//
+// Roving tabindex: exactly one tab is tabbable (the selected one). The others are reachable
+// with the arrow keys, Home and End, per the tabs pattern. Activation follows focus, so an
+// arrow key both moves focus and switches panel.
+const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
+const settingsPanels = {
+  navidrome: 'settingsNavidrome', slskd: 'settingsSlskd',
+  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz'
+};
+
+function selectSettingsTab(button, moveFocus = true) {
+  if (!button) return;
+  const name = button.dataset.settingsTab;
+  for (const tab of settingsTabs) {
+    const active = tab === button;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+    // Only the selected tab stays in the document tab order.
+    tab.setAttribute('tabindex', active ? '0' : '-1');
+  }
+  for (const panel of document.querySelectorAll('.settings-tab-panel')) {
+    panel.hidden = panel.id !== settingsPanels[name];
+  }
+  if (moveFocus) button.focus();
+}
+
+function moveSettingsTab(from, step) {
+  const index = settingsTabs.indexOf(from);
+  if (index === -1) return;
+  const next = settingsTabs[(index + step + settingsTabs.length) % settingsTabs.length];
+  selectSettingsTab(next);
+}
+
+settingsTabs.forEach(button => {
+  button.addEventListener('click', () => selectSettingsTab(button, false));
+  button.addEventListener('keydown', event => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault(); moveSettingsTab(button, 1);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault(); moveSettingsTab(button, -1);
+    } else if (event.key === 'Home') {
+      event.preventDefault(); selectSettingsTab(settingsTabs[0]);
+    } else if (event.key === 'End') {
+      event.preventDefault(); selectSettingsTab(settingsTabs[settingsTabs.length - 1]);
+    }
   });
+  // Set the initial roving state without moving focus on page load.
+  button.setAttribute('tabindex', button.classList.contains('active') ? '0' : '-1');
 });
 
 async function loadSlskdSettings() {
