@@ -1,8 +1,11 @@
-## 2026-10-16 — Personal recommendation allocator adapter integrated (verification pending)
+## 2026-10-16 — PR #223 merged: personal recommendation allocation
 
-- Integrated the pure allocator into `recommend_new_music()` using immutable candidate records, stable candidate IDs, precomputed ownership status, and original insertion order. Server-side payload construction and diagnostic shaping remain outside the allocator.
-- Added the contract and allocator modules to the Docker COPY list. The change has not been tested locally and exact-head CI is pending; do not treat this as tested or complete.
-- Next: review the full diff and run all four required workflows on the exact PR head. If CI reveals policy parity defects, fix those before merge. Publishing/deployment remain paused.
+- PR #223 squash-merged as `1ccb11485bf1efce3ff201fb7337407c3e668c47` from exact final tested head `b604940e4b7a20160d4f3710b009c6ca718c57c5`.
+- Moved shortlist allocation loops into the pure `discovery_personal_allocator.allocate_personal_recommendations()`; the immutable contract keeps candidate identity, ownership classification, quotas, style targets, family cap, and check budget explicit. Server-side payload/diagnostic shaping and Navidrome ownership lookup remain in the adapter.
+- Exact-head CI passed all four required workflows: syntax/acquisition safety run 1171; Docker packaging/full suite (468 tests)/build run 1079; runtime smoke run 888; validation-only multi-architecture build run 932. No assistant-side local tests were run.
+- The first CI attempt exposed two incorrect test fixture expectations; corrected them before final verification. Also reviewed and preserved the distinct selected/review payload shapes. No image publication, deployment, or production runtime verification.
+- Next: refresh GitHub main/open PRs and identify one small, independently testable seam. Publishing remains paused.
+
 
 ## 2026-10-16 — Personal recommendation allocator boundary investigation (incomplete)
 
