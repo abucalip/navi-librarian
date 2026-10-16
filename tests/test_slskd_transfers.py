@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from slskd_transfers import download_transfer_files
+from slskd_transfers import download_transfer_files, queue_download_files
 
 
 class FakeResponse:
@@ -35,6 +35,52 @@ class FakeHTTP:
 
 
 class SlskdTransferListingTests(unittest.TestCase):
+    def test_queue_posts_selected_files_and_returns_success_response(self):
+        response = FakeResponse(payload={"queued": True})
+        calls = []
+
+        class QueueHTTP:
+            def post(self, url, **kwargs):
+                calls.append((url, kwargs))
+                return response
+
+        selected = [{"filename": "Album/01.flac"}]
+        result = queue_download_files(
+            "http://slskd", {"X-API-KEY": "test"}, "peer", selected,
+            http_client=QueueHTTP(),
+        )
+        self.assertIs(result, response)
+        self.assertEqual(calls, [(
+            "http://slskd/api/v0/transfers/downloads/peer",
+            {"headers": {"X-API-KEY": "test"}, "json": selected, "timeout": 12},
+        )])
+        self.assertEqual(response.raise_calls, 1)
+
+    def test_queue_http_errors_propagate(self):
+        response = FakeResponse(status_code=500, error=RuntimeError("queue failed"))
+
+        class QueueHTTP:
+            def post(self, *args, **kwargs):
+                return response
+
+        with self.assertRaisesRegex(RuntimeError, "queue failed"):
+            queue_download_files("http://slskd", {}, "peer", [], http_client=QueueHTTP())
+
+    def test_legacy_queue_adapter_preserves_queue_contract(self):
+        from navidrome_server import _discovery_queue_candidate_unless_dismissed
+        from unittest.mock import MagicMock
+        response = FakeResponse(payload={"queued": True})
+        with patch("navidrome_server.httpx.post", return_value=response) as post:
+            result = _discovery_queue_candidate_unless_dismissed(
+                "Artist", "Album", "http://slskd", {"X-API-KEY": "test"},
+                "peer", [{"filename": "01.flac"}],
+            )
+        self.assertEqual(result, response)
+        post.assert_called_once_with(
+            "http://slskd/api/v0/transfers/downloads/peer",
+            headers={"X-API-KEY": "test"}, json=[{"filename": "01.flac"}], timeout=12,
+        )
+
     def test_requests_peer_transfers_with_encoded_username_and_timeout(self):
         response = FakeResponse(payload=[])
         http = FakeHTTP(response)
