@@ -35,6 +35,8 @@ def get_librarian():
             ("app/api/dependencies.py", "def another():\n    import navidrome_server\n"),
             ("app/services/domain.py", "def get_librarian():\n    import navidrome_server\n"),
             ("app/api/dependencies.py", "from navidrome_server import api_call\n"),
+            ("app/api/dependencies.py", "def get_librarian():\n    from navidrome_server import api_call\n"),
+            ("app/api/dependencies.py", "def get_librarian():\n    import navidrome_server.submodule\n"),
         ]
         for relative, content in cases:
             with self.subTest(relative=relative, content=content):
