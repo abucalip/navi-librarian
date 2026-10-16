@@ -19,7 +19,7 @@ from discovery_allocation_contract import (
 
 
 def allocate_personal_recommendations(request: AllocationRequest) -> AllocationResult:
-    """Allocate a shortlist using the established multi-pass recommendation policy."""
+    """Allocate a shortlist using the established multi-pass recommendation policy (parity verification pending)."""
     candidates = request.candidates
     by_id = {candidate.candidate_id: candidate for candidate in candidates}
     ordered_by_category = {
