@@ -56,12 +56,14 @@
       <div class="dashboard-carousel-heading">
         <div>
           <h2 id="dashboardHeading">Ten from the collection</h2>
-          <p>A fresh, random mix from every discovery lane.</p>
+          <!-- The ring is steered, so the copy names the gesture: a control that cannot be
+               discovered may as well not exist. -->
+          <p>A fresh, random mix from every discovery lane. Drag the ring, or focus it and use ← →.</p>
         </div>
         <button id="shuffleDashboard">Shuffle picks ↻</button>
       </div>
       <p id="dashboardPicksStatus" class="dashboard-picks-status status-line" aria-live="polite">Finding something unexpected…</p>
-      <div id="dashboardCarousel" class="dashboard-carousel" aria-label="Random album recommendations"></div>
+      <div id="dashboardCarousel" class="dashboard-carousel" role="group" aria-label="Random album recommendations"></div>
     </div>
   </section>
 

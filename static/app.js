@@ -711,10 +711,263 @@ function makeScrollTrackFocusable(track, label) {
   });
 }
 
+/* --------------------------------------------------------------- dashboard ring
+
+   The dashboard album list is presented as a 3D coverflow ring: the picks sit evenly around a
+   cylinder and the card at the front is the album under consideration. This adapts the
+   coverflow-ring technique (rotateY + translateZ around a perspective scene) and is written
+   from the technique rather than copied from a component, because the reference is
+   commercially licensed and its cards carry no text — this list has to show the album, the
+   artist and the Get action, so only the rear cards are reduced to artwork.
+
+   Motion thesis: one authored moment, the ring's rotation, and it exists to move between the
+   picks rather than to decorate them. It is steered (drag, or the arrow keys while the ring
+   has focus) and always eases out instead of snapping to a stop. The loop stops the moment it
+   cannot be seen or is not wanted: hidden tab, scrolled offscreen, pointer over the ring,
+   focus inside it, or a reduced-motion preference. Per frame it writes a single transform on
+   the stage; the per-card transforms are static and nothing blurs, filters or shadows is
+   animated. Geometry lives in CSS custom properties so it can be tuned without touching this.
+
+   Note for the reduced-motion path: the ambient drift is the nonessential part and it is
+   removed there, but manual steering is left intact, so the ring stays usable rather than
+   becoming a single static album with no way to reach the others. */
+const RING_PERSPECTIVE = 2000;     // px; larger flattens the ring, smaller exaggerates it
+const RING_BASE_VELOCITY = 0.4;    // deg/frame when idle: a slow drift, ~24 deg/s
+const RING_BOOST_MAX = 2.6;        // deg/frame ceiling, so a hard flick stays readable
+const RING_BOOST_DECAY = 0.94;     // eases a flick out rather than snapping on release
+const RING_FLAT_CARD_WIDTH = 218;  // matches .dashboard-carousel > .card
+const RING_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+const RING = {
+  scene: null, stage: null, cards: [], count: 0, step: 0, front: -1,
+  angle: 0, boost: 0, scale: 1, baseHeight: 0, cardWidth: RING_FLAT_CARD_WIDTH,
+  radius: 0, raf: 0, abort: null, observer: null, suppressClick: false,
+  dragging: false, dragX: 0, dragDistance: 0,
+  pointerOver: false, focusWithin: false, onscreen: true, inert: false
+};
+
+function ringFrontIndex() {
+  return ((Math.round(RING.angle / RING.step) % RING.count) + RING.count) % RING.count;
+}
+
+// Ambient drift is the nonessential part, so it yields to every signal that the user is
+// reading, acting, or simply cannot see the ring. Manual steering ignores all of this.
+function ringAmbientVelocity() {
+  if (document.hidden || !RING.onscreen || RING.dragging) return 0;
+  if (RING.pointerOver || RING.focusWithin) return 0;
+  if (RING_REDUCED_MOTION.matches) return 0;
+  return RING_BASE_VELOCITY;
+}
+
+function ringSettled() {
+  return RING.boost === 0 && ringAmbientVelocity() === 0;
+}
+
+function ringWrite() {
+  RING.stage.style.transform =
+    'scale(' + RING.scale.toFixed(3) + ') rotateY(' + (-RING.angle).toFixed(3) + 'deg)';
+}
+
+function ringFrame() {
+  RING.raf = 0;
+  const velocity = ringAmbientVelocity() + RING.boost;
+  if (velocity) {
+    RING.angle = (RING.angle + velocity) % 360;
+    ringWrite();
+    ringApplyFront(ringFrontIndex());
+  }
+  RING.boost = Math.abs(RING.boost) < 0.02 ? 0 : RING.boost * RING_BOOST_DECAY;
+  if (!ringSettled()) ringStart();
+}
+
+function ringStart() {
+  if (!RING.raf && RING.stage && !ringSettled()) RING.raf = requestAnimationFrame(ringFrame);
+}
+
+// Exactly one card is legible and operable at a time. Without this the ring would put every
+// album and every Get button into the tab order, and a rear card that happens to be rotated
+// towards the viewer would be clickable while showing only artwork.
+function ringApplyFront(index) {
+  if (index === RING.front) return;
+  RING.front = index;
+  RING.cards.forEach((card, cardIndex) => {
+    const isFront = cardIndex === index;
+    card.classList.toggle('is-front', isFront);
+    card.tabIndex = isFront ? 0 : -1;
+    if (isFront) card.removeAttribute('aria-hidden');
+    else card.setAttribute('aria-hidden', 'true');
+    if (RING.inert) card.inert = !isFront;
+    const get = card.querySelector('.get-album');
+    if (get) get.tabIndex = isFront ? 0 : -1;
+  });
+}
+
+function ringPointerDown(event) {
+  if (event.button) return;
+  RING.dragging = true;
+  RING.dragX = event.clientX;
+  RING.dragDistance = 0;
+  RING.suppressClick = false;
+  if (RING.scene.setPointerCapture) {
+    // Capture keeps the drag alive past the panel edge. It is an optimisation, not a
+    // requirement, so a browser that refuses it still gets a working drag.
+    try { RING.scene.setPointerCapture(event.pointerId); } catch (error) { /* ignore */ }
+  }
+}
+
+function ringPointerMove(event) {
+  if (!RING.dragging) return;
+  const delta = event.clientX - RING.dragX;
+  if (!delta) return;
+  RING.dragX = event.clientX;
+  RING.dragDistance += Math.abs(delta);
+  // Past a few pixels this is a drag, not a click, so the release must not open the dialog.
+  if (RING.dragDistance > 6) RING.suppressClick = true;
+  // One card of travel advances one step, so the drag stays attached to the artwork.
+  const degrees = -(delta / RING.cardWidth) * RING.step;
+  RING.angle = (RING.angle + degrees) % 360;
+  // A flick is what accelerates: the release keeps this momentum and eases it out.
+  RING.boost = Math.max(-RING_BOOST_MAX, Math.min(RING_BOOST_MAX, RING.boost + degrees * 0.3));
+  ringWrite();
+  ringApplyFront(ringFrontIndex());
+  ringStart();
+}
+
+function ringPointerUp() {
+  if (!RING.dragging) return;
+  RING.dragging = false;
+  ringStart();
+}
+
+function ringKeyDown(event) {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+  const nudge = RING.step / 12;
+  if (event.key === 'ArrowRight') RING.boost = Math.min(RING_BOOST_MAX, RING.boost + nudge);
+  else if (event.key === 'ArrowLeft') RING.boost = Math.max(-RING_BOOST_MAX, RING.boost - nudge);
+  else return;
+  event.preventDefault();
+  ringStart();
+}
+
+// Zoom the ring out until it fits the panel rather than letting it push the page sideways.
+// Read on resize, never per frame.
+function ringMeasure() {
+  if (!RING.scene) return;
+  const available = RING.scene.clientWidth || 0;
+  const ringWidth = RING.radius * 2 + RING.cardWidth;
+  RING.scale = available > 0 ? Math.max(0.34, Math.min(1, (available - 16) / ringWidth)) : 1;
+  RING.scene.style.setProperty('--ring-height', Math.round(RING.baseHeight * RING.scale) + 'px');
+  ringWrite();
+}
+
+// The stage is sized for the magnified front card, not the flat card, or the ring is clipped.
+// Cards stay auto-height, so a face that arrives late changes this number but never clips text.
+function ringBaseHeight(cards) {
+  const height = Math.max(...cards.map(card => card.getBoundingClientRect().height));
+  return Math.round(height * RING_PERSPECTIVE / (RING_PERSPECTIVE - RING.radius));
+}
+
+function destroyDashboardRing() {
+  if (RING.raf) cancelAnimationFrame(RING.raf);
+  if (RING.observer) RING.observer.disconnect();
+  if (RING.abort) RING.abort.abort();
+  RING.raf = 0;
+  RING.observer = null;
+  RING.abort = null;
+  RING.stage = null;
+  RING.scene = null;
+  RING.cards = [];
+  RING.count = 0;
+  RING.front = -1;
+  RING.boost = 0;
+  RING.angle = 0;
+  RING.dragging = false;
+  RING.pointerOver = false;
+  RING.focusWithin = false;
+}
+
+function buildDashboardRing(scene) {
+  destroyDashboardRing();
+  const cards = [...scene.children].filter(child => child.classList.contains('card'));
+  // Two albums are a pair, not a ring; below three this stays the flat list it already is.
+  if (cards.length < 3) return;
+  RING.scene = scene;
+  RING.cards = cards;
+  RING.count = cards.length;
+  RING.step = 360 / RING.count;
+  RING.inert = 'inert' in HTMLElement.prototype;
+  RING.cardWidth = RING_FLAT_CARD_WIDTH;
+  // Radius that puts neighbours edge to edge, so the ring reads as one continuous band
+  // instead of overlapping cards.
+  RING.radius = Math.round((RING.cardWidth / 2) / Math.tan(Math.PI / RING.count) * 1.05);
+  // Measured while the cards are still in normal flow. .card-art is aspect-ratio 1/1, so the
+  // height does not depend on whether artwork has loaded yet.
+  RING.baseHeight = ringBaseHeight(cards);
+
+  const ringScene = document.createElement('div');
+  ringScene.className = 'ring-scene';
+  const stage = document.createElement('div');
+  stage.className = 'ring-stage';
+  cards.forEach((card, index) => {
+    card.classList.add('ring-card');
+    card.style.setProperty('--ring-index', String(index));
+    stage.append(card);
+  });
+  ringScene.append(stage);
+  scene.append(ringScene);
+  scene.classList.add('is-ring');
+  scene.style.setProperty('--ring-step', RING.step.toFixed(4) + 'deg');
+  scene.style.setProperty('--ring-radius', RING.radius + 'px');
+  scene.style.setProperty('--ring-card-width', RING.cardWidth + 'px');
+  RING.stage = stage;
+
+  const abort = new AbortController();
+  RING.abort = abort;
+  const options = {signal: abort.signal};
+  scene.addEventListener('pointerdown', ringPointerDown, options);
+  scene.addEventListener('pointermove', ringPointerMove, options);
+  scene.addEventListener('pointerup', ringPointerUp, options);
+  scene.addEventListener('pointercancel', ringPointerUp, options);
+  scene.addEventListener('pointerenter', () => { RING.pointerOver = true; }, options);
+  scene.addEventListener('pointerleave', () => { RING.pointerOver = false; ringStart(); }, options);
+  scene.addEventListener('focusin', () => { RING.focusWithin = true; }, options);
+  scene.addEventListener('focusout', () => { RING.focusWithin = false; ringStart(); }, options);
+  scene.addEventListener('keydown', ringKeyDown, options);
+  // Swallow the click that ends a drag, so a flick never opens the album dialog.
+  scene.addEventListener('click', event => {
+    if (!RING.suppressClick) return;
+    RING.suppressClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, {signal: abort.signal, capture: true});
+  window.addEventListener('resize', ringMeasure, options);
+  document.addEventListener('visibilitychange', ringStart, options);
+  if ('IntersectionObserver' in window) {
+    RING.observer = new IntersectionObserver(entries => {
+      RING.onscreen = entries[0].isIntersecting;
+      if (RING.onscreen) ringStart();
+    }, {rootMargin: '120px'});
+    RING.observer.observe(scene);
+  }
+  ringMeasure();
+  ringApplyFront(0);
+  ringWrite();
+  ringStart();
+  // Web fonts land after first paint and change text metrics, which moves the measured height.
+  // Re-take it once they settle; the cards are auto-height, so nothing clips in the meantime.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (RING.cards !== cards) return;
+      RING.baseHeight = ringBaseHeight(cards);
+      ringMeasure();
+    });
+  }
+}
+
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
   const status = $('dashboardPicksStatus');
-  makeScrollTrackFocusable(target);
+  destroyDashboardRing();
   target.replaceChildren();
   status.textContent = 'Picking ten albums across your discovery lists…';
   try {
@@ -740,6 +993,7 @@ async function loadDashboardPicks() {
       art.append(get);
       target.append(card);
     }
+    buildDashboardRing(target);
     status.textContent = items.length
       ? `${items.length} randomly selected albums from ${data.pool_size || items.length} available suggestions.`
       : 'No suggestions yet. Open a discovery page and refresh its list first.';
