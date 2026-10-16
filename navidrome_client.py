@@ -76,3 +76,26 @@ def search_result_payload(result, category, collection_items=items):
             for item in collection_items(result.get(key))
         ]
     return output
+
+
+def album_details_payload(album, collection_items=items):
+    """Shape a Subsonic album record and its tracks for get_album_details."""
+    return {
+        "id": album.get("id"),
+        "name": album.get("name"),
+        "artist": album.get("artist"),
+        "year": album.get("year"),
+        "genre": album.get("genre"),
+        "songCount": album.get("songCount"),
+        "songs": [
+            {
+                "id": song.get("id"),
+                "title": song.get("title"),
+                "artist": song.get("artist"),
+                "track": song.get("track"),
+                "duration": song.get("duration"),
+                "playCount": song.get("playCount"),
+            }
+            for song in collection_items(album.get("song"))
+        ],
+    }
