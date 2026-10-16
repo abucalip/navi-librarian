@@ -37,4 +37,31 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   result=diversify_classic_candidates(items,limit=10,per_artist=2,per_family=2)
   self.assertEqual(sum(x["artist"]=="A" for x in result),2); self.assertEqual(len(result),10)
   self.assertEqual(sum(x.get("primary_genre_family")=="jazz" for x in result),2)
+
+ def test_recommendation_genre_families_and_style_families(self):
+  self.assertEqual(
+   genre_families(["Jazz", "Bossa Nova", "Malian desert blues", "Raï"]),
+   {"jazz", "brazilian", "african", "north-african-middle-eastern"},
+  )
+  self.assertEqual(
+   recent_style_families(["Jazz rap", "Bossa Nova", "Raï"]),
+   {"hip-hop", "bossa_nova_brazilian", "north_african"},
+  )
+  self.assertEqual(recent_style_families(["Electronic rock"]), {"electronic"})
+
+ def test_primary_recent_family_prioritizes_specific_style(self):
+  self.assertEqual(primary_recent_family(["Jazz rap"], {"jazz": 8, "hip-hop": 2}), "hip-hop")
+  self.assertEqual(primary_recent_family(["Afro-jazz"], {"african": 8}), "jazz")
+  self.assertIsNone(primary_recent_family([], {}))
+
+ def test_diversity_style_classification_and_overrides(self):
+  self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, []), "north_african")
+  self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, []), "malian_desert_blues")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeat"]), "afrobeats")
+  self.assertEqual(
+   classify_diversity_style({"artist": "Unknown", "regional_styles": ["afro_jazz"]}, ["Raï"]),
+   "afro_jazz",
+  )
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Indie rock"]), "other")
+
 if __name__=="__main__": unittest.main()
