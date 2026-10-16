@@ -5,7 +5,6 @@ details, and release years. Provider failures remain non-fatal except for
 invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
-import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from time import monotonic, sleep
@@ -13,6 +12,8 @@ from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, HTTPException
+
+from app.services.artist_bio import resolve_artist_bio
 from urllib.request import urlopen
 
 router = APIRouter()
@@ -28,15 +29,6 @@ _EXTERNAL_HTTP = httpx.Client(
 # versus the optical phenomenon) from producing unrelated summaries.
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
-
-_ARTIST_DESCRIPTION_RE = __import__("re").compile(
-    r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
-    r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
-    r"guitarist|bassist|drummer|keyboardist|record producer|music producer|"
-    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\b",
-    __import__("re").IGNORECASE,
-)
-
 
 @router.get("/api/artist-bio")
 def artist_bio(artist: str):
@@ -86,33 +78,7 @@ def artist_bio(artist: str):
         except Exception:
             pass
 
-    music_entities = [
-        item for item in entities
-        if item.get("id")
-        and _ARTIST_DESCRIPTION_RE.search(str(item.get("description") or ""))
-    ]
-    music_entities.sort(key=lambda item: (
-        str(item.get("label") or "").casefold() != key,
-        str(item.get("label") or "").casefold() != key.replace("the ", "", 1),
-    ))
-
-    page_qid = str(page.get("wikibase_item") or "")
-    if page_qid and page.get("type") != "disambiguation":
-        matching_entity = next(
-            (item for item in music_entities if str(item.get("id") or "") == page_qid),
-            None,
-        )
-        if matching_entity:
-            extract = " ".join(str(page.get("extract") or "").split())
-            if extract:
-                match = __import__("re").search(r"^.*?[.!?](?=\s|$)", extract)
-                bio = match.group(0) if match else extract[:240]
-                if len(bio) > 280:
-                    bio = bio[:277].rsplit(" ", 1)[0] + "…"
-
-    # Fast, safe fallback: use Wikidata's own music-related description.
-    if not bio and music_entities:
-        bio = str(music_entities[0].get("description") or "").strip()
+    bio = resolve_artist_bio(name, entities, page)
 
     _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
     return {"artist": name, "bio": bio}

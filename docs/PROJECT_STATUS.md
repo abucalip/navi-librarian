@@ -1,3 +1,11 @@
+## 2026-10-16 — Artist-biography resolution extraction (PR preparation)
+
+- Branch `refactor/extract-artist-bio-resolution`, based on GitHub main `7bfcbebfa66e7d00d20f78e25d8b998b7a617bd0`, after PR #189 merged.
+- Moved the pure Wikidata/Wikipedia identity decision, music-entity filtering/ranking, summary sentence normalization, and length bounding into `app/services/artist_bio.py`. The metadata route retains request validation, HTTP fetching/concurrency, caching, and response shape.
+- Added direct-import regressions for exact QID match, mismatched entity identity, disambiguation pages, music-entity filtering/ranking, empty payloads, and long-summary truncation. Existing metadata route tests remain.
+- Focused/full tests and all four exact-final-head workflows are pending. No local test run, merge, publication, deployment, or production runtime verification is claimed.
+- Next: review complete diff, open PR, and verify exact-head CI. No acquisition or filesystem behavior is changed.
+
 ## 2026-10-16 — PR #189 merged: dashboard-pick service extraction
 
 - PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested PR head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`.

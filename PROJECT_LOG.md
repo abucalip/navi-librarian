@@ -1,3 +1,11 @@
+## 2026-10-16 — Artist-biography resolution extraction opened
+
+- Branch `refactor/extract-artist-bio-resolution`, based on refreshed main `7bfcbebfa66e7d00d20f78e25d8b998b7a617bd0` after PR #189.
+- Added `app/services/artist_bio.py` with pure artist-biography resolution from already-fetched Wikidata entities and Wikipedia page payloads. `app/api/metadata.py` still owns provider requests, parallel retrieval, caching, input validation, and the response contract.
+- Added `tests/test_artist_bio_service.py`; retained `tests/test_metadata_routes.py` for HTTP routes and provider integration.
+- Verification pending on the exact PR head; no assistant-side test execution, merge, publication, deployment, or production runtime verification is claimed.
+- Next: inspect the complete diff and all four required exact-head workflows before merge.
+
 ## 2026-10-16 — PR #189 merged: dashboard-pick service
 
 - PR: https://github.com/abucalip/navi-librarian/pull/189
