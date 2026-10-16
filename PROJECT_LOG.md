@@ -777,10 +777,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Next: obtain the owner decision on MCP-exposed `restart_server` and `apply_server_patch`; no changes to those capabilities before authorization.
 
 
-## 2026-10-16 — Retire legacy operational MCP tools (PR pending)
+## 2026-10-16 — PR #276 merged: retire legacy operational MCP tools
 
 - Based on GitHub main `fc73958eac7b3e1b95ab29493fb023f63b76bd41`. Branch: `remove/legacy-operational-mcp-tools`.
 - Safety audit found `restart_server` and `apply_server_patch` had no internal callers and were exposed only through `mcp_registry.TOOL_NAMES`. The former kills/relaunches the server on hardcoded port 8000; the latter rewrites `navidrome_server.py` on disk. Per the owner's earlier direction to remove these if safe, both definitions and registry entries are removed; the other 25 tools and MCP runtime remain.
 - Updated `tests/test_mcp_registry.py` to assert 25 unique tools and that the two retired functions are neither registered nor exposed by the legacy service. Added a decision record and updated the active roadmap/workflow/status docs.
-- Tests/CI not yet verified on the final PR head. No live service restart, source rewrite, deployment, or publication was performed.
-- Next: review the complete diff, verify all four required workflows on the exact final PR-head SHA, and merge only if the MCP registry and compatibility tests pass.
+- Exact final PR head `67320d555d2ce5f26868b57f8d46a5b46b295f81` passed all four required workflows: Python syntax/acquisition safety (`38970741140`), Docker packaging/full unit suite/build (`38970741125`), container runtime smoke (`38970741243`), and validation-only multi-architecture image validation (`38970741035`, publishing paused). The full suite passed 554 tests. PR #276 squash-merged as `fb5085f7b62b4b9616372c4d044fd974320b2f76`.
+- No live service restart, source rewrite, deployment, or publication was performed.
+- Next: run the modularization completion audit against current main, including the dependency-map artifact, remaining legacy references, and size-ratchet measurements.

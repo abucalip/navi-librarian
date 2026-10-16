@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #274 merged; AST/source-layout coupling audit complete)
-Audit base: GitHub `main` at commit `cae95e74c9910c512392de80b337eb4b21de67a5`
+Last reviewed: 2026-10-16 (PR #276 merged; legacy operational MCP tools retired)
+Audit base: GitHub `main` at commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`
 
 ## Purpose
 
@@ -33,9 +33,9 @@ The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_m
 
 ### 0b. Legacy operational MCP functions — retired
 
-The owner requested removal of the early-development `restart_server` and `apply_server_patch` capabilities if safe. The audit found no internal callers; their only runtime exposure was the ordered MCP registry. `restart_server` killed/relaunched the process on hardcoded port 8000, and `apply_server_patch` rewrote the running service's own source file. PR removes both definitions and registry entries while preserving the remaining 25 MCP tools and the MCP runtime.
+The owner requested removal of the early-development `restart_server` and `apply_server_patch` capabilities if safe. The audit found no internal callers; their only runtime exposure was the ordered MCP registry. `restart_server` killed/relaunched the process on hardcoded port 8000, and `apply_server_patch` rewrote the running service's own source file. PR #276 removed both definitions and registry entries while preserving the remaining 25 MCP tools and the MCP runtime.
 
-**Status:** removal and regression coverage are in PR review. Do not restore either capability without a new explicit owner decision and a separate security review. The MCP server itself is not being retired.
+**Status: implemented, tested, and merged.** Exact PR head `67320d555d2ce5f26868b57f8d46a5b46b295f81` passed all four required workflows and the full 554-test suite; merge commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`. Do not restore either capability without a new explicit owner decision and a separate security review. The MCP server itself is not being retired.
 
 
 ### 0c. Mutable settings coupling — audited; no state-object extraction justified
