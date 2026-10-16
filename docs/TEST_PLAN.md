@@ -52,7 +52,7 @@ The enforced size check is `python scripts/check_server_size.py`. Its baseline i
 
 Before extracting any part of `recommend_new_music()`, add deterministic tests with fake provider callables/responses and a fixed listen/library fixture. Assert stable candidate ordering, ownership exclusions, scoring/bonus effects, provider failure behavior, and the public result shape where those behaviors apply. Existing tests that mock the entire function do not characterize its internals. Compare the library-inventory path with `discovery_library_snapshot.py` before creating another inventory implementation.
 
-A CI size guard should check the verified `navidrome_server.py` line ceiling and recorded top-level-function limits. The baseline must be measured from the exact reviewed GitHub revision; do not blindly hardcode an audit estimate. Tests for the guard must prove both acceptance below thresholds and failure above thresholds, and diagnostics must name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
+`scripts/check_server_size.py` enforces the baseline measured from the exact reviewed GitHub revision; do not substitute the older audit estimate. The guard tests prove acceptance at thresholds and failure above them, and diagnostics name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
 
 ## UI changes
 
