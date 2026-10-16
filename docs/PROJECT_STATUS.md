@@ -1,31 +1,31 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #283 merged as `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`)
-Documentation base: GitHub `main` at commit `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`
+Last reviewed: 2026-10-16 (PRs #222, #279, and #282 merged)
+Documentation base: GitHub `main` at commit `71eb20bc734f1113f81b62eef35e17d53b8adf8e`; status update is being recorded on a documentation PR branch.
 
 ## Current focus
 
-PRs #278, #280, and #281 extracted category, Last.fm, and familiarity/exploration scoring policies; PR #283 tightened the recommendation size exception from 575 to 450 lines. `recommend_new_music()` is 396 AST lines, the server is 2,596 lines, and `_discovery_acquire_album_impl()` is 278 lines. Current-main dependency map artifact `12077488636` (SHA-256 `39b6b2854789f0273b117adb1b9357e4765e420f87f61b05b4932f4b45c5ad49`) covers 171 modules and a 73-module app import closure; the sole app-to-legacy import is the intentionally lazy edge at `app/api/dependencies.py:10`. The completion audit found no further extraction worth the dependency surface without a concrete behavior seam. See `PROJECT_LOG.md`.
+PRs #278, #280, and #281 extracted recommendation category, Last.fm, and familiarity/exploration scoring policies; PR #283 tightened the temporary recommendation size exception to 450 lines. `recommend_new_music()` is 396 AST lines, `navidrome_server.py` is 2,596 lines, and `_discovery_acquire_album_impl()` is 278 lines. The current dependency map covers 171 modules and a 73-module app import closure; the sole app-to-legacy import is the intentionally lazy edge at `app/api/dependencies.py:10`. The AST/source-layout test migration is complete. See `PROJECT_LOG.md`.
+
+The UI PRs #222 (dashboard coverflow ring), #279 (async Get-button state machine), and #282 (uniform acquisition-toast border) are now merged. All four required workflows passed on each exact PR head, and the owner confirmed manual UI testing. Publishing remains paused.
 
 ## Next action
 
-1. Verify and merge PR #282 only after all four required workflows pass on its exact final PR head; it tightens the temporary recommendation exception from 575 to 450 lines.
-2. Then review the remaining `recommend_new_music()` body for independently testable policy seams; retain orchestration/diagnostic projection if no narrower boundary justifies extraction.
+1. Continue from `docs/MODULARIZATION_ROADMAP.md` only where a concrete behavior/testability seam justifies further work; the latest completion audit found no additional extraction worth the dependency surface without such a seam.
+2. Keep the remaining acquisition coordinator orchestration intact unless a narrower policy boundary can be extracted without duplicating retry, concurrency, source-switching, or filesystem-safety rules.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
-The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
-
-The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`; no direct AST/source-layout coupling remains in the audited test suite. Request coordination lifecycle tests exercise `acquisition_request_coordinator.acquire_album_request()` directly.
+The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, while operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md.
 
 ## Delivery and verification state
 
 - **Implemented / merged:** see `PROJECT_LOG.md` and current GitHub history for exact revisions.
-- **Automated verification:** required CI gates must be checked on each exact final PR-head SHA; historical success is not evidence for a new revision.
-- **Local execution:** do not claim assistant-side local tests unless actually run. Record unavailable or skipped checks explicitly.
-- **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
-- **Deployment / production runtime:** not implied by merge or CI. No new deployment or production-runtime verification is claimed by this documentation update.
+- **Automated verification:** the four required workflows passed on exact PR heads for #222 (`5b55527ec3a13aaa137ed3d56341fb029913f09f`), #279 (`b3f44942724b6f9c6865f6c9160a69e58715b28a`), and #282 (`cbe30a5bf26e503f1cb455861b32a5064b3604ab`).
+- **Manual UI verification:** owner reports all three PRs were manually tested; the older manual-report format was waived by the owner for this merge request.
+- **Publishing:** paused; multi-architecture validation remains non-publishing (`push: false`).
+- **Deployment / production runtime:** not implied by merge or CI. No deployment or production-runtime verification is claimed.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred because it has not been reproducibly demonstrated.
-- **MCP:** preserve current compatibility seams during routine modularization. Retirement requires a separate explicit decision and migration gate.
+- **MCP:** the early-development operational tools `restart_server` and `apply_server_patch` have been retired by PR #276. Preserve remaining compatibility seams unless a separately approved migration changes them.
 
 ## Documentation map
 
@@ -37,7 +37,7 @@ The active candidate list and acceptance criteria live in `docs/MODULARIZATION_R
 | User-visible behavior and product invariants | `docs/REQUIREMENTS.md` |
 | Required automated and manual verification | `docs/TEST_PLAN.md` |
 | Development, review, merge, and release process | `docs/DEVELOPMENT_WORKFLOW.md` |
-| Current module boundaries and architectural decisions | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and source code |
+| Current module boundaries and rationale | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and source code |
 
 ## Status update rule
 

@@ -1,3 +1,15 @@
+## 2026-10-16 — UI PRs #222, #279, and #282 merged
+
+- Owner confirmed all three UI changes were manually tested and explicitly waived the older manual-report requirement for this merge set. The changes were reviewed as UI-only; #222 updates the dashboard coverflow ring and its keyboard contract, #279 adds the async Get-button visual/state treatment, and #282 removes the redundant colored toast side border.
+- PR #222 exact head `5b55527ec3a13aaa137ed3d56341fb029913f09f`: all four required workflows passed (Python syntax, Docker packaging/full unit suite, container runtime smoke, and non-publishing multi-architecture validation). Squash-merged as `880fc34b43012f235fd0920bacd6ba644ecf3713`.
+- PR #279 exact head `b3f44942724b6f9c6865f6c9160a69e58715b28a`: all four required workflows passed. Squash-merged as `48675a803ef6a74dbb5782a1c87fdacd2c278b76`.
+- PR #282 exact head `cbe30a5bf26e503f1cb455861b32a5064b3604ab`: all four required workflows passed. Squash-merged as `71eb20bc734f1113f81b62eef35e17d53b8adf8e`.
+- Merge order was #222, #279, then #282. GitHub reported successful merges and each PR is now closed/merged. The commits were reviewed as non-overlapping functional regions despite shared UI asset files; GitHub mergeability was refreshed before the final merge.
+- No assistant-side local tests or browser tests were run in this session; manual testing is recorded as owner-reported. No publishing, deployment, or production runtime verification was performed. Publishing remains paused.
+- Next: continue from the modularization roadmap only where a concrete, testable responsibility boundary justifies the work.
+
+---
+
 ## 2026-10-16 — PR #270 merged: import-completion service extraction
 
 - Based on GitHub main after PR #268 merge `d5f48cd5666ccbe2ab318516b7ed9fba0fa37fee`. Added `acquisition_import_service.import_completed_source_locked()` with injected path naming, authoritative status persistence, hardened import operation, and clock dependencies. The legacy `_discovery_import_completed_source_locked()` is now a narrow adapter; the outer transition-lock/dismissal guard is unchanged.
