@@ -1,3 +1,7 @@
+## Artist-biography resolution — extraction in progress (PR preparation)
+
+`app/services/artist_bio.py` owns the pure matching decision after provider retrieval: it filters/ranks music-related Wikidata entities, accepts a Wikipedia extract only when its `wikibase_item` matches a music entity, avoids disambiguation-page extracts, and falls back to a music-related Wikidata description. `app/api/metadata.py` retains external requests, concurrent retrieval, cache lifetime, input validation, and response payload. Direct-import tests are in `tests/test_artist_bio_service.py`; existing route/provider tests remain. Exact-head CI is pending; no merge or deployment is claimed.
+
 ## Dashboard-pick service — extracted (PR #189)
 
 `app/services/dashboard.py` owns the dashboard's three-lane candidate assembly, album eligibility callback, case-insensitive artist/album deduplication, balanced per-category selection, and random fill. `app/api/dashboard.py` retains HTTP count validation, dependency injection, the response contract, and the route-level service adapter. List reads, eligibility, and shuffle are injected; the module does not initialize FastAPI, Navidrome, persistence, or MCP. PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`; all four required exact-head workflows passed (syntax 1052, Docker/full suite/build 959, runtime smoke 768, validation-only multi-architecture 812). No publication or deployment is claimed.
