@@ -1,3 +1,9 @@
+## 2026-10-16 — Independent extraction verification closeout (PRs #205 and #207)
+
+- **PR #205 — New Releases candidate selection:** direct-import tests cover eligible payload shape, invalid/non-album/out-of-window/future releases, similar-artist credit rejection, owned album exclusion, Various Artists rejection, and duplicate identity release-date precedence. Exact final head `079d355e972ea39d792c1dfa6fca6eab902800e3` passed syntax run 1111, Docker packaging/full unit suite/build run 1018, runtime smoke run 827, and validation-only multi-architecture run 871. Squash merge `32b39be400ec046e8310a87260346b1959141609`.
+- **PR #207 — Artist Deep Dives ranking/diversity:** direct-import tests cover candidate-pool scoring influence, eligibility filtering, artist/anchor repetition caps, and primary-pass genre diversity. Exact final head `20e565582579f4097eed3803748c87bb3d932a98` passed syntax run 1114, Docker packaging/full unit suite/build run 1021, runtime smoke run 830, and validation-only multi-architecture run 874. Squash merge `a5b0d865060c3d069a865be7a1cb43c1a072ae91`.
+- Assistant-side local test commands were not run; the Docker packaging workflows ran the full unit suite. No live MusicBrainz/Last.fm integration, publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — Extraction verification closeout (PRs #202 and #203)
 
 - **PR #202 — library overview payload:** direct-import tests in `tests/test_navidrome_client.py` cover projected album fields, artist count/note, empty input, and unchanged payload shape. Exact final head `6903f40578f40fec08f1efde92d6577fcaeeced0` passed syntax/acquisition safety run 1104, Docker packaging/full unit suite/build run 1011, runtime smoke run 820, and validation-only multi-architecture run 864. Squash merge `7a95364a31f360bb20dd8d2919a9bfea93ec893c`.
