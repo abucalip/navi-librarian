@@ -1011,143 +1011,91 @@ def recommend_new_music(count: int = 10) -> str:
     }
     targets["adventurous"] = count - sum(targets.values())
 
-    selected_counts = Counter()
-    selected_styles = Counter()
-    selected_profile_families = Counter()
+    from discovery_allocation_contract import (
+        AllocationCandidate,
+        AllocationRequest,
+        OwnershipStatus,
+    )
+    from discovery_personal_allocator import allocate_personal_recommendations
+
     diversity_style_targets = {
         "north_african": 1,
         "afrobeats": 1,
         "afro_jazz": 1,
         "malian_desert_blues": 1,
     }
-    processed = set()
-    candidate_decisions = {}
+    targets = {
+        "adjacent": (count * 4) // 10,
+        "cross_genre": (count * 3) // 10,
+    }
+    targets["adventurous"] = count - sum(targets.values())
 
-    def record_decision(candidate, status, reason):
-        previous = candidate_decisions.get(id(candidate))
-        if previous and previous.get("status") == "selected":
-            return
-        candidate_decisions[id(candidate)] = {
-            "status": status,
-            "reason": reason,
-        }
-
-    def consider(
-        candidate,
-        allow_over_quota=False,
-        allow_over_family_cap=False,
-        allow_over_diversity_style=False,
-    ):
-        nonlocal checked
-        category = candidate["discovery_category"]
-        style = candidate.get("diversity_style", "other")
-        if (
-            not allow_over_diversity_style
-            and style in diversity_style_targets
-            and selected_styles[style] >= diversity_style_targets[style]
-        ):
-            record_decision(
-                candidate,
-                "diversity_style_target_filled",
-                f"The target of {diversity_style_targets[style]} recommendation "
-                f"for the {style} diversity slot was already filled.",
-            )
-            return
-
-        profile_family = candidate.get("recent_profile_family")
-        if (
-            not allow_over_family_cap
-            and style not in diversity_style_targets
-            and profile_family
-            and selected_profile_families[profile_family] >= 1
-        ):
-            record_decision(
-                candidate,
-                "recent_genre_cap_reached",
-                f"The recent-listening family {profile_family} already has a "
-                "recommendation; another family is preferred.",
-            )
-            return
-
-        key = (
-            _artist_identity(candidate),
-            _music_key(candidate["album"]),
-        )
-        if key in processed:
-            candidate_decisions.setdefault(
-                id(candidate),
-                {
-                    "status": "duplicate_candidate",
-                    "reason": (
-                        "The same artist and album identity was already "
-                        "processed."
-                    ),
-                },
-            )
-            return
-
-        if checked >= 60:
-            record_decision(
-                candidate,
-                "not_considered",
-                "The candidate search limit of 60 checks was reached.",
-            )
-            return
-
-        if (
-            not allow_over_quota
-            and category in targets
-            and selected_counts[category] >= targets[category]
-        ):
-            record_decision(
-                candidate,
-                "category_quota_filled",
-                f"The target of {targets[category]} recommendations "
-                f"for the {category} category was already filled.",
-            )
-            return
-
-        if len(found) >= count:
-            record_decision(
-                candidate,
-                "not_considered",
-                "The requested number of recommendations was already reached.",
-            )
-            return
-
-        processed.add(key)
-
-        artist_key = _artist_identity(candidate)
-        if artist_recommendation_counts[artist_key] >= 1:
-            record_decision(
-                candidate,
-                "artist_already_selected",
-                "Another album by this artist has already been selected.",
-            )
-            return
-
-        checked += 1
+    # Prepare immutable policy inputs in original album insertion order. The
+    # adapter owns identity normalization and the Navidrome ownership lookup;
+    # the allocator itself has no provider/library access or mutable callbacks.
+    candidate_by_id = {}
+    allocation_candidates = []
+    for source_order, candidate in enumerate(albums.values()):
+        candidate_id = str(source_order)
+        candidate_by_id[candidate_id] = candidate
         title_key = _music_key(candidate["album"])
         same_title = library_by_title.get(title_key, [])
-
         exact_owned = any(
             _music_key(match.get("artist", ""))
             == _music_key(candidate["primary_artist"])
             for match in same_title
         )
-        if exact_owned:
-            record_decision(
-                candidate,
-                "already_owned",
-                "A normalized album-title and artist-credit match exists "
-                "in the indexed Navidrome inventory.",
-            )
-            return
+        ownership = (
+            OwnershipStatus.EXACT_OWNED
+            if exact_owned
+            else OwnershipStatus.TITLE_CONFLICT
+            if same_title
+            else OwnershipStatus.CLEAR
+        )
+        allocation_candidates.append(AllocationCandidate(
+            candidate_id=candidate_id,
+            artist_key=_artist_identity(candidate),
+            album_key=title_key,
+            category=candidate["discovery_category"],
+            score=float(candidate["discovery_score"]),
+            source_order=source_order,
+            diversity_style=candidate.get("diversity_style", "other"),
+            recent_profile_family=candidate.get("recent_profile_family"),
+            ownership=ownership,
+        ))
 
+    allocation = allocate_personal_recommendations(AllocationRequest(
+        candidates=tuple(allocation_candidates),
+        count=count,
+        category_targets=targets,
+        diversity_style_targets=diversity_style_targets,
+        family_cap=1,
+        max_checks=60,
+    ))
+    selected_counts = Counter(allocation.category_counts)
+    selected_styles = Counter(
+        candidate_by_id[candidate_id].get("diversity_style", "other")
+        for candidate_id in allocation.selected_candidate_ids
+    )
+    selected_profile_families = Counter()
+    artist_recommendation_counts = Counter()
+    candidate_decisions = {
+        id(candidate_by_id[decision.candidate_id]): {
+            "status": decision.status,
+            "reason": decision.reason,
+        }
+        for decision in allocation.decisions
+    }
+    checked = allocation.checked_count
+    found = []
+    possible_matches = []
+
+    def recommendation_payload(candidate):
+        recent_count = recent_artists.get(
+            _music_key(candidate["primary_artist"]), 0
+        )
         category = candidate["discovery_category"]
-        recent_count = recent_artists.get(_music_key(candidate["primary_artist"]), 0)
-
-        result = {
+        return {
             "artist": candidate["artist"],
             "album": candidate["album"],
             "discovery_category": category,
@@ -1199,140 +1147,23 @@ def recommend_new_music(count: int = 10) -> str:
             ),
         }
 
-        if same_title:
-            result["ownership_note"] = (
-                "A same-title album exists in Navidrome under a different "
-                "artist credit. Review before treating this as new."
-            )
-            possible_matches.append(result)
-            record_decision(
-                candidate,
-                "held_for_ownership_review",
-                "The album title exists in Navidrome under a different "
-                "artist credit; manual review is recommended.",
-            )
-            return
+    for candidate_id in allocation.selected_candidate_ids:
+        candidate = candidate_by_id[candidate_id]
+        found.append(recommendation_payload(candidate))
+        artist_recommendation_counts[_artist_identity(candidate)] += 1
+        style = candidate.get("diversity_style", "other")
+        if style not in diversity_style_targets:
+            family = candidate.get("recent_profile_family")
+            if family:
+                selected_profile_families[family] += 1
 
-        result["ownership_check"] = (
-            "No exact normalized album-title match found in the indexed "
-            "Navidrome inventory; alternate editions may still exist."
+    for candidate_id in allocation.ownership_review_candidate_ids:
+        result = recommendation_payload(candidate_by_id[candidate_id])
+        result["ownership_note"] = (
+            "A same-title album exists in Navidrome under a different "
+            "artist credit. Review before treating this as new."
         )
-        found.append(result)
-        record_decision(
-            candidate,
-            "selected",
-            "Passed the ownership checks and was added to the recommendations.",
-        )
-        artist_recommendation_counts[artist_key] += 1
-        selected_counts[category] += 1
-        selected_styles[candidate.get("diversity_style", "other")] += 1
-        if candidate.get("diversity_style", "other") not in diversity_style_targets:
-            profile_family = candidate.get("recent_profile_family")
-            if profile_family:
-                selected_profile_families[profile_family] += 1
-
-    # First reserve one slot for each requested regional/style family where
-    # a suitable, unowned candidate exists and category quotas permit it.
-    for style, style_target in diversity_style_targets.items():
-        if len(found) >= count or checked >= 60:
-            break
-        if selected_styles[style] >= style_target:
-            continue
-        style_candidates = sorted(
-            (
-                candidate
-                for candidate in albums.values()
-                if candidate.get("diversity_style") == style
-            ),
-            key=lambda candidate: candidate["discovery_score"],
-            reverse=True,
-        )
-        for candidate in style_candidates:
-            if selected_styles[style] >= style_target:
-                break
-            consider(candidate)
-            if len(found) >= count or checked >= 60:
-                break
-
-    # Fill remaining category targets after the diversity pass.
-    for category in ("adjacent", "cross_genre", "adventurous"):
-        for candidate in candidates_by_category[category]:
-            if selected_counts[category] >= targets[category]:
-                break
-            consider(candidate)
-            if len(found) >= count or checked >= 60:
-                break
-        if len(found) >= count or checked >= 60:
-            break
-
-    # If genre variety leaves a category short, relax the family cap before
-    # relaxing the 4/3/3 category balance or using unclassified candidates.
-    for category in ("adjacent", "cross_genre", "adventurous"):
-        if len(found) >= count or checked >= 60:
-            break
-        for candidate in candidates_by_category[category]:
-            if selected_counts[category] >= targets[category]:
-                break
-            consider(candidate, allow_over_family_cap=True)
-            if len(found) >= count or checked >= 60:
-                break
-
-    # Do not silently exceed category targets during fallback.
-    # First, try to fill any remaining target slots in their own categories.
-    if len(found) < count and checked < 60:
-        for category in ("adjacent", "cross_genre", "adventurous"):
-            if selected_counts[category] >= targets[category]:
-                continue
-            for candidate in candidates_by_category[category]:
-                if selected_counts[category] >= targets[category]:
-                    break
-                consider(candidate)
-                if len(found) >= count or checked >= 60:
-                    break
-            if len(found) >= count or checked >= 60:
-                break
-
-    # If a genre-based category cannot fill its target, use unclassified
-    # candidates for the remaining slots rather than silently exceeding the
-    # adjacent or cross-genre quotas. Keep their category explicitly uncertain.
-    if len(found) < count and checked < 60:
-        remaining_unclassified = sorted(
-            candidates_by_category["unclassified"],
-            key=lambda candidate: candidate["discovery_score"],
-            reverse=True,
-        )
-        for candidate in remaining_unclassified:
-            if len(found) >= count or checked >= 60:
-                break
-            consider(candidate, allow_over_quota=True)
-
-    # Final fallback: fill any remaining slots from the strongest candidates
-    # across all categories, relaxing category, family, and style caps only
-    # after the normal allocation attempts have been exhausted.
-    if len(found) < count and checked < 60:
-        remaining_candidates = sorted(
-            (
-                candidate
-                for category in (
-                    "adjacent",
-                    "cross_genre",
-                    "adventurous",
-                    "unclassified",
-                )
-                for candidate in candidates_by_category[category]
-            ),
-            key=lambda candidate: candidate["discovery_score"],
-            reverse=True,
-        )
-        for candidate in remaining_candidates:
-            if len(found) >= count or checked >= 60:
-                break
-            consider(
-                candidate,
-                allow_over_quota=True,
-                allow_over_family_cap=True,
-                allow_over_diversity_style=True,
-            )
+        possible_matches.append(result)
 
 
     # Temporary diagnostics: inspect all resolved candidates before return.
