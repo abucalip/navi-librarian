@@ -1840,13 +1840,6 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
 
 
-## 2026-10-16 — New Releases date-window policy extraction in progress
-
-- Branch `extract/new-release-window-policy` extracts the deterministic 730-day cutoff and derived query-year bounds into `discovery_new_releases.new_release_window(today)`.
-- The server adapter still supplies the current date and owns provider/cache calls, throttling, candidate selection, and response assembly. Direct-import regressions cover the 730-day boundary and leap-day arithmetic.
-- Verification, PR, merge, and exact-head CI status are pending. Publishing and deployment remain paused; no runtime verification is claimed.
-
-
 ## 2026-10-16 — PR #237 merged: New Releases date-window policy
 
 - Merged PR #237 from `extract/new-release-window-policy`; merge commit `2d11e52b78004ee51a6ce70a6a6ac6c2b451f397` (tested PR head `8d42c9f5f320fd7b4c0653fa09da8eda12f03f78`).
