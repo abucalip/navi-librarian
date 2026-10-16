@@ -1,7 +1,10 @@
 import hashlib
 import unittest
 
-from navidrome_client import (\n    api_call, items, search_result_payload, album_details_payload,\n    library_overview_payload,\n)
+from navidrome_client import (
+    api_call, items, search_result_payload, album_details_payload,
+    library_overview_payload,
+)
 
 
 class FakeResponse:
