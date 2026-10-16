@@ -1,5 +1,7 @@
 ## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
 
+- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+
 - Started from GitHub main after PR #224. Extracted cached-list filtering and response projection into `discovery_list_payload.build_cached_discovery_list_response()`; the server retains input validation, feedback persistence/read, For Me inventory logic, and dependency wiring.
 - Added direct-import tests for empty-cache shape, dismissal/saved/non-album filtering, personal diagnostics/legacy fields, and visible-count behavior. Docker packaging includes the helper.
 - Verification pending: complete diff review and all four required workflows on the final PR head. No merge, publication, deployment, or runtime verification is claimed.
