@@ -1,3 +1,12 @@
+## 2026-10-16 — Migrated slskd transfer lookup tests to direct imports
+
+- Replaced the AST harness in `tests/test_slskd_transfer_lookup.py` with direct imports of `slskd_transfers.download_transfer_files()`. Coverage retains the missing-peer 404 behavior, propagation of other HTTP errors, URL-escaped usernames and timeout, and successful parsing with remote-directory metadata.
+- Kept the legacy `navidrome_server._slskd_download_transfer_files` compatibility contract in `tests/test_slskd_transfers.py`; no production behavior changed.
+- Updated `docs/architecture/AST_TEST_INVENTORY.md`, `docs/MODULARIZATION_ROADMAP.md`, and `docs/PROJECT_STATUS.md`: two AST-coupled test files remain.
+- Branch: `test/migrate-slskd-transfer-lookup`. Test execution and required CI are pending; no test result, merge, publication, deployment, or runtime verification is claimed yet.
+
+---
+
 ## 2026-10-16 — Dependency-map execution and AST-coupled test inventory
 
 - Audit baseline: current GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`. A local `git clone` could not run because this execution environment cannot resolve `github.com`; no local checkout was used as source of truth.
