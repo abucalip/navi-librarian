@@ -898,3 +898,5 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Added regression assertions that blank Navidrome/slskd URLs and a blank ListenBrainz username fail validation.
 - Added `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with the audit findings and next-session proposal: remove fixed regional targets, make supplementary discovery responsive to recent listening, reduce artist-specific overrides, and test ranking variability/refresh/cache behavior while preserving ownership and eligibility safeguards.
 - **Verification status:** tests have not been run yet. CI, merge, publishing, deployment, and runtime verification are not claimed. Publishing remains paused.
+
+- PR #292 opened: https://github.com/abucalip/navi-librarian/pull/292. The PR initially opened at `eef6005f53a75f166ddd2844c2326d1071aa6be8`; subsequent status/log documentation updates change the final head, so refresh PR metadata before verification. Initial GitHub status and workflow queries returned no checks/runs; CI is not yet verified.
