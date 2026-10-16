@@ -1894,22 +1894,8 @@ def _lastfm_top_albums(artist, limit=8):
 
 
 def _lastfm_artist_genres(artist):
-    """Return cached Last.fm top tags for an artist, suitable for display grouping."""
-    payload = _lastfm_cached_call(
-        "artist.getTopTags", ttl_seconds=30 * 24 * 60 * 60,
-        artist=artist,
-    )
-    if not payload:
-        return []
-    records = items(payload.get("toptags", {}).get("tag"))
-    tags = []
-    for record in records:
-        name = str(record.get("name") or "").strip()
-        if name and name.casefold() not in {tag.casefold() for tag in tags}:
-            tags.append(name)
-        if len(tags) >= 8:
-            break
-    return tags
+    """Compatibility adapter for cached Last.fm artist tags."""
+    return _lastfm_client.artist_genres(artist)
 
 
 def _deep_dive_genre_families(tags):

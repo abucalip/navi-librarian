@@ -174,5 +174,46 @@ class LastFmClientTests(unittest.TestCase):
             self.assertEqual(navidrome_server.LASTFM_LAST_ERROR, "Last.fm returned HTTP 503.")
         lookup.assert_called_once_with("Artist", "Album")
 
+
+    def test_artist_genres_normalizes_deduplicates_and_limits_tags(self):
+        payload = {"toptags": {"tag": [
+            {"name": " Jazz "}, {"name": "jazz"}, {"name": "Bossa Nova"},
+            {"name": "Soul"}, {"name": "Funk"}, {"name": "Rock"},
+            {"name": "Pop"}, {"name": "Afrobeat"}, {"name": "Blues"},
+            {"name": "Country"}, {"name": "Ignored"},
+        ]}}
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
+        self.assertEqual(client.artist_genres("Artist"), [
+            "Jazz", "Bossa Nova", "Soul", "Funk", "Rock", "Pop", "Afrobeat", "Blues",
+        ])
+        request = next(row for row in self.calls if row[0] == "http_get")
+        self.assertEqual(request[2]["params"]["method"], "artist.getTopTags")
+        self.assertEqual(request[2]["params"]["artist"], "Artist")
+        self.assertEqual(request[2]["timeout"], 15)
+
+    def test_artist_genres_handles_scalar_tags_cache_hits_and_missing_payload(self):
+        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse({
+            "toptags": {"tag": {"name": " Rai "}}
+        }))
+        self.assertEqual(client.artist_genres("Artist"), ["Rai"])
+        cached = self.make_client(cache_get=lambda _key, _ttl: {
+            "toptags": {"tag": [{"name": "Jazz"}]}
+        })
+        self.assertEqual(cached.artist_genres("Artist"), ["Jazz"])
+        self.assertFalse(any(row[0] == "http_get" for row in self.calls))
+        missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
+        self.assertEqual(missing.artist_genres("Artist"), [])
+
+    def test_artist_genres_legacy_adapter_delegates(self):
+        import navidrome_server
+        with patch.object(navidrome_server._lastfm_client, "artist_genres",
+                          return_value=["Jazz"]) as call:
+            self.assertEqual(navidrome_server._lastfm_artist_genres("Artist"), ["Jazz"])
+        call.assert_called_once_with("Artist")
+
 if __name__ == "__main__":
     unittest.main()

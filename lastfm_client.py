@@ -90,6 +90,31 @@ class LastFmClient:
             return None
 
 
+    def artist_genres(self, artist: str) -> list[str]:
+        """Return up to eight distinct cached Last.fm top tags for an artist."""
+        payload = self.cached_call(
+            "artist.getTopTags",
+            ttl_seconds=30 * 24 * 60 * 60,
+            artist=artist,
+        )
+        if not payload:
+            return []
+        records = self._items_normalizer((payload.get("toptags") or {}).get("tag"))
+        tags = []
+        seen = set()
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            name = str(record.get("name") or "").strip()
+            key = name.casefold()
+            if name and key not in seen:
+                tags.append(name)
+                seen.add(key)
+            if len(tags) >= 8:
+                break
+        return tags
+
+
     def album_popularity(
         self, artist: str, album: str
     ) -> tuple[dict[str, Any] | None, str | None]:
