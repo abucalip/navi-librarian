@@ -6,8 +6,6 @@
 - All four required workflows passed on the exact final PR head: Python syntax/acquisition safety run `38937239432`; Docker packaging/full unit suite/build run `38937239481`; container runtime smoke run `38937239444`; validation-only multi-architecture image validation run `38937239482` (publishing paused).
 - Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
-The next independently testable discovery seam is response projection after candidate collection. `discovery_new_releases.build_new_release_response()` owns only stable newest-first sorting, the 200-item visible cap, the 20-error cap, and the established response fields/limitations. The server retains clock/date policy, provider/cache/rate-limit handling, eligibility and candidate collection. Direct-import tests pin sort ordering, caps, metadata, and the payload contract. This is a focused discovery extraction; app-assembly completion accounting and AST-coupled acquisition test cleanup remain audit candidates rather than being mixed into this PR.
-
 ## 2026-10-16 — PR #234 merged: New Releases global candidate merge
 
 - Squash merge commit: `c44ea572354b4714e5e2577f5eb21b091be97cc8`; exact final PR head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`.
