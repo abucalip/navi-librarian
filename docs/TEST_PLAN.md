@@ -1,3 +1,15 @@
+## 2026-10-16 — Independent extraction verification closeout (PRs #205 and #207)
+
+- **PR #205 — New Releases candidate selection:** direct-import tests cover eligible payload shape, invalid/non-album/out-of-window/future releases, similar-artist credit rejection, owned album exclusion, Various Artists rejection, and duplicate identity release-date precedence. Exact final head `079d355e972ea39d792c1dfa6fca6eab902800e3` passed syntax run 1111, Docker packaging/full unit suite/build run 1018, runtime smoke run 827, and validation-only multi-architecture run 871. Squash merge `32b39be400ec046e8310a87260346b1959141609`.
+- **PR #207 — Artist Deep Dives ranking/diversity:** direct-import tests cover candidate-pool scoring influence, eligibility filtering, artist/anchor repetition caps, and primary-pass genre diversity. Exact final head `20e565582579f4097eed3803748c87bb3d932a98` passed syntax run 1114, Docker packaging/full unit suite/build run 1021, runtime smoke run 830, and validation-only multi-architecture run 874. Squash merge `a5b0d865060c3d069a865be7a1cb43c1a072ae91`.
+- Assistant-side local test commands were not run; the Docker packaging workflows ran the full unit suite. No live MusicBrainz/Last.fm integration, publication, deployment, or production runtime verification is claimed.
+
+## 2026-10-16 — Extraction verification closeout (PRs #202 and #203)
+
+- **PR #202 — library overview payload:** direct-import tests in `tests/test_navidrome_client.py` cover projected album fields, artist count/note, empty input, and unchanged payload shape. Exact final head `6903f40578f40fec08f1efde92d6577fcaeeced0` passed syntax/acquisition safety run 1104, Docker packaging/full unit suite/build run 1011, runtime smoke run 820, and validation-only multi-architecture run 864. Squash merge `7a95364a31f360bb20dd8d2919a9bfea93ec893c`.
+- **PR #203 — source preview redaction:** direct-import tests in `tests/test_server_source_redaction.py` cover case-insensitive sensitive names, non-sensitive assignments, non-assignment lines, and legacy indentation behavior. Exact final head `14019b8beeca9b71fbb8167117dafea3f60c74ea` passed syntax/acquisition safety run 1106, Docker packaging/full unit suite/build run 1013, runtime smoke run 822, and validation-only multi-architecture run 866. Squash merge `89e639394122aebe29bfb8602a1135722ea28bbe`.
+- Assistant-side local test commands were not run; the Docker packaging CI jobs ran the full unit suite. No live integration, publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — Artist-biography resolution verification (PR #190)
 
 Exact PR head `6c04d8a67944568a3e2b280deafb4eb2c66c2391` passed all four required GitHub Actions workflows: syntax/acquisition-safety regressions (run 1059), Docker packaging/full unit suite/image build (run 966), isolated container runtime smoke (run 775), and validation-only multi-architecture image validation (run 819). Direct-import tests in `tests/test_artist_bio_service.py` cover exact QID matching, mismatched identities, disambiguation, entity filtering/ranking, empty payloads, and truncation. Existing `tests/test_metadata_routes.py` remains in place for route/input/cache contracts. PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43`. Assistant-side local tests were not run independently; no publication, deployment, or production runtime verification is claimed.
@@ -1053,3 +1065,43 @@ This is the selected next work item. The dismissal HTTP 409 root-cause investiga
 ## Last.fm top album extraction — completed (PR #175, 2026-10-16)
 
 Direct-import regression coverage verifies scalar and list API payloads, empty-title filtering, normalized metadata, request parameters/limit/timeout/cache TTL, cache hits, missing payloads, and compatibility-adapter album eligibility filtering. The exact final PR head `6b5e32b1144e9f3517247110ea4383b287ce33f4` passed all four required workflows: Python syntax check (38829855110), Docker packaging validation including the full unit suite/build (38829855077), container runtime smoke test (38829855100), and validation-only multi-architecture image validation (38829855093). PR #175 was squash-merged at `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. No separate assistant-side local test execution, image publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Extraction regression coverage: PRs #193 and #195
+
+- PR #193 direct-import tests in `tests/test_musicbrainz_album_year.py` cover exact title/artist-credit matching, earliest valid year selection, missing input, and negative-cache reuse. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; all four required workflows passed: syntax/acquisition safety `38881961573`, Docker/full suite/build `38881961574`, runtime smoke `38881961553`, validation-only multi-architecture `38881961580`.
+- PR #195 direct-import tests in `tests/test_acquisition_candidate_queue.py` cover list and filename validation, normalized sizes, optional quality-summary fallback, and malformed-size exception behavior. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; all four required workflows passed: syntax/acquisition safety `38882195745`, Docker/full suite/build `38882195774`, runtime smoke `38882195700`, validation-only multi-architecture `38882195820`.
+- These are GitHub CI results; no separate assistant-side local test execution is claimed. No real slskd operation, destructive filesystem test, publication, deployment, or production runtime verification occurred.
+
+
+## 2026-10-16 — Navidrome response-shaping extraction verification (PRs #196 and #198)
+
+- PR #196 exact head 4b501c64c82a69af1805a7f6195b4fc15ef0c836: syntax/acquisition-safety workflow 1088 passed; Docker packaging/full unit suite/build 995 passed; container runtime smoke 804 passed; validation-only multi-architecture image validation 848 passed.
+- PR #198 exact head a718780edcb85eb8f4453e44a2d5a4925a512314: syntax/acquisition-safety workflow 1090 passed; Docker packaging/full unit suite/build 997 passed; container runtime smoke 806 passed; validation-only multi-architecture image validation 850 passed.
+- Direct-import regressions were added to tests/test_navidrome_client.py for search categories/output fields and album details with scalar tracks/missing fields. CI's packaging workflow ran the full unit suite for both exact heads. Assistant-side local test commands were not run.
+- Backend-only changes; no manual UI checklist required. No live Navidrome integration test, publication, deployment, or production runtime verification is claimed. Publishing remains paused.
+
+
+## 2026-10-16 — Acquisition progress snapshot extraction completed (PR #199)
+
+- PR #199 squash-merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066.
+- acquisition_progress_snapshots.py now owns the per-process, per-acquisition byte-snapshot map and lock. navidrome_server.py retains live slskd polling and compatibility behavior; the manager delegates speed math to slskd_transfers.estimate_transfer_speed.
+- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. All four exact-head workflows passed: syntax/acquisition safety run 1096; Docker packaging/full suite/build run 1003; runtime smoke run 812; validation-only multi-architecture run 856.
+- Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Acquisition search diagnostics extraction completed (PR #200)
+
+- PR #200 squash-merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c.
+- acquisition_search_diagnostics.py now owns the bounded candidate diagnostic projection, recognized audio-file count, and no-match explanation. Search execution, path-match diagnostics, persistence, queueing, and JSON/API serialization remain in navidrome_server.py.
+- The first CI attempt exposed a compatibility issue in the AST-based acquisition safety test harness: its extracted function namespace did not include a module-level helper alias. The import was moved into the function, preserving production behavior and allowing the legacy test harness to execute it. The exact final head passed all four workflows: syntax/acquisition safety run 1099; Docker packaging/full suite/build run 1006; runtime smoke run 815; validation-only multi-architecture run 859.
+- Direct-import tests cover diagnostic field projection and 10-item cap, copied quality summaries, recognized audio extensions, and no-match message/query ordering. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — PR #213 merged: Deezer album-matching policy
+
+- Extracted catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance scoring from `app/api/metadata.py` into pure `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, response shapes, tracklist retrieval, and transient-provider failure handling. Docker already packages the helper through `COPY app/ ./app/`.
+- Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
+- PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
+- Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.

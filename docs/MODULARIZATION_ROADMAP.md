@@ -1,3 +1,37 @@
+## 2026-10-16 — Session closeout: PRs #208–#210 merged
+
+- **PR #208 — page/asset routes:** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
+- **PR #209 — login-gate middleware:** merged as `669379aaed12092b1f826d46e0c3f8675e6ea6eb` from exact tested head `1b248dcb20d7a0f8622f32de6ae0bcfc3e5795ed`. All four required workflows passed (syntax 1123, Docker/full suite/build 1030, runtime smoke 839, validation-only multi-architecture 883).
+- **PR #210 — session-cookie policy:** merged as `21cd2bc19e9af66bb155b0d036f3b1f9ffb8d28f` from exact tested head `a394b6ea75fff91fcd4828f1946c14b98bbcf827`. All four required workflows passed (syntax 1125, Docker/full suite/build 1032, runtime smoke 841, validation-only multi-architecture 885).
+- Regression tests added for page routes/assets, authentication-gate decisions, and session-cookie security attributes. These are code merges only; publishing, deployment, and production runtime verification are not claimed.
+- **Session outcome:** no further extraction started. Next session should refresh GitHub state and read the current requirements/workflow/test-plan/roadmap before choosing another candidate. Keep PR #194 unchanged as previously requested; review other open PRs against current priorities rather than assuming they are ready to merge.
+
+## 2026-10-16 — Independent discovery policy extractions completed (PRs #205 and #207)
+
+- **PR #205** extracted per-artist MusicBrainz release-group filtering/candidate construction to `discovery_new_releases.py`; exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`, squash merge `32b39be400ec046e8310a87260346b1959141609`. All four required workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).
+- **PR #207** extracted Artist Deep Dives scoring/ranking/diversity policy to `discovery_recommendations.rank_and_diversify_deep_dive_candidates()`; exact tested head `20e565582579f4097eed3803748c87bb3d932a98`, squash merge `a5b0d865060c3d069a865be7a1cb43c1a072ae91`. All four required workflows passed (syntax 1114, Docker/full suite/build 1021, runtime smoke 830, validation-only multi-architecture 874).
+- Both are independently reviewable, backend-only changes. Provider I/O and orchestration remain in the server adapter; direct-import regressions were added. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+## Next step
+
+Refresh current GitHub main, open PRs, and exact-head CI. Continue with one small, low-coupling remaining application-assembly/domain-service seam; do not treat extraction count as a quota. Keep acquisition-dismissal HTTP 409 deferred unless it recurs or the user reopens it.
+
+
+## 2026-10-16 — Library overview and source redaction extractions completed (PRs #202 and #203)
+
+- **PR #202** merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`. Pure library-overview response shaping moved to `navidrome_client.library_overview_payload()`; the server retains API I/O and the compatibility/MCP response wrapper. All four exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
+- **PR #203** merged at `89e639394122aebe29bfb8602a1135722ea28bbe` from exact tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`. Sensitive assignment redaction moved to `server_source_redaction.redact_assignment()`; source bounds and MCP response assembly remain in `get_server_source()`. Docker packaging includes the helper. All four exact-head workflows passed (syntax 1106, Docker/full suite/build 1013, runtime smoke 822, validation-only multi-architecture 866).
+- Assistant-side local tests were not run; CI packaging jobs ran the full unit suite. No publication, deployment, or production runtime verification is claimed. Publishing remains paused and acquisition-dismissal HTTP 409 remains deferred.
+- Next: refresh main/open PRs/CI and choose the next low-coupling seam; do not treat extraction count as a quota.
+
+
+## 2026-10-16 — Navidrome response shaping extracted (PRs #196 and #198)
+
+- **PR #196** merged at 277499ec949353f5f24542a8033a481283814782 from exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836. navidrome_client.search_result_payload() now owns pure search response shaping; search_music() remains the compatibility adapter. Direct-import tests cover category filtering, fields, and output ordering.
+- **PR #198** merged at 92cdd6309244e78e78bd0f6f8d2e38ea929e434b from exact tested head a718780edcb85eb8f4453e44a2d5a4925a512314. navidrome_client.album_details_payload() now owns pure album/track response shaping; get_album_details() remains the compatibility adapter.
+- All four required workflows passed on each exact final head. PR #196: syntax 1088, packaging/full suite/build 995, runtime smoke 804, validation-only multi-architecture 848. PR #198: syntax 1090, packaging/full suite/build 997, runtime smoke 806, validation-only multi-architecture 850.
+- No assistant-side local tests, image publication, deployment, or production runtime verification are claimed. Acquisition-dismissal HTTP 409 remains deferred; publishing remains paused.
+- Next: refresh main/open PRs/CI and identify the next low-coupling seam. Do not treat extraction count as a quota.
 ## 2026-10-16 — Artist-biography identity matching extracted (PR #190)
 
 PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`. Pure Wikidata/Wikipedia identity matching and biography text selection moved into `app/services/artist_bio.py`; provider I/O, concurrent retrieval, cache ownership, and HTTP behavior remain in `app/api/metadata.py`. All four exact-head workflows passed: syntax 1059, Docker packaging/full suite/build 966, runtime smoke 775, and validation-only multi-architecture 819. No local test run, publication, or deployment is claimed.
@@ -678,3 +712,42 @@ Moved the shared response-normalization rule into `navidrome_client.items()` and
 ## Next step
 
 Refresh current GitHub main, inspect open PRs and the current requirements/test plan, then select the next smallest safe extraction from the remaining application-assembly/domain-service seams. Keep the acquisition dismissal HTTP 409 investigation deferred unless it recurs or the user explicitly reopens it.
+
+
+## 2026-10-16 — Reviewed candidate normalization extracted (PR #195)
+
+Moved reviewed slskd file-record and quality-summary normalization into `acquisition_candidate_queue.py`, with direct-import regression tests. The compatibility adapter still owns network queueing and watcher startup. Exact tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; squash merge `5629d259468a0f748fb5d3fdb78819a0fb00d73c`. All four required exact-head workflows passed. No acquisition cleanup or dismissal behavior changed.
+
+## 2026-10-16 — MusicBrainz album-year lookup extracted (PR #193)
+
+Moved exact release-year lookup and matching into `musicbrainz_album_year.py`; the metadata route retains its compatibility adapter and endpoint contract. Exact tested head `2b426587e6cb4dc011c85099021041d9f9450744`; squash merge `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`. All four required exact-head workflows passed. Publishing/deployment remain paused.
+
+## Next step
+
+Refresh GitHub main, open PRs, and CI. Continue the remaining acquisition lifecycle/orchestration modularization; keep acquisition-dismissal HTTP 409 deferred as directed.
+
+
+## 2026-10-16 — Acquisition progress snapshot extraction completed (PR #199)
+
+Merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from tested head f7157cb28d5e753a97bb9c24eea209b767d74066. The process-local map and lock used to estimate slskd transfer speed now live in acquisition_progress_snapshots.py. The service retains polling, identity construction, monotonic clock selection, and the existing estimator. Direct-import tests cover initial/previous snapshots, key isolation, and exception behavior; all four required workflows passed on the exact head. Publishing and deployment remain paused.
+
+
+## 2026-10-16 — Acquisition search diagnostics extraction completed (PR #200)
+
+Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c. Pure shaping for candidate diagnostics, audio-file counts, and the user-facing empty-search message is isolated in acquisition_search_diagnostics.py. Search execution, persistence, path-match diagnostics, and API serialization remain in the server adapter. All four required exact-head workflows passed (syntax 1099, full suite/build 1006, runtime smoke 815, validation-only multi-architecture 859). Publishing and deployment remain paused.
+
+
+## 2026-10-16 — Independent extraction session closeout: PRs #199 and #200
+
+- PR #199 extracted thread-safe acquisition progress snapshots; exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066 passed all four required workflows and merged as a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41.
+- PR #200 extracted slskd search diagnostic shaping; after correcting the AST-test import seam, exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c passed all four required workflows and merged as 9b3cf481a46282d2f980709091d57aea36144029.
+- Both are backend-only. No local test run, live slskd operation, publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
+
+
+## 2026-10-16 — PR #213 merged: Deezer album-matching policy
+
+- Extracted catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance scoring from `app/api/metadata.py` into pure `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, response shapes, tracklist retrieval, and transient-provider failure handling. Docker already packages the helper through `COPY app/ ./app/`.
+- Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
+- PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
+- Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.

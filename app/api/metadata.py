@@ -5,16 +5,20 @@ details, and release years. Provider failures remain non-fatal except for
 invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
-import threading
 from concurrent.futures import ThreadPoolExecutor
-from time import monotonic, sleep
+from time import monotonic
 from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, HTTPException
 
 from app.services.artist_bio import resolve_artist_bio
-from urllib.request import urlopen
+from app.services.deezer_album_matching import (
+    artwork_match_score,
+    exact_album_matches,
+    release_year,
+)
+from musicbrainz_album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
 
 router = APIRouter()
 
@@ -88,86 +92,11 @@ def artist_bio(artist: str):
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
 _ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
 _artwork_cache = {}
-_MUSICBRAINZ_YEAR_CACHE_TTL = 180 * 24 * 60 * 60
-_musicbrainz_year_cache = {}
-_musicbrainz_year_lock = threading.Lock()
-_musicbrainz_last_request = 0.0
 
 
 def _musicbrainz_album_year(artist: str, album: str):
-    """Resolve a release year from an exact MusicBrainz release-group match."""
-    import re
-    global _musicbrainz_last_request
-
-    def norm(value):
-        return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
-
-    artist = str(artist or "").strip()
-    album = str(album or "").strip()
-    if not artist or not album:
-        return None
-    key = (norm(artist), norm(album))
-    now = monotonic()
-    cached = _musicbrainz_year_cache.get(key)
-    if cached:
-        ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
-        if now - cached["time"] < ttl:
-            return cached["year"]
-
-    year = None
-    try:
-        with _musicbrainz_year_lock:
-            cached = _musicbrainz_year_cache.get(key)
-            now = monotonic()
-            if cached:
-                ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
-                if now - cached["time"] < ttl:
-                    return cached["year"]
-            wait = 1.1 - (now - _musicbrainz_last_request)
-            if wait > 0:
-                sleep(wait)
-            escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
-            escaped_album = album.replace("\\", "\\\\").replace('"', '\\"')
-            query = urlencode({
-                "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
-                "fmt": "json",
-                "limit": 25,
-            })
-            request = __import__("urllib.request", fromlist=["Request"]).Request(
-                "https://musicbrainz.org/ws/2/release-group/?" + query,
-                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-            )
-            _musicbrainz_last_request = monotonic()
-            with urlopen(request, timeout=8) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-
-        exact_dates = []
-        for group in payload.get("release-groups") or []:
-            if norm(group.get("title")) != norm(album):
-                continue
-            credits = []
-            for part in group.get("artist-credit") or []:
-                if not isinstance(part, dict):
-                    continue
-                credit_name = (part.get("artist") or {}).get("name") or part.get("name")
-                if credit_name:
-                    credits.append(str(credit_name))
-            # Accept an exact artist credit or an exact credited member of a
-            # collaboration, never a substring such as "Queen Tribute".
-            if norm(artist) not in {norm(name) for name in credits} and norm("".join(credits)) != norm(artist):
-                continue
-            date_text = str(group.get("first-release-date") or "")
-            year_text = date_text[:4]
-            if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
-                exact_dates.append((date_text or year_text, int(year_text)))
-        if exact_dates:
-            year = min(exact_dates, key=lambda entry: entry[0])[1]
-    except Exception:
-        # The UI can still show artwork; an unavailable catalog is not fatal.
-        pass
-
-    _musicbrainz_year_cache[key] = {"time": monotonic(), "year": year}
-    return year
+    """Compatibility adapter for the directly testable MusicBrainz lookup."""
+    return _lookup_musicbrainz_album_year(artist, album)
 
 
 @router.get("/api/album-year")
@@ -184,20 +113,14 @@ def album_year(artist: str = "", album: str = ""):
     # MusicBrainz is primary. Deezer is a fallback only for an exact normalized
     # artist AND album match; fuzzy or artist-only results are never trusted.
     if not year:
-        def norm(value):
-            return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
         try:
             query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 20})
             response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
             response.raise_for_status()
-            for item in response.json().get("data") or []:
-                if norm((item.get("artist") or {}).get("name")) != norm(artist):
-                    continue
-                if norm(item.get("title")) != norm(album):
-                    continue
-                year_text = str(item.get("release_date") or "")[:4]
-                if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
-                    year = int(year_text)
+            for item in exact_album_matches(response.json().get("data") or [], artist, album):
+                matched_year = release_year(item.get("release_date"))
+                if matched_year is not None:
+                    year = matched_year
                     source = "Deezer"
                     break
         except Exception:
@@ -214,31 +137,22 @@ def album_details(artist: str = "", album: str = ""):
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
 
-    def key(value):
-        return "".join(char.casefold() for char in str(value or "") if char.isalnum())
-
     result = {"artist": artist, "album": album, "year": None, "artwork_url": None, "tracks": []}
     try:
         query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 12})
         response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/album?" + query)
         response.raise_for_status()
         albums = response.json().get("data") or []
-        exact = [
-            item for item in albums
-            if key((item.get("artist") or {}).get("name")) == key(artist)
-            and key(item.get("title")) == key(album)
-        ]
+        exact = exact_album_matches(albums, artist, album)
         if not exact:
             result["message"] = "No exact catalog match was found, so the tracklist is unavailable."
             return result
 
         match = exact[0]
-        release_date = str(match.get("release_date") or "")
-        year_text = release_date[:4]
         result.update({
             "matched_artist": (match.get("artist") or {}).get("name"),
             "matched_album": match.get("title"),
-            "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
+            "year": release_year(match.get("release_date")),
             "artwork_url": (match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium") or "").replace("http://", "https://", 1) or None,
         })
         album_id = match.get("id")
@@ -294,34 +208,18 @@ def album_artwork(artist: str = "", album: str = ""):
         payload = response.json()
         albums = payload.get("data") or []
 
-        def match_score(item):
-            candidate_artist = str((item.get("artist") or {}).get("name") or "").casefold()
-            candidate_album = str(item.get("title") or "").casefold()
-            score = 0
-            if artist.casefold() == candidate_artist:
-                score += 5
-            elif artist and artist.casefold() in candidate_artist:
-                score += 2
-            if album.casefold() == candidate_album:
-                score += 8
-            elif album and (album.casefold() in candidate_album or candidate_album in album.casefold()):
-                score += 4
-            return score
-
         if albums:
-            match = max(albums, key=match_score)
-            if match_score(match) >= 9:
+            match = max(albums, key=lambda item: artwork_match_score(item, artist, album))
+            if artwork_match_score(match, artist, album) >= 9:
                 # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
                 artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
-                release_date = str(match.get("release_date") or "")
-                year_text = release_date[:4]
                 result = {
                     "artwork_url": artwork.replace("http://", "https://", 1) if artwork else None,
                     "image_kind": "album",
                     "source": "Deezer",
                     "matched_artist": (match.get("artist") or {}).get("name"),
                     "matched_album": match.get("title"),
-                    "year": int(year_text) if year_text.isdigit() and 1900 <= int(year_text) <= 2100 else None,
+                    "year": release_year(match.get("release_date")),
                 }
 
         # Do not perform a serialized MusicBrainz lookup here: it rate-limits

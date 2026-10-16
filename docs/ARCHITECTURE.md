@@ -1,3 +1,19 @@
+## New Releases candidate selection — extracted (PR #205)
+
+`discovery_new_releases.select_artist_release_candidates()` owns pure per-artist release-group eligibility, candidate shaping, exact-credit/Various Artists filtering, owned-album exclusion, and duplicate-date precedence. `_build_new_releases_list()` retains inventory, MusicBrainz requests, caching, rate limiting, lookup error reporting, and global merge. PR #205 merged at `32b39be400ec046e8310a87260346b1959141609` from exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required exact-head workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).
+
+## Artist Deep Dives ranking and diversity — extracted (PR #207)
+
+`discovery_recommendations.rank_and_diversify_deep_dive_candidates()` owns pure candidate scoring, exploration penalties/jitter, album eligibility filtering, ranking, and the existing two-pass artist/anchor/genre diversity policy. The server retains provider/cache access, genre enrichment, MusicBrainz year lookups, and response assembly. PR #207 merged at `a5b0d865060c3d069a865be7a1cb43c1a072ae91` from exact tested head `20e565582579f4097eed3803748c87bb3d932a98`; all four required exact-head workflows passed (syntax 1114, Docker/full suite/build 1021, runtime smoke 830, validation-only multi-architecture 874).
+
+## Library overview payload shaping — extracted (PR #202)
+
+`navidrome_client.library_overview_payload(artists, albums)` owns pure projection of normalized Navidrome artist/album rows into the existing library-overview payload. `navidrome_server.library_overview()` retains API calls, Subsonic collection normalization, JSON serialization, and the MCP-facing interface. PR #202 merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
+
+## Server source preview redaction — extracted (PR #203)
+
+`server_source_redaction.redact_assignment()` owns the pure, case-insensitive sensitive-assignment-name redaction used by the read-only `get_server_source()` MCP tool. The server retains source-path selection, range and 250-line validation, line numbering, and JSON serialization. The helper is included in Docker packaging; direct-import tests cover redaction and unchanged non-sensitive lines. PR #203 merged at `89e639394122aebe29bfb8602a1135722ea28bbe` from tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`; all four required workflows passed (syntax 1106, Docker/full suite/build 1013, runtime smoke 822, validation-only multi-architecture 866). No source secrets were used or exposed by testing.
+
 ## Artist-biography resolution — extracted (PR #190)
 
 `app/services/artist_bio.py` owns pure matching after provider retrieval: it filters/ranks music-related Wikidata entities, accepts a Wikipedia extract only when its `wikibase_item` matches a music entity, avoids disambiguation-page extracts, and falls back to a music-related description. `app/api/metadata.py` retains external requests, concurrent retrieval, cache lifetime, input validation, and response payload. PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`; all four required exact-head workflows passed (syntax 1059, Docker/full suite/build 966, runtime smoke 775, validation-only multi-architecture 819). No publication or deployment is claimed.
@@ -346,3 +362,21 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Last.fm top album retrieval — completed (PR #175)
 
 `LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` requests and normalization of returned album metadata. The legacy `navidrome_server._lastfm_top_albums()` remains a compatibility adapter and continues applying discovery-specific album-candidate eligibility filtering. The extraction preserves request pacing, timeout, the 30-day cache TTL, caller-requested limit, and normalized output contract. Exact tested head `6b5e32b1144e9f3517247110ea4383b287ce33f4`; merged to main at `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. All four required CI workflows passed on the exact head. No publication, deployment, or production runtime verification is claimed.
+
+
+## Reviewed candidate normalization — PR #195
+
+`acquisition_candidate_queue.py` owns pure validation and normalization of user-reviewed slskd file records and optional quality-summary JSON. The legacy `discovery_queue_slskd_candidate()` remains the adapter for response mapping, slskd queue I/O, and watcher startup. Invalid file-list and filename messages, malformed quality-summary fallback, and malformed file-size exception mapping are preserved. PR #195 tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`, merged at `5629d259468a0f748fb5d3fdb78819a0fb00d73c`; all four required exact-head workflows passed.
+
+## MusicBrainz album-year lookup — PR #193
+
+`musicbrainz_album_year.py` owns the exact release-group query, title and artist-credit matching, request pacing, and positive/negative cache. `app/api/metadata.py` retains `_musicbrainz_album_year()` as a compatibility adapter and preserves the album-year endpoint contract. PR #193 tested head `2b426587e6cb4dc011c85099021041d9f9450744`, merged at `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`; all four required exact-head workflows passed. No publication or deployment is claimed.
+
+
+## 2026-10-16 — PR #213 merged: Deezer album-matching policy
+
+- Extracted catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance scoring from `app/api/metadata.py` into pure `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, response shapes, tracklist retrieval, and transient-provider failure handling. Docker already packages the helper through `COPY app/ ./app/`.
+- Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
+- PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
+- Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.

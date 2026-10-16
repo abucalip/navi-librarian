@@ -1,7 +1,10 @@
 import hashlib
 import unittest
 
-from navidrome_client import api_call, items
+from navidrome_client import (
+    api_call, items, search_result_payload, album_details_payload,
+    library_overview_payload,
+)
 
 
 class FakeResponse:
@@ -39,6 +42,70 @@ class NavidromeClientTests(unittest.TestCase):
         self.assertEqual(items("single"), ["single"])
         self.assertEqual(items(["first", "second"]), ["first", "second"])
         self.assertEqual(items([]), [])
+
+
+    def test_search_result_payload_preserves_category_and_field_contract(self):
+        result = {
+            "artist": [{"id": "a1", "name": "Artist", "extra": "ignored"}],
+            "album": {"id": "b1", "name": "Album", "year": "2001"},
+            "song": [{"id": "t1", "title": "Track", "duration": 180, "playCount": 4}],
+        }
+        self.assertEqual(search_result_payload(result, "artist"), {
+            "artist": [{"id": "a1", "name": "Artist", "artist": None, "album": None,
+                        "year": None, "duration": None, "playCount": None}],
+        })
+        self.assertEqual(search_result_payload(result, "album"), {
+            "album": [{"id": "b1", "name": "Album", "artist": None, "album": None,
+                       "year": "2001", "duration": None, "playCount": None}],
+        })
+        self.assertEqual(search_result_payload(result, "all")["song"], [{
+            "id": "t1", "name": None, "artist": None, "album": None,
+            "year": None, "duration": 180, "playCount": 4,
+        }])
+        self.assertEqual(list(search_result_payload(result, "all")), ["artist", "album", "song"])
+
+
+    def test_album_details_payload_shapes_album_and_scalar_track(self):
+        payload = album_details_payload({
+            "id": "album-1", "name": "Record", "artist": "Band",
+            "year": "1999", "genre": "rock", "songCount": 1,
+            "song": {"id": "track-1", "title": "Opening", "track": 1,
+                     "duration": 210, "playCount": 3, "ignored": True},
+        })
+        self.assertEqual(payload, {
+            "id": "album-1", "name": "Record", "artist": "Band",
+            "year": "1999", "genre": "rock", "songCount": 1,
+            "songs": [{"id": "track-1", "title": "Opening", "artist": None,
+                       "track": 1, "duration": 210, "playCount": 3}],
+        })
+
+    def test_album_details_payload_handles_missing_album_fields_and_tracks(self):
+        self.assertEqual(album_details_payload({}), {
+            "id": None, "name": None, "artist": None, "year": None,
+            "genre": None, "songCount": None, "songs": [],
+        })
+
+    def test_library_overview_payload_preserves_counts_and_recent_album_fields(self):
+        result = library_overview_payload(
+            [{"id": "artist-1"}, {"id": "artist-2"}],
+            [{"id": "album-1", "name": "Record", "artist": "Band",
+              "year": 2002, "songCount": 9, "ignored": "not exposed"}],
+        )
+        self.assertEqual(result, {
+            "artist_count": 2,
+            "artist_count_note": "Count reflects artists returned by Navidrome's artist index.",
+            "recent_albums": [{
+                "id": "album-1", "name": "Record", "artist": "Band",
+                "year": 2002, "songCount": 9,
+            }],
+        })
+
+    def test_library_overview_payload_handles_empty_inputs(self):
+        self.assertEqual(library_overview_payload([], []), {
+            "artist_count": 0,
+            "artist_count_note": "Count reflects artists returned by Navidrome's artist index.",
+            "recent_albums": [],
+        })
 
     def test_authentication_request_and_success_response(self):
         response = FakeResponse({"subsonic-response": {"status": "ok", "artists": []}})

@@ -1,3 +1,40 @@
+## 2026-10-16 — Session closeout: PRs #208–#210 merged
+
+- **PR #208 — page/asset routes:** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
+- **PR #209 — login-gate middleware:** merged as `669379aaed12092b1f826d46e0c3f8675e6ea6eb` from exact tested head `1b248dcb20d7a0f8622f32de6ae0bcfc3e5795ed`. All four required workflows passed (syntax 1123, Docker/full suite/build 1030, runtime smoke 839, validation-only multi-architecture 883).
+- **PR #210 — session-cookie policy:** merged as `21cd2bc19e9af66bb155b0d036f3b1f9ffb8d28f` from exact tested head `a394b6ea75fff91fcd4828f1946c14b98bbcf827`. All four required workflows passed (syntax 1125, Docker/full suite/build 1032, runtime smoke 841, validation-only multi-architecture 885).
+- Regression tests added for page routes/assets, authentication-gate decisions, and session-cookie security attributes. These are code merges only; publishing, deployment, and production runtime verification are not claimed.
+- **Session outcome:** no further extraction started. Next session should refresh GitHub state and read the current requirements/workflow/test-plan/roadmap before choosing another candidate. Keep PR #194 unchanged as previously requested; review other open PRs against current priorities rather than assuming they are ready to merge.
+
+## 2026-10-16 — Independent extraction session closeout: PRs #205 and #207
+
+- **PR #205** extracted pure per-artist MusicBrainz release-group eligibility/candidate shaping into `discovery_new_releases.select_artist_release_candidates()`. Exact final tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required workflows passed: syntax 1111, Docker packaging/full unit suite/build 1018, runtime smoke 827, validation-only multi-architecture 871. Squash merge: `32b39be400ec046e8310a87260346b1959141609`.
+- **PR #207** extracted pure Artist Deep Dives scoring, exploration ranking, eligibility filtering, and two-pass artist/anchor/genre diversity into `discovery_recommendations.rank_and_diversify_deep_dive_candidates()`. Exact final tested head `20e565582579f4097eed3803748c87bb3d932a98`; all four required workflows passed: syntax 1114, Docker packaging/full unit suite/build 1021, runtime smoke 830, validation-only multi-architecture 874. Squash merge: `a5b0d865060c3d069a865be7a1cb43c1a072ae91`.
+- Both preserve server-side provider access, cache/rate limiting, and existing compatibility wrappers. Direct-import regression tests were added; assistant-side local tests were not run. No publication, deployment, live provider integration, or production runtime verification is claimed. Publishing remains paused and acquisition-dismissal HTTP 409 remains deferred.
+- PR #206 was closed as superseded when refreshing its branch from current main; its work was recreated and merged as PR #207.
+- **Next action:** refresh main/open PRs/CI and choose the next small, low-coupling seam; do not treat extraction count as a quota.
+
+
+## 2026-10-16 — Independent extraction session closeout: PRs #202 and #203
+
+- **PR #202** extracted pure Navidrome library-overview payload shaping into `navidrome_client.library_overview_payload()`; `navidrome_server.library_overview()` retains API calls, collection normalization, JSON serialization, and the MCP-facing contract. Exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required workflows passed: syntax/acquisition safety 1104, Docker packaging/full unit suite/build 1011, runtime smoke 820, validation-only multi-architecture 864. Squash merge: `7a95364a31f360bb20dd8d2919a9bfea93ec893c`.
+- **PR #203** extracted source-preview sensitive-assignment redaction into `server_source_redaction.redact_assignment()`. `get_server_source()` retains source selection, range validation, 250-line bound, numbering, and JSON response shape. Docker packaging includes the helper. Exact tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`; all four required workflows passed: syntax/acquisition safety 1106, Docker packaging/full unit suite/build 1013, runtime smoke 822, validation-only multi-architecture 866. Squash merge: `89e639394122aebe29bfb8602a1135722ea28bbe`.
+- Both changes include direct-import regression tests and preserve legacy compatibility. Assistant-side local tests were not run; full unit suites were run by the Docker packaging CI jobs. No live Navidrome integration, source-secret access, image publication, deployment, or production runtime verification is claimed.
+- Acquisition-dismissal HTTP 409 remains deferred. Publishing remains paused.
+- **Next action:** refresh main/open PRs/CI and select the next small, low-coupling extraction; do not treat extraction count as a quota.
+
+
+## 2026-10-16 — PRs #196 and #198 merged: Navidrome response shaping
+
+- **PR #196** (branch refactor/extract-navidrome-search-shaping): exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836; squash merge 277499ec949353f5f24542a8033a481283814782. Extracted pure Subsonic search-result shaping into navidrome_client.search_result_payload(); search_music() remains the compatibility/MCP-facing adapter.
+- **PR #198** (branch refactor/extract-navidrome-album-details-main): exact tested head a718780edcb85eb8f4453e44a2d5a4925a512314; squash merge 92cdd6309244e78e78bd0f6f8d2e38ea929e434b. Extracted album/track payload shaping into navidrome_client.album_details_payload(); get_album_details() retains API access, JSON serialization, and the compatibility interface.
+- Both PRs added direct-import regression coverage and preserved response field names, scalar/list handling, and formatting. All four exact-head workflows passed separately:
+  - PR #196: syntax run 1088; Docker packaging/full unit suite/build run 995; runtime smoke run 804; validation-only multi-architecture run 848.
+  - PR #198: syntax run 1090; Docker packaging/full unit suite/build run 997; runtime smoke run 806; validation-only multi-architecture run 850.
+- Assistant-side local test commands were not run. CI packaging workflows ran the full unit suite. No image publication, deployment, or production runtime verification is claimed.
+- PR #197 was closed as superseded while recreating its follow-up branch from the post-#196 main; replacement PR #198 was merged. Main after the two code merges: 92cdd6309244e78e78bd0f6f8d2e38ea929e434b.
+- Acquisition-dismissal HTTP 409 remains deferred per user direction. Publishing remains paused.
+- **Next:** refresh main/open PRs/CI and select the next small, low-coupling extraction; continue keeping each extraction independently tested and preserve MCP compatibility.
 ## 2026-10-16 — PR #192 merged: settings tabs and skip-link accessibility
 
 - Replacement for conflicted PR #188, refreshed from main `470b232977b45ee1cf1bf1b399c2c43843062c1f`; PR #192 exact tested head: `75c13b0099285747c9da75c5c3879e6594e5fe36`; squash merge/current main: `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
@@ -1591,3 +1628,37 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - State: both extractions implemented, tested by required exact-head CI, and merged. Publishing remains paused; no deployment or production runtime verification is claimed.
 - Acquisition Dismiss HTTP 409 remains explicitly deferred.
 - Next session: refresh current main and open PRs, read the required workflow/testing docs, then select the next smallest roadmap-aligned extraction. Do not resume the deferred 409 investigation unless asked or it recurs.
+
+
+## 2026-10-16 — Modularization closeout: PRs #193 and #195
+
+- **PR #193** extracted exact MusicBrainz release-year lookup, artist-credit/title matching, request pacing, and positive/negative cache ownership into `musicbrainz_album_year.py`. The legacy `app.api.metadata._musicbrainz_album_year()` remains a compatibility adapter. Tested head `2b426587e6cb4dc011c85099021041d9f9450744`; squash merge `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`.
+- **PR #195** extracted reviewed slskd file-list and quality-summary normalization into `acquisition_candidate_queue.py`. `discovery_queue_slskd_candidate()` retains JSON response mapping, slskd network I/O, and watcher startup. Tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; squash merge `5629d259468a0f748fb5d3fdb78819a0fb00d73c`.
+- All four required exact-head workflows passed for each PR: Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image build. PR #193 run IDs: `38881961573`, `38881961574`, `38881961553`, `38881961580`. PR #195 run IDs: `38882195745`, `38882195774`, `38882195700`, `38882195820`.
+- No separate assistant-side local test run, image publication, deployment, or production runtime verification is claimed. Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred; neither extraction changes cleanup behavior.
+- Next: refresh GitHub main, open PRs, and CI; continue the remaining acquisition lifecycle/orchestration modularization without touching the deferred 409 investigation.
+
+
+## 2026-10-16 — Acquisition progress snapshot extraction completed (PR #199)
+
+- PR #199 squash-merged at a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41 from exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066.
+- acquisition_progress_snapshots.py now owns the per-process, per-acquisition byte-snapshot map and lock. navidrome_server.py retains live slskd polling and compatibility behavior; the manager delegates speed math to slskd_transfers.estimate_transfer_speed.
+- Direct-import regressions cover first/next samples, identity isolation, and retaining the current sample if the estimator raises. All four exact-head workflows passed: syntax/acquisition safety run 1096; Docker packaging/full suite/build run 1003; runtime smoke run 812; validation-only multi-architecture run 856.
+- Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — Acquisition search diagnostics extraction completed (PR #200)
+
+- PR #200 squash-merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c.
+- acquisition_search_diagnostics.py now owns the bounded candidate diagnostic projection, recognized audio-file count, and no-match explanation. Search execution, path-match diagnostics, persistence, queueing, and JSON/API serialization remain in navidrome_server.py.
+- The first CI attempt exposed a compatibility issue in the AST-based acquisition safety test harness: its extracted function namespace did not include a module-level helper alias. The import was moved into the function, preserving production behavior and allowing the legacy test harness to execute it. The exact final head passed all four workflows: syntax/acquisition safety run 1099; Docker packaging/full suite/build run 1006; runtime smoke run 815; validation-only multi-architecture run 859.
+- Direct-import tests cover diagnostic field projection and 10-item cap, copied quality summaries, recognized audio extensions, and no-match message/query ordering. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — PR #213 merged: Deezer album-matching policy
+
+- Extracted catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance scoring from `app/api/metadata.py` into pure `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, response shapes, tracklist retrieval, and transient-provider failure handling. Docker already packages the helper through `COPY app/ ./app/`.
+- Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
+- PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
+- Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.

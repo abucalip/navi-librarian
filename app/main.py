@@ -7,8 +7,8 @@ from html import escape
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.dependencies import get_librarian
@@ -32,6 +32,9 @@ from app.api.acquisitions import router as acquisitions_router
 from app.api.discovery import router as discovery_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
+from app.api.pages import create_pages_router
+from app.security.app_login_middleware import create_app_login_middleware
+from app.security.auth_cookie import set_auth_cookie as _set_auth_cookie_impl
 
 
 
@@ -45,14 +48,6 @@ _APP_ROOT = Path(__file__).resolve().parent.parent
 _STATIC_DIR = _APP_ROOT / "static"
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
-
-
-@app.get("/assets/cassette.png", include_in_schema=False)
-def cassette_icon():
-    """Serve the bundled app icon without relying on an external image host."""
-    icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cassette.png")
-    return FileResponse(icon_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
-
 
 
 # Authentication settings remain in the existing persistent settings store.
@@ -93,44 +88,21 @@ def _session_username(token, now=None):
 
 
 def _set_auth_cookie(response, request, username):
-    response.set_cookie(
-        AUTH_COOKIE_NAME,
-        _make_session_token(username),
+    _set_auth_cookie_impl(
+        response,
+        request,
+        username,
+        make_session_token=_make_session_token,
+        cookie_name=AUTH_COOKIE_NAME,
         max_age=AUTH_SESSION_SECONDS,
-        httponly=True,
-        secure=(
-            request.url.scheme == "https"
-            or request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower() == "https"
-        ),
-        samesite="strict",
-        path="/",
     )
 
 
-@app.middleware("http")
-async def require_app_login(request: Request, call_next):
-    path = request.url.path
-    public_paths = {
-        "/login",
-        "/api/auth/status",
-        "/api/auth/setup",
-        "/api/auth/login",
-        "/api/auth/logout",
-    }
-    is_public_asset = path.startswith("/static/") or path == "/assets/cassette.png"
-    if path not in public_paths and not is_public_asset and _auth_configured():
-        username = _session_username(request.cookies.get(AUTH_COOKIE_NAME))
-        if username:
-            return await call_next(request)
-    elif path in public_paths or is_public_asset:
-        return await call_next(request)
-
-    # When no owner exists yet, only the first-run setup screen and auth
-    # endpoints are reachable. Every app/API route remains closed.
-    if path.startswith("/api/"):
-        return JSONResponse({"detail": "Authentication required."}, status_code=401)
-    return RedirectResponse(url="/login", status_code=303)
-
+app.middleware("http")(create_app_login_middleware(
+    auth_configured=_auth_configured,
+    session_username=lambda token: _session_username(token),
+    cookie_name=AUTH_COOKIE_NAME,
+))
 
 LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
 
@@ -153,10 +125,8 @@ app.include_router(discovery_router)
 app.include_router(metadata_router)
 app.include_router(dashboard_router)
 
-
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return HTMLResponse(PAGE)
-
-
 PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+app.include_router(create_pages_router(
+    page_html=PAGE,
+    cassette_icon_path=_APP_ROOT / "cassette.png",
+))

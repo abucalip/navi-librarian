@@ -13,6 +13,7 @@ import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
+from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
 from settings_persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from service_settings import (
@@ -34,6 +35,7 @@ import acquisition_lifecycle as _acquisition_lifecycle
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
 from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 import acquisition_orchestration
+from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
 from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -107,8 +109,8 @@ def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
     Returns at most 250 lines per request.
     """
     import json
-    import re
     from pathlib import Path
+    from server_source_redaction import redact_assignment
 
     source_path = Path(__file__).resolve()
     lines = source_path.read_text(encoding="utf-8").splitlines()
@@ -123,19 +125,9 @@ def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
         })
 
     end_line = min(end_line, len(lines))
-    secret_pattern = re.compile(
-        r"(password|passwd|secret|api[_-]?key|access[_-]?token|"
-        r"client[_-]?secret)",
-        re.IGNORECASE,
-    )
-    assignment_pattern = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=")
-
     result = []
     for number in range(start_line, end_line + 1):
-        line = lines[number - 1]
-        match = assignment_pattern.match(line)
-        if match and secret_pattern.search(match.group(1)):
-            line = match.group(1) + " = '[REDACTED]'"
+        line = redact_assignment(lines[number - 1])
         result.append(f"{number:4}: {line}")
 
     return json.dumps({
@@ -167,22 +159,12 @@ def library_overview() -> str:
         albums_root.get("albumList2", {}).get("album")
     )
 
-    return json.dumps({
-        "artist_count": len(artists),
-        "artist_count_note": (
-            "Count reflects artists returned by Navidrome's artist index."
-        ),
-        "recent_albums": [
-            {
-                "id": a.get("id"),
-                "name": a.get("name"),
-                "artist": a.get("artist"),
-                "year": a.get("year"),
-                "songCount": a.get("songCount"),
-            }
-            for a in albums
-        ],
-    }, ensure_ascii=False, indent=2)
+    from navidrome_client import library_overview_payload
+    return json.dumps(
+        library_overview_payload(artists, albums),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def search_music(query: str, category: str = "all") -> str:
@@ -205,33 +187,12 @@ def search_music(query: str, category: str = "all") -> str:
     )
     result = root.get("searchResult3", {})
 
-    fields = {
-        "artist": "artist",
-        "album": "album",
-        "track": "song",
-    }
-
-    output = {}
-
-    for kind, key in fields.items():
-        if category not in ("all", kind):
-            continue
-
-        records = items(result.get(key))
-        output[key] = [
-            {
-                "id": item.get("id"),
-                "name": item.get("name"),
-                "artist": item.get("artist"),
-                "album": item.get("album"),
-                "year": item.get("year"),
-                "duration": item.get("duration"),
-                "playCount": item.get("playCount"),
-            }
-            for item in records
-        ]
-
-    return json.dumps(output, ensure_ascii=False, indent=2)
+    from navidrome_client import search_result_payload
+    return json.dumps(
+        search_result_payload(result, category, items),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def get_album_details(album_id: str) -> str:
@@ -242,25 +203,12 @@ def get_album_details(album_id: str) -> str:
     root = api_call("getAlbum", id=album_id)
     album = root.get("album", {})
 
-    return json.dumps({
-        "id": album.get("id"),
-        "name": album.get("name"),
-        "artist": album.get("artist"),
-        "year": album.get("year"),
-        "genre": album.get("genre"),
-        "songCount": album.get("songCount"),
-        "songs": [
-            {
-                "id": song.get("id"),
-                "title": song.get("title"),
-                "artist": song.get("artist"),
-                "track": song.get("track"),
-                "duration": song.get("duration"),
-                "playCount": song.get("playCount"),
-            }
-            for song in items(album.get("song"))
-        ],
-    }, ensure_ascii=False, indent=2)
+    from navidrome_client import album_details_payload
+    return json.dumps(
+        album_details_payload(album, items),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
@@ -1966,47 +1914,22 @@ def _build_new_releases_list():
                 errors.append({"artist": artist, "error": type(exc).__name__})
                 continue
 
-        for group in payload if isinstance(payload, list) else []:
-            if not isinstance(group, dict) or group.get("primary-type") != "Album":
-                continue
-            title = str(group.get("title") or "").strip()
-            release_date = str(group.get("first-release-date") or "")
-            year_text = release_date[:4]
-            if not title or not year_text.isdigit():
-                continue
-            year = int(year_text)
-            if release_date < cutoff_date or year > current_year:
-                continue
-            candidate = {
-                "artist": artist, "album": title, "year": year,
-                "first_release_date": release_date, "mbid": group.get("id"),
-                "primary_type": group.get("primary-type"),
-                "secondary_types": group.get("secondary-types") or [],
-                "discovery_type": "new_release",
-                "discovery_source": "MusicBrainz recent release groups",
-                "reason": f"Released in {year} by an artist with a full album in your library",
-                "artist_library_album_count": int(artist_record.get("album_count") or 0),
-            }
-            if not _discovery_is_album_candidate(candidate):
-                continue
-            # MusicBrainz text search can return similarly named artists (e.g.
-            # "Queen Tribute") for an exact-looking artist query. Require an
-            # exact artist-credit name rather than a substring match.
-            artist_credit = group.get("artist-credit")
-            if not _discovery_exact_artist_credit_matches(artist_credit, artist):
-                continue
-            if _discovery_is_various_artists(artist):
-                continue
-            if _discovery_is_various_artists(" ".join(
-                str((part.get("artist") or {}).get("name") or part.get("name") or "")
-                for part in (artist_credit or []) if isinstance(part, dict)
-            )):
-                continue
-            identity = (_music_key(artist), _music_key(title))
-            if identity in owned:
-                continue
+        from discovery_new_releases import select_artist_release_candidates
+        artist_candidates = select_artist_release_candidates(
+            payload if isinstance(payload, list) else [],
+            artist=artist,
+            artist_record=artist_record,
+            owned=owned,
+            cutoff_date=cutoff_date,
+            current_year=current_year,
+            music_key=_music_key,
+            is_album_candidate=_discovery_is_album_candidate,
+            exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
+            is_various_artists=_discovery_is_various_artists,
+        )
+        for identity, candidate in artist_candidates.items():
             old = candidates.get(identity)
-            if old is None or release_date > old.get("first_release_date", ""):
+            if old is None or candidate["first_release_date"] > old.get("first_release_date", ""):
                 candidates[identity] = candidate
 
     items_out = sorted(
@@ -2298,89 +2221,13 @@ def _build_artist_deep_dive_list():
                 item["genres"] = artist_genre_cache[anchor_key]
                 item["genre_families"] = anchor_families
                 item["genre_inherited_from_anchor"] = True
-        import math
-        popularity = math.log10(max(0, int(item.get("lastfm_listeners") or 0)) + 1)
-        playcount = math.log10(max(0, int(item.get("lastfm_playcount") or 0)) + 1)
-        candidate_score = float(item.get("candidate_pool_score", 0) or 0)
-        # Similarity to an established library artist and candidate-pool evidence
-        # should matter more than global Last.fm popularity.
-        candidate_bonus = candidate_score * 2.5
-        anchor_bonus = (
-            min(int(item.get("anchor_album_count", 0) or 0), 15) * 0.05
-            if candidate_score else 0.0
-        )
-        item["discovery_score"] = round(
-            popularity * 0.15 + playcount * 0.03
-            + float(item.get("similar_artist_score", 0)) * 2.0
-            + candidate_bonus + anchor_bonus,
-            4,
-        )
-    # Strongly penalize listener-count dominance and give genuinely lesser-known
-    # artists a meaningful exploration bonus. Last.fm's top-album endpoint is
-    # popularity-sorted, so cap both artist and anchor repetition afterwards.
-    import math
-    for item in candidates.values():
-        listeners = max(0, int(item.get("lastfm_listeners") or 0))
-        listener_magnitude = math.log10(listeners + 1)
-        item["exploration_score"] = round(
-            item["discovery_score"] - listener_magnitude * 0.65
-            + max(0.0, 6.0 - listener_magnitude) * 0.35,
-            4,
-        )
-    # Rotate otherwise-equivalent candidates on every refresh, then enforce
-    # artist, anchor and genre diversity rather than letting Last.fm's default
-    # popularity ordering dominate the page.
-    for item in candidates.values():
-        item["exploration_score"] = round(
-            float(item.get("exploration_score", 0) or 0)
-            + random.uniform(-1.25, 1.25),
-            4,
-        )
-    candidates = {
-        key: item for key, item in candidates.items()
-        if _discovery_is_album_candidate(item)
-    }
-    ranked = sorted(
+    from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+    ranked, diversified = rank_and_diversify_deep_dive_candidates(
         candidates.values(),
-        key=lambda item: (
-            item["exploration_score"],
-            float(item.get("similar_artist_score", 0) or 0),
-        ),
-        reverse=True,
+        music_key=_music_key,
+        is_album_candidate=_discovery_is_album_candidate,
+        jitter=random.uniform,
     )
-    diversified = []
-    artist_counts = {}
-    anchor_counts = {}
-    genre_counts = {}
-    deferred = []
-    for item in ranked:
-        artist_key = _music_key(item.get("artist", ""))
-        anchor_key = _music_key(item.get("anchor_artist", ""))
-        families = item.get("genre_families") or ["other"]
-        family = next((value for value in families if genre_counts.get(value, 0) < 12), families[0])
-        if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4) or genre_counts.get(family, 0) >= 12:
-            deferred.append(item)
-            continue
-        item["primary_genre_family"] = family
-        diversified.append(item)
-        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
-        genre_counts[family] = genre_counts.get(family, 0) + 1
-        if anchor_key:
-            anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
-        if len(diversified) >= 150:
-            break
-    if len(diversified) < 150:
-        for item in deferred:
-            artist_key = _music_key(item.get("artist", ""))
-            anchor_key = _music_key(item.get("anchor_artist", ""))
-            if artist_counts.get(artist_key, 0) >= 2 or (anchor_key and anchor_counts.get(anchor_key, 0) >= 4):
-                continue
-            diversified.append(item)
-            artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
-            if anchor_key:
-                anchor_counts[anchor_key] = anchor_counts.get(anchor_key, 0) + 1
-            if len(diversified) >= 150:
-                break
     # Resolve years only for a bounded top slice with MusicBrainz IDs. The
     # release-group metadata is cached, so later refreshes reuse these lookups.
     for item in ranked[:25]:
@@ -2753,8 +2600,7 @@ def _discovery_list_acquisition_jobs():
 
 
 # Per-process snapshots used to calculate an instantaneous speed from byte deltas.
-_DISCOVERY_PROGRESS_SNAPSHOTS = {}
-_DISCOVERY_PROGRESS_SNAPSHOT_LOCK = __import__("threading").Lock()
+_DISCOVERY_PROGRESS_SNAPSHOTS = _ProgressSnapshots()
 
 
 def _discovery_live_download_progress(job):
@@ -2798,14 +2644,12 @@ def _discovery_live_download_progress(job):
         str(job.get("album_key") or _music_key(job.get("album"))),
         str(username).casefold(),
     )
-    with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
-        prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
-        _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
-            "at": now, "files": file_byte_snapshot,
-        }
-        speed = _slskd_transfers_module.estimate_transfer_speed(
-            file_byte_snapshot, prior, now
-        )
+    speed = _DISCOVERY_PROGRESS_SNAPSHOTS.estimate(
+        snapshot_key,
+        file_byte_snapshot,
+        now,
+        _slskd_transfers_module.estimate_transfer_speed,
+    )
 
     percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
     total_tracks = len(expected_by_name)
@@ -3266,6 +3110,7 @@ def _discovery_acquire_album_impl(
     auto_queue: bool = True,
 ) -> str:
     """Search slskd; queue the best clear match, fall back to faster/next sources if it does not start, and import on completion."""
+    import acquisition_search_diagnostics as _acquisition_search_diagnostics
     import uuid
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})
@@ -3311,41 +3156,19 @@ def _discovery_acquire_album_impl(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
         )
-        candidate_diagnostics = [
-            {
-                "username": item.get("username"),
-                "folder": item.get("folder"),
-                "file_count": item.get("file_count"),
-                "unique_track_count": item.get("unique_track_count"),
-                "expected_track_count": item.get("expected_track_count"),
-                "quality_summary": list(item.get("quality_summary") or []),
-                "clear_match": bool(item.get("clear_match")),
-                "eligibility_reason": item.get("eligibility_reason"),
-            }
-            for item in candidates[:10]
-        ]
+        candidate_diagnostics = _acquisition_search_diagnostics.candidate_diagnostics(candidates)
         if not candidates:
-            audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
             response_count = len(payload_by_peer)
-            audio_file_count = sum(
-                1 for entry in payload_by_peer.values()
-                for item in (entry.get("files") or [])
-                if isinstance(item, dict)
-                and Path(str(item.get("filename") or item.get("path") or "")).suffix.casefold() in audio_exts
-            )
+            audio_file_count = _acquisition_search_diagnostics.count_audio_files(payload_by_peer)
             path_diagnostics = _slskd_path_match_diagnostics(
                 list(payload_by_peer.values()), artist, album
             )
-            attempted_queries = " -> ".join(
-                item["query"] for item in search_attempts
-            )
-            message = (
-                f"No matching album folders were found among {response_count} collected peer responses "
-                f"({audio_file_count} audio files). slskd reported up to {reported_response_count} "
-                f"responses and {reported_file_count} files across the search attempts. "
-                "If the counts are zero, no peers answered the attempted queries; otherwise "
-                "the response payloads may not have been available to Librarian. "
-                f"Queries tried: {attempted_queries}."
+            message = _acquisition_search_diagnostics.no_match_message(
+                response_count=response_count,
+                audio_file_count=audio_file_count,
+                reported_response_count=reported_response_count,
+                reported_file_count=reported_file_count,
+                search_attempts=search_attempts,
             )
             _discovery_update_acquisition_status(
                 artist, album, "no_matches",
@@ -3608,22 +3431,11 @@ def discovery_queue_slskd_candidate(
     """Queue a user-reviewed slskd candidate and import it into the library when complete."""
     try:
         files = json.loads(files_json)
-        if not isinstance(files, list) or not files:
-            return json.dumps({"ok": False, "error": "files_json must be a non-empty JSON list."})
-        try:
-            quality_summary = json.loads(quality_summary_json or "[]")
-            if not isinstance(quality_summary, list):
-                quality_summary = []
-        except (ValueError, TypeError):
-            quality_summary = []
-        normalized = []
-        for item in files:
-            if not isinstance(item, dict) or not item.get("filename"):
-                return json.dumps({"ok": False, "error": "Each file requires a filename."})
-            normalized.append({
-                "filename": str(item["filename"]),
-                "size": int(item.get("size") or 0),
-            })
+        normalized, quality_summary, validation_error = _normalize_reviewed_candidate_files(
+            files, quality_summary_json
+        )
+        if validation_error:
+            return json.dumps({"ok": False, "error": validation_error})
         base_url, api_key, settings = _slskd_config()
         response = httpx.post(
             f"{base_url}/api/v0/transfers/downloads/{username}",

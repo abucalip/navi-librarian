@@ -54,3 +54,68 @@ def items(value):
     if value is None:
         return []
     return value if isinstance(value, list) else [value]
+
+
+def search_result_payload(result, category, collection_items=items):
+    """Shape Subsonic search results for the legacy search_music response."""
+    fields = {"artist": "artist", "album": "album", "track": "song"}
+    output = {}
+    for kind, key in fields.items():
+        if category not in ("all", kind):
+            continue
+        output[key] = [
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "artist": item.get("artist"),
+                "album": item.get("album"),
+                "year": item.get("year"),
+                "duration": item.get("duration"),
+                "playCount": item.get("playCount"),
+            }
+            for item in collection_items(result.get(key))
+        ]
+    return output
+
+
+def album_details_payload(album, collection_items=items):
+    """Shape a Subsonic album record and its tracks for get_album_details."""
+    return {
+        "id": album.get("id"),
+        "name": album.get("name"),
+        "artist": album.get("artist"),
+        "year": album.get("year"),
+        "genre": album.get("genre"),
+        "songCount": album.get("songCount"),
+        "songs": [
+            {
+                "id": song.get("id"),
+                "title": song.get("title"),
+                "artist": song.get("artist"),
+                "track": song.get("track"),
+                "duration": song.get("duration"),
+                "playCount": song.get("playCount"),
+            }
+            for song in collection_items(album.get("song"))
+        ],
+    }
+
+
+def library_overview_payload(artists, albums):
+    """Shape the legacy library overview from normalized artist and album rows."""
+    return {
+        "artist_count": len(artists),
+        "artist_count_note": (
+            "Count reflects artists returned by Navidrome's artist index."
+        ),
+        "recent_albums": [
+            {
+                "id": album.get("id"),
+                "name": album.get("name"),
+                "artist": album.get("artist"),
+                "year": album.get("year"),
+                "songCount": album.get("songCount"),
+            }
+            for album in albums
+        ],
+    }
