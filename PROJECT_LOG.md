@@ -616,3 +616,11 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 ## 2026-10-16 — Auth settings reader extraction (PR verification pending)
 
 The lazy persisted-settings read used by authentication now delegates through `AuthSettingsReader`, with `app.main._auth_settings()` retained as the compatibility adapter. Direct-import regressions cover fresh reads (no caching) and propagation of settings-store failures. Verification and merge remain pending until focused/full tests and all four required workflows pass on the exact final PR head. Publishing remains paused.
+
+
+## 2026-10-16 — Pure-helper test decoupling in progress
+
+- Starting from GitHub main after PR #249, migrated `tests/test_quality_priority.py` away from AST extraction: quality tier assertions call `slskd_quality.quality_tier()` directly, and legacy quality-order migration uses `SettingsPersistence` directly. The UI source-contract assertions remain unchanged.
+- In `tests/test_acquisition_safety.py`, pure slskd search/path/candidate/quality helper bindings now point to `slskd_search.py` and `slskd_quality.py` implementations rather than compiling those wrappers from `navidrome_server.py`. The AST harness remains for acquisition lifecycle/orchestration behavior, preserving concurrency, persistence-before-import, incomplete recovery details, dismissed-job reactivation, and stale watcher recovery tests.
+- Updated the AST inventory, roadmap, and status to distinguish completed-on-branch pure-helper decoupling from the still-pending lifecycle AST removal. No application production code changed.
+- Branch: `test/migrate-acquisition-pure-helpers`. CI, exact final PR-head SHA, merge, and post-merge main refresh are pending. No assistant-side local test execution is claimed.

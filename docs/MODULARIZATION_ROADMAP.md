@@ -19,7 +19,7 @@ The dependency map was generated in CI and reviewed from artifact `12068042162` 
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. The transfer lookup test now imports `slskd_transfers.download_transfer_files()` directly; two tests still parse/compile functions from `navidrome_server.py`. Migrate the remaining tests incrementally and preserve acquisition-safety lifecycle, concurrency, persistence, and recovery cases.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. The transfer lookup test and quality-priority tests now use direct imports. In the current pure-helper migration, acquisition-safety AST compilation remains only for lifecycle/orchestration cases. Preserve concurrency, persistence, recovery, and safety coverage while continuing incrementally.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
 4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
 5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.

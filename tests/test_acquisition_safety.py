@@ -12,6 +12,15 @@ import unicodedata
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration as _acquisition_orchestration
 from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
+from slskd_search import (
+    album_path_match as _slskd_album_path_match_impl,
+    search_queries as _slskd_search_queries_impl,
+    response_items as _slskd_search_response_items_impl,
+    path_match_diagnostics as _slskd_path_match_diagnostics_impl,
+    extract_candidates as _slskd_extract_candidates_impl,
+    track_identity as _slskd_track_identity_impl,
+)
+from slskd_quality import quality_tier as _slskd_quality_tier_impl
 from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
 
 from acquisition_completion import (
@@ -32,13 +41,6 @@ class FakeHTTPError(Exception):
 def load_helpers():
     tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
     wanted = {
-        "_slskd_album_path_match",
-        "_slskd_search_queries",
-        "_slskd_search_response_items",
-        "_slskd_path_match_diagnostics",
-        "_slskd_quality_tier",
-        "_slskd_track_identity",
-        "_slskd_extract_candidates",
         "_slskd_candidate_start_state",
         "_discovery_import_completed_source",
         "_discovery_import_completed_source_locked",
@@ -98,6 +100,31 @@ def load_helpers():
         "_slskd_candidate_start_state": lambda *args, **kwargs: True,
         "_music_key": lambda value: str(value or "").strip().casefold(),
     }
+    # Pure slskd helpers use their extracted production modules; only lifecycle
+    # and orchestration functions remain compiled from the legacy adapter.
+    namespace["_slskd_album_path_match"] = _slskd_album_path_match_impl
+    namespace["_slskd_search_queries"] = _slskd_search_queries_impl
+    namespace["_slskd_search_response_items"] = _slskd_search_response_items_impl
+    namespace["_slskd_quality_tier"] = _slskd_quality_tier_impl
+    namespace["_slskd_track_identity"] = lambda filename: _slskd_track_identity_impl(
+        filename, namespace["_music_key"]
+    )
+    namespace["_slskd_path_match_diagnostics"] = lambda payload, artist, album, limit=10: (
+        _slskd_path_match_diagnostics_impl(
+            payload, artist, album, limit,
+            music_key=namespace["_music_key"],
+            album_path_match=namespace["_slskd_album_path_match"],
+        )
+    )
+    namespace["_slskd_extract_candidates"] = lambda payload, artist, album, priority, expected_track_count=None: (
+        _slskd_extract_candidates_impl(
+            payload, artist, album, priority, expected_track_count,
+            music_key=namespace["_music_key"],
+            album_path_match=namespace["_slskd_album_path_match"],
+            quality_tier=namespace["_slskd_quality_tier"],
+            track_identity=namespace["_slskd_track_identity"],
+        )
+    )
     namespace["_discovery_list_acquisition_jobs"] = lambda: namespace["jobs"]
     namespace["_discovery_is_dismissed"] = lambda artist, album: any(
         row.get("artist_key") == namespace["_music_key"](artist)
