@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #259 merged; inventory mismatch characterized)  
-Documentation branch base: GitHub `main` at `4a82ce01cf37d0e9cff27a9f67f9a037cad23e2e`
+Last reviewed: 2026-10-16 (PR #261 merged; raw album inventory boundary shared)  
+Documentation branch base: GitHub `main` at `a9bc864df85a8fb643864cb128d6b70f10eb7dce`
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Extract a shared raw Navidrome album-pagination helper, preserving both callers' cache and error contracts; add direct-import tests, then use it as the first small seam before extracting the wider candidate-gathering pipeline.
+1. Extract the `recommend_new_music()` provider/candidate-gathering seam behind explicit provider dependencies, using the characterization suite for parity and preserving public response ordering, error behavior, and route/MCP compatibility.
 2. Add the measurable CI size ratchet only after verifying the line/function-size baseline against current `main`.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
