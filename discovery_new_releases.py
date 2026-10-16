@@ -5,6 +5,23 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 
+def build_new_release_lookup(
+    artist: str,
+    *,
+    artist_key: str,
+    earliest_year: int,
+    current_year: int,
+) -> tuple[str, str]:
+    """Build the stable cache key and MusicBrainz query for one library artist."""
+    cache_key = f"mb:new-releases:v1:{earliest_year}:{artist_key}"
+    escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
+    query = (
+        f'artist:"{escaped_artist}" AND primarytype:album '
+        f'AND firstreleasedate:[{earliest_year} TO {current_year}]'
+    )
+    return cache_key, query
+
+
 def select_artist_release_candidates(
     release_groups: list[Any],
     *,
