@@ -1,3 +1,9 @@
+## 2026-10-16 — PR #224 verification: personal recommendation payload projection
+
+- Direct-import tests in `tests/test_discovery_recommendation_payload.py` cover legacy field mapping, defaults, score rounding, category-specific reason strings and low-confidence suffix, ListenBrainz-vs-Last.fm score behavior, track truncation, and optional metadata preservation.
+- Exact final head `6d2e0ccc8d24cd11b727255f171fd405384a8729` passed syntax/acquisition safety run 1177; Docker packaging/full unit suite (473 tests)/build run 1085; isolated runtime smoke run 894; validation-only multi-architecture image validation run 938. Squash merge: `f795239589e6dd78f0f5e6d98cf2eadc897d6f49`.
+- No independent local test run, publication, deployment, or production runtime verification is claimed.
+
 ## 2026-10-16 — Independent extraction verification closeout (PRs #205 and #207)
 
 - **PR #205 — New Releases candidate selection:** direct-import tests cover eligible payload shape, invalid/non-album/out-of-window/future releases, similar-artist credit rejection, owned album exclusion, Various Artists rejection, and duplicate identity release-date precedence. Exact final head `079d355e972ea39d792c1dfa6fca6eab902800e3` passed syntax run 1111, Docker packaging/full unit suite/build run 1018, runtime smoke run 827, and validation-only multi-architecture run 871. Squash merge `32b39be400ec046e8310a87260346b1959141609`.
