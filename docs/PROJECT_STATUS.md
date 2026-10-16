@@ -1,10 +1,11 @@
-## 2026-10-16 — Artist-biography resolution extraction (PR preparation)
+## 2026-10-16 — PR #190 merged: artist-biography resolution
 
-- Branch `refactor/extract-artist-bio-resolution`, based on GitHub main `7bfcbebfa66e7d00d20f78e25d8b998b7a617bd0`, after PR #189 merged.
-- Moved the pure Wikidata/Wikipedia identity decision, music-entity filtering/ranking, summary sentence normalization, and length bounding into `app/services/artist_bio.py`. The metadata route retains request validation, HTTP fetching/concurrency, caching, and response shape.
-- Added direct-import regressions for exact QID match, mismatched entity identity, disambiguation pages, music-entity filtering/ranking, empty payloads, and long-summary truncation. Existing metadata route tests remain.
-- Focused/full tests and all four exact-final-head workflows are pending. No local test run, merge, publication, deployment, or production runtime verification is claimed.
-- Next: review complete diff, open PR, and verify exact-head CI. No acquisition or filesystem behavior is changed.
+- PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested PR head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`.
+- Moved pure Wikidata/Wikipedia identity matching, music-entity filtering/ranking, first-sentence normalization, and summary truncation into `app/services/artist_bio.py`. The metadata route retains concurrent provider requests, caching, input validation, and response shape.
+- Added direct-import regressions in `tests/test_artist_bio_service.py`; retained `tests/test_metadata_routes.py`. All four exact-head workflows passed: syntax/acquisition safety run 1059; Docker packaging/full suite/build run 966; runtime smoke run 775; validation-only multi-architecture run 819.
+- Assistant-side local tests were not independently run. No publication, deployment, or production runtime verification is claimed.
+- Main tip at closeout: `b829fa953d979563a8ace6e5529eace8cb80ac43`. Acquisition-dismissal HTTP 409 remains deferred.
+- Next: refresh main/open PRs/CI before selecting another independent extraction.
 
 ## 2026-10-16 — PR #189 merged: dashboard-pick service extraction
 
