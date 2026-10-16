@@ -1,3 +1,19 @@
+## 2026-10-16 — Three additional extractions completed (PRs #170–#172)
+
+These were implemented and merged sequentially, refreshing GitHub `main` between each PR.
+
+- **MusicBrainz tag audit, PR #170:** `music_tag_audit.py` now owns the bounded, read-only missing-MBID scan. `navidrome_server.find_missing_mbids()` remains the JSON/error-string adapter. Tested head `3ce122d2e950aaf9b8ddd56f8dfecc927255ba07`; merge `dbbdda35792fd569cfdeec2c4c7b42fc106f84e3`. All four exact-head workflows passed: syntax `38827001217`, full suite/build `38827001215`, runtime smoke `38827001195`, validation-only multi-architecture `38827001227`.
+- **Recommendation style classification, PR #171:** `discovery_recommendations.py` now owns the pure broad genre-family, recent listening-style, primary-family, and regional diversity-style classifiers previously nested in `recommend_new_music()`. Final tested head `24e2e27f7af3bd3be6b96d725bc72b577f8f78d9`; merge `6d00562405320affcb1a04b4359397b332cd5bf5`. All four exact-head workflows passed: syntax `38827709662`, full suite/build `38827709650` (319 tests), runtime smoke `38827709649`, validation-only multi-architecture `38827709610`.
+- **Last.fm album popularity, PR #172:** `LastFmClient.album_popularity()` now owns the cached `album.getInfo` request, response parsing, and error mapping. `navidrome_server._lastfm_album_popularity()` remains the adapter that updates the legacy `LASTFM_LAST_ERROR` diagnostic. Final tested head `d2808d44825e949ff71ed8471d25cee6570b54f1`; merge `d5153a3fe0625bc52b5896e87846b55cabe58e81`. All four exact-head workflows passed: syntax `38827973048`, full suite/build `38827972941` (324 tests), runtime smoke `38827972940`, validation-only multi-architecture `38827972938`.
+
+Assistant-side local tests were not run; CI ran the full unit suite for each final head. Publishing remains paused and no deployment/runtime verification is claimed.
+
+**Acquisition-dismissal HTTP 409 deferral:** the user explicitly directed that the unreproducible 409 investigation wait until modularization is complete. Keep PRs #44 and #45 closed, do not claim a fix, and do not weaken cleanup validation. Revisit the issue after the planned modularization is complete and reproduce/root-cause it before changing behavior.
+
+**Next:** re-audit the current `main` and remaining independent application-assembly/domain-service seams before selecting the next extraction. PR #23 remains open as the roadmap.
+
+---
+
 ## 2026-10-16 — Three integration client extractions completed
 
 The following independent seams were extracted sequentially and merged to GitHub main. Each PR kept a compatibility adapter in `navidrome_server.py`, added direct-import/adapter regressions, and updated Docker packaging.
@@ -8,7 +24,7 @@ The following independent seams were extracted sequentially and merged to GitHub
 
 Assistant-side local test execution was not performed; the full unit suite was run by CI on each exact final PR head. Publishing and deployment remain separate and unverified.
 
-**Priority gate before further routine extraction:** review the outstanding acquisition-dismissal HTTP 409 safety/diagnostic issue. Do not claim a fix without reproducing the failure, identifying its root cause, and verifying safe behavior.
+**Deferred acquisition-dismissal HTTP 409 (user direction, 2026-10-16):** the user cannot currently reproduce the issue and explicitly directed that it remain deferred until modularization is complete. Keep PRs #44 and #45 closed. Do not claim a fix or weaken safety checks; revisit after planned modularization is complete, and reproduce/root-cause the issue before changing behavior.
 
 ---
 
@@ -75,7 +91,7 @@ PR #143 exact final head `e28cd12d3736fd2eb368b53c98e3cbddb5438166` passed all f
 - PR #114 merged at `6ab848d444373dfa37e6d46528a2840a53a8f763` from exact tested head `cd8319696180875a3cb6f0dc151d88e0c8c490d7`.
 - The host-side Proxmox MCP now accepts only explicitly approved diagnostic command forms and rejects arbitrary shell execution before SSH. Direct-import regressions cover accepted and rejected inputs.
 - All four required exact-head workflows passed: syntax `38740491280`, Docker packaging/full suite/build `38740491274`, runtime smoke `38740491268`, and validation-only multi-architecture validation `38740491281`. Publishing/deployment remain paused; the host-side MCP is not part of the application image.
-- **Next:** continue the highest-priority audit of safety and verification gaps before routine modularization. Keep the acquisition-dismissal HTTP 409 investigation deferred unless it recurs.
+- **Next (superseded 2026-10-16):** continue the modularization roadmap using current main/open-PR/CI evidence. Per the user's direction, keep the acquisition-dismissal HTTP 409 investigation deferred until modularization is complete; do not reopen PRs #44/#45 or claim a fix without reproduction and root-cause evidence.
 
 
 ---

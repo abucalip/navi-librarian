@@ -1,3 +1,17 @@
+## Recommendation style classification — extracted (PR #171)
+
+`discovery_recommendations.py` owns the pure `genre_families()`, `recent_style_families()`, `primary_recent_family()`, and `classify_diversity_style()` rules used by `recommend_new_music()`. The server imports these helpers inside the recommendation operation; scoring, provider I/O, candidate quotas, persistence, and the legacy MCP response remain in their existing owners. PR #171 merged at `6d00562405320affcb1a04b4359397b332cd5bf5` from exact tested head `24e2e27f7af3bd3be6b96d725bc72b577f8f78d9`. All four required workflows passed on that exact head.
+
+## Last.fm album popularity — extracted (PR #172)
+
+`lastfm_client.LastFmClient.album_popularity()` owns the cached Last.fm `album.getInfo` request, statistics/tag normalization, and lookup diagnostic mapping. It preserves the legacy `lastfm:album-info-v2` cache identity, 30-day TTL, 12-second timeout, direct/nested stats compatibility, and 404-as-silent-miss behavior. `navidrome_server._lastfm_album_popularity()` remains the compatibility adapter that updates `LASTFM_LAST_ERROR`. PR #172 merged at `d5153a3fe0625bc52b5896e87846b55cabe58e81` from exact tested head `d2808d44825e949ff71ed8471d25cee6570b54f1`; all four required workflows passed on that exact head.
+
+## MusicBrainz tag audit — extracted (PR #170)
+
+`music_tag_audit.scan_missing_mbids()` owns the bounded, read-only scan and receives the audio reader as a dependency. `navidrome_server.find_missing_mbids()` remains the legacy JSON/error-string adapter. The module is included in Docker packaging; direct-import tests cover tag interpretation, pagination, unreadable files, validation, and read-only behavior. PR #170 merged at `dbbdda35792fd569cfdeec2c4c7b42fc106f84e3` from exact tested head `3ce122d2e950aaf9b8ddd56f8dfecc927255ba07`; all four required workflows passed on that exact head.
+
+---
+
 ## slskd transfer listing service — extracted (PR #157)
 
 `slskd_transfers.py` owns the HTTP transfer-list request and recursive normalization into flat file records carrying `_transfer_directory`. It receives the HTTP client as an injected dependency and does not initialize the application. `navidrome_server._slskd_download_transfer_files(base_url, headers, username)` remains the compatibility adapter used by candidate-start validation. PR #157 merged at `17922f878f0ea391b47652012a38530e9eb044fc` from exact tested head `504b10392061dbc44d28d66e663b88cbefb8f1a4`. All four required workflows passed on that exact head. Deployment remains unverified.

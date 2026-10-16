@@ -1,3 +1,15 @@
+## 2026-10-16 — Three-extraction session closeout (PRs #170–#172)
+
+- Starting GitHub `main`: `098c5d9d8536070c1115ec2a7c25b99490efb312`. Final code `main`: `d5153a3fe0625bc52b5896e87846b55cabe58e81`.
+- **PR #170 — MusicBrainz tag audit.** Branch `refactor/extract-music-tag-audit`; tested head `3ce122d2e950aaf9b8ddd56f8dfecc927255ba07`; squash merge `dbbdda35792fd569cfdeec2c4c7b42fc106f84e3`. Extracted a bounded read-only scan into `music_tag_audit.py`, retained the legacy MCP adapter/output contract, added direct-import regression tests, and updated Docker packaging. Exact-head workflows all passed: syntax `38827001217`; Docker/full suite/build `38827001215`; runtime smoke `38827001195`; validation-only multi-architecture `38827001227`.
+- **PR #171 — Recommendation style rules.** Branch `refactor/extract-recommendation-style-rules`; final tested head `24e2e27f7af3bd3be6b96d725bc72b577f8f78d9`; squash merge `6d00562405320affcb1a04b4359397b332cd5bf5`. Extracted four pure classification helpers into the existing `discovery_recommendations.py`; no Docker file-list change was needed because that module was already packaged. The first CI run caught a mistaken test fixture (the classifier recognizes `Afrobeats`, not `Afrobeat`); the fixture was corrected and final exact-head workflows passed: syntax `38827709662`; Docker/full suite/build `38827709650` (319 tests); runtime smoke `38827709649`; validation-only multi-architecture `38827709610`.
+- **PR #172 — Last.fm album popularity.** Branch `refactor/extract-lastfm-album-popularity`; final tested head `d2808d44825e949ff71ed8471d25cee6570b54f1`; squash merge `d5153a3fe0625bc52b5896e87846b55cabe58e81`. Extracted `album.getInfo` transport/response handling into `LastFmClient.album_popularity()`, preserving the old cache key, TTL, timeout, tags/stat normalization, diagnostic strings, and 404 behavior. The first CI run caught a test fixture that did not record the injected HTTP call; the test helper was corrected and final exact-head workflows passed: syntax `38827973048`; Docker/full suite/build `38827972941` (324 tests); runtime smoke `38827972940`; validation-only multi-architecture `38827972938`.
+- All three PRs were merged only after the final exact PR-head workflows passed and the changed-file diffs were reviewed. Assistant-side local test execution was not performed. No manual UI tests were required. Publishing remained paused; no image publication, deployment, or production runtime verification is claimed.
+- Current open PR inventory after the code merges: only PR #23, the modularization roadmap. PRs #44 and #45 remain closed. The acquisition-dismissal HTTP 409 remains unresolved and deferred until modularization is complete at the user's direction; do not claim a fix or relax filesystem safeguards.
+- Next action: review current `main` and the roadmap, then select the next small independent seam. Keep publishing paused.
+
+---
+
 ## 2026-10-16 — Two-extraction session closeout
 
 - Starting main SHA `8dbb1e3125d2422e69bb30fa7ecb5bebdf652eed`; final main SHA `89f7ec7eb291d4dd4f62784bae6f6d30af06ccae`.
