@@ -1,6 +1,6 @@
-## New Releases query construction extraction — in progress
+## New Releases query construction extraction — completed (PR #236)
 
-Focused verification: `python -m unittest tests.test_discovery_new_releases -v`; then full `python -m unittest discover -s tests -v`, syntax/package checks, and all four required CI workflows on the exact final PR head. Tests cover cache-key stability, artist escaping, and date-bounded MusicBrainz query shape. Do not claim assistant-side local execution unless run; publishing remains paused.
+Direct-import tests cover date-bounded query shape, quote/backslash escaping, and cache-key stability. Exact tested head `990e3ddfe08b6b1590860e8fd07d0ac13882be3e` passed all four required workflows: syntax/acquisition safety `38938238608`, Docker packaging/full unit suite/build `38938238694`, container runtime smoke `38938238678`, and validation-only multi-architecture validation `38938238904`. Assistant-side local tests were not run. Publishing/deployment remain paused.
 
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
