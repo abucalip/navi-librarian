@@ -1,3 +1,11 @@
+## New Releases candidate selection — extracted (PR #205)
+
+`discovery_new_releases.select_artist_release_candidates()` owns pure per-artist release-group eligibility, candidate shaping, exact-credit/Various Artists filtering, owned-album exclusion, and duplicate-date precedence. `_build_new_releases_list()` retains inventory, MusicBrainz requests, caching, rate limiting, lookup error reporting, and global merge. PR #205 merged at `32b39be400ec046e8310a87260346b1959141609` from exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required exact-head workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).
+
+## Artist Deep Dives ranking and diversity — extracted (PR #207)
+
+`discovery_recommendations.rank_and_diversify_deep_dive_candidates()` owns pure candidate scoring, exploration penalties/jitter, album eligibility filtering, ranking, and the existing two-pass artist/anchor/genre diversity policy. The server retains provider/cache access, genre enrichment, MusicBrainz year lookups, and response assembly. PR #207 merged at `a5b0d865060c3d069a865be7a1cb43c1a072ae91` from exact tested head `20e565582579f4097eed3803748c87bb3d932a98`; all four required exact-head workflows passed (syntax 1114, Docker/full suite/build 1021, runtime smoke 830, validation-only multi-architecture 874).
+
 ## Library overview payload shaping — extracted (PR #202)
 
 `navidrome_client.library_overview_payload(artists, albums)` owns pure projection of normalized Navidrome artist/album rows into the existing library-overview payload. `navidrome_server.library_overview()` retains API calls, Subsonic collection normalization, JSON serialization, and the MCP-facing interface. PR #202 merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
