@@ -1,7 +1,10 @@
 import hashlib
 import unittest
 
-from navidrome_client import api_call, items, search_result_payload, album_details_payload
+from navidrome_client import (
+    api_call, items, search_result_payload, album_details_payload,
+    library_overview_payload,
+)
 
 
 class FakeResponse:
@@ -80,6 +83,28 @@ class NavidromeClientTests(unittest.TestCase):
         self.assertEqual(album_details_payload({}), {
             "id": None, "name": None, "artist": None, "year": None,
             "genre": None, "songCount": None, "songs": [],
+        })
+
+    def test_library_overview_payload_preserves_counts_and_recent_album_fields(self):
+        result = library_overview_payload(
+            [{"id": "artist-1"}, {"id": "artist-2"}],
+            [{"id": "album-1", "name": "Record", "artist": "Band",
+              "year": 2002, "songCount": 9, "ignored": "not exposed"}],
+        )
+        self.assertEqual(result, {
+            "artist_count": 2,
+            "artist_count_note": "Count reflects artists returned by Navidrome's artist index.",
+            "recent_albums": [{
+                "id": "album-1", "name": "Record", "artist": "Band",
+                "year": 2002, "songCount": 9,
+            }],
+        })
+
+    def test_library_overview_payload_handles_empty_inputs(self):
+        self.assertEqual(library_overview_payload([], []), {
+            "artist_count": 0,
+            "artist_count_note": "Count reflects artists returned by Navidrome's artist index.",
+            "recent_albums": [],
         })
 
     def test_authentication_request_and_success_response(self):
