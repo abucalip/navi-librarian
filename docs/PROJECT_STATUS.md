@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-16 (recommendation and operational-surface audit adopted)  
-Documentation branch base: current GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff` (verify and refresh after PR review/merge)
+Documentation branch base: GitHub `main` at `3d99647ceec5e69deebacd622588470c5b4c3c65`
 
 ## Current focus
 
