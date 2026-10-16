@@ -373,9 +373,10 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 `musicbrainz_album_year.py` owns the exact release-group query, title and artist-credit matching, request pacing, and positive/negative cache. `app/api/metadata.py` retains `_musicbrainz_album_year()` as a compatibility adapter and preserves the album-year endpoint contract. PR #193 tested head `2b426587e6cb4dc011c85099021041d9f9450744`, merged at `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`; all four required exact-head workflows passed. No publication or deployment is claimed.
 
 
-## 2026-10-16 — In progress: Deezer album-matching policy extraction (PR pending)
+## 2026-10-16 — PR #213 merged: Deezer album-matching policy
 
-- Candidate: move the pure catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance score from `app/api/metadata.py` into `app/services/deezer_album_matching.py`.
-- The metadata router retains HTTP validation, provider requests, cache behavior, endpoint response shapes, tracklist retrieval, and transient-provider failure handling. The new helper performs no I/O and does not import FastAPI.
-- Added direct-import regression coverage for normalization, requiring both artist and album identity, valid/invalid release years, and existing artwork score weights. Existing metadata-route tests remain the compatibility coverage.
-- Verification status at this commit: not yet run locally by the assistant; exact-head CI pending. Do not merge unless all four required workflows pass on the final PR head. No publication or deployment.
+- Extracted catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance scoring from `app/api/metadata.py` into pure `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, response shapes, tracklist retrieval, and transient-provider failure handling. Docker already packages the helper through `COPY app/ ./app/`.
+- Added direct-import regressions for punctuation/case normalization, exact two-field identity, empty names, plausible release years, and unchanged artwork score weights. Existing metadata-route regressions remain.
+- PR #213 final tested head: `8760f068b9ab0e28f8a578d1b39bf326010d6fbb`. All four required workflows passed on that exact head: Python syntax run 1131, Docker packaging/full unit suite/build run 1038, container runtime smoke run 847, and validation-only multi-architecture image validation run 891 (`push: false)).
+- Squash merge: `c8d82c227ca7bac22feaf03e0f61b12bbe3ae88e`. Assistant-side local tests were not run independently. No image publication, deployment, or production runtime verification is claimed.
