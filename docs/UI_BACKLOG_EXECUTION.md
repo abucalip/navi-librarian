@@ -676,6 +676,86 @@ empty case.
 
 **Pending on the refreshed exact PR-head SHA.** Prior browser-agent measurements used reconstructed/injected deep-dive DOM rather than a real Navidrome library. They are not a substitute for the documented human checklist. After exact-head CI passes, run the full checklist in the isolated local helper, with sandbox paths and slskd disabled; record the exact SHA, viewport checks, keyboard behavior, console/network/server errors, and any skips. Do not merge before this gate is complete.
 
+## 5i. Empty-state copy findings
+
+C7 of the external critique. Four defects, measured in the running app rather than read from
+source.
+
+### Defect 1 — four sections shared one generic sentence
+
+`loadDiscovery` renders one empty-state string for `new_releases`, `personal`, `classics` and
+`artist_deep_dive`:
+
+```
+No results. Try refreshing this list.
+```
+
+Those four sections have genuinely different preconditions, stated in their own descriptions:
+new releases needs a full album already in the library, personal discoveries needs listening
+history, and the library and artist views need a connected Navidrome. One sentence could only
+name the symptom.
+
+`clarify.md` requires an empty state to "explain the state and provide the next useful action",
+and to "distinguish first use, no results, filters, permissions, and failure". A single string
+cannot do that across four different causes.
+
+**Fixed:** each section now states its own precondition and what resolves it, e.g. "No personal
+discoveries yet. These recommendations are based on your listening history, so they need
+Last.fm or ListenBrainz configured in Settings before there is anything to work from."
+
+### Defect 2 — parenthesised pseudo-plurals
+
+Three messages used fake plurals:
+
+```
+3 item(s)
+1 acquisition record(s).
+```
+
+`clarify.md` asks for "complete translatable messages rather than concatenated fragments" and
+for pluralization to be handled. "item(s)" is neither: it reads as a fragment to a person and
+it is untranslatable in languages with more than two plural forms.
+
+**Fixed:** a small `pluralize(count, singular, plural)` helper. Measured: `1 acquisition
+record`, `3 acquisition records`, `1 item`, `0 items`.
+
+### Defect 3 — the empty message carried the loading glyph
+
+`renderAcquisitions` set the status text without calling `setStatusState`, so the element kept
+the `is-loading` class applied by `loadAcquisitions`. Measured, with no acquisition records:
+
+| | Before | After |
+|---|---|---|
+| text | `No acquisition records yet.` | same, plus what the section is for |
+| classes | `status-line is-loading` | `status-line is-empty` |
+| glyph | `…` (loading) | `—` (empty) |
+
+The message said "no records" while the glyph said "still working" — the two halves of the same
+state contradicted each other, and the glyph is the part a scanning user reads first.
+
+**Fixed:** the kind now travels with the message. The detached-override case is excluded,
+because a caller rendering a single identity owns its own node.
+
+### Defect 4 — the empty state named no action
+
+"Try refreshing this list" told the user to retry an operation that had already produced
+nothing, without saying why it might work the second time. The rewritten copy names the actual
+precondition instead, which is what the user has to change.
+
+### Note on where the generic string appears
+
+With no data, the sections take the auto-refresh path first and show "Building the first list
+in the background…", so the empty branch only renders once a refresh has already been attempted
+for that section. Verified by exercising the branch directly rather than by waiting for it.
+
+### Verification
+
+Measured on the branch: four distinct empty strings, one per section, all four carrying
+`is-empty` and the em-dash glyph; the acquisitions empty message now renders `is-empty` with
+`—` instead of `is-loading` with `…`; `pluralize` returns `1 acquisition record`, `3 acquisition
+records`, `1 item`, `0 items`; 8/8 pages render their expected heading; zero horizontal overflow
+at 1440/900/620/390/360px despite the longer strings; no console or page errors.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
