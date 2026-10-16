@@ -893,10 +893,10 @@ The lazy persisted-settings read used by authentication now delegates through `A
 
 ## 2026-10-17 — Service configuration defaults audit
 
-- Started focused branch `fix/remove-personal-network-defaults` from current main `bf27b86069e5acb420f7e5663783a01fa4e36076`.
+- Started focused branch `fix/remove-personal-network-defaults` from main `bf27b86069e5acb420f7e5663783a01fa4e36076`.
 - Removed the personal ListenBrainz username fallback and the private `192.168.1.12` Navidrome/slskd URL fallbacks from Python settings defaults, the slskd settings tool signature, Compose defaults, and `.env.example`. Unconfigured service URLs/usernames now rely on existing validation to report configuration errors rather than silently targeting a personal account or private host.
 - Added regression assertions that blank Navidrome/slskd URLs and a blank ListenBrainz username fail validation.
-- Added `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with the audit findings and next-session proposal: remove fixed regional targets, make supplementary discovery responsive to recent listening, reduce artist-specific overrides, and test ranking variability/refresh/cache behavior while preserving ownership and eligibility safeguards.
-- **Verification status:** tests have not been run yet. CI, merge, publishing, deployment, and runtime verification are not claimed. Publishing remains paused.
-
-- PR #292 opened: https://github.com/abucalip/navi-librarian/pull/292. The PR initially opened at `eef6005f53a75f166ddd2844c2326d1071aa6be8`; subsequent status/log documentation updates change the final head, so refresh PR metadata before verification. Initial GitHub status and workflow queries returned no checks/runs; CI is not yet verified.
+- Added `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with audit findings and next-session proposals: remove fixed regional targets, make supplementary discovery responsive to recent listening, reduce artist-specific overrides, and test ranking variability/refresh/cache behavior while preserving ownership and eligibility safeguards.
+- **PR #292 merged:** final PR head `51f3a0e1ee55334020bc26793ca1d86a6c145a7c`; merge commit `0db291970fbeff2ed192d73b04fe1efc8ecb3cb6`.
+- **CI:** all four required workflows passed on the exact final PR head: `compile`, `test-and-build`, `container-smoke`, and `validate-container`. Local test commands were not run. Publishing remains paused; no deployment or production runtime verification is claimed.
+- **Configuration caveat:** existing persisted settings were not migrated, so values previously saved in an installation may remain until explicitly changed.
