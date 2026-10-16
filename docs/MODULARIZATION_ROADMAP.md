@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #263 merged; PR #264 diagnoses/fixes response-contract regression)  
-Baseline: GitHub `main` at `87d55561a0d2b7be4bc516ffc146da8c96d8254c`
+Last reviewed: 2026-10-16 (PR #264 merged; PR #265 adds the measurable size ratchet)  
+Baseline: GitHub `main` after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Acceptance: fixed-provider characterization coverage exists before extraction; i
 
 ### 0a. Measurable size ratchet
 
-The audit baseline reports `navidrome_server.py` at 3,514 lines and `recommend_new_music()` at roughly 1,058 lines. Verify those measurements against the exact `main` revision when implementing the ratchet; do not silently treat approximate audit line references as current facts.
+The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_music()`) is stale after extraction. PR #265 measures the current source at 3,032 lines and adds `scripts/check_server_size.py`: a 3,032-line server ceiling, a 280-line general top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. The guard uses AST `end_lineno` measurements, reports offending function names and sizes, and prints the ten largest functions in CI. The exception includes a rationale and follow-up plan; lower it as the recommendation adapter is decomposed.
 
 Add a lightweight CI check that fails when:
 - `navidrome_server.py` exceeds the verified baseline line ceiling; and
