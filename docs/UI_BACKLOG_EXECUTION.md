@@ -820,6 +820,20 @@ Both: 8/8 pages render their expected heading; zero horizontal overflow at
 1440/1200/1100/900/760/620/390/360px; no console or page errors.
 
 
+
+### Refreshed-main merge verification (PR #192, 2026-10-16)
+
+PR #188 conflicted after main advanced, so its accessibility changes were reapplied to the current
+main versions in replacement PR #192. Exact tested head: `75c13b0099285747c9da75c5c3879e6594e5fe36`;
+squash merge: `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
+
+All four required GitHub Actions workflows passed on that exact head: Python syntax (run 1069),
+Docker packaging/full unit suite/build (run 976), container runtime smoke (run 785), and
+validation-only Docker image validation with publishing paused (run 829). The user-published
+manual browser report in PR #192 tested the same SHA and records all checklist items passing,
+with zero failures. No publication, deployment, or production runtime verification is claimed.
+
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
