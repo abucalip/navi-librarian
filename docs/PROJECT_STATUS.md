@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (modularization completion audit)
+Last reviewed: 2026-10-17 (orphan-script and size-ratchet follow-up)
 Documentation base: GitHub `main`; audit reviewed source at PR #288 final code head `92042dd9d7fbb755e4898b1bd1d1a35b97e41b7c` plus subsequent documentation-only closeout.
 
 ## Current focus
@@ -9,7 +9,7 @@ Documentation base: GitHub `main`; audit reviewed source at PR #288 final code h
 
 The transitive dependency-map review is recorded in `PROJECT_LOG.md`. The app-to-legacy import remains the single intentional lazy edge in `app/api/dependencies.py:get_librarian()`; AST/source-reading tests have been inventoried and behavior tests migrated to direct imports. The Docker regression checks every root-level module imported by `navidrome_server.py` against the explicit COPY list; the final audit found all 48 imported modules included, including the two omissions corrected by PRs #286 and #288.
 
-**Next action:** none for modularization. Resume only for a concrete correctness, security, verification, or product requirement. Keep publishing paused until separately authorized.
+**Next action:** none for modularization. The post-closeout hygiene follow-up removes two unreferenced root patch scripts and tightens the server ceiling to 2,650 lines. Resume further work only for a concrete correctness, security, verification, or product requirement. Keep publishing paused until separately authorized.
 
 ## Delivery and verification state
 
