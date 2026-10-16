@@ -1,8 +1,9 @@
-## 2026-10-16 — Watcher progress accounting extraction (PR pending)
+## 2026-10-16 — PR #230 merged: watcher progress accounting
 
-- Started from current GitHub main after PR #229. Extracted the pure byte-counter progress/timer transition into `acquisition_progress_accounting.observe_progress()`; watcher polling, stall thresholds/countdown, source switching, transfer state interpretation, and safe import remain in `acquisition_watcher.py`.
-- Added direct-import contract tests for increased, unchanged, and decreasing counters and the exact 120-second boundary. Docker packaging includes the helper. No test execution or CI result is claimed yet.
-- Branch: `refactor/extract-watcher-progress-accounting`. Publishing/deployment remain paused.
+- Branch: `refactor/extract-watcher-progress-accounting`; exact tested head `47fb2a5bb18d4101dde910dd30e5bad2ed13e2e7`; squash merge `57f9776b1b517c7c86119b2a11d7f919b8cab631`.
+- Extracted the deterministic byte-counter/progress-timer update into `acquisition_progress_accounting.observe_progress()`; the watcher retains slskd polling, transfer interpretation, stall policy/countdown, source switching, filesystem verification, and import decisions. Added direct-import regression tests and Docker packaging.
+- All four required exact-head workflows passed: Python syntax run 1202; Docker packaging/full unit suite/build run 1110; container runtime smoke run 919; validation-only multi-architecture image validation run 963 (`push: false`). Assistant-side local tests were not run.
+- No image publication, deployment, or production runtime verification is claimed. Publishing remains paused.
 
 ## 2026-10-16 — PR #229 merged: classics critical-rating extraction
 
