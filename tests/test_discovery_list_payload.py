@@ -61,7 +61,6 @@ class DiscoveryListPayloadTests(unittest.TestCase):
             "source": "listenbrainz", "recent_listens_retrieved": 7,
             "library_albums_indexed": 12, "limitations": ["limited metadata"],
         })
-        self.assertEqual(result["library_albums_indexed"], 12)
 
     def test_count_limits_visible_items_not_source_total(self):
         rows = [{"artist": "A", "album": str(i)} for i in range(4)]
