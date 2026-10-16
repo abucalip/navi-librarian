@@ -775,3 +775,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Exact final PR head `ad6864ea1f5f70b7f9d8b852bbc4bb02e7c2d395` passed all four required workflows: Python syntax/acquisition safety (`38970088355`), Docker packaging/full unit suite/build (`38970088327`), container runtime smoke (`38970088307`), and validation-only multi-architecture image validation (`38970088322`, publishing paused). The full suite passed 554 tests. PR #274 squash-merged as `cae95e74c9910c512392de80b337eb4b21de67a5`.
 - No production code changed. Publishing, deployment, and production runtime verification were not performed.
 - Next: obtain the owner decision on MCP-exposed `restart_server` and `apply_server_patch`; no changes to those capabilities before authorization.
+
+
+## 2026-10-16 — Retire legacy operational MCP tools (PR pending)
+
+- Based on GitHub main `fc73958eac7b3e1b95ab29493fb023f63b76bd41`. Branch: `remove/legacy-operational-mcp-tools`.
+- Safety audit found `restart_server` and `apply_server_patch` had no internal callers and were exposed only through `mcp_registry.TOOL_NAMES`. The former kills/relaunches the server on hardcoded port 8000; the latter rewrites `navidrome_server.py` on disk. Per the owner's earlier direction to remove these if safe, both definitions and registry entries are removed; the other 25 tools and MCP runtime remain.
+- Updated `tests/test_mcp_registry.py` to assert 25 unique tools and that the two retired functions are neither registered nor exposed by the legacy service. Added a decision record and updated the active roadmap/workflow/status docs.
+- Tests/CI not yet verified on the final PR head. No live service restart, source rewrite, deployment, or publication was performed.
+- Next: review the complete diff, verify all four required workflows on the exact final PR-head SHA, and merge only if the MCP registry and compatibility tests pass.
