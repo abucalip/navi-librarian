@@ -1,7 +1,7 @@
 # Modularization roadmap
 
 Last reviewed: 2026-10-16 (recommendation-provider and operational-surface audit adopted)  
-Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
+Baseline: GitHub `main` at `3d99647ceec5e69deebacd622588470c5b4c3c65`
 
 ## Purpose
 
