@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm top-albums parsing extraction in progress (PR pending)
+
+- Based on refreshed GitHub `main` after PR #174 merge: `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
+- `LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` retrieval and record normalization. The legacy `_lastfm_top_albums()` adapter retains discovery-specific album eligibility filtering.
+- Added direct-import regression coverage for scalar/list payloads, blank-title filtering, metadata normalization, request parameters, cache TTL/hits, missing payloads, and compatibility adapter filtering.
+- CI, merge, publication, deployment, and production runtime verification pending. Acquisition dismissal HTTP 409 remains deferred as directed.
+
+---
+
 ## 2026-10-16 — Three additional extractions completed (PRs #170–#172)
 
 These were implemented and merged sequentially, refreshing GitHub `main` between each PR.

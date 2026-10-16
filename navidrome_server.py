@@ -1869,28 +1869,11 @@ def _discovery_library_snapshot():
 
 
 def _lastfm_top_albums(artist, limit=8):
-    payload = _lastfm_cached_call(
-        "artist.getTopAlbums", ttl_seconds=30 * 24 * 60 * 60,
-        artist=artist, limit=limit,
-    )
-    if not payload:
-        return []
-    records = items(payload.get("topalbums", {}).get("album"))
-    output = []
-    for album in records:
-        title = (album.get("name") or "").strip()
-        if not title or not _discovery_is_album_candidate({"album": title}):
-            continue
-        stats = album.get("playcount")
-        output.append({
-            "artist": artist,
-            "album": title,
-            "mbid": album.get("mbid") or None,
-            "lastfm_listeners": int(album.get("listeners") or 0),
-            "lastfm_playcount": int(stats or 0),
-            "lastfm_url": album.get("url"),
-        })
-    return output
+    """Compatibility adapter retaining discovery-specific album filtering."""
+    return [
+        album for album in _lastfm_client.artist_top_albums(artist, limit=limit)
+        if _discovery_is_album_candidate({"album": album["album"]})
+    ]
 
 
 def _lastfm_artist_genres(artist):

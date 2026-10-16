@@ -215,5 +215,60 @@ class LastFmClientTests(unittest.TestCase):
             self.assertEqual(navidrome_server._lastfm_artist_genres("Artist"), ["Jazz"])
         call.assert_called_once_with("Artist")
 
+
+    def test_artist_top_albums_normalizes_records_and_preserves_request_contract(self):
+        payload = {"topalbums": {"album": [
+            {"name": " Album One ", "mbid": "abc", "listeners": "12",
+             "playcount": "345", "url": "https://last.fm/one"},
+            {"name": "", "listeners": 1},
+            {"name": "Album Two", "listeners": None, "playcount": None},
+        ]}}
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
+        self.assertEqual(client.artist_top_albums("Artist", limit=5), [
+            {"artist": "Artist", "album": "Album One", "mbid": "abc",
+             "lastfm_listeners": 12, "lastfm_playcount": 345,
+             "lastfm_url": "https://last.fm/one"},
+            {"artist": "Artist", "album": "Album Two", "mbid": None,
+             "lastfm_listeners": 0, "lastfm_playcount": 0, "lastfm_url": None},
+        ])
+        request = next(row for row in self.calls if row[0] == "http_get")
+        self.assertEqual(request[2]["params"]["method"], "artist.getTopAlbums")
+        self.assertEqual(request[2]["params"]["artist"], "Artist")
+        self.assertEqual(request[2]["params"]["limit"], 5)
+        self.assertEqual(request[2]["timeout"], 15)
+        self.assertEqual(next(row for row in self.calls if row[0] == "cache_get")[2], 30 * 24 * 60 * 60)
+
+    def test_artist_top_albums_supports_scalar_payload_cache_and_missing_payload(self):
+        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse({
+            "topalbums": {"album": {"name": "Solo", "listeners": "7"}}
+        }))
+        self.assertEqual(client.artist_top_albums("Artist")[0]["album"], "Solo")
+        cached = self.make_client(cache_get=lambda _key, _ttl: {
+            "topalbums": {"album": [{"name": "Cached"}]}
+        })
+        self.assertEqual(cached.artist_top_albums("Artist")[0]["album"], "Cached")
+        self.assertFalse(any(row[0] == "http_get" for row in self.calls))
+        missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
+        self.assertEqual(missing.artist_top_albums("Artist"), [])
+
+    def test_artist_top_albums_legacy_adapter_keeps_discovery_filter(self):
+        import navidrome_server
+        records = [
+            {"artist": "Artist", "album": "Valid", "mbid": None,
+             "lastfm_listeners": 1, "lastfm_playcount": 2, "lastfm_url": None},
+            {"artist": "Artist", "album": "Various Artists", "mbid": None,
+             "lastfm_listeners": 3, "lastfm_playcount": 4, "lastfm_url": None},
+        ]
+        with patch.object(navidrome_server._lastfm_client, "artist_top_albums",
+                          return_value=records) as call, patch.object(
+                              navidrome_server, "_discovery_is_album_candidate",
+                              side_effect=lambda item: item["album"] == "Valid"):
+            self.assertEqual(navidrome_server._lastfm_top_albums("Artist", limit=2), [records[0]])
+        call.assert_called_once_with("Artist", limit=2)
+
 if __name__ == "__main__":
     unittest.main()

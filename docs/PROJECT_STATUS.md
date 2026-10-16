@@ -1,9 +1,18 @@
-## 2026-10-16 — Last.fm artist tag extraction in progress
+## 2026-10-16 — Last.fm top-albums parsing extraction in progress (PR pending)
 
-- Starting `main` SHA: `ffa2b441e7543b2778d1835cfc42386e53c37225`.
-- Moving cached artist top-tag response parsing and eight-item deduplication into `LastFmClient.artist_genres()`; retaining `_lastfm_artist_genres()` as the compatibility adapter.
-- Added direct-import tests for scalar/list payloads, duplicate/case handling, maximum count, cache hits, missing payload, and adapter delegation. The first syntax/full-suite workflow caught a test-fixture logging error (the custom fake HTTP function did not append its call); the fixture was corrected. All required workflows must pass again on the refreshed exact final head. No local tests are claimed.
-- The acquisition dismissal HTTP 409 remains deferred by explicit user direction. Publishing remains paused.
+- Based on refreshed GitHub `main` after PR #174 merge: `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
+- `LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` retrieval and record normalization. The legacy `_lastfm_top_albums()` adapter retains discovery-specific album eligibility filtering.
+- Added direct-import regression coverage for scalar/list payloads, blank-title filtering, metadata normalization, request parameters, cache TTL/hits, missing payloads, and compatibility adapter filtering.
+- CI, merge, publication, deployment, and production runtime verification pending. Acquisition dismissal HTTP 409 remains deferred as directed.
+
+---
+
+## 2026-10-16 — Last.fm artist tag extraction completed (PR #174)
+
+- Started from `ffa2b441e7543b2778d1835cfc42386e53c37225`; merged commit `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
+- `LastFmClient.artist_genres()` now owns cached artist top-tag parsing; the legacy adapter remains intact.
+- Exact final PR head `08c260e2a166a744bbde4009196b53d238afb647` passed syntax/acquisition safety, full unit suite and Docker build, runtime smoke, and non-publishing multi-architecture validation. Initial fixture logging error was corrected before this passing head.
+- Publishing/deployment remain paused and unverified. Acquisition dismissal HTTP 409 remains deferred by explicit user direction.
 
 ---
 
