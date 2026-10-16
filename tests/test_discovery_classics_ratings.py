@@ -112,7 +112,7 @@ class ClassicsGenreEnrichmentTests(unittest.TestCase):
         from discovery_classics_genres import enrich_classic_genres
 
         candidates = [{"artist": "A"}]
-        enrich_classic_genres(candidates, lambda artist: self.fail("lookup should not run"), lambda tags: [])
+        enrich_classic_genres(candidates, lambda artist: self.fail("lookup should not run"), lambda tags: [], limit=0)
         self.assertEqual(candidates[0]["genres"], [])
         with self.assertRaises(ValueError):
             enrich_classic_genres(candidates, lambda artist: [], lambda tags: [], limit=-1)
