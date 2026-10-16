@@ -810,3 +810,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Current-main dependency-map artifact `12076948070` (SHA-256 `5f56d6735f0416674aa853435f1ce1d126d015d930ad604c96226341ce185682`) on `3dc999b872bdf12db30c43ee73b5e726c4ea494b` reports 170 repository modules and a 73-module app import closure; the only AST-visible app-to-legacy-server edge remains the lazy import at `app/api/dependencies.py:10`.
 - Current size guard passes at 2,616 server lines (limit 3,031), `recommend_new_music()` at 416 AST lines (temporary limit 575), and `_discovery_acquire_album_impl()` at 278 AST lines (limit 280).
 - Next seam: extract the familiarity multiplier thresholds and exploration-family boost into `discovery_recommendations.apply_familiarity_exploration_bonus()`, with direct tests for every threshold and the family-overlap condition.
+
+
+## 2026-10-16 — PR #281 merged: familiarity/exploration scoring extracted
+
+- PR #281 merged as `93519c403ac2c301c46acddf6a64d59059d3f683`. Exact PR head `176914b3e4712d3090cb2fa80a4246fb12e89b2b` passed all four required workflows: syntax/acquisition safety (`38972398532`), Docker packaging/full suite/build (`38972398406`), runtime smoke (`38972398402`), and validation-only multi-architecture image validation (`38972398450`, publishing paused). The full suite passed 566 tests.
+- `discovery_recommendations.apply_familiarity_exploration_bonus()` now owns the recent-artist multipliers and 1.10 exploration-family boost. Direct tests cover every threshold boundary and both overlap/no-overlap cases. No public response fields, provider calls, allocation policy, or production behavior changed beyond extracting the same scoring operations.
+- Current-main dependency-map artifact `12078000327` (SHA-256 `cd9c931dd7e3ccb740f1ab24c01686a27c8f6b51ed7be58c87e301b6b6e0b58e`) on `93519c403ac2c301c46acddf6a64d59059d3f683` reports 171 Python modules and a 73-module app import closure. The sole AST-visible app import of `navidrome_server` remains the intentional lazy import at `app/api/dependencies.py:10`.
+- Current size guard passes at 2,596 server lines (limit 3,031), `recommend_new_music()` at 396 AST lines (current temporary exception 575), and `_discovery_acquire_album_impl()` at 278 AST lines (limit 280).
+- Next: tighten the recommendation adapter exception from 575 to 450 lines, then audit the remaining function for a clear independent seam rather than extracting solely for size.

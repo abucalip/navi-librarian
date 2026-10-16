@@ -10,9 +10,9 @@ SERVER_LINE_LIMIT = 3031
 TOP_LEVEL_FUNCTION_LINE_LIMIT = 280
 FUNCTION_EXCEPTIONS = {
     "recommend_new_music": {
-        "max_lines": 575,
-        "reason": "Large live recommendation adapter; provider gathering was extracted first.",
-        "follow_up": "Reduce this limit as recommendation policy and payload responsibilities are separated.",
+        "max_lines": 450,
+        "reason": "Remaining recommendation orchestration after provider, category, and scoring policy extractions.",
+        "follow_up": "Reassess only when a distinct, directly testable responsibility is identified; do not extract for size alone.",
     },
 }
 
