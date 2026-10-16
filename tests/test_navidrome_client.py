@@ -55,7 +55,10 @@ class NavidromeClientTests(unittest.TestCase):
             "album": [{"id": "b1", "name": "Album", "artist": None, "album": None,
                        "year": "2001", "duration": None, "playCount": None}],
         })
-        self.assertEqual(search_result_payload(result, "all")["song"][0]["title"] if "title" in search_result_payload(result, "all")["song"][0] else None, None)
+        self.assertEqual(search_result_payload(result, "all")["song"], [{
+            "id": "t1", "name": None, "artist": None, "album": None,
+            "year": None, "duration": 180, "playCount": 4,
+        }])
         self.assertEqual(list(search_result_payload(result, "all")), ["artist", "album", "song"])
 
     def test_authentication_request_and_success_response(self):
