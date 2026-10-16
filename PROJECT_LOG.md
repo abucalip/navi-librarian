@@ -174,3 +174,13 @@ Next: prioritize the outstanding acquisition-dismissal HTTP 409 investigation/di
 ## 2026-10-16 — Last.fm artist tags extraction started
 
 Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cached `artist.getTopTags` response normalization into `LastFmClient.artist_genres()` while preserving `_lastfm_artist_genres()` as the compatibility adapter. Added direct-import and adapter regression cases. The initial CI run caught a test-fixture logging error because the custom fake HTTP function did not record its call; corrected the fixture in a follow-up commit. Final-head CI and merge are pending. No local tests, publication, deployment, or production runtime verification are claimed. The acquisition dismissal HTTP 409 remains deferred until modularization is complete.
+
+
+## 2026-10-16 — Modularization session closeout: Last.fm extraction pair
+
+- PR #174, `refactor: extract Last.fm artist tag parsing`, merged at `4dd8b926a7a6cf76e248420860d7c29c892da3c0` from exact tested head `08c260e2a166a744bbde4009196b53d238afb647`. Cached `artist.getTopTags` retrieval and normalization moved to `LastFmClient.artist_genres()`; legacy adapter remains.
+- PR #175, `refactor: extract Last.fm top album parsing`, merged at `f922631e0393063bde02b1e0bd93d30b2d38bd2a` from exact tested head `6b5e32b1144e9f3517247110ea4383b287ce33f4`. Cached `artist.getTopAlbums` retrieval and response normalization moved to `LastFmClient.artist_top_albums()`; legacy adapter retains discovery eligibility filtering.
+- Exact-head CI for PR #175 passed: Python syntax (run 38829855110), container runtime smoke (38829855100), validation-only multi-architecture image validation (38829855093), and Docker packaging/full suite/build (38829855077). PR #174's final-head checks also passed after correcting a fake-HTTP test fixture.
+- Both extractions preserve legacy entry points and include direct regression coverage. No assistant-side local test run, image publication, deployment, or production runtime verification is claimed.
+- Publishing remains paused. Acquisition dismissal HTTP 409 remains deferred by explicit instruction.
+- Next action: on the next session, refresh GitHub main and open PRs, reread the required project workflow/testing/roadmap docs, and choose the next smallest safe extraction.
