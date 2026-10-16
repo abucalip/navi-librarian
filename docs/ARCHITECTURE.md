@@ -420,3 +420,8 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Authentication configuration predicate (PR #239 merged)
 
 `app/security/auth_configuration.py` owns only the pure predicate over persisted owner-auth settings. `app/main.py` still owns reading settings from the service, secret loading, middleware/router assembly, and session-cookie integration. The extraction intentionally preserves truthiness checks and does not alter the authentication flow.
+
+
+## Lazy auth-secret provider (PR pending)
+
+`app/security/auth_secret.py` encapsulates lazy, lock-protected loading and successful-result caching of the persistent app-auth signing secret. The provider takes an injected data-directory getter and secret loader, avoiding app initialization or filesystem access at module import. `app/main.py` retains dependency wiring, settings access, session token creation, middleware, routes, and cookie integration. Loading failures and `None` results remain retryable.
