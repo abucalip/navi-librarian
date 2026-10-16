@@ -1,3 +1,9 @@
+## 2026-10-16 — Auth-secret provider extraction (PR pending)
+
+- Extracted lazy, thread-safe persistent signing-secret loading into `app/security/auth_secret.py`; app assembly injects the data-directory lookup and existing `load_auth_secret` implementation.
+- Preserves lazy loading, successful-result caching, lock-protected first use, and retry after exceptions or a `None` result. Added direct-import tests for laziness, cache behavior, retries, and concurrent first use.
+- Verification pending on this branch. Do not claim CI, merge, publication, deployment, or runtime verification until verified. Publishing remains paused.
+
 ## 2026-10-16 — PR #236 merged: New Releases lookup construction
 
 - Squash merge commit: `aaa748f2dfdc307d79faf5397a51dbfbcd75ec6c`; exact tested PR head: `990e3ddfe08b6b1590860e8fd07d0ac13882be3e`.
