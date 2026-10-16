@@ -1,3 +1,10 @@
+## 2026-10-16 — Classics candidate collection extraction (verification pending)
+
+- Branch `extract/classics-candidate-collection`, based on current GitHub `main` after PR #231. Extracted Last.fm top-album aggregation, normalized identity deduplication, owned-album exclusion, candidate eligibility filtering, legacy metadata shaping, and fifth-artist pacing into `discovery_classics_candidates.collect_classic_candidates()`.
+- The adapter continues to own library snapshot acquisition, cached Last.fm access, music-key policy, album eligibility, and timing. Added direct-import tests and Docker packaging.
+- Acceptance: preserve descending library-artist order, top-album limit 8, strongest-listener duplicate winner, owned/ineligible filtering, candidate metadata, and pause cadence. Assistant-side tests and exact-head CI have not yet been run; do not merge until all four required workflows pass on the final PR head.
+- Publishing/deployment remain paused. No runtime verification is claimed.
+
 ## 2026-10-16 — PR #231 merged: classics genre enrichment
 
 - Merged PR #231 from `extract/classics-genre-enrichment`; exact tested PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge commit `b23d76712a04dcbfc461ceb7245a0676738fca7a`.
