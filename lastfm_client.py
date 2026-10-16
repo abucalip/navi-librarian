@@ -10,6 +10,14 @@ from typing import Any
 
 import httpx
 
+from discovery_recommendations import music_key
+
+
+def _default_items(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
 
 class LastFmClient:
     """Last.fm transport with injected settings/cache dependencies."""
@@ -24,6 +32,8 @@ class LastFmClient:
         monotonic: Callable[[], float] | None = None,
         sleep: Callable[[float], None] | None = None,
         request_lock: Any | None = None,
+        key_normalizer: Callable[[Any], str] | None = None,
+        items_normalizer: Callable[[Any], list[Any]] | None = None,
     ):
         self._settings_reader = settings_reader
         self._cache_get = cache_get
@@ -33,6 +43,8 @@ class LastFmClient:
         self._sleep = sleep or time.sleep
         self._request_lock = request_lock or threading.Lock()
         self._last_request_at = 0.0
+        self._key_normalizer = key_normalizer or music_key
+        self._items_normalizer = items_normalizer or _default_items
 
     def cached_call(self, method: str, ttl_seconds: int = 30 * 24 * 60 * 60, **params: Any) -> Any:
         """Return cached provider data or fetch it with the existing pacing policy."""
@@ -76,3 +88,77 @@ class LastFmClient:
             return payload
         except (httpx.HTTPError, ValueError, TypeError, AttributeError):
             return None
+
+
+    def album_popularity(
+        self, artist: str, album: str
+    ) -> tuple[dict[str, Any] | None, str | None]:
+        """Return cached Last.fm album statistics and an optional diagnostic.
+
+        This preserves the older album.getInfo cache identity and error mapping
+        used by the recommendation endpoint. A 404 is an ordinary miss for
+        niche releases and therefore returns no diagnostic.
+        """
+        api_key = str(self._settings_reader().get("lastfm_api_key") or "").strip()
+        if not api_key or not artist or not album:
+            return None, None
+
+        cache_key = (
+            "lastfm:album-info-v2:"
+            + self._key_normalizer(artist)
+            + ":"
+            + self._key_normalizer(album)
+        )
+        cached = self._cache_get(cache_key, 30 * 24 * 60 * 60)
+        if cached is not None:
+            return cached, None
+
+        try:
+            response = self._http_get(
+                "https://ws.audioscrobbler.com/2.0/",
+                params={
+                    "method": "album.getInfo",
+                    "api_key": api_key,
+                    "artist": artist,
+                    "album": album,
+                    "autocorrect": 1,
+                    "format": "json",
+                },
+                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                timeout=12,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("error"):
+                return None, (
+                    f"Last.fm API error {payload.get('error')}: "
+                    f"{payload.get('message', 'Unknown API error')}"
+                )
+            data = payload.get("album", {})
+            # album.getInfo exposes listeners/playcount directly on the album
+            # object; accept a nested stats object too for response compatibility.
+            stats = data.get("stats") or data
+            if not data or not (
+                stats.get("listeners") is not None
+                or stats.get("playcount") is not None
+            ):
+                return None, "Last.fm returned no album statistics for a lookup."
+            raw_tags = self._items_normalizer((data.get("tags") or {}).get("tag"))
+            result = {
+                "listeners": int(stats.get("listeners") or 0),
+                "playcount": int(stats.get("playcount") or 0),
+                "tags": [
+                    item.get("name", "").strip().casefold()
+                    for item in raw_tags
+                    if isinstance(item, dict) and item.get("name", "").strip()
+                ],
+            }
+            self._cache_set(cache_key, result)
+            return result, None
+        except httpx.HTTPStatusError as exc:
+            # Album-not-found is normal for niche/poorly indexed releases.
+            if exc.response.status_code != 404:
+                return None, f"Last.fm returned HTTP {exc.response.status_code}."
+            return None, None
+        except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
+            return None, f"{type(exc).__name__}: Last.fm lookup failed."
