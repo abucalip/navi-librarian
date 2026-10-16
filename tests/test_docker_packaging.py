@@ -1,10 +1,11 @@
 """Regression checks for root-level modules required by the Docker image."""
+import ast
 import unittest
 from pathlib import Path
 
 
 class DockerPackagingTests(unittest.TestCase):
-    def test_acquisition_import_service_is_copied_into_image(self):
+    def test_legacy_server_imports_are_copied_into_image(self):
         root = Path(__file__).resolve().parents[1]
         dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
         copied_sources = set()
@@ -15,10 +16,33 @@ class DockerPackagingTests(unittest.TestCase):
             source_start = 2 if parts[1].startswith("--") else 1
             copied_sources.update(parts[source_start:-1])
 
-        self.assertIn(
-            "acquisition_import_service.py",
-            copied_sources,
-            "The lazy import-completion adapter dependency must be copied into the image.",
+        root_modules = {path.stem for path in root.glob("*.py")}
+        server = ast.parse(
+            (root / "navidrome_server.py").read_text(encoding="utf-8"),
+            filename="navidrome_server.py",
+        )
+        imported_root_modules = set()
+        for node in ast.walk(server):
+            if isinstance(node, ast.Import):
+                imported_root_modules.update(
+                    alias.name.split(".")[0]
+                    for alias in node.names
+                    if alias.name.split(".")[0] in root_modules
+                )
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                module = node.module.split(".")[0]
+                if module in root_modules:
+                    imported_root_modules.add(module)
+
+        missing = sorted(
+            f"{module}.py"
+            for module in imported_root_modules
+            if f"{module}.py" not in copied_sources
+        )
+        self.assertEqual(
+            missing,
+            [],
+            "Root-level modules imported by navidrome_server.py must be copied into the image.",
         )
 
 
