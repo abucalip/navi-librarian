@@ -1,3 +1,9 @@
+## 2026-10-16 — Last.fm similar-artist extraction verification closeout
+
+PR #178 head `a97be052d3a1e74843feaacd6403d10ce5aad6af` was merged as `f18574b74a564031c5268cf04c956475d64dc30c`. GitHub Actions succeeded for Python syntax (run 1003), Docker packaging validation (run 910), container runtime smoke (run 719), and validation-only Docker image build with publishing paused (run 763). These are CI results for the exact PR head. A separate assistant-side local full unit-test run was not performed; do not record one as passed. No publication/deployment/runtime-on-production verification is claimed.
+
+---
+
 ## 2026-10-16 — Last.fm similar-artist extraction in progress
 
 `LastFmClient.similar_artists()` direct-import regressions cover scalar/list response shapes, blank names, malformed similarity values/records, request method/artist/limit, 60-day cache TTL, cache hits, provider errors, and the `_lastfm_similar_artists()` compatibility adapter. Required exact-final-head gates remain: syntax/acquisition safety, full unit suite plus Docker build, isolated runtime smoke, and validation-only multi-architecture build (`push: false`). Assistant-side local test execution is not claimed.
