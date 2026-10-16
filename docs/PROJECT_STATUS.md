@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-17 (service-default cleanup and recommendation-engine planning)
-Documentation base: GitHub `main`; current change is on branch `fix/remove-personal-network-defaults` pending review and CI.
+Documentation base: GitHub `main`; current change is on branch `fix/remove-personal-network-defaults`, PR #292 open and awaiting CI.
 
 ## Current focus
 
@@ -13,8 +13,8 @@ Recommendation-engine improvement is intentionally deferred to the next session.
 
 ## Delivery and verification state
 
-- **Implemented, pending review:** branch `fix/remove-personal-network-defaults`; latest known commit after source/config/test edits is `cb7cf2bd4283609ff395725dfd11f0427a401150`. Documentation commits and final verification are still pending.
-- **Tests:** regression cases added, but tests have not been executed in this session. CI status for the final PR head is not yet verified.
+- **Implemented, pending review:** [PR #292](https://github.com/abucalip/navi-librarian/pull/292), branch `fix/remove-personal-network-defaults`; the PR was opened with head `eef6005f53a75f166ddd2844c2326d1071aa6be8`. This status/log update adds a further documentation commit, so verify the final head SHA again before evaluating CI.
+- **Tests:** regression cases added, but tests have not been executed in this session. GitHub status/workflow queries returned no status checks or PR-triggered workflow runs for the inspected head; CI remains unverified.
 - **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
