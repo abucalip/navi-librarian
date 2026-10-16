@@ -61,6 +61,9 @@ class ServiceSettingsTests(unittest.TestCase):
         })
         with self.assertRaisesRegex(ValueError, "valid HTTP or HTTPS"):
             navidrome_config(self.read_settings)
+        self.state["navidrome_url"] = ""
+        with self.assertRaisesRegex(ValueError, "valid HTTP or HTTPS"):
+            navidrome_config(self.read_settings)
 
     def test_navidrome_save_preserves_password_and_does_not_return_it(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -124,6 +127,10 @@ class ServiceSettingsTests(unittest.TestCase):
 
     def test_listenbrainz_username_validation_and_save(self):
         self.assertEqual(listenbrainz_username(self.read_settings), "listener")
+        self.state["listenbrainz_username"] = ""
+        with self.assertRaisesRegex(ValueError, "Configure a valid ListenBrainz username"):
+            listenbrainz_username(self.read_settings)
+        self.state["listenbrainz_username"] = "listener"
         result = json.loads(set_listenbrainz_settings(self.write_settings, "new.listener"))
         self.assertTrue(result["ok"])
         self.assertEqual(self.state["listenbrainz_username"], "new.listener")
@@ -154,6 +161,9 @@ class ServiceSettingsTests(unittest.TestCase):
         self.state.update({"slskd_url": "http://slskd:5030", "slskd_api_key": "slskd-secret"})
         self.assertEqual(slskd_config(self.read_settings)[:2], ("http://slskd:5030", "slskd-secret"))
         self.state["slskd_url"] = "file:///bad"
+        with self.assertRaisesRegex(ValueError, "valid HTTP or HTTPS"):
+            slskd_config(self.read_settings)
+        self.state["slskd_url"] = ""
         with self.assertRaisesRegex(ValueError, "valid HTTP or HTTPS"):
             slskd_config(self.read_settings)
         self.state.update({"slskd_url": "http://slskd:5030", "slskd_api_key": ""})
