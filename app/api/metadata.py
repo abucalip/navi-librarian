@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
+from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services.deezer_album_matching import (
     artwork_match_score,
     exact_album_matches,
@@ -204,18 +205,9 @@ def album_artwork(artist: str = "", album: str = ""):
         albums = payload.get("data") or []
 
         if albums:
-            match = max(albums, key=lambda item: artwork_match_score(item, artist, album))
-            if artwork_match_score(match, artist, album) >= 9:
-                # Prefer Deezer's XL artwork for crisp large cards and high-DPI displays.
-                artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
-                result = {
-                    "artwork_url": artwork.replace("http://", "https://", 1) if artwork else None,
-                    "image_kind": "album",
-                    "source": "Deezer",
-                    "matched_artist": (match.get("artist") or {}).get("name"),
-                    "matched_album": match.get("title"),
-                    "year": release_year(match.get("release_date")),
-                }
+            selected_artwork = select_album_artwork(albums, artist, album)
+            if selected_artwork is not None:
+                result = selected_artwork
 
         # Do not perform a serialized MusicBrainz lookup here: it rate-limits
         # requests and can delay artwork by several seconds. Deezer release dates
@@ -227,21 +219,11 @@ def album_artwork(artist: str = "", album: str = ""):
             response.raise_for_status()
             artist_payload = response.json()
             artists = artist_payload.get("data") or []
-            exact = next(
-                (item for item in artists if str(item.get("name") or "").casefold() == artist.casefold()),
-                None,
+            selected_artist_artwork = select_artist_artwork(
+                artists, artist, year=result.get("year")
             )
-            if exact:
-                # Prefer high-resolution artist portraits; fall back if unavailable.
-                photo = exact.get("picture_xl") or exact.get("picture_big") or exact.get("picture_medium")
-                if photo:
-                    result = {
-                        "artwork_url": photo.replace("http://", "https://", 1),
-                        "image_kind": "artist",
-                        "source": "Deezer",
-                        "matched_artist": exact.get("name"),
-                        "year": result.get("year"),
-                    }
+            if selected_artist_artwork is not None:
+                result = selected_artist_artwork
     except Exception:
         # A provider outage must not poison the negative cache for five minutes.
         # Tell the browser this result is transient so it can retry with backoff.
