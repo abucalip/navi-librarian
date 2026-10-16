@@ -42,6 +42,7 @@ from acquisition_source_switch import switch_to_next_source_locked as _switch_to
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
 import discovery_refresh
+import listening_profile
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
     filename_key as _acquisition_filename_key,
@@ -3359,16 +3360,11 @@ def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
 
 
 def _refresh_listening_profile_background():
-    """Refresh and persist the 30-day ListenBrainz profile without a UI page."""
-    try:
-        payload = json.loads(recent_listening_profile(days=30))
-        if isinstance(payload, dict) and not payload.get("error"):
-            payload["background_refresh"] = True
-            _discovery_write_list("listening_profile", payload)
-            return {"ok": True, "listens_retrieved": payload.get("listens_retrieved", 0)}
-        return {"ok": False, "error": "Listening profile returned an error payload"}
-    except Exception as exc:
-        return {"ok": False, "error": type(exc).__name__}
+    """Compatibility adapter for the extracted background profile refresh."""
+    return listening_profile.refresh_and_persist_background_profile(
+        recent_listening_profile,
+        _discovery_write_list,
+    )
 
 
 def _discovery_scheduler():

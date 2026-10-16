@@ -1,10 +1,14 @@
-## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
 
-- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
+- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
 
-- Started from GitHub main after PR #224. Extracted cached-list filtering and response projection into `discovery_list_payload.build_cached_discovery_list_response()`; the server retains input validation, feedback persistence/read, For Me inventory logic, and dependency wiring.
-- Added direct-import tests for empty-cache shape, dismissal/saved/non-album filtering, personal diagnostics/legacy fields, and visible-count behavior. Docker packaging includes the helper.
-- Verification pending: complete diff review and all four required workflows on the final PR head. No merge, publication, deployment, or runtime verification is claimed.
+## 2026-10-16 — PR #225 merged: cached discovery-list payload shaping
+
+- PR #225 squash-merged as `4d968b381d1f541b81a4a46d1753b5145347e33d` from exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`.
+- Extracted cached discovery-list filtering and response projection to `discovery_list_payload.build_cached_discovery_list_response()`. The adapter retains input validation, feedback reads/persistence, For Me inventory lookup, and dependency wiring.
+- All four exact-head workflows passed: Python syntax/acquisition safety run 1187; Docker packaging/full suite (477 tests)/build run 1095; container runtime smoke run 904; validation-only multi-architecture image validation run 948 (`push: false`).
+- Initial CI caught an incorrect test assertion for a legacy top-level field; it was corrected before the final passing head. No independent local test run, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
 
