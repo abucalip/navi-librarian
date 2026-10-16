@@ -1,3 +1,7 @@
+## New Releases query construction extraction — in progress
+
+Focused verification: `python -m unittest tests.test_discovery_new_releases -v`; then full `python -m unittest discover -s tests -v`, syntax/package checks, and all four required CI workflows on the exact final PR head. Tests cover cache-key stability, artist escaping, and date-bounded MusicBrainz query shape. Do not claim assistant-side local execution unless run; publishing remains paused.
+
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
 - Squash merge commit: `0d77f7d99a89660ea1d9a38635e93343538e93b8`; exact tested PR head: `f3e7ec7c14deac8136b5066011623e00dffca134`.

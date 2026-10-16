@@ -1,3 +1,7 @@
+## 2026-10-16 — New Releases lookup construction extraction in progress
+
+The next narrow discovery seam isolates MusicBrainz artist-query construction and the corresponding versioned cache key in `discovery_new_releases.build_new_release_lookup()`. The server adapter continues to own provider requests, cache reads/writes, rate limiting, error collection, and date-window policy. Preserve the exact escaped artist query, query date bounds, and cache-key format; direct-import tests cover quotes/backslashes and stable normalized keys. Require focused/full tests and all four exact-head CI workflows before merge. Publishing/deployment remain paused.
+
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
 - Squash merge commit: `0d77f7d99a89660ea1d9a38635e93343538e93b8`; exact tested PR head: `f3e7ec7c14deac8136b5066011623e00dffca134`.

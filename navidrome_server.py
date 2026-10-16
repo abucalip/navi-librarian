@@ -1662,17 +1662,18 @@ def _build_new_releases_list():
         if _discovery_is_various_artists(artist):
             continue
         artist_key = _music_key(artist)
-        cache_key = f"mb:new-releases:v1:{earliest_year}:{artist_key}"
+        from discovery_new_releases import build_new_release_lookup
+        cache_key, query = build_new_release_lookup(
+            artist,
+            artist_key=artist_key,
+            earliest_year=earliest_year,
+            current_year=current_year,
+        )
         payload = _metadata_cache_get(cache_key, ttl_seconds=30 * 24 * 60 * 60)
         if payload is None:
             try:
                 if index:
                     time.sleep(1.1)
-                escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
-                query = (
-                    f'artist:"{escaped_artist}" AND primarytype:album '
-                    f'AND firstreleasedate:[{earliest_year} TO {current_year}]'
-                )
                 response = httpx.get(
                     "https://musicbrainz.org/ws/2/release-group/",
                     params={"query": query, "fmt": "json", "limit": 100},
