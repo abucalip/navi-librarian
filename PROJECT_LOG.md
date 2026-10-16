@@ -1,3 +1,10 @@
+## 2026-10-16 — Independent extraction session: PRs #202 and #203
+
+- **PR #202:** https://github.com/abucalip/navi-librarian/pull/202 — extracted pure library-overview payload shaping to `navidrome_client.library_overview_payload()`; exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`, squash merge `7a95364a31f360bb20dd8d2919a9bfea93ec893c`. All four required exact-head workflows passed: syntax 1104, Docker packaging/full unit suite/build 1011, runtime smoke 820, validation-only multi-architecture 864.
+- **PR #203:** https://github.com/abucalip/navi-librarian/pull/203 — extracted pure source-preview redaction to `server_source_redaction.redact_assignment()`; exact tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`, squash merge `89e639394122aebe29bfb8602a1135722ea28bbe`. All four required exact-head workflows passed: syntax 1106, Docker packaging/full unit suite/build 1013, runtime smoke 822, validation-only multi-architecture 866.
+- Assistant-side local tests were not run; full unit suites ran in CI. No publication, deployment, or production runtime verification. Acquisition-dismissal HTTP 409 remains deferred; publishing remains paused.
+
+
 ## 2026-10-16 — Navidrome response-shaping extractions (PRs #196 and #198)
 
 - **PR #196:** https://github.com/abucalip/navi-librarian/pull/196 — branch refactor/extract-navidrome-search-shaping; exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836; squash merge 277499ec949353f5f24542a8033a481283814782.
