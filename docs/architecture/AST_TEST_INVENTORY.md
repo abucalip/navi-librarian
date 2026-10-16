@@ -4,7 +4,7 @@ Audit baseline: GitHub `main` after PR #272 and documentation closeout commit `5
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
-## Tests that parse or execute functions extracted from navidrome_server.py
+## Source-layout coupling audit
 
 | Test | Coupling | Coverage currently provided | Recommended disposition |
 |---|---|---|---|
