@@ -49,7 +49,7 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 - Preserve MCP compatibility during routine modularization. MCP retirement requires a separate explicit decision and migration gate.
 - Do not perform size-only slskd refactors. The modularization completion audit is a gated sequence: generate/review `scripts/dep_map.py` output; inventory and decouple AST/source-reading tests; add and enforce the app-to-legacy-server import boundary; audit mutable `MUSIC_DIR` and settings wrappers; then evaluate the acquisition coordinator. Do not skip ahead to extraction.
 - The active roadmap now includes characterization and a provider-injected candidate-gathering seam for `recommend_new_music()`. Characterize behavior before extraction and inspect `discovery_library_snapshot.py` for overlap first.
-- Operational functions that rewrite source or kill/restart the server are an owner decision. Do not assume an MCP exposure is sufficient authorization; do not refactor or remove them until the owner decides whether/how they remain exposed.
+- Owner decision recorded: retire the early-development MCP tools `restart_server` and `apply_server_patch` if safe. The focused removal PR preserves the remaining MCP registry and runtime; do not restore either capability without a new explicit owner decision and security review.
 - Add a measurable CI size ratchet for `navidrome_server.py` and recorded top-level-function limits. Verify the line-count baseline against the exact main SHA, report offending names/sizes, and permit only explicit temporary exceptions with a removal plan.
 
 ## Required verification gates
