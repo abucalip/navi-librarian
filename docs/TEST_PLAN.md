@@ -1,3 +1,10 @@
+## 2026-10-16 — Last.fm top albums extraction in progress (PR #175)
+
+- `LastFmClient.artist_top_albums()` tests cover scalar/list payloads, blank-title filtering, normalized metadata, requested limit, 30-day cache TTL/hits, missing payloads, and compatibility adapter filtering.
+- Exact-head syntax/acquisition safety, full unit suite and Docker build, runtime smoke, and non-publishing multi-architecture checks are required. CI pending; assistant-side local tests not run.
+
+---
+
 ## 2026-10-16 — Modularization extraction verification: PRs #170–#172
 
 - **PR #170, MusicBrainz tag audit:** direct-import tests cover sorted bounded batches, populated/missing/empty MBID tags, unreadable audio, validation/error strings, the legacy JSON adapter, and read-only behavior. Exact final head `3ce122d2e950aaf9b8ddd56f8dfecc927255ba07` passed syntax `38827001217`, full suite/build `38827001215`, runtime smoke `38827001195`, and validation-only multi-architecture `38827001227`.
