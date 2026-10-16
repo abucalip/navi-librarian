@@ -258,14 +258,24 @@ p { line-height: 1.55; }
 }
 .get-album:hover:not(:disabled) { background: var(--yellow-bright); border-color: var(--yellow-bright); }
 .get-album:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.get-album-label { grid-area: 1 / 1; }
+.get-album-glyph { grid-area: 1 / 1; width: 100%; height: 100%; }
+.get-album-arc, .get-album-tick, .get-album-arrow, .get-album-arrow-head { opacity: 0; }
 /* Pending: the request is in flight. Applied before the server answers, so it must not
-   read as success. */
+   read as success — a short accent arc travels the ring instead. */
 .get-album.is-pending { background: var(--surface-raised); border-color: var(--yellow-dim); color: var(--muted); cursor: progress; }
-/* Requested: only ever applied after the server confirms. */
-.get-album.requested { background: var(--red-deep); border-color: var(--red-bright); color: #fff; cursor: default; box-shadow: 0 3px 12px rgba(120,0,0,.35); }
-.get-album.requested:hover { background: var(--red-deep); border-color: var(--red-bright); transform: none; }
+.get-album.is-pending .get-album-arc { opacity: 1; stroke: var(--yellow); stroke-dasharray: 15.8 56.46; animation: get-arc-travel 1.15s linear infinite; }
+@keyframes get-arc-travel { to { stroke-dashoffset: -72.26; } }
+/* Requested: only ever applied after the server confirms. Accent fill and a tick that draws
+   itself. Held rather than returning to idle, so the control cannot be clicked into a second
+   acquisition; the accessible name still reads "Acquisition requested". */
+.get-album.requested { background: var(--yellow); border-color: var(--yellow-pale); color: var(--on-yellow); cursor: default; }
+.get-album.requested:hover { background: var(--yellow); border-color: var(--yellow-pale); transform: none; }
+.get-album.requested .get-album-tick { opacity: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: get-tick-draw .36s cubic-bezier(.16,1,.3,1) forwards; }
+@keyframes get-tick-draw { to { stroke-dashoffset: 0; } }
 /* Failed: the request did not land and the control is usable again. */
 .get-album.is-failed { background: var(--surface-raised); border-color: var(--red); color: var(--red); }
+.get-album.is-failed .get-album-arrow, .get-album.is-failed .get-album-arrow-head { opacity: 1; }
 .get-album:disabled { cursor: progress; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
@@ -371,4 +381,11 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 @media (prefers-reduced-motion: reduce) {
   .notyf__toast, .notyf__message, .notyf__icon,
   .notyf__toast--disappear, .notyf__toast--disappear .notyf__message, .notyf__toast--disappear .notyf__icon { animation-duration: .01ms !important; animation-delay: 0s !important; }
+}
+/* The async Get button: the arc holds still and the tick is drawn outright. Unlike the toasts
+   above, nothing here is removed on animationend, so switching the animation off is safe and the
+   state still reads without motion. */
+@media (prefers-reduced-motion: reduce) {
+  .get-album.is-pending .get-album-arc { animation: none; }
+  .get-album.requested .get-album-tick { animation: none; stroke-dashoffset: 0; }
 }
