@@ -2720,8 +2720,8 @@ def _discovery_list_acquisition_jobs():
 
 
 # Per-process snapshots used to calculate an instantaneous speed from byte deltas.
-_DISCOVERY_PROGRESS_SNAPSHOTS = {}
-_DISCOVERY_PROGRESS_SNAPSHOT_LOCK = __import__("threading").Lock()
+from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
+_DISCOVERY_PROGRESS_SNAPSHOTS = _ProgressSnapshots()
 
 
 def _discovery_live_download_progress(job):
@@ -2765,14 +2765,12 @@ def _discovery_live_download_progress(job):
         str(job.get("album_key") or _music_key(job.get("album"))),
         str(username).casefold(),
     )
-    with _DISCOVERY_PROGRESS_SNAPSHOT_LOCK:
-        prior = _DISCOVERY_PROGRESS_SNAPSHOTS.get(snapshot_key)
-        _DISCOVERY_PROGRESS_SNAPSHOTS[snapshot_key] = {
-            "at": now, "files": file_byte_snapshot,
-        }
-        speed = _slskd_transfers_module.estimate_transfer_speed(
-            file_byte_snapshot, prior, now
-        )
+    speed = _DISCOVERY_PROGRESS_SNAPSHOTS.estimate(
+        snapshot_key,
+        file_byte_snapshot,
+        now,
+        _slskd_transfers_module.estimate_transfer_speed,
+    )
 
     percent = round(min(100.0, max(0.0, transferred_bytes / total_bytes * 100.0)), 1) if total_bytes else None
     total_tracks = len(expected_by_name)
