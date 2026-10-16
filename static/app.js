@@ -988,9 +988,13 @@ function genreRowLabel(key) {
 
 /** ResizeObservers watching genre-row overflow, disconnected on every re-render. */
 const genreRowObservers = [];
+const genreRowResizeHandlers = [];
 
 function disconnectGenreRowObservers() {
   while (genreRowObservers.length) genreRowObservers.pop().disconnect();
+  while (genreRowResizeHandlers.length) {
+    window.removeEventListener('resize', genreRowResizeHandlers.pop());
+  }
 }
 
 async function loadDiscovery(name, options = {}) {
@@ -1102,6 +1106,7 @@ async function loadDiscovery(name, options = {}) {
           genreRowObservers.push(observer);
         } else {
           window.addEventListener('resize', syncArrows);
+          genreRowResizeHandlers.push(syncArrows);
         }
         requestAnimationFrame(syncArrows);
         heading.append(arrows);
