@@ -1143,12 +1143,14 @@ async function loadDiscovery(name, options = {}) {
       // album-grid sections.
       title.append(document.createTextNode(isDeepDive ? artist : album));
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
-      if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
+      if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       ensureAlbumYearBadge(card);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.
-      addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);
+      const supportingLine = addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);
+      // Keep release-year metadata with the album when the artist is the primary heading.
+      if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));
 
       const needsBio = isDeepDive ||
         /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
