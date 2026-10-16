@@ -319,6 +319,8 @@ def recommend_new_music(count: int = 10) -> str:
     core_families = gathered["core_families"]
     exploration_families = gathered["exploration_families"]
     profile_families = gathered["profile_families"]
+    regional_candidates_added = gathered["regional_candidates_added"]
+    regional_results_seen = gathered["regional_results_seen"]
 
     found = []
     possible_matches = []
