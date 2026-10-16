@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff` (2026-10-16).
+Audit baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff` (2026-10-16); transfer lookup test migrated on the current follow-up branch.
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
@@ -14,9 +14,8 @@ This inventory distinguishes tests that parse the legacy server source from test
 
 ### Migration order
 
-1. `test_slskd_transfer_lookup.py`: smallest, clear direct implementation exists in `slskd_transfers.py`.
-2. The pure-helper portions of `test_acquisition_safety.py` and `test_quality_priority.py`: direct implementations already exist in `slskd_search.py`, `slskd_quality.py`, and `acquisition_candidate_start.py`.
-3. The remaining `test_acquisition_safety.py` lifecycle/concurrency/persistence cases: map each case to the real owner before changing it. Some behaviors may remain at the legacy orchestration boundary if no direct-import owner exists yet; that is a concrete extraction decision, not permission to stub away safety coverage.
+1. Migrate the pure-helper portions of `test_acquisition_safety.py` and `test_quality_priority.py`: direct implementations already exist in `slskd_search.py`, `slskd_quality.py`, and `acquisition_candidate_start.py`.
+2. Migrate the remaining `test_acquisition_safety.py` lifecycle/concurrency/persistence cases only after mapping each case to the real owner. Some behaviors may remain at the legacy orchestration boundary if no direct-import owner exists yet; that is a concrete extraction decision, not permission to stub away safety coverage.
 
 ## Related legacy-server references that are not AST source coupling
 
