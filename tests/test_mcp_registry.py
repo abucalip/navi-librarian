@@ -47,6 +47,8 @@ class MCPRegistryTests(unittest.TestCase):
                 "import sys; import navidrome_server as service; "
                 "from mcp_registry import TOOL_NAMES; "
                 "assert all(callable(getattr(service, name)) for name in TOOL_NAMES); "
+                "assert not hasattr(service, 'restart_server'); "
+                "assert not hasattr(service, 'apply_server_patch'); "
                 "assert 'mcp.server.mcpserver' not in sys.modules",
             ],
             check=False,
