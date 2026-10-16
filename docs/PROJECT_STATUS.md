@@ -1,3 +1,11 @@
+## 2026-10-16 — PR #194 merged: token cleanup and touch targets
+
+- Refreshed PR #194 against current main and merged the reviewed CSS/documentation diff. Exact tested PR head: `0cf2e4329015fd9159213fbe25561decb16dbdb8`; squash merge commit: `10b14c1ed37bfc20930bf642f511065404dfb379`.
+- Manual browser report was published by the operator in PR #194 comments for that exact head. All 8 checklist items passed with zero failures: first-run setup, dashboard/artwork, discovery lists, navigation/album details, settings load/save and secret handling, Get/request behavior without a real download, acquisition cards/status, and absence of unexpected browser/server errors.
+- All four required workflows passed on the exact tested head: Python syntax run 38900816052; Docker packaging/full unit suite/build run 38900816045; container runtime smoke run 38900816210; validation-only multi-architecture image validation run 38900816039 (`push: false`).
+- Scope remained `static/app.css` and `docs/UI_BACKLOG_EXECUTION.md`. Merge is verified; publishing remains paused. No image publication, deployment, or production runtime verification is claimed.
+- **Next action:** refresh current main/open PRs/CI and review outstanding work against the requirements and priority order before choosing the next task.
+
 ## 2026-10-16 — Session closeout: PRs #208–#210 merged
 
 - **PR #208 — page/asset routes:** merged as `8ed54b0cc3750dc0aae1bc20efda61bba7dd71cd` from exact tested head `75305491eb12ff1796569f51e364aace41796292`. All four required workflows passed (syntax 1121, Docker/full suite/build 1028, runtime smoke 837, validation-only multi-architecture 881).
