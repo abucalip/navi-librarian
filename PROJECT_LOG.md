@@ -2,7 +2,9 @@
 
 - Re-established canonical document roles: `docs/MODULARIZATION_ROADMAP.md` is the short active plan; `docs/PROJECT_STATUS.md` is the current snapshot; `docs/TEST_PLAN.md` is the verification baseline; `docs/ARCHITECTURE.md` describes current responsibilities; this file remains the primary detailed project history.
 - Older extraction/verification sections found in the former diary-style roadmap, test plan, and architecture document that were not represented by PR number here were preserved in `docs/archive/MODULARIZATION_HISTORY.md`. Archived records are historical evidence, not current status; verify current state against GitHub `main` and exact CI runs.
-- Updated the workflow to use targeted historical search instead of reading the full log every session. This was a documentation-only change; no application tests or CI have been run yet. No publication, deployment, or runtime verification is claimed.
+- Updated the workflow to use targeted historical search instead of reading the full log every session.
+- The read-only boundary audit found the next candidate should be a trace of `_build_classics_list()` and its tests, followed by an application-assembly/AST-test dependency audit. Acquisition coordinator extraction remains conditional on a narrow safe seam; slskd work is not justified by file size alone. PR #228's audit findings are incorporated here and in the roadmap; the PR can be closed as superseded once this consolidation is reviewed.
+- This was a documentation-only change; no application tests or CI have been run yet. No publication, deployment, or runtime verification is claimed.
 
 ---
 
