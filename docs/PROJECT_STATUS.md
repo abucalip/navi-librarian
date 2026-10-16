@@ -1,16 +1,16 @@
 # Project status
 
 Last reviewed: 2026-10-16 (PR #272 merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`)
-Documentation base: GitHub `main` at commit `9b97f447adc602a3be3b5ac496633430f3eb3cb4`
+Documentation base: GitHub `main` at commit `5a74b12d489ae30cfad923af7b68985ebede87dc`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #272 moved broader-query fallback behavior tests to direct-import coverage while retaining the AST harness for higher-risk lifecycle and compatibility behavior. All four required workflows passed on exact final PR head `7b1257e0ceb9368063de025a2758f48a344efbcb`; the PR merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. See root `PROJECT_LOG.md` for run IDs and test evidence.
+Backend modularization remains in progress. PR #272 migrated broader-query fallback tests to direct imports and merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. The next focused PR removes the final AST/source-layout coupling from `tests/test_acquisition_safety.py` while retaining production-owner coverage for import persistence, dismissal locking, concurrency/recovery, and filesystem safety. Exact-head CI is pending.
 
 ## Next action
 
-1. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them; preserve current compatibility and operational safety until then.
-2. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
+1. Verify and merge the final acquisition AST-coupling migration only after all four required workflows pass on its exact final PR head.
+2. Then request the owner decision on MCP-exposed `restart_server` and `apply_server_patch`; do not refactor or remove them before that decision.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
 The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, but operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md audit entry.
