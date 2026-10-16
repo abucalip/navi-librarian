@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #254 merged; app import boundary enforced)  
-Baseline: GitHub `main` at `3d99647ceec5e69deebacd622588470c5b4c3c65`
+Last reviewed: 2026-10-16 (PR #255 merged; initial new-music characterization added)  
+Baseline: GitHub `main` at `4d21627f4d01c7129298fa2753c518006db5ba45`
 
 ## Purpose
 
@@ -13,10 +13,10 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 ### 0. Characterize and extract the new-music candidate-gathering pipeline
 
-The audit identifies `recommend_new_music()` in `navidrome_server.py` (approximately lines 282–1340; about 1,058 lines in the audited revision) as a major live responsibility used by the `/discovery` route and an MCP tool. Its tail already composes `discovery_personal_allocator`, `discovery_allocation_contract`, and `discovery_recommendation_payload`; the front half still combines ListenBrainz fetches, regional MusicBrainz queries, library inventory paging, family scoring, and Last.fm bonuses. Existing tests reportedly mock the whole function, so internal policy has no characterization baseline. Reconfirm all line references and call paths against current `main` before implementation.
+The audit identifies `recommend_new_music()` in `navidrome_server.py` (approximately lines 282–1340; about 1,058 lines in the audited revision) as a major live responsibility used by the `/discovery` route and an MCP tool. Its tail already composes `discovery_personal_allocator`, `discovery_allocation_contract`, and `discovery_recommendation_payload`; the front half still combines ListenBrainz fetches, regional MusicBrainz queries, library inventory paging, family scoring, and Last.fm bonuses. Existing tests mocked the whole function, leaving internal policy without a characterization baseline. PR #255 adds the first adapter-level baseline for clear inventory, exact ownership exclusion, duplicate album IDs, and inventory failure. Candidate ordering/scoring and provider failure behavior still need characterization. Reconfirm all line references and call paths against current `main` before implementation.
 
 Required sequence:
-1. Add deterministic characterization tests using fake provider responses and a fixed listen/library fixture. Pin the current candidate/output behavior and meaningful intermediate policy outcomes before moving code. Do not treat mocked-function tests as internal coverage.
+1. Expand deterministic characterization tests using fake provider responses and fixed listen/library fixtures. PR #255 covers inventory ownership, duplicate IDs, the public response shape, and inventory failure; still pin candidate ordering/scoring and provider failure behavior before moving code. Do not treat mocked-function tests as internal coverage.
 2. Trace `discovery_library_snapshot.py` and its callers first. Reuse its inventory boundary where semantics match; document any meaningful mismatch before implementing a second inventory path.
 3. Extract candidate gathering/provider orchestration behind injected provider callables, keeping provider I/O, policy, and payload shaping distinct. Preserve the public signature, route/MCP compatibility, ordering, failure behavior, and existing allocator/payload contracts.
 4. Add direct-import tests for the extracted seam and adapter-level compatibility tests. Verify output parity against characterization fixtures before expanding behavior.
