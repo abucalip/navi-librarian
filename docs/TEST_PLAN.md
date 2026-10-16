@@ -1134,3 +1134,10 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Direct-import regressions cover skipping non-exact/invalid-year results and preserving result order; a route-level regression covers the Deezer fallback source/year contract.
 - Exact final tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; all four workflows passed: Python syntax run 1153, Docker packaging/full suite/build run 1060, container runtime smoke run 869, and validation-only multi-architecture image validation run 913. Assistant-side local tests were not run.
 - Squash merge commit `6dc6adae89169638da9a158c79ccee5d2e1ddfb7`. Publishing, deployment, and production runtime verification remain unclaimed.
+
+## 2026-10-16 — Personal recommendation allocation contract (pre-extraction)
+
+- Added direct-import contract tests in `tests/test_discovery_allocation_contract.py` for candidate identity/category/score/ownership validation; immutable request policy mappings; unique candidate IDs; requested-count, category-target and 60-check bounds; selected-vs-review result separation; diagnostics mapping immutability; and result/decision invariants.
+- These tests validate the proposed interface only. They do not exercise the existing shortlist-selection loops or prove allocation policy equivalence. Those policy regressions are acceptance criteria for a later, separate allocator extraction: style reservations, category quotas, duplicate/artist caps, exact-owned vs title-conflict behavior, family-cap relaxation, unclassified/final fallback ordering, diagnostics, and check-cap behavior.
+- Assistant-side execution and GitHub Actions exact-head results: pending.
+

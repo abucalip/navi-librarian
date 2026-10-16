@@ -1714,3 +1714,13 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - All three PRs added direct-import regression coverage and preserved route/provider/cache ownership. Assistant-side local test commands were not run; the Docker packaging workflows ran the full unit suite. No publication, deployment, or production runtime verification is claimed.
 - Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred per user direction; no acquisition/import/deletion semantics were changed.
 - **Next action:** refresh GitHub main/open PRs/CI and inspect remaining application-assembly/domain-service boundaries before selecting the next independent seam. Do not treat extraction count as a quota.
+
+## 2026-10-16 — Personal recommendation allocation contract designed
+
+- Current GitHub base: `9376d5f0d55815067aeb5cadf9015b4b775a9848` (PR #220 merge). Open PR audit was empty at session start; recent `main` workflow run `38915170332` succeeded.
+- Added `discovery_allocation_contract.py`, `tests/test_discovery_allocation_contract.py`, and `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` on branch `refactor/personal-allocation-contract`.
+- The contract is data-only: prepared candidates have stable IDs, normalized identity keys, category/style/family/score, and precomputed ownership status; request contains immutable policy mappings and bounded count/check limits; result carries selected IDs, ownership-review IDs, decision reasons, category counts, and check count. No callbacks, provider/library access, candidate payload copies, or shared mutable counters are part of the interface.
+- **The shortlist-selection loops remain unchanged and have not been moved.** This is a contract-design PR, not an allocator implementation. Tests cover input/output invariants, ownership-state representation, duplicate IDs, immutable mappings, and bounds; they do not claim to test allocation policy.
+- Test execution and exact-head CI are pending PR creation. No publication, deployment, or runtime verification.
+- **Next action:** run the focused direct-import contract tests and required exact-head workflows; only then decide whether to move loops in a separate PR. If actual policy needs callbacks/shared mutable state beyond this interface, stop and refine the seam.
+
