@@ -324,6 +324,30 @@ pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
 footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--subtle); font: 10px/1.6 var(--mono); }
+
+/* The dashboard carousel and the genre rows are native scroll containers. A card inside one
+   is already reachable by Tab, but the container itself was not focusable, so the row could
+   only be walked one card at a time. The ring has to be drawn on the container now that it
+   is the thing that takes focus. */
+.dashboard-carousel:focus-visible, .genre-row-track:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; border-radius: 4px; }
+
+/* Transient acquisition feedback. Deliberately visual only: app.js hides .notyf from
+   assistive tech and silences Notyf's own announcer so each message is announced exactly
+   once, by the live region that owns it (a view's .status-line, or #appStatusAnnouncer on
+   views that have none). Notyf paints the toast background inline from its options, so the
+   surface colour is set in JS and only the parts CSS can own are styled here. */
+.notyf { z-index: 200; }
+.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-left-width: 3px; border-radius: var(--radius); color: var(--text); font: 13px/1.5 var(--body); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.notyf__toast--success { border-left-color: var(--green); }
+.notyf__toast--error { border-left-color: var(--red); }
+.notyf__message { font: inherit; }
+/* Notyf draws each icon as a white disc with currentColor bars. Recolouring the disc to
+   the state colour and leaving the bars on the dark inline colour keeps the success and
+   error marks distinguishable by shape as well as hue, at 4.2:1 or better against it. */
+.notyf__icon { width: 22px; margin-right: 9px; }
+.notyf__icon--success { background: var(--green); }
+.notyf__icon--error { background: var(--red); }
+
 @media (max-width: 1200px) { .cards:not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
 @media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
 @media (max-width: 620px) {
@@ -342,3 +366,9 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--border
 @media (max-width: 360px) { .cards:not(.acquisition-grid) { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 @media (prefers-reduced-motion: reduce) { .nav-blob { transition: none; } }
+/* Durations are shortened rather than switched off. Notyf removes a toast on its
+   animationend event, so animation: none would strand every toast on screen permanently. */
+@media (prefers-reduced-motion: reduce) {
+  .notyf__toast, .notyf__message, .notyf__icon,
+  .notyf__toast--disappear, .notyf__toast--disappear .notyf__message, .notyf__toast--disappear .notyf__icon { animation-duration: .01ms !important; animation-delay: 0s !important; }
+}

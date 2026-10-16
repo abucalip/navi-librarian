@@ -533,9 +533,56 @@ function setAlbumPlatformLinks(artist, album) {
     nav.append(link);
   }
 }
+// The dialog sets aria-modal, which tells assistive tech the rest of the page is inert, but
+// nothing contained Tab, so it walked straight out of the dialog into the sidebar behind it.
+// Closing the dialog had the same shape of problem: the close button it had focused is
+// hidden by the close, so focus fell back to the top of the document rather than the card
+// that opened it. Both are handled here. Focus returns to the originating card rather than
+// to document.activeElement because Safari does not focus a tabindex element on click, so
+// the active element at open time is not a reliable record of what the user was on.
+const ALBUM_MODAL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let albumModalReturnFocus = null;
+
+function albumModalFocusable() {
+  const modal = document.querySelector('.album-modal');
+  if (!modal) return [];
+  // getClientRects rather than offsetParent: the dialog sits in a position:fixed backdrop,
+  // for which offsetParent is always null and would filter out every control.
+  return [...modal.querySelectorAll(ALBUM_MODAL_FOCUSABLE)]
+    .filter(element => element.getClientRects().length > 0);
+}
+
+function trapAlbumModalFocus(event) {
+  const focusable = albumModalFocusable();
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  // The platform links are rebuilt while the dialog is open, so focus can end up on the
+  // backdrop or on <body>. Anything outside the list is pulled back inside rather than
+  // being allowed to continue through the page behind the dialog.
+  if (!focusable.includes(active)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+    return;
+  }
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function closeAlbumModal() {
   $('albumModalBackdrop').hidden = true;
   activeAlbumModal = null;
+  const returnTo = albumModalReturnFocus;
+  albumModalReturnFocus = null;
+  // isConnected guards the case where a lane re-rendered while the dialog was open and the
+  // originating card is gone; focusing a detached node would silently do nothing.
+  if (returnTo && returnTo.isConnected) returnTo.focus();
 }
 
 async function openAlbumModal(card) {
@@ -547,6 +594,7 @@ async function openAlbumModal(card) {
   const tracklist = $('albumModalTracklist');
   const get = $('albumModalGet');
   activeAlbumModal = {card, artist, album, metadata};
+  albumModalReturnFocus = card;
   $('albumModalTitle').textContent = album;
   $('albumModalArtist').textContent = artist;
   $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
@@ -621,7 +669,9 @@ document.addEventListener('click', event => {
   openAlbumModal(card);
 });
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('albumModalBackdrop').hidden) closeAlbumModal();
+  const albumModalOpen = !$('albumModalBackdrop').hidden;
+  if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
+  if (event.key === 'Tab' && albumModalOpen) trapAlbumModalFocus(event);
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title]')) {
     event.preventDefault(); openAlbumModal(event.target);
   }
@@ -631,9 +681,40 @@ $('albumModalBackdrop').addEventListener('click', event => {
   if (event.target === $('albumModalBackdrop')) closeAlbumModal();
 });
 
+// Horizontal scroll tracks — the dashboard carousel and the per-genre rows — are native
+// overflow containers. A card inside one is reachable by Tab, because the browser scrolls a
+// focused child into view, but the container itself is neither focusable nor named, so the
+// row can only be walked one card at a time and cannot be scrolled, paged or jumped as a
+// unit. Giving the container a tab stop, an accessible name and arrow/Home/End handling is
+// what makes the row itself operable. When no label is passed the container keeps the
+// accessible name already in the markup, so a static region stays named in one place.
+const trackScrollStep = track => Math.max(250, track.clientWidth * 0.8);
+const trackScrollBehavior = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+function scrollTrackBy(track, delta) {
+  track.scrollBy({left: delta, behavior: trackScrollBehavior()});
+}
+
+function makeScrollTrackFocusable(track, label) {
+  track.setAttribute('tabindex', '0');
+  track.setAttribute('role', 'group');
+  if (label) track.setAttribute('aria-label', label);
+  track.addEventListener('keydown', event => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'ArrowRight') scrollTrackBy(track, trackScrollStep(track));
+    else if (event.key === 'ArrowLeft') scrollTrackBy(track, -trackScrollStep(track));
+    else if (event.key === 'Home') track.scrollTo({left: 0, behavior: trackScrollBehavior()});
+    else if (event.key === 'End') track.scrollTo({left: track.scrollWidth, behavior: trackScrollBehavior()});
+    else return;
+    event.preventDefault();
+  });
+}
+
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
   const status = $('dashboardPicksStatus');
+  makeScrollTrackFocusable(target);
   target.replaceChildren();
   status.textContent = 'Picking ten albums across your discovery lists…';
   try {
@@ -1083,6 +1164,7 @@ async function loadDiscovery(name, options = {}) {
         arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
+        makeScrollTrackFocusable(track, genreRowLabel(genre) + ' albums');
         const arrowList = [];
         for (const [symbol, direction] of [['<', -1], ['>', 1]]) {
           const arrow = document.createElement('button');
@@ -1090,7 +1172,7 @@ async function loadDiscovery(name, options = {}) {
           arrow.type = 'button';
           arrow.textContent = symbol;
           arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');
-          arrow.addEventListener('click', () => track.scrollBy({left: direction * Math.max(250, track.clientWidth * 0.8), behavior: 'smooth'}));
+          arrow.addEventListener('click', () => scrollTrackBy(track, direction * trackScrollStep(track)));
           arrows.append(arrow);
           arrowList.push(arrow);
         }
@@ -1368,6 +1450,33 @@ function setGetButtonState(button, state, artist, album) {
   }
 }
 
+// Transient acquisition feedback. Notyf is vendored under static/vendor/notyf; that
+// directory's README records the pinned version, integrity hashes and update procedure.
+// Errors are held longer than successes because the status line that also carries them is
+// easy to overwrite, while a failure is the message a user is most likely to need again.
+const acquisitionToasts = typeof Notyf === 'function'
+  ? new Notyf({
+      ripple: false,
+      dismissible: false,
+      position: {x: 'right', y: 'bottom'},
+      // Only the surface colour and duration are overridden. registerTypes merges each entry
+      // over the default for that type, so the built-in class names and icon markup survive.
+      // Motion is handled in app.css so reduced-motion preferences are respected.
+      types: [
+        {type: 'success', backgroundColor: 'var(--surface-raised)', duration: 5000},
+        {type: 'error', backgroundColor: 'var(--surface-raised)', duration: 8000}
+      ]
+    })
+  : null;
+
+if (acquisitionToasts) {
+  // Visual channel only. Every message is announced exactly once by the live region chosen
+  // below, so the toast container is hidden from assistive tech and Notyf's built-in
+  // announcer — which would otherwise speak each message a second time — is switched off.
+  acquisitionToasts.view.container.setAttribute('aria-hidden', 'true');
+  acquisitionToasts.view.a11yContainer.setAttribute('aria-live', 'off');
+}
+
 async function searchAlbum(artist, album, metadata, button = null) {
   if (button && button.disabled && !button.classList.contains('is-failed')) return;
   // Pending, not requested. The former code marked the button as requested before
@@ -1407,12 +1516,16 @@ function pluralize(count, singular, plural) {
 
 function reportAcquisitionOutcome(message, kind) {
   if (!message) return;
+  if (acquisitionToasts) acquisitionToasts[kind === 'error' ? 'error' : 'success'](message);
+  // Announce through exactly one live region: the active view's own status line when it has
+  // one, otherwise the shared #appStatusAnnouncer. Views without a status line previously
+  // received no feedback at all, which is the defect the selector comment above describes.
   const page = document.querySelector('section.page:not(.hidden)');
-  if (!page) return;
-  const target = page.querySelector('.status-line') || page.querySelector('.muted[aria-live]');
-  if (!target) return;
-  target.textContent = message;
-  setStatusState(target, kind);
+  const target = page && (page.querySelector('.status-line') || page.querySelector('.muted[aria-live]'));
+  const liveRegion = target || $('appStatusAnnouncer');
+  if (!liveRegion) return;
+  liveRegion.textContent = message;
+  if (target) setStatusState(target, kind);
 }
 async function loadNavidromeSettings() {
   try {
