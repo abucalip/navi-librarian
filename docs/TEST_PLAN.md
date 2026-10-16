@@ -1116,6 +1116,7 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 
 ## 2026-10-16 — PR #216 in progress: Deezer artwork selection
 
-- Extracted the pure album-artwork relevance selection/payload shaping and exact-artist photo fallback shaping into `app/services/deezer_artwork.py`. `app/api/metadata.py` retains request sequencing, cache ownership, provider-failure/retry behavior, and HTTP validation.
-- Added direct-import tests for relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year fallback, exact artist identity, missing photos, and empty results; added route-level regressions for album selection and artist-photo fallback.
-- Current branch: `refactor/extract-deezer-artwork-selection`. Focused/full tests have not been run locally; exact-head CI, final diff review, and merge are pending. Publishing/deployment remain paused.
+- Extracted pure album-artwork relevance selection/payload shaping and exact-artist photo fallback shaping into `app/services/deezer_artwork.py`. `app/api/metadata.py` retains request sequencing, cache ownership, provider-failure/retry behavior, and HTTP validation.
+- Added direct-import tests for the relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year handling, exact artist identity, missing photos, and empty results; route regressions cover album selection and artist-photo fallback.
+- Initial implementation head `5fd8edb4a5e0962218ec9a144b7ce57a7de25614` passed all four workflows: Python syntax run 1147, Docker packaging/full suite/build run 1054, container runtime smoke run 863, and validation-only multi-architecture image validation run 907. The assistant did not run the test suite locally.
+- Documentation closeout updates are being added on this branch; rerun all four workflows on the resulting final PR head before merge. Publishing/deployment remain paused.
