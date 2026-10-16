@@ -1,8 +1,11 @@
-## 2026-10-16 — Classics candidate collection extraction (PR pending)
+## 2026-10-16 — PR #232 merged: classics candidate collection
 
-- Branch `extract/classics-candidate-collection`, based on current GitHub `main` after PR #231. Moved candidate gathering/merge policy into `discovery_classics_candidates.collect_classic_candidates()`, keeping provider/cache lookup and policy callbacks injected.
-- Added `tests/test_discovery_classics_candidates.py` for artist order and limit, owned/ineligible exclusion, duplicate winner and metadata, pacing cadence, and empty provider results. Added the module to Docker packaging and delegated the stage from `_build_classics_list()`.
-- Verification is pending: no local tests or CI results are claimed yet. No merge, publication, deployment, or production runtime verification.
+- Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.
+- The latest four workflow runs inspected for the PR reported success (syntax/acquisition safety, Docker packaging/full suite/build, container smoke, and non-publishing multi-architecture validation). The connector evidence did not independently expose each run's head SHA, so this closeout does not label them exact-head verified. Assistant-side local tests were not run. Publishing/deployment/runtime verification remain paused/unclaimed.
+
+## 2026-10-16 — New Releases library qualification extraction in progress
+
+The next candidate moves normalized ownership identity construction and full-album artist qualification/sorting into `discovery_new_releases.prepare_new_release_library_scope()`. It preserves the six-track threshold, Various Artists exclusion, stable descending album-count order, all-owned-album identity set, and untruncated qualified count. The adapter retains the 120-artist request cap, date-window policy, MusicBrainz requests/cache/rate limit, error reporting, and global merge. Direct-import contract tests are being added; final-head CI and merge remain pending.
 
 ## 2026-10-16 — PR #231 merged: classics genre enrichment
 
