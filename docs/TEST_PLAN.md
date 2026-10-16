@@ -1,9 +1,13 @@
-## 2026-10-16 — Cached discovery-list payload extraction (PR preparation)
+## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
 
-- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
+- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
 
-- New direct-import tests in `tests/test_discovery_list_payload.py` cover missing cache response shape; dismissal, saved-item, and non-album filtering; personal recommendations/diagnostics fields; and count versus pre-feedback total.
-- Required before merge: focused test, full `python -m unittest discover -s tests -v`, syntax check, Docker packaging/runtime checks, and all four required exact-final-head workflows. Results are pending; do not infer success from code creation or PR creation.
+## 2026-10-16 — PR #225 verification: cached discovery-list payload
+
+- Direct-import tests in `tests/test_discovery_list_payload.py` cover missing-cache response shape; dismissal, saved-item, and non-album filtering; personal recommendations/diagnostics; and count versus pre-feedback total.
+- Exact final head `573fe05d31dae422c25188688cd2fa949339e487` passed syntax/acquisition safety run 1187, Docker packaging/full unit suite (477 tests)/build run 1095, isolated runtime smoke run 904, and validation-only multi-architecture image validation run 948. Squash merge: `4d968b381d1f541b81a4a46d1753b5145347e33d`.
+- Initial CI caught an incorrect assertion for a field not present in the legacy top-level payload; corrected before the final passing head. No independent local test command, publication, deployment, or production runtime verification is claimed.
 
 ## 2026-10-16 — PR #224 verification: personal recommendation payload projection
 
