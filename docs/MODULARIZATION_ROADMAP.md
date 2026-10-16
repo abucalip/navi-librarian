@@ -1,3 +1,9 @@
+## 2026-10-16 — Cached discovery-list projection extraction (verification pending)
+
+- Candidate seam: the cached-list branch of `discovery_get_list()`, leaving request validation, feedback reads, persistence, and For Me library-inventory handling in the server adapter.
+- Proposed owner: `discovery_list_payload.build_cached_discovery_list_response()`; dependencies are injected for list reading, identity normalization, and album eligibility.
+- Direct-import regression tests and Docker inclusion have been added. Exact-head CI and final diff review remain pending; this is not merged or verified.
+
 ## 2026-10-16 — Session closeout: PRs #223 and #224 merged
 
 - **PR #223 — personal recommendation allocation:** exact final tested head `b604940e4b7a20160d4f3710b009c6ca718c57c5`; squash merge `1ccb11485bf1efce3ff201fb7337407c3e668c47`. All four required workflows passed: syntax/acquisition safety 1171, Docker/full suite/build 1079 (468 tests), runtime smoke 888, validation-only multi-architecture 932.
