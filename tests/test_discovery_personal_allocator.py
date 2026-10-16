@@ -89,6 +89,19 @@ class PersonalAllocatorTests(unittest.TestCase):
         ], count=3, targets={"adjacent": 2, "cross_genre": 2, "adventurous": 0}))
         self.assertEqual(result.selected_candidate_ids, ("adj", "cross", "unknown"))
 
+
+    def test_final_fallback_preserves_legacy_category_tie_order(self):
+        result = allocate_personal_recommendations(request([
+            item("cross-first", category="cross_genre", score=1),
+            item("adjacent-second", category="adjacent", score=1),
+            item("adventurous-third", category="adventurous", score=1),
+        ], count=2, targets={
+            "adjacent": 0, "cross_genre": 0, "adventurous": 0,
+        }))
+        self.assertEqual(
+            result.selected_candidate_ids, ("adjacent-second", "cross-first")
+        )
+
     def test_check_budget_is_bounded(self):
         items = [item(f"a{i}", category="adjacent", score=100-i) for i in range(60)]
         items += [item("cross", category="cross_genre"), item("adventure", category="adventurous")]
