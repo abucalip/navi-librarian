@@ -1,11 +1,11 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #281 merged as `93519c403ac2c301c46acddf6a64d59059d3f683`)
-Documentation base: GitHub `main` at commit `93519c403ac2c301c46acddf6a64d59059d3f683`
+Last reviewed: 2026-10-16 (PR #283 merged as `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`)
+Documentation base: GitHub `main` at commit `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #281 extracted familiarity/exploration scoring after PRs #278/#280 centralized category and Last.fm policies, reducing `recommend_new_music()` from 568 to 396 AST lines. The current-main dependency map (artifact `12078000327`, SHA-256 `cd9c931dd7e3ccb740f1ab24c01686a27c8f6b51ed7be58c87e301b6b6e0b58e`) covers 171 repository modules and a 73-module app import closure; `app.api.dependencies` remains the only app module with an AST-visible local import of `navidrome_server`, at its intentionally lazy line 10. The size guard passes at 2,596 server lines; `_discovery_acquire_album_impl()` remains 278 lines. PR #282 tightens the recommendation exception to 450 lines. See `PROJECT_LOG.md`.
+PRs #278, #280, and #281 extracted category, Last.fm, and familiarity/exploration scoring policies; PR #283 tightened the recommendation size exception from 575 to 450 lines. `recommend_new_music()` is 396 AST lines, the server is 2,596 lines, and `_discovery_acquire_album_impl()` is 278 lines. Current-main dependency map artifact `12077488636` (SHA-256 `39b6b2854789f0273b117adb1b9357e4765e420f87f61b05b4932f4b45c5ad49`) covers 171 modules and a 73-module app import closure; the sole app-to-legacy import is the intentionally lazy edge at `app/api/dependencies.py:10`. The completion audit found no further extraction worth the dependency surface without a concrete behavior seam. See `PROJECT_LOG.md`.
 
 ## Next action
 

@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` at `93519c403ac2c301c46acddf6a64d59059d3f683` (2026-10-16).
+Audit baseline: GitHub `main` at `767ac3efd4e02eab15c04fd033fabeb619f4b1ff` (2026-10-16).
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
