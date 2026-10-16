@@ -1,3 +1,9 @@
+## 2026-10-16 — Open-PR refresh after extraction session
+
+- PR #184, `ui: make Artist Deep Dive artist-led and drop its dead controls`, appeared during this session. Its branch `ui/artist-deep-dive` is based on `9f05bed`; comparison against the refreshed main showed it 7 commits behind and one commit ahead of its merge base.
+- The PR description explicitly says the required human manual browser checklist is NOT RUN. Treat its automated/browser-agent measurements as separate evidence, not a substitute for the documented human checklist. Do not merge until the branch is refreshed, required exact-head CI is verified, and the human checklist is recorded on that exact head.
+- This backend session did not modify PR #184. PR #23 remains the modularization roadmap; PRs #44/#45 remain closed per user direction.
+
 ## 2026-10-16 — slskd progress summary and speed estimator extracted (PRs #182–#183)
 
 - **PR #182 — progress summary:** extracted matched-record aggregation into `slskd_transfers.summarize_transfer_progress()`; preserved the legacy HTTP and matching adapters, speed snapshot lock, and response schema. Tested head `045131f58365dd0e6538c1712f37f56f639c65ad`; all four required workflows passed (syntax 1016, Docker/full suite/build 923, runtime smoke 732, non-publishing multi-architecture validation 776). Squash merge `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`.
