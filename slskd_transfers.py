@@ -72,3 +72,39 @@ def queue_download_files(base_url, headers, username, selected_files, *, http_cl
     )
     response.raise_for_status()
     return response
+
+
+def match_expected_transfer_records(expected_files, tracked):
+    """Match slskd records to expected files by normalized basename.
+
+    When duplicate records identify the same expected basename, prefer completed
+    states over active transfers and active transfers over other states.
+    Returns the expected-file map and the selected tracked-record map.
+    """
+    def basename(value):
+        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
+
+    def state_rank(value):
+        state = str(value or "").replace("_", "").casefold()
+        if state in {"succeeded", "completed"}:
+            return 2
+        if state in {"inprogress", "transferring", "downloading"}:
+            return 1
+        return 0
+
+    expected_by_name = {}
+    for item in expected_files:
+        name = basename(item.get("filename"))
+        if name:
+            expected_by_name[name] = item
+
+    tracked_by_name = {}
+    for item in tracked:
+        name = basename(item.get("filename"))
+        if name not in expected_by_name:
+            continue
+        prior = tracked_by_name.get(name)
+        if prior is None or state_rank(item.get("state")) >= state_rank(prior.get("state")):
+            tracked_by_name[name] = item
+
+    return expected_by_name, tracked_by_name

@@ -2800,26 +2800,9 @@ def _discovery_live_download_progress(job):
             "speed_bytes_per_second": None,
         }
 
-    def basename(value):
-        return str(value or "").replace("\\", "/").rsplit("/", 1)[-1].casefold()
-
-    expected_by_name = {}
-    for item in expected_files:
-        name = basename(item.get("filename"))
-        if name:
-            expected_by_name[name] = item
-
-    tracked_by_name = {}
-    for item in tracked:
-        name = basename(item.get("filename"))
-        if name not in expected_by_name:
-            continue
-        prior = tracked_by_name.get(name)
-        state = str(item.get("state") or "").replace("_", "").casefold()
-        prior_state = str((prior or {}).get("state") or "").replace("_", "").casefold()
-        rank = lambda value: 2 if value in {"succeeded", "completed"} else 1 if value in {"inprogress", "transferring", "downloading"} else 0
-        if prior is None or rank(state) >= rank(prior_state):
-            tracked_by_name[name] = item
+    expected_by_name, tracked_by_name = (
+        _slskd_transfers_module.match_expected_transfer_records(expected_files, tracked)
+    )
 
     completed_states = {"succeeded", "completed"}
     completed = 0
