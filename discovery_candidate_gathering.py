@@ -520,6 +520,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         "recent_artist_mbid_counts": recent_artist_mbid_counts,
         "albums": albums, "failures": failures,
         "library_by_title": library_by_title, "genre_cache": genre_cache,
+        "regional_candidates_added": regional_candidates_added,
+        "regional_results_seen": regional_results_seen,
         "recent_family_counts": recent_family_counts, "core_families": core_families,
         "exploration_families": exploration_families, "profile_families": profile_families,
     }
