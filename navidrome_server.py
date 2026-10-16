@@ -1647,11 +1647,9 @@ def _build_new_releases_list():
         music_key=_music_key,
         is_various_artists=_discovery_is_various_artists,
     )
-    from datetime import date, timedelta
-    today = date.today()
-    cutoff_date = (today - timedelta(days=730)).isoformat()
-    current_year = today.year
-    earliest_year = int(cutoff_date[:4])
+    from datetime import date
+    from discovery_new_releases import new_release_window
+    cutoff_date, earliest_year, current_year = new_release_window(date.today())
     candidates = {}
     errors = []
     artist_batch = qualified_artists[:120]
