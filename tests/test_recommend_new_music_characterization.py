@@ -96,7 +96,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         self.assertEqual(result["recommendations"], [])
         self.assertEqual(result["recommendations_returned"], 0)
         self.assertTrue(result["debug_all_candidates"][0]["exact_owned"])
-        self.assertEqual(result["debug_all_candidates"][0]["selection_decision"], "exact_owned")
+        self.assertEqual(result["debug_all_candidates"][0]["selection_decision"], "already_owned")
 
     def test_duplicate_album_ids_are_deduplicated_before_ownership_indexing(self):
         result = self._run_recommendations([
