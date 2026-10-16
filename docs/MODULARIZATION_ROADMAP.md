@@ -1,3 +1,11 @@
+## 2026-10-16 — slskd progress aggregation and speed calculations extracted
+
+- **PR #182:** extracted pure matched-record progress aggregation into `slskd_transfers.summarize_transfer_progress()`. Exact tested head `045131f58365dd0e6538c1712f37f56f639c65ad`; merge `d706b084bc85d78f48ddd9b7d958ce04613fdc3e`. All four required exact-head workflows passed: syntax 1016, Docker packaging/full suite/build 923, runtime smoke 732, validation-only multi-architecture 776.
+- **PR #183:** extracted delta-based speed estimation into `slskd_transfers.estimate_transfer_speed()`. Exact final tested head `fac29c108a1d630f2ffbc6af8dad8a5e88c5368f`; merge `e4e9bd1fad9536f00f3908d753b66147d30ca03f`. All four required workflows passed: syntax 1019, Docker packaging/full suite/build 926 (342 tests), runtime smoke 735, validation-only multi-architecture 779. A failing initial expectation was corrected before the final passing head.
+- Both extractions preserve the public progress schema and keep snapshot locking/state ownership in `navidrome_server.py`. Local assistant-side tests were not run. Publishing/deployment/runtime verification remain unperformed.
+- Keep acquisition-dismissal HTTP 409 deferred until modularization is complete, as directed. Do not weaken cleanup safety.
+- **Next:** refresh current main/open PRs/CI and choose one independent low-coupling seam; do not treat throughput as a quota.
+
 ## 2026-10-16 — slskd queue and progress transfer matching completed
 
 - **Queue request boundary (PR #180):** `slskd_transfers.queue_download_files()` now owns the slskd queue POST. The existing service adapter and `acquisition_orchestration` retain dismissal locking and decision flow. Tested head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`; merged `7c670f2eac838934bc9afa7f40f892ff595ca4ca`. All four required exact-head workflows passed.
