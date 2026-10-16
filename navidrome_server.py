@@ -295,6 +295,7 @@ def recommend_new_music(count: int = 10) -> str:
 
     from discovery_recommendations import (
         classify_diversity_style,
+        apply_lastfm_popularity_bonus,
         classify_recommendation_category,
         genre_families,
         primary_recent_family,
@@ -408,63 +409,11 @@ def recommend_new_music(count: int = 10) -> str:
 
         candidates_by_category[category].append(candidate)
 
-    # Last.fm popularity is a small confidence signal, not a replacement for
-    # personalized relevance. Query a bounded top slice and cache for 30 days.
-    lastfm_checked = 0
-    lastfm_available = bool(_discovery_settings_read().get("lastfm_api_key"))
-    for candidate in sorted(
+    lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),
-        key=lambda album: album["discovery_score"],
-        reverse=True,
-    )[:40]:
-        stats = _lastfm_album_popularity(
-            candidate.get("primary_artist") or candidate.get("artist", ""),
-            candidate.get("album", ""),
-        )
-        if stats is None:
-            continue
-        candidate["lastfm_listeners"] = stats["listeners"]
-        candidate["lastfm_playcount"] = stats["playcount"]
-        candidate["lastfm_tags"] = stats.get("tags", [])
-        if candidate["lastfm_tags"]:
-            candidate["listening_families"] = sorted(
-                recent_style_families(candidate["lastfm_tags"])
-            )
-            candidate["recent_profile_families"] = [
-                family for family in candidate["listening_families"]
-                if recent_family_counts.get(family, 0) > 0
-            ]
-            candidate["recent_profile_family"] = primary_recent_family(
-                candidate["lastfm_tags"], recent_family_counts
-            )
-            old_profile_bonus = candidate.get("recent_profile_bonus", 1.0)
-            matched_families = candidate["recent_profile_families"]
-            if matched_families and recent_family_counts:
-                max_count = max(recent_family_counts.values())
-                average_count = sum(
-                    recent_family_counts[family]
-                    for family in matched_families
-                ) / len(matched_families)
-                new_profile_bonus = 1.0 + 0.10 * average_count / max_count
-            else:
-                new_profile_bonus = 1.0
-            candidate["discovery_score"] = (
-                candidate["discovery_score"]
-                / old_profile_bonus
-                * new_profile_bonus
-            )
-            candidate["recent_profile_bonus"] = new_profile_bonus
-        lastfm_checked += 1
-        listener_signal = min(
-            1.0, __import__("math").log10(stats["listeners"] + 1) / 6.0
-        )
-        playcount_signal = min(
-            1.0, __import__("math").log10(stats["playcount"] + 1) / 7.0
-        )
-        candidate["lastfm_popularity_bonus"] = (
-            1.0 + 0.08 * listener_signal + 0.04 * playcount_signal
-        )
-        candidate["discovery_score"] *= candidate["lastfm_popularity_bonus"]
+        recent_family_counts,
+        _lastfm_album_popularity,
+    )
 
     for group in candidates_by_category.values():
         group.sort(
