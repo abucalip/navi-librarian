@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from navidrome_client import api_call, items
+from navidrome_client import api_call, items, search_result_payload
 
 
 class FakeResponse:
@@ -39,6 +39,24 @@ class NavidromeClientTests(unittest.TestCase):
         self.assertEqual(items("single"), ["single"])
         self.assertEqual(items(["first", "second"]), ["first", "second"])
         self.assertEqual(items([]), [])
+
+
+    def test_search_result_payload_preserves_category_and_field_contract(self):
+        result = {
+            "artist": [{"id": "a1", "name": "Artist", "extra": "ignored"}],
+            "album": {"id": "b1", "name": "Album", "year": "2001"},
+            "song": [{"id": "t1", "title": "Track", "duration": 180, "playCount": 4}],
+        }
+        self.assertEqual(search_result_payload(result, "artist"), {
+            "artist": [{"id": "a1", "name": "Artist", "artist": None, "album": None,
+                        "year": None, "duration": None, "playCount": None}],
+        })
+        self.assertEqual(search_result_payload(result, "album"), {
+            "album": [{"id": "b1", "name": "Album", "artist": None, "album": None,
+                       "year": "2001", "duration": None, "playCount": None}],
+        })
+        self.assertEqual(search_result_payload(result, "all")["song"][0]["title"] if "title" in search_result_payload(result, "all")["song"][0] else None, None)
+        self.assertEqual(list(search_result_payload(result, "all")), ["artist", "album", "song"])
 
     def test_authentication_request_and_success_response(self):
         response = FakeResponse({"subsonic-response": {"status": "ok", "artists": []}})
