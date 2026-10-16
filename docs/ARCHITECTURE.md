@@ -389,6 +389,10 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 - Exact tested head `59c8d13ba57930400675e4f9ff90ccba919b63aa`; all four workflows passed: Python syntax run 1144, Docker packaging/full suite/build run 1051, container runtime smoke run 860, and validation-only multi-architecture validation run 904.
 - Merged at `51c4e03ac3a65cd74a25c6aced897bfa4d74a989`. No publication or deployment.
 
-## Deezer artwork selection boundary (PR #216 in progress)
+## Deezer artwork selection boundary (PR #216 merged)
 
-`app/services/deezer_artwork.py` owns pure selection and response shaping for relevant Deezer album artwork and exact-name artist-photo fallback. `app/api/metadata.py` remains responsible for provider I/O, the cache and its TTLs, transient failure/retry behavior, and endpoint response flow. The new helper imports the existing album relevance/year policy rather than duplicating it. Direct-import and route-level regressions are added; CI verification is pending.
+`app/services/deezer_artwork.py` owns pure selection and response shaping for relevant Deezer album artwork and exact-name artist-photo fallback. `app/api/metadata.py` remains responsible for provider I/O, the cache and its TTLs, transient failure/retry behavior, and endpoint response flow. The helper reuses the existing album relevance/year policy. PR #216 merged at `ad61b1b91a5c351a73c02e37d7639bc47c61a52f` from exact tested head `aa1099e8ed43b9afcce483a50be31226a66218f4`; all four workflows passed (syntax 1148, Docker/full suite/build 1055, runtime smoke 864, validation-only multi-architecture 908).
+
+## Deezer album-details shaping boundary (PR #217 in progress)
+
+`app/services/deezer_album_details.py` owns the pure projection of a matched Deezer album row into the established matched-artist, matched-album, year, and artwork URL fields. `app/api/metadata.py` retains provider I/O, exact catalog matching, tracklist retrieval, error handling, and response assembly. Direct-import and route regressions are added; final CI verification is pending.
