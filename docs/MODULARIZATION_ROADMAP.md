@@ -1,3 +1,7 @@
+## 2026-10-16 — Artist-biography identity matching extraction (PR preparation)
+
+A small, independently testable metadata boundary is being extracted from `app/api/metadata.py`: pure Wikidata/Wikipedia identity matching and biography text selection move into `app/services/artist_bio.py`. Provider I/O, concurrent retrieval, cache ownership, and HTTP behavior remain in the route module. Direct-import tests protect exact QID matching, disambiguation handling, safe fallback, entity ranking, and truncation. Verify focused/full tests, syntax, container smoke, and non-publishing multi-architecture validation on the exact final PR head before merge.
+
 ## 2026-10-16 — Dashboard-pick service extraction merged (PR #189)
 
 PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`. Dashboard candidate aggregation and category balancing moved to `app/services/dashboard.py`, with injected list-reading, eligibility, and shuffle dependencies. Route validation and response contract remain in `app/api/dashboard.py`. All four required exact-head workflows passed: syntax 1052, Docker packaging/full suite/build 959, runtime smoke 768, and validation-only multi-architecture 812. No local test run, publication, or deployment is claimed. Acquisition dismissal HTTP 409 remains deferred.
