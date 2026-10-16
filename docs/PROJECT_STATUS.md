@@ -1802,3 +1802,12 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - No publication, deployment, or production runtime verification is claimed.
 - **Next action:** use this interface for a separate allocator implementation only if the existing policy can be moved without callbacks or shared mutable state, with direct-import policy-parity tests for style reservations, quotas, duplicates/per-artist limits, ownership/manual review, fallback ordering, diagnostics, and the 60-check cap. If not, refine or abandon the boundary.
 
+
+
+## 2026-10-16 — PR #233 merged: New Releases library qualification
+
+- PR #233 merged to `main` from exact final PR head `2512a638001e922f5c507994b2f1e667bab9615a`; squash merge commit `08e20f502e10f829bf9ae7920106b7e8427668eb`.
+- Extracted `prepare_new_release_library_scope()` to `discovery_new_releases.py`, with direct-import tests for the six-track full-album threshold, Various Artists/blank-name exclusions, stable descending album-count order, and normalized owned-album identities. Provider/cache/rate-limit operations, date policy, adapter cap, error reporting, and candidate merging remain in the adapter.
+- All four required workflows passed on the exact final PR head: syntax/acquisition safety run `38934216294`; Docker packaging/full unit suite/build run `38934216395`; container runtime smoke run `38934216347`; validation-only multi-architecture build (`push: false`) run `38934216280`.
+- Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed; publishing remains paused.
+- **Next action:** refresh GitHub main, open PRs, docs, and CI, then select the next independently testable remaining roadmap boundary. Do not treat extraction count as a quota.
