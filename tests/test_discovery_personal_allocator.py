@@ -52,8 +52,11 @@ class PersonalAllocatorTests(unittest.TestCase):
             item("second-album", artist="same", album="two", category="adjacent", score=3),
             item("other", artist="other", album="other", category="cross_genre"),
             item("last", category="adventurous"),
-        ], count=3))
-        self.assertEqual(result.selected_candidate_ids, ("first", "other", "last"))
+            item("fallback", category="unclassified", score=0.5),
+        ], count=4))
+        self.assertEqual(
+            result.selected_candidate_ids, ("first", "other", "last", "fallback")
+        )
         statuses = {decision.candidate_id: decision.status for decision in result.decisions}
         self.assertEqual(statuses["duplicate"], "duplicate_candidate")
         self.assertEqual(statuses["second-album"], "artist_already_selected")
