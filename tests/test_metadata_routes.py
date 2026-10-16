@@ -81,6 +81,7 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertEqual(result["matched_artist"], "Artist")
         self.assertEqual(result["matched_album"], "Album")
         self.assertEqual(result["year"], 2001)
+        self.assertEqual(result["artwork_url"], "https://example.test/cover.jpg")
         self.assertEqual(result["tracks"], [
             {"track_number": 1, "title": "Opening", "duration_seconds": 123},
             {"track_number": 2, "title": "Finale", "duration_seconds": 234},

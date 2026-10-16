@@ -1114,9 +1114,15 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Exact tested head `59c8d13ba57930400675e4f9ff90ccba919b63aa`; all four workflows passed: Python syntax run 1144, Docker packaging/full suite/build run 1051, container runtime smoke run 860, and validation-only multi-architecture validation run 904.
 - Merged at `51c4e03ac3a65cd74a25c6aced897bfa4d74a989`. No publication or deployment.
 
-## 2026-10-16 — PR #216 in progress: Deezer artwork selection
+## 2026-10-16 — PR #216 merged: Deezer artwork selection
 
 - Extracted pure album-artwork relevance selection/payload shaping and exact-artist photo fallback shaping into `app/services/deezer_artwork.py`. `app/api/metadata.py` retains request sequencing, cache ownership, provider-failure/retry behavior, and HTTP validation.
-- Added direct-import tests for the relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year handling, exact artist identity, missing photos, and empty results; route regressions cover album selection and artist-photo fallback.
-- Initial implementation head `5fd8edb4a5e0962218ec9a144b7ce57a7de25614` passed all four workflows: Python syntax run 1147, Docker packaging/full suite/build run 1054, container runtime smoke run 863, and validation-only multi-architecture image validation run 907. The assistant did not run the test suite locally.
-- Documentation closeout updates are being added on this branch; rerun all four workflows on the resulting final PR head before merge. Publishing/deployment remain paused.
+- Added direct-import tests for relevance threshold, best candidate, resolution preference, HTTPS normalization, release-year handling, exact artist identity, missing photos, and empty results; route regressions cover album selection and artist-photo fallback.
+- Exact final tested head `aa1099e8ed43b9afcce483a50be31226a66218f4`; all four workflows passed: Python syntax run 1148, Docker packaging/full suite/build run 1055, container runtime smoke run 864, and validation-only multi-architecture image validation run 908. Assistant-side local tests were not run.
+- Squash merge commit `ad61b1b91a5c351a73c02e37d7639bc47c61a52f`. Publishing, deployment, and production runtime verification remain unclaimed.
+
+## 2026-10-16 — PR #217 in progress: Deezer matched album payload shaping
+
+- Extracted the pure projection of a matched Deezer album row into `app/services/deezer_album_details.py`. The metadata route retains provider requests, exact matching, tracklist retrieval, error handling, and endpoint response assembly.
+- Direct-import tests cover cover-size preference, HTTP-to-HTTPS normalization, release-year parsing, and missing fields; the route regression asserts the existing artwork field.
+- Branch: `refactor/extract-deezer-album-details-shaping`. Assistant-side local tests have not been run; final diff review and all four exact-head workflows are pending. Publishing/deployment remain paused.
