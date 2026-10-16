@@ -633,3 +633,13 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Retained the broader-search orchestration test and the import-status persistence guard in the AST harness: these still exercise behavior owned by the legacy search implementation/import adapter, and no equivalent extracted owner currently represents the full tested behavior. Existing assertions were not removed or weakened.
 - Updated `docs/architecture/AST_TEST_INVENTORY.md`, `docs/MODULARIZATION_ROADMAP.md`, and `docs/PROJECT_STATUS.md` to reflect the remaining boundary accurately.
 - Branch: `test/direct-import-acquisition-lifecycle`, based on GitHub main `d5e3b77aded4f32cd2d188598747b9dac820a9e6`. Tests were not executed in this authoring environment; verify focused and full suite plus all four required workflows on the exact final PR-head SHA before merge. No merge, publication, deployment, or runtime verification is claimed.
+
+
+## 2026-10-16 — Adopt recommendation and operational-surface audit
+
+- Added `recommend_new_music()` to the active roadmap as a major live responsibility (audit estimate: about 1,058 lines, roughly lines 282–1340). The required order is deterministic fake-provider characterization first, inventory-overlap review against `discovery_library_snapshot.py`, then extraction of provider-injected candidate gathering while preserving route/MCP compatibility and existing allocator/payload modules.
+- Added a measurable CI size-ratchet task for `navidrome_server.py` and recorded top-level-function limits. The audit estimate of 3,514 server lines must be verified against the exact current main SHA before it becomes a threshold; limits need explicit, temporary exceptions and pass/fail tests.
+- Flagged MCP-exposed `restart_server` and `apply_server_patch` as an owner decision, not an automatic refactor. No authorization or exposure decision is assumed. If retained after owner approval, the roadmap calls for a dedicated ops module and tests for unique-match rejection, no-op on mismatch, and occupied-port/restart failure.
+- Added an explicit audit of mutable `MUSIC_DIR` before settings-wrapper work, and a concise line-referenced policy-vs-orchestration decision for `_discovery_acquire_album_impl()`.
+- Updated workflow guidance to allow independent audit gates to run as separate concurrent PRs only when dependencies and file overlap have been checked. Each still requires exact-head verification and documented evidence.
+- This documentation change does not modify application behavior or make the product decision about the operational MCP tools. Test/CI, merge, publishing, deployment, and runtime status must be recorded after PR verification; none is claimed here.

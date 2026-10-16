@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (acquisition request lifecycle tests migrated to direct coordinator imports)  
-GitHub source of truth: `main` at `d5e3b77aded4f32cd2d188598747b9dac820a9e6` (PR #251 documentation closeout)
+Last reviewed: 2026-10-16 (recommendation and operational-surface audit adopted)  
+Documentation branch base: GitHub `main` at `3d99647ceec5e69deebacd622588470c5b4c3c65`
 
 ## Current focus
 
@@ -9,10 +9,12 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Finish the AST/source-coupling audit: decide whether the remaining legacy broader-search and import-status persistence tests can be moved behind existing production owners without creating a second orchestration layer; otherwise keep narrowly scoped AST tests.
-2. Add an allowlist-aware app-import boundary guard that recognizes the reviewed lazy adapter in `app/api/dependencies.py` and preserves the app-import isolation regression.
-3. Then evaluate `service_settings.py` wrappers and the acquisition coordinator's policy-vs-orchestration seam.
-4. Do not force additional classics-builder or size-only slskd extractions.
+1. Finish the AST/source-coupling audit and add the allowlist-aware app-import boundary guard; keep lifecycle/concurrency/persistence/recovery safety coverage intact.
+2. Add deterministic characterization tests for `recommend_new_music()` using fake ListenBrainz, MusicBrainz, library, and Last.fm responses; inspect `discovery_library_snapshot.py` before extracting candidate gathering.
+3. Add a CI size ratchet after verifying the 3,514-line audit baseline and recording function-size limits against the exact main SHA.
+4. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates in separate PRs only when no dependency or file overlap exists.
+5. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
+6. Do not force additional classics-builder or size-only slskd extractions.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`. Request coordination lifecycle tests now exercise `acquisition_request_coordinator.acquire_album_request()` directly; the legacy AST harness remains only for behaviors without a suitable extracted owner.
 
