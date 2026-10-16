@@ -1,6 +1,6 @@
 # Test plan
 
-Last updated: 2026-10-16
+Last updated: 2026-10-16 (modularization audit gates added)
 
 This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
@@ -24,6 +24,26 @@ After the final code or documentation commit, verify all four workflows on the *
 - Validation-only multi-architecture image validation.
 
 The multi-architecture workflow must remain non-publishing (`push: false`). A workflow existing, a successful compile, or a container starting does not prove all required checks passed. If a workflow is missing, skipped, cancelled, or associated with another SHA, state that explicitly and do not claim the gate is complete.
+
+## Modularization completion audit
+
+Run the AST dependency map from the repository root and review its output with the runtime/import inspection:
+
+```sh
+python scripts/dep_map.py --output docs/architecture/dependency-map.json
+```
+
+Commit the generated map only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
+
+Inventory tests that read `navidrome_server.py` as source or parse it with `ast`. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
+
+Before declaring modularization complete, inspect all Python references under `app/`:
+
+```sh
+grep -r "navidrome_server" app/ --include="*.py"
+```
+
+Expected result: no domain/API imports of `navidrome_server.py`; only explicitly documented MCP compatibility shims may remain. Review the matches, do not treat a grep exit code alone as proof. Add this allowlist-aware check to CI after the intentional compatibility import locations are confirmed from current code. The AST map and grep are complementary checks.
 
 ## UI changes
 
