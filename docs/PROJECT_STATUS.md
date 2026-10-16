@@ -1699,8 +1699,18 @@ Never record credentials, API keys, cookies, or other secrets in documentation.
 - Exact final tested head `b631f4c6367c68357cbd91f75b986770edfeee0e`; all four workflows passed: Python syntax run 1151, Docker packaging/full suite/build run 1058, container runtime smoke run 867, and validation-only multi-architecture image validation run 911. Assistant-side local tests were not run.
 - Squash merge commit `37f04d0a863f69f5596f6a46406cc8bd64bde039`. Publishing, deployment, and production runtime verification remain unclaimed.
 
-## 2026-10-16 — PR #218 in progress: exact Deezer release-year selection
+## 2026-10-16 — PR #218 merged: exact Deezer release-year selection
 
-- Extracted the pure rule that returns the first plausible release year among exact artist+album matches into `exact_album_release_year()` in `app/services/deezer_album_matching.py`. Provider requests and the `MusicBrainz`-first response contract remain in the metadata route.
+- Extracted the pure rule that returns the first plausible year among exact artist+album matches into `exact_album_release_year()` in `app/services/deezer_album_matching.py`. Provider requests and the `MusicBrainz`-first response contract remain in the metadata route.
 - Direct-import regressions cover skipping non-exact/invalid-year results and preserving result order; a route-level regression covers the Deezer fallback source/year contract.
-- Branch: `refactor/extract-deezer-exact-release-year`. Assistant-side local tests have not been run; final diff review and all four exact-head workflows are pending. Publishing/deployment remain paused.
+- Exact final tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; all four workflows passed: Python syntax run 1153, Docker packaging/full suite/build run 1060, container runtime smoke run 869, and validation-only multi-architecture image validation run 913. Assistant-side local tests were not run.
+- Squash merge commit `6dc6adae89169638da9a158c79ccee5d2e1ddfb7`. Publishing, deployment, and production runtime verification remain unclaimed.
+
+## 2026-10-16 — Modularization session closeout: PRs #216–#218
+
+- **PR #216 — Deezer artwork selection:** exact final tested head `aa1099e8ed43b9afcce483a50be31226a66218f4`; syntax 1148, Docker/full suite/build 1055, runtime smoke 864, validation-only multi-architecture 908 all passed; merge `ad61b1b91a5c351a73c02e37d7639bc47c61a52f`.
+- **PR #217 — matched Deezer album payload shaping:** exact final tested head `b631f4c6367c68357cbd91f75b986770edfeee0e`; syntax 1151, Docker/full suite/build 1058, runtime smoke 867, validation-only multi-architecture 911 all passed; merge `37f04d0a863f69f5596f6a46406cc8bd64bde039`.
+- **PR #218 — exact Deezer release-year selection:** exact final tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; syntax 1153, Docker/full suite/build 1060, runtime smoke 869, validation-only multi-architecture 913 all passed; merge `6dc6adae89169638da9a158c79ccee5d2e1ddfb7`.
+- All three PRs added direct-import regression coverage and preserved route/provider/cache ownership. Assistant-side local test commands were not run; the Docker packaging workflows ran the full unit suite. No publication, deployment, or production runtime verification is claimed.
+- Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred per user direction; no acquisition/import/deletion semantics were changed.
+- **Next action:** refresh GitHub main/open PRs/CI and inspect remaining application-assembly/domain-service boundaries before selecting the next independent seam. Do not treat extraction count as a quota.
