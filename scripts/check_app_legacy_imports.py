@@ -30,11 +30,17 @@ def _legacy_import_nodes(tree: ast.AST) -> list[tuple[ast.AST, tuple[str, ...]]]
         visit_AsyncFunctionDef = visit_FunctionDef
 
         def visit_Import(self, node: ast.Import) -> None:
-            if any(alias.name == "navidrome_server" or alias.name.startswith("navidrome_server.") for alias in node.names):
+            if any(
+                alias.name == "navidrome_server"
+                or alias.name.startswith("navidrome_server.")
+                for alias in node.names
+            ):
                 found.append((node, tuple(self.functions)))
 
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-            if node.module == "navidrome_server" or (node.module or "").startswith("navidrome_server."):
+            if node.module == "navidrome_server" or (node.module or "").startswith(
+                "navidrome_server."
+            ):
                 found.append((node, tuple(self.functions)))
 
     Visitor().visit(tree)
@@ -56,7 +62,13 @@ def check_app_imports(root: Path) -> list[str]:
 
         relative = path.relative_to(root)
         for node, functions in _legacy_import_nodes(tree):
-            allowed = (\n                relative == ALLOWED_PATH\n                and functions == (ALLOWED_FUNCTION,)\n                and isinstance(node, ast.Import)\n                and len(node.names) == 1\n                and node.names[0].name == "navidrome_server"\n            )
+            allowed = (
+                relative == ALLOWED_PATH
+                and functions == (ALLOWED_FUNCTION,)
+                and isinstance(node, ast.Import)
+                and len(node.names) == 1
+                and node.names[0].name == "navidrome_server"
+            )
             if not allowed:
                 errors.append(
                     f"{relative}:{node.lineno}: unapproved import of navidrome_server"
