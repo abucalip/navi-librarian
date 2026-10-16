@@ -1,6 +1,6 @@
-## 2026-10-16 — New Releases lookup construction extraction in progress
+## 2026-10-16 — New Releases lookup construction completed (PR #236)
 
-The next narrow discovery seam isolates MusicBrainz artist-query construction and the corresponding versioned cache key in `discovery_new_releases.build_new_release_lookup()`. The server adapter continues to own provider requests, cache reads/writes, rate limiting, error collection, and date-window policy. Preserve the exact escaped artist query, query date bounds, and cache-key format; direct-import tests cover quotes/backslashes and stable normalized keys. Require focused/full tests and all four exact-head CI workflows before merge. Publishing/deployment remain paused.
+Merged at `aaa748f2dfdc307d79faf5397a51dbfbcd75ec6c` from exact tested head `990e3ddfe08b6b1590860e8fd07d0ac13882be3e`. `discovery_new_releases.build_new_release_lookup()` now owns the pure query and cache-key rule; provider/cache/rate-limit/error behavior stays in the adapter. Direct-import regressions added. All four required exact-head workflows passed: syntax/acquisition safety `38938238608`, Docker/full suite/build `38938238694`, runtime smoke `38938238678`, validation-only multi-architecture `38938238904`. No assistant-side local test run or publication/deployment/runtime verification claimed.
 
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
