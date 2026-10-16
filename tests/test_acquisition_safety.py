@@ -45,7 +45,6 @@ def load_helpers():
         "_discovery_import_completed_source",
         "_discovery_import_completed_source_locked",
         "_discovery_acquire_album_impl",
-        "discovery_acquire_album",
     }
     selected = [
         node for node in tree.body
@@ -227,6 +226,24 @@ class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
         self.ns = load_helpers()
 
+    def acquire(self, artist, album, metadata_json="{}", auto_queue=True):
+        """Exercise the real request coordinator with the lifecycle's injected state."""
+        return _module_acquire_album_request(
+            artist, album, metadata_json, auto_queue,
+            music_key=self.ns["_music_key"],
+            transition_lock=self.ns["_DISCOVERY_IMPORT_TRANSITION_LOCK"],
+            watcher_lock=self.ns["_DISCOVERY_IMPORT_LOCK"],
+            active_watchers=self.ns["_DISCOVERY_IMPORT_ACTIVE"],
+            active_requests=self.ns["_DISCOVERY_ACQUIRE_ACTIVE"],
+            list_jobs=self.ns["_discovery_list_acquisition_jobs"],
+            is_dismissed=self.ns["_discovery_is_dismissed"],
+            reactivate=self.ns["_discovery_reactivate_dismissed_acquisition"],
+            start_watcher=self.ns["_discovery_start_import_watcher"],
+            lifecycle=_acquisition_lifecycle,
+            json_module=json,
+            acquire_impl=self.ns["_discovery_acquire_album_impl"],
+        )
+
     def test_simultaneous_requests_do_not_run_two_acquisition_searches(self):
         entered_impl = threading.Event()
         release_impl = threading.Event()
@@ -242,11 +259,11 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.ns["_discovery_acquire_album_impl"] = slow_impl
         first_result = []
         first = threading.Thread(target=lambda: first_result.append(
-            self.ns["discovery_acquire_album"]("Artist", "Album")
+            self.acquire("Artist", "Album")
         ))
         first.start()
         self.assertTrue(entered_impl.wait(timeout=2))
-        second_result = self.ns["discovery_acquire_album"]("Artist", "Album")
+        second_result = self.acquire("Artist", "Album")
         release_impl.set()
         first.join(timeout=3)
 
@@ -297,7 +314,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.ns["_discovery_acquire_album_impl"] = lambda *args: impl_calls.append(args)
         self.ns["_discovery_start_import_watcher"] = lambda *args: watcher_calls.append(args)
 
-        result = json.loads(self.ns["discovery_acquire_album"]("Artist", "Album"))
+        result = json.loads(self.acquire("Artist", "Album"))
 
         self.assertEqual(result["status"], "recovery_unavailable")
         self.assertEqual(impl_calls, [])
@@ -325,7 +342,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.ns["_discovery_acquire_album_impl"] = lambda *args: json.dumps({
             "ok": True, "status": "implementation_called"
         })
-        result = json.loads(self.ns["discovery_acquire_album"](
+        result = json.loads(self.acquire(
             "Artist", "Album", json.dumps({"mbid": "release-id"})
         ))
 
@@ -342,7 +359,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
             "status": "dismissed",
         })
         self.ns["_discovery_reactivate_dismissed_acquisition"] = lambda *_args, **_kwargs: False
-        result = json.loads(self.ns["discovery_acquire_album"]("Artist", "Album"))
+        result = json.loads(self.acquire("Artist", "Album"))
 
         self.assertEqual(result["status"], "dismissed")
         self.assertEqual(result["ok"], False)
@@ -360,7 +377,7 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         impl_calls = []
         self.ns["_discovery_acquire_album_impl"] = lambda *args: impl_calls.append(args)
 
-        result = json.loads(self.ns["discovery_acquire_album"]("Artist", "Album"))
+        result = json.loads(self.acquire("Artist", "Album"))
 
         self.assertEqual(result["status"], "recovery_started")
         self.assertEqual(impl_calls, [])

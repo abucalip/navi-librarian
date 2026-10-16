@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #250 pure-helper test migration merged)  
-GitHub source of truth: `main` includes pure-helper test migration merge `c71a330ee6b5d44595c0c70299e8a61a45b15ab4` (PR #250)
+Last reviewed: 2026-10-16 (acquisition request lifecycle tests migrated to direct coordinator imports)  
+GitHub source of truth: `main` at `d5e3b77aded4f32cd2d188598747b9dac820a9e6` (PR #251 documentation closeout)
 
 ## Current focus
 
@@ -9,12 +9,12 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Map the remaining acquisition-safety lifecycle tests to direct production interfaces where a real owner exists; preserve concurrency, persistence, recovery, and unsafe-failure coverage.
+1. Finish the AST/source-coupling audit: decide whether the remaining legacy broader-search and import-status persistence tests can be moved behind existing production owners without creating a second orchestration layer; otherwise keep narrowly scoped AST tests.
 2. Add an allowlist-aware app-import boundary guard that recognizes the reviewed lazy adapter in `app/api/dependencies.py` and preserves the app-import isolation regression.
 3. Then evaluate `service_settings.py` wrappers and the acquisition coordinator's policy-vs-orchestration seam.
 4. Do not force additional classics-builder or size-only slskd extractions.
 
-The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`.
+The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`. The AST/source-coupling inventory is `docs/architecture/AST_TEST_INVENTORY.md`. Request coordination lifecycle tests now exercise `acquisition_request_coordinator.acquire_album_request()` directly; the legacy AST harness remains only for behaviors without a suitable extracted owner.
 
 ## Delivery and verification state
 
