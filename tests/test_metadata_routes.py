@@ -65,6 +65,26 @@ class MetadataRoutesTests(unittest.TestCase):
             })
         client.get.assert_not_called()
 
+    def test_album_year_uses_first_plausible_exact_deezer_fallback(self):
+        response = _Response({"data": [
+            {"artist": {"name": "Artist Tribute"}, "title": "Album",
+             "release_date": "1990-01-01"},
+            {"artist": {"name": "Artist"}, "title": "Album",
+             "release_date": "unknown"},
+            {"artist": {"name": "ARTIST"}, "title": "ALBUM",
+             "release_date": "2004-06-01"},
+            {"artist": {"name": "Artist"}, "title": "Album",
+             "release_date": "2010-01-01"},
+        ]})
+        with patch.object(metadata, "_musicbrainz_album_year", return_value=None), \
+             patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.return_value = response
+            result = metadata.album_year("Artist", "Album")
+        self.assertEqual(result, {
+            "artist": "Artist", "album": "Album", "year": 2004, "source": "Deezer"
+        })
+        client.get.assert_called_once()
+
     def test_album_details_returns_exact_match_and_tracklist(self):
         search = _Response({"data": [{
             "artist": {"name": "Artist"}, "title": "Album",
