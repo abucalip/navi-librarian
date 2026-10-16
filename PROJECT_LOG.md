@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm top albums extraction (PR #175)
+
+- Branch `refactor/extract-lastfm-top-albums`, based on main `4dd8b926a7a6cf76e248420860d7c29c892da3c0`.
+- Moved cached `artist.getTopAlbums` response normalization into `LastFmClient.artist_top_albums()` while retaining discovery-specific filtering in `_lastfm_top_albums()`.
+- Added direct-import tests and updated architecture/roadmap/status documentation. PR #175 open; exact-head CI pending. No local test, publishing, deployment, or production runtime verification claimed.
+- Acquisition dismissal HTTP 409 remains deferred by explicit direction.
+
+---
+
 ## 2026-10-16 — Three-extraction session closeout (PRs #170–#172)
 
 - Starting GitHub `main`: `098c5d9d8536070c1115ec2a7c25b99490efb312`. Final code `main`: `d5153a3fe0625bc52b5896e87846b55cabe58e81`.
