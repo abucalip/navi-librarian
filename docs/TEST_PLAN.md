@@ -1,13 +1,8 @@
-## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
+## 2026-10-16 — Verification closeout: PRs #225 and #226
 
-- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
-- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
-
-## 2026-10-16 — PR #225 verification: cached discovery-list payload
-
-- Direct-import tests in `tests/test_discovery_list_payload.py` cover missing-cache response shape; dismissal, saved-item, and non-album filtering; personal recommendations/diagnostics; and count versus pre-feedback total.
-- Exact final head `573fe05d31dae422c25188688cd2fa949339e487` passed syntax/acquisition safety run 1187, Docker packaging/full unit suite (477 tests)/build run 1095, isolated runtime smoke run 904, and validation-only multi-architecture image validation run 948. Squash merge: `4d968b381d1f541b81a4a46d1753b5145347e33d`.
-- Initial CI caught an incorrect assertion for a field not present in the legacy top-level payload; corrected before the final passing head. No independent local test command, publication, deployment, or production runtime verification is claimed.
+- **PR #225 — cached discovery-list payload:** direct-import tests cover missing cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior. Exact head `573fe05d31dae422c25188688cd2fa949339e487` passed syntax/acquisition safety 1187, Docker packaging/full suite (477 tests)/build 1095, runtime smoke 904, and validation-only multi-architecture image validation 948. Squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
+- **PR #226 — background listening-profile refresh:** direct-import tests cover success/persistence, error payloads, malformed JSON, and sanitized provider exceptions. Exact head `740979f1b4da4f5c13632ab3598c13bc09ed413e` passed syntax/acquisition safety 1189, Docker packaging/full suite (481 tests)/build 1097, runtime smoke 906, and validation-only multi-architecture image validation 950. Squash merge `f5a95338e978a14d01fb6a1c3741e2e6c8bea11c`.
+- No assistant-side local test commands, image publication, deployment, or production runtime verification are claimed. Publishing remains paused.
 
 ## 2026-10-16 — PR #224 verification: personal recommendation payload projection
 

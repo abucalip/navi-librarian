@@ -1,14 +1,8 @@
-## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
+## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
-- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
-- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
-
-## 2026-10-16 — PR #225 merged: cached discovery-list projection
-
-- Exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
-- `discovery_list_payload.build_cached_discovery_list_response()` owns cached-list filtering and response projection. Validation, feedback persistence/read, For Me inventory, and injected dependency wiring remain in the adapter.
-- All four workflows passed: syntax/acquisition safety 1187, Docker/full suite/build 1095 (477 tests), runtime smoke 904, validation-only multi-architecture 948. Initial test-fixture assertion was corrected before the final passing head.
-- No publication/deployment/runtime claim.
+- **PR #225:** cached discovery-list filtering/projection moved to `discovery_list_payload.build_cached_discovery_list_response()`; exact head `573fe05d31dae422c25188688cd2fa949339e487`, squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. All four workflows passed: syntax/acquisition safety 1187, Docker/full suite/build 1095 (477 tests), runtime smoke 904, validation-only multi-architecture 948.
+- **PR #226:** background listening-profile refresh moved to `listening_profile.refresh_and_persist_background_profile()`; exact head `740979f1b4da4f5c13632ab3598c13bc09ed413e`, squash merge `f5a95338e978a14d01fb6a1c3741e2e6c8bea11c`. All four workflows passed: syntax/acquisition safety 1189, Docker/full suite/build 1097 (481 tests), runtime smoke 906, validation-only multi-architecture 950.
+- Both retain server-owned validation/provider/persistence dependencies at the adapter boundary. No publication, deployment, or production runtime verification.
 
 ## 2026-10-16 — Session closeout: PRs #223 and #224 merged
 
