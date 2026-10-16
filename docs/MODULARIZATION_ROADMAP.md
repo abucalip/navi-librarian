@@ -1,3 +1,7 @@
+## 2026-10-16 — Watcher progress-accounting seam (PR pending)
+
+A narrow, deterministic helper `acquisition_progress_accounting.observe_progress()` owns only the byte-counter comparison and progress-marker/timer update. The watcher retains its two-minute stall policy, 15-second switch countdown, source-switch/reset orchestration, slskd polling, filesystem verification, and import safety decisions. Direct-import tests cover progress increase, unchanged/decreasing observations, and the exact timeout boundary. This is implementation in progress; do not count the extraction complete until the final diff and all four required workflows pass on the exact PR head.
+
 ## 2026-10-16 — Classics-list critical-rating extraction completed (PR #229)
 
 The first independently testable seam is critical-rating enrichment, not the whole builder. `discovery_classics_ratings.enrich_critical_ratings(candidates, rating_lookup, shortlist_limit=80, year_limit=30)` owns stable listener-ranked shortlist selection and candidate metadata updates; the adapter retains cached MusicBrainz access, library inventory, Last.fm gathering, scoring/jitter, genre enrichment, diversity selection, and response assembly. Tests inject a deterministic lookup and assert ordering, bounds, missing-rating behavior, and metadata updates. Keep this narrow; do not extract the whole provider/cache-backed pipeline with a large callback surface.
