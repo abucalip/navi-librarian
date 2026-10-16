@@ -1,6 +1,6 @@
-## 2026-10-16 — Classics genre enrichment extraction in progress
+## 2026-10-16 — Classics genre enrichment extracted (PR #231 merged)
 
-The next isolated classics-list stage is `discovery_classics_genres.enrich_classic_genres(ranked, genre_lookup, family_classifier, limit=300)`. It owns normalized-artist lookup deduplication, genre/family annotation for the ranked prefix, and the existing empty/`other` fallback for candidates after the limit. Last.fm cache/provider behavior remains injected in the server adapter. Direct-import tests and Docker packaging are included. Do not expand this into scoring, refresh jitter, or diversity selection.
+PR #231 moved the bounded genre annotation stage to `discovery_classics_genres.enrich_classic_genres(ranked, genre_lookup, family_classifier, limit=300)`. It retains normalized-artist lookup deduplication, order, the 300-candidate boundary, and empty/`other` fallback metadata. Last.fm provider/cache access and family classification remain injected; scoring, refresh jitter, and diversity selection remain in the builder. All four required workflows passed on exact PR head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge `b23d76712a04dcbfc461ceb7245a0676738fca7a`. Publishing and deployment remain paused.
 
 ## 2026-10-16 — Watcher progress-accounting seam completed (PR #230)
 
