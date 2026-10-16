@@ -1337,13 +1337,13 @@ _NEW_RELEASES_REFRESH_LOCK = __import__("threading").Lock()
 
 
 _DISCOVERY_SETTINGS_DEFAULTS = {
-    "navidrome_url": os.environ.get("NAVIDROME_URL", "http://192.168.1.12:4533").rstrip("/"),
+    "navidrome_url": os.environ.get("NAVIDROME_URL", "").strip().rstrip("/"),
     "navidrome_user": os.environ.get("NAVIDROME_USER", ""),
     "navidrome_password": os.environ.get("NAVIDROME_PASSWORD", ""),
     "lastfm_api_key": os.environ.get("LASTFM_API_KEY", ""),
-    "listenbrainz_username": os.environ.get("LISTENBRAINZ_USERNAME", "copi35"),
+    "listenbrainz_username": os.environ.get("LISTENBRAINZ_USERNAME", "").strip(),
     "music_library_path": str(MUSIC_DIR),
-    "slskd_url": os.environ.get("SLSKD_URL", "http://192.168.1.12:5030"),
+    "slskd_url": os.environ.get("SLSKD_URL", "").strip().rstrip("/"),
     "quality_priority": [
         "mp3_320",
         "mp3_193_319",
@@ -1481,7 +1481,7 @@ def discovery_get_slskd_settings() -> str:
 
 
 def discovery_set_slskd_settings(
-    slskd_url: str = "http://192.168.1.12:5030",
+    slskd_url: str = "",
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
     auto_acquire_for_me: bool | None = None,
