@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #270 import-completion service extraction under verification)
+Last reviewed: 2026-10-16 (PR #270 exact-head CI passed; awaiting merge)
 Documentation branch base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
 
 ## Current focus
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Verify PR #270's exact final head; only merge after all four required workflows pass.
+1. Merge PR #270 after final diff review; all four required workflows passed on exact head `0f2c90a576062c78273f3f4fb35ffa6cfb9716e5`.
 2. After merge, re-evaluate the remaining broader-search AST-coupled test without weakening real search/retry, concurrency, or filesystem-safety coverage.
 3. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
 
