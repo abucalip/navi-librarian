@@ -19,10 +19,10 @@ class MusicTagAuditTests(unittest.TestCase):
                 calls.append((path.name, kwargs))
                 if path.name == "a.flac":
                     return SimpleNamespace(tags={
-                        "MusicBrainz Track Id": ["track-id"],
-                        "MusicBrainz Album Id": ["album-id"],
-                        "MusicBrainz Artist Id": ["artist-id"],
-                        "MusicBrainz Album Artist Id": ["albumartist-id"],
+                        "MUSICBRAINZ_TRACKID": ["track-id"],
+                        "MUSICBRAINZ_ALBUMID": ["album-id"],
+                        "MUSICBRAINZ_ARTISTID": ["artist-id"],
+                        "MUSICBRAINZ_ALBUMARTISTID": ["albumartist-id"],
                     })
                 return SimpleNamespace(tags={})
 
@@ -72,6 +72,34 @@ class MusicTagAuditTests(unittest.TestCase):
                 "Music directory is unavailable",
                 scan_missing_mbids(root / "missing", audio_file_reader=reader),
             )
+
+
+    def test_legacy_server_adapter_preserves_json_contract(self):
+        import json
+        from unittest.mock import patch
+        import navidrome_server
+
+        expected = {
+            "directory": "/music",
+            "total_audio_files_found": 0,
+            "offset": 0,
+            "files_in_batch": 0,
+            "files_with_missing_ids": 0,
+            "unreadable_files": 0,
+            "next_offset": 0,
+            "more_files_remaining": False,
+            "results": [],
+            "read_only": True,
+        }
+        with patch.object(navidrome_server, "MUSIC_DIR", Path("/music")), patch.object(
+            navidrome_server, "scan_missing_mbids", return_value=expected
+        ) as scan:
+            result = json.loads(navidrome_server.find_missing_mbids())
+        self.assertEqual(result, expected)
+        scan.assert_called_once_with(
+            Path("/music"), max_files=1000, offset=0,
+            audio_file_reader=navidrome_server.File,
+        )
 
 
 if __name__ == "__main__":
