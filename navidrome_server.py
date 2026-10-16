@@ -313,6 +313,7 @@ def recommend_new_music(count: int = 10) -> str:
     recent_artist_mbid_counts = gathered["recent_artist_mbid_counts"]
     albums = gathered["albums"]
     failures = gathered["failures"]
+    library_albums = gathered["library_albums"]
     library_by_title = gathered["library_by_title"]
     genre_cache = gathered["genre_cache"]
     recent_family_counts = gathered["recent_family_counts"]
