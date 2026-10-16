@@ -1,3 +1,10 @@
+## 2026-10-16 — Navidrome response shaping extracted (PRs #196 and #198)
+
+- **PR #196** merged at 277499ec949353f5f24542a8033a481283814782 from exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836. navidrome_client.search_result_payload() now owns pure search response shaping; search_music() remains the compatibility adapter. Direct-import tests cover category filtering, fields, and output ordering.
+- **PR #198** merged at 92cdd6309244e78e78bd0f6f8d2e38ea929e434b from exact tested head a718780edcb85eb8f4453e44a2d5a4925a512314. navidrome_client.album_details_payload() now owns pure album/track response shaping; get_album_details() remains the compatibility adapter.
+- All four required workflows passed on each exact final head. PR #196: syntax 1088, packaging/full suite/build 995, runtime smoke 804, validation-only multi-architecture 848. PR #198: syntax 1090, packaging/full suite/build 997, runtime smoke 806, validation-only multi-architecture 850.
+- No assistant-side local tests, image publication, deployment, or production runtime verification are claimed. Acquisition-dismissal HTTP 409 remains deferred; publishing remains paused.
+- Next: refresh main/open PRs/CI and identify the next low-coupling seam. Do not treat extraction count as a quota.
 ## 2026-10-16 — Artist-biography identity matching extracted (PR #190)
 
 PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`. Pure Wikidata/Wikipedia identity matching and biography text selection moved into `app/services/artist_bio.py`; provider I/O, concurrent retrieval, cache ownership, and HTTP behavior remain in `app/api/metadata.py`. All four exact-head workflows passed: syntax 1059, Docker packaging/full suite/build 966, runtime smoke 775, and validation-only multi-architecture 819. No local test run, publication, or deployment is claimed.
