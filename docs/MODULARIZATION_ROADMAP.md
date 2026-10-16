@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #261 merged; raw album inventory pagination shared)  
-Baseline: GitHub `main` at `a9bc864df85a8fb643864cb128d6b70f10eb7dce`
+Last reviewed: 2026-10-16 (PR #263 merged; PR #264 diagnoses/fixes response-contract regression)  
+Baseline: GitHub `main` at `87d55561a0d2b7be4bc516ffc146da8c96d8254c`
 
 ## Purpose
 
@@ -20,8 +20,8 @@ The audit identifies `recommend_new_music()` in `navidrome_server.py` (approxima
 Required sequence:
 1. Characterization now covers inventory ownership, duplicate IDs, response shape, inventory failure/limit behavior, score-based output ordering, early ListenBrainz failure/empty-result behavior, the Last.fm bonus, and regional MusicBrainz HTTP failure. PR #261 adds direct tests for the shared raw inventory helper.
 2. **Completed by PR #261:** share raw pagination without reusing `build_library_snapshot()` directly; keep the snapshot's 10-minute cache/normalized schema and the recommendation adapter's fresh raw inventory/error payloads distinct.
-3. Next: extract candidate gathering/provider orchestration behind injected provider callables, keeping provider I/O, policy, and payload shaping distinct. Preserve the public signature, route/MCP compatibility, ordering, failure behavior, and existing allocator/payload contracts.
-4. Add direct-import tests for the extracted seam and adapter-level compatibility tests. Verify output parity against characterization fixtures before expanding behavior.
+3. **Implemented by PR #263; verification regression found:** the provider module omitted `regional_candidates_added` and `regional_results_seen` from its returned mapping, breaking the downstream public response contract. PR #264 adds both fields back and asserts them in characterization coverage; do not proceed until its exact final PR-head CI passes.
+4. After the response-contract fix is verified, continue to the measurable size ratchet below, using measurements from the exact current main revision rather than the older audit estimate.
 
 Acceptance: fixed-provider characterization coverage exists before extraction; inventory overlap is explicitly resolved; candidate gathering is independently testable; route and MCP compatibility remain intact.
 
