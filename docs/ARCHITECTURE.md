@@ -41,7 +41,7 @@ Before declaring modularization complete:
 - trace `app/main.py` and API dependencies on `navidrome_server.py`;
 - distinguish intentional compatibility adapters from accidental coupling;
 - inventory AST/source-reading tests in `docs/architecture/AST_TEST_INVENTORY.md` and move behavioral assertions to direct-import tests without weakening safety coverage;
-- run `grep -r "navidrome_server" app/ --include="*.py"` and allow only documented MCP compatibility shims;
+- run `grep -r "navidrome_server" app/ --include="*.py"` and allow only explicitly documented compatibility adapters. Current known web edge: `app/api/dependencies.py` lazily imports the legacy server inside `get_librarian()`; preserve the app-import isolation regression in `tests/test_auth_routes_integration.py`.
 - verify direct-import and adapter-level regressions for extracted boundaries;
 - identify remaining responsibilities that are justified orchestration/provider wiring rather than forcing further extraction.
 
