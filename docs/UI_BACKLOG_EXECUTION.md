@@ -672,6 +672,10 @@ reconstructing the exact DOM the app's own renderer produces. The structure and 
 results are real; the content is not. The real `loadDiscovery` path was exercised only for the
 empty case.
 
+### Manual browser checklist status
+
+**Pending on the refreshed exact PR-head SHA.** Prior browser-agent measurements used reconstructed/injected deep-dive DOM rather than a real Navidrome library. They are not a substitute for the documented human checklist. After exact-head CI passes, run the full checklist in the isolated local helper, with sandbox paths and slskd disabled; record the exact SHA, viewport checks, keyboard behavior, console/network/server errors, and any skips. Do not merge before this gate is complete.
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
