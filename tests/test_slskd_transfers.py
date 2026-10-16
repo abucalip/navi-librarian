@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from slskd_transfers import (
     download_transfer_files, queue_download_files, match_expected_transfer_records,
-    summarize_transfer_progress,
+    summarize_transfer_progress, estimate_transfer_speed,
 )
 
 
@@ -232,6 +232,20 @@ class SlskdTransferListingTests(unittest.TestCase):
         self.assertEqual(result["total_size_bytes"], 20)
         self.assertEqual(result["transferred_size_bytes"], 20)
         self.assertEqual(result["file_byte_snapshot"], {"a.flac": 99, "b.flac": 0})
+
+
+
+    def test_speed_estimator_requires_baseline_and_half_second_interval(self):
+        current = {"01.flac": 300, "02.flac": 50}
+        self.assertIsNone(estimate_transfer_speed(current, None, 10.0))
+        prior = {"at": 9.75, "files": {"01.flac": 100, "02.flac": 50}}
+        self.assertIsNone(estimate_transfer_speed(current, prior, 10.2))
+        self.assertEqual(estimate_transfer_speed(current, prior, 10.75), 400)
+
+    def test_speed_estimator_ignores_counter_resets_and_new_file_baselines(self):
+        prior = {"at": 1.0, "files": {"old.flac": 500, "same.flac": 100}}
+        current = {"same.flac": 160, "new.flac": 40, "old.flac": 20}
+        self.assertEqual(estimate_transfer_speed(current, prior, 2.0), 100)
 
 
 
