@@ -855,3 +855,8 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - Defined immutable prepared-candidate/request/result types in `discovery_allocation_contract.py`; added direct-import contract invariant tests and the boundary decision document. All four exact-head workflows passed (syntax `38916419736`, Docker/full unit suite/build `38916419709`, runtime smoke `38916419958`, validation-only multi-architecture `38916419701`).
 - The shortlist-selection loops remain in `navidrome_server.py`. The interface probe has no callbacks or shared mutable counters, but it is not proof that the actual policy can be extracted unchanged. Next extraction must first demonstrate parity for reservations, quotas, duplicate/artist limits, ownership review, fallback order, diagnostics, and the 60-check cap; stop/refine if this cannot be achieved within the boundary.
 
+
+
+## 2026-10-16 — New Releases date-window policy extraction in progress
+
+Extract the deterministic 730-day cutoff and derived year bounds into `discovery_new_releases.new_release_window(today)`. Keep the system clock, MusicBrainz provider/cache access, rate limiting, candidate selection, and response assembly in the adapter. Verify exact 730-day and leap-day behavior with direct-import tests, then require all four exact-head workflows before merge. No publication/deployment.
