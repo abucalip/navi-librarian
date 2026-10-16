@@ -1,3 +1,12 @@
+## 2026-10-16 — PR #192 merged: settings tabs and skip-link accessibility
+
+- Replacement for conflicted PR #188, refreshed from main `470b232977b45ee1cf1bf1b399c2c43843062c1f`; PR #192 exact tested head: `75c13b0099285747c9da75c5c3879e6594e5fe36`; squash merge/current main: `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
+- Added a first-tab-stop skip link targeting `main#content`; completed settings tabs keyboard behavior (roving tabindex, arrow/Home/End navigation, wrap-around), and accessible names for all four tab panels. Updated `docs/UI_BACKLOG_EXECUTION.md`.
+- All four required exact-head workflows passed: Python syntax (run 1069), Docker packaging/full unit suite/build (run 976), container runtime smoke (run 785), and validation-only image workflow with publishing paused (run 829).
+- User-published manual browser report in PR #192 comment confirms checklist passed with zero failures on exact head `75c13b0099285747c9da75c5c3879e6594e5fe36`. No assistant-side local tests, image publication, deployment, or production runtime verification are claimed.
+- PR #188 was closed as superseded; PR #192 merged. Main was verified at merge SHA `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
+- Next: refresh GitHub main/open PRs/CI and follow the current priority order; acquisition-dismissal HTTP 409 remains deferred as previously directed.
+
 ## 2026-10-16 — PR #190 merged: artist-biography resolution
 
 - PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested PR head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`.
