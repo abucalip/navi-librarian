@@ -1,7 +1,7 @@
 # Project status
 
 Last reviewed: 2026-10-16 (scripted modularization audit adopted)  
-GitHub source of truth: `main` at review baseline `73897c11bd82f2c0869bad58094d09088b2c6dd2`
+GitHub source of truth: `main` at review baseline `cc2613e1a03e2084f9cbce4febb83a3a24d77600`
 
 ## Current focus
 
