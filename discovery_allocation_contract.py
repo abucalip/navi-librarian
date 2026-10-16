@@ -43,6 +43,7 @@ class AllocationCandidate:
     album_key: str
     category: str
     score: float
+    source_order: int = 0
     diversity_style: str = "other"
     recent_profile_family: str | None = None
     ownership: OwnershipStatus = OwnershipStatus.CLEAR
@@ -55,6 +56,8 @@ class AllocationCandidate:
             raise ValueError(f"unsupported recommendation category: {self.category}")
         if not math.isfinite(self.score):
             raise ValueError("score must be finite")
+        if not isinstance(self.source_order, int) or self.source_order < 0:
+            raise ValueError("source_order must be a non-negative integer")
         if not isinstance(self.ownership, OwnershipStatus):
             raise ValueError("ownership must be an OwnershipStatus")
 
