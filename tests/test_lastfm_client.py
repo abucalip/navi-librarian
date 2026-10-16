@@ -98,6 +98,54 @@ class LastFmClientTests(unittest.TestCase):
 
 
 
+    def test_similar_artists_normalizes_scores_and_preserves_request_contract(self):
+        payload = {"similarartists": {"artist": [
+            {"name": " Artist One ", "match": "0.75"},
+            {"name": "Artist Two", "match": "invalid"},
+            {"name": " ", "match": "1"},
+            None,
+        ]}}
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
+        self.assertEqual(client.similar_artists("Anchor", limit=5), [
+            {"artist": "Artist One", "similarity": 0.75},
+            {"artist": "Artist Two", "similarity": 0.0},
+        ])
+        request = next(row for row in self.calls if row[0] == "http_get")
+        self.assertEqual(request[2]["params"]["method"], "artist.getSimilar")
+        self.assertEqual(request[2]["params"]["artist"], "Anchor")
+        self.assertEqual(request[2]["params"]["limit"], 5)
+        self.assertEqual(next(row for row in self.calls if row[0] == "cache_get")[2], 60 * 24 * 60 * 60)
+
+    def test_similar_artists_supports_scalar_cache_hit_and_missing_payload(self):
+        scalar = self.make_client(http_get=lambda *_a, **_k: FakeResponse({
+            "similarartists": {"artist": {"name": "Solo", "match": "0.4"}}
+        }))
+        self.assertEqual(scalar.similar_artists("Anchor"), [
+            {"artist": "Solo", "similarity": 0.4}
+        ])
+        cached = self.make_client(cache_get=lambda _key, _ttl: {
+            "similarartists": {"artist": [{"name": "Cached", "match": 1}]}
+        })
+        self.assertEqual(cached.similar_artists("Anchor"), [
+            {"artist": "Cached", "similarity": 1.0}
+        ])
+        self.assertFalse(any(row[0] == "http_get" for row in self.calls))
+        missing = self.make_client(http_get=lambda *_a, **_k: FakeResponse({"error": 6}))
+        self.assertEqual(missing.similar_artists("Anchor"), [])
+
+    def test_similar_artists_legacy_adapter_delegates(self):
+        import navidrome_server
+        expected = [{"artist": "Similar", "similarity": 0.8}]
+        with patch.object(navidrome_server._lastfm_client, "similar_artists",
+                          return_value=expected) as call:
+            self.assertIs(navidrome_server._lastfm_similar_artists("Anchor", limit=4), expected)
+        call.assert_called_once_with("Anchor", limit=4)
+
+
     def test_album_popularity_fetches_normalizes_tags_and_caches_legacy_key(self):
         payload = {
             "album": {
