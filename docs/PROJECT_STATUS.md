@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #264 fixes recommendation provider diagnostics; verification pending)  
-Documentation branch base: GitHub `main` at `87d55561a0d2b7be4bc516ffc146da8c96d8254c`
+Last reviewed: 2026-10-16 (PR #264 merged and verified; size ratchet in progress)  
+Documentation branch base: GitHub `main` after merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`
 
 ## Current focus
 
@@ -9,8 +9,8 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Fix and verify PR #264: PR #263 CI exposed a missing return of `regional_candidates_added` and `regional_results_seen` from `discovery_candidate_gathering.py`; six characterization tests failed on exact head `a0d0afcdc1c54b73c2227a24735f8a606bb38f6a`. PR #264 restores the diagnostic fields in the provider result, also returns/unpacks the raw library inventory used for response diagnostics, and asserts the response fields in characterization coverage; required CI is pending on its final head.
-2. After PR #264 passes all required workflows and is merged, add the measurable CI size ratchet using the verified current baseline (`navidrome_server.py`: 3,029 lines; largest top-level function `recommend_new_music`: 572 lines).
+1. Review and verify PR #265 (size ratchet) on its exact final head, then merge only if all four required workflows pass.
+2. The verified baseline after PR #264 is `navidrome_server.py`: 3,032 lines. The new guard sets a 3,032-line file ceiling, a 280-line general top-level-function ceiling, and a documented temporary 575-line exception for `recommend_new_music()`; CI reports measured AST function sizes.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
 5. Do not force additional classics-builder or size-only slskd extractions.
