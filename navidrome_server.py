@@ -293,6 +293,12 @@ def recommend_new_music(count: int = 10) -> str:
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
 
+    from discovery_recommendations import (
+        classify_diversity_style,
+        genre_families,
+        primary_recent_family,
+        recent_style_families,
+    )
     from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
     gathered = gather_recommendation_candidates(RecommendationProviders(
         listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
