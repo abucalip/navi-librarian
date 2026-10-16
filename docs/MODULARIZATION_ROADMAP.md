@@ -1,6 +1,11 @@
-## 2026-10-16 — Classics candidate collection extraction in progress
+## 2026-10-16 — PR #232 merged: classics candidate collection
 
-The next narrow classics-list seam moves candidate collection and duplicate resolution out of `_build_classics_list()` into `discovery_classics_candidates.collect_classic_candidates()`. Provider/cache access, inventory retrieval, scoring/jitter, genre enrichment, diversity, and response assembly remain in the adapter. Contract tests cover candidate ordering, top-album limit, ownership and eligibility filtering, duplicate winner, metadata, and request pacing. Branch: `extract/classics-candidate-collection`. Final-head CI and merge are pending; publishing remains paused.
+- Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.
+- The latest four workflow runs inspected for the PR reported success (syntax/acquisition safety, Docker packaging/full suite/build, container smoke, and non-publishing multi-architecture validation). The connector evidence did not independently expose each run's head SHA, so this closeout does not label them exact-head verified. Assistant-side local tests were not run. Publishing/deployment/runtime verification remain paused/unclaimed.
+
+## 2026-10-16 — New Releases library qualification extraction in progress
+
+The next candidate moves normalized ownership identity construction and full-album artist qualification/sorting into `discovery_new_releases.prepare_new_release_library_scope()`. It preserves the six-track threshold, Various Artists exclusion, stable descending album-count order, all-owned-album identity set, and untruncated qualified count. The adapter retains the 120-artist request cap, date-window policy, MusicBrainz requests/cache/rate limit, error reporting, and global merge. Direct-import contract tests are added. PR #233 is open on tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`. All four required workflows passed on that head: Python syntax/acquisition safety run 38934044235, Docker packaging/full unit suite/build run 38934044270, container runtime smoke run 38934044253, and validation-only multi-architecture validation run 38934044237. Assistant-side local tests were not run. Merge remains pending; publishing/deployment/runtime verification remain paused/unclaimed.
 
 ## 2026-10-16 — Classics genre enrichment extracted (PR #231 merged)
 

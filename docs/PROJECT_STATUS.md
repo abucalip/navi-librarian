@@ -1,9 +1,11 @@
-## 2026-10-16 — Classics candidate collection extraction (verification pending)
+## 2026-10-16 — PR #232 merged: classics candidate collection
 
-- Branch `extract/classics-candidate-collection`, based on current GitHub `main` after PR #231. Extracted Last.fm top-album aggregation, normalized identity deduplication, owned-album exclusion, candidate eligibility filtering, legacy metadata shaping, and fifth-artist pacing into `discovery_classics_candidates.collect_classic_candidates()`.
-- The adapter continues to own library snapshot acquisition, cached Last.fm access, music-key policy, album eligibility, and timing. Added direct-import tests and Docker packaging.
-- Acceptance: preserve descending library-artist order, top-album limit 8, strongest-listener duplicate winner, owned/ineligible filtering, candidate metadata, and pause cadence. Assistant-side tests and exact-head CI have not yet been run; do not merge until all four required workflows pass on the final PR head.
-- Publishing/deployment remain paused. No runtime verification is claimed.
+- Squash merge commit: `451944c9056eeb50ec7d8b1744bbf435d653b70b`. `discovery_classics_candidates.collect_classic_candidates()` owns candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, and fifth-artist pacing; the server retains library/provider access, scoring, enrichment, diversity, and response assembly.
+- The latest four workflow runs inspected for the PR reported success (syntax/acquisition safety, Docker packaging/full suite/build, container smoke, and non-publishing multi-architecture validation). The connector evidence did not independently expose each run's head SHA, so this closeout does not label them exact-head verified. Assistant-side local tests were not run. Publishing/deployment/runtime verification remain paused/unclaimed.
+
+## 2026-10-16 — New Releases library qualification extraction in progress
+
+The next candidate moves normalized ownership identity construction and full-album artist qualification/sorting into `discovery_new_releases.prepare_new_release_library_scope()`. It preserves the six-track threshold, Various Artists exclusion, stable descending album-count order, all-owned-album identity set, and untruncated qualified count. The adapter retains the 120-artist request cap, date-window policy, MusicBrainz requests/cache/rate limit, error reporting, and global merge. Direct-import contract tests are added. PR #233 is open on tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`. All four required workflows passed on that head: Python syntax/acquisition safety run 38934044235, Docker packaging/full unit suite/build run 38934044270, container runtime smoke run 38934044253, and validation-only multi-architecture validation run 38934044237. Assistant-side local tests were not run. Merge remains pending; publishing/deployment/runtime verification remain paused/unclaimed.
 
 ## 2026-10-16 — PR #231 merged: classics genre enrichment
 

@@ -1640,22 +1640,13 @@ def _discovery_is_various_artists(value):
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
     snapshot = _discovery_library_snapshot()
-    owned = {
-        (_music_key(item.get("artist", "")), _music_key(item.get("album", "")))
-        for item in snapshot["albums"]
-    }
-    full_album_artist_keys = {
-        _music_key(item.get("artist", ""))
-        for item in snapshot["albums"]
-        if int(item.get("song_count") or 0) >= 6 and item.get("artist")
-    }
-    qualified_artists = [
-        artist for artist in snapshot["artists"]
-        if artist.get("name")
-        and not _discovery_is_various_artists(artist["name"])
-        and _music_key(artist["name"]) in full_album_artist_keys
-    ]
-    qualified_artists.sort(key=lambda item: int(item.get("album_count") or 0), reverse=True)
+    from discovery_new_releases import prepare_new_release_library_scope
+    owned, qualified_artists = prepare_new_release_library_scope(
+        snapshot["artists"],
+        snapshot["albums"],
+        music_key=_music_key,
+        is_various_artists=_discovery_is_various_artists,
+    )
     from datetime import date, timedelta
     today = date.today()
     cutoff_date = (today - timedelta(days=730)).isoformat()

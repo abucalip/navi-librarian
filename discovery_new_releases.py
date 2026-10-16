@@ -70,3 +70,36 @@ def select_artist_release_candidates(
         if old is None or release_date > old.get("first_release_date", ""):
             selected[identity] = candidate
     return selected
+
+
+def prepare_new_release_library_scope(
+    artists: list[dict[str, Any]],
+    albums: list[dict[str, Any]],
+    *,
+    music_key: Callable[[Any], str],
+    is_various_artists: Callable[[Any], bool],
+) -> tuple[set[tuple[str, str]], list[dict[str, Any]]]:
+    """Return normalized owned identities and full-album-qualified artists.
+
+    This pure inventory policy preserves the existing six-track threshold,
+    Various Artists exclusion, stable album-count ordering, and untruncated
+    qualified-artist count. Provider access, date-window policy, and the 120
+    artist request bound remain with the caller.
+    """
+    owned = {
+        (music_key(item.get("artist", "")), music_key(item.get("album", "")))
+        for item in albums
+    }
+    full_album_artist_keys = {
+        music_key(item.get("artist", ""))
+        for item in albums
+        if int(item.get("song_count") or 0) >= 6 and item.get("artist")
+    }
+    qualified_artists = [
+        artist for artist in artists
+        if artist.get("name")
+        and not is_various_artists(artist["name"])
+        and music_key(artist["name"]) in full_album_artist_keys
+    ]
+    qualified_artists.sort(key=lambda item: int(item.get("album_count") or 0), reverse=True)
+    return owned, qualified_artists
