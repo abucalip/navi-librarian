@@ -7,13 +7,14 @@
 - Publishing remains paused. Next action: refresh GitHub main/open PRs and choose the next smallest safe independent extraction; do not treat extraction count as a quota.
 
 
-## 2026-10-16 — Personal allocator extraction investigation (not PR-ready)
+## 2026-10-16 — Personal allocator boundary investigation (pre-integration history)
 
-- Continued from the merged allocation contract in PR #221. The exploratory branch now adds a pure allocator and direct-import tests, and refines the immutable candidate contract with source-order metadata so stable ties can preserve legacy fallback ordering.
-- Code review found a parity-sensitive detail: legacy regional-style reservations use original candidate insertion order for equal scores, while final fallback first groups score-sorted candidates by category and then applies a stable global score sort. The allocator now records source_order and models the final-fallback tie rule; tests were added for the contract and fallback ordering.
-- No adapter integration has been made. The server's response shaping, ownership-review payloads, diagnostics, and selected-artist accounting remain in the legacy loops. No tests have been executed locally and no CI result exists for the exploratory branch; these changes are not ready for a PR.
-- **Next action:** integrate through a thin server adapter only after tracing and regression-testing legacy decision/payload parity. Add the allocator module to Docker packaging, run focused and full tests, then verify all four required workflows on the exact PR head. If parity cannot be achieved without coupling policy to response/provider logic, stop and refine the boundary.
-- Publishing and deployment remain paused; no production action occurred.
+- This records the exploratory stage before PR #223. The immutable contract was merged in PR #221, then the allocator policy and direct-import tests were developed on a separate branch.
+- Tie-order analysis found that regional-style reservations preserve original candidate insertion order, while final fallback concatenates category lists already sorted by score and then uses a stable global score sort. The final allocator preserves that behavior with `source_order`.
+- The investigation was completed by PR #223, which integrated the adapter, added Docker packaging, and passed all four required exact-head workflows. See the PR #223 entry above for the verified final state.
+- Publishing and deployment remain paused.
+
+
 
 ## 2026-10-16 — PR #194 merged: token cleanup and touch targets
 
