@@ -102,5 +102,6 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertEqual(len(ranked), 20)
   self.assertLessEqual(sum(item["artist"]=="Same" for item in diversified), 2)
   self.assertLessEqual(sum(item.get("primary_genre_family")=="jazz" for item in diversified), 12)
+  self.assertLessEqual(sum(item["anchor_artist"]=="Anchor" for item in diversified), 4)
 
 if __name__=="__main__": unittest.main()
