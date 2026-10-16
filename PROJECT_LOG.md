@@ -411,3 +411,18 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - All three PRs added direct-import regression coverage and preserved route/provider/cache ownership. Assistant-side local test commands were not run; the Docker packaging workflows ran the full unit suite. No publication, deployment, or production runtime verification is claimed.
 - Publishing remains paused. Acquisition-dismissal HTTP 409 remains deferred per user direction; no acquisition/import/deletion semantics were changed.
 - **Next action:** refresh GitHub main/open PRs/CI and inspect remaining application-assembly/domain-service boundaries before selecting the next independent seam. Do not treat extraction count as a quota.
+
+## 2026-10-16 — Personal recommendation allocation contract designed (pre-extraction)
+
+- Based on GitHub main `9376d5f0d55815067aeb5cadf9015b4b775a9848`, traced `recommend_new_music()` and its policy loops. Added branch `refactor/personal-allocation-contract` with `discovery_allocation_contract.py`, `tests/test_discovery_allocation_contract.py`, and `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md`.
+- Contract inputs are immutable prepared candidate records with stable IDs and precomputed ownership classification, plus explicit count/targets/caps. Contract output uses ordered candidate IDs and explicit decision diagnostics; adapter remains responsible for payload construction. No callbacks, provider/library access, or shared mutable counters.
+- The selection loops are intentionally untouched. Contract tests are interface tests, not proof of allocation behavior. Focused execution and exact-head CI are pending. No publishing/deployment/runtime verification.
+- Next: verify this contract PR; only if it passes and the seam stays independent, move the actual loops in a subsequent focused PR with policy parity regressions.
+
+## 2026-10-16 — PR #221 merged: personal recommendation allocation contract
+
+- Branch `refactor/personal-allocation-contract`; exact tested head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`; squash merge/current main at merge `820556799fa9d3ec663e5117b36c68084281b20a`.
+- Added immutable data-contract types, direct-import interface tests, and contract documentation. The four required exact-head workflows passed: syntax run `38916419736`, Docker packaging/full unit suite/build `38916419709`, runtime smoke `38916419958`, validation-only multi-architecture `38916419701` (`push: false`). Assistant-side local tests were not run independently; CI packaging ran the unit suite.
+- This was a contract-design stage, not the allocation extraction. Selection loops, public signature, response construction, and provider/library operations remain unchanged. No publishing, deployment, or production runtime verification.
+- Next: if the interface still fits once policy behavior is mapped to it, make the actual allocator a separate PR with comprehensive policy-parity tests. Do not add callbacks/shared mutable state to force the extraction; refine or stop if the boundary proves inadequate.
+
