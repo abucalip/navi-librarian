@@ -1667,25 +1667,20 @@ def _build_new_releases_list():
             earliest_year=earliest_year,
             current_year=current_year,
         )
-        payload = _metadata_cache_get(cache_key, ttl_seconds=30 * 24 * 60 * 60)
-        if payload is None:
-            try:
-                if index:
-                    time.sleep(1.1)
-                response = httpx.get(
-                    "https://musicbrainz.org/ws/2/release-group/",
-                    params={"query": query, "fmt": "json", "limit": 100},
-                    headers=headers,
-                    timeout=20,
-                )
-                response.raise_for_status()
-                payload = response.json().get("release-groups", [])
-                if not isinstance(payload, list):
-                    payload = []
-                _metadata_cache_set(cache_key, payload)
-            except (httpx.HTTPError, ValueError, TypeError) as exc:
-                errors.append({"artist": artist, "error": type(exc).__name__})
-                continue
+        from discovery_new_releases import fetch_artist_release_groups
+        payload, lookup_error = fetch_artist_release_groups(
+            cache_key,
+            query,
+            cache_get=_metadata_cache_get,
+            cache_set=_metadata_cache_set,
+            http_get=httpx.get,
+            sleep=time.sleep,
+            headers=headers,
+            pause_before_request=bool(index),
+        )
+        if lookup_error is not None:
+            errors.append({"artist": artist, "error": lookup_error})
+            continue
 
         from discovery_new_releases import select_artist_release_candidates
         artist_candidates = select_artist_release_candidates(
