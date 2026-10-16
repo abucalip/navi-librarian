@@ -1,3 +1,9 @@
+## 2026-10-16 — Classics candidate collection extraction (PR pending)
+
+- Branch `extract/classics-candidate-collection`, based on current GitHub `main` after PR #231. Moved candidate gathering/merge policy into `discovery_classics_candidates.collect_classic_candidates()`, keeping provider/cache lookup and policy callbacks injected.
+- Added `tests/test_discovery_classics_candidates.py` for artist order and limit, owned/ineligible exclusion, duplicate winner and metadata, pacing cadence, and empty provider results. Added the module to Docker packaging and delegated the stage from `_build_classics_list()`.
+- Verification is pending: no local tests or CI results are claimed yet. No merge, publication, deployment, or production runtime verification.
+
 ## 2026-10-16 — PR #231 merged: classics genre enrichment
 
 - Branch: `extract/classics-genre-enrichment`; exact tested head `0856f2a9a91e8b3aff88f933d845b182007997d4`; squash merge `b23d76712a04dcbfc461ceb7245a0676738fca7a`.
