@@ -678,3 +678,16 @@ Moved the shared response-normalization rule into `navidrome_client.items()` and
 ## Next step
 
 Refresh current GitHub main, inspect open PRs and the current requirements/test plan, then select the next smallest safe extraction from the remaining application-assembly/domain-service seams. Keep the acquisition dismissal HTTP 409 investigation deferred unless it recurs or the user explicitly reopens it.
+
+
+## 2026-10-16 — Reviewed candidate normalization extracted (PR #195)
+
+Moved reviewed slskd file-record and quality-summary normalization into `acquisition_candidate_queue.py`, with direct-import regression tests. The compatibility adapter still owns network queueing and watcher startup. Exact tested head `f60d682b2ebcd94ecfbcfd0b4beb77c628643fc5`; squash merge `5629d259468a0f748fb5d3fdb78819a0fb00d73c`. All four required exact-head workflows passed. No acquisition cleanup or dismissal behavior changed.
+
+## 2026-10-16 — MusicBrainz album-year lookup extracted (PR #193)
+
+Moved exact release-year lookup and matching into `musicbrainz_album_year.py`; the metadata route retains its compatibility adapter and endpoint contract. Exact tested head `2b426587e6cb4dc011c85099021041d9f9450744`; squash merge `bce1e32b4ca4c2df86f51dd6102931ed8299dcfe`. All four required exact-head workflows passed. Publishing/deployment remain paused.
+
+## Next step
+
+Refresh GitHub main, open PRs, and CI. Continue the remaining acquisition lifecycle/orchestration modularization; keep acquisition-dismissal HTTP 409 deferred as directed.
