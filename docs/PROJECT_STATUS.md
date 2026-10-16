@@ -1,15 +1,15 @@
 # Project status
 
-Last reviewed: 2026-10-16 (search fallback direct-import migration prepared on `test/direct-search-fallback-regression`)
-Documentation/code branch base: GitHub `main` at commit `de94d9bbb9790129ed86dc9fefd28a1850a9c721`
+Last reviewed: 2026-10-16 (PR #272 merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`)
+Documentation base: GitHub `main` at commit `9b97f447adc602a3be3b5ac496633430f3eb3cb4`
 
 ## Current focus
 
-Backend modularization remains in progress. PR #272 moves broader-query fallback behavior tests to direct-import coverage while retaining the AST harness for higher-risk lifecycle and compatibility behavior. Its code head `8a464edf8313594ddde69f0be90135fce4782f07` passed all four required workflows; a documentation closeout commit is pending exact-head verification. See root `PROJECT_LOG.md` for run IDs and test evidence.
+Backend modularization remains in progress. PR #272 moved broader-query fallback behavior tests to direct-import coverage while retaining the AST harness for higher-risk lifecycle and compatibility behavior. All four required workflows passed on exact final PR head `7b1257e0ceb9368063de025a2758f48a344efbcb`; the PR merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`. See root `PROJECT_LOG.md` for run IDs and test evidence.
 
 ## Next action
 
-1. Verify the documentation closeout revision's exact-head CI for PR #272, then merge if all four required workflows pass; preserve concurrency, queue/lifecycle, and filesystem-safety coverage.
+1. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them; preserve current compatibility and operational safety until then.
 2. Obtain the owner's explicit decision for MCP-exposed `restart_server` and `apply_server_patch` before changing them.
 3. Do not force additional classics-builder or size-only slskd extractions.
 
