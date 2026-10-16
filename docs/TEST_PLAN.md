@@ -1,3 +1,7 @@
+## 2026-10-16 — New Releases response projection extraction (PR pending)
+
+The next independently testable discovery seam is response projection after candidate collection. `discovery_new_releases.build_new_release_response()` owns only stable newest-first sorting, the 200-item visible cap, the 20-error cap, and the established response fields/limitations. The server retains clock/date policy, provider/cache/rate-limit handling, eligibility and candidate collection. Direct-import tests pin sort ordering, caps, metadata, and the payload contract. This is a focused discovery extraction; app-assembly completion accounting and AST-coupled acquisition test cleanup remain audit candidates rather than being mixed into this PR.
+
 ## New Releases global candidate merge — merged (PR #234)
 
 PR #234 merged at `c44ea572354b4714e5e2577f5eb21b091be97cc8` from exact tested head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`. Direct-import regressions cover newest-release winner per identity, stable existing winner on equal dates, input non-mutation, and empty/missing-date cases. All four required workflows passed on that exact head: syntax 38935716487, Docker/full suite/build 38935717026, runtime smoke 38935716420, validation-only multi-architecture 38935716622. Assistant-side local test commands were not run.
