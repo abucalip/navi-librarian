@@ -57,7 +57,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_diversity_style_classification_and_overrides(self):
   self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, []), "north_african")
   self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, []), "malian_desert_blues")
-  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeat"]), "afrobeats")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeats"]), "afrobeats")
   self.assertEqual(
    classify_diversity_style({"artist": "Unknown", "regional_styles": ["afro_jazz"]}, ["Raï"]),
    "afro_jazz",
