@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from app.services.dashboard import build_dashboard_picks
 
 router = APIRouter()
 
