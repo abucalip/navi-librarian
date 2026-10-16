@@ -1209,3 +1209,8 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 ## Authentication configuration predicate extraction (PR #239 merged)
 
 Focused regression command: `python -m unittest tests.test_auth_configuration -v`. Coverage includes a complete configuration, each missing/empty required field, absent/partial settings, and preservation of the existing truthiness behavior. The Docker packaging workflow (including the full unit suite) and all four required workflows passed on the final tested PR head: syntax `38940305016`, Docker/full suite/build `38940304930`, runtime smoke `38940304907`, and validation-only multi-architecture `38940305045`. Assistant-side local test commands were not run.
+
+
+## Auth-secret provider extraction (PR pending)
+
+Focused command: `python -m unittest tests.test_auth_secret -v`. Direct-import tests cover lazy loading, successful caching, retry after exceptions or `None`, and concurrent first access. Before merge, require all four repository workflows on the exact final PR-head SHA: Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation. No image publication is permitted.

@@ -4,7 +4,6 @@ import os
 import secrets
 import time
 from html import escape
-import threading
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -36,6 +35,7 @@ from app.api.pages import create_pages_router
 from app.security.app_login_middleware import create_app_login_middleware
 from app.security.auth_cookie import set_auth_cookie as _set_auth_cookie_impl
 from app.security.auth_configuration import auth_is_configured
+from app.security.auth_secret import AuthSecretProvider
 
 
 
@@ -53,17 +53,18 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 # Authentication settings remain in the existing persistent settings store.
 
-_AUTH_SECRET = None
-_AUTH_SECRET_LOCK = threading.Lock()
+_AUTH_SECRET = None  # Retained as a compatibility seam for auth integration tests.
+_AUTH_SECRET_PROVIDER = AuthSecretProvider(
+    data_dir_getter=lambda: get_librarian().DATA_DIR,
+    secret_loader=load_auth_secret,
+)
 
 
 def _auth_secret():
     """Load the persistent signing key only when an auth operation needs it."""
     global _AUTH_SECRET
     if _AUTH_SECRET is None:
-        with _AUTH_SECRET_LOCK:
-            if _AUTH_SECRET is None:
-                _AUTH_SECRET = load_auth_secret(get_librarian().DATA_DIR)
+        _AUTH_SECRET = _AUTH_SECRET_PROVIDER.get()
     return _AUTH_SECRET
 
 

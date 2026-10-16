@@ -1,3 +1,7 @@
+## 2026-10-16 — Auth-secret provider extraction (PR pending)
+
+Extracted lazy, thread-safe app-auth signing-secret loading into `app/security/auth_secret.py`, injected with the existing data-directory getter and `load_auth_secret`. Direct-import tests cover lazy initialization, successful caching, retry after exceptions/None, and concurrent first use. Exact-head CI and review remain pending; no local tests, publication, deployment, or production runtime verification are claimed. Publishing remains paused.
+
 ## 2026-10-16 — PR #236 merged: New Releases lookup construction
 
 - Squash merge: `aaa748f2dfdc307d79faf5397a51dbfbcd75ec6c`; exact tested head: `990e3ddfe08b6b1590860e8fd07d0ac13882be3e`.
