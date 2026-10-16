@@ -350,3 +350,11 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - PR #199 extracted thread-safe acquisition progress snapshots; exact tested head f7157cb28d5e753a97bb9c24eea209b767d74066 passed all four required workflows and merged as a18889b7aa45dd8ef0a9e99a12236cedf5ed5a41.
 - PR #200 extracted slskd search diagnostic shaping; after correcting the AST-test import seam, exact tested head b74f6a3f4f8290d6e8d7123399185e9692dd053c passed all four required workflows and merged as 9b3cf481a46282d2f980709091d57aea36144029.
 - Both are backend-only. No local test run, live slskd operation, publication, deployment, or production runtime verification is claimed. Acquisition-dismissal HTTP 409 remains deferred.
+
+
+## 2026-10-16 — In progress: Deezer album-matching policy extraction (PR pending)
+
+- Candidate: move the pure catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance score from `app/api/metadata.py` into `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, endpoint response shapes, tracklist retrieval, and transient-provider failure handling. The new helper performs no I/O and does not import FastAPI.
+- Added direct-import regression coverage for normalization, requiring both artist and album identity, valid/invalid release years, and existing artwork score weights. Existing metadata-route tests remain the compatibility coverage.
+- Verification status at this commit: not yet run locally by the assistant; exact-head CI pending. Do not merge unless all four required workflows pass on the final PR head. No publication or deployment.

@@ -1096,3 +1096,11 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - acquisition_search_diagnostics.py now owns the bounded candidate diagnostic projection, recognized audio-file count, and no-match explanation. Search execution, path-match diagnostics, persistence, queueing, and JSON/API serialization remain in navidrome_server.py.
 - The first CI attempt exposed a compatibility issue in the AST-based acquisition safety test harness: its extracted function namespace did not include a module-level helper alias. The import was moved into the function, preserving production behavior and allowing the legacy test harness to execute it. The exact final head passed all four workflows: syntax/acquisition safety run 1099; Docker packaging/full suite/build run 1006; runtime smoke run 815; validation-only multi-architecture run 859.
 - Direct-import tests cover diagnostic field projection and 10-item cap, copied quality summaries, recognized audio extensions, and no-match message/query ordering. Assistant-side local tests were not run. No publication, deployment, or production runtime verification is claimed.
+
+
+## 2026-10-16 — In progress: Deezer album-matching policy extraction (PR pending)
+
+- Candidate: move the pure catalog-name normalization, exact artist+album matching, release-year validation, and artwork relevance score from `app/api/metadata.py` into `app/services/deezer_album_matching.py`.
+- The metadata router retains HTTP validation, provider requests, cache behavior, endpoint response shapes, tracklist retrieval, and transient-provider failure handling. The new helper performs no I/O and does not import FastAPI.
+- Added direct-import regression coverage for normalization, requiring both artist and album identity, valid/invalid release years, and existing artwork score weights. Existing metadata-route tests remain the compatibility coverage.
+- Verification status at this commit: not yet run locally by the assistant; exact-head CI pending. Do not merge unless all four required workflows pass on the final PR head. No publication or deployment.
