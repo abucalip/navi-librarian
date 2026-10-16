@@ -1010,6 +1010,9 @@ def recommend_new_music(count: int = 10) -> str:
         OwnershipStatus,
     )
     from discovery_personal_allocator import allocate_personal_recommendations
+    from discovery_recommendation_payload import (
+        build_personal_recommendation_payload,
+    )
 
     diversity_style_targets = {
         "north_african": 1,
@@ -1083,66 +1086,12 @@ def recommend_new_music(count: int = 10) -> str:
     found = []
     possible_matches = []
 
-    def recommendation_payload(candidate):
-        recent_count = recent_artists.get(
-            _music_key(candidate["primary_artist"]), 0
-        )
-        category = candidate["discovery_category"]
-        return {
-            "artist": candidate["artist"],
-            "album": candidate["album"],
-            "discovery_category": category,
-            "diversity_style": candidate.get("diversity_style", "other"),
-            "genres": candidate["genres"],
-            "genre_families": candidate["genre_families"],
-            "recent_profile_family": candidate.get("recent_profile_family"),
-            "recent_profile_families": candidate.get("recent_profile_families", []),
-            "recent_profile_bonus": round(
-                candidate.get("recent_profile_bonus", 1.0), 3
-            ),
-            "genre_metadata_available": candidate["genre_metadata_available"],
-            "listenbrainz_score": (
-                candidate["score"]
-                if candidate.get("discovery_source", "listenbrainz")
-                == "listenbrainz"
-                else None
-            ),
-            "discovery_source": candidate.get(
-                "discovery_source", "listenbrainz"
-            ),
-            "discovery_score": round(candidate["discovery_score"], 6),
-            "recent_artist_listens": recent_count,
-            "lastfm_listeners": candidate.get("lastfm_listeners"),
-            "lastfm_playcount": candidate.get("lastfm_playcount"),
-            "lastfm_tags": candidate.get("lastfm_tags", []),
-            "lastfm_popularity_bonus": round(
-                candidate.get("lastfm_popularity_bonus", 1.0), 3
-            ),
-            "suggested_tracks": candidate["tracks"][:3],
-            "reason": (
-                {
-                    "adjacent": "Genre tags connect this artist to your "
-                                "established musical interests.",
-                    "cross_genre": "Genre tags suggest a bridge between "
-                                   "multiple musical families in your profile.",
-                    "adventurous": "Available genre tags suggest a "
-                                   "departure from the strongest mapped "
-                                   "genre matches.",
-                    "unclassified": "Genre metadata is unavailable, so this "
-                                    "candidate's musical fit is uncertain."
-                }[category]
-                + (
-                    " Genre metadata was unavailable, so this classification "
-                    "has low confidence."
-                    if not candidate["genre_metadata_available"]
-                    else ""
-                )
-            ),
-        }
-
     for candidate_id in allocation.selected_candidate_ids:
         candidate = candidate_by_id[candidate_id]
-        result = recommendation_payload(candidate)
+        result = build_personal_recommendation_payload(
+            candidate,
+            recent_artists.get(_music_key(candidate["primary_artist"]), 0),
+        )
         result["ownership_check"] = (
             "No exact normalized album-title match found in the indexed "
             "Navidrome inventory; alternate editions may still exist."
@@ -1156,7 +1105,11 @@ def recommend_new_music(count: int = 10) -> str:
                 selected_profile_families[family] += 1
 
     for candidate_id in allocation.ownership_review_candidate_ids:
-        result = recommendation_payload(candidate_by_id[candidate_id])
+        candidate = candidate_by_id[candidate_id]
+        result = build_personal_recommendation_payload(
+            candidate,
+            recent_artists.get(_music_key(candidate["primary_artist"]), 0),
+        )
         result["ownership_note"] = (
             "A same-title album exists in Navidrome under a different "
             "artist credit. Review before treating this as new."
