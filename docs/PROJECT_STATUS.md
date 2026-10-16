@@ -1,3 +1,9 @@
+## 2026-10-16 — PR #234 merged: New Releases global candidate merge
+
+- Squash merge commit: `c44ea572354b4714e5e2577f5eb21b091be97cc8`; exact final PR head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`.
+- Extracted `discovery_new_releases.merge_release_candidates()` to own cross-artist identity merging and newest-date winner selection. Existing candidate wins ties; inputs are not mutated. Direct-import regressions cover newer winner, tie stability, non-mutation, empty inputs, and missing dates.
+- All four required workflows passed on the exact final PR head: Python syntax run 38935716487, Docker packaging/full suite/build run 38935717026, container runtime smoke run 38935716420, validation-only multi-architecture run 38935716622. Assistant-side local tests were not run. Publishing, deployment, and production runtime verification remain unclaimed.
+
 ## 2026-10-16 — PR #233 merged; New Releases global merge extraction in progress
 
 - PR #233 squash merge: `08e20f502e10f829bf9ae7920106b7e8427668eb`, from exact tested head `4d7fa4b09bbfa59a8c7a4e4a48aec5b76585a7e1`. All four required workflows passed: syntax/acquisition safety 38934044235, Docker/full suite/build 38934044270, runtime smoke 38934044253, validation-only multi-architecture 38934044237. Local test commands were not run; publishing/deployment/runtime verification remain unclaimed.
