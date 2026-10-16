@@ -1,11 +1,8 @@
-"""Regression tests for slskd transfer-list lifecycle responses."""
-import ast
-import unittest
-from pathlib import Path
-from types import SimpleNamespace
-from urllib.parse import quote
+"""Direct-import regressions for slskd download-transfer lookup."""
 
-SOURCE = Path(__file__).resolve().parents[1] / "navidrome_server.py"
+import unittest
+
+from slskd_transfers import download_transfer_files
 
 
 class FakeHTTPError(RuntimeError):
@@ -27,56 +24,54 @@ class FakeResponse:
         return self.payload
 
 
-def load_transfer_helper():
-    tree = ast.parse(SOURCE.read_text(encoding="utf-8"), filename=str(SOURCE))
-    helper = next(
-        node for node in tree.body
-        if isinstance(node, ast.FunctionDef)
-        and node.name == "_slskd_download_transfer_files"
-    )
-    namespace = {"httpx": None}
-    module = ast.Module(body=[helper], type_ignores=[])
-    exec(compile(ast.fix_missing_locations(module), str(SOURCE), "exec"), namespace)
-    return namespace
+class FakeHTTP:
+    def __init__(self, response):
+        self.response = response
+        self.calls = []
+
+    def get(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        return self.response
 
 
 class SlskdTransferLookupTests(unittest.TestCase):
-    def call_helper(self, response):
-        namespace = load_transfer_helper()
-        calls = []
-        namespace["httpx"] = SimpleNamespace(
-            get=lambda *args, **kwargs: (calls.append((args, kwargs)) or response)
+    def call_lookup(self, response, username="peer/name"):
+        http = FakeHTTP(response)
+        result = download_transfer_files(
+            "http://slskd.example", {"X-API-Key": "test"}, username,
+            http_client=http,
         )
-        result = namespace["_slskd_download_transfer_files"](
-            "http://slskd.example", {"X-API-Key": "test"}, "peer/name"
-        )
-        return result, calls
+        return result, http
 
     def test_missing_peer_transfer_entry_is_treated_as_no_active_transfers(self):
         response = FakeResponse(404)
-        result, calls = self.call_helper(response)
+        result, http = self.call_lookup(response)
         self.assertEqual(result, [])
         self.assertFalse(response.json_called)
         self.assertEqual(
-            calls[0][0][0],
-            "http://slskd.example/api/v0/transfers/downloads/peer%2Fname",
+            http.calls,
+            [(("http://slskd.example/api/v0/transfers/downloads/peer%2Fname",),
+              {"headers": {"X-API-Key": "test"}, "timeout": 8})],
         )
 
     def test_other_http_errors_still_raise(self):
-        response = FakeResponse(503)
-        with self.assertRaises(FakeHTTPError):
-            self.call_helper(response)
+        with self.assertRaisesRegex(FakeHTTPError, "HTTP 503"):
+            self.call_lookup(FakeResponse(503))
 
-    def test_successful_transfer_response_is_parsed(self):
+    def test_successful_transfer_response_is_parsed_with_remote_directory(self):
         response = FakeResponse(200, [
             {"directory": "/Music/Album", "files": [
                 {"filename": "01 - Song.flac", "state": "Succeeded"}
             ]}
         ])
-        result, _ = self.call_helper(response)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["filename"], "01 - Song.flac")
-        self.assertEqual(result[0]["_transfer_directory"], "/Music/Album")
+        result, http = self.call_lookup(response)
+        self.assertEqual(result, [{
+            "filename": "01 - Song.flac",
+            "state": "Succeeded",
+            "_transfer_directory": "/Music/Album",
+        }])
+        self.assertTrue(response.json_called)
+        self.assertEqual(len(http.calls), 1)
 
 
 if __name__ == "__main__":
