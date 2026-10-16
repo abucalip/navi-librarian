@@ -4,7 +4,7 @@
 
 ## New Releases library qualification — extraction in progress
 
-The helper `discovery_new_releases.prepare_new_release_library_scope(artists, albums, ...)` owns normalized owned-album identities and pure full-album artist qualification/order. The adapter retains MusicBrainz/cache/rate limiting, date-window policy, 120-artist cap, and global candidate merge. Direct-import regression tests are being added; CI/merge are pending.
+The helper `discovery_new_releases.prepare_new_release_library_scope(artists, albums, ...)` owns normalized owned-album identities and pure full-album artist qualification/order. The adapter retains MusicBrainz/cache/rate limiting, date-window policy, 120-artist cap, and global candidate merge. Direct-import regression tests are added; CI/merge are pending.
 ## New Releases candidate selection — extracted (PR #205)
 
 `discovery_new_releases.select_artist_release_candidates()` owns pure per-artist release-group eligibility, candidate shaping, exact-credit/Various Artists filtering, owned-album exclusion, and duplicate-date precedence. `_build_new_releases_list()` retains inventory, MusicBrainz requests, caching, rate limiting, lookup error reporting, and global merge. PR #205 merged at `32b39be400ec046e8310a87260346b1959141609` from exact tested head `079d355e972ea39d792c1dfa6fca6eab902800e3`; all four required exact-head workflows passed (syntax 1111, Docker/full suite/build 1018, runtime smoke 827, validation-only multi-architecture 871).
