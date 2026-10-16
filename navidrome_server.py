@@ -2599,30 +2599,10 @@ def discovery_set_slskd_settings(
 
 
 def discovery_test_slskd_connection() -> str:
-    """Test the configured slskd API without exposing the API key."""
-    try:
-        base_url, api_key, _ = _slskd_config()
-        response = httpx.get(
-            base_url + "/api/v0/server",
-            headers={"X-API-KEY": api_key},
-            timeout=8,
-        )
-        if response.status_code in (401, 403):
-            return json.dumps({
-                "ok": False, "status": "authentication_failed",
-                "message": "slskd rejected the API key. Check the key in Settings.",
-            })
-        response.raise_for_status()
-        return json.dumps({
-            "ok": True, "status": "connected",
-            "http_status": response.status_code,
-            "message": "slskd API connection succeeded.",
-        })
-    except (httpx.HTTPError, ValueError) as exc:
-        return json.dumps({
-            "ok": False, "status": "connection_failed",
-            "message": str(exc),
-        })
+    """Compatibility adapter for the extracted slskd connectivity probe."""
+    from slskd_client import test_connection
+
+    return test_connection(_slskd_config)
 
 
 def _slskd_quality_tier(file_record, filename, priority):
