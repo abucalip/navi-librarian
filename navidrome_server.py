@@ -222,25 +222,12 @@ def get_album_details(album_id: str) -> str:
     root = api_call("getAlbum", id=album_id)
     album = root.get("album", {})
 
-    return json.dumps({
-        "id": album.get("id"),
-        "name": album.get("name"),
-        "artist": album.get("artist"),
-        "year": album.get("year"),
-        "genre": album.get("genre"),
-        "songCount": album.get("songCount"),
-        "songs": [
-            {
-                "id": song.get("id"),
-                "title": song.get("title"),
-                "artist": song.get("artist"),
-                "track": song.get("track"),
-                "duration": song.get("duration"),
-                "playCount": song.get("playCount"),
-            }
-            for song in items(album.get("song"))
-        ],
-    }, ensure_ascii=False, indent=2)
+    from navidrome_client import album_details_payload
+    return json.dumps(
+        album_details_payload(album, items),
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
