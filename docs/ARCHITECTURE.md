@@ -1,3 +1,7 @@
+## New Releases global candidate merge — extraction in progress (PR #234)
+
+`discovery_new_releases.merge_release_candidates(existing, incoming)` is a pure merge policy: preserve the newest candidate per identity and retain the existing candidate on equal dates. The server continues provider access, cache/rate limiting, per-artist filtering, final sorting, and response assembly. Direct-import tests cover newest winner, tie stability, input non-mutation, and empty/missing-date inputs. Exact-head CI pending.
+
 ## Classics candidate collection — extracted (PR #232 merged)
 
 `discovery_classics_candidates.collect_classic_candidates()` owns candidate gathering and duplicate resolution; the server retains provider/cache access, inventory acquisition, and downstream scoring/enrichment/diversity/response assembly. PR #232 merged at `451944c9056eeb50ec7d8b1744bbf435d653b70b`. The four workflow runs inspected reported success, but their exact head-SHA association was not independently confirmed in the available connector result.
