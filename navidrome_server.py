@@ -1004,13 +1004,6 @@ def recommend_new_music(count: int = 10) -> str:
             reverse=True,
         )
 
-    # Allocate targets proportionally for non-default count values too.
-    targets = {
-        "adjacent": (count * 4) // 10,
-        "cross_genre": (count * 3) // 10,
-    }
-    targets["adventurous"] = count - sum(targets.values())
-
     from discovery_allocation_contract import (
         AllocationCandidate,
         AllocationRequest,
