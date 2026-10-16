@@ -15,11 +15,7 @@ from fastapi import APIRouter, HTTPException
 from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
-from app.services.deezer_album_matching import (
-    artwork_match_score,
-    exact_album_matches,
-    release_year,
-)
+from app.services.deezer_album_matching import exact_album_matches, release_year
 from musicbrainz_album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
 
 router = APIRouter()
