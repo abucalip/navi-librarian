@@ -47,12 +47,12 @@ Expected result: no domain-policy imports of `navidrome_server.py`; only explici
 
 ## Recommendation characterization and size ratchet
 
-The enforced size check is `python scripts/check_server_size.py`. Its baseline is 3,031 lines for `navidrome_server.py`, with a 280-line default top-level-function limit and a temporary named 575-line ceiling for `recommend_new_music()`. `tests/test_server_size_guard.py` must cover in-limit acceptance, file growth, generic function growth, exception-specific boundaries/diagnostics, and invalid Python. The Python syntax workflow runs the guard before the full unit suite; the guard must not change the non-publishing image-validation setting.
+The enforced size check is `python scripts/check_server_size.py`. Its ceiling is 2,650 lines for `navidrome_server.py`, with a 280-line default top-level-function limit and a temporary named 575-line ceiling for `recommend_new_music()`. `tests/test_server_size_guard.py` must cover in-limit acceptance, file growth, generic function growth, exception-specific boundaries/diagnostics, and invalid Python. The Python syntax workflow runs the guard before the full unit suite; the guard must not change the non-publishing image-validation setting.
 
 
 Before extracting any part of `recommend_new_music()`, add deterministic tests with fake provider callables/responses and a fixed listen/library fixture. Assert stable candidate ordering, ownership exclusions, scoring/bonus effects, provider failure behavior, and the public result shape where those behaviors apply. Existing tests that mock the entire function do not characterize its internals. Compare the library-inventory path with `discovery_library_snapshot.py` before creating another inventory implementation.
 
-`scripts/check_server_size.py` enforces the baseline measured from the exact reviewed GitHub revision; do not substitute the older audit estimate. The guard tests prove acceptance at thresholds and failure above them, and diagnostics name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
+`scripts/check_server_size.py` enforces the ceiling measured against the exact reviewed GitHub revision; do not substitute the older audit estimate. The guard tests prove acceptance at thresholds and failure above them, and diagnostics name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
 
 ## UI changes
 
