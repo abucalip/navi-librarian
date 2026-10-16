@@ -97,6 +97,10 @@ class SlskdSearchPollingTests(unittest.TestCase):
     def test_retries_broader_query_when_exact_query_has_no_payload(self):
         client = FakeSlskdClient("fallback")
         queries = search_queries("Tinariwen", "Idrache (Traces of the Past)")
+        self.assertEqual(queries, [
+            "Tinariwen Idrache (Traces of the Past)",
+            "Tinariwen Idrache Traces of the Past",
+        ])
         result = self.run_search(client, queries)
 
         self.assertEqual([item["payload"]["searchText"] for item in client.posted],
