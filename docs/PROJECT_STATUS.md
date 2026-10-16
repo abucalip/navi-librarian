@@ -4,7 +4,7 @@
 - Moved pure Wikidata/Wikipedia identity matching, music-entity filtering/ranking, first-sentence normalization, and summary truncation into `app/services/artist_bio.py`. The metadata route retains concurrent provider requests, caching, input validation, and response shape.
 - Added direct-import regressions in `tests/test_artist_bio_service.py`; retained `tests/test_metadata_routes.py`. All four exact-head workflows passed: syntax/acquisition safety run 1059; Docker packaging/full suite/build run 966; runtime smoke run 775; validation-only multi-architecture run 819.
 - Assistant-side local tests were not independently run. No publication, deployment, or production runtime verification is claimed.
-- Main tip at closeout: `b829fa953d979563a8ace6e5529eace8cb80ac43`. Acquisition-dismissal HTTP 409 remains deferred.
+- PR #190 code merge SHA: `b829fa953d979563a8ace6e5529eace8cb80ac43`; documentation closeout commits followed on main. Acquisition-dismissal HTTP 409 remains deferred.
 - Next: refresh main/open PRs/CI before selecting another independent extraction.
 
 ## 2026-10-16 — PR #189 merged: dashboard-pick service extraction
