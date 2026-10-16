@@ -1,10 +1,10 @@
-## 2026-10-16 — Modularization completion audit found a Docker packaging gap
+## 2026-10-16 — PR #286 merged: Docker acquisition import service packaging fixed
 
-- Audited GitHub `main` at `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`, after PR #285. Read the current status, modularization roadmap, requirements, workflow, test plan, architecture, decisions, AST test inventory, import-boundary guard, dependency-map generator, Dockerfile, and the relevant acquisition adapter/module.
-- Confirmed the final acquisition AST/source-layout migration is complete in PR #274 and the AST inventory says no direct AST/source-layout coupling remains. `app/api/dependencies.py:get_librarian()` is the intentionally lazy web-to-legacy import; the CI guard permits only that exact edge.
-- Found a concrete packaging omission: `navidrome_server.py` lazily imports `acquisition_import_service.import_completed_source_locked()` at import-completion time, but the explicit module list in `Dockerfile` does not copy `acquisition_import_service.py`. This can break containerized import completion even when startup and unrelated smoke paths succeed.
-- Opened a focused fix PR to add the missing module to the image and add a regression test for the Docker COPY list. The fix, tests, and CI are pending; no local test commands were run here.
-- The remaining recommendation diagnostic projection and acquisition coordinator still lack a narrower boundary worth extracting. Next: verify all four required workflows on the exact fix PR head, then finish the dependency-map/dynamic-import/package audit against current main before declaring modularization complete. Publishing remains paused; no deployment or production-runtime verification is claimed.
+- Completion audit of GitHub `main` at `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82` found that `navidrome_server.py` lazily imports `acquisition_import_service.import_completed_source_locked()` during import completion, but the explicit root-module COPY list in `Dockerfile` omitted `acquisition_import_service.py`. Startup alone did not exercise this delayed import.
+- PR #286 added the missing module to the Docker image and added `tests/test_docker_packaging.py` to guard the COPY list. Merge commit: `1cf9d66ad57364eec855b2425263e9a59b011d9a`; exact PR head: `de68aa4cd5cbd657bcdd1c59cdde4e2b7e1df283`.
+- All four required workflows passed on that exact head: Python syntax `38977669838`, Docker packaging/full unit suite/build `38977669928`, container runtime smoke `38977669818`, and validation-only multi-architecture image validation `38977669844`. Publishing remained paused. No local tests, deployment, or production-runtime verification are claimed.
+- Confirmed the AST/source-layout migration is complete in PR #274 and the documented lazy `app/api/dependencies.py:get_librarian()` import remains the only permitted app-to-legacy edge.
+- Next: finish the modularization completion audit against exact current `main`, including the generated dependency-map artifact, dynamic/runtime imports, Docker module inclusion, and compatibility/safety coverage. If no concrete gap remains, close modularization without inventing another extraction.
 
 ---
 
