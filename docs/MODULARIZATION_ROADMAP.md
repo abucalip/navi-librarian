@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #283 merged; current main `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`)
-Audit base: GitHub `main` at commit `767ac3efd4e02eab15c04fd033fabeb619f4b1ff`
+Last reviewed: 2026-10-16 (completion audit at current main `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`)
+Audit base: GitHub `main` at commit `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`
 
 ## Purpose
 
@@ -57,28 +57,28 @@ The current MUSIC_DIR audit found this dependency pattern in navidrome_server.py
 
 **Decision:** do not introduce a settings object or extract the remaining wrappers now. The existing persistence and service-settings modules already accept explicit path callbacks, while navidrome_server.py acts as the mutable runtime owner and compatibility adapter. A new object would duplicate the same getter/setter wiring without eliminating the legacy boundary. The nested settings setters are thin adapters, not independent policy. Revisit only if a broader app-state lifecycle change gives the object a clear owner and can prove that long-running watcher/recovery work observes path changes with the same semantics.
 
-This audit did not change application code. The acquisition coordinator audit is now complete; no discrete policy boundary justified extracting it. The next active task is to migrate the remaining AST-coupled import-safety test only after mapping the production owner and preserving its destination validation and persistence-failure guard.
+This audit did not justify another extraction: the acquisition coordinator remains orchestration, and the AST-coupled import-safety migration is already complete in PR #274. The next active task is the modularization completion audit, not another size-driven refactor. The audit found a packaging gap: `navidrome_server.py` lazily imports `acquisition_import_service`, but the explicit root-module list in `Dockerfile` omits `acquisition_import_service.py`. Fix this and add a regression before declaring the packaging gate complete.
 
 
 These are audit targets, not permission to refactor without inspecting current main. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
-### 1. Application assembly and test coupling — map generated; lifecycle AST migration remains
+### 1. Application assembly and test coupling — AST migration complete; final packaging audit active
 
-The dependency map was generated in CI and reviewed from artifact `12068042162` on initial PR head `1f9e6313310c691e9d9844d22136182e51ca6fee`: 159 local Python modules, 71 modules in the static `app.main` closure, and one direct `app/` import edge to `navidrome_server` (`app/api/dependencies.py`). The edge is inside lazy `get_librarian()` and does not imply eager import-time initialization; the app-import isolation regression covers that distinction. The workflow retains the full JSON as a 14-day `modularization-dependency-map` artifact. Static imports still do not capture runtime dependency injection.
+The dependency-map artifact and import-boundary work established the expected static edge: `app/api/dependencies.py:get_librarian()` lazily imports `navidrome_server`, while `scripts/check_app_legacy_imports.py` rejects other app-to-legacy imports. `docs/architecture/AST_TEST_INVENTORY.md` confirms the source-layout migration is complete; do not reopen those tests without new evidence.
 
-Complete these gates in order; do not jump straight to another extraction:
-1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. The import-status persistence guard now has direct-import coverage in PR #270; its AST adapter test remains to preserve lock/dismissal compatibility. Broader-query fallback has been moved to direct-import tests of `slskd_search.search_queries()`, `slskd_search_polling.collect_search_responses()`, and `acquisition_search_diagnostics.no_match_message()`. The regression pins generated query order, the 15,000/6,000 ms timeouts, zero/one collected responses, and ordered query diagnostics. The AST harness no longer compiles `_discovery_acquire_album_impl()`; candidate eligibility and queue/lifecycle safety remain separately covered. The remaining AST harness is retained for acquisition lifecycle/import adapter behavior until those real owners can be tested directly.
-3. **Completed by PR #254:** `scripts/check_app_legacy_imports.py` enforces the app-to-legacy-server boundary in CI. The only allowlisted direct import is `app/api/dependencies.py:get_librarian`, the existing lazy compatibility adapter. Regression tests reject module-level imports, imports from other functions/paths, `from` imports, and submodule imports. All four required workflows passed on final PR head `908783f0a46618c53e4f3e4c4dcf298ec33850fc`; merged as `8bfd6a57179aec46a672343745b494dff60fec02`.
-4. **Completed:** shared raw inventory helper (PR #261), provider/candidate-gathering extraction (PR #263), response-contract regression fix (PR #264), and `MUSIC_DIR` read/write audit (PR #267). No separate settings wrapper is justified while operational adapters intentionally snapshot the current path at invocation time.
-5. **Completed:** audit `_discovery_acquire_album_impl()`; retain it as orchestration because no discrete policy seam justified extraction. PR #270's import-completion extraction is complete. PR #272 moves the broader-query fallback regression to direct-import query-generation, polling, and diagnostics tests; retain the remaining lifecycle/import AST cases. PR #272 was squash-merged as `9b97f447adc602a3be3b5ac496633430f3eb3cb4`; all four required workflows passed on exact final PR head `7b1257e0ceb9368063de025a2758f48a344efbcb`. The final AST coupling migration merged as `cae95e74c9910c512392de80b337eb4b21de67a5`; all four required workflows passed on exact final PR head `ad6864ea1f5f70b7f9d8b852bbc4bb02e7c2d395`.
-6. **Completed audits:** the app-to-legacy import boundary guard is merged in PR #254; the `MUSIC_DIR` read/write audit is complete with no new settings object justified; the final AST-coupled acquisition test migration is tracked in PR #274. Do not reopen these items unless current source or CI evidence reveals a regression.
+**Completion-audit finding (current main `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`):** the Dockerfile explicitly enumerates root-level Python modules copied into the image. `navidrome_server.py` lazily imports `acquisition_import_service.import_completed_source_locked()`, but `acquisition_import_service.py` is absent from that COPY list. The focused runtime smoke test may not trigger the delayed import-completion path, so the existing green history is not evidence that this module is available when that path runs in the container.
+
+**Active task:** add `acquisition_import_service.py` to the Docker COPY list and add a regression that asserts the required module is packaged. Verify the final PR head through all four required workflows, including the container runtime smoke test. No local tests have been run as part of this audit.
+
+After that fix merges, complete the audit against exact current `main`: review the dependency-map artifact generated for that revision, inspect all Python references under `app/`, distinguish dynamic imports and injected dependencies from static edges, verify all imported root modules are packaged, and confirm direct-import plus compatibility/safety regressions remain in place. If this audit finds no additional concrete defect or independently testable boundary, mark modularization complete; do not invent another extraction.
 
 Acceptance criteria:
-- The committed dependency map corresponds to the exact source revision audited and is regenerated when relevant imports change.
-- AST-coupled tests are listed by filename and purpose; behavior tests target production modules directly, with adapter tests retained where compatibility requires them.
-- No domain/API imports of `navidrome_server.py` remain except explicitly documented compatibility adapters. The current graph has one direct edge: `app/api/dependencies.py` lazily imports the legacy service inside `get_librarian()`; this is a runtime service-adapter dependency, not an import-time app initialization. The boundary guard must allow only reviewed adapter locations, not only MCP shims.
-- Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
+- The generated dependency map is reviewed against the exact source revision, with runtime/dynamic imports checked separately.
+- The only app-to-legacy-server import remains the documented lazy adapter at `app/api/dependencies.py:get_librarian`.
+- Every root-level module required at runtime is included in the Docker image, with regression coverage for the discovered missing module.
+- AST-coupled behavior tests target production modules directly; adapter/MCP compatibility tests remain.
+- Acquisition/import/deletion safety and compatibility contracts remain unchanged.
+- No additional extraction is undertaken unless it improves correctness, safety, or testability enough to justify its dependency surface.
 
 ### 2. Acquisition coordinator — audited; retain orchestration
 

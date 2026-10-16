@@ -1,3 +1,13 @@
+## 2026-10-16 — Modularization completion audit found a Docker packaging gap
+
+- Audited GitHub `main` at `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`, after PR #285. Read the current status, modularization roadmap, requirements, workflow, test plan, architecture, decisions, AST test inventory, import-boundary guard, dependency-map generator, Dockerfile, and the relevant acquisition adapter/module.
+- Confirmed the final acquisition AST/source-layout migration is complete in PR #274 and the AST inventory says no direct AST/source-layout coupling remains. `app/api/dependencies.py:get_librarian()` is the intentionally lazy web-to-legacy import; the CI guard permits only that exact edge.
+- Found a concrete packaging omission: `navidrome_server.py` lazily imports `acquisition_import_service.import_completed_source_locked()` at import-completion time, but the explicit module list in `Dockerfile` does not copy `acquisition_import_service.py`. This can break containerized import completion even when startup and unrelated smoke paths succeed.
+- Opened a focused fix PR to add the missing module to the image and add a regression test for the Docker COPY list. The fix, tests, and CI are pending; no local test commands were run here.
+- The remaining recommendation diagnostic projection and acquisition coordinator still lack a narrower boundary worth extracting. Next: verify all four required workflows on the exact fix PR head, then finish the dependency-map/dynamic-import/package audit against current main before declaring modularization complete. Publishing remains paused; no deployment or production-runtime verification is claimed.
+
+---
+
 ## 2026-10-16 — UI PRs #222, #279, and #282 merged
 
 - Owner confirmed all three UI changes were manually tested and explicitly waived the older manual-report requirement for this merge set. The changes were reviewed as UI-only; #222 updates the dashboard coverflow ring and its keyboard contract, #279 adds the async Get-button visual/state treatment, and #282 removes the redundant colored toast side border.
