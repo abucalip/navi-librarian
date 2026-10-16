@@ -32,7 +32,7 @@ class MusicBrainzAlbumYearTests(unittest.TestCase):
             {"title": "Album", "artist-credit": [{"artist": {"name": "Artist"}}], "first-release-date": "1997"},
             {"title": "Album Deluxe", "artist-credit": [{"artist": {"name": "Artist"}}], "first-release-date": "1990"},
         ]}
-        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", side_effect=[100.0, 100.0, 100.0, 100.0]), patch.object(service, "sleep"):
+        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0), patch.object(service, "sleep"):
             self.assertEqual(service.lookup_album_year("Artist", "Album"), 1997)
 
     def test_missing_inputs_do_not_request(self):
