@@ -860,3 +860,10 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 ## 2026-10-16 — New Releases date-window policy extraction in progress
 
 Extract the deterministic 730-day cutoff and derived year bounds into `discovery_new_releases.new_release_window(today)`. Keep the system clock, MusicBrainz provider/cache access, rate limiting, candidate selection, and response assembly in the adapter. Verify exact 730-day and leap-day behavior with direct-import tests, then require all four exact-head workflows before merge. No publication/deployment.
+
+
+## 2026-10-16 — New Releases date-window policy extraction completed (PR #237)
+
+- Extracted deterministic cutoff/year-bound calculation into `discovery_new_releases.new_release_window(today)`; adapter retains clock access and provider/cache orchestration.
+- Added direct-import tests for the 730-day cutoff and leap-day behavior. All four required workflows passed on exact PR head `8d42c9f5f320fd7b4c0653fa09da8eda12f03f78`: syntax `38938867862`, Docker/full unit suite/build `38938867879`, runtime smoke `38938867737`, validation-only multi-architecture `38938867550` (publishing paused).
+- Merged as `2d11e52b78004ee51a6ce70a6a6ac6c2b451f397`. Assistant-side local test commands were not run independently; no deployment/runtime verification is claimed.
