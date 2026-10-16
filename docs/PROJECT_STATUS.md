@@ -1,3 +1,14 @@
+## 2026-10-16 — PRs #196 and #198 merged: Navidrome response shaping
+
+- **PR #196** (branch refactor/extract-navidrome-search-shaping): exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836; squash merge 277499ec949353f5f24542a8033a481283814782. Extracted pure Subsonic search-result shaping into navidrome_client.search_result_payload(); search_music() remains the compatibility/MCP-facing adapter.
+- **PR #198** (branch refactor/extract-navidrome-album-details-main): exact tested head a718780edcb85eb8f4453e44a2d5a4925a512314; squash merge 92cdd6309244e78e78bd0f6f8d2e38ea929e434b. Extracted album/track payload shaping into navidrome_client.album_details_payload(); get_album_details() retains API access, JSON serialization, and the compatibility interface.
+- Both PRs added direct-import regression coverage and preserved response field names, scalar/list handling, and formatting. All four exact-head workflows passed separately:
+  - PR #196: syntax run 1088; Docker packaging/full unit suite/build run 995; runtime smoke run 804; validation-only multi-architecture run 848.
+  - PR #198: syntax run 1090; Docker packaging/full unit suite/build run 997; runtime smoke run 806; validation-only multi-architecture run 850.
+- Assistant-side local test commands were not run. CI packaging workflows ran the full unit suite. No image publication, deployment, or production runtime verification is claimed.
+- PR #197 was closed as superseded while recreating its follow-up branch from the post-#196 main; replacement PR #198 was merged. Main after the two code merges: 92cdd6309244e78e78bd0f6f8d2e38ea929e434b.
+- Acquisition-dismissal HTTP 409 remains deferred per user direction. Publishing remains paused.
+- **Next:** refresh main/open PRs/CI and select the next small, low-coupling extraction; continue keeping each extraction independently tested and preserve MCP compatibility.
 ## 2026-10-16 — PR #192 merged: settings tabs and skip-link accessibility
 
 - Replacement for conflicted PR #188, refreshed from main `470b232977b45ee1cf1bf1b399c2c43843062c1f`; PR #192 exact tested head: `75c13b0099285747c9da75c5c3879e6594e5fe36`; squash merge/current main: `4fc72001807e0afc40ebc99bf1be9a502f87e0f8`.
