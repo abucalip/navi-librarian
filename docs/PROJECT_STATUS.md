@@ -1,4 +1,10 @@
-## 2026-10-16 — New Releases response projection extraction (PR pending)
+## 2026-10-16 — PR #235 merged: New Releases response projection
+
+- Squash merge commit: `0d77f7d99a89660ea1d9a38635e93343538e93b8`; exact tested PR head: `f3e7ec7c14deac8136b5066011623e00dffca134`.
+- Extracted sorting, the 200-item visible cap, the 20-error cap, and response shaping into `discovery_new_releases.build_new_release_response()`. Provider/cache/rate-limit access, date-window policy, candidate selection, and error collection remain in the server adapter.
+- Added direct-import tests for newest-first ordering/tie behavior, response metadata, error/item caps, and non-mutation. Docker packaging already included `discovery_new_releases.py`, so no packaging change was needed.
+- All four required workflows passed on the exact final PR head: Python syntax/acquisition safety run `38937239432`; Docker packaging/full unit suite/build run `38937239481`; container runtime smoke run `38937239444`; validation-only multi-architecture image validation run `38937239482` (publishing paused).
+- Assistant-side local test commands were not run independently. No image publication, deployment, or production runtime verification is claimed.
 
 The next independently testable discovery seam is response projection after candidate collection. `discovery_new_releases.build_new_release_response()` owns only stable newest-first sorting, the 200-item visible cap, the 20-error cap, and the established response fields/limitations. The server retains clock/date policy, provider/cache/rate-limit handling, eligibility and candidate collection. Direct-import tests pin sort ordering, caps, metadata, and the payload contract. This is a focused discovery extraction; app-assembly completion accounting and AST-coupled acquisition test cleanup remain audit candidates rather than being mixed into this PR.
 
