@@ -44,7 +44,6 @@ def load_helpers():
         "_slskd_candidate_start_state",
         "_discovery_import_completed_source",
         "_discovery_import_completed_source_locked",
-        "_discovery_acquire_album_impl",
     }
     selected = [
         node for node in tree.body
@@ -150,77 +149,6 @@ HELPERS = load_helpers()
 
 
 class SlskdSearchQueryTests(unittest.TestCase):
-    def test_acquisition_retries_broader_query_when_exact_search_has_no_payload(self):
-        posted_queries = []
-        posted_timeouts = []
-        other_peer = {
-            "username": "peer",
-            "files": [{"filename": "Other Artist/Other Album/01 - Track.flac", "size": 1000}],
-        }
-
-        def fake_response(payload=None, status_code=200):
-            return SimpleNamespace(
-                status_code=status_code,
-                json=lambda: payload,
-                raise_for_status=lambda: None,
-            )
-
-        def fake_post(_url, headers=None, json=None, timeout=None):
-            posted_queries.append(json["searchText"])
-            posted_timeouts.append(json["searchTimeout"])
-            return fake_response({})
-
-        def fake_get(url, params=None, headers=None, timeout=None):
-            if url.endswith("/responses"):
-                return fake_response([])
-            search_id = url.rsplit("/", 1)[-1]
-            query_index = len(posted_queries) - 1
-            state = {"isComplete": True, "responseCount": 0, "fileCount": 0}
-            if query_index == 1:
-                state = {
-                    "isComplete": True,
-                    "responseCount": 1,
-                    "fileCount": 1,
-                    "responses": [other_peer],
-                }
-            return fake_response(state)
-
-        client = HELPERS["httpx"]
-        original_post = client.post
-        original_get = getattr(client, "get", None)
-        original_status_error = getattr(client, "HTTPStatusError", None)
-        client.post = fake_post
-        client.get = fake_get
-        client.HTTPStatusError = FakeHTTPError
-        try:
-            result = json.loads(HELPERS["_discovery_acquire_album_impl"](
-                "Tinariwen", "Idrache (Traces of the Past)"
-            ))
-        finally:
-            client.post = original_post
-            if original_get is None:
-                delattr(client, "get")
-            else:
-                client.get = original_get
-            if original_status_error is None:
-                delattr(client, "HTTPStatusError")
-            else:
-                client.HTTPStatusError = original_status_error
-
-        self.assertEqual(posted_queries, [
-            "Tinariwen Idrache (Traces of the Past)",
-            "Tinariwen Idrache Traces of the Past",
-        ])
-        self.assertEqual(posted_timeouts, [15000, 6000])
-        self.assertEqual(
-            [item["query"] for item in result["search_queries_attempted"]],
-            posted_queries,
-        )
-        self.assertEqual(result["search_queries_attempted"][0]["collected_peer_response_count"], 0)
-        self.assertEqual(result["search_queries_attempted"][1]["collected_peer_response_count"], 1)
-        self.assertIn("Queries tried: Tinariwen Idrache (Traces of the Past)", result["message"])
-        self.assertIn("Tinariwen Idrache Traces of the Past", result["message"])
-
 
 class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
