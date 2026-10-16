@@ -11,8 +11,9 @@ from pathlib import Path
 
 import acquisition_lifecycle as _acquisition_lifecycle
 import acquisition_orchestration as _acquisition_orchestration
-from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
 from acquisition_import_service import import_completed_source_locked
+from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
+
 
 def load_helpers():
     """Build isolated state/dependency fixtures without parsing legacy source."""
@@ -46,6 +47,7 @@ def load_helpers():
         "ok": True, "status": "implementation_called"
     })
     return namespace
+
 
 class AcquisitionLifecycleTests(unittest.TestCase):
     def setUp(self):
