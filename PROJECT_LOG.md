@@ -1,9 +1,17 @@
-## 2026-10-16 — Fix recommendation provider diagnostics (PR #264; verification pending)
+## 2026-10-16 — Add measurable legacy-server size ratchet (PR #265; verification pending)
+
+- Baseline measured against main after PR #264 merge commit `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`: `navidrome_server.py` has 3,031 source lines (`splitlines()`, matching the guard). On the first PR #265 CI run, AST measurements were `recommend_new_music`: 568 lines and `_discovery_acquire_album_impl`: 278 lines. The older 3,032 count included the trailing empty element from splitting on `\\n`; the enforced ceiling is corrected to 3,031.
+- Added `scripts/check_server_size.py` with a 3,031-line file ceiling, 280-line default top-level function ceiling, and a named temporary 575-line `recommend_new_music()` exception with reason and follow-up. Added pass/fail regression tests for file/function limits, exception diagnostics, and parse failures; wired compile and guard execution into the Python syntax workflow.
+- PR #265 final head and all four required workflows are pending. No assistant-side local tests were run. Merge only after full suite, syntax, container smoke, and validation-only multi-architecture workflows pass on the exact final head. Publishing remains paused.
+
+---
+
+## 2026-10-16 — PR #264 merged: recommendation provider diagnostics restored
 
 - CI on merged PR #263 exact head `a0d0afcdc1c54b73c2227a24735f8a606bb38f6a` failed in both the Docker/unit and Python syntax/unit workflows. The unit suite ran 545 tests and reported six errors in `tests/test_recommend_new_music_characterization.py`: `recommend_new_music()` read `regional_candidates_added`, which the new provider-gathering result mapping did not return. Syntax compilation and the app-to-legacy import-boundary guard passed; Docker build was skipped after unit failure. Container smoke and validation-only multi-architecture workflows passed on that head.
 - PR #264 returns `regional_candidates_added`, `regional_results_seen`, and `library_albums` from `gather_recommendation_candidates()`, unpacks them in `recommend_new_music()` before response shaping, and extends the stable response-shape characterization test to assert the regional counters. The first follow-up attempt restored the regional counter mapping but still failed because the adapter did not unpack those counters; the second CI run then exposed the same extraction-boundary issue for `library_albums`. The current follow-up fixes the provider result and adapter unpacking for all three values without changing candidate policy.
-- PR #264 final head and required CI are pending. No assistant-side local tests were run. Do not merge until all four required workflows pass on the exact final PR head. Publishing, deployment, and runtime verification were not performed.
-- Next: verify and merge the regression fix; only then implement the measurable size ratchet with baseline measured against the refreshed main revision.
+- PR #264 final head `c9635675005d995c368100688e0a8eaf5abb75ad` passed all four required workflows: Python syntax/acquisition safety (`38964596901`), Docker packaging/full unit suite/build (`38964597032`), container runtime smoke (`38964596886`), and validation-only multi-architecture image validation (`38964596916`, publishing paused). The full unit suite and syntax workflow passed on this exact head.
+- PR #264 squash-merged as `cb4f5aef3534e06128401ef3eed3e9ce2908b5f4`. No assistant-side local tests were run. Publishing, deployment, and production runtime verification were not performed.
 
 ---
 
