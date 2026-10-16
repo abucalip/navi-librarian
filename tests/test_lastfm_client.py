@@ -182,7 +182,11 @@ class LastFmClientTests(unittest.TestCase):
             {"name": "Pop"}, {"name": "Afrobeat"}, {"name": "Blues"},
             {"name": "Country"}, {"name": "Ignored"},
         ]}}
-        client = self.make_client(http_get=lambda *_a, **_k: FakeResponse(payload))
+        def http_get(url, **kwargs):
+            self.calls.append(("http_get", url, kwargs))
+            return FakeResponse(payload)
+
+        client = self.make_client(http_get=http_get)
         self.assertEqual(client.artist_genres("Artist"), [
             "Jazz", "Bossa Nova", "Soul", "Funk", "Rock", "Pop", "Afrobeat", "Blues",
         ])
