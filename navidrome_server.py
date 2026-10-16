@@ -294,8 +294,9 @@ def recommend_new_music(count: int = 10) -> str:
         return "count must be between 1 and 20."
 
     from discovery_recommendations import (
-        classify_diversity_style,
+        apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
+        classify_diversity_style,
         classify_recommendation_category,
         genre_families,
         primary_recent_family,
@@ -330,34 +331,13 @@ def recommend_new_music(count: int = 10) -> str:
     checked = 0
     artist_recommendation_counts = Counter()
 
-    # Rank for discovery, not just ListenBrainz similarity.
-    # Recent familiarity lowers priority; unfamiliar artists get a boost.
     for candidate in albums.values():
         recent_count = recent_artists.get(
             _music_key(candidate["primary_artist"]), 0
         )
-        if recent_count == 0:
-            familiarity_factor = 1.35
-        elif recent_count <= 2:
-            familiarity_factor = 1.20
-        elif recent_count <= 5:
-            familiarity_factor = 1.05
-        elif recent_count <= 10:
-            familiarity_factor = 0.90
-        else:
-            familiarity_factor = 0.75
-
-        # Give the explicitly requested exploration families a modest boost.
         candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
-        candidate_families = genre_families(candidate_tags)
-        exploration_bonus = (
-            1.10
-            if candidate_families & exploration_families
-            else 1.0
-        )
-
-        candidate["discovery_score"] = (
-            candidate["score"] * familiarity_factor * exploration_bonus
+        apply_familiarity_exploration_bonus(
+            candidate, recent_count, candidate_tags, exploration_families
         )
 
     # Classify candidates using available MusicBrainz genres and a separate
