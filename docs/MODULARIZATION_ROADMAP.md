@@ -29,11 +29,7 @@ Acceptance: fixed-provider characterization coverage exists before extraction; i
 
 The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_music()`) is stale after extraction. PR #265 measures the current source at 3,032 lines and adds `scripts/check_server_size.py`: a 3,032-line server ceiling, a 280-line general top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. The guard uses AST `end_lineno` measurements, reports offending function names and sizes, and prints the ten largest functions in CI. The exception includes a rationale and follow-up plan; lower it as the recommendation adapter is decomposed.
 
-Add a lightweight CI check that fails when:
-- `navidrome_server.py` exceeds the verified baseline line ceiling; and
-- a top-level function exceeds a recorded per-function line ceiling, with any legacy exception explicitly named, justified, and temporary.
-
-Keep the thresholds in a small, reviewable configuration or script, report offending function names and measured sizes, and test both pass and fail cases. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. The ratchet complements, but does not replace, the import-boundary guard or tests. As `recommend_new_music()` is decomposed, tighten its exception/limit rather than normalizing its current size as acceptable architecture.
+The CI guard is now implemented in `scripts/check_server_size.py` and enforced by the Python syntax workflow. Its tests prove both accepted and rejected boundaries, including the temporary exception diagnostics. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. The ratchet complements, but does not replace, the import-boundary guard or tests. As `recommend_new_music()` is decomposed, tighten its exception/limit rather than normalizing its current size as acceptable architecture.
 
 ### 0b. Operational MCP functions — owner decision required
 
