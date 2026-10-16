@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #276 merged; legacy operational MCP tools retired)
-Audit base: GitHub `main` at commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`
+Last reviewed: 2026-10-16 (current-main modularization audit at `d6e32aadfbca6e1d746ced657bdc124b9d472251`)
+Audit base: GitHub `main` at commit `d6e32aadfbca6e1d746ced657bdc124b9d472251`
 
 ## Purpose
 
@@ -11,23 +11,24 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 ## Current priorities
 
-### 0. Characterize and extract the new-music candidate-gathering pipeline
+### 0. Recommendation candidate gathering — provider seam complete; policy cleanup remains
 
-The audit identifies `recommend_new_music()` in `navidrome_server.py` (approximately lines 282–1340; about 1,058 lines in the audited revision) as a major live responsibility used by the `/discovery` route and an MCP tool. Its tail already composes `discovery_personal_allocator`, `discovery_allocation_contract`, and `discovery_recommendation_payload`; the front half still combines ListenBrainz fetches, regional MusicBrainz queries, library inventory paging, family scoring, and Last.fm bonuses. Existing tests mocked the whole function, leaving internal policy without a characterization baseline. PR #255 established inventory ownership, duplicate-ID, response-shape, and inventory-failure cases; PR #257 added score-based ordering and ListenBrainz failure/empty-result behavior; PR #259 pins the Last.fm popularity bonus and regional MusicBrainz HTTP-failure diagnostics. Reconfirm all line references and call paths against current `main` before implementation.
+`recommend_new_music()` remains the live adapter used by the `/discovery` route and MCP tool. On current `main`, it spans source lines 282–856 (575 physical lines; 568 AST-measured lines) and delegates provider calls to `discovery_candidate_gathering.py`, allocation to `discovery_personal_allocator.py`, and payload construction to `discovery_recommendation_payload.py`. It still owns score adjustments, category policy, Last.fm bonus application, allocation input preparation, and diagnostic projection. PRs #255/#257/#259 established deterministic characterization coverage for ownership, duplicate IDs, response shape, inventory failures, score ordering, provider failures, Last.fm bonus, and regional MusicBrainz diagnostics.
 
 **Inventory overlap assessment (PR #259):** both the recommendation adapter and `discovery_library_snapshot.py` page `getAlbumList2` in batches of 500 up to 50,000 records and deduplicate non-empty album IDs. They do not have interchangeable contracts. The snapshot first reads/writes a 10-minute cache, also loads artists, and normalizes album records to `album`/`song_count`/`coverArt`; `recommend_new_music()` intentionally reads a fresh raw inventory, indexes `name` and `artist`, and converts retrieval exceptions and safety-limit exhaustion into distinct JSON error payloads. Reusing `build_library_snapshot()` directly would change freshness, record shape, and failure behavior. PR #261 extracted `fetch_album_inventory()` as the shared **raw pagination helper**, with injected API/items, stable ID deduplication, and a typed limit error carrying the retrieved count. The snapshot adapter retains its cache and normalization; the recommendation adapter retains fresh raw records and its JSON error shapes.
 
 Required sequence:
 1. Characterization now covers inventory ownership, duplicate IDs, response shape, inventory failure/limit behavior, score-based output ordering, early ListenBrainz failure/empty-result behavior, the Last.fm bonus, and regional MusicBrainz HTTP failure. PR #261 adds direct tests for the shared raw inventory helper.
 2. **Completed by PR #261:** share raw pagination without reusing `build_library_snapshot()` directly; keep the snapshot's 10-minute cache/normalized schema and the recommendation adapter's fresh raw inventory/error payloads distinct.
-3. **Implemented by PR #263; verification regression found:** the provider module omitted `regional_candidates_added` and `regional_results_seen` from its returned mapping, breaking the downstream public response contract. PR #264 returns the regional counters and raw library inventory from the provider mapping, unpacks them in the compatibility adapter, and asserts the response diagnostics in characterization coverage; do not proceed until its exact final PR-head CI passes.
-4. After the response-contract fix is verified, continue to the measurable size ratchet below, using measurements from the exact current main revision rather than the older audit estimate.
+3. **Completed by PRs #263/#264:** provider calls are behind `RecommendationProviders`; PR #264 restored the regional counters and raw library inventory in the provider mapping and compatibility adapter, preserving the public response contract.
+4. **Completed by PR #265:** the measurable size ratchet is enforced. Current `main` measures `navidrome_server.py` at 2,768 lines, `recommend_new_music()` at 568 AST lines against its temporary 575-line exception, and `_discovery_acquire_album_impl()` at 278 lines against the 280-line default limit.
+5. **Current extraction in PR review:** selection and diagnostic projection duplicated the regional artist overrides, adventurous-tag signals, and category precedence. Move this cohesive category policy into `discovery_recommendations.classify_recommendation_category()` and call it from both paths. Preserve family sets, regional aliases, precedence (`unclassified`, adventurous signal, cross-genre, adjacent, fallback adventurous), diagnostic counts/reasons, score/order, and public response shape.
 
-Acceptance: fixed-provider characterization coverage exists before extraction; inventory overlap is explicitly resolved; candidate gathering is independently testable; route and MCP compatibility remain intact.
+Acceptance: fixed-provider characterization remains green; the shared raw inventory contract remains distinct from the cached snapshot; category policy has direct-import tests; both selection and diagnostics use the same production helper; route/MCP response fields, category ordering, ownership checks, scoring, and failure behavior remain unchanged.
 
 ### 0a. Measurable size ratchet
 
-The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_music()`) is stale after extraction. PR #265 measures the current source at 3,031 lines and adds `scripts/check_server_size.py`: a 3,031-line server ceiling, a 280-line general top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. The guard uses AST `end_lineno` measurements, reports offending function names and sizes, and prints the ten largest functions in CI. The exception includes a rationale and follow-up plan; lower it as the recommendation adapter is decomposed.
+PR #265 added `scripts/check_server_size.py`: a 3,031-line server ceiling, a 280-line general top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. On the current audited main revision, the server is 2,768 lines. The guard uses AST `end_lineno` measurements, reports offending function names and sizes, and prints the ten largest functions in CI. The exception includes a rationale and follow-up plan; lower it as the recommendation adapter is decomposed.
 
 **Implemented and merged by PR #265.** The CI guard in `scripts/check_server_size.py` enforces a 3,031-line file ceiling, a 280-line default top-level-function ceiling, and a temporary named 575-line exception for `recommend_new_music()`. On the verified source, AST sizes are 568 lines for `recommend_new_music()` and 278 for `_discovery_acquire_album_impl()`. Tests prove accepted and rejected boundaries, including exception diagnostics. Update ceilings only through a reviewed change with a rationale; never raise them just to accommodate unrelated growth. As `recommend_new_music()` is decomposed, tighten its exception rather than normalizing its current size as acceptable architecture.
 
@@ -35,7 +36,7 @@ The older audit estimate (3,514 lines / roughly 1,058 lines for `recommend_new_m
 
 The owner requested removal of the early-development `restart_server` and `apply_server_patch` capabilities if safe. The audit found no internal callers; their only runtime exposure was the ordered MCP registry. `restart_server` killed/relaunched the process on hardcoded port 8000, and `apply_server_patch` rewrote the running service's own source file. PR #276 removed both definitions and registry entries while preserving the remaining 25 MCP tools and the MCP runtime.
 
-**Status: implemented, tested, and merged.** Exact PR head `67320d555d2ce5f26868b57f8d46a5b46b295f81` passed all four required workflows and the full 554-test suite; merge commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`. Do not restore either capability without a new explicit owner decision and a separate security review. The MCP server itself is not being retired.
+**Status: implemented, tested, and merged.** PR #276 exact head `67320d555d2ce5f26868b57f8d46a5b46b295f81` passed all four required workflows and the full 554-test suite; merge commit `fb5085f7b62b4b9616372c4d044fd974320b2f76`. Do not restore either capability without a new explicit owner decision and a separate security review. The MCP server itself is not being retired.
 
 
 ### 0c. Mutable settings coupling — audited; no state-object extraction justified
