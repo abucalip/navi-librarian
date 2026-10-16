@@ -7,6 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
+import slskd_transfers as _slskd_transfers_module
 import listenbrainz_client as _listenbrainz_client
 import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
@@ -3316,14 +3317,9 @@ def _discovery_queue_candidate_unless_dismissed(
 ):
     """Compatibility adapter for the directly tested queue/dismissal guard."""
     def queue_source():
-        response = httpx.post(
-            f"{base_url}/api/v0/transfers/downloads/{username}",
-            headers=headers,
-            json=selected_files,
-            timeout=12,
+        return _slskd_transfers_module.queue_download_files(
+            base_url, headers, username, selected_files, http_client=httpx
         )
-        response.raise_for_status()
-        return response
 
     return acquisition_orchestration.queue_candidate_unless_dismissed(
         artist, album,
