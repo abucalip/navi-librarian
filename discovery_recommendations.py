@@ -282,7 +282,6 @@ def primary_recent_family(tags: Iterable[str], family_counts: Mapping[str, int])
     )
 
 
-
 def apply_familiarity_exploration_bonus(
     candidate: dict[str, Any],
     recent_artist_count: int,
