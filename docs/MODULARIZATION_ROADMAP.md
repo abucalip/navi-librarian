@@ -877,3 +877,8 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 ## 2026-10-16 — Application-assembly seam: auth configuration predicate (PR #239)
 
 The pure check that determines whether all three persisted owner-auth fields are present is extracted to `app/security/auth_configuration.py`. The app assembly retains settings access and its compatibility wrapper. Direct-import tests preserve existing truthiness behavior. All four required workflows passed on the exact final PR head: syntax `38940305016`, Docker/full suite/build `38940304930`, runtime smoke `38940304907`, validation-only multi-architecture `38940305045`. This completes only the narrow predicate seam; broader application-assembly accounting and auth-flow verification remain.
+
+
+## 2026-10-16 — Auth-secret loading boundary (PR pending)
+
+The next application-assembly extraction moves lazy, lock-protected signing-secret loading from `app/main.py` into `app/security/auth_secret.py`. The app assembly still injects the current persistent data-directory lookup and `load_auth_secret`; session token creation, middleware, routes, and cookie policy remain unchanged. Direct-import tests cover lazy loading, cache-on-success, retry behavior, and concurrent first access. CI and merge status are pending; continue with settings/service access only after this boundary is verified.
