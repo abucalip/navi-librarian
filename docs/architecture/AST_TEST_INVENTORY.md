@@ -1,6 +1,6 @@
 # AST-coupled test inventory
 
-Audit baseline: GitHub `main` at `60cf07ffa05416355053660c1823f6af5b18716b` (2026-10-16); pure-helper test migration in progress on the current follow-up branch.
+Audit baseline: GitHub `main` at `c71a330ee6b5d44595c0c70299e8a61a45b15ab4` (2026-10-16), after PR #250.
 
 This inventory distinguishes tests that parse the legacy server source from tests that import it to verify a compatibility adapter. The latter are not AST-coupled and must not be indiscriminately rewritten.
 
@@ -35,6 +35,6 @@ Other text-reading tests found in the test suite inspect frontend assets/templat
 
 ## Audit conclusion
 
-There are **two remaining direct AST/source-layout couplings** to `navidrome_server.py`: `tests/test_acquisition_safety.py` and `tests/test_quality_priority.py`. The transfer lookup migration is complete; its direct-import behavior tests and the separate legacy adapter contract in `tests/test_slskd_transfers.py` remain. The acquisition-safety test is the highest-risk migration and must be split incrementally, preserving the real concurrency, persistence, recovery, and acquisition lifecycle guarantees.
+There is **one remaining direct AST/source-layout coupling** to `navidrome_server.py`: `tests/test_acquisition_safety.py`. The transfer lookup migration is complete; its direct-import behavior tests and the separate legacy adapter contract in `tests/test_slskd_transfers.py` remain. The acquisition-safety test is the highest-risk migration and must be split incrementally, preserving the real concurrency, persistence, recovery, and acquisition lifecycle guarantees.
 
 This inventory is based on a source search and full review of the identified test files at the stated main baseline. CI generated the dependency map from the audit branch, whose application source is unchanged from that baseline. It contains 159 local Python modules and a 71-module static closure from `app.main`; `navidrome_server` appears in that closure because `app/api/dependencies.py` imports it inside the lazy `get_librarian()` function. This static edge does not mean importing `app.main` eagerly loads the legacy server; `tests/test_auth_routes_integration.py::test_importing_app_does_not_initialize_legacy_server` checks that runtime boundary. The graph reports one direct `app/` import edge to the legacy server: `app/api/dependencies.py`.
