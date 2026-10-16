@@ -67,11 +67,16 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_excludes_owned_and_various_artists_credit(self):
-        result = self.select([
-            group("Fossora", "2025-09-30"),
-            group("Compilation", "2025-02-01", artist="Various Artists"),
-        ], owned={("bjork", "fossora")})
-        self.assertEqual(result, {})
+        owned_result = self.select(
+            [group("Fossora", "2025-09-30")],
+            owned={("bjork", "fossora")},
+        )
+        various_result = self.select(
+            [group("Compilation", "2025-02-01", artist="Various Artists")],
+            artist="Various Artists",
+        )
+        self.assertEqual(owned_result, {})
+        self.assertEqual(various_result, {})
 
     def test_duplicate_identity_keeps_latest_release_date(self):
         result = self.select([
