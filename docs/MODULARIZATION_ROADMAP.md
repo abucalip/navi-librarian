@@ -1,10 +1,14 @@
-## 2026-10-16 — Cached discovery-list projection extraction (verification pending)
+## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
 
-- Initial CI caught a test-fixture assertion for a legacy response field that is not present in the top-level payload; removed the incorrect assertion in commit `71816c027c496bd6c92cb8f09090da7d0c068abe`. Exact-head reruns are pending.
+- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
+- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
 
-- Candidate seam: the cached-list branch of `discovery_get_list()`, leaving request validation, feedback reads, persistence, and For Me library-inventory handling in the server adapter.
-- Proposed owner: `discovery_list_payload.build_cached_discovery_list_response()`; dependencies are injected for list reading, identity normalization, and album eligibility.
-- Direct-import regression tests and Docker inclusion have been added. Exact-head CI and final diff review remain pending; this is not merged or verified.
+## 2026-10-16 — PR #225 merged: cached discovery-list projection
+
+- Exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
+- `discovery_list_payload.build_cached_discovery_list_response()` owns cached-list filtering and response projection. Validation, feedback persistence/read, For Me inventory, and injected dependency wiring remain in the adapter.
+- All four workflows passed: syntax/acquisition safety 1187, Docker/full suite/build 1095 (477 tests), runtime smoke 904, validation-only multi-architecture 948. Initial test-fixture assertion was corrected before the final passing head.
+- No publication/deployment/runtime claim.
 
 ## 2026-10-16 — Session closeout: PRs #223 and #224 merged
 
