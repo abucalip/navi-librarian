@@ -36,6 +36,7 @@ from acquisition_candidate_start import candidate_start_state as _module_candida
 from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 import acquisition_orchestration
 from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
+import acquisition_search_diagnostics as _acquisition_search_diagnostics
 from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
 import acquisition_state as _acquisition_state
 from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -3276,41 +3277,19 @@ def _discovery_acquire_album_impl(
             list(payload_by_peer.values()), artist, album, priority,
             expected_track_count=expected_track_count,
         )
-        candidate_diagnostics = [
-            {
-                "username": item.get("username"),
-                "folder": item.get("folder"),
-                "file_count": item.get("file_count"),
-                "unique_track_count": item.get("unique_track_count"),
-                "expected_track_count": item.get("expected_track_count"),
-                "quality_summary": list(item.get("quality_summary") or []),
-                "clear_match": bool(item.get("clear_match")),
-                "eligibility_reason": item.get("eligibility_reason"),
-            }
-            for item in candidates[:10]
-        ]
+        candidate_diagnostics = _acquisition_search_diagnostics.candidate_diagnostics(candidates)
         if not candidates:
-            audio_exts = {".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".ape"}
             response_count = len(payload_by_peer)
-            audio_file_count = sum(
-                1 for entry in payload_by_peer.values()
-                for item in (entry.get("files") or [])
-                if isinstance(item, dict)
-                and Path(str(item.get("filename") or item.get("path") or "")).suffix.casefold() in audio_exts
-            )
+            audio_file_count = _acquisition_search_diagnostics.count_audio_files(payload_by_peer)
             path_diagnostics = _slskd_path_match_diagnostics(
                 list(payload_by_peer.values()), artist, album
             )
-            attempted_queries = " -> ".join(
-                item["query"] for item in search_attempts
-            )
-            message = (
-                f"No matching album folders were found among {response_count} collected peer responses "
-                f"({audio_file_count} audio files). slskd reported up to {reported_response_count} "
-                f"responses and {reported_file_count} files across the search attempts. "
-                "If the counts are zero, no peers answered the attempted queries; otherwise "
-                "the response payloads may not have been available to Librarian. "
-                f"Queries tried: {attempted_queries}."
+            message = _acquisition_search_diagnostics.no_match_message(
+                response_count=response_count,
+                audio_file_count=audio_file_count,
+                reported_response_count=reported_response_count,
+                reported_file_count=reported_file_count,
+                search_attempts=search_attempts,
             )
             _discovery_update_acquisition_status(
                 artist, album, "no_matches",
