@@ -141,6 +141,15 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         self.assertEqual(result["recommendations"][0]["artist"], "John Coltrane")
         self.assertEqual(result["recommendations"][0]["ownership_check"],
                          "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist.")
+        debug = result["debug_all_candidates"][0]
+        self.assertEqual(
+            debug["assigned_category"],
+            result["recommendations"][0]["discovery_category"],
+        )
+        self.assertEqual(
+            result["debug_candidate_category_counts"],
+            {debug["assigned_category"]: 1},
+        )
 
     def test_exact_owned_album_is_not_recommended(self):
         result = self._run_recommendations([{
