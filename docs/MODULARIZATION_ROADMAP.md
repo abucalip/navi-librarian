@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (PR #270 exact-head CI passed; awaiting merge)
-Audit base: GitHub `main` at commit `5a05ca4a389673896f8263758aacecaad79f28b0`
+Last reviewed: 2026-10-16 (PR #270 merged; import-completion service extracted)
+Audit base: GitHub `main` at commit `d84d74c1cfa295e3c3fd2ff1594fa1758dc69949`
 
 ## Purpose
 
@@ -68,7 +68,7 @@ Complete these gates in order; do not jump straight to another extraction:
 2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`. PR #249 migrated transfer lookup tests and PR #250 decoupled pure helper tests. `tests/test_acquisition_safety.py` now calls the extracted request coordinator directly for duplicate-request concurrency, persisted-job recovery, and dismissed-job reactivation. The import-status persistence guard now has direct-import coverage in PR #270; its AST adapter test remains to preserve lock/dismissal compatibility. Broader-search orchestration remains source-executed until a production boundary can preserve real search/retry behavior.
 3. **Completed by PR #254:** `scripts/check_app_legacy_imports.py` enforces the app-to-legacy-server boundary in CI. The only allowlisted direct import is `app/api/dependencies.py:get_librarian`, the existing lazy compatibility adapter. Regression tests reject module-level imports, imports from other functions/paths, `from` imports, and submodule imports. All four required workflows passed on final PR head `908783f0a46618c53e4f3e4c4dcf298ec33850fc`; merged as `8bfd6a57179aec46a672343745b494dff60fec02`.
 4. **Completed:** shared raw inventory helper (PR #261), provider/candidate-gathering extraction (PR #263), response-contract regression fix (PR #264), and `MUSIC_DIR` read/write audit (PR #267). No separate settings wrapper is justified while operational adapters intentionally snapshot the current path at invocation time.
-5. **Completed:** audit `_discovery_acquire_album_impl()`; retain it as orchestration because no discrete policy seam justified extraction. PR #270's import-completion extraction is the active change. After merge, re-evaluate the remaining broader-query fallback AST-coupled test only when real search/retry behavior can be tested through a suitable production boundary.
+5. **Completed:** audit `_discovery_acquire_album_impl()`; retain it as orchestration because no discrete policy seam justified extraction. PR #270's import-completion extraction is complete. The next candidate is the remaining broader-query fallback AST-coupled test, but only move it to direct-import coverage when real search/retry behavior can be tested through a suitable production boundary.
 6. In parallel only where file/dependency overlap is absent, run separate PRs for the AST-test migration, app-import boundary guard, and settings-wrapper audit. Each PR must still branch from a suitable current base, pass exact-head CI, and refresh main before dependent work.
 
 Acceptance criteria:
