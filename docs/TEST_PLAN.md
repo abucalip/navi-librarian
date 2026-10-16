@@ -1204,3 +1204,8 @@ Direct-import regression coverage verifies scalar and list API payloads, empty-t
 - Added direct-import regression coverage for the exact 730-day cutoff, earliest query year/current year, and leap-day arithmetic in `tests/test_discovery_new_releases.py`.
 - All four exact-head CI workflows passed on PR head `8d42c9f5f320fd7b4c0653fa09da8eda12f03f78`: syntax run `38938867862`, Docker packaging/full unit suite/build run `38938867879`, container runtime smoke run `38938867737`, and validation-only multi-architecture image validation run `38938867550` (non-publishing).
 - Assistant-side local test commands were not run independently. No publishing, deployment, or production runtime verification is claimed.
+
+
+## Authentication configuration predicate extraction (PR pending)
+
+Focused regression command: `python -m unittest tests.test_auth_configuration -v`. Coverage includes a complete configuration, each missing/empty required field, absent/partial settings, and preservation of the existing truthiness behavior. The full suite and all four required exact-final-head workflows remain mandatory before merge; no local execution is claimed unless separately recorded.
