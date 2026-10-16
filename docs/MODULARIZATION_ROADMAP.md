@@ -1,7 +1,7 @@
 # Modularization roadmap
 
 Last reviewed: 2026-10-16  
-Baseline: GitHub `main` at `b0c63b267c834516b419d7e8183d007d2dbb2f5b`
+Baseline: GitHub `main` at `b9a97b5e37aff297c836d2039763de7b166441ba`
 
 ## Purpose
 
@@ -13,17 +13,19 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
-### 1. Discovery builder responsibilities — first to assess
+### 1. Application assembly and test coupling — next audit
 
-Trace `_build_classics_list()`, its callers, and tests. Identify the smallest remaining independently testable policy stage, if one still exists after the already-merged classics extractions.
+The `_build_classics_list()` trace is complete. Do not schedule another classics extraction unless new evidence shows a cohesive policy boundary.
+
+Audit current `app/main.py` and API dependencies on `navidrome_server.py`, package configuration, compatibility adapters, and AST-coupled acquisition tests.
 
 Acceptance criteria:
-- Name one responsibility and its inputs/outputs before changing code.
-- Keep provider/cache access, rate limiting, ranking, response shape, and persistence at their existing owners unless the selected seam explicitly requires otherwise.
-- Add direct-import contract tests plus adapter/compatibility regressions.
-- Stop if the boundary requires a broad callback surface or merely moves code without improving ownership.
+- Identify runtime dependencies from actual imports and callers.
+- Distinguish intentional compatibility seams from accidental coupling.
+- Prefer a dependency map and targeted test improvements over another extraction when no cohesive behavior boundary exists.
+- Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
 
-### 2. Application assembly and test coupling — completion audit
+### 2. Acquisition coordinator — conditional, high risk
 
 Reconcile current `app/main.py` and API dependencies on `navidrome_server.py`, package configuration, compatibility adapters, and AST-coupled acquisition tests.
 
@@ -33,13 +35,13 @@ Acceptance criteria:
 - Prefer a dependency map and targeted test improvements over another extraction when no cohesive behavior boundary exists.
 - Do not retire MCP compatibility as part of routine modularization; that requires its own explicit decision and migration gate.
 
-### 3. Acquisition coordinator — conditional, high risk
+### 2. Acquisition coordinator — conditional, high risk
 
-Audit `_discovery_acquire_album_impl()` only after the discovery and assembly audits. Extract only if a narrow, independently testable policy/coordination boundary is evident.
+Audit `_discovery_acquire_album_impl()` only after the application-assembly and AST-test dependency audit. Extract only if a narrow, independently testable policy/coordination boundary is evident.
 
 Preserve concurrency and lock behavior, conditional state transitions, persistence, queue uncertainty, recovery, dismissal/import exclusion, watcher startup, mount identity, rollback, no-overwrite behavior, cleanup refusal, and path safety. Add tests for both safe success and unsafe refusal. Do not bundle this work with unrelated refactors.
 
-### 4. slskd integration — no size-only work
+### 3. slskd integration — no size-only work
 
 Search polling, quality, transfer matching, progress, and connectivity responsibilities have already been extracted in prior work. Treat remaining code as adapter/wiring unless a concrete duplicated policy or independently testable orchestration responsibility is demonstrated.
 
