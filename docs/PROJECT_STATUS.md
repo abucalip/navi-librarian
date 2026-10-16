@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #261 merged; raw album inventory boundary shared)  
-Documentation branch base: GitHub `main` at `a9bc864df85a8fb643864cb128d6b70f10eb7dce`
+Last reviewed: 2026-10-16 (PR #263 merged; recommendation provider orchestration extracted)  
+Documentation branch base: GitHub `main` after merge commit `20728507774a210123ef91d72b7cd2370668659d`
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. **In progress:** extract `recommend_new_music()` provider/candidate gathering behind explicit dependencies; verify characterization parity, public response ordering, error behavior, and route/MCP compatibility.
+1. Verify merged PR #263 against characterization tests, the full unit suite, and all required CI workflows; the GitHub workflow-run lookup did not return runs for merge commit `20728507774a210123ef91d72b7cd2370668659d`, so verification remains unconfirmed.
 2. Add the measurable CI size ratchet only after verifying the line/function-size baseline against current `main`.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
