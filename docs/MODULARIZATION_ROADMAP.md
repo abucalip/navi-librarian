@@ -1,6 +1,6 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (AST test inventory completed; dependency map CI run pending)  
+Last reviewed: 2026-10-16 (dependency map reviewed; AST test inventory completed)  
 Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
