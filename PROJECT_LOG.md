@@ -1,7 +1,8 @@
-## 2026-10-16 — Recommendation provider orchestration extraction (verification pending)
+## 2026-10-16 — PR #263 merged: recommendation provider orchestration
 
-- Added `discovery_candidate_gathering.py` with an immutable `RecommendationProviders` dependency bundle for ListenBrainz, MusicBrainz, cache, Navidrome inventory, album eligibility, HTTP, and sleep dependencies. `recommend_new_music(count=10)` remains the public adapter; scoring, ownership decisions, allocation, and payload shaping remain downstream.
-- Verification and exact PR-head SHA: pending. No local test command was run. Do not treat this extraction as verified until characterization, full unit suite, and all four required workflows pass on the exact final PR head.
+- Merged PR #263 with merge commit `20728507774a210123ef91d72b7cd2370668659d`. Added `discovery_candidate_gathering.py` with an immutable `RecommendationProviders` dependency bundle for ListenBrainz, MusicBrainz, cache, Navidrome inventory, album eligibility, HTTP, and sleep dependencies. The public `recommend_new_music(count=10)` adapter remains; scoring, ownership allocation, and payload shaping remain downstream.
+- CI verification is **unconfirmed**: the workflow-run lookup returned no runs for the merge commit. The initial PR run exposed six characterization failures from downstream imports; the adapter imports were restored in a follow-up commit, but no successful post-fix CI result was confirmed here. No local tests were run. Do not describe this revision as verified until characterization, full unit suite, and required workflows pass.
+- Publishing, deployment, and runtime verification were not performed.
 
 ---
 
