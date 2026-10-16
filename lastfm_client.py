@@ -115,6 +115,32 @@ class LastFmClient:
         return tags
 
 
+    def similar_artists(self, artist: str, limit: int = 8) -> list[dict[str, Any]]:
+        """Return Last.fm similar-artist names and normalized similarity scores."""
+        payload = self.cached_call(
+            "artist.getSimilar",
+            ttl_seconds=60 * 24 * 60 * 60,
+            artist=artist,
+            limit=limit,
+        )
+        if not payload:
+            return []
+        records = self._items_normalizer((payload.get("similarartists") or {}).get("artist"))
+        output = []
+        for item in records:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            if not name:
+                continue
+            try:
+                match = float(item.get("match") or 0)
+            except (ValueError, TypeError):
+                match = 0.0
+            output.append({"artist": name, "similarity": match})
+        return output
+
+
     def album_popularity(
         self, artist: str, album: str
     ) -> tuple[dict[str, Any] | None, str | None]:
