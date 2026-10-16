@@ -5,9 +5,8 @@ details, and release years. Provider failures remain non-fatal except for
 invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
-import threading
 from concurrent.futures import ThreadPoolExecutor
-from time import monotonic, sleep
+from time import monotonic
 from urllib.parse import urlencode
 
 import httpx
@@ -15,7 +14,6 @@ from fastapi import APIRouter, HTTPException
 
 from app.services.artist_bio import resolve_artist_bio
 from musicbrainz_album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
-from urllib.request import urlopen
 
 router = APIRouter()
 
