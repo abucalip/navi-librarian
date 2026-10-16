@@ -5,7 +5,7 @@
 
 ## 2026-10-16 — New Releases library qualification extraction in progress
 
-The next candidate moves normalized ownership identity construction and full-album artist qualification/sorting into `discovery_new_releases.prepare_new_release_library_scope()`. It preserves the six-track threshold, Various Artists exclusion, stable descending album-count order, all-owned-album identity set, and untruncated qualified count. The adapter retains the 120-artist request cap, date-window policy, MusicBrainz requests/cache/rate limit, error reporting, and global merge. Direct-import contract tests are being added; final-head CI and merge remain pending.
+The next candidate moves normalized ownership identity construction and full-album artist qualification/sorting into `discovery_new_releases.prepare_new_release_library_scope()`. It preserves the six-track threshold, Various Artists exclusion, stable descending album-count order, all-owned-album identity set, and untruncated qualified count. The adapter retains the 120-artist request cap, date-window policy, MusicBrainz requests/cache/rate limit, error reporting, and global merge. Direct-import contract tests are added; final-head CI and merge remain pending.
 
 ## 2026-10-16 — PR #231 merged: classics genre enrichment
 
