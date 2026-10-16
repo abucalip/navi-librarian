@@ -9,8 +9,8 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Finish the AST/source-coupling audit and add the allowlist-aware app-import boundary guard; keep lifecycle/concurrency/persistence/recovery safety coverage intact.
-2. Add deterministic characterization tests for `recommend_new_music()` using fake ListenBrainz, MusicBrainz, library, and Last.fm responses; inspect `discovery_library_snapshot.py` before extracting candidate gathering.
+1. Enforce the allowlist-aware app-import boundary guard in PR #254; merge only after the exact final head passes all four required workflows.
+2. Then add deterministic characterization tests for `recommend_new_music()` using fake ListenBrainz, MusicBrainz, library, and Last.fm responses; inspect `discovery_library_snapshot.py` before extracting candidate gathering.
 3. Add a CI size ratchet after verifying the 3,514-line audit baseline and recording function-size limits against the exact main SHA.
 4. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates in separate PRs only when no dependency or file overlap exists.
 5. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.
