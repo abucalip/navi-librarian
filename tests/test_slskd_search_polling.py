@@ -100,15 +100,17 @@ class SlskdSearchPollingTests(unittest.TestCase):
         self.assertEqual(queries, [
             "Tinariwen Idrache (Traces of the Past)",
             "Tinariwen Idrache Traces of the Past",
+            "Tinariwen Idrache",
         ])
         result = self.run_search(client, queries)
+        attempted_queries = queries[:2]
 
         self.assertEqual([item["payload"]["searchText"] for item in client.posted],
-                         queries)
+                         attempted_queries)
         self.assertEqual([item["payload"]["searchTimeout"] for item in client.posted],
                          [15000, 6000])
         self.assertEqual([item["query"] for item in result["search_attempts"]],
-                         queries)
+                         attempted_queries)
         self.assertEqual(result["search_attempts"][0]["collected_peer_response_count"], 0)
         self.assertEqual(result["search_attempts"][1]["collected_peer_response_count"], 1)
         self.assertEqual(result["reported_response_count"], 1)
@@ -119,7 +121,7 @@ class SlskdSearchPollingTests(unittest.TestCase):
             reported_file_count=result["reported_file_count"],
             search_attempts=result["search_attempts"],
         )
-        self.assertIn("Queries tried: " + " -> ".join(queries), message)
+        self.assertIn("Queries tried: " + " -> ".join(attempted_queries), message)
 
     def test_legacy_404_405_endpoints_are_tolerated(self):
         client = FakeSlskdClient("legacy")
