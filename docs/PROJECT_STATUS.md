@@ -1,31 +1,30 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PRs #222, #279, and #282 merged)
-Documentation base: GitHub `main` at commit `71eb20bc734f1113f81b62eef35e17d53b8adf8e`; status update is being recorded on a documentation PR branch.
+Last reviewed: 2026-10-16 (completion audit found a missing Docker module copy)
+Documentation base: GitHub `main` at commit `1f8f37ba7f9c289b694b1089492ba7a3cfdacf82`
 
 ## Current focus
 
-PRs #278, #280, and #281 extracted recommendation category, Last.fm, and familiarity/exploration scoring policies; PR #283 tightened the temporary recommendation size exception to 450 lines. `recommend_new_music()` is 396 AST lines, `navidrome_server.py` is 2,596 lines, and `_discovery_acquire_album_impl()` is 278 lines. The current dependency map covers 171 modules and a 73-module app import closure; the sole app-to-legacy import is the intentionally lazy edge at `app/api/dependencies.py:10`. The AST/source-layout test migration is complete. See `PROJECT_LOG.md`.
+The recommendation policy seams and acquisition AST-test migration are complete. No further extraction currently has a sufficiently narrow boundary to justify added indirection. The completion audit checked the current lazy web-to-legacy import in `app/api/dependencies.py`, the CI import-boundary guard, the AST inventory, and Docker's explicit root-module copy list.
 
-The UI PRs #222 (dashboard coverflow ring), #279 (async Get-button state machine), and #282 (uniform acquisition-toast border) are now merged. All four required workflows passed on each exact PR head, and the owner confirmed manual UI testing. Publishing remains paused.
+That audit found a concrete packaging defect: `navidrome_server.py` lazily imports `acquisition_import_service` during import completion, but `Dockerfile` does not copy `acquisition_import_service.py` into the image. Add the missing module and a regression test before considering modularization complete. The isolated runtime smoke test may not exercise this delayed import path.
 
 ## Next action
 
-1. Continue from `docs/MODULARIZATION_ROADMAP.md` only where a concrete behavior/testability seam justifies further work; the latest completion audit found no additional extraction worth the dependency surface without such a seam.
-2. Keep the remaining acquisition coordinator orchestration intact unless a narrower policy boundary can be extracted without duplicating retry, concurrency, source-switching, or filesystem-safety rules.
-3. Do not force additional classics-builder or size-only slskd extractions.
+1. Fix the Docker image's missing `acquisition_import_service.py` and add a regression test that prevents this omission from recurring.
+2. Verify all four required workflows on the exact final PR-head SHA, especially the container runtime and packaging checks; do not claim local tests unless run.
+3. After merge, repeat the completion audit against exact current `main`: review the generated dependency map/artifact, app-to-legacy references, dynamic imports, Docker inclusion, and compatibility/safety tests. If no further gap remains, record modularization complete without inventing another extraction.
 
-The MUSIC_DIR read/write audit is complete: persistence already injects path getter/setter callbacks, while operational adapters intentionally snapshot the current path at invocation time. A separate settings object would add indirection without removing the legacy compatibility dependency today; see the roadmap and PROJECT_LOG.md.
+The `MUSIC_DIR` read/write audit remains closed: existing persistence callbacks and invocation-time path snapshots are sufficient; a separate settings object is not justified. The recommendation diagnostic projection and acquisition coordinator remain orchestration unless a concrete behavior change establishes a smaller testable seam.
 
 ## Delivery and verification state
 
-- **Implemented / merged:** see `PROJECT_LOG.md` and current GitHub history for exact revisions.
-- **Automated verification:** the four required workflows passed on exact PR heads for #222 (`5b55527ec3a13aaa137ed3d56341fb029913f09f`), #279 (`b3f44942724b6f9c6865f6c9160a69e58715b28a`), and #282 (`cbe30a5bf26e503f1cb455861b32a5064b3604ab`).
-- **Manual UI verification:** owner reports all three PRs were manually tested; the older manual-report format was waived by the owner for this merge request.
-- **Publishing:** paused; multi-architecture validation remains non-publishing (`push: false`).
-- **Deployment / production runtime:** not implied by merge or CI. No deployment or production-runtime verification is claimed.
-- **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred because it has not been reproducibly demonstrated.
-- **MCP:** the early-development operational tools `restart_server` and `apply_server_patch` have been retired by PR #276. Preserve remaining compatibility seams unless a separately approved migration changes them.
+- **Implemented:** missing Docker copy and regression test are being proposed in a focused PR.
+- **Tests / CI:** not yet run for this change. Required checks must pass on the exact final PR-head SHA.
+- **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
+- **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
+- **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
+- **MCP:** `restart_server` and `apply_server_patch` were retired by PR #276; preserve the remaining MCP compatibility surface unless a separately approved migration changes it.
 
 ## Documentation map
 
