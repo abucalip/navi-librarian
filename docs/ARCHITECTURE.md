@@ -1,6 +1,6 @@
-## 2026-10-16 — Dashboard-pick service boundary (PR preparation)
+## Dashboard-pick service — extracted (PR #189)
 
-`app/services/dashboard.py` owns the dashboard's three-lane candidate assembly, album eligibility callback, case-insensitive artist/album deduplication, balanced per-category selection, and random fill. `app/api/dashboard.py` retains HTTP count validation, dependency injection, the response contract, and the route-level service adapter. The service receives list-reading, eligibility, and shuffle dependencies, so importing it does not initialize FastAPI, Navidrome, persistence, or MCP. Direct-import regression coverage is in `tests/test_dashboard_service.py`; route integration coverage remains in `tests/test_dashboard_routes.py`. Exact-head CI is pending; no merge or deployment is claimed.
+`app/services/dashboard.py` owns the dashboard's three-lane candidate assembly, album eligibility callback, case-insensitive artist/album deduplication, balanced per-category selection, and random fill. `app/api/dashboard.py` retains HTTP count validation, dependency injection, the response contract, and the route-level service adapter. List reads, eligibility, and shuffle are injected; the module does not initialize FastAPI, Navidrome, persistence, or MCP. PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5` from exact tested head `d28aaa33f7096ba764232d6bd435cc68d5d85f98`; all four required exact-head workflows passed (syntax 1052, Docker/full suite/build 959, runtime smoke 768, validation-only multi-architecture 812). No publication or deployment is claimed.
 
 ## slskd connectivity probe — extraction in progress (PR #187)
 
