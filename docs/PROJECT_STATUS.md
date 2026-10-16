@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16 (PR #255 merged; new-music inventory characterization started)  
-Documentation branch base: GitHub `main` at `4d21627f4d01c7129298fa2753c518006db5ba45`
+Last reviewed: 2026-10-16 (PR #257 merged; ranking/provider characterization expanded)  
+Documentation branch base: GitHub `main` at `2bbe5c28887e16c249c119634c7b33396351f540`
 
 ## Current focus
 
@@ -9,7 +9,7 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Expand `recommend_new_music()` characterization beyond inventory ownership to stable candidate ordering/scoring and provider failure behavior; compare `discovery_library_snapshot.py` semantics before extracting candidate gathering.
+1. Add characterization for scoring/bonus effects and regional MusicBrainz provider failures; finish the inventory-semantics comparison with `discovery_library_snapshot.py` before extracting candidate gathering.
 2. Add the measurable CI size ratchet only after verifying the line/function-size baseline against current `main`.
 3. Audit mutable `MUSIC_DIR`, then settings wrappers and the acquisition coordinator's policy-vs-orchestration seam. Parallelize independent gates only when prerequisites and changed files do not overlap.
 4. Obtain the owner's explicit authorization/retention decision for MCP-exposed `restart_server` and `apply_server_patch` before changing their exposure or implementation.

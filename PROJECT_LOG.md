@@ -1,3 +1,12 @@
+## 2026-10-16 — Expanded new-music ranking and provider characterization
+
+- Extended `tests/test_recommend_new_music_characterization.py` with a fixed two-recording fixture proving recommendation output is ordered by discovery score rather than raw ListenBrainz order. Added assertions for the existing ListenBrainz recent-history error response and the empty-recommendation message.
+- PR #257 final head `4de3a9e0488552e2f3452c00fe691fb8ce084e61` passed all four required workflows: Python syntax/acquisition safety and dependency map (`38961968775`), Docker packaging/full unit suite/build (`38961968720`), isolated container runtime smoke (`38961968596`), and validation-only multi-architecture image validation (`38961968694`, `push: false)). Full suite: 537 tests passed. No separate assistant-side local test command ran.
+- PR #257 was squash-merged as `2bbe5c28887e16c249c119634c7b33396351f540`. Tests only; no production behavior changed. Publishing, deployment, and production runtime verification were not performed.
+- Remaining before extraction: characterize scoring/bonus effects and regional MusicBrainz failure behavior, and complete the comparison with `discovery_library_snapshot.py` so any inventory-schema/cache/safety-limit mismatch is explicit.
+
+---
+
 ## 2026-10-16 — Initial new-music inventory characterization
 
 - Added `tests/test_recommend_new_music_characterization.py` with deterministic mocked provider/cache responses. It pins the public response shape for a clear inventory, exclusion of an exact artist+album ownership match, duplicate album-ID deduplication before ownership indexing, and fail-closed behavior when Navidrome inventory retrieval raises.
