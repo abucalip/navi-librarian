@@ -108,3 +108,59 @@ def match_expected_transfer_records(expected_files, tracked):
             tracked_by_name[name] = item
 
     return expected_by_name, tracked_by_name
+
+
+def summarize_transfer_progress(expected_by_name, tracked_by_name):
+    """Aggregate matched expected/tracked records without touching shared state.
+
+    Completed-state records count as complete even when byte counters are absent.
+    A non-completed record whose reported bytes reach a known file size also counts
+    as complete. Speed snapshots use only real transfer counters, not inferred
+    bytes for completed files.
+    """
+    completed_states = {"succeeded", "completed"}
+    completed = 0
+    total_bytes = 0
+    transferred_bytes = 0
+    file_byte_snapshot = {}
+
+    for name, expected in expected_by_name.items():
+        item = tracked_by_name.get(name) or {}
+        state = str(item.get("state") or "").replace("_", "").casefold()
+        is_completed_state = state in completed_states
+        if is_completed_state:
+            completed += 1
+
+        try:
+            size = max(0, int(expected.get("size") or item.get("size") or 0))
+        except (TypeError, ValueError):
+            size = 0
+        transferred = 0
+        raw_transferred = 0
+        has_transfer_counter = False
+        for key in ("bytesTransferred", "bytesDownloaded", "downloadedBytes", "transferredBytes"):
+            if item.get(key) is not None:
+                try:
+                    raw_transferred = max(0, int(item[key]))
+                    transferred = raw_transferred
+                    has_transfer_counter = True
+                    break
+                except (TypeError, ValueError):
+                    pass
+        if is_completed_state and size:
+            transferred = size
+        if size:
+            transferred = min(transferred, size)
+            total_bytes += size
+            transferred_bytes += transferred
+            if transferred >= size and not is_completed_state:
+                completed += 1
+        file_byte_snapshot[name] = raw_transferred if has_transfer_counter else 0
+
+    return {
+        "total_tracks": len(expected_by_name),
+        "completed_tracks": min(completed, len(expected_by_name)),
+        "total_size_bytes": total_bytes,
+        "transferred_size_bytes": transferred_bytes,
+        "file_byte_snapshot": file_byte_snapshot,
+    }
