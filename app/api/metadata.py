@@ -41,6 +41,43 @@ def artist_bio(artist: str):
     if cached and now - cached["time"] < _ARTIST_BIO_CACHE_TTL:
         return {"artist": name, "bio": cached["bio"]}
 
+    bio = ""
+    params = {
+        "action": "wbsearchentities",
+        "search": name,
+        "language": "en",
+        "uselang": "en",
+        "format": "json",
+        "limit": 10,
+    }
+    summary_url = (
+        "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        + __import__("urllib.parse", fromlist=["quote"]).quote(name.replace(" ", "_"), safe="")
+    )
+
+    # Start both network requests together. The summary is used only after its
+    # Wikidata identity is checked, so the faster path doesn't reintroduce
+    # wrong-name biographies such as Rainbow the optical phenomenon.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        search_future = pool.submit(
+            _EXTERNAL_HTTP.get, "https://www.wikidata.org/w/api.php", params=params
+        )
+        summary_future = pool.submit(_EXTERNAL_HTTP.get, summary_url)
+        entities = []
+        page = {}
+        try:
+            search_response = search_future.result()
+            search_response.raise_for_status()
+            entities = search_response.json().get("search", [])
+        except Exception:
+            pass
+        try:
+            summary_response = summary_future.result()
+            if summary_response.status_code == 200:
+                page = summary_response.json()
+        except Exception:
+            pass
+
     bio = resolve_artist_bio(name, entities, page)
 
     _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
