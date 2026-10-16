@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Enforce a reviewed size ceiling for the legacy server and its top-level functions."""
+"""Enforce the legacy-server size ceiling; new domain logic belongs in modules, not here."""
 from __future__ import annotations
 
 import argparse
 import ast
 from pathlib import Path
 
-SERVER_LINE_LIMIT = 3031
+# Keep the compatibility/orchestration entry point lean: new domain logic belongs
+# in a focused module with direct-import tests, not in navidrome_server.py.
+SERVER_LINE_LIMIT = 2650
 TOP_LEVEL_FUNCTION_LINE_LIMIT = 280
 FUNCTION_EXCEPTIONS = {
     "recommend_new_music": {
