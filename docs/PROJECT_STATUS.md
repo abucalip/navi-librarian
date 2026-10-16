@@ -1,3 +1,9 @@
+## 2026-10-16 — Classics genre enrichment extraction (PR in progress)
+
+- Selected the bounded genre-enrichment stage following PR #229's critical-rating seam. The new `discovery_classics_genres.enrich_classic_genres()` keeps Last.fm cache/provider access injected, deduplicates lookups by normalized artist, preserves candidate order, applies the existing 300-item bound, and retains empty/`other` fallback metadata beyond the bound.
+- Added direct-import tests for ordering, classification fallback, normalized lookup deduplication, and limits; added the module to Docker packaging. The builder remains the adapter for provider access and response assembly.
+- PR/CI status will be recorded after the branch is reviewed. No local test run, merge, publication, deployment, or runtime verification is claimed at this point.
+
 ## 2026-10-16 — PR #230 merged: watcher progress accounting
 
 - Extracted the pure byte-counter progress/timer transition into `acquisition_progress_accounting.observe_progress()`; watcher polling, stall thresholds/countdown, source switching, transfer-state interpretation, filesystem verification, and safe import remain in `acquisition_watcher.py`.
