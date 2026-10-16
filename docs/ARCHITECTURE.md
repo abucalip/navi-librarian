@@ -322,3 +322,8 @@ The pure aggregation of ListenBrainz history into the recent-listening profile p
 ## Last.fm top albums — extraction in progress
 
 `LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` retrieval and response normalization. The legacy `_lastfm_top_albums()` adapter retains discovery-specific eligibility filtering. Exact-head CI and merge pending.
+
+
+## Last.fm top album retrieval — completed (PR #175)
+
+`LastFmClient.artist_top_albums()` owns cached `artist.getTopAlbums` requests and normalization of returned album metadata. The legacy `navidrome_server._lastfm_top_albums()` remains a compatibility adapter and continues applying discovery-specific album-candidate eligibility filtering. The extraction preserves request pacing, timeout, the 30-day cache TTL, caller-requested limit, and normalized output contract. Exact tested head `6b5e32b1144e9f3517247110ea4383b287ce33f4`; merged to main at `f922631e0393063bde02b1e0bd93d30b2d38bd2a`. All four required CI workflows passed on the exact head. No publication, deployment, or production runtime verification is claimed.
