@@ -282,6 +282,34 @@ def primary_recent_family(tags: Iterable[str], family_counts: Mapping[str, int])
     )
 
 
+
+def apply_familiarity_exploration_bonus(
+    candidate: dict[str, Any],
+    recent_artist_count: int,
+    genre_tags: Iterable[str],
+    exploration_families: set[str],
+) -> float:
+    """Apply the established recent-familiarity and exploration score multipliers."""
+    if recent_artist_count == 0:
+        familiarity_factor = 1.35
+    elif recent_artist_count <= 2:
+        familiarity_factor = 1.20
+    elif recent_artist_count <= 5:
+        familiarity_factor = 1.05
+    elif recent_artist_count <= 10:
+        familiarity_factor = 0.90
+    else:
+        familiarity_factor = 0.75
+
+    candidate_families = genre_families(genre_tags)
+    exploration_bonus = (
+        1.10 if candidate_families & exploration_families else 1.0
+    )
+    candidate["discovery_score"] = (
+        candidate["score"] * familiarity_factor * exploration_bonus
+    )
+    return candidate["discovery_score"]
+
 def apply_lastfm_popularity_bonus(
     candidates: Iterable[dict[str, Any]],
     recent_family_counts: Mapping[str, int],
