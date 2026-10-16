@@ -1,3 +1,12 @@
+## 2026-10-16 — Independent extraction session closeout: PRs #202 and #203
+
+- **PR #202** extracted pure Navidrome library-overview payload shaping into `navidrome_client.library_overview_payload()`; `navidrome_server.library_overview()` retains API calls, collection normalization, JSON serialization, and the MCP-facing contract. Exact tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required workflows passed: syntax/acquisition safety 1104, Docker packaging/full unit suite/build 1011, runtime smoke 820, validation-only multi-architecture 864. Squash merge: `7a95364a31f360bb20dd8d2919a9bfea93ec893c`.
+- **PR #203** extracted source-preview sensitive-assignment redaction into `server_source_redaction.redact_assignment()`. `get_server_source()` retains source selection, range validation, 250-line bound, numbering, and JSON response shape. Docker packaging includes the helper. Exact tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`; all four required workflows passed: syntax/acquisition safety 1106, Docker packaging/full unit suite/build 1013, runtime smoke 822, validation-only multi-architecture 866. Squash merge: `89e639394122aebe29bfb8602a1135722ea28bbe`.
+- Both changes include direct-import regression tests and preserve legacy compatibility. Assistant-side local tests were not run; full unit suites were run by the Docker packaging CI jobs. No live Navidrome integration, source-secret access, image publication, deployment, or production runtime verification is claimed.
+- Acquisition-dismissal HTTP 409 remains deferred. Publishing remains paused.
+- **Next action:** refresh main/open PRs/CI and select the next small, low-coupling extraction; do not treat extraction count as a quota.
+
+
 ## 2026-10-16 — PRs #196 and #198 merged: Navidrome response shaping
 
 - **PR #196** (branch refactor/extract-navidrome-search-shaping): exact tested head 4b501c64c82a69af1805a7f6195b4fc15ef0c836; squash merge 277499ec949353f5f24542a8033a481283814782. Extracted pure Subsonic search-result shaping into navidrome_client.search_result_payload(); search_music() remains the compatibility/MCP-facing adapter.

@@ -1,3 +1,11 @@
+## Library overview payload shaping — extracted (PR #202)
+
+`navidrome_client.library_overview_payload(artists, albums)` owns pure projection of normalized Navidrome artist/album rows into the existing library-overview payload. `navidrome_server.library_overview()` retains API calls, Subsonic collection normalization, JSON serialization, and the MCP-facing interface. PR #202 merged at `7a95364a31f360bb20dd8d2919a9bfea93ec893c` from tested head `6903f40578f40fec08f1efde92d6577fcaeeced0`; all four required exact-head workflows passed (syntax 1104, Docker/full suite/build 1011, runtime smoke 820, validation-only multi-architecture 864).
+
+## Server source preview redaction — extracted (PR #203)
+
+`server_source_redaction.redact_assignment()` owns the pure, case-insensitive sensitive-assignment-name redaction used by the read-only `get_server_source()` MCP tool. The server retains source-path selection, range and 250-line validation, line numbering, and JSON serialization. The helper is included in Docker packaging; direct-import tests cover redaction and unchanged non-sensitive lines. PR #203 merged at `89e639394122aebe29bfb8602a1135722ea28bbe` from tested head `14019b8beeca9b71fbb8167117dafea3f60c74ea`; all four required workflows passed (syntax 1106, Docker/full suite/build 1013, runtime smoke 822, validation-only multi-architecture 866). No source secrets were used or exposed by testing.
+
 ## Artist-biography resolution — extracted (PR #190)
 
 `app/services/artist_bio.py` owns pure matching after provider retrieval: it filters/ranks music-related Wikidata entities, accepts a Wikipedia extract only when its `wikibase_item` matches a music entity, avoids disambiguation-page extracts, and falls back to a music-related description. `app/api/metadata.py` retains external requests, concurrent retrieval, cache lifetime, input validation, and response payload. PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43` from exact tested head `6c04d8a67944568a3e2b280deafb4eb2c66c2391`; all four required exact-head workflows passed (syntax 1059, Docker/full suite/build 966, runtime smoke 775, validation-only multi-architecture 819). No publication or deployment is claimed.
