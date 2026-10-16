@@ -7,6 +7,55 @@ from collections.abc import Callable
 from typing import Any
 
 
+class AlbumInventoryLimitError(RuntimeError):
+    """Raised when a complete album inventory cannot fit within the safety cap."""
+
+    def __init__(self, albums_retrieved: int):
+        self.albums_retrieved = albums_retrieved
+        super().__init__("Navidrome album inventory exceeded the safety limit.")
+
+
+def fetch_album_inventory(
+    api_call: Callable[..., dict[str, Any]],
+    items: Callable[[Any], list[Any]],
+    *,
+    page_size: int = 500,
+    max_albums: int = 50000,
+) -> list[dict[str, Any]]:
+    """Fetch a complete raw Navidrome album inventory with stable ID deduplication.
+
+    This low-level boundary deliberately does not cache or normalize records.
+    Callers own their freshness, schema, and error-response contracts.
+    """
+    albums = []
+    seen_ids = set()
+    complete = False
+
+    for offset in range(0, max_albums, page_size):
+        root = api_call(
+            "getAlbumList2",
+            type="alphabeticalByName",
+            size=page_size,
+            offset=offset,
+        )
+        page = items(root.get("albumList2", {}).get("album"))
+        for album in page:
+            album_id = album.get("id")
+            if album_id and album_id in seen_ids:
+                continue
+            if album_id:
+                seen_ids.add(album_id)
+            albums.append(album)
+
+        if len(page) < page_size:
+            complete = True
+            break
+
+    if not complete:
+        raise AlbumInventoryLimitError(len(albums))
+    return albums
+
+
 def build_library_snapshot(
     api_call: Callable[..., dict[str, Any]],
     items: Callable[[Any], list[Any]],
@@ -47,36 +96,20 @@ def build_library_snapshot(
         if artist.get("name")
     ]
 
-    albums = []
-    seen_ids = set()
-    complete = False
-    for offset in range(0, max_albums, page_size):
-        album_root = api_call(
-            "getAlbumList2",
-            type="alphabeticalByName",
-            size=page_size,
-            offset=offset,
-        )
-        page = items(album_root.get("albumList2", {}).get("album"))
-        for album in page:
-            album_id = album.get("id")
-            if album_id and album_id in seen_ids:
-                continue
-            if album_id:
-                seen_ids.add(album_id)
-            albums.append({
-                "id": album_id,
-                "artist": album.get("artist", ""),
-                "album": album.get("name", ""),
-                "year": album.get("year"),
-                "song_count": int(album.get("songCount") or 0),
-                "coverArt": album.get("coverArt"),
-            })
-        if len(page) < page_size:
-            complete = True
-            break
-    if not complete:
-        raise RuntimeError("Navidrome album inventory exceeded the safety limit.")
+    raw_albums = fetch_album_inventory(
+        api_call, items, page_size=page_size, max_albums=max_albums
+    )
+    albums = [
+        {
+            "id": album.get("id"),
+            "artist": album.get("artist", ""),
+            "album": album.get("name", ""),
+            "year": album.get("year"),
+            "song_count": int(album.get("songCount") or 0),
+            "coverArt": album.get("coverArt"),
+        }
+        for album in raw_albums
+    ]
 
     snapshot = {"artists": artists, "albums": albums}
     write_list("library_snapshot", snapshot)

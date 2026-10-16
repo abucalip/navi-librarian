@@ -655,44 +655,23 @@ def recommend_new_music(count: int = 10) -> str:
 
     # Build a complete, paginated Navidrome album inventory.
 
-    library_albums = []
-    seen_album_ids = set()
-    page_size = 500
-    inventory_complete = False
+    from discovery_library_snapshot import (
+        AlbumInventoryLimitError,
+        fetch_album_inventory,
+    )
 
     try:
-        for offset in range(0, 50000, page_size):
-            root = api_call(
-                "getAlbumList2",
-                type="alphabeticalByName",
-                size=page_size,
-                offset=offset,
-            )
-            page = items(root.get("albumList2", {}).get("album"))
-
-            for album in page:
-                album_id = album.get("id")
-                if album_id and album_id in seen_album_ids:
-                    continue
-                if album_id:
-                    seen_album_ids.add(album_id)
-                library_albums.append(album)
-
-            if len(page) < page_size:
-                inventory_complete = True
-                break
-
+        library_albums = fetch_album_inventory(api_call, items)
+    except AlbumInventoryLimitError as exc:
+        return json.dumps({
+            "error": "Album inventory exceeded the safety limit.",
+            "albums_retrieved": exc.albums_retrieved,
+            "recommendations": [],
+        }, ensure_ascii=False, indent=2)
     except Exception as exc:
         return json.dumps({
             "error": "Could not retrieve the Navidrome album inventory.",
             "details": str(exc),
-            "recommendations": [],
-        }, ensure_ascii=False, indent=2)
-
-    if not inventory_complete:
-        return json.dumps({
-            "error": "Album inventory exceeded the safety limit.",
-            "albums_retrieved": len(library_albums),
             "recommendations": [],
         }, ensure_ascii=False, indent=2)
 

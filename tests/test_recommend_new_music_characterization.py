@@ -2,9 +2,11 @@
 
 import json
 import unittest
+from contextlib import nullcontext
 from unittest.mock import patch
 
 import navidrome_server as server
+from discovery_library_snapshot import AlbumInventoryLimitError
 
 
 class _Response:
@@ -73,7 +75,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
 
     def _run_recommendations(
         self, library_albums, recommendations=None, *, lastfm_stats=None,
-        regional_http_status=200,
+        regional_http_status=200, inventory_limit=None,
     ):
         if recommendations is None:
             recommendations = [{"recording_mbid": "recording-1", "score": 10}]
@@ -97,7 +99,17 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             self.assertEqual(params["offset"], 0)
             return {"albumList2": {"album": library_albums}}
 
+        inventory_patch = (
+            patch(
+                "discovery_library_snapshot.fetch_album_inventory",
+                side_effect=AlbumInventoryLimitError(inventory_limit),
+            )
+            if inventory_limit is not None
+            else nullcontext()
+        )
+
         with (
+            inventory_patch,
             patch.object(server, "_listenbrainz_recent", return_value=[]),
             patch.object(server, "_listenbrainz_username", return_value="test-user"),
             patch.object(server, "_metadata_cache_get", side_effect=cache_get),
@@ -221,6 +233,18 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         self.assertEqual(
             result["message"],
             "ListenBrainz returned no recording recommendations.",
+        )
+
+    def test_inventory_safety_limit_keeps_distinct_error_response(self):
+        result = self._run_recommendations([], inventory_limit=50000)
+
+        self.assertEqual(
+            result,
+            {
+                "error": "Album inventory exceeded the safety limit.",
+                "albums_retrieved": 50000,
+                "recommendations": [],
+            },
         )
 
     def test_inventory_failure_returns_error_without_recommendations(self):
