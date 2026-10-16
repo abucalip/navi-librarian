@@ -5,16 +5,15 @@ details, and release years. Provider failures remain non-fatal except for
 invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
-import threading
 from concurrent.futures import ThreadPoolExecutor
-from time import monotonic, sleep
+from time import monotonic
 from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, HTTPException
 
 from app.services.artist_bio import resolve_artist_bio
-from urllib.request import urlopen
+from musicbrainz_album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
 
 router = APIRouter()
 
@@ -88,86 +87,11 @@ def artist_bio(artist: str):
 _ARTWORK_CACHE_TTL = 6 * 60 * 60
 _ARTWORK_NEGATIVE_CACHE_TTL = 5 * 60
 _artwork_cache = {}
-_MUSICBRAINZ_YEAR_CACHE_TTL = 180 * 24 * 60 * 60
-_musicbrainz_year_cache = {}
-_musicbrainz_year_lock = threading.Lock()
-_musicbrainz_last_request = 0.0
 
 
 def _musicbrainz_album_year(artist: str, album: str):
-    """Resolve a release year from an exact MusicBrainz release-group match."""
-    import re
-    global _musicbrainz_last_request
-
-    def norm(value):
-        return "".join(ch.casefold() for ch in str(value or "") if ch.isalnum())
-
-    artist = str(artist or "").strip()
-    album = str(album or "").strip()
-    if not artist or not album:
-        return None
-    key = (norm(artist), norm(album))
-    now = monotonic()
-    cached = _musicbrainz_year_cache.get(key)
-    if cached:
-        ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
-        if now - cached["time"] < ttl:
-            return cached["year"]
-
-    year = None
-    try:
-        with _musicbrainz_year_lock:
-            cached = _musicbrainz_year_cache.get(key)
-            now = monotonic()
-            if cached:
-                ttl = _MUSICBRAINZ_YEAR_CACHE_TTL if cached.get("year") else 6 * 60 * 60
-                if now - cached["time"] < ttl:
-                    return cached["year"]
-            wait = 1.1 - (now - _musicbrainz_last_request)
-            if wait > 0:
-                sleep(wait)
-            escaped_artist = artist.replace("\\", "\\\\").replace('"', '\\"')
-            escaped_album = album.replace("\\", "\\\\").replace('"', '\\"')
-            query = urlencode({
-                "query": f'artist:"{escaped_artist}" AND releasegroup:"{escaped_album}"',
-                "fmt": "json",
-                "limit": 25,
-            })
-            request = __import__("urllib.request", fromlist=["Request"]).Request(
-                "https://musicbrainz.org/ws/2/release-group/?" + query,
-                headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
-            )
-            _musicbrainz_last_request = monotonic()
-            with urlopen(request, timeout=8) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-
-        exact_dates = []
-        for group in payload.get("release-groups") or []:
-            if norm(group.get("title")) != norm(album):
-                continue
-            credits = []
-            for part in group.get("artist-credit") or []:
-                if not isinstance(part, dict):
-                    continue
-                credit_name = (part.get("artist") or {}).get("name") or part.get("name")
-                if credit_name:
-                    credits.append(str(credit_name))
-            # Accept an exact artist credit or an exact credited member of a
-            # collaboration, never a substring such as "Queen Tribute".
-            if norm(artist) not in {norm(name) for name in credits} and norm("".join(credits)) != norm(artist):
-                continue
-            date_text = str(group.get("first-release-date") or "")
-            year_text = date_text[:4]
-            if year_text.isdigit() and 1900 <= int(year_text) <= 2100:
-                exact_dates.append((date_text or year_text, int(year_text)))
-        if exact_dates:
-            year = min(exact_dates, key=lambda entry: entry[0])[1]
-    except Exception:
-        # The UI can still show artwork; an unavailable catalog is not fatal.
-        pass
-
-    _musicbrainz_year_cache[key] = {"time": monotonic(), "year": year}
-    return year
+    """Compatibility adapter for the directly testable MusicBrainz lookup."""
+    return _lookup_musicbrainz_album_year(artist, album)
 
 
 @router.get("/api/album-year")
