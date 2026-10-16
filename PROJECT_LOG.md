@@ -1,3 +1,9 @@
+## 2026-10-16 — New Releases lookup construction extraction in progress
+
+- Isolates the pure MusicBrainz query and cache-key construction from `_build_new_releases_list()` in `discovery_new_releases.build_new_release_lookup()`.
+- Preserves cache-key version/format, escaped artist syntax, date bounds, and provider adapter responsibilities. Direct-import tests cover query shape, escaping, and key stability.
+- Branch: `extract/new-release-query-construction`. CI, merge, and final SHA pending; no publication/deployment claimed.
+
 ## 2026-10-16 — PR #235 merged: New Releases response projection
 
 - Squash merge commit: `0d77f7d99a89660ea1d9a38635e93343538e93b8`; exact tested PR head: `f3e7ec7c14deac8136b5066011623e00dffca134`.
