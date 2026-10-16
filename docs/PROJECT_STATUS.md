@@ -1,7 +1,7 @@
 # Project status
 
-Last reviewed: 2026-10-16  
-GitHub source of truth: `main` at review baseline `b0c63b267c834516b419d7e8183d007d2dbb2f5b`
+Last reviewed: 2026-10-16 (classics builder boundary audited)  
+GitHub source of truth: `main` at review baseline `b9a97b5e37aff297c836d2039763de7b166441ba`
 
 ## Current focus
 
@@ -9,10 +9,9 @@ Backend modularization remains in progress. Recent work has extracted discrete d
 
 ## Next action
 
-1. Refresh `main`, open PRs, recent commits, and CI before selecting work.
-2. Trace `_build_classics_list()`, callers, tests, and the already-extracted classics helpers. Select one narrow, independently testable remaining responsibility only if it improves ownership.
-3. Reassess application-assembly dependencies and AST-coupled acquisition tests as a completion audit.
-4. Treat the acquisition coordinator as conditional, high-risk work; do not force an extraction. Do not perform size-only slskd refactors.
+1. Audit `app/main.py` and API dependencies on `navidrome_server.py`, package inclusion, compatibility adapters, and AST-coupled acquisition tests.
+2. Treat acquisition-coordinator extraction as conditional, high-risk work; proceed only if the audit reveals a narrow safe seam.
+3. Do not force additional classics-builder or size-only slskd extractions.
 
 The active candidate list and acceptance criteria live in `docs/MODULARIZATION_ROADMAP.md`.
 

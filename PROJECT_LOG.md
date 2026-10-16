@@ -1,3 +1,13 @@
+## 2026-10-16 — Classics builder boundary audit: no further extraction justified
+
+- Traced `_build_classics_list()` on main at `b9a97b5e37aff297c836d2039763de7b166441ba`. Its only direct production reference is the classics builder registration in the discovery-list dispatch table; that call is an orchestration entry point, not a reusable policy function.
+- The builder now composes already-separated responsibilities: `discovery_classics_candidates.collect_classic_candidates()` (candidate collection, normalized duplicate resolution, ownership/eligibility filtering, metadata, pacing), `discovery_classics_ratings.enrich_critical_ratings()` (bounded shortlist enrichment), `discovery_recommendations.score_classic_candidates()` / `refresh_exploration_scores()` / `diversify_classic_candidates()` (ranking and diversity), and `discovery_classics_genres.enrich_classic_genres()` (bounded genre metadata). The provider/cache lookups, inventory snapshot, stage order, jitter, and response envelope are adapter/orchestration responsibilities.
+- Direct-import regression suites already exist for the extracted candidate and rating helpers; the genre helper was likewise introduced with direct-import coverage in PR #231. I found no remaining self-contained policy stage in the builder that would improve ownership if moved. Extracting the response dictionary alone would be a mechanical relocation; extracting the whole pipeline would create a broad callback interface and obscure orchestration.
+- **Decision:** no application-code PR for classics. Removed this stale candidate from the active roadmap and made the application-assembly / AST-coupled test audit the next action. Acquisition coordination remains conditional and safety-critical.
+- This session's work is documentation-only. No application tests or local test commands were run. Required workflow status must be verified on the final documentation PR head before merge. No publication, deployment, or production runtime verification is claimed.
+
+---
+
 ## 2026-10-16 — Documentation consolidation
 
 - Re-established canonical document roles: `docs/MODULARIZATION_ROADMAP.md` is the short active plan; `docs/PROJECT_STATUS.md` is the current snapshot; `docs/TEST_PLAN.md` is the verification baseline; `docs/ARCHITECTURE.md` describes current responsibilities; this file remains the primary detailed project history.
