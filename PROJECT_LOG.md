@@ -7,12 +7,13 @@
 - Next: refresh GitHub main/open PRs and identify one small, independently testable seam. Publishing remains paused.
 
 
-## 2026-10-16 — Personal recommendation allocator boundary investigation (incomplete)
+## 2026-10-16 — Personal recommendation allocator boundary investigation (pre-integration history)
 
-- Continued the allocator work after PR #221's contract merge. Added a pure policy allocator and focused tests, then refined the candidate contract with `source_order` because stable tie ordering differs between regional-style reservations and the legacy final fallback.
-- The final fallback now models the legacy order: category-grouped score-sorted candidates are stably globally sorted by score. A focused test pins equal-score category ordering; a contract test validates source-order metadata.
-- Not integrated into `navidrome_server.py`; response shaping, ownership-review output, candidate diagnostics, and selected-artist accounting still belong to the legacy flow. No local tests were run, no CI was run for this branch, and no PR was opened. Do not treat this as completed or tested.
-- Next: implement and verify a thin adapter with policy-parity regressions; if that requires callbacks/shared mutable state or moves response/provider logic into the allocator, refine the boundary. Include Docker packaging and all four required exact-head workflows before proposing merge. Publishing/deployment remain paused.
+- PR #221 established the immutable contract, deliberately leaving allocation loops untouched. A follow-up investigation identified the stable tie-order distinction between regional-style reservations and final fallback; `source_order` was added to preserve the legacy behavior.
+- This exploratory stage was superseded by PR #223, which integrated the pure allocator through the server adapter, added Docker packaging and policy tests, and passed all four required workflows on exact final head `b604940e4b7a20160d4f3710b009c6ca718c57c5`. See the PR #223 entry above for verification details.
+- Publishing/deployment remain paused.
+
+
 
 ## 2026-10-16 — PR #194 merged: token cleanup and touch targets
 
