@@ -159,6 +159,14 @@ p { line-height: 1.55; }
 .controls { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 18px 0 14px; }
 .controls label { color: var(--muted); font-size: 13px; }
 .controls button, .card-actions button, #settings button { font-size: 12px; font-weight: 600; letter-spacing: .015em; }
+/* Discover music is a two-phase task: build a set, then narrow it. The request group and the
+   results toolbar are separated by a wider interval than anything inside either group, so the
+   two phases read as distinct blocks instead of as two equal-weight control rows. Scoped to
+   this section; .controls keeps its existing rhythm in the other discovery sections. */
+.controls.request-controls { margin: 20px 0 30px; }
+.results-toolbar { margin: 0 0 18px; }
+.results-toolbar-label { margin: 0 0 7px; color: var(--muted); font-size: 13px; }
+.results-toolbar .discovery-controls { margin: 0; }
 #loadRecommendations, #saveSlskd { color: var(--on-yellow); background: var(--yellow); border-color: var(--yellow); }
 #loadRecommendations:hover, #saveSlskd:hover { background: var(--yellow-bright); border-color: var(--yellow-bright); }
 .discovery-controls { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); gap: 8px; margin: 17px 0 8px; }
@@ -169,7 +177,7 @@ p { line-height: 1.55; }
    tabular-nums keeps the two numbers column-stable without mono, which is what the
    numeric-content guidance asks for. Size and weight are combined deliberately: the count
    is quiet metadata, so it stays 400 and does not compete with the section heading. */
-#recommendationCount { margin: 13px 0 16px; color: var(--muted); font: 400 13px/1.5 var(--body); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+#recommendationCount { margin: 0 0 12px; color: var(--muted); font: 400 13px/1.5 var(--body); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
 /* Acquisition cards are status records, not artwork tiles: they carry a progress
