@@ -1914,47 +1914,22 @@ def _build_new_releases_list():
                 errors.append({"artist": artist, "error": type(exc).__name__})
                 continue
 
-        for group in payload if isinstance(payload, list) else []:
-            if not isinstance(group, dict) or group.get("primary-type") != "Album":
-                continue
-            title = str(group.get("title") or "").strip()
-            release_date = str(group.get("first-release-date") or "")
-            year_text = release_date[:4]
-            if not title or not year_text.isdigit():
-                continue
-            year = int(year_text)
-            if release_date < cutoff_date or year > current_year:
-                continue
-            candidate = {
-                "artist": artist, "album": title, "year": year,
-                "first_release_date": release_date, "mbid": group.get("id"),
-                "primary_type": group.get("primary-type"),
-                "secondary_types": group.get("secondary-types") or [],
-                "discovery_type": "new_release",
-                "discovery_source": "MusicBrainz recent release groups",
-                "reason": f"Released in {year} by an artist with a full album in your library",
-                "artist_library_album_count": int(artist_record.get("album_count") or 0),
-            }
-            if not _discovery_is_album_candidate(candidate):
-                continue
-            # MusicBrainz text search can return similarly named artists (e.g.
-            # "Queen Tribute") for an exact-looking artist query. Require an
-            # exact artist-credit name rather than a substring match.
-            artist_credit = group.get("artist-credit")
-            if not _discovery_exact_artist_credit_matches(artist_credit, artist):
-                continue
-            if _discovery_is_various_artists(artist):
-                continue
-            if _discovery_is_various_artists(" ".join(
-                str((part.get("artist") or {}).get("name") or part.get("name") or "")
-                for part in (artist_credit or []) if isinstance(part, dict)
-            )):
-                continue
-            identity = (_music_key(artist), _music_key(title))
-            if identity in owned:
-                continue
+        from discovery_new_releases import select_artist_release_candidates
+        artist_candidates = select_artist_release_candidates(
+            payload if isinstance(payload, list) else [],
+            artist=artist,
+            artist_record=artist_record,
+            owned=owned,
+            cutoff_date=cutoff_date,
+            current_year=current_year,
+            music_key=_music_key,
+            is_album_candidate=_discovery_is_album_candidate,
+            exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
+            is_various_artists=_discovery_is_various_artists,
+        )
+        for identity, candidate in artist_candidates.items():
             old = candidates.get(identity)
-            if old is None or release_date > old.get("first_release_date", ""):
+            if old is None or candidate["first_release_date"] > old.get("first_release_date", ""):
                 candidates[identity] = candidate
 
     items_out = sorted(
