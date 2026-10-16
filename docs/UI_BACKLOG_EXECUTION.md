@@ -756,6 +756,70 @@ Measured on the branch: four distinct empty strings, one per section, all four c
 records`, `1 item`, `0 items`; 8/8 pages render their expected heading; zero horizontal overflow
 at 1440/900/620/390/360px despite the longer strings; no console or page errors.
 
+## 5j. Tabs pattern and skip link
+
+Two gaps carried forward from earlier sessions: the settings-tab ARIA pattern, and the skip link
+discovered while auditing C5.
+
+### Gap 1 — the tabs pattern was half-applied
+
+The markup already had `role="tablist"`, `role="tab"`, `role="tabpanel"` and `aria-controls`.
+Measured, two halves were missing:
+
+| | Before | After |
+|---|---|---|
+| Panel accessible name | **none** | `aria-labelledby` on all 4 panels |
+| Roving `tabindex` | **absent** | selected tab `0`, others `-1` |
+| Tab stops consumed by the 4 tabs | **4** | **1** |
+| `ArrowLeft`/`ArrowRight` | did nothing | moves focus **and** switches panel |
+| `Home`/`End` | nothing | first / last tab |
+| Wrap-around | n/a | last → first |
+
+`audit.md` lists "Keyboard navigation: Missing focus indicators, illogical tab order" and
+`critique.md` asks "Are all interactive elements focusable with visible focus indicators?". A
+tabs widget that is announced but not operable is the failure both are pointing at: a keyboard
+user had to Tab through all four tabs to leave the group, which is exactly what the pattern
+exists to prevent.
+
+**Fixed** per the tabs pattern: activation follows focus, so an arrow key both moves focus and
+switches the panel. Click still works, verified separately, so the pointer path is unchanged.
+
+### Gap 2 — no skip link at all
+
+`harden.md` lists "Skip links for long content" under keyboard navigation. Measured: the document
+contained **zero anchors**, so there was no skip mechanism, and the nine navigation controls plus
+the page's own controls occupied the first 15 tab stops on every route.
+
+**Fixed:** a `.skip-link` as the first element in the tab order, targeting `main` (given
+`id="content"` and `tabindex="-1"` so it can receive focus without becoming a tab stop itself).
+
+It is hidden with `transform: translateY(-200%)` rather than `display: none`, because a
+`display: none` link cannot receive focus and would therefore be unreachable by the very
+keyboard users it serves.
+
+### Note on the Forever Components reference
+
+`inputs-switches/segmented-pill` was a candidate for this pattern. Its own metadata rules it out:
+"**No aria-selected or role=tablist — add for full accessibility**", plus "Production use without
+removing the auto-cycle loop". It is announced as no better than the code it would replace, so
+the pattern was built directly rather than borrowed.
+
+### Verification
+
+**Skip link:** first tab stop measured as `A.skip-link`; activating it moves focus to
+`MAIN#content` and sets `#content` in the URL; when unfocused its transform is
+`translateY(-74px)` so it is off-screen; it does not affect `scrollWidth`.
+
+**Tabs:** `tabindex` reads `navidrome:0, slskd:-1, lastfm:-1, listenbrainz:-1`; all four panels
+resolve `aria-labelledby` to an existing tab id; Tab from the selected tab goes straight to the
+first form input, so the group costs **one** stop instead of four; `ArrowRight` moves focus to
+`slskd` and switches the visible panel to `settingsSlskd`; `End` selects `listenbrainz`;
+`ArrowRight` from the last wraps to `navidrome`; clicking each tab still switches its panel.
+
+Both: 8/8 pages render their expected heading; zero horizontal overflow at
+1440/1200/1100/900/760/620/390/360px; no console or page errors.
+
+
 ## 5. Observed evidence for item 1 (State craft)
 
 ### Before the change (main at `4098361`)
