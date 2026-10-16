@@ -1,3 +1,7 @@
+## New Releases global candidate merge — extracted (PR #234 merged)
+
+`discovery_new_releases.merge_release_candidates(existing, incoming)` owns pure cross-artist candidate merging: newest release wins per identity; existing candidates win equal-date ties; inputs are not mutated. Provider/cache/rate limiting, per-artist eligibility, final sorting, and response assembly remain in the server adapter. Direct-import regression tests cover winner precedence, ties, non-mutation, empty and missing-date inputs. PR #234 merged at `c44ea572354b4714e5e2577f5eb21b091be97cc8` from tested head `56bb5b6835d03860124f2dbdff4dbb13a813d5c8`; all four required workflows passed on that exact head. No local tests or production verification claimed.
+
 ## New Releases global candidate merge — extraction in progress (PR #234)
 
 `discovery_new_releases.merge_release_candidates(existing, incoming)` is a pure merge policy: preserve the newest candidate per identity and retain the existing candidate on equal dates. The server continues provider access, cache/rate limiting, per-artist filtering, final sorting, and response assembly. Direct-import tests cover newest winner, tie stability, input non-mutation, and empty/missing-date inputs. Exact-head CI pending.
