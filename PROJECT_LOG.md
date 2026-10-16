@@ -419,3 +419,10 @@ Started from GitHub main `ffa2b441e7543b2778d1835cfc42386e53c37225`. Moving cach
 - The selection loops are intentionally untouched. Contract tests are interface tests, not proof of allocation behavior. Focused execution and exact-head CI are pending. No publishing/deployment/runtime verification.
 - Next: verify this contract PR; only if it passes and the seam stays independent, move the actual loops in a subsequent focused PR with policy parity regressions.
 
+## 2026-10-16 — PR #221 merged: personal recommendation allocation contract
+
+- Branch `refactor/personal-allocation-contract`; exact tested head `9d17a0ef32782db35b19b5226d3b8c052f8775d6`; squash merge/current main at merge `820556799fa9d3ec663e5117b36c68084281b20a`.
+- Added immutable data-contract types, direct-import interface tests, and contract documentation. The four required exact-head workflows passed: syntax run `38916419736`, Docker packaging/full unit suite/build `38916419709`, runtime smoke `38916419958`, validation-only multi-architecture `38916419701` (`push: false`). Assistant-side local tests were not run independently; CI packaging ran the unit suite.
+- This was a contract-design stage, not the allocation extraction. Selection loops, public signature, response construction, and provider/library operations remain unchanged. No publishing, deployment, or production runtime verification.
+- Next: if the interface still fits once policy behavior is mapped to it, make the actual allocator a separate PR with comprehensive policy-parity tests. Do not add callbacks/shared mutable state to force the extraction; refine or stop if the boundary proves inadequate.
+
