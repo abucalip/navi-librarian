@@ -1,3 +1,11 @@
+## 2026-10-16 — Two slskd transfer-boundary extractions merged
+
+- **PR #180 — queue request extraction:** moved the slskd queue POST into `slskd_transfers.queue_download_files()`; retained the dismissal guard and orchestration in `acquisition_orchestration` and `navidrome_server.py`. Exact final tested head `ce0e635cc77c687958d6ad1c1a852e55476c14b2`; syntax run 1008, Docker packaging/full unit suite/build run 915, container runtime smoke run 724, and validation-only Docker image run 768 all succeeded. Squash merge `7c670f2eac838934bc9afa7f40f892ff595ca4ca`.
+- **PR #181 — live progress transfer matching:** moved normalized expected/tracked basename matching and duplicate state precedence into `slskd_transfers.match_expected_transfer_records()`; byte/speed calculation and public progress shape remain unchanged. Exact final tested head `cf78b4188a549d6e1b2b98c76a63a6bc0826d129`; syntax run 1010, Docker packaging/full unit suite/build run 917, container runtime smoke run 726, and validation-only Docker image run 770 all succeeded. Squash merge `3df14d3c59bb7e5a689d797028e45468c6a87ee7`.
+- Both PRs added direct-import regression tests and preserved compatibility paths. Assistant-side local test commands were not run; the full unit suite ran in CI on each exact final head. Publishing remained paused; no deployment or production runtime verification is claimed.
+- Acquisition dismissal HTTP 409 remains deferred per user direction. No change was made to filesystem cleanup or dismissal behavior.
+- Next action: refresh main/open PRs/CI and choose the next small seam from the modularization roadmap.
+
 ## 2026-10-16 — Last.fm similar-artist parsing extraction merged
 
 - PR #178 merged as `f18574b74a564031c5268cf04c956475d64dc30c`; tested PR head `a97be052d3a1e74843feaacd6403d10ce5aad6af`.
