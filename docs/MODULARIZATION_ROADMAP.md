@@ -786,3 +786,10 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - Direct-import regressions cover skipping non-exact/invalid-year results and preserving result order; a route-level regression covers the Deezer fallback source/year contract.
 - Exact final tested head `0293e4fe4eab7dd66dc82280720183dab3b913ed`; all four workflows passed: Python syntax run 1153, Docker packaging/full suite/build run 1060, container runtime smoke run 869, and validation-only multi-architecture image validation run 913. Assistant-side local tests were not run.
 - Squash merge commit `6dc6adae89169638da9a158c79ccee5d2e1ddfb7`. Publishing, deployment, and production runtime verification remain unclaimed.
+
+## 2026-10-16 — Personal recommendation allocation boundary probe
+
+- Added `docs/PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT.md` and immutable data-contract types in `discovery_allocation_contract.py`, with direct-import contract tests.
+- The proposed interface supplies prepared candidate values, explicit ownership status, policy targets, and count limits; returns candidate IDs, review IDs, decisions, counts, and checked count. It requires no callbacks or shared mutable state.
+- **Do not move the shortlist-selection loops in this change.** Current `consider()` mixes selection policy with candidate identity tracking, ownership lookup, manual-review payload creation, response shaping, and diagnostics. The contract tests only validate the interface invariants, not allocator semantics. Proceed to a separate extraction only after this contract is tested and the implementation can remain pure; refine/stop if that cannot be achieved without callbacks or mutable shared state.
+
