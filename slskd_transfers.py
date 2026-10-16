@@ -56,3 +56,19 @@ def download_transfer_files(base_url, headers, username, *, http_client):
             add_files(root)
 
     return found
+
+
+def queue_download_files(base_url, headers, username, selected_files, *, http_client):
+    """Queue selected files for a peer and propagate slskd HTTP failures.
+
+    The caller owns dismissal/transition locking; this function only performs the
+    remote request so its URL, payload, and error behavior can be tested directly.
+    """
+    response = http_client.post(
+        f"{base_url}/api/v0/transfers/downloads/{username}",
+        headers=headers,
+        json=selected_files,
+        timeout=12,
+    )
+    response.raise_for_status()
+    return response
