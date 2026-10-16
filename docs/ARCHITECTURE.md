@@ -1,6 +1,6 @@
 # Architecture overview
 
-Last reviewed: 2026-10-16 (completion audit made repeatable)
+Last reviewed: 2026-10-16 (AST test inventory added)
 
 This document describes current architectural responsibilities at a useful level. It is not a chronological extraction log; see root `PROJECT_LOG.md` for PR-by-PR history and verification evidence. Confirm all details against current GitHub `main` and source before changing a boundary.
 
@@ -40,8 +40,8 @@ Before declaring modularization complete:
 - run `scripts/dep_map.py` and review the generated import graph for `app/main.py`, API modules, and `navidrome_server.py`;
 - trace `app/main.py` and API dependencies on `navidrome_server.py`;
 - distinguish intentional compatibility adapters from accidental coupling;
-- inventory AST/source-reading tests that depend on legacy source layout and move behavioral assertions to direct-import tests without weakening safety coverage;
-- run `grep -r "navidrome_server" app/ --include="*.py"` and allow only documented MCP compatibility shims;
+- inventory AST/source-reading tests in `docs/architecture/AST_TEST_INVENTORY.md` and move behavioral assertions to direct-import tests without weakening safety coverage;
+- run `grep -r "navidrome_server" app/ --include="*.py"` and allow only explicitly documented compatibility adapters. Current known web edge: `app/api/dependencies.py` lazily imports the legacy server inside `get_librarian()`; preserve the app-import isolation regression in `tests/test_auth_routes_integration.py`.
 - verify direct-import and adapter-level regressions for extracted boundaries;
 - identify remaining responsibilities that are justified orchestration/provider wiring rather than forcing further extraction.
 

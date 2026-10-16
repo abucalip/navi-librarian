@@ -25,5 +25,26 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Compile Python sources
         run: python -m py_compile navidrome_server.py acquisition_completion.py app/main.py app/api/settings.py app/api/utils.py tests/test_acquisition_safety.py tests/test_acquisition_completion.py tests/test_service_settings.py tests/test_app_auth.py tests/test_quality_priority.py tests/test_settings_routes.py slskd_search_polling.py tests/test_slskd_search_polling.py
+      - name: Generate modularization dependency map
+        run: |
+          python scripts/dep_map.py --output dependency-map.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("dependency-map.json").read_text(encoding="utf-8"))
+          print("DEPENDENCY_MAP_MODULE_COUNT:", len(report["modules"]))
+          print("APP_MAIN_CLOSURE_COUNT:", len(report["app_main_import_closure"]))
+          print("LEGACY_SERVER_IN_APP_MAIN_CLOSURE:", report["legacy_server_in_app_main_closure"])
+          for name, module in sorted(report["modules"].items()):
+              if module["path"].startswith("app/") and "navidrome_server" in module["local_imports"]:
+                  print("APP_DIRECT_LEGACY_IMPORT:", module["path"], "-> navidrome_server")
+          PY
+      - name: Upload dependency map audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modularization-dependency-map
+          path: dependency-map.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Run acquisition safety regressions
         run: python -m unittest discover -s tests -v

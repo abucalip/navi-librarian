@@ -33,9 +33,9 @@ Run the AST dependency map from the repository root and review its output with t
 python scripts/dep_map.py --output docs/architecture/dependency-map.json
 ```
 
-Commit the generated map only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
+The Python syntax workflow also generates `dependency-map.json` and uploads it as the `modularization-dependency-map` artifact (14-day retention). Review that artifact against the exact source revision before treating the graph gate as complete. Commit a repository copy only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
 
-Inventory tests that read `navidrome_server.py` as source or parse it with `ast`. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
+Use `docs/architecture/AST_TEST_INVENTORY.md` as the current inventory of tests that read `navidrome_server.py` as source or parse it with `ast`; update the inventory as coupling changes. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
 
 Before declaring modularization complete, inspect all Python references under `app/`:
 
@@ -43,7 +43,7 @@ Before declaring modularization complete, inspect all Python references under `a
 grep -r "navidrome_server" app/ --include="*.py"
 ```
 
-Expected result: no domain/API imports of `navidrome_server.py`; only explicitly documented MCP compatibility shims may remain. Review the matches, do not treat a grep exit code alone as proof. Add this allowlist-aware check to CI after the intentional compatibility import locations are confirmed from current code. The AST map and grep are complementary checks.
+Expected result: no domain-policy imports of `navidrome_server.py`; only explicitly documented compatibility adapters may remain. On the current audit baseline, `app/api/dependencies.py` intentionally performs a lazy import in `get_librarian()` to preserve the web API's legacy-service adapter, and the MCP/server compatibility surface also remains. Review every match and its import timing; do not treat a grep exit code alone as proof. Add an allowlist-aware check to CI after the approved adapter locations are confirmed. The AST map traverses imports inside functions and therefore reports this lazy edge in the static `app.main` closure even though `tests/test_auth_routes_integration.py` verifies that importing the web app does not initialize `navidrome_server`.
 
 ## UI changes
 

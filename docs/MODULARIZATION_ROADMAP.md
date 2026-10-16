@@ -1,7 +1,7 @@
 # Modularization roadmap
 
-Last reviewed: 2026-10-16 (scripted dependency audit adopted)  
-Baseline: GitHub `main` at `73897c11bd82f2c0869bad58094d09088b2c6dd2`
+Last reviewed: 2026-10-16 (dependency map reviewed; AST test inventory completed)  
+Baseline: GitHub `main` at `be01d3ebe41abc888de24b4e5bd01d54628bb0ff`
 
 ## Purpose
 
@@ -13,13 +13,13 @@ Do not add a roadmap entry merely because a function or file is large. Extract o
 
 These are audit targets, not permission to refactor without inspecting current `main`. Reconfirm each target against current callers, tests, and open PRs before implementation.
 
-### 1. Application assembly and test coupling — scripted audit in progress
+### 1. Application assembly and test coupling — map generated; AST test migration next
 
-Use `scripts/dep_map.py` to produce the deterministic AST import map at `docs/architecture/dependency-map.json`. Review the generated graph against actual callers, runtime wiring, package/Docker inclusion, and open PRs; static imports do not capture dynamic imports or dependency injection.
+The dependency map was generated in CI and reviewed from artifact `12068042162` on initial PR head `1f9e6313310c691e9d9844d22136182e51ca6fee`: 159 local Python modules, 71 modules in the static `app.main` closure, and one direct `app/` import edge to `navidrome_server` (`app/api/dependencies.py`). The edge is inside lazy `get_librarian()` and does not imply eager import-time initialization; the app-import isolation regression covers that distinction. The workflow retains the full JSON as a 14-day `modularization-dependency-map` artifact. Static imports still do not capture runtime dependency injection.
 
 Complete these gates in order; do not jump straight to another extraction:
 1. Generate and review the import map for `app/main.py`, all `app/api/*.py`, and `navidrome_server.py`.
-2. Inventory tests that read or parse `navidrome_server.py` as source (AST/source-string coupling), distinguish structural assertions from behavior tests, and move behavior coverage to direct imports of the extracted `acquisition_*` / `discovery_*` modules without weakening safety coverage.
+2. AST/source-reading inventory is recorded in `docs/architecture/AST_TEST_INVENTORY.md`: three tests parse/compile functions from `navidrome_server.py`. Migrate these incrementally to direct imports; preserve the acquisition-safety lifecycle, concurrency, persistence, and recovery cases.
 3. Add the application-import boundary check to `docs/TEST_PLAN.md` and CI, allowing only explicitly documented MCP compatibility shims if those remain necessary.
 4. Then evaluate the thin settings wrappers around `service_settings.py`; remove wrappers only after confirming and redirecting every API/MCP caller and preserving compatibility where required.
 5. Audit `_discovery_acquire_album_impl()` using the binary policy-vs-orchestration question below.
@@ -27,7 +27,7 @@ Complete these gates in order; do not jump straight to another extraction:
 Acceptance criteria:
 - The committed dependency map corresponds to the exact source revision audited and is regenerated when relevant imports change.
 - AST-coupled tests are listed by filename and purpose; behavior tests target production modules directly, with adapter tests retained where compatibility requires them.
-- No domain API depends on `navidrome_server.py` except a documented, intentional compatibility seam; static graph and source grep are reviewed together.
+- No domain/API imports of `navidrome_server.py` remain except explicitly documented compatibility adapters. The current graph has one direct edge: `app/api/dependencies.py` lazily imports the legacy service inside `get_librarian()`; this is a runtime service-adapter dependency, not an import-time app initialization. The boundary guard must allow only reviewed adapter locations, not only MCP shims.
 - Preserve MCP compatibility; retirement requires a separate explicit decision and migration gate.
 
 ### 2. Acquisition coordinator — conditional, high risk
