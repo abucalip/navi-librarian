@@ -1,14 +1,8 @@
-## 2026-10-16 — Background listening-profile refresh extraction (PR preparation)
+## 2026-10-16 — Session closeout: PRs #225 and #226 merged
 
-- Proposed seam: move the background refresh's JSON parsing, success/error normalization, background marker, and persistence call into a dependency-injected helper in `listening_profile.py`; keep scheduler timing and server callbacks in the adapter.
-- Added direct-import tests for successful persistence, provider error payloads, malformed JSON, and sanitized exception types. Full diff review and all four exact-head workflows are pending. No merge, publication, deployment, or runtime verification is claimed.
-
-## 2026-10-16 — PR #225 merged: cached discovery-list payload shaping
-
-- PR #225: https://github.com/abucalip/navi-librarian/pull/225 — exact final tested head `573fe05d31dae422c25188688cd2fa949339e487`, squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`.
-- Extracted cached-list filtering and response projection to `discovery_list_payload.build_cached_discovery_list_response()`; feedback persistence, validation, For Me inventory lookup, and dependency wiring remain in the server.
-- Direct-import tests cover empty cache, dismissed albums/artists, saved albums, non-album filtering, personal diagnostics, and count/total behavior. All four exact-head workflows passed: syntax/acquisition safety 1187; Docker/full suite (477 tests)/build 1095; runtime smoke 904; validation-only multi-architecture 948. The first CI run exposed one incorrect test assertion, corrected before final verification.
-- No independent local test run, publication, deployment, or production runtime verification is claimed.
+- **PR #225:** https://github.com/abucalip/navi-librarian/pull/225 — cached discovery-list projection extracted to `discovery_list_payload.build_cached_discovery_list_response()`. Exact tested head `573fe05d31dae422c25188688cd2fa949339e487`; squash merge `4d968b381d1f541b81a4a46d1753b5145347e33d`. Four required workflows passed: syntax/acquisition safety 1187, Docker/full suite (477 tests)/build 1095, runtime smoke 904, validation-only multi-architecture 948.
+- **PR #226:** https://github.com/abucalip/navi-librarian/pull/226 — background listening-profile refresh extracted to `listening_profile.refresh_and_persist_background_profile()`. Exact tested head `740979f1b4da4f5c13632ab3598c13bc09ed413e`; squash merge `f5a95338e978a14d01fb6a1c3741e2e6c8bea11c`. Four required workflows passed: syntax/acquisition safety 1189, Docker/full suite (481 tests)/build 1097, runtime smoke 906, validation-only multi-architecture 950.
+- Both changes preserve the server adapter/compatibility boundary and include direct-import regression coverage. PR #225's initial test-fixture assertion was corrected before final CI. No independent local tests, publication, deployment, or production runtime verification are claimed.
 
 ## 2026-10-16 — PR #224 merged: personal recommendation payload shaping
 
