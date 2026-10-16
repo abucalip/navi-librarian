@@ -43,7 +43,7 @@ class MusicBrainzAlbumYearTests(unittest.TestCase):
 
     def test_negative_result_is_cached_for_short_ttl(self):
         payload = {"release-groups": []}
-        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", side_effect=[100.0, 100.0, 100.0, 100.0]), patch.object(service, "sleep"), patch.object(service, "_year_lock"):
+        with patch.object(service, "urlopen", return_value=_Response(payload)), patch.object(service, "monotonic", return_value=100.0), patch.object(service, "sleep"), patch.object(service, "_year_lock"):
             self.assertIsNone(service.lookup_album_year("Unknown", "Album"))
             with patch.object(service, "urlopen") as request:
                 self.assertIsNone(service.lookup_album_year("Unknown", "Album"))
