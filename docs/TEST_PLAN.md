@@ -1,11 +1,6 @@
-## 2026-10-16 — Artist-biography resolution extraction (PR preparation)
+## 2026-10-16 — Artist-biography resolution verification (PR #190)
 
-- Focused tests: `python -m unittest tests.test_artist_bio_service tests.test_metadata_routes -v`.
-- Full suite: `python -m unittest discover -s tests -v`.
-- Required exact-final-head workflows: Python syntax/acquisition safety; Docker packaging/full suite/image build; isolated container runtime smoke; validation-only multi-architecture image validation with publishing disabled.
-- Preserve `GET /api/artist-bio`, its 400 input validation, cached response behavior, parallel Wikidata/Wikipedia requests, QID identity guard, disambiguation rejection, fallback description, and response keys.
-- Current state: implementation and direct-import tests are on the branch; verification pending. No test or CI result is claimed until observed.
-
+Exact PR head `6c04d8a67944568a3e2b280deafb4eb2c66c2391` passed all four required GitHub Actions workflows: syntax/acquisition-safety regressions (run 1059), Docker packaging/full unit suite/image build (run 966), isolated container runtime smoke (run 775), and validation-only multi-architecture image validation (run 819). Direct-import tests in `tests/test_artist_bio_service.py` cover exact QID matching, mismatched identities, disambiguation, entity filtering/ranking, empty payloads, and truncation. Existing `tests/test_metadata_routes.py` remains in place for route/input/cache contracts. PR #190 merged at `b829fa953d979563a8ace6e5529eace8cb80ac43`. Assistant-side local tests were not run independently; no publication, deployment, or production runtime verification is claimed.
 ## 2026-10-16 — Dashboard-pick service extraction verification (PR #189)
 
 Exact PR head `d28aaa33f7096ba764232d6bd435cc68d5d85f98` passed all four required GitHub Actions workflows: Python syntax/acquisition-safety regressions (run 1052), Docker packaging plus full unit suite/image build (run 959), isolated container runtime smoke (run 768), and validation-only multi-architecture image validation (run 812). Direct-import tests in `tests/test_dashboard_service.py` cover balanced categories, source call count/arguments, case-insensitive deduplication, eligibility filtering, failed-lane tolerance, and malformed/missing-identity rows. Existing `tests/test_dashboard_routes.py` remains in place for endpoint contract and input validation. PR #189 merged at `f5f355f8bdc0599bb240933e248177c7b0517ff5`. Assistant-side local tests were not run independently; no publication, deployment, or production runtime verification is claimed.
