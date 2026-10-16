@@ -1,5 +1,5 @@
 import unittest
-from discovery_recommendations import artist_identity, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, is_album_candidate, is_various_artists, music_key, refresh_exploration_scores, score_classic_candidates
+from discovery_recommendations import artist_identity, classify_diversity_style, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
 
 class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_normalization_and_artist_identity(self):
