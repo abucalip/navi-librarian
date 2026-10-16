@@ -1747,10 +1747,45 @@ async function pollDiscoveryUntilReady(name) {
 // States: idle -> pending -> requested, or idle -> pending -> failed. "pending" is
 // applied while the request is in flight so the control never claims success before
 // the server confirms; "requested" is applied only after a successful response.
+// The Get button is a fixed-size circle — 44px in card actions, 46px over artwork, 58px in the
+// dialog — so its state lives in an icon slot rather than in a word: "requested" is nine
+// characters at 11px mono, wider than the 44px button it has to fit. Static markup with no
+// interpolation, so no user-controlled string reaches innerHTML. The arc carries no pathLength,
+// because its dash pattern is written in real user units; the tick does, so its draw is a
+// 1 -> 0 dashoffset as the reference component specifies.
+const GET_BUTTON_ICON =
+  '<svg class="get-album-glyph" viewBox="0 0 44 44" aria-hidden="true" focusable="false"' +
+  ' fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">' +
+  '<circle class="get-album-arc" cx="22" cy="22" r="11.5"/>' +
+  '<path class="get-album-tick" d="M14.5 22.6 19.6 27.7 29.5 16.4" pathLength="1"/>' +
+  '<path class="get-album-arrow" d="M30.8 15.2A11 11 0 1 0 33 22"/>' +
+  '<path class="get-album-arrow-head" d="M25.9 16.9 30.9 15.1 29.1 20.1"/>' +
+  '</svg>';
+
+function decorateGetButton(button) {
+  if (button.dataset.getDecorated) return button;
+  button.dataset.getDecorated = 'true';
+  const label = document.createElement('span');
+  label.className = 'get-album-label';
+  label.textContent = (button.textContent || '').trim() || 'get';
+  button.textContent = '';
+  button.insertAdjacentHTML('afterbegin', GET_BUTTON_ICON);
+  button.append(label);
+  return button;
+}
+
+// The word is only shown when idle. In every other state the icon slot carries the state and the
+// accessible name carries it for assistive tech, so the face never depends on reading a word that
+// does not fit.
+function setGetButtonLabel(button, text) {
+  decorateGetButton(button).querySelector('.get-album-label').textContent = text;
+}
+
 function createGetButton(artist, album, metadata) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'get-album';
+  decorateGetButton(button);
   setGetButtonState(button, 'idle', artist, album);
   button.addEventListener('click', () => searchAlbum(artist, album, metadata, button));
   return button;
@@ -1763,26 +1798,26 @@ function setGetButtonState(button, state, artist, album) {
   if (state === 'pending') {
     button.disabled = true;
     button.classList.add('is-pending');
-    button.textContent = '…';
+    setGetButtonLabel(button, '');
     button.title = album ? 'Requesting ' + album : 'Requesting';
     button.setAttribute('aria-label', button.title);
     button.setAttribute('aria-busy', 'true');
   } else if (state === 'requested') {
     button.disabled = true;
     button.classList.add('requested');
-    button.textContent = 'requested';
+    setGetButtonLabel(button, '');
     button.title = album ? 'Acquisition requested: ' + album : 'Acquisition requested';
     button.setAttribute('aria-label', button.title);
   } else if (state === 'failed') {
     // Usable again immediately: the user can retry without a reload.
     button.disabled = false;
     button.classList.add('is-failed');
-    button.textContent = 'retry';
+    setGetButtonLabel(button, '');
     button.title = album ? 'Request failed. Try again: ' + album : 'Request failed. Try again';
     button.setAttribute('aria-label', button.title);
   } else {
     button.disabled = false;
-    button.textContent = 'get';
+    setGetButtonLabel(button, 'get');
     button.title = 'Get this album';
     button.setAttribute('aria-label', album ? 'Get ' + album : 'Get this album');
   }
