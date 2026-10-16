@@ -862,3 +862,9 @@ Merged at 9b3cf481a46282d2f980709091d57aea36144029 from exact tested head b74f6a
 - Extracted deterministic cutoff/year-bound calculation into `discovery_new_releases.new_release_window(today)`; adapter retains clock access and provider/cache orchestration.
 - Added direct-import tests for the 730-day cutoff and leap-day behavior. All four required workflows passed on exact PR head `8d42c9f5f320fd7b4c0653fa09da8eda12f03f78`: syntax `38938867862`, Docker/full unit suite/build `38938867879`, runtime smoke `38938867737`, validation-only multi-architecture `38938867550` (publishing paused).
 - Merged as `2d11e52b78004ee51a6ce70a6a6ac6c2b451f397`. Assistant-side local test commands were not run independently; no deployment/runtime verification is claimed.
+
+
+## 2026-10-16 — New Releases provider lookup extraction (PR in progress)
+
+- Extracted one artist's cache/read-through MusicBrainz request into `discovery_new_releases.fetch_artist_release_groups()`; artist iteration, query policy, and global candidate selection remain in the server adapter.
+- Added direct-import tests for cache hits, request parameters/timeout, pacing, cache writes, malformed payload normalization, and safe error-type reporting. Exact-head CI is pending; no merge, publication, deployment, or runtime verification is claimed.
