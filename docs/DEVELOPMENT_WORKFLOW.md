@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-16
+Last updated: 2026-10-16 (scripted modularization audit adopted)
 
 ## Authority and responsibilities
 
@@ -46,7 +46,7 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 - Stop when the boundary is unclear, tests fail, higher-priority correctness/security/verification work exists, or the extraction adds more complexity than it removes.
 - Treat acquisition/import/deletion and shared-state/locking changes as high risk; isolate them and test safe success and unsafe refusal.
 - Preserve MCP compatibility during routine modularization. MCP retirement requires a separate explicit decision and migration gate.
-- Do not perform size-only slskd refactors. Audit remaining application-assembly and AST-coupled test dependencies before declaring modularization complete.
+- Do not perform size-only slskd refactors. The modularization completion audit is now a gated sequence: generate/review `scripts/dep_map.py` output; inventory and decouple AST/source-reading tests; add and enforce the app-to-legacy-server import boundary; then evaluate settings wrappers and the acquisition coordinator. Do not skip ahead to extraction.
 
 ## Required verification gates
 
