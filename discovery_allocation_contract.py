@@ -49,7 +49,7 @@ class AllocationCandidate:
     ownership: OwnershipStatus = OwnershipStatus.CLEAR
 
     def __post_init__(self) -> None:
-        for field_name in ("candidate_id", "artist_key", "album_key"):
+        for field_name in ("candidate_id", "artist_key"):
             if not getattr(self, field_name).strip():
                 raise ValueError(f"{field_name} must be non-empty")
         if self.category not in CATEGORIES:
