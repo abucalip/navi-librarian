@@ -1,3 +1,13 @@
+## 2026-10-16 — Characterized Last.fm scoring and regional MusicBrainz failure
+
+- PR #259 added deterministic tests for the current capped Last.fm popularity bonus and the behavior when regional MusicBrainz release-group searches return HTTP 503. The test asserts the personalized ListenBrainz candidate remains available and the regional failure is reported; the test HTTP client is fake.
+- PR #259 final head `d39ee50b2ec0483da2a415ef81793d20d644a439` passed all four required workflows: Python syntax/acquisition safety and dependency map (`38962391039`), Docker packaging/full unit suite/build (`38962391189`), isolated container runtime smoke (`38962391035`), and validation-only multi-architecture image validation (`38962391062`, `push: false`). Full suite: 539 tests passed. No separate assistant-side local test command ran.
+- PR #259 was squash-merged as `4a82ce01cf37d0e9cff27a9f67f9a037cad23e2e`. Tests only; no production behavior changed. Publishing, deployment, and production runtime verification were not performed.
+- Compared the inventory paths: both paginate `getAlbumList2` in batches of 500 up to 50,000 and deduplicate non-empty album IDs. However, `discovery_library_snapshot.build_library_snapshot()` uses a 10-minute cache, also reads artists, normalizes album records, and propagates API/safety exceptions; `recommend_new_music()` reads fresh raw records and maps inventory failures and safety-limit exhaustion to distinct JSON responses. Directly reusing the snapshot builder would change freshness, schema, and error semantics.
+- Next: extract a small shared raw album-pagination helper with direct tests, preserving the two adapters' distinct cache, normalization, and error contracts. Only after that should the larger provider/candidate-gathering seam be extracted.
+
+---
+
 ## 2026-10-16 — Expanded new-music ranking and provider characterization
 
 - Extended `tests/test_recommend_new_music_characterization.py` with a fixed two-recording fixture proving recommendation output is ordered by discovery score rather than raw ListenBrainz order. Added assertions for the existing ListenBrainz recent-history error response and the empty-recommendation message.
