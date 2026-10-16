@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_new_releases import prepare_new_release_library_scope, select_artist_release_candidates
+from discovery_new_releases import merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
@@ -133,3 +133,24 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NewReleaseGlobalMergeTests(unittest.TestCase):
+    def test_newer_candidate_wins_and_inputs_are_not_mutated(self):
+        old = {("bjork", "album"): {"first_release_date": "2025-01-01"}}
+        incoming = {("bjork", "album"): {"first_release_date": "2025-09-01"}, ("radiohead", "album"): {"first_release_date": "2025-06-01"}}
+        merged = merge_release_candidates(old, incoming)
+        self.assertEqual(merged[("bjork", "album")]["first_release_date"], "2025-09-01")
+        self.assertNotIn(("radiohead", "album"), old)
+        self.assertEqual(old[("bjork", "album")]["first_release_date"], "2025-01-01")
+
+    def test_existing_candidate_wins_equal_date_tie(self):
+        old = {("artist", "album"): {"first_release_date": "2025-03-01", "winner": "old"}}
+        incoming = {("artist", "album"): {"first_release_date": "2025-03-01", "winner": "new"}}
+        self.assertEqual(merge_release_candidates(old, incoming)[("artist", "album")]["winner"], "old")
+
+    def test_empty_and_missing_dates(self):
+        self.assertEqual(merge_release_candidates({}, {}), {})
+        old = {("artist", "album"): {"first_release_date": ""}}
+        new = {("artist", "album"): {"first_release_date": "2024-01-01"}}
+        self.assertEqual(merge_release_candidates(old, new)[("artist", "album")]["first_release_date"], "2024-01-01")
