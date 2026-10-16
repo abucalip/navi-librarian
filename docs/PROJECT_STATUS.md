@@ -1,3 +1,12 @@
+## 2026-10-16 — Last.fm similar-artist parsing extraction in progress
+
+- Branch `refactor/extract-lastfm-similar-artists-main`, based on GitHub `main` at `4dd8b926a7a6cf76e248420860d7c29c892da3c0` (PR #174 merge). This intentionally does not depend on the still-separate PR #175.
+- Moved `artist.getSimilar` cached retrieval and record normalization into `LastFmClient.similar_artists()`; retained `_lastfm_similar_artists()` as a compatibility adapter.
+- Added direct-import regressions for list/scalar payloads, blank/malformed records, similarity normalization, cache hits/misses, request parameters, TTL, and adapter delegation. Existing Docker packaging already includes `lastfm_client.py`.
+- Exact-head tests/CI, PR review, and merge pending. Publishing/deployment remain paused. Acquisition-dismissal HTTP 409 remains deferred as directed.
+
+---
+
 ## 2026-10-16 — Last.fm artist tag extraction in progress
 
 - Starting `main` SHA: `ffa2b441e7543b2778d1835cfc42386e53c37225`.
