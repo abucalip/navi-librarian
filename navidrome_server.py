@@ -295,7 +295,6 @@ def recommend_new_music(
     recent listening context, and Navidrome album searches.
     Does not modify files or playlists.
     """
-    import logging
     import os
     import time
     import httpx
@@ -303,7 +302,6 @@ def recommend_new_music(
 
     if _capture_path is None:
         _capture_path = os.environ.get("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH")
-    _lastfm_calls = []
 
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
@@ -328,9 +326,8 @@ def recommend_new_music(
             is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
             http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
         )
-        if provider_tape is None and _capture_path:
-            from recommendation_replay import ProviderTape
-            provider_tape = ProviderTape("record")
+        from recommendation_replay import prepare_provider_tape
+        provider_tape = prepare_provider_tape(provider_tape, _capture_path)
         if provider_tape is not None:
             providers = provider_tape.wrap(providers)
         gathered = gather_recommendation_candidates(providers)
@@ -419,13 +416,14 @@ def recommend_new_music(
         if _lastfm_available_override is None
         else bool(_lastfm_available_override)
     )
-    lastfm_callback = _lastfm_popularity_fn or _lastfm_album_popularity
-    if _capture_path and _gathered_override is None and _provider_tape is None:
-        def _capture_lastfm_result(artist, album):
-            value = _lastfm_album_popularity(artist, album)
-            _lastfm_calls.append({"artist": artist, "album": album, "result": value})
-            return value
-        lastfm_callback = _capture_lastfm_result
+    from recommendation_replay import prepare_lastfm_callback
+    lastfm_callback, _lastfm_calls = prepare_lastfm_callback(
+        _capture_path,
+        _gathered_override,
+        _provider_tape,
+        _lastfm_popularity_fn,
+        _lastfm_album_popularity,
+    )
     lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),
         recent_family_counts,
@@ -736,20 +734,10 @@ def recommend_new_music(
     }
     encoded = json.dumps(result, ensure_ascii=False, indent=2)
     if _capture_path and _gathered_override is None and _provider_tape is None:
-        try:
-            from recommendation_replay import write_capture
-            write_capture(
-                _capture_path,
-                gathered=gathered,
-                lastfm_calls=_lastfm_calls,
-                provider_events=provider_tape.events if provider_tape is not None else [],
-                output=encoded,
-                count=count,
-            )
-        except Exception as exc:
-            logging.getLogger(__name__).warning(
-                "Recommendation replay capture failed (%s).", type(exc).__name__
-            )
+        from recommendation_replay import write_capture_safely
+        write_capture_safely(
+            _capture_path, gathered, _lastfm_calls, provider_tape, encoded, count
+        )
     return encoded
 
 
