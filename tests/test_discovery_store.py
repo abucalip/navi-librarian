@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from discovery_store import read_list, write_list
+from discovery_store import read_list, recent_recommendation_history, write_list
 
 
 class DiscoveryStoreTests(unittest.TestCase):
@@ -36,6 +36,46 @@ class DiscoveryStoreTests(unittest.TestCase):
         write_list(self.database_path, "personal", {"items": [3]}, generated_at=3)
         self.assertEqual(read_list(self.database_path, "personal")["payload"], {"items": [3]})
         self.assertEqual(read_list(self.database_path, "classics")["payload"], {"items": [2]})
+
+    def test_personal_list_write_records_only_hashed_identity_and_rank(self):
+        payload = {"recommendations": [
+            {"artist": "Beyoncé", "album": "Déjà vu"},
+            {"artist": "Fela Kuti", "album": "Zombie"},
+        ]}
+        write_list(self.database_path, "personal", payload, generated_at=1000.0)
+
+        history = recent_recommendation_history(self.database_path, now=1001.0)
+        self.assertEqual(len(history), 2)
+        self.assertEqual([row["rank"] for row in history], [2, 1])
+        self.assertTrue(all(len(row["identity_hash"]) == 64 for row in history))
+        with sqlite3.connect(self.database_path) as db:
+            stored = db.execute(
+                "SELECT identity_hash FROM recommendation_history"
+            ).fetchall()
+        serialized_hashes = repr(stored)
+        self.assertNotIn("Beyoncé", serialized_hashes)
+        self.assertNotIn("Déjà vu", serialized_hashes)
+
+    def test_history_is_bounded_by_retention_window_and_future_rows_are_hidden(self):
+        write_list(self.database_path, "personal", {
+            "recommendations": [{"artist": "Old Artist", "album": "Old Album"}],
+        }, generated_at=100.0)
+        write_list(self.database_path, "personal", {
+            "recommendations": [{"artist": "New Artist", "album": "New Album"}],
+        }, generated_at=200_000.0)
+
+        history = recent_recommendation_history(
+            self.database_path, now=200_001.0, within_seconds=10_000.0
+        )
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["generated_at"], 200_000.0)
+        self.assertEqual(recent_recommendation_history(self.database_path, now=150_000.0), [])
+
+    def test_non_personal_lists_do_not_record_recommendation_history(self):
+        write_list(self.database_path, "classics", {
+            "recommendations": [{"artist": "Artist", "album": "Album"}],
+        }, generated_at=1234.0)
+        self.assertEqual(recent_recommendation_history(self.database_path, now=1235.0), [])
 
     def test_malformed_json_returns_none(self):
         with sqlite3.connect(self.database_path) as db:
