@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (MCP retirement PR #296 merged; repository-level closeout recorded)
+Last reviewed: 2026-10-17 (PR #298 replay fidelity fix under verification)
 
 ## Current focus
 
@@ -10,7 +10,7 @@ The service-default audit found personal/private-network defaults for ListenBrai
 
 **MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
 
-**Recommendation improvement:** Open PR #298 now includes pool diagnostics, offline metrics, a private real-run capture format, a strict provider/cache response cassette, and offline replay through candidate gathering and ranking without live providers. Capture is opt-in via `LIBRARIAN_RECOMMENDATION_CAPTURE_PATH`; real captures must remain outside Git with owner-only permissions. Ranking behavior is unchanged. Code head `794013c3966c4d2dd9f736ccee4089c8621df943` passed all four required workflows, including 602 unit tests; a real private capture/replay has not yet been performed. Phase 0 remains in progress until that real capture reproduces the ordered output. Publishing and deployment remain paused.
+**Recommendation Phase 0 is implemented but not complete.** Open PR #298 adds bounded pool diagnostics, synthetic offline metrics, private capture, and strict offline replay. The private baseline confirmed identical recommendation outputs (10 expected and 10 actual) and ten HTTP 503 metadata failures, but exposed a stable `metadata_lookup_errors` discrepancy. Root cause was confirmed in `recommendation_replay.py`: the HTTP cassette stored status/body but rebuilt requests as GET using the first URL argument, losing the original response request's fully resolved URL/query string. The fix and synthetic regression test are now on the PR branch; exact-head CI and user replay remain pending. Do not change ranking, candidate selection, scoring, or allocation until the private replay succeeds and Phase 0 evidence is reviewed. Publishing/deployment remain paused.
 
 ## Delivery and verification state
 
