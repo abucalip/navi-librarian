@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Iterable
 
+from discovery_mmr import candidate_similarity
+
 from discovery_allocation_contract import (
     AllocationCandidate,
     AllocationRequest,
@@ -30,6 +32,9 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         )
         for category in ("adjacent", "cross_genre", "adventurous", "unclassified")
     }
+    all_scores = [candidate.score for candidate in candidates]
+    score_low = min(all_scores, default=0.0)
+    score_span = max(all_scores, default=0.0) - score_low
     selected: list[str] = []
     review: list[str] = []
     selected_counts: Counter[str] = Counter()
@@ -39,6 +44,35 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     decisions: dict[str, CandidateDecision] = {}
     checked = 0
 
+    def ranked_candidates(items):
+        """Yield candidates by current marginal relevance, recalculating after each pick."""
+        remaining = list(items)
+        if request.diversity_penalty == 0:
+            yield from remaining
+            return
+        while remaining:
+            selected_candidates = [by_id[candidate_id] for candidate_id in selected]
+
+            def marginal_score(candidate):
+                relevance = (
+                    1.0 if score_span == 0.0
+                    else (candidate.score - score_low) / score_span
+                )
+                similarity = max(
+                    (
+                        candidate_similarity(
+                            {"artist_key": candidate.artist_key, "tags": candidate.tags},
+                            {"artist_key": chosen.artist_key, "tags": chosen.tags},
+                        )
+                        for chosen in selected_candidates
+                    ),
+                    default=0.0,
+                )
+                return relevance - request.diversity_penalty * similarity
+
+            best = max(remaining, key=marginal_score)
+            remaining.remove(best)
+            yield best
     def record(candidate: AllocationCandidate, status: str, reason: str) -> None:
         previous = decisions.get(candidate.candidate_id)
         if previous and previous.status == "selected":
@@ -122,10 +156,12 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             break
         if selected_styles[style] >= target:
             continue
-        for candidate in sorted(
-            (item for item in candidates if item.diversity_style == style),
-            key=lambda item: item.score,
-            reverse=True,
+        for candidate in ranked_candidates(
+            sorted(
+                (item for item in candidates if item.diversity_style == style),
+                key=lambda item: item.score,
+                reverse=True,
+            )
         ):
             if selected_styles[style] >= target:
                 break
@@ -135,7 +171,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
 
     # Normal category quota pass.
     for category in ("adjacent", "cross_genre", "adventurous"):
-        for candidate in ordered_by_category[category]:
+        for candidate in ranked_candidates(ordered_by_category[category]):
             target = request.category_targets.get(category, 0)
             if selected_counts[category] >= target:
                 break
@@ -172,7 +208,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
 
     # Use unclassified candidates before relaxing all remaining policy limits.
     if len(selected) < request.count and checked < request.max_checks:
-        for candidate in ordered_by_category["unclassified"]:
+        for candidate in ranked_candidates(ordered_by_category["unclassified"]):
             consider(candidate, allow_over_quota=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
@@ -198,7 +234,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         remaining: Iterable[AllocationCandidate] = sorted(
             fallback_base, key=lambda item: item.score, reverse=True
         )
-        for candidate in remaining:
+        for candidate in ranked_candidates(remaining):
             consider(candidate, allow_over_quota=True,
                      allow_over_family_cap=True, allow_over_style_target=True)
             if len(selected) >= request.count or checked >= request.max_checks:
