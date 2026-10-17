@@ -1,5 +1,5 @@
 import unittest
-from discovery_recommendations import artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
+from discovery_recommendations import decayed_listen_weights, apply_familiarity_exploration_bonus, artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
 
 class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_normalization_and_artist_identity(self):
@@ -114,5 +114,29 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertEqual(candidate["discovery_score"], 10.0)
   self.assertEqual(candidate["genre_families"], [])
   self.assertFalse(candidate["genre_metadata_available"])
+
+
+ def test_decayed_listen_weights_prioritize_recent_listens_deterministically(self):
+  listens = [
+   {"listened_at": 1_000, "track_metadata": {}},
+   {"listened_at": 1_000 + 14 * 24 * 60 * 60, "track_metadata": {}},
+   {"track_metadata": {}},
+  ]
+  self.assertEqual(decayed_listen_weights(listens), [0.5, 1.0, 1.0])
+  self.assertEqual(decayed_listen_weights([{"track_metadata": {}}, {}]), [1.0, 1.0])
+
+ def test_decayed_listen_weights_reject_invalid_half_life(self):
+  for value in (0, -1, float("inf"), float("nan")):
+   with self.assertRaises(ValueError):
+    decayed_listen_weights([], half_life_days=value)
+
+ def test_familiarity_curve_is_smooth_and_peaks_at_low_nonzero_count(self):
+  scores = []
+  for count in (0.0, 1.5, 5.0, 20.0):
+   candidate = {"score": 1.0}
+   scores.append(apply_familiarity_exploration_bonus(candidate, count, [], set()))
+  self.assertGreater(scores[1], scores[0])
+  self.assertGreater(scores[0], scores[2])
+  self.assertGreater(scores[2], scores[3])
 
 if __name__=="__main__": unittest.main()
