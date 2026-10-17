@@ -221,6 +221,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                         "album": album_title,
                         "score": score,
                         "tracks": [],
+                        "discovery_source": "listenbrainz",
+                        "discovery_sources": ["listenbrainz_cf"],
                     }
 
                 candidate = albums[key]
@@ -375,10 +377,20 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                         providers.music_key(album_title),
                     )
 
+                    source = (
+                        "profile_tag_search"
+                        if regional_style.startswith("profile:")
+                        else "exploration_tag_search"
+                    )
                     if key in albums:
                         albums[key]["discovery_source"] = (
                             albums[key].get("discovery_source", "listenbrainz")
                         )
+                        sources = albums[key].setdefault(
+                            "discovery_sources", ["listenbrainz_cf"]
+                        )
+                        if source not in sources:
+                            sources.append(source)
                         regional_families = albums[key].setdefault(
                             "regional_families", []
                         )
@@ -400,6 +412,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                         "score": 0.035,
                         "tracks": [],
                         "discovery_source": "musicbrainz_tag_search",
+                        "discovery_sources": [source],
                         "regional_families": [regional_family],
                         "regional_styles": [regional_style],
                     }
