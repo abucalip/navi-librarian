@@ -88,6 +88,40 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             self.assertNotIn("recording-b", row[0])
             self.assertNotIn("candidate_diagnostics", second)
 
+    def test_aggregate_diagnostics_persist_privately_without_public_schema_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            gathered = {
+                "cf_recording_mbids": ["recording-id"],
+                "cf_recordings_returned": 1,
+                "cf_recordings_resolved": 1,
+                "recent_family_counts": {"jazz": 2},
+            }
+            candidates = [{
+                "artist": "Private Artist", "album": "Private Album",
+                "discovery_source": "listenbrainz", "score": 0.5,
+                "discovery_score": 0.6, "recent_profile_bonus": 1.0,
+                "lastfm_popularity_bonus": 1.0, "genre_metadata_available": True,
+                "exact_owned": False, "same_title_library_matches": 0,
+                "assigned_category": "adjacent", "selection_decision": "selected",
+            }]
+            public = record_recommendation_diagnostics(
+                db, gathered, [{"artist": "Private Artist", "album": "Private Album"}],
+                [{"artist": "Private Artist", "album": "Private Album"}],
+                candidate_diagnostics=candidates,
+            )
+            self.assertNotIn("candidate_diagnostics", public)
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                stored = json.loads(connection.execute(
+                    "SELECT metrics_json FROM recommendation_pool_diagnostics"
+                ).fetchone()[0])
+            aggregate = stored["candidate_diagnostics"]
+            self.assertEqual(aggregate["candidate_count"], 1)
+            self.assertEqual(aggregate["profile_evidence"]["recent_family_counts"], {"jazz": 2})
+            self.assertNotIn("Private Artist", json.dumps(stored))
+            self.assertNotIn("Private Album", json.dumps(stored))
+
     def test_aggregate_candidate_diagnostics_are_bounded_and_identity_free(self):
         gathered = {
             "listens": [{}, {}, {}],
