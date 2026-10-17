@@ -2550,29 +2550,45 @@ def _refresh_listening_profile_background():
     )
 
 
+def _discovery_scheduler_refresh_one(list_name):
+    if list_name == "personal":
+        return _discovery_refresh_personal(20)
+    if list_name == "listening_profile":
+        return _refresh_listening_profile_background()
+    return _discovery_refresh_other(list_name)
+
+
 def _discovery_scheduler():
-    """Refresh discovery lists and the listening profile when older than 24 hours."""
+    """Refresh stale lists hourly and log bounded per-list failures."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+    list_names = (
+        "personal", "classics", "artist_deep_dive", "new_releases",
+        "listening_profile",
+    )
     while True:
         try:
-            for list_name in (
-                "personal", "classics", "artist_deep_dive", "new_releases",
-                "listening_profile",
-            ):
-                cached = _discovery_read_list(list_name)
-                stale = (
-                    cached is None
-                    or time.time() - cached["generated_at"] >= 24 * 60 * 60
-                )
-                if not stale:
-                    continue
-                if list_name == "personal":
-                    _discovery_refresh_personal(20)
-                elif list_name == "listening_profile":
-                    _refresh_listening_profile_background()
-                else:
-                    _discovery_refresh_other(list_name)
-        except Exception:
-            pass
+            outcomes = discovery_refresh.refresh_stale_lists(
+                list_names,
+                _discovery_read_list,
+                _discovery_scheduler_refresh_one,
+                now=time.time(),
+                max_age_seconds=24 * 60 * 60,
+            )
+            for outcome in outcomes:
+                if outcome["status"] in {"read_failed", "refresh_failed"}:
+                    logger.warning(
+                        "Discovery scheduler %s failed for %s (%s)",
+                        outcome.get("stage", "refresh"),
+                        outcome["list"],
+                        outcome.get("error_type", "reported_error"),
+                    )
+        except Exception as exc:
+            logger.error(
+                "Discovery scheduler cycle failed (%s)",
+                type(exc).__name__,
+            )
         time.sleep(3600)
 
 

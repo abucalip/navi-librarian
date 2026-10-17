@@ -1,3 +1,15 @@
+## 2026-10-17 — PR #299: discovery refresh freshness diagnostics
+
+- PR #299, “Improve discovery refresh freshness diagnostics,” is open and unmerged on branch `fix/discovery-refresh-freshness-diagnostics`; exact reviewed head before this documentation closeout was `68ecda913379e30ea15b4f57a825f2e1d384eeca`.
+- Added `cache_staleness_reason()` for missing, expired, malformed, and non-finite cache timestamps, and `refresh_stale_lists()` to isolate cache-read/refresh failures per list. The hourly scheduler retains its 24-hour threshold, cadence, ordering, refresh callbacks, and API response contracts. Ranking, candidate selection, and allocation are unchanged.
+- Regression coverage includes freshness boundaries, invalid timestamps, fresh-cache skips, per-list continuation after read/refresh errors, bounded failure reporting, and suppression of exception-message details in logs.
+- All four required workflows passed on exact head `68ecda913379e30ea15b4f57a825f2e1d384eeca`: Python syntax run 1493; Docker packaging/full unit suite/image build run 1401; container runtime smoke run 1210; validation-only multi-architecture image validation run 1254 (publishing paused).
+- Full PR diff was reviewed. No assistant-side local tests were run. No publication, deployment, or production-runtime verification is claimed.
+- PR #298's private real-data recommendation capture/replay remains pending on the user's isolated Mac environment; do not change ranking/scoring/allocation before that baseline gate completes.
+- Closeout docs updated on the PR branch. Keep #299 unmerged until the final documentation commit is checked by all four required workflows and the final diff is reviewed. Publishing remains paused.
+
+---
+
 ## 2026-10-17 — MCP retirement closeout
 
 - Refreshed GitHub `main`: PR #296's retirement implementation is present at commit `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`; the earlier status/plan text incorrectly still described the PR as open and verification as pending.

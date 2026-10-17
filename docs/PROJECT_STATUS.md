@@ -1,16 +1,14 @@
 # Project status
 
-Last reviewed: 2026-10-17 (MCP retirement PR #296 merged; repository-level closeout recorded)
+Last reviewed: 2026-10-17 (PR #299 discovery-refresh diagnostics closeout in progress)
 
 ## Current focus
 
-**Modularization roadmap complete.** The final audit found no remaining concrete correctness, safety, or testability gap that justifies another extraction. Remaining recommendation and acquisition code is documented orchestration/compatibility wiring. No further size-only extraction is planned.
+**Recommendation Phase 0 diagnostics are in progress.** PR #298 adds private recommendation capture/replay and baseline diagnostics; its real-data capture and offline replay remain pending on the user's isolated Mac test environment. Do not change ranking, candidate selection, or allocation before that baseline gate is complete.
 
-The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+PR #299 addresses a separate, baseline-independent observability gap: scheduled discovery refreshes previously failed silently and one list's exception could prevent later lists from being checked in that hourly cycle. The branch adds deterministic freshness classification, per-list failure isolation, bounded warning logs, and regression tests. It does not change recommendation ranking or user-facing response shapes.
 
-**MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
-
-**Next action:** migrate any external MCP clients/configurations that may still target the retired endpoint, if any exist; repository inspection cannot determine this. Do not publish or deploy without separate authorization.
+**Verification:** PR #299 code head `68ecda913379e30ea15b4f57a825f2e1d384eeca` passed all four required workflows: Python syntax run 1493, Docker packaging/full unit suite/build run 1401, container runtime smoke run 1210, and validation-only multi-architecture validation run 1254. The root `PROJECT_LOG.md` closeout entry is now included on the PR branch. The documentation closeout has advanced beyond the code head listed above; the latest PR head and exact-head CI state are tracked in PR #299. The workflow lookup returned no runs for the documentation-only head, so final-head CI is not yet verified. PR #299 remains open and unmerged pending exact-head CI and diff review. Keep PR #298's private capture/replay gate open; publishing and deployment remain paused.
 
 ## Delivery and verification state
 

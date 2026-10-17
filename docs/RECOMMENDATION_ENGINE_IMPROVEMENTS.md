@@ -8,7 +8,7 @@ Recommendations should respond meaningfully to changes in recent listening and t
 
 Preserve:
 - Owned-album exclusion, reliable artist identity, and compilation/remix/non-album release filtering.
-- Existing discovery-list/API response contracts, acquisition behavior, persistence, and remaining MCP compatibility.
+- Existing discovery-list/API response contracts, acquisition behavior, and persistence. MCP transport/registration is retired.
 - Bounded provider calls, cache/rate-limit behavior, and graceful failure paths.
 - Deterministic, fixture-driven verification; no live provider dependency for correctness tests.
 - Publishing remains paused. No UI redesign or new discovery mode is part of the first implementation.
@@ -20,6 +20,8 @@ Do not assume a diagnosis before measuring it. In particular, repeated recommend
 The audit inspected `navidrome_server.py::recommend_new_music`, `discovery_candidate_gathering.py`, `discovery_recommendations.py`, `discovery_list_payload.py`, and `app/api/discovery.py`. The audit ran no tests and changed no behavior.
 
 ### Candidate sources and refresh
+
+- Discovery refresh freshness is a separate layer from recommendation candidate/scoring behavior. PR #299 adds direct tests for missing/expired/malformed/non-finite timestamps and isolates cache-read and refresh failures per list, so one failing list does not prevent later lists from being checked in that hourly cycle. The scheduler keeps its existing hourly cadence, 24-hour stale threshold, list order, and callbacks. Warning logs are intentionally bounded to list, stage, and exception type; do not log provider exception messages or URLs.
 
 - **ListenBrainz collaborative filtering (CF) is already the primary candidate source.** Candidate gathering requests `cf/recommendation/user/<user>/recording` with `count=100`, resolves recording MBIDs through MusicBrainz with approximately 1.1-second spacing and a 180-day cache, and groups recordings into albums using the maximum recording score per album. This avoids automatically favoring albums with more tracks.
 - Fixed MusicBrainz tag searches are the **supplementary** candidate source, not the primary recommender. The supplementary path has a fixed set of 20 style/regional tag queries, can add up to 60 candidates, and caches search results for 30 days.
@@ -93,7 +95,12 @@ Library owners may already own and play music, so evaluate on unowned artists an
 
 #### 0.3 Trace refresh and expose score diagnostics
 
-Trace refresh triggers, scheduled refreshes, persisted list reads/writes, and cache boundaries. Confirm whether each user refresh regenerates user-dependent output as intended. Expose a debug-only candidate record with source provenance, per-term score breakdown, relevant seed/profile evidence, cache diagnostics, and rejection reasons.
+**Refresh/freshness audit started in PR #299.** Manual reads return persisted discovery lists rather than regenerating them. The scheduler checks five cached records hourly and refreshes records at least 24 hours old. Personal refresh is synchronous at the explicit refresh entry point; other discovery refreshes are launched in background threads. The scheduler previously wrapped the entire list loop in one silent exception handler, so a read/refresh failure could stop processing later lists for that hour without leaving a useful diagnostic.
+
+PR #299 adds a directly tested stale-reason classifier (missing, expired, invalid timestamp), isolates read/refresh failures per list, and logs bounded list/stage/exception-type diagnostics without provider exception messages. This is operational visibility only; it does not change score, candidate, or allocation policy. CI must confirm the scheduler wiring and existing behavior.
+
+Remaining work after this audit: trace API-triggered versus scheduled refresh outcomes through persistence, then add debug-only candidate provenance, score-component, profile-evidence, cache, and rejection diagnostics.
+
 
 **Acceptance gate for Phase 0**
 - Repeated-pool vs repeated-ranking hypotheses can be distinguished from recorded evidence.
