@@ -310,6 +310,7 @@ def recommend_new_music(
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
 
+    from discovery_mmr import diversity_setting_to_penalty
     from discovery_recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
@@ -455,7 +456,7 @@ def recommend_new_music(
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
         diversity_penalty=(
-            __import__("discovery_mmr").diversity_setting_to_penalty(
+            diversity_setting_to_penalty(
                 _service_recommendation_diversity_value(_discovery_settings_read)
             )
         ),
