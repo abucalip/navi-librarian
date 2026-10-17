@@ -140,16 +140,22 @@ def write_capture(
         raise ValueError("Only a successful JSON recommendation result can be captured.") from exc
     if not isinstance(expected_output, dict) or "recommendations" not in expected_output:
         raise ValueError("Output is not a successful recommendation result.")
-    try:
-        sha = git_sha or subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=_REPOSITORY_ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        sha = "unknown"
+    sha = (
+        git_sha
+        or os.environ.get("LIBRARIAN_RECOMMENDATION_CAPTURE_GIT_SHA")
+        or os.environ.get("GITHUB_SHA")
+    )
+    if not sha:
+        try:
+            sha = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=_REPOSITORY_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            sha = "unknown"
     payload = {
         "count": int(count),
         "gathered_inputs": freeze_gathered_inputs(gathered),
