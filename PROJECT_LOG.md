@@ -1,3 +1,12 @@
+## 2026-10-17 — PR #312 merged: profile-derived supplementary queries
+
+- PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`.
+- Replaced the 20 fixed regional MusicBrainz supplementary searches with up to six queries selected by 14-day-decayed listening weights against cached artist genre tags, plus up to two exploration queries from the ranked CF candidate pool. The selector is pure and directly tested for contrasting profiles, weighted determinism, exploration quota, safe query formatting, and bounds. Cache reads are bounded to 15 recent artists and 60 candidate artists; provider rate limiting, 30-day search-result cache, candidate cap, and graceful failure behavior remain intact.
+- Removed four fixed regional one-slot allocation targets so regional styles are not hidden preferences. Measured diversity re-ranking remains Phase 3 work.
+- All four required workflows passed on exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`: Python syntax/size/import-boundary `39049404041`, Docker packaging/full unit suite/build `39049404031`, container runtime smoke `39049404044`, and validation-only multi-architecture image validation `39049404139` (publishing paused). The Docker unit suite reported 631 passing tests on the preceding code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`. No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — Phase 2.1 profile-derived supplementary queries (verification pending)
 
 - Started branch `recommendation/profile-derived-tag-queries` from current GitHub main `c6cbd65e872944b08f15ae66df94d15935dccf6e`.

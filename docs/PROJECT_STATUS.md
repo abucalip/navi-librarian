@@ -4,7 +4,7 @@ Last reviewed: 2026-10-17 (PR #310 merged; contrasting-profile regression verifi
 
 ## Current focus
 
-**Recommendation roadmap — Phase 2.1 profile-derived supplementary queries.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
+**Recommendation roadmap — Phase 2.2 classification overrides and source provenance.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
 
 PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. PR #309 merged at `d11dce4d981af4c34aa60a4d9caedb15eb8b6d58` from exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`. It adds deterministic 14-day half-life listen weights, a smooth familiarity curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts drive scoring/profile evidence. Ownership/release eligibility and the public API response shape remain unchanged by intent.
 
@@ -12,11 +12,11 @@ All four required workflows passed on exact final PR head `e00d07363c72fcbe971cb
 
 PR #310 merged at `31315a54255762f821cdd9d9949ee11a3ce17fb1` from exact final PR head `2fb8ce7e45188f7f02104cd171ac0d08102279ca`. The contrasting-profile regression reverses both score ordering and the top recommendation when recent listening shifts between artists, with candidate/provider inputs and cached genre metadata held constant. All four required workflows passed on that exact final head: Python syntax `39048493243`, Docker packaging/full unit suite/build `39048493246` (627 tests passed), container runtime smoke `39048493238`, and validation-only multi-architecture image validation `39048493239` (publishing paused). No assistant-side local tests were run; no live provider calls or private captures were used.
 
-**Current task:** PR #312 implements Phase 2.1 on branch `recommendation/profile-derived-tag-queries`. On code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`, all 631 unit tests passed; Python syntax, Docker packaging/build, container runtime smoke, and validation-only multi-architecture image validation all passed (workflow runs `39049316942`, `39049316950`, `39049316947`, `39049316962`). The final documentation-only update requires a fresh exact-head CI pass before merge.
+PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`. It replaces the 20 fixed regional MusicBrainz queries with up to six listening-profile-weighted queries and two candidate-pool exploration queries, selected by a pure tested helper. It also removes four hidden regional one-slot allocation targets; measured diversity re-ranking remains for Phase 3.
 
-The change adds a pure bounded selector, uses cached genres weighted by the decayed recent-listening profile, reserves two queries for exploration tags from the CF candidate pool, and packages the helper in Docker. Fixed regional tag constants and four hidden regional one-slot allocation targets are removed; measured diversity re-ranking remains for Phase 3.
+All four required workflows passed on exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`: Python syntax/size/import-boundary `39049404041`, Docker packaging/full unit suite/build `39049404031`, container runtime smoke `39049404044`, and validation-only multi-architecture image validation `39049404139` (publishing paused). On preceding code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`, the full unit suite reported 631 tests passed. No assistant-side local tests were run; publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** verify all four required workflows on the final documentation-inclusive PR head, then merge only if green. Do not collect further live diagnostic snapshots.
+**Next action:** implement Phase 2.2: audit classification overrides and candidate source provenance. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
