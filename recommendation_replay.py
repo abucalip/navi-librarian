@@ -1,4 +1,4 @@
-"""Private, deterministic replay of the recommendation ranking stage.
+"""Private, deterministic replay of candidate gathering and recommendation ranking.
 
 Capture files contain personal listening and library data. They are deliberately
 created outside the repository with owner-only permissions and must never be
