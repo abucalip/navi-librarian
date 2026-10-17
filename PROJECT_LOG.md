@@ -1140,3 +1140,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Any agent may work on front-end matters, but edits remain restricted to `static/app.css`, `static/app.js`, `static/login.css`, `static/login.js`, `app/templates/*.html`, narrowly scoped front-end tests/fixtures under `tests/`, and `docs/UI_BACKLOG_EXECUTION.md`.
 - Protected backend/API/security, domain, architecture, workflow, dependencies, packaging, deployment, and release-policy files still require explicit approval and coordinated ownership. No application code or runtime behavior changed.
 - Documentation-only change; automated tests and browser checks were not run in this editing step. CI verification on the final PR head remains required.
+
+
+## 2026-10-17 — PR #321 merged: diversity setting roadmap
+
+- PR #321 merged at `504035d36ad63605c7ba645f0e995745894f7434`; exact final head `8bf73dc4ac2927a08d3ac0e0d22466d60e542795`.
+- Added `docs/DIVERSITY_SETTING_ROADMAP.md` describing the Recommendation diversity slider, endpoint copy, evidence limits, offline calibration, backend preference/persistence, safe MMR integration, frontend boundaries, acceptance criteria, and rollout restrictions. Updated `docs/PROJECT_STATUS.md` to point to the new roadmap and set offline mapping calibration as the next action.
+- All four required workflows passed on exact final head: Python syntax run 1620 (`39066220743`), Docker packaging/full suite/build run 1528 (`39066220749`), container runtime smoke run 1337 (`39066220736`), and validation-only multi-architecture image validation run 1381 (`39066220768`, publishing paused).
+- Documentation-only; no local tests or UI checks were run. Production ranking is unchanged. No publishing, deployment, or runtime verification is claimed.
+- Next: calibrate the diversity-to-lambda mapping and relevance floor offline around lambda 0.75 before backend preference integration.
