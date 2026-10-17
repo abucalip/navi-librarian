@@ -47,6 +47,7 @@ class AllocationCandidate:
     diversity_style: str = "other"
     recent_profile_family: str | None = None
     ownership: OwnershipStatus = OwnershipStatus.CLEAR
+    tags: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for field_name in ("candidate_id", "artist_key"):
@@ -60,6 +61,8 @@ class AllocationCandidate:
             raise ValueError("source_order must be a non-negative integer")
         if not isinstance(self.ownership, OwnershipStatus):
             raise ValueError("ownership must be an OwnershipStatus")
+        if not isinstance(self.tags, tuple) or any(not isinstance(tag, str) for tag in self.tags):
+            raise ValueError("tags must be a tuple of strings")
 
 
 @dataclass(frozen=True)
@@ -72,6 +75,7 @@ class AllocationRequest:
     diversity_style_targets: Mapping[str, int]
     family_cap: int = 1
     max_checks: int = MAX_CANDIDATE_CHECKS
+    diversity_penalty: float = 0.0
 
     def __post_init__(self) -> None:
         if not 1 <= self.count <= MAX_RECOMMENDATION_COUNT:
@@ -91,6 +95,11 @@ class AllocationRequest:
             raise ValueError("family_cap must be a non-negative integer")
         if not isinstance(self.max_checks, int) or not 1 <= self.max_checks <= MAX_CANDIDATE_CHECKS:
             raise ValueError("max_checks must be between 1 and 60")
+        if (isinstance(self.diversity_penalty, bool)
+                or not isinstance(self.diversity_penalty, (int, float))
+                or not math.isfinite(self.diversity_penalty)
+                or not 0.0 <= self.diversity_penalty <= 1.0):
+            raise ValueError("diversity_penalty must be finite and between 0 and 1")
         object.__setattr__(
             self, "category_targets", MappingProxyType(dict(self.category_targets))
         )
