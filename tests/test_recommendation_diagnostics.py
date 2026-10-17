@@ -3,11 +3,55 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from discovery_store import record_recommendation_pool_diagnostic
+from discovery_store import (
+    record_discovery_refresh_outcome,
+    record_recommendation_pool_diagnostic,
+)
 from recommendation_diagnostics import evaluate_replay_fixture, jaccard_overlap
 
 
 class RecommendationDiagnosticsTests(unittest.TestCase):
+    def test_refresh_outcome_keeps_latest_manual_and_scheduler_states_without_details(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            first = record_discovery_refresh_outcome(
+                db, list_name="personal", origin="manual", status="error",
+                generated_at=100, error_type="RuntimeError",
+            )
+            record_discovery_refresh_outcome(
+                db, list_name="personal", origin="manual", status="success",
+                generated_at=200, item_count=10,
+            )
+            scheduled = record_discovery_refresh_outcome(
+                db, list_name="personal", origin="scheduler", status="already_running",
+                generated_at=201,
+            )
+            self.assertEqual(first["status"], "error")
+            self.assertEqual(scheduled["origin"], "scheduler")
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                rows = connection.execute(
+                    "SELECT origin, status, generated_at, item_count, error_type "
+                    "FROM discovery_refresh_outcomes ORDER BY origin"
+                ).fetchall()
+            self.assertEqual(rows, [
+                ("manual", "success", 200.0, 10, None),
+                ("scheduler", "already_running", 201.0, None, None),
+            ])
+
+    def test_refresh_outcome_rejects_unbounded_origin_and_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            with self.assertRaises(ValueError):
+                record_discovery_refresh_outcome(
+                    db, list_name="personal", origin="https://private.example/token",
+                    status="error",
+                )
+            with self.assertRaises(ValueError):
+                record_discovery_refresh_outcome(
+                    db, list_name="personal", origin="manual", status="failed with secret",
+                )
+
     def test_pool_jaccard_and_empty_pool(self):
         self.assertEqual(jaccard_overlap(["a", "b"], ["b", "c"]), 0.333333)
         self.assertIsNone(jaccard_overlap([], []))
@@ -22,12 +66,20 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             )
             second = record_recommendation_pool_diagnostic(
                 db, ["recording-b", "recording-c"], ["Artist|Album"],
-                {"cf_recordings_returned": 2, "cf_recordings_resolved": 2, "resolved_album_count": 2},
+                {"cf_recordings_returned": 2, "cf_recordings_resolved": 2, "resolved_album_count": 2,
+                 "refresh_origin": "scheduler"},
                 generated_at=200,
             )
             self.assertIsNone(first["cf_recording_jaccard_previous"])
             self.assertEqual(second["cf_recording_jaccard_previous"], 0.333333)
             self.assertEqual(second["final_list_jaccard_previous"], 1.0)
+            self.assertNotIn("refresh_origin", second)
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                stored = connection.execute(
+                    "SELECT metrics_json FROM recommendation_pool_diagnostics"
+                ).fetchone()[0]
+            self.assertEqual(json.loads(stored)["refresh_origin"], "scheduler")
             import sqlite3
             with sqlite3.connect(db) as connection:
                 row = connection.execute("SELECT recording_hashes_json FROM recommendation_pool_diagnostics").fetchone()
