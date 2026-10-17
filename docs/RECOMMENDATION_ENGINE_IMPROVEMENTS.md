@@ -70,6 +70,9 @@ Phases are ordered by dependency and evidence. Do not skip measurement to tune w
 
 #### 0.1 Pool-fingerprint diagnostic
 
+**Private baseline review (2026-10-17):** the frozen capture reported 100 CF recordings returned, all 100 with metadata, and 83 resolved albums. Both CF-recording and final-list Jaccard overlap against the previous stored snapshot were 1.0; supplementary cache counters were 14 hits and zero misses. The same capture had zero metadata lookup errors, zero unclassified recommendations, and met all category targets. This is consistent with an unchanged candidate pool and final list across that adjacent comparison. It is only one comparison: it does not establish a longer-term trend, show whether the listening profile changed between snapshots, or prove whether stable input, persisted-list freshness, ranking, or allocation caused the repeated output. Do not change policy on this evidence alone. The capture's limitations include the 100-recording CF cap, incomplete community-supplied genre tags, bounded genre lookup, a rolling 30-day profile, cached Last.fm popularity, and imperfect ownership matching. Keep the capture private; record only bounded aggregates in repository documentation.
+
+
 On each recommendation refresh, record privacy-conscious, bounded diagnostic data:
 - Fingerprint/set of CF recording MBIDs (do not log credentials or raw personal data beyond the identifiers needed for this diagnostic).
 - Number of recordings returned, number resolved, and resolved album count.
@@ -103,6 +106,10 @@ Refresh-origin tracing is now implemented on the working branch: the personal-li
 
 Aggregate recommendation diagnostics are implemented and merged in PR #304. Bounded source counts, base/final score and bonus distributions, profile-evidence counts, cache counts, and eligibility/selection outcomes are persisted with the existing pool snapshot. The aggregate omits candidate identities and raw tags and does not expand the public API response. All four required workflows passed on exact final head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`; merge commit `19435d5deea69b188d920cf375ef924ec3b14a97`. Review the real replay baseline's metrics and limitations before any score, source, or allocation changes.
 
+
+**Baseline review decision (2026-10-17):** the private exact replay succeeded (10/10 recommendations, 197 provider events, 40 Last.fm events, zero network providers). The associated diagnostic snapshot has identical CF and final-list sets versus the previous stored snapshot (Jaccard 1.0 each), but this single pair is insufficient to pass the causal diagnosis gate. The public synthetic fixture demonstrates the metric harness, not real-user relevance; the private exact replay verifies reproducibility, not future-listen hit-rate/nDCG or profile responsiveness. Phase 0 therefore remains open.
+
+Next evidence needed: comparable aggregate snapshots from multiple refreshes, with timestamps/origins and, if feasible, a deliberate listening-profile change between observations. If CF overlap remains high, investigate provider candidate-supply freshness; if CF overlap falls while final lists remain stable, inspect eligibility, scoring/allocation, and persisted-output behavior. Keep policy unchanged until the evidence supports a specific cause.
 
 **Acceptance gate for Phase 0**
 - Repeated-pool vs repeated-ranking hypotheses can be distinguished from recorded evidence.
