@@ -58,11 +58,31 @@ def summarize_candidate_diagnostics(
         for key, value in raw_profile_counts.items()
         if str(key) and isinstance(value, (int, float)) and math.isfinite(float(value))
     }
+    recent_counts = []
+    familiarity_factors = []
+    exploration_factors = []
+    for row in rows:
+        try:
+            recent_count = max(0, int(row.get("recent_artist_play_count", 0)))
+        except (TypeError, ValueError, OverflowError):
+            recent_count = 0
+        recent_counts.append(recent_count)
+        familiarity_factors.append(
+            1.35 if recent_count == 0 else
+            1.20 if recent_count <= 2 else
+            1.05 if recent_count <= 5 else
+            0.90 if recent_count <= 10 else 0.75
+        )
+        exploration_factors.append(1.10 if row.get("exploration_family_match") else 1.0)
+
     return {
         "candidate_count": len(rows),
         "candidate_counts_by_source": dict(sorted(sources.items())),
         "score_components": {
             "base_score": _numeric_summary([row.get("score") for row in rows]),
+            "familiarity_factor": _numeric_summary(familiarity_factors),
+            "exploration_family_bonus": _numeric_summary(exploration_factors),
+            "recent_artist_play_count": _numeric_summary(recent_counts),
             "final_discovery_score": _numeric_summary([row.get("discovery_score") for row in rows]),
             "recent_profile_bonus": _numeric_summary([row.get("recent_profile_bonus") for row in rows]),
             "lastfm_popularity_bonus": _numeric_summary([row.get("lastfm_popularity_bonus") for row in rows]),
