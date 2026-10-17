@@ -40,6 +40,7 @@ class MCPRetirementTests(unittest.TestCase):
         app_source = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
         service_source = (ROOT / "navidrome_server.py").read_text(encoding="utf-8")
         self.assertIn('@app.on_event("startup")', app_source)
+        self.assertIn("threading.Timer(\n        10,", app_source)
         self.assertIn("get_librarian()._start_discovery_scheduler()", app_source)
         self.assertIn("def _start_discovery_scheduler()", service_source)
 
