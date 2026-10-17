@@ -137,6 +137,8 @@ Keep Last.fm popularity capped and normalized as a weak tie-breaker or cold-star
 
 **Acceptance gate:** replay results show more responsiveness without an unacceptable regression in relevance, novelty, diversity, or deterministic repeatability. Numeric targets should be chosen after baseline collection rather than invented in advance.
 
+**Contrasting-profile regression (PR #310):** the adapter test runs the same two candidates and provider scores against two different recent-listening histories, with cached genre metadata held fixed. It asserts both score ordering and the leading recommendation reverse when the listened-to artist changes. This verifies profile sensitivity through the real recommendation adapter without live providers or private captures. It does not by itself establish production-list freshness or future-listen relevance; evaluate those qualitatively after the change is merged.
+
 ### Phase 2 — Make candidate generation reflect the current profile
 
 Proceed after the Phase 1 responsiveness changes have been evaluated, and coordinate query changes so they can be evaluated independently from score changes.
@@ -244,11 +246,9 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. The private baseline captured at `d8c1f3de5180b35919f55c304d55e5c939dad373` replays successfully offline (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). The comparator covers all stable top-level fields except volatile pool diagnostics and Last.fm error state. These results establish replay fidelity, not recommendation quality: the current session has not inspected the private capture's full metric output, and the synthetic fixture is not a substitute for the user's historical replay.
+PR #309 implements the initial Phase 1 ranking responsiveness changes: 14-day half-life recency weighting, a smooth familiarity curve, and a recent-profile multiplier cap increased to 25%. PR #310 adds a deterministic end-to-end adapter regression using the same candidate pool and fixed cached genres with contrasting recent-listening histories; it asserts that scores and the leading recommendation reverse with the profile. The test uses injected fixtures and no live providers. Required CI must pass on the exact final PR head before merge.
 
-PR #303 adds bounded origin/outcome telemetry for personal-list refreshes, separating manual refresh requests from the hourly scheduler and keeping the latest outcome for each origin. No ranking, candidate selection, allocation, or public response fields are intentionally changed. Verify all required gates on the exact final PR head before treating this step as complete.
-
-Next, add aggregate candidate provenance, score-component, profile-evidence, cache, and rejection diagnostics as a separate baseline-independent observability task. Do not change scoring, source selection, candidate generation, or allocation until the real baseline metrics and limitations have been reviewed.
+After this regression is merged, proceed to Phase 2.1: replace the fixed supplementary MusicBrainz tag-query list with a bounded, profile-derived set. Keep query selection separate from the score change, preserve an explicit exploration quota, retain cache/rate-limit/failure behavior, and test that contrasting profiles select different queries while genre metadata is unchanged. Do not collect further live diagnostic snapshots. Publishing and deployment remain unauthorized.
 
 ## Private real-run capture and offline replay
 
