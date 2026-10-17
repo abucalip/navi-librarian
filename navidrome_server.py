@@ -570,6 +570,7 @@ def recommend_new_music(
 
         candidate_debug.append({
             "discovery_source": candidate.get("discovery_source", "listenbrainz"),
+            "discovery_sources": candidate.get("discovery_sources", []),
             "artist": candidate["artist"],
             "album": candidate["album"],
             "diversity_style": candidate.get("diversity_style", "other"),
