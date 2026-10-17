@@ -1,5 +1,4 @@
 import json
-import os
 import tempfile
 import unittest
 from collections import Counter
@@ -130,6 +129,14 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                         raise AssertionError("live provider invoked during replay: " + name)
                     return result
                 return call
+            def http_get(url, **kwargs):
+                if raise_if_called:
+                    raise AssertionError("live HTTP GET invoked during replay")
+                return Response({"url": url, "params": kwargs.get("params", {})})
+            def http_client(**kwargs):
+                if raise_if_called:
+                    raise AssertionError("live HTTP client opened during replay")
+                return Client()
             return RecommendationProviders(
                 listenbrainz_recent=value("listens", [{"listen": 1}]),
                 listenbrainz_username=value("username", "fixture-user"),
@@ -139,8 +146,8 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                 is_album_candidate=lambda candidate: True,
                 api_call=value("api_call", {"albumList2": {"album": []}}),
                 items=lambda response: response,
-                http_get=lambda url, **kwargs: Response({"url": url, "params": kwargs.get("params", {})}),
-                http_client=lambda **kwargs: Client(),
+                http_get=http_get,
+                http_client=http_client,
                 sleep=lambda seconds: None,
             )
 
