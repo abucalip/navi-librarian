@@ -1,3 +1,13 @@
+## 2026-10-17 — Recommendation diagnostics: bounded longitudinal snapshot history
+
+- Added a separate SQLite history table for recommendation-pool diagnostics, retaining at most the latest eight snapshots while preserving the existing single-row latest-snapshot table and diagnostic/public response contracts.
+- Each history row stores only the existing hashed recording/album identities and bounded aggregate metrics; raw recording MBIDs, album identities, and profile tags are not persisted. Added a bounded reader that returns snapshots chronologically without exposing identity-hash fields.
+- Added regression coverage for retention bounds, chronological reads, hash non-disclosure, overlap continuity, invalid limits, and compatibility with a database containing only the legacy latest snapshot. Ranking, candidate generation, allocation, and public response shape remain unchanged.
+- PR verification pending. No assistant-side local tests were run; do not claim CI until the exact final PR-head workflows are inspected. Publishing remains paused; no deployment/runtime verification is claimed.
+- Next: collect multiple aggregate snapshots in the isolated test environment, including one after a deliberate profile change if feasible, then use CF-vs-final overlap to select the next diagnosis.
+
+---
+
 ## 2026-10-17 — Private recommendation baseline reviewed; policy gate remains closed
 
 - Reviewed the owner-provided aggregate report from the private PR #298 capture/replay. The replay reproduced 10/10 recommendations from capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, consumed 197 provider events and 40 Last.fm events, and made zero network provider calls.
