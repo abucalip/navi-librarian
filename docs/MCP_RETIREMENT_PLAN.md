@@ -31,6 +31,7 @@ Audited the current GitHub `main` source and package/runtime configuration befor
 | Reference | Finding | Disposition |
 |---|---|---|
 | `mcp_registry.py` | Registers 25 service functions; includes no longer supported restart/patch tools. | Delete registry. The underlying service functions remain available to the web layer. |
+| `server.py` | A separate, non-Librarian Proxmox MCP entry point imports the same SDK, contains a hardcoded local SSH identity/host, and is exercised by `tests/test_proxmox_mcp_handler.py`. It is not packaged or referenced by the web app. | Remove this unrelated MCP entry point and its handler tests rather than retain a second MCP runtime or private-network defaults in this repository. Keep `read_only_command_policy.py` and its shell-composition/traversal rejection tests. |
 | `navidrome_server.py` standalone block | Only direct MCP transport startup; binds streamable HTTP to loopback port 8000 and starts the scheduler as a side effect. | Remove transport/startup block. Keep shared service and scheduler functions. |
 | `requirements.txt` | `mcp==2.3.0` is the only declared MCP SDK dependency found in the inspected package manifest. | Remove dependency. |
 | `Dockerfile` | Explicit COPY list includes `mcp_registry.py`; no separate MCP service exists in `compose.yaml`. | Remove registry from image contents. Web service remains on its configured port. |
@@ -38,7 +39,7 @@ Audited the current GitHub `main` source and package/runtime configuration befor
 | `app/api/dependencies.py` and `app/main.py` | Web routes lazily call shared `navidrome_server` functions; no need for MCP registration. The web entry point did not start the scheduler, while the removed standalone block did. | Keep lazy adapter; start the idempotent scheduler from web application startup. |
 | Requirements, test plan, workflow docs, status, and project log | Some still described MCP as supported or required compatibility. | Update to the web-only supported interface and MCP-free verification contract. |
 
-No repository-defined external MCP consumer or separate Compose MCP service was found in the inspected configuration. GitHub source inspection cannot establish whether an external client or existing user configuration still targets the former loopback endpoint; that remains unverified. The existing Compose deployment exposes the web port, not port 8000. The 25 registered function implementations were not deleted; they remain shared service functionality.
+The audit also found and removed the unrelated Proxmox MCP entry point (`server.py`), which was not part of the web application or Docker image and hardcoded an SSH identity/host. Its read-only command allowlist and rejection tests remain. No repository-defined external MCP consumer or separate Compose MCP service was found in the inspected configuration. GitHub source inspection cannot establish whether an external client or existing user configuration still targets the former loopback endpoint; that remains unverified. The existing Compose deployment exposes the web port, not port 8000. The 25 registered function implementations were not deleted; they remain shared service functionality.
 
 ## Principles and constraints
 
