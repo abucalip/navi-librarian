@@ -15,11 +15,16 @@ function isAlbumRecommendation(item) {
     .some(pattern => pattern.test(normalized));
 }
 
+let activePage = 'dashboard';
+
 function showPage(name) {
+  activePage = name;
   document.querySelectorAll('.page').forEach(el =>
     el.classList.toggle('hidden', el.id !== name));
   document.querySelectorAll('nav button[data-page]').forEach(el =>
     el.classList.toggle('active', el.dataset.page === name));
+  // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
+  $('appMenuButton').classList.toggle('is-current', name === 'settings');
   moveNavBlob();
   syncNavAria();
 }
@@ -39,8 +44,8 @@ function moveNavBlob() {
 // The reference component ships no aria-selected or role=tablist, so this is added here:
 // the sidebar is a navigation landmark, and the current page is exposed as aria-current.
 function syncNavAria() {
-  document.querySelectorAll('nav button[data-page]').forEach(el => {
-    if (el.classList.contains('active')) el.setAttribute('aria-current', 'page');
+  document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(el => {
+    if (el.dataset.page === activePage) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
   });
 }
@@ -59,13 +64,61 @@ function initializePage(name) {
   else if (name === 'acquisitions') startAcquisitionStream();
 }
 
-document.querySelectorAll('nav button[data-page]').forEach(button =>
+// One navigation path for the rail and the header menu, so Settings in the menu still runs
+// initializePage('settings') and loads its panels rather than opening an empty page.
+function navigateTo(name) {
+  showPage(name);
+  initializePage(name);
+  if (name !== 'acquisitions') stopAcquisitionStream();
+}
+
+document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
-    const name = button.dataset.page;
-    showPage(name);
-    initializePage(name);
-    if (name !== 'acquisitions') stopAcquisitionStream();
+    setAppMenuOpen(false, {focusToggle: true});
+    navigateTo(button.dataset.page);
   }));
+
+// Header gear menu: a disclosure (aria-expanded and aria-controls) over a plain group of
+// buttons, not role="menu". Pointer dismissal is handled by the document click listener;
+// focus leaving the container closes it only when the new focus target is a real element
+// outside it, because Safari does not focus buttons on click and would otherwise close the
+// panel on mousedown and swallow the item click.
+const appMenuButton = $('appMenuButton');
+const appMenu = $('appMenu');
+const appMenuContainer = appMenuButton.parentElement;
+const appMenuItems = () => Array.from(appMenu.querySelectorAll('button'));
+
+function setAppMenuOpen(open, {focusToggle = false, focusFirst = false} = {}) {
+  appMenu.hidden = !open;
+  appMenuButton.setAttribute('aria-expanded', String(open));
+  if (open && focusFirst) appMenuItems()[0].focus();
+  if (!open && focusToggle) appMenuButton.focus();
+}
+
+appMenuButton.addEventListener('click', () => setAppMenuOpen(appMenu.hidden));
+appMenuButton.addEventListener('keydown', event => {
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    setAppMenuOpen(true, {focusFirst: true});
+  }
+});
+appMenu.addEventListener('keydown', event => {
+  const items = appMenuItems();
+  const index = items.indexOf(document.activeElement);
+  let target = null;
+  if (event.key === 'ArrowDown') target = items[(index + 1) % items.length];
+  else if (event.key === 'ArrowUp') target = items[(index - 1 + items.length) % items.length];
+  else if (event.key === 'Home') target = items[0];
+  else if (event.key === 'End') target = items[items.length - 1];
+  if (target) { event.preventDefault(); target.focus(); }
+});
+appMenuContainer.addEventListener('focusout', event => {
+  const next = event.relatedTarget;
+  if (next && !appMenuContainer.contains(next)) setAppMenuOpen(false);
+});
+document.addEventListener('click', event => {
+  if (!appMenu.hidden && !(event.target.closest && event.target.closest('.header-menu'))) setAppMenuOpen(false);
+});
 
 document.querySelectorAll('button[data-go]').forEach(button =>
   button.addEventListener('click', () => showPage(button.dataset.go)));
@@ -671,6 +724,7 @@ document.addEventListener('click', event => {
 document.addEventListener('keydown', event => {
   const albumModalOpen = !$('albumModalBackdrop').hidden;
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
+  else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});
   if (event.key === 'Tab' && albumModalOpen) trapAlbumModalFocus(event);
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title]')) {
     event.preventDefault(); openAlbumModal(event.target);
@@ -2198,7 +2252,12 @@ $('testSlskd').addEventListener('click', async () => {
 });
 
 
-document.getElementById('logoutButton').addEventListener('click', async () => {
+document.getElementById('logoutButton').addEventListener('click', async event => {
+  // Prevent a second submission while the request is in flight. The redirect in finally
+  // ends the page either way, so the disabled state never needs to be cleared.
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
   try { await fetch('/api/auth/logout', {method: 'POST', cache: 'no-store'}); }
   finally { window.location.replace('/login'); }
 });

@@ -36,6 +36,9 @@
   --scroll-thumb: #686044;
   --scroll-track: #222424;
   --radius: 6px; --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  /* The header menu is the only element that floats over arbitrary page content, so it alone
+     needs a shadow to separate it from the surface beneath. */
+  --shadow-menu: 0 8px 24px rgba(0,0,0,.45);
   --body: "IBM Plex Sans", sans-serif; --mono: "IBM Plex Mono", monospace;
 }
 * { box-sizing: border-box; }
@@ -58,6 +61,36 @@ header h1::before {
   background: center / contain no-repeat url("/assets/cassette.png");
 }
 header p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .025em; text-align: right; }
+.header-tools { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.header-menu { position: relative; flex: 0 0 auto; }
+.header-menu-toggle {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+  color: var(--text-chip); background: transparent; border-radius: 4px;
+}
+.header-menu-toggle svg { display: block; width: 20px; height: 20px; }
+.header-menu-toggle[aria-expanded="true"] { color: var(--yellow); background: var(--surface-raised); border-color: var(--yellow); }
+/* Settings is the current page but is no longer a rail item, so the toggle carries the cue. */
+.header-menu-toggle.is-current { color: var(--yellow); box-shadow: inset 0 -3px var(--yellow); }
+.header-menu-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 1;
+  min-width: 176px; max-width: calc(100vw - 30px); padding: 4px;
+  background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius);
+  box-shadow: var(--shadow-menu);
+}
+.header-menu-panel[hidden] { display: none; }
+.header-menu-panel:not([hidden]) { animation: header-menu-in 150ms ease-out; }
+@keyframes header-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.header-menu-panel button {
+  display: block; width: 100%; min-height: 44px; padding: 10px 14px;
+  color: var(--text); background: transparent; border: 0; border-radius: 3px;
+  font: 400 13px/1.4 var(--body); text-align: left;
+}
+.header-menu-panel button:hover { background: var(--surface-hover); }
+/* Inset so the ring is never clipped by the panel's own edge. */
+.header-menu-panel button:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
+.header-menu-panel button[aria-current="page"] { background: var(--yellow-dim); box-shadow: inset 3px 0 var(--yellow); }
+.header-menu-separator { height: 1px; margin: 4px 0; background: var(--border); }
+@media (prefers-reduced-motion: reduce) { .header-menu-panel:not([hidden]) { animation: none; } }
 main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
 nav {
   position: fixed; z-index: 15; inset: 82px auto 0 0; width: 220px;

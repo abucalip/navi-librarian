@@ -1040,6 +1040,38 @@ by reading source.
 - Deliberately **not** a pill or a badge, because `docs/FRONTEND_DESIGN_GUIDE.md` section 3
   lists colourful status pills among the anti-patterns to avoid.
 
+## 5m. Header settings menu (plan: `docs/STATUS_ICON_DEV.md`)
+
+Settings and Log out moved out of the sidebar into a gear button at the top right of the
+header. Activating the gear opens a small disclosure with those two items. Acquisitions stays
+in the rail. It completes the follow-up that §5b anticipated ("Acquisitions and Settings are
+intended to move elsewhere later, as is Log out").
+
+Decisions recorded from the plan: a disclosure (`aria-expanded`, `aria-controls`) rather than
+`role="menu"`; Log out uses neutral text, because `--red-text` fails 4.5:1 on the panel surface
+and logging out is not destructive; the skip link moved ahead of `<header>` so it stays the
+first tab stop; one non-colour token (`--shadow-menu`) was added and no colour literal was.
+
+Verification on the branch (head SHA recorded in the PR, not here):
+
+- `python -m unittest tests.test_header_menu_ui_contract`: 20 tests pass on the change and 16
+  of them fail when run against the pre-change `index.html`, `app.css` and `app.js`.
+- `python -m unittest discover -s tests`: 660 tests, OK.
+- `node --check static/app.js` and `python -m compileall app static`: clean.
+- Impeccable detector: the same five findings as `main` (nav-blob and modal easing, card stripe,
+  album-modal `<img>` without `src`, an 11px label). None are introduced by this change; they
+  are left for their own items.
+- Headless Chromium against the local app, sandbox paths, slskd disabled: rail has no Settings or
+  Log out; skip link is the first tab stop; gear opens and closes by click, outside click,
+  Escape (focus returns to the gear) and ArrowDown; Settings from the menu loads its panels;
+  the gear and the item carry the current-page cue; no rail item is active on Settings and the
+  blob is hidden; zero horizontal overflow at 1440, 1200, 900, 620, 390 and 360px with the panel
+  inside the viewport and the toggle at 44×44; Log out sends `POST /api/auth/logout` and lands on
+  `/login`.
+
+Not verified: Safari (focus rule written for it, not exercised), a real screen reader, reduced
+motion in a browser, and the CI workflows and manual gate on the exact PR head.
+
 ## 6. Session protocol
 
 Each session handles exactly one backlog item and produces exactly one PR.
