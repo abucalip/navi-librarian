@@ -103,7 +103,7 @@ Search the root `PROJECT_LOG.md` by PR number, module, or responsibility to find
 The standard agent workflow uses `scripts/session_search.py` to retrieve focused documentation and source snippets rather than ingesting the whole repository. Its regression suite is `tests/test_session_search.py`. Run:
 
 ```sh
-python -m unittest tests.test_session_search -v
+python -m unittest discover -s tests -p 'test_session_search.py' -v
 python scripts/session_search.py "session workflow" --scope docs
 python scripts/session_search.py "path traversal symlink" --scope code --json
 ```
