@@ -14,7 +14,7 @@ The private PR #298 replay reproduced 10/10 recommendations using 197 provider e
 
 PR #304's four required workflows passed on exact final head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`: Python syntax/size/import-boundary run 1531 (`39042482100`), Docker packaging/full unit suite/build run 1439 (`39042482020`), container runtime smoke run 1248 (`39042481923`), and validation-only multi-architecture build run 1292 (`39042481930`). PR #305's final-head workflow evidence is recorded above. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-**Next action after the private baseline review:** collect comparable aggregate diagnostics across multiple refreshes, ideally including a refresh after a deliberate listening-profile change. Do not change recommendation policy until those observations distinguish stale/repeated candidate supply from downstream ranking/allocation behavior.
+**Next action after the private baseline review:** use the bounded eight-snapshot history in an isolated test environment to collect comparable aggregate diagnostics across multiple refreshes, ideally including one after a deliberate listening-profile change. The history reader returns aggregate metrics and timestamps, never stored identity hashes. Do not change recommendation policy until the observations distinguish stale/repeated candidate supply from downstream ranking/allocation behavior.
 
 ## Recommendation baseline and prior work
 
