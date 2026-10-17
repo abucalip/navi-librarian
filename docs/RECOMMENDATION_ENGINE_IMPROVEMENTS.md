@@ -93,7 +93,12 @@ Library owners may already own and play music, so evaluate on unowned artists an
 
 #### 0.3 Trace refresh and expose score diagnostics
 
-Trace refresh triggers, scheduled refreshes, persisted list reads/writes, and cache boundaries. Confirm whether each user refresh regenerates user-dependent output as intended. Expose a debug-only candidate record with source provenance, per-term score breakdown, relevant seed/profile evidence, cache diagnostics, and rejection reasons.
+**Refresh/freshness audit started in PR #299.** Manual reads return persisted discovery lists rather than regenerating them. The scheduler checks five cached records hourly and refreshes records at least 24 hours old. Personal refresh is synchronous at the explicit refresh entry point; other discovery refreshes are launched in background threads. The scheduler previously wrapped the entire list loop in one silent exception handler, so a read/refresh failure could stop processing later lists for that hour without leaving a useful diagnostic.
+
+PR #299 adds a directly tested stale-reason classifier (missing, expired, invalid timestamp), isolates read/refresh failures per list, and logs bounded list/stage/exception-type diagnostics without provider exception messages. This is operational visibility only; it does not change score, candidate, or allocation policy. CI must confirm the scheduler wiring and existing behavior.
+
+Remaining work after this audit: trace API-triggered versus scheduled refresh outcomes through persistence, then add debug-only candidate provenance, score-component, profile-evidence, cache, and rejection diagnostics.
+
 
 **Acceptance gate for Phase 0**
 - Repeated-pool vs repeated-ranking hypotheses can be distinguished from recorded evidence.
