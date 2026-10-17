@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (MCP retirement plan drafted)
+Last reviewed: 2026-10-17 (MCP retirement plan merged)
 
 ## Current focus
 
@@ -8,17 +8,16 @@ Last reviewed: 2026-10-17 (MCP retirement plan drafted)
 
 The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-**MCP retirement planning:** `docs/MCP_RETIREMENT_PLAN.md` records the current MCP surface, consumer-audit requirements, focused removal approach, regression expectations, required CI gates, and definition of done. This is planning only; no MCP implementation has been removed in this change.
+**MCP retirement planning:** PR #295 added `docs/MCP_RETIREMENT_PLAN.md`, recording the current MCP surface, consumer-audit requirements, focused removal approach, regression expectations, required CI gates, and definition of done. This is planning only; no MCP implementation has been removed.
 
 **Next action:** audit remaining MCP consumers and references on current `main`, then implement a focused retirement PR without removing shared web/service behavior.
 
 ## Delivery and verification state
 
-- **Previously implemented / merged:** PR #292, merge commit `0db291970fbeff2ed192d73b04fe1efc8ecb3cb6`, based on final PR head `51f3a0e1ee55334020bc26793ca1d86a6c145a7c`.
-- **Current change:** documentation-only MCP retirement plan; branch `docs/mcp-retirement-plan`. PR/merge/CI status to be recorded after verification.
-- **Prior CI evidence:** all four required workflows passed on PR #292's exact final head. This is not verification of the current documentation commit.
-- **Local tests:** not run for this documentation-only planning change.
-- **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
+- **MCP retirement plan merged:** PR #295, final PR head `6fe8a2c11c73da5c95a296cca8bc29657fef7f19`, merge commit `82146d3c14bb4106ea445eed8d7931eda1eec587`.
+- **CI on exact PR head:** all four required workflows passed: Python syntax `38989332620`, Docker packaging/full unit suite/build `38989332628`, container runtime smoke `38989332661`, and validation-only multi-architecture `38989332681`. Publishing remains paused.
+- **Local tests:** not run; this was a documentation-only planning change.
+- **Publishing:** paused; multi-architecture validation remains non-publishing (`push: false`).
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Configuration note:** existing persisted settings were not migrated; previously saved URLs/usernames may remain until the user changes them.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
