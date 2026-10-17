@@ -1,3 +1,12 @@
+## 2026-10-17 — Phase 2.1 profile-derived supplementary queries (verification pending)
+
+- Started branch `recommendation/profile-derived-tag-queries` from current GitHub main `c6cbd65e872944b08f15ae66df94d15935dccf6e`.
+- Added pure `discovery_tag_queries.py`: up to six queries weighted by decayed recent-artist listening against cached genre tags, plus up to two exploration queries from cached tags associated with the CF candidate pool. Queries are bounded, deduplicated case-insensitively, quote multiword tags, and reject invalid/control-character tags.
+- Replaced the 20 fixed regional supplementary queries with profile-derived selection. Cache reads are bounded to 15 recent artists and 60 candidate artists; no additional live provider is introduced. Existing MusicBrainz request throttling, 30-day result cache, per-query result cap, candidate cap, failure isolation, and primary CF candidates remain in place. Added direct tests for contrasting profiles with unchanged cache, deterministic weighted selection/exploration quota, escaping/invalid tags, and limit validation. Added the helper to Docker packaging.
+- Verification status at log entry: automated tests and exact-head CI have not yet been run; do not treat implementation as complete until focused/full tests and all four required workflows pass on the exact final PR head. Publishing remains paused; no deployment/runtime verification.
+
+---
+
 ## 2026-10-17 — Recommendation Phase 0 closed; Phase 1 profile responsiveness started
 
 - The owner reports using the app since v0.1 publication and that recommendations have remained overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to prioritize profile-responsive ranking without further diagnostic collection. It establishes the product defect, not a definitive technical root cause.
