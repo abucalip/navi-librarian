@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #305 merged; private baseline review next)
+Last reviewed: 2026-10-17 (private recommendation baseline reviewed)
 
 ## Current focus
 
@@ -8,11 +8,13 @@ Last reviewed: 2026-10-17 (PR #305 merged; private baseline review next)
 
 **Privacy correction merged:** PR #305 removes raw family/tag names from persisted aggregate recommendation diagnostics, replacing them with `recent_family_count` and `recent_family_listen_count`. Regression tests confirm representative raw tags are absent from returned and persisted diagnostics. No ranking behavior or public API response shape changed. PR #305 merged at `909eac617368f18a0ec4ff196f7eb83bb9a9a9c6` from exact final PR head `4b9e0ad77b89aac144bbf5505666381a49a2af69`; all four required workflows passed on that exact head: Python syntax run 1539 (`39044014509`), Docker packaging/full unit suite/build run 1447 (`39044014507`), container runtime smoke run 1256 (`39044014508`), and validation-only multi-architecture image validation run 1300 (`39044014541`).
 
-The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls, but its full metric report has not been inspected in this session. Recommendation-policy changes remain gated until that report and its limitations are reviewed.
+The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls. The metric review found 100/100 CF recordings with metadata, 83 resolved albums, zero metadata lookup errors, zero unclassified recommendations, and all category targets met. Current-versus-previous CF pool and final-list Jaccard overlaps are both 1.0; supplementary cache recorded 14 hits and zero misses. This is evidence that the compared adjacent snapshots were identical, not proof of a persistent trend or of why they were identical. The eight capture limitations remain relevant, especially the 100-recording CF cap, incomplete community genre tags, 30-day profile, cached Last.fm popularity, and imperfect ownership matching.
+
+**Decision:** keep ranking, candidate-source, and allocation policy unchanged. The private capture is one comparison against a previous stored snapshot and does not show whether pool/list overlap stays high across multiple refreshes or after the listening profile changes. The next action is to collect a second privacy-safe snapshot after a deliberate profile change and compare the same aggregate diagnostics; do not commit the private capture or its identity-bearing contents.
 
 PR #304's four required workflows passed on exact final head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`: Python syntax/size/import-boundary run 1531 (`39042482100`), Docker packaging/full unit suite/build run 1439 (`39042482020`), container runtime smoke run 1248 (`39042481923`), and validation-only multi-architecture build run 1292 (`39042481930`). PR #305's final-head workflow evidence is recorded above. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-**Next action after this privacy fix:** review the private replay baseline metrics and limitations, then decide whether Phase 0 has enough evidence to advance before changing recommendation policy.
+**Next action after the private baseline review:** collect comparable aggregate diagnostics across multiple refreshes, ideally including a refresh after a deliberate listening-profile change. Do not change recommendation policy until those observations distinguish stale/repeated candidate supply from downstream ranking/allocation behavior.
 
 ## Recommendation baseline and prior work
 
