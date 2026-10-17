@@ -1,3 +1,12 @@
+## 2026-10-17 — PR #298 merged: recommendation diagnostics and offline capture/replay
+
+- PR #298, “Add recommendation diagnostics and offline capture/replay,” merged at `68a0ee365778dab790ec54e04b54c8c72bd4552c`. Exact final PR head: `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`.
+- Added bounded recommendation-pool diagnostics with hashed recording/album identities, deterministic synthetic metrics, private opt-in capture, strict offline replay, and HTTP error replay fidelity preserving request method and fully resolved URL/query parameters. Candidate classification was extracted into `discovery_recommendations.py` with regression coverage to satisfy the legacy-server size guard without weakening it.
+- User's isolated Mac replay of private capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373` reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. Stable output comparison excludes only `pool_diagnostics` and `lastfm_last_error`; the private capture was not uploaded or exposed. Review baseline metrics and limitations before changing ranking/scoring/source/allocation.
+- All four required workflows passed on exact final PR head `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`: Python syntax/size guard `39037807384`; Docker packaging/full unit suite/build `39037807392`; container runtime smoke `39037807378`; validation-only multi-architecture image build `39037807401`. Publishing remains paused. No deployment or production-runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — PR #299 merged: discovery refresh freshness diagnostics
 
 - PR #299, “Improve discovery refresh freshness diagnostics,” merged at `22820fb534ce243c78b1bb30d1f7cbbaaabd36cd`. Exact final PR head: `e830adc7b014a915d31756619e5fadc90106696c`.
@@ -24,8 +33,6 @@
 - Capture files must be outside the repository, in a mode-700 directory; files are created mode 600 and existing files are never overwritten. Real listening/library/provider data must not be committed or attached to public PRs.
 - Added regression tests for freeze/thaw ordering, private capture permissions, overwrite refusal, checksum tampering, provider cassette replay, and strict Last.fm call order. Added the replay module to Docker packaging and documented setup/replay commands and limitations.
 - No ranking/scoring/allocation behavior was intentionally changed. Earlier code head `794013c3966c4d2dd9f736ccee4089c8621df943` passed all four required workflows: Python syntax `39022880718`, Docker packaging/full unit suite/build `39022880732` (602 tests), container runtime smoke `39022880724`, and validation-only multi-architecture image validation `39022880734`. The later private capture at `d8c1f3de5180b35919f55c304d55e5c939dad373` replayed successfully offline (10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). CI for the latest head remains unverified; no merge, publication, deployment, or production-runtime verification is claimed. Publishing/deployment remain paused.
-
----
 
 ---
 
