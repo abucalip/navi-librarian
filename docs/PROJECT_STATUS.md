@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-17 (Phase 3.1 MMR evaluation helper opened for review)
+Last reviewed: 2026-10-17 (PR #316 merged; MMR helper CI verified)
 
 ## Current focus
 
-**Recommendation roadmap — Phase 3.1 MMR evaluation.** Branch `recommendation/phase-3-1-mmr-evaluation` adds a pure deterministic MMR selector and shortlist diversity metrics with focused tests. The helper is not integrated into production ranking; replay-based relevance/diversity evaluation and exact-head CI remain pending. Prior Phase 2.2 work (PR #314) is merged at `295da73b9d279e944501c5c3d28866e8b1b7123f`; provider genre tags take precedence over artist-name fallbacks, and source provenance remains private. The owner's sustained real-world report is sufficient to proceed without further diagnostic snapshots.
+**Recommendation roadmap — Phase 3.1 MMR evaluation.** PR #316 merged at `f2393fdfb9e793f8d8b7f32a13c2fc754cbd9409` from exact final head `f46b7fc23c2e0bdbaceff63cca532379fa2c456e`. It adds a deterministic, provider-free MMR selector and diversity metrics but does not change production ranking. All four required workflows passed on that exact head: Python syntax run 1604 (`39051000774`), Docker packaging/full unit suite/build run 1512 (`39051000938`, 640 tests passed), container runtime smoke run 1321 (`39051000832`), and validation-only multi-architecture image validation run 1365 (`39051000940`, publishing paused). The private replay fixture is not accessible from this GitHub session, so replay trade-off evaluation remains outstanding. Do not collect further live diagnostic snapshots.
 
 PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. PR #309 merged at `d11dce4d981af4c34aa60a4d9caedb15eb8b6d58` from exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`. It adds deterministic 14-day half-life listen weights, a smooth familiarity curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts drive scoring/profile evidence. Ownership/release eligibility and the public API response shape remain unchanged by intent.
 
@@ -16,7 +16,7 @@ PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR
 
 All four required workflows passed on exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`: Python syntax/size/import-boundary `39049404041`, Docker packaging/full unit suite/build `39049404031`, container runtime smoke `39049404044`, and validation-only multi-architecture image validation `39049404139` (publishing paused). On preceding code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`, the full unit suite reported 631 tests passed. No assistant-side local tests were run; publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** begin Phase 3.1 with a deterministic offline evaluation of MMR-style diversity re-ranking. Preserve hard eligibility and artist constraints; measure relevance and diversity against the existing replay harness. Do not collect further live diagnostic snapshots.
+**Next action:** run the MMR offline evaluation against the private fixture in `~/navi-librarian-test/private-recommendation-fixtures` using an isolated checkout of merged commit `f2393fdfb9e793f8d8b7f32a13c2fc754cbd9409`; report relevance/diversity trade-offs before proposing production integration. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
