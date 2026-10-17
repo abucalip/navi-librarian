@@ -1,22 +1,13 @@
-## 2026-10-18 — Backend recommendation-diversity contract and MMR integration PR #326
+## 2026-10-18 — Backend recommendation-diversity contract and MMR integration merged
 
-- Opened PR #326: `feat: add backend recommendation diversity preference`.
-- Added persistent `recommendation_diversity` (strict integer 0–100, default 0), `GET/PUT /api/settings/recommendation-diversity`, fail-safe reads for invalid stored values, and rejection of invalid writes without persistence.
-- Integrated dynamic MMR marginal ranking inside the existing personal recommendation allocator. MMR is applied only among ownership-clear candidates; non-clear candidates keep legacy positions. Value 0 bypasses MMR ordering, preserving the previous allocator ordering. Category/style/family passes, one-artist cap, deterministic ties, ownership behavior, and the 60-check limit remain in place.
-- Added tests for preference service validation and fallback, persistence defaults/round-trip, API paths and invalid inputs, setting-to-allocator wiring, MMR candidate ordering, hard ownership gates, artist cap, and allocation request validation.
-- CI caught two issues during iteration: the legacy-server size ratchet and a temporarily removed candidate-tag assignment. Both were corrected without weakening the guard. Code/test head `84a0f626da5c0293279755b2e2a0111960b19304` then passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image validation (publishing paused). The documentation-updated PR head `7366e9933ab268deba14d83b6e2309deb53b0e98` also passed all four required workflows; this final closeout edit requires the usual exact-head CI rerun before merge.
-- The private MMR fixture/report remains unchanged and outside GitHub. No new fixture run, live provider call, UI change, publish, or deployment occurred.
-- **Next action:** verify all four workflows on PR #326's exact final head, review the final diff, and merge if all gates pass; then coordinate the separate settings UI PR.
-
-## 2026-10-18 — Identity-free MMR evaluator CLI verified; preference integration unblocked
-
-- The owner ran `recommendation_mmr_evaluate.py --identity-free` in the isolated Python environment from source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64` against the unchanged private fixture captured from source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The command exited 0.
-- Output aggregates: 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 candidate rows rejected for hard eligibility or missing score, 10 baseline recommendations with captured scores, zero network-provider calls, and no provider-tape replay.
-- Six tested lambda values (0, 0.1, 0.25, 0.5, 0.75, 1.0) each returned 10 eligible selections, 10 unique artists, zero duplicate non-empty artist keys, and deterministic repeated results. Lambda 0 mean pairwise similarity was 0.1044; lambda 0.75/1.0 was 0.0591. Lambda 0.75 retained 7/10 baseline items and 85.5% baseline relevance-score retention; lambda 1.0 added no measured benefit.
-- The earlier 35-combination/relevance-floor reproduction is dismissed as a decision input. The actual CLI output has six lambda results and no floor dimension; no further test will be run to reconcile it. Keep relevance floor at its default of 0 and production ranking unchanged.
-- Updated `docs/PROJECT_STATUS.md`, `docs/DIVERSITY_SETTING_ROADMAP.md`, and `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` to record the verified CLI run, evidence limits, and backend preference-contract/integration acceptance criteria. The fixture and identity-bearing report remain private and unchanged.
-- No code behavior, production ranking, publishing, or deployment changed. No assistant-side test or CI result is claimed for this documentation update.
-- **Next action:** implement a focused backend preference-contract/integration PR; keep the settings UI separate until API semantics and backend verification are complete.
+- PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`.
+- Added persistent `recommendation_diversity` (strict integer 0–100, default 0), `GET/PUT /api/settings/recommendation-diversity`, safe fallback to 0 for absent/corrupt stored values, and rejection of invalid writes without persistence.
+- Integrated dynamic MMR marginal ranking inside existing personal recommendation allocator passes. MMR applies only among ownership-clear candidates; non-clear candidates keep legacy positions. Value 0 bypasses MMR ordering and preserves previous selection order. Existing category/style/family policy, artist cap, deterministic ties, ownership behavior, and 60-check limit remain intact.
+- Added regression coverage for preference service validation/fallback, persistence defaults/round-trip, API paths and invalid inputs, setting-to-allocator wiring, MMR candidate ordering, ownership gates, artist cap, and allocation contract validation.
+- All four required workflows passed on the exact final PR head: Python syntax, Docker packaging/full unit suite (655 tests passed), container runtime smoke test, and validation-only multi-architecture image validation (publishing paused). Earlier CI iterations caught and fixed the server-size ratchet and a candidate-tag assignment regression; neither safety guard was weakened.
+- The identity-free fixture CLI result remains documented. The earlier 35-combination/floor-sweep reproduction is dismissed as a decision input; no further fixture test was run. The fixture/report remains private and unchanged.
+- No UI change, live provider call, publish, deployment, or production-runtime verification occurred.
+- **Next action:** coordinate the separate settings UI PR, following frontend file ownership and the documented API contract. Keep publishing and deployment paused.
 
 ## 2026-10-17 — Owner-supplied offline MMR comparison
 
