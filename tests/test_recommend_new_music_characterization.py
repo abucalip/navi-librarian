@@ -203,7 +203,8 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         self.assertEqual(candidate["lastfm_listeners"], 1_000_000)
         self.assertEqual(candidate["lastfm_playcount"], 5_000_000)
         self.assertEqual(candidate["lastfm_popularity_bonus"], 1.118)
-        self.assertGreater(candidate["discovery_score"], 10 * 1.35)
+        self.assertGreater(candidate["discovery_score"], 10.0)
+        self.assertLess(candidate["discovery_score"], 10 * 1.25 * 1.12)
 
     def test_regional_musicbrainz_http_failure_is_reported_without_losing_personal_candidate(self):
         result = self._run_recommendations([], regional_http_status=503)
