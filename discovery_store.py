@@ -57,7 +57,7 @@ def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
     album = " ".join(unicodedata.normalize("NFKC", str(recommendation.get("album") or "")).casefold().split())
     if not artist or not album:
         return None
-    return hashlib.sha256(f"{artist}\\0{album}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{artist}\0{album}".encode("utf-8")).hexdigest()
 
 
 def _ensure_recommendation_history_schema(db: sqlite3.Connection) -> None:
