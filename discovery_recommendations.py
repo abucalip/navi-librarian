@@ -282,6 +282,42 @@ def primary_recent_family(tags: Iterable[str], family_counts: Mapping[str, int])
     )
 
 
+def decayed_listen_weights(
+    listens: Iterable[Mapping[str, Any]],
+    *,
+    half_life_days: float = 14.0,
+) -> list[float]:
+    """Return deterministic recency weights anchored to the newest dated listen.
+
+    ListenBrainz timestamps are Unix seconds. Anchoring to the newest observed
+    listen keeps captured recommendation replays deterministic while making
+    more recent listens contribute more strongly than older listens. Undated
+    legacy/test records retain equal weight; invalid half-lives are rejected.
+    """
+    if not math.isfinite(half_life_days) or half_life_days <= 0:
+        raise ValueError("half_life_days must be a positive finite number")
+
+    records = list(listens)
+    timestamps: list[float | None] = []
+    for listen in records:
+        try:
+            value = float(listen.get("listened_at"))
+            timestamps.append(value if math.isfinite(value) else None)
+        except (TypeError, ValueError, AttributeError):
+            timestamps.append(None)
+
+    dated = [value for value in timestamps if value is not None]
+    if not dated:
+        return [1.0] * len(records)
+    reference = max(dated)
+    half_life_seconds = half_life_days * 24 * 60 * 60
+    return [
+        1.0 if timestamp is None else
+        0.5 ** (max(0.0, reference - timestamp) / half_life_seconds)
+        for timestamp in timestamps
+    ]
+
+
 def apply_familiarity_exploration_bonus(
     candidate: dict[str, Any],
     recent_artist_count: int,
@@ -289,16 +325,11 @@ def apply_familiarity_exploration_bonus(
     exploration_families: set[str],
 ) -> float:
     """Apply the established recent-familiarity and exploration score multipliers."""
-    if recent_artist_count == 0:
-        familiarity_factor = 1.35
-    elif recent_artist_count <= 2:
-        familiarity_factor = 1.20
-    elif recent_artist_count <= 5:
-        familiarity_factor = 1.05
-    elif recent_artist_count <= 10:
-        familiarity_factor = 0.90
-    else:
-        familiarity_factor = 0.75
+    # Smoothly favor artists with a little familiarity over both extremes:
+    # entirely unknown artists and artists already heard very frequently.
+    # Counts may be recency-weighted floats rather than raw integer scrobbles.
+    count = max(0.0, float(recent_artist_count or 0))
+    familiarity_factor = 0.82 + 0.42 * math.exp(-((count - 1.5) / 3.0) ** 2)
 
     candidate_families = genre_families(genre_tags)
     exploration_bonus = (
