@@ -71,6 +71,19 @@ class DiscoveryStoreTests(unittest.TestCase):
         self.assertEqual(history[0]["generated_at"], 200_000.0)
         self.assertEqual(recent_recommendation_history(\n            self.database_path, now=150_000.0, within_seconds=1_000.0\n        ), [])
 
+    def test_history_row_count_is_capped(self):
+        for batch in range(101):
+            write_list(self.database_path, "personal", {
+                "recommendations": [
+                    {"artist": f"Artist {batch}-{rank}", "album": f"Album {rank}"}
+                    for rank in range(20)
+                ],
+            }, generated_at=1000.0 + batch)
+        history = recent_recommendation_history(
+            self.database_path, now=1100.0, within_seconds=10_000.0
+        )
+        self.assertEqual(len(history), 2000)
+
     def test_non_personal_lists_do_not_record_recommendation_history(self):
         write_list(self.database_path, "classics", {
             "recommendations": [{"artist": "Artist", "album": "Album"}],
