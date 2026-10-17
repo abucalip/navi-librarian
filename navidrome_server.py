@@ -2584,8 +2584,11 @@ def _discovery_scheduler():
                         outcome["list"],
                         outcome.get("error_type", "reported_error"),
                     )
-        except Exception:
-            logger.exception("Discovery scheduler cycle failed")
+        except Exception as exc:
+            logger.error(
+                "Discovery scheduler cycle failed (%s)",
+                type(exc).__name__,
+            )
         time.sleep(3600)
 
 
