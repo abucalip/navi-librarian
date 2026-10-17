@@ -1,5 +1,5 @@
 import unittest
-from discovery_recommendations import decayed_listen_weights, apply_familiarity_exploration_bonus, artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
+from discovery_recommendations import decayed_listen_weights, apply_familiarity_exploration_bonus, classify_recommendation_candidates, artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
 
 class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_normalization_and_artist_identity(self):
@@ -138,5 +138,19 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertGreater(scores[1], scores[0])
   self.assertGreater(scores[0], scores[2])
   self.assertGreater(scores[2], scores[3])
+
+
+ def test_profile_bonus_responds_proportionally_to_decayed_family_weights(self):
+  albums = {
+   "jazz": {"primary_artist": "Jazz Artist", "artist_mbid": "jazz-id", "discovery_score": 1.0},
+   "rock": {"primary_artist": "Rock Artist", "artist_mbid": "rock-id", "discovery_score": 1.0},
+  }
+  groups = classify_recommendation_candidates(
+   albums, {"jazz-id": ["jazz"], "rock-id": ["rock"]},
+   {"jazz", "rock"}, set(), {"jazz": 8.0, "rock": 1.0},
+  )
+  self.assertAlmostEqual(groups["adjacent"][0]["recent_profile_bonus"], 1.25)
+  self.assertAlmostEqual(groups["adventurous"][0]["recent_profile_bonus"], 1.03125)
+  self.assertGreater(albums["jazz"]["discovery_score"], albums["rock"]["discovery_score"])
 
 if __name__=="__main__": unittest.main()
