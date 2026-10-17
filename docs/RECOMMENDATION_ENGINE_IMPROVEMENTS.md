@@ -235,7 +235,9 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-Implement **Phase 0.1 and 0.2 only** in one focused PR: pool-fingerprint diagnostics plus the fixture-based offline replay/metrics harness. Do not change ranking behavior in that PR. Inspect existing persistence/cache/diagnostic structures first, add deterministic tests, and make the output answer whether the next investment should target candidate supply/freshness or scoring/allocation. Trace refresh semantics and debug score/rejection diagnostics (Phase 0.3) can be included only if they remain small and do not dilute this decision gate.
+PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. PR #299 adds scheduled-refresh freshness diagnostics without changing ranking behavior. These are implemented and the PRs' required CI gates passed, but **Phase 0 is not complete until a real private capture is taken in the isolated Mac PR-test environment and successfully replayed offline**. Review the resulting baseline metrics and limitations before selecting ranking or candidate-generation changes.
+
+While that user-environment gate is pending, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
 
 ## Out of scope unless separately approved
 

@@ -1,12 +1,10 @@
-## 2026-10-17 — PR #299: discovery refresh freshness diagnostics
+## 2026-10-17 — PR #299 merged: discovery refresh freshness diagnostics
 
-- PR #299, “Improve discovery refresh freshness diagnostics,” is open and unmerged on branch `fix/discovery-refresh-freshness-diagnostics`; exact reviewed head before this documentation closeout was `68ecda913379e30ea15b4f57a825f2e1d384eeca`.
-- Added `cache_staleness_reason()` for missing, expired, malformed, and non-finite cache timestamps, and `refresh_stale_lists()` to isolate cache-read/refresh failures per list. The hourly scheduler retains its 24-hour threshold, cadence, ordering, refresh callbacks, and API response contracts. Ranking, candidate selection, and allocation are unchanged.
-- Regression coverage includes freshness boundaries, invalid timestamps, fresh-cache skips, per-list continuation after read/refresh errors, bounded failure reporting, and suppression of exception-message details in logs.
-- All four required workflows passed on exact head `68ecda913379e30ea15b4f57a825f2e1d384eeca`: Python syntax run 1493; Docker packaging/full unit suite/image build run 1401; container runtime smoke run 1210; validation-only multi-architecture image validation run 1254 (publishing paused).
-- Full PR diff was reviewed. No assistant-side local tests were run. No publication, deployment, or production-runtime verification is claimed.
-- PR #298's private real-data recommendation capture/replay remains pending on the user's isolated Mac environment; do not change ranking/scoring/allocation before that baseline gate completes.
-- Closeout docs updated on the PR branch. Keep #299 unmerged until the final documentation commit is checked by all four required workflows and the final diff is reviewed. Publishing remains paused.
+- PR #299, “Improve discovery refresh freshness diagnostics,” merged at `22820fb534ce243c78b1bb30d1f7cbbaaabd36cd`. Exact final PR head: `e830adc7b014a915d31756619e5fadc90106696c`.
+- Added deterministic freshness classification for missing, expired, malformed, and non-finite cache timestamps; isolated cache-read and refresh failures per list; and bounded scheduler warnings that include list, stage, and exception type but omit exception messages/URLs. The scheduler's 24-hour threshold, hourly cadence, list ordering, callbacks, and API response contracts remain unchanged. Recommendation ranking, candidate selection, and allocation are unchanged.
+- All four required workflows passed on the exact final PR head: Python syntax run 1497; Docker packaging/full unit suite/build run 1405; container runtime smoke run 1214; validation-only multi-architecture image validation run 1258. The multi-architecture workflow is validation-only; publishing remains paused.
+- No assistant-side local tests were run. No image publication, deployment, or production-runtime verification is claimed.
+- PR #298's private real-data recommendation capture and successful offline replay remain pending on the user's isolated Mac test environment. Do not change recommendation scoring, candidate selection, or allocation until that baseline gate is complete.
 
 ---
 
