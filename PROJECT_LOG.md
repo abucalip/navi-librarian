@@ -1,8 +1,9 @@
-## 2026-10-17 — Recommendation Phase 0.3: aggregate diagnostics (PR in progress)
+## 2026-10-17 — Recommendation Phase 0.3: aggregate diagnostics (PR #304 merged)
 
 - Started the branch from current GitHub main at `b51ab24dee6cd760c31e6924816143a8658db815` after reviewing the workflow, project status, requirements, test plan, recommendation roadmap, relevant source, and existing diagnostic tests.
-- Added bounded aggregate metrics for candidate source provenance, base/final score and bonus distributions, listening/profile evidence, supplementary cache hit/miss counts, and eligibility/selection outcomes. Metrics contain no candidate names, album titles, or raw tags and remain in the existing persisted pool diagnostic JSON; public response shape and ranking behavior are unchanged.
-- Added deterministic direct-import coverage for summary values and identity omission. Focused tests, full unit suite, and required CI have not yet been run in this assistant session. PR/commit and exact-head workflow evidence will be appended after review. Publishing remains paused; no deployment/runtime verification is claimed.
+- Added bounded aggregate metrics for candidate source provenance, base/final score, familiarity/exploration/profile/popularity bonuses, listening/profile evidence, supplementary cache hit/miss counts, and eligibility/selection outcomes. Metrics contain no candidate names, album titles, or raw tags and are persisted in the existing private pool-diagnostic record; the public diagnostic response shape and ranking behavior are unchanged.
+- Added deterministic tests for summary values, identity omission, private persistence, and no public-schema expansion. No assistant-side local tests were run. On exact final PR head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`, all four required workflows passed: Python syntax/size/import-boundary run 1531 (`39042482100`); Docker packaging/full unit suite/build run 1439 (`39042482020`); container runtime smoke run 1248 (`39042481923`); validation-only multi-architecture build run 1292 (`39042481930`). PR #304 squash-merged at `19435d5deea69b188d920cf375ef924ec3b14a97`.
+- Publishing remains paused. No deployment or production-runtime verification is claimed. Next action: review the private PR #298 replay baseline metrics and limitations before making any recommendation-policy changes.
 
 ---
 
