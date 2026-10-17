@@ -2584,13 +2584,3 @@ def _start_discovery_scheduler():
         daemon=True,
     )
     thread.start()
-
-
-if __name__ == "__main__":
-    _start_discovery_scheduler()
-    import sys
-    from mcp_registry import create_mcp_server
-
-    create_mcp_server(sys.modules[__name__]).run(
-        transport="streamable-http", host="127.0.0.1", port=8000
-    )
