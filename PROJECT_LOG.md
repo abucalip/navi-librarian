@@ -1,3 +1,13 @@
+## 2026-10-17 — PR #298 extended with private recommendation capture and replay
+
+- Extended the existing open recommendation baseline PR rather than stacking a second PR on its still-unmerged base.
+- Added opt-in `LIBRARIAN_RECOMMENDATION_CAPTURE_PATH` capture. A successful run records ordered provider/cache calls and consumed results (ListenBrainz, MusicBrainz HTTP, cache get/set, Navidrome API responses), the ranking input snapshot, Last.fm callback results, expected output, timestamp, schema version, source SHA, and SHA-256 integrity hash.
+- Added strict cassette replay for the actual candidate-gathering and ranking entry point. Replay validates request identity and event order, uses captured HTTP responses and cache values, disables provider sleeps, substitutes captured Last.fm results, and skips mutable pool-diagnostic persistence. It fails on missing/extra events or output mismatch.
+- Capture files must be outside the repository, in a mode-700 directory; files are created mode 600 and existing files are never overwritten. Real listening/library/provider data must not be committed or attached to public PRs.
+- Added regression tests for freeze/thaw ordering, private capture permissions, overwrite refusal, checksum tampering, provider cassette replay, and strict Last.fm call order. Added the replay module to Docker packaging and documented setup/replay commands and limitations.
+- No ranking/scoring/allocation behavior was intentionally changed. CI, focused/full test execution, real private capture/replay, and exact-final-head workflow status remain pending at this log entry; do not claim the feature complete until those gates are verified. Publishing/deployment remain paused.
+
+---
 ## 2026-10-17 — Recommendation Phase 0 diagnostics and offline replay harness
 
 - Started from GitHub main `06c4407f7185db1abfecdad256d7bfd6821327e1`, after confirming no open PRs. Objective: implement recommendation roadmap Phase 0.1/0.2 without changing ranking.
