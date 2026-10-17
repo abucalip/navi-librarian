@@ -6,6 +6,7 @@ server initialization, so its storage behavior can be tested through normal impo
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import time
 from os import PathLike
@@ -42,6 +43,100 @@ def read_list(database_path: str | PathLike[str], name: str) -> dict[str, Any] |
     return {"payload": payload, "generated_at": row[1]}
 
 
+
+_RECOMMENDATION_HISTORY_RETENTION_SECONDS = 30 * 24 * 60 * 60
+_RECOMMENDATION_HISTORY_MAX_ROWS = 2000
+
+
+def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
+    """Hash normalized artist/album identity without retaining personal labels."""
+    import hashlib
+    import unicodedata
+
+    artist = " ".join(
+        unicodedata.normalize("NFKC", str(recommendation.get("artist") or ""))
+        .casefold().split()
+    )
+    album = " ".join(
+        unicodedata.normalize("NFKC", str(recommendation.get("album") or ""))
+        .casefold().split()
+    )
+    if not artist or not album:
+        return None
+    return hashlib.sha256(f"{artist}\0{album}".encode("utf-8")).hexdigest()
+
+
+def _ensure_recommendation_history_schema(db: sqlite3.Connection) -> None:
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS recommendation_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            generated_at REAL NOT NULL,
+            identity_hash TEXT NOT NULL,
+            rank INTEGER NOT NULL CHECK (rank >= 1)
+        )"""
+    )
+    db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_recommendation_history_identity_time "
+        "ON recommendation_history(identity_hash, generated_at DESC)"
+    )
+
+
+def _record_recommendation_batch_db(
+    db: sqlite3.Connection,
+    recommendations: list[Any],
+    *,
+    generated_at: float,
+) -> int:
+    """Append a bounded, identity-hashed snapshot of a successfully stored list."""
+    _ensure_recommendation_history_schema(db)
+    rows = []
+    for rank, recommendation in enumerate(recommendations[:20], start=1):
+        if not isinstance(recommendation, dict):
+            continue
+        identity_hash = _recommendation_identity_hash(recommendation)
+        if identity_hash:
+            rows.append((generated_at, identity_hash, rank))
+    if rows:
+        db.executemany(
+            "INSERT INTO recommendation_history(generated_at, identity_hash, rank) VALUES (?, ?, ?)",
+            rows,
+        )
+    db.execute(
+        "DELETE FROM recommendation_history WHERE generated_at < ?",
+        (generated_at - _RECOMMENDATION_HISTORY_RETENTION_SECONDS,),
+    )
+    db.execute(
+        "DELETE FROM recommendation_history WHERE id NOT IN "
+        "(SELECT id FROM recommendation_history ORDER BY generated_at DESC, id DESC LIMIT ?)",
+        (_RECOMMENDATION_HISTORY_MAX_ROWS,),
+    )
+    return len(rows)
+
+
+def recent_recommendation_history(
+    database_path: str | PathLike[str],
+    *,
+    now: float | None = None,
+    within_seconds: float = _RECOMMENDATION_HISTORY_RETENTION_SECONDS,
+) -> list[dict[str, Any]]:
+    """Return recent hashed identities and rank/timestamp, newest occurrence first."""
+    timestamp = time.time() if now is None else float(now)
+    if within_seconds < 0 or not math.isfinite(float(within_seconds)):
+        raise ValueError("within_seconds must be finite and non-negative")
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_recommendation_history_schema(db)
+        rows = db.execute(
+            "SELECT identity_hash, generated_at, rank FROM recommendation_history "
+            "WHERE generated_at >= ? AND generated_at <= ? "
+            "ORDER BY generated_at DESC, id DESC LIMIT ?",
+            (timestamp - float(within_seconds), timestamp, _RECOMMENDATION_HISTORY_MAX_ROWS),
+        ).fetchall()
+    return [
+        {"identity_hash": row[0], "generated_at": row[1], "rank": row[2]}
+        for row in rows
+    ]
+
+
 def write_list(
     database_path: str | PathLike[str],
     name: str,
@@ -59,6 +154,10 @@ def write_list(
             "(name, payload_json, generated_at) VALUES (?, ?, ?)",
             (name, encoded, timestamp),
         )
+        if name == "personal" and isinstance(payload, dict):
+            recommendations = payload.get("recommendations")
+            if isinstance(recommendations, list):
+                _record_recommendation_batch_db(db, recommendations, generated_at=timestamp)
         db.commit()
 
 

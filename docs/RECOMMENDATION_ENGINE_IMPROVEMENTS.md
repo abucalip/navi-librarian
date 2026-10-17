@@ -172,9 +172,9 @@ The earlier 35-combination/floor-sweep reproduction is dismissed as a decision i
 
 #### 3.2 Recommendation history and cooldown
 
-First inspect `discovery_store.py` and existing persistence to see whether recommendation batches are already retained. If not, persist a minimal batch history (album identity, timestamp, rank) sufficient for repeat-rate metrics and comparisons.
+**History persistence implemented on branch `feat/recommendation-batch-history`; CI and review pending.** Inspection confirmed `discovery_store.py` retained only the latest payload per list plus a single pool-diagnostic snapshot; it did not retain recommendation batches. The current change records up to 20 ranked items whenever a valid personal list is persisted. It stores only a SHA-256 hash of normalized artist/album identity, timestamp, and rank—not raw labels. Retention is bounded to 30 days and 2,000 rows; history writes share the personal-list SQLite transaction. Ranking is unchanged by this persistence-only step.
 
-Use history for a soft, time-limited cooldown when candidates are otherwise comparable. Define expiry explicitly; never permanently exclude a candidate merely because it was previously shown. Account for missing/deleted albums and storage growth.
+Next, implement and calibrate a soft, time-limited cooldown using this history when candidates are otherwise comparable. Define decay/expiry explicitly; never permanently exclude a candidate merely because it was previously shown. Account for missing/deleted albums and storage growth. Use the existing frozen fixture and deterministic tests where suitable; do not collect a new live capture or choose arbitrary numeric quality targets without baseline evidence.
 
 #### 3.3 Feedback as a bounded signal
 

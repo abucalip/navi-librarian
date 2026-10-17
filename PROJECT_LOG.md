@@ -1,3 +1,14 @@
+## 2026-10-18 — Recommendation batch history persistence (PR pending)
+
+- Branch: `feat/recommendation-batch-history`, based on main commit `547ea225b47c97a8f762f1d8d17d70118b31a643`.
+- Inspection found `discovery_store.py` kept only the current payload for each list and one latest pool diagnostic; no ranked recommendation-batch history was retained.
+- Added bounded history recording to the same SQLite transaction as a successfully written `personal` list. Each row contains only a SHA-256 hash of normalized artist/album identity, generation timestamp, and rank. Raw artist/album labels are not stored in the history table. Retention is capped at 30 days and 2,000 rows; only the top 20 ranked entries per stored batch are recorded.
+- Added read access to recent hashed history and regression tests for hashed identity storage, rank ordering, retention-window filtering, future-row exclusion, and isolation from non-personal lists.
+- Ranking/candidate ordering is unchanged; no cooldown is active. Focused tests and all CI workflows have not yet run on this branch. No local tests were run in this GitHub-only session. No publish, deployment, or runtime verification.
+- Next action: review diff and open PR; run focused/full tests and all four required workflows on the exact final PR-head SHA. Then implement a separately reviewed, measured soft cooldown; coordinate the independent settings UI task with the frontend owner.
+
+---
+
 ## 2026-10-18 — Backend recommendation-diversity contract and MMR integration merged
 
 - PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`.
