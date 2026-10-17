@@ -613,6 +613,7 @@ def recommend_new_music(
         pool_diagnostics = record_recommendation_diagnostics(
             DISCOVERY_DB, gathered, albums.values(), found,
             refresh_origin=_refresh_origin,
+            candidate_diagnostics=candidate_debug,
         )
 
     result = {
