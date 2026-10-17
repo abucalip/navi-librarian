@@ -5,7 +5,7 @@ Last updated: 2026-10-17 (agent session context search adopted)
 ## Authority and responsibilities
 
 - **GitHub is the single source of truth** for code, commits, branches, PRs, documentation, and release history. Do not use a local checkout as the source for authoritative changes.
-- **Ownership boundaries:** ZCode owns front-end implementation within the permitted paths in root `AGENTS.md`; it must read `AGENTS.md`, `docs/FRONTEND_DESIGN_GUIDE.md`, and relevant project docs. The assistant owns backend/domain/security changes, shared integration, release controls, and final cross-layer verification.
+- **Front-end contribution boundaries:** Any agent working on front-end matters must read root `AGENTS.md`, `docs/FRONTEND_DESIGN_GUIDE.md`, and relevant project docs, and may edit only the permitted UI files listed in `AGENTS.md` (plus narrowly scoped UI tests/fixtures and `docs/UI_BACKLOG_EXECUTION.md`). Do not edit protected backend/API/security, architecture, workflow, dependency, packaging, or release files without explicit approval and coordinated ownership. Shared integration, backend/domain/security changes, release controls, and final cross-layer verification require coordinated review.
 - All authoritative changes go through focused GitHub branches and PRs. Local environments are for testing identifiable GitHub revisions only.
 - Production is separate from GitHub state: merge, CI, image publication, deployment, and runtime verification are distinct states.
 
