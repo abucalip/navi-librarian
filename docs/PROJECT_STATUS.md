@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (MCP retirement plan merged)
+Last reviewed: 2026-10-17 (MCP removal PR prepared; verification pending)
 
 ## Current focus
 
@@ -8,9 +8,9 @@ Last reviewed: 2026-10-17 (MCP retirement plan merged)
 
 The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-**MCP retirement planning:** PR #295 added `docs/MCP_RETIREMENT_PLAN.md`, recording the current MCP surface, consumer-audit requirements, focused removal approach, regression expectations, required CI gates, and definition of done. This is planning only; no MCP implementation has been removed.
+**MCP retirement implementation:** the focused removal branch deletes the MCP registry, SDK dependency, and standalone transport; preserves the shared service functions; adds web-startup scheduler lifecycle; and replaces registry tests with MCP-free architecture regressions. The audit and changed-file dispositions are recorded in `docs/MCP_RETIREMENT_PLAN.md`. PR creation, exact-head CI, and merge remain pending.
 
-**Next action:** audit remaining MCP consumers and references on current `main`, then implement a focused retirement PR without removing shared web/service behavior.
+**Next action:** verify focused tests and all four required workflows on the exact final PR head, then review and merge only if every gate passes.
 
 ## Delivery and verification state
 
@@ -21,7 +21,7 @@ The service-default audit found personal/private-network defaults for ListenBrai
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Configuration note:** existing persisted settings were not migrated; previously saved URLs/usernames may remain until the user changes them.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
-- **MCP:** full retirement remains pending the separate audit, implementation, and required verification described in `docs/MCP_RETIREMENT_PLAN.md`.
+- **MCP:** removal implementation is prepared on `retire/remove-mcp-runtime`; exact PR-head verification and merge remain pending.
 
 ## Documentation map
 
