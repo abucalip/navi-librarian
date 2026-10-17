@@ -6,6 +6,7 @@ this module can be tested without importing the web service or contacting APIs.
 from __future__ import annotations
 
 import json
+import math
 import time
 from collections.abc import Callable, Mapping, Sequence
 from threading import Lock
@@ -29,6 +30,8 @@ def cache_staleness_reason(
     try:
         generated_at = float(cached["generated_at"])
     except (KeyError, TypeError, ValueError, OverflowError):
+        return "invalid_timestamp"
+    if not math.isfinite(generated_at):
         return "invalid_timestamp"
     if now - generated_at >= max_age_seconds:
         return "expired"
