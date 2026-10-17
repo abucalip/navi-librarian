@@ -9,6 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from service_settings import (
+    get_recommendation_diversity_settings,
+    set_recommendation_diversity_settings,
+)
 
 router = APIRouter()
 
@@ -16,7 +20,7 @@ router = APIRouter()
 @router.get("/api/settings/recommendation-diversity")
 def get_recommendation_diversity_settings(librarian=Depends(get_librarian)):
     try:
-        return parse_result(librarian.discovery_get_recommendation_diversity_settings())
+        return parse_result(get_recommendation_diversity_settings(librarian._discovery_settings_read))
     except Exception:
         raise HTTPException(
             status_code=502,
@@ -34,7 +38,9 @@ def set_recommendation_diversity_settings(payload: dict, librarian=Depends(get_l
         )
     try:
         result = parse_result(
-            librarian.discovery_set_recommendation_diversity_settings(value)
+            set_recommendation_diversity_settings(
+                librarian._discovery_settings_write, value
+            )
         )
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(
