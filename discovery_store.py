@@ -211,11 +211,14 @@ def record_recommendation_diagnostics(
     recommendations: list[dict[str, Any]],
     *,
     refresh_origin: str = "direct_api",
+    candidate_diagnostics: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Persist the bounded pool snapshot using the completed gathering result."""
     from collections import Counter
+    from recommendation_diagnostics import summarize_candidate_diagnostics
 
     albums = list(albums)
+    aggregate = summarize_candidate_diagnostics(gathered, candidate_diagnostics or [])
     return record_recommendation_pool_diagnostic(
         database_path,
         gathered.get("cf_recording_mbids", []),
@@ -233,6 +236,7 @@ def record_recommendation_diagnostics(
             "candidate_counts_by_source": dict(Counter(
                 item.get("discovery_source", "listenbrainz") for item in albums
             )),
+            "candidate_diagnostics": aggregate,
         },
     )
 
