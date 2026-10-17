@@ -10,7 +10,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
-
 RECOMMENDATION_DIVERSITY_KEY = "recommendation_diversity"
 DEFAULT_RECOMMENDATION_DIVERSITY = 0
 
@@ -50,6 +49,7 @@ def set_recommendation_diversity_settings(settings_write, value):
         RECOMMENDATION_DIVERSITY_KEY: validated,
         "message": "Recommendation diversity preference saved.",
     })
+
 
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
