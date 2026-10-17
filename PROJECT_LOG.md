@@ -3,8 +3,8 @@
 - Based on current GitHub `main` after PR #304, review found that `recommendation_diagnostics.summarize_candidate_diagnostics()` persisted `profile_evidence.recent_family_counts` with raw family/tag names. This contradicted the explicit privacy claim in the recommendation roadmap and PR #304.
 - The focused fix replaces that map with two aggregates: number of valid recent families and the sum of their listen counts. Regression tests assert representative raw tag names are absent from both the returned summary and persisted diagnostic JSON, while preserving aggregate counts and the existing public response shape.
 - Branch: `fix/private-recommendation-profile-diagnostics`; PR #305. Current implementation is committed on GitHub. No assistant-side local tests were run.
-- Required CI on the exact final PR-head SHA is pending/not yet reported. Publishing remains paused; no deployment or production-runtime verification is claimed.
-- Next: verify all four required workflows on the exact final PR head, review the final diff, then merge only if all gates pass. The private replay metric review remains the next recommendation-policy gate.
+- Code/test head `48ded142232ca46fc663ec13c49a0655dc7f34e7` passed all four required workflows: Python syntax/acquisition safety run 1537 (`39043790506`), Docker packaging/full unit suite/build run 1445 (`39043790494`), container runtime smoke run 1254 (`39043790634`), and validation-only multi-architecture image validation run 1298 (`39043790596`). A subsequent documentation-only closeout commit will require exact-final-head CI verification before merge. Publishing remains paused; no deployment or production-runtime verification is claimed.
+- Next: refresh the PR-head documentation with final CI evidence, then verify all four workflows on the exact final PR head, review the final diff, and merge only if all gates pass. The private replay metric review remains the next recommendation-policy gate.
 
 ---
 
