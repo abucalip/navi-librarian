@@ -56,6 +56,25 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertEqual(diverse.selected_candidate_ids, ("anchor", "different", "similar"))
         self.assertEqual(dict(diverse.category_counts)["adjacent"], 3)
 
+    def test_mmr_keeps_hard_ownership_gate_and_artist_cap(self):
+        candidates = [
+            item("owned", artist="owned-artist", category="adjacent", score=10.0,
+                 tags=("jazz",), ownership=OwnershipStatus.EXACT_OWNED),
+            item("anchor", artist="a", category="adjacent", score=9.9, tags=("jazz", "soul")),
+            item("similar", artist="b", category="adjacent", score=9.8, tags=("jazz", "soul")),
+            item("different", artist="c", category="adjacent", score=9.7, tags=("funk", "afrobeat")),
+            item("same-artist-alt", artist="a", category="adjacent", score=9.6, tags=("funk",)),
+        ]
+        result = allocate_personal_recommendations(request(
+            candidates, count=3,
+            targets={"adjacent": 3, "cross_genre": 0, "adventurous": 0},
+            diversity_penalty=0.5,
+        ))
+        self.assertEqual(result.selected_candidate_ids, ("anchor", "different", "similar"))
+        self.assertNotIn("owned", result.selected_candidate_ids)
+        self.assertNotIn("same-artist-alt", result.selected_candidate_ids)
+        self.assertEqual(result.checked_count, 4)
+
     def test_diversity_style_reservation_precedes_category_fill(self):
         result = allocate_personal_recommendations(request([
             item("ordinary", category="adjacent", score=10),
