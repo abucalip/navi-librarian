@@ -900,3 +900,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - **PR #292 merged:** final PR head `51f3a0e1ee55334020bc26793ca1d86a6c145a7c`; merge commit `0db291970fbeff2ed192d73b04fe1efc8ecb3cb6`.
 - **CI:** all four required workflows passed on the exact final PR head: `compile`, `test-and-build`, `container-smoke`, and `validate-container`. Local test commands were not run. Publishing remains paused; no deployment or production runtime verification is claimed.
 - **Configuration caveat:** existing persisted settings were not migrated, so values previously saved in an installation may remain until explicitly changed.
+
+## 2026-10-17 — MCP retirement plan drafted
+
+- Inspected current GitHub `main` documentation and implementation relevant to MCP retirement: project status, product requirements, development workflow, test plan, `mcp_registry.py`, `navidrome_server.py`, the lazy web-service adapter, MCP registry tests, `requirements.txt`, Dockerfile, and Compose configuration.
+- Confirmed that MCP is not fully retired: `mcp_registry.py` still registers 25 tools, `navidrome_server.py` retains a standalone streamable-HTTP MCP startup path on `127.0.0.1:8000`, and `requirements.txt` still declares `mcp==2.3.0`.
+- Recorded that the web app shares service logic through `app/api/dependencies.py:get_librarian`; retiring MCP must not remove recommendation, discovery, settings, acquisition, recovery, persistence, or filesystem-safety behavior. The consumer audit must establish whether any external clients rely on the MCP endpoint before removal.
+- Added `docs/MCP_RETIREMENT_PLAN.md` with the audit sequence, focused removal approach, regression requirements, packaging checks, required four-workflow CI gate, and definition of done. The plan explicitly does not authorize publishing or deployment.
+- No implementation code changed and no tests were run locally in this documentation-planning session. Existing historical CI results do not verify this new commit; record exact PR-head CI evidence before merge. Publishing remains paused; no deployment or production runtime verification is claimed.
+- Next action: complete the consumer/reference audit and prepare a focused MCP retirement implementation PR.

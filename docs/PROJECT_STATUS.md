@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (service-default cleanup merged)
+Last reviewed: 2026-10-17 (MCP retirement plan drafted)
 
 ## Current focus
 
@@ -8,24 +8,28 @@ Last reviewed: 2026-10-17 (service-default cleanup merged)
 
 The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-**Next action:** in the next session, use the recommendation-engine proposal document to select a focused behavior change and define tests before implementation.
+**MCP retirement planning:** `docs/MCP_RETIREMENT_PLAN.md` records the current MCP surface, consumer-audit requirements, focused removal approach, regression expectations, required CI gates, and definition of done. This is planning only; no MCP implementation has been removed in this change.
+
+**Next action:** audit remaining MCP consumers and references on current `main`, then implement a focused retirement PR without removing shared web/service behavior.
 
 ## Delivery and verification state
 
-- **Implemented / merged:** PR #292, merge commit `0db291970fbeff2ed192d73b04fe1efc8ecb3cb6`, based on final PR head `51f3a0e1ee55334020bc26793ca1d86a6c145a7c`.
-- **CI:** all four required workflows passed on that exact PR head: `compile`, `test-and-build`, `container-smoke`, and `validate-container`. These cover syntax/size checks, the full unit suite and Docker build, isolated container smoke, and non-publishing multi-architecture validation.
-- **Local tests:** not run in this session; CI provides the verification above.
-- **Publishing:** paused; multi-architecture validation remains non-publishing (`push: false`).
+- **Previously implemented / merged:** PR #292, merge commit `0db291970fbeff2ed192d73b04fe1efc8ecb3cb6`, based on final PR head `51f3a0e1ee55334020bc26793ca1d86a6c145a7c`.
+- **Current change:** documentation-only MCP retirement plan; branch `docs/mcp-retirement-plan`. PR/merge/CI status to be recorded after verification.
+- **Prior CI evidence:** all four required workflows passed on PR #292's exact final head. This is not verification of the current documentation commit.
+- **Local tests:** not run for this documentation-only planning change.
+- **Publishing:** paused; multi-architecture validation must remain non-publishing (`push: false`).
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Configuration note:** existing persisted settings were not migrated; previously saved URLs/usernames may remain until the user changes them.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
-- **MCP:** preserve the remaining MCP compatibility surface unless a separately approved migration changes it.
+- **MCP:** full retirement remains pending the separate audit, implementation, and required verification described in `docs/MCP_RETIREMENT_PLAN.md`.
 
 ## Documentation map
 
 | Need | Canonical document |
 |---|---|
 | Current snapshot and next action | This file |
+| MCP retirement evidence and migration gates | `docs/MCP_RETIREMENT_PLAN.md` |
 | Recommendation engine audit and next-session proposals | `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` |
 | Remaining extraction work and exit criteria | `docs/MODULARIZATION_ROADMAP.md` |
 | Detailed historical PR, commit, and verification evidence | Root `PROJECT_LOG.md` |
