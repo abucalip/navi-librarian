@@ -26,7 +26,7 @@ class DiscoveryRefreshTests(unittest.TestCase):
         self.assertIsNone(
             cache_staleness_reason({"generated_at": 101}, now=100, max_age_seconds=24)
         )
-        for cached in ({}, {"generated_at": None}, {"generated_at": "bad"}):
+        for cached in ({}, {"generated_at": None}, {"generated_at": "bad"}, {"generated_at": "nan"}, {"generated_at": "inf"}):
             with self.subTest(cached=cached):
                 self.assertEqual(
                     cache_staleness_reason(cached, now=100, max_age_seconds=24),
