@@ -1,12 +1,12 @@
 # Project status
 
-Last reviewed: 2026-10-17 (raw profile-tag diagnostic privacy fix in progress)
+Last reviewed: 2026-10-17 (recommendation diagnostic privacy correction)
 
 ## Current focus
 
 **Recommendation roadmap — Phase 0.3 observability.** PR #302 merged at `bb473e99855208606e3bcb76dbf7c1cb9eb09b43`, making `scripts/session_search.py` the standard focused retrieval workflow. PR #303 merged at `a04d4f4c3b5beed3e29969c75cf812591222dc08`, adding bounded persisted outcomes for manual versus scheduled personal-list refreshes and recording the origin in persisted recommendation-pool metrics without expanding the public API response. PR #304 merged at `19435d5deea69b188d920cf375ef924ec3b14a97`, adding aggregate candidate provenance, score, profile, cache, and eligibility metrics.
 
-**Current correctness finding:** PR #304's aggregate `profile_evidence.recent_family_counts` persisted raw family/tag names, contradicting the roadmap and PR's privacy claim that raw tags are excluded. A focused fix is in progress on branch `fix/private-recommendation-profile-diagnostics`: retain only the number of recent families and summed family-listen counts, and add persisted-record regression assertions that representative raw tags are absent. No ranking behavior or public API shape is intended to change.
+**Current correctness finding:** PR #304's aggregate `profile_evidence.recent_family_counts` persisted raw family/tag names, contradicting the roadmap and PR's privacy claim that raw tags are excluded. PR #305 on branch `fix/private-recommendation-profile-diagnostics` replaces those keys with only the number of recent families and summed family-listen counts, with persisted-record regression assertions that representative raw tags are absent. No ranking behavior or public API shape is intended to change.
 
 The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls, but its full metric report has not been inspected in this session. Recommendation-policy changes remain gated until that report and its limitations are reviewed.
 
