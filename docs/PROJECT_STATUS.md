@@ -16,7 +16,7 @@ PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR
 
 All four required workflows passed on exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`: Python syntax/size/import-boundary `39049404041`, Docker packaging/full unit suite/build `39049404031`, container runtime smoke `39049404044`, and validation-only multi-architecture image validation `39049404139` (publishing paused). On preceding code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`, the full unit suite reported 631 tests passed. No assistant-side local tests were run; publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** after this evaluator PR's exact-head CI passes, run `python recommendation_mmr_evaluate.py "$HOME/navi-librarian-test/private-recommendation-fixtures/baseline-20261017_new.json" --identity-free` in the isolated test environment; inspect the private identity-bearing report locally if needed, then document measured relevance/diversity trade-offs. Do not collect another live capture or integrate MMR into production before reviewing results. Do not collect further live diagnostic snapshots.
+**Next action:** owner-supplied offline results show lambda 0.75 reduces mean pairwise similarity about 43% versus lambda 0, with 85.5% baseline relevance-score retention and 7/10 baseline items retained. After PR #320 merges with all four required gates, prepare a controlled MMR adapter-integration PR using lambda 0.75 as the initial candidate; add regression coverage and preserve all eligibility/API invariants. This is one frozen-capture result, not future-listen relevance evidence. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
