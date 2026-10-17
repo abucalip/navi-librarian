@@ -49,8 +49,8 @@ class SupplementaryTagQueryTests(unittest.TestCase):
                 profile_limit=1, exploration_limit=1,
             ),
             [
-                ("primarytype:album AND tag:jazz", "profile-derived", "profile:jazz"),
-                ("primarytype:album AND tag:ambient", "profile-derived", "explore:ambient"),
+                ("primarytype:album AND tag:jazz", "jazz", "profile:jazz"),
+                ("primarytype:album AND tag:ambient", "other", "explore:ambient"),
             ],
         )
 
