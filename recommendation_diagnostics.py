@@ -19,6 +19,74 @@ def _fingerprint(values: Sequence[str]) -> str:
     return hashlib.sha256("\n".join(values).encode("utf-8")).hexdigest()
 
 
+def _numeric_summary(values: Sequence[Any]) -> dict[str, Any]:
+    numbers = []
+    for value in values:
+        try:
+            number = float(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(number):
+            numbers.append(number)
+    if not numbers:
+        return {"count": 0, "min": None, "mean": None, "max": None}
+    return {
+        "count": len(numbers),
+        "min": round(min(numbers), 6),
+        "mean": round(sum(numbers) / len(numbers), 6),
+        "max": round(max(numbers), 6),
+    }
+
+
+def summarize_candidate_diagnostics(
+    gathered: Mapping[str, Any],
+    candidates: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Return bounded aggregate telemetry without candidate identities or raw tags."""
+    from collections import Counter
+
+    rows = list(candidates)
+    decisions = Counter(str(row.get("selection_decision") or "unknown") for row in rows)
+    sources = Counter(str(row.get("discovery_source") or "listenbrainz") for row in rows)
+    owned = sum(bool(row.get("exact_owned")) for row in rows)
+    title_conflicts = sum(int(row.get("same_title_library_matches") or 0) > 0 for row in rows)
+    unclassified = sum(row.get("assigned_category") == "unclassified" for row in rows)
+    genre_available = sum(bool(row.get("genre_metadata_available")) for row in rows)
+    raw_profile_counts = gathered.get("recent_family_counts") or {}
+    profile_counts = {
+        str(key): max(0, int(value))
+        for key, value in raw_profile_counts.items()
+        if str(key) and isinstance(value, (int, float)) and math.isfinite(float(value))
+    }
+    return {
+        "candidate_count": len(rows),
+        "candidate_counts_by_source": dict(sorted(sources.items())),
+        "score_components": {
+            "base_score": _numeric_summary([row.get("score") for row in rows]),
+            "final_discovery_score": _numeric_summary([row.get("discovery_score") for row in rows]),
+            "recent_profile_bonus": _numeric_summary([row.get("recent_profile_bonus") for row in rows]),
+            "lastfm_popularity_bonus": _numeric_summary([row.get("lastfm_popularity_bonus") for row in rows]),
+        },
+        "profile_evidence": {
+            "listens_seen": len(gathered.get("listens") or []),
+            "distinct_recent_artists": len(gathered.get("recent_artists") or {}),
+            "artist_mbids_with_recent_listens": len(gathered.get("recent_artist_mbid_counts") or {}),
+            "candidate_count_with_genre_metadata": genre_available,
+            "recent_family_counts": dict(sorted(profile_counts.items())),
+        },
+        "eligibility_rejections": {
+            "exact_owned": owned,
+            "same_title_artist_conflicts": title_conflicts,
+            "unclassified": unclassified,
+            "selection_decisions": dict(sorted(decisions.items())),
+        },
+        "cache": {
+            "supplementary_hits": max(0, int(gathered.get("supplementary_cache_hits", 0))),
+            "supplementary_misses": max(0, int(gathered.get("supplementary_cache_misses", 0))),
+        },
+    }
+
+
 def evaluate_replay_case(case: Mapping[str, Any], *, k: int = 10) -> dict[str, Any]:
     """Score a frozen T-to-T+14-day replay case without provider access.
 
