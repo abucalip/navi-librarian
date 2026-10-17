@@ -8,7 +8,7 @@ Last reviewed: 2026-10-17 (MCP removal PR prepared; verification pending)
 
 The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-**MCP retirement implementation:** the focused removal branch deletes the MCP registry, SDK dependency, and standalone transport; preserves the shared service functions; adds web-startup scheduler lifecycle; and replaces registry tests with MCP-free architecture regressions. The audit and changed-file dispositions are recorded in `docs/MCP_RETIREMENT_PLAN.md`. PR #296 is open; exact-head CI and merge remain pending.
+**MCP retirement implementation:** the focused removal branch deletes the MCP registry, SDK dependency, and standalone transport; removes the unrelated Proxmox MCP entry point and its handler tests; preserves the read-only command allowlist tests and shared Librarian service functions; adds web-startup scheduler lifecycle; and adds MCP-free architecture regressions. The audit and changed-file dispositions are recorded in `docs/MCP_RETIREMENT_PLAN.md`. PR #296 is open; exact-head CI and merge remain pending.
 
 **Next action:** verify focused tests and all four required workflows on the exact final PR head, then review and merge only if every gate passes.
 
