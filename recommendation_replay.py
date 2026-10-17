@@ -256,6 +256,9 @@ def write_capture_safely(
         logging.getLogger("navidrome_server").warning(
             "Recommendation replay capture failed (%s).", type(exc).__name__
         )
+    finally:
+        if os.environ.get("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH") == path:
+            os.environ.pop("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH", None)
 
 
 class ProviderTape:
