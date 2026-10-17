@@ -1,3 +1,15 @@
+## 2026-10-17 — MCP retirement closeout
+
+- Refreshed GitHub `main`: PR #296's retirement implementation is present at commit `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`; the earlier status/plan text incorrectly still described the PR as open and verification as pending.
+- Confirmed the merged source/configuration state: `requirements.txt` no longer declares the MCP SDK; the Dockerfile no longer copies `mcp_registry.py`; Compose exposes only the web service; the web app is the supported interface. The implementation removes the MCP registry/transport and the separate un-packaged Proxmox MCP entry point while retaining shared Librarian functions and `read_only_command_policy.py` safety coverage.
+- PR #296's four required workflows were reported passing on its final PR head: Python syntax/acquisition safety; Docker packaging/full unit suite/build; isolated container runtime smoke; validation-only multi-architecture. Publishing remains paused. A follow-up workflow/status query returned no records, so no new run IDs or fresh execution are claimed here.
+- No local tests were run during this documentation closeout. No publication, deployment, or production-runtime verification is claimed.
+- Updated `docs/MCP_RETIREMENT_PLAN.md` and `docs/PROJECT_STATUS.md` to mark repository-level retirement complete and distinguish it from external-client/configuration migration. Repository inspection cannot identify user-specific or external clients still pointing at the retired endpoint; persisted settings were not migrated.
+- Documentation-only closeout branch: `docs/closeout-mcp-retirement`, based on `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. CI for this documentation follow-up remains to be checked on its final PR head. No merge/publication/deployment is claimed for this follow-up.
+- Next action: verify required CI for the documentation closeout PR, merge if all required gates pass, then treat any external client migration as a separate user-environment check.
+
+---
+
 ## 2026-10-17 — MCP retirement implementation prepared
 
 - Audited current GitHub `main` against `docs/MCP_RETIREMENT_PLAN.md`. The 25-entry registry in `mcp_registry.py`, the `mcp==2.3.0` requirement, the Docker COPY reference, and the `navidrome_server.py` streamable-HTTP startup block were the Librarian runtime/package references. The broader audit also found `server.py`, a separate un-packaged Proxmox MCP entry point with a hardcoded SSH identity/host. `compose.yaml` defines only the web service and exposes its configured web port; no separate Librarian MCP service is configured.

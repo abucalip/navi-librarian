@@ -1,7 +1,7 @@
 # MCP Retirement Plan
 
 Last updated: 2026-10-17
-Status: **Removal implementation prepared in PR; verification and merge pending**
+Status: **Implementation merged; repository-level retirement complete; external-client migration remains unverified**
 
 ## Objective
 
@@ -9,9 +9,9 @@ Retire the remaining Model Context Protocol (MCP) server interface and its runti
 
 This is a dedicated migration following completion of the modularization roadmap. GitHub `main` remains the source of truth. Do not treat this plan as authorization to deploy or publish an image.
 
-## Current evidence and baseline
+## Pre-removal evidence and baseline (historical)
 
-The current repository has not fully retired MCP:
+The following findings describe the state before PR #296 and are retained as audit history, not as a description of current `main`:
 
 - `mcp_registry.py` defines `TOOL_NAMES` and `create_mcp_server()`, registering 25 remaining tools.
 - `navidrome_server.py` retains a standalone `if __name__ == "__main__"` path that imports the registry and starts a streamable HTTP MCP server on `127.0.0.1:8000`.
@@ -22,7 +22,7 @@ The current repository has not fully retired MCP:
 - `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/TEST_PLAN.md`, and `docs/DEVELOPMENT_WORKFLOW.md` currently require preserving MCP compatibility unless a separate retirement decision authorizes its removal.
 - Earlier work removed the high-risk `restart_server` and `apply_server_patch` tools. Do not restore them.
 
-These are repository-source observations; they do not establish whether any external MCP client or live installation currently uses the interface. Verify consumers before removal.
+These were repository-source observations at the pre-removal baseline; they did not establish whether any external MCP client or live installation used the interface.
 
 ## Consumer/reference audit (2026-10-17)
 
@@ -141,6 +141,15 @@ MCP retirement is complete only when:
 - The PR is merged and the merge SHA is recorded.
 - Publication, deployment, and runtime verification are reported separately and are not claimed unless actually performed.
 
-## Current next action
+## Post-merge closeout (2026-10-17)
 
-PR #296 is open. Complete focused tests and verify all four required workflows on the exact final PR-head SHA. Merge only after those gates pass. This document records a plan, not evidence that any retirement implementation or verification has occurred.
+- PR [#296](https://github.com/abucalip/navi-librarian/pull/296) is merged; the resulting `main` commit is `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`.
+- The merged implementation removes `mcp_registry.py`, the MCP SDK dependency, the standalone streamable-HTTP startup path, its Docker packaging reference, and the separate un-packaged Proxmox MCP entry point and handler test.
+- The implementation retains shared service functions and the read-only command policy safety tests; it adds MCP-free architecture regressions and starts the discovery scheduler from the supported FastAPI lifecycle.
+- The four required workflows were reported as passing on the final PR head: Python syntax/acquisition safety; Docker packaging, full unit suite and build; isolated container runtime smoke; validation-only multi-architecture. Publishing remained paused. The available follow-up CI query returned no runs/status entries, so this closeout does not add run IDs or claim a new CI execution.
+- No local tests were run in this GitHub-only closeout. No publication, deployment, or production-runtime verification is claimed.
+- External MCP clients and user-specific persisted configurations cannot be inspected from repository evidence. If any external client used the old loopback endpoint, that client must be migrated separately. Existing persisted settings were not migrated.
+
+## Final disposition
+
+The **repository-level MCP retirement plan is complete** against its code, documentation, regression, CI, and merge criteria. External consumer migration and production runtime verification are explicitly outside the evidence available here and remain unverified; they do not mean the MCP runtime remains in this repository.
