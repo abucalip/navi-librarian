@@ -381,18 +381,19 @@ def main(argv: list[str] | None = None) -> int:
         payload = envelope["payload"]
         gathered = thaw_gathered_inputs(payload["gathered_inputs"])
         lastfm = LastFmReplay(payload["lastfm_calls"])
-        # Import only after the capture is validated. The ranking entry point
-        # accepts frozen gathered inputs and skips every candidate provider.
+        provider_tape = ProviderTape("replay", payload["provider_events"])
+        # Import only after the capture is validated. Candidate gathering uses
+        # the strict cassette, and ranking uses captured Last.fm results.
         import navidrome_server
         actual_text = navidrome_server.recommend_new_music(
             count=int(payload["count"]),
-            _gathered_override=gathered,
+            _provider_tape=provider_tape,
             _lastfm_popularity_fn=lastfm,
             _lastfm_available_override=bool(payload["expected_output"].get("lastfm_api_configured")),
             _record_diagnostics=False,
         )
         actual = json.loads(actual_text)
-        lastfm_calls.assert_consumed()
+        lastfm.assert_consumed()
         provider_tape.assert_consumed()
         expected = payload["expected_output"]
         matches = _comparable_output(actual) == _comparable_output(expected)
@@ -402,7 +403,9 @@ def main(argv: list[str] | None = None) -> int:
             "reproduced": matches,
             "expected_recommendations": len(expected.get("recommendations", [])),
             "actual_recommendations": len(actual.get("recommendations", [])),
-            "network_providers_used": 0,\n            "provider_events_replayed": len(payload["provider_events"]),\n            "lastfm_events_replayed": len(payload["lastfm_calls"]),
+            "network_providers_used": 0,
+            "provider_events_replayed": len(payload["provider_events"]),
+            "lastfm_events_replayed": len(payload["lastfm_calls"]),
             "comparison": "all stable output fields except volatile pool diagnostics and Last.fm error state",
         }
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
