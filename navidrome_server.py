@@ -575,6 +575,10 @@ def recommend_new_music(
             "album": candidate["album"],
             "diversity_style": candidate.get("diversity_style", "other"),
             "score": candidate["score"],
+            "recent_artist_play_count": recent_artists.get(
+                _music_key(candidate["primary_artist"]), 0
+            ),
+            "exploration_family_match": bool(families & exploration_families),
             "discovery_score": round(
                 candidate.get("discovery_score", 0), 6
             ),
