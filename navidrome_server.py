@@ -309,11 +309,8 @@ def recommend_new_music(
     from discovery_recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
-        classify_diversity_style,
+        classify_recommendation_candidates,
         classify_recommendation_category,
-        genre_families,
-        primary_recent_family,
-        recent_style_families,
     )
     provider_tape = _provider_tape
     if _gathered_override is not None:
@@ -362,54 +359,10 @@ def recommend_new_music(
             candidate, recent_count, candidate_tags, exploration_families
         )
 
-    # Classify candidates using available MusicBrainz genres and a separate
-    # regional/style label used to encourage variety in the final shortlist.
-    candidates_by_category = {
-        "adjacent": [],
-        "cross_genre": [],
-        "adventurous": [],
-        "unclassified": [],
-    }
-
-    for candidate in albums.values():
-        tags = genre_cache.get(candidate.get("artist_mbid"), [])
-        candidate["diversity_style"] = classify_diversity_style(candidate, tags)
-        category, families = classify_recommendation_category(
-            candidate, tags, core_families, exploration_families,
-            music_key_fn=_music_key,
-        )
-
-        candidate["genres"] = tags
-        candidate["genre_families"] = sorted(families)
-        candidate["listening_families"] = sorted(recent_style_families(tags))
-        candidate["recent_profile_families"] = [
-            family for family in candidate["listening_families"]
-            if recent_family_counts.get(family, 0) > 0
-        ]
-        candidate["recent_profile_family"] = primary_recent_family(
-            tags, recent_family_counts
-        )
-        profile_family = candidate["recent_profile_family"]
-        matched_profile_families = candidate["recent_profile_families"]
-        if matched_profile_families and recent_family_counts:
-            max_recent_family_count = max(recent_family_counts.values())
-            average_recent_count = sum(
-                recent_family_counts[family]
-                for family in matched_profile_families
-            ) / len(matched_profile_families)
-            profile_match_bonus = (
-                1.0 + 0.10 * (
-                    average_recent_count / max_recent_family_count
-                )
-            )
-            candidate["recent_profile_bonus"] = profile_match_bonus
-            candidate["discovery_score"] *= profile_match_bonus
-        else:
-            candidate["recent_profile_bonus"] = 1.0
-        candidate["discovery_category"] = category
-        candidate["genre_metadata_available"] = bool(tags)
-
-        candidates_by_category[category].append(candidate)
+    candidates_by_category = classify_recommendation_candidates(
+        albums, genre_cache, core_families, exploration_families,
+        recent_family_counts, music_key_fn=_music_key,
+    )
 
     lastfm_available = (
         bool(_discovery_settings_read().get("lastfm_api_key"))
