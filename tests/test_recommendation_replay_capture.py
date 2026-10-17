@@ -202,7 +202,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         request_url = "https://musicbrainz.org/ws/2/recording/abc"
         params = {"fmt": "json", "inc": "artists"}
         def live_request(url, **kwargs):
-            request = httpx.Request("GET", url, params=kwargs.get("params"))
+            request = httpx.Request("GET", httpx.URL(url, params=kwargs.get("params")) )
             return httpx.Response(503, json={"error": "temporarily unavailable"}, request=request)
 
         recorded = ProviderTape("record")
