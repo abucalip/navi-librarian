@@ -496,7 +496,7 @@ def recommend_new_music(
         candidate = candidate_by_id[candidate_id]
         result = build_personal_recommendation_payload(
             candidate,
-            recent_artists.get(_music_key(candidate["primary_artist"]), 0),
+            recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
         result["ownership_note"] = (
             "A same-title album exists in Navidrome under a different "
