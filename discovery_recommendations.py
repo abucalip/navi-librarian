@@ -385,7 +385,7 @@ def apply_lastfm_popularity_bonus(
                     recent_family_counts[family]
                     for family in matched_families
                 ) / len(matched_families)
-                new_profile_bonus = 1.0 + 0.10 * average_count / max_count
+                new_profile_bonus = 1.0 + 0.25 * average_count / max_count
             else:
                 new_profile_bonus = 1.0
             candidate["discovery_score"] = (
@@ -577,7 +577,7 @@ def classify_recommendation_candidates(
         if matched and recent_family_counts:
             max_count = max(recent_family_counts.values())
             average = sum(recent_family_counts[family] for family in matched) / len(matched)
-            bonus = 1.0 + 0.10 * (average / max_count)
+            bonus = 1.0 + 0.25 * (average / max_count)
             candidate["recent_profile_bonus"] = bonus
             candidate["discovery_score"] *= bonus
         else:
