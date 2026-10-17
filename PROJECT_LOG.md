@@ -10,8 +10,6 @@
 
 ---
 
----
-
 ## 2026-10-17 — PR #312 merged: profile-derived supplementary queries
 
 - PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`.
