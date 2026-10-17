@@ -86,6 +86,7 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             with sqlite3.connect(db) as connection:
                 row = connection.execute("SELECT recording_hashes_json FROM recommendation_pool_diagnostics").fetchone()
             self.assertNotIn("recording-b", row[0])
+            self.assertNotIn("candidate_diagnostics", second)
 
     def test_aggregate_candidate_diagnostics_are_bounded_and_identity_free(self):
         gathered = {
