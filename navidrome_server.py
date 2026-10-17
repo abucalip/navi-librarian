@@ -855,7 +855,7 @@ def _discovery_auto_acquire_for_me(artist, album):
 def _discovery_refresh_personal(count=20, origin="manual"):
     return discovery_refresh.refresh_personal(
         _DISCOVERY_REFRESH_LOCK,
-        recommend_new_music,
+        lambda **kwargs: recommend_new_music(**kwargs, _refresh_origin=origin),
         _discovery_write_list,
         count=count,
         origin=origin,
