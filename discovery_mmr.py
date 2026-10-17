@@ -28,11 +28,24 @@ def candidate_similarity(left: Mapping[str, Any], right: Mapping[str, Any]) -> f
     return tag_jaccard(left.get("tags") or (), right.get("tags") or ())
 
 
+def diversity_setting_to_penalty(value: int) -> float:
+    """Map the 0–100 user diversity setting to this implementation's penalty weight.
+
+    Here lambda_ is the penalty subtracted for similarity, so larger values
+    produce more diversification (unlike the relevance-weight convention used
+    in some MMR descriptions). Keep this mapping pure and explicitly tested.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
+        raise ValueError("diversity setting must be an integer from 0 to 100")
+    return value / 100.0
+
+
 def mmr_rerank(
     candidates: Iterable[Mapping[str, Any]],
     *,
     limit: int,
     lambda_: float = 0.25,
+    relevance_floor: float = 0.0,
 ) -> list[dict[str, Any]]:
     """Greedily balance normalized relevance and similarity to selected items.
 
@@ -45,6 +58,8 @@ def mmr_rerank(
         raise ValueError("limit must be a non-negative integer")
     if not math.isfinite(lambda_) or not 0.0 <= lambda_ <= 1.0:
         raise ValueError("lambda_ must be finite and between 0 and 1")
+    if not math.isfinite(relevance_floor) or not 0.0 <= relevance_floor <= 1.0:
+        raise ValueError("relevance_floor must be finite and between 0 and 1")
 
     pool: list[dict[str, Any]] = []
     for index, source in enumerate(candidates):
@@ -67,9 +82,11 @@ def mmr_rerank(
     for item in pool:
         item["_mmr_relevance"] = 1.0 if span == 0.0 else (item["_mmr_score"] - low) / span
 
+    # Apply the floor against the original pool normalization. Do not renormalize
+    # the surviving candidates, which would erase the meaning of the floor.
     selected: list[dict[str, Any]] = []
     selected_artists: set[str] = set()
-    remaining = list(pool)
+    remaining = [item for item in pool if item["_mmr_relevance"] >= relevance_floor]
     while remaining and len(selected) < limit:
         best_index: int | None = None
         best_value = -math.inf
