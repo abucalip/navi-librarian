@@ -100,6 +100,18 @@ class AllocationContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "max_checks"):
             AllocationRequest((), 10, {}, {}, max_checks=61)
 
+    def test_request_validates_diversity_penalty(self):
+        request = AllocationRequest((), 10, {}, {}, diversity_penalty=0.75)
+        self.assertEqual(request.diversity_penalty, 0.75)
+        for value in (-0.1, 1.1, float("nan"), float("inf"), True, "0.5"):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "diversity_penalty"):
+                AllocationRequest((), 10, {}, {}, diversity_penalty=value)
+
+    def test_candidate_tags_are_an_immutable_typed_input(self):
+        self.assertEqual(candidate(tags=("Jazz", "Soul")).tags, ("Jazz", "Soul"))
+        with self.assertRaisesRegex(ValueError, "tags"):
+            candidate(tags=["Jazz"])
+
     def test_result_keeps_selected_and_manual_review_ids_separate(self):
         result = AllocationResult(
             requested_count=2,

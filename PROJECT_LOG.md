@@ -1,3 +1,13 @@
+## 2026-10-18 — Backend recommendation-diversity contract and MMR integration PR #326
+
+- Opened PR #326: `feat: add backend recommendation diversity preference`.
+- Added persistent `recommendation_diversity` (strict integer 0–100, default 0), `GET/PUT /api/settings/recommendation-diversity`, fail-safe reads for invalid stored values, and rejection of invalid writes without persistence.
+- Integrated dynamic MMR marginal ranking inside the existing personal recommendation allocator. MMR is applied only among ownership-clear candidates; non-clear candidates keep legacy positions. Value 0 bypasses MMR ordering, preserving the previous allocator ordering. Category/style/family passes, one-artist cap, deterministic ties, ownership behavior, and the 60-check limit remain in place.
+- Added tests for preference service validation and fallback, persistence defaults/round-trip, API paths and invalid inputs, setting-to-allocator wiring, MMR candidate ordering, hard ownership gates, artist cap, and allocation request validation.
+- CI caught two issues during iteration: the legacy-server size ratchet and a temporarily removed candidate-tag assignment. Both were corrected without weakening the guard. Code/test head `84a0f626da5c0293279755b2e2a0111960b19304` then passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image validation (publishing paused). The documentation-updated PR head `7366e9933ab268deba14d83b6e2309deb53b0e98` also passed all four required workflows; this final closeout edit requires the usual exact-head CI rerun before merge.
+- The private MMR fixture/report remains unchanged and outside GitHub. No new fixture run, live provider call, UI change, publish, or deployment occurred.
+- **Next action:** verify all four workflows on PR #326's exact final head, review the final diff, and merge if all gates pass; then coordinate the separate settings UI PR.
+
 ## 2026-10-18 — Identity-free MMR evaluator CLI verified; preference integration unblocked
 
 - The owner ran `recommendation_mmr_evaluate.py --identity-free` in the isolated Python environment from source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64` against the unchanged private fixture captured from source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The command exited 0.

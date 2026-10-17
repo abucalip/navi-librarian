@@ -11,6 +11,7 @@ import slskd_transfers as _slskd_transfers_module
 import listenbrainz_client as _listenbrainz_client
 import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
+import service_settings as _service_settings
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
@@ -307,6 +308,7 @@ def recommend_new_music(
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
 
+    from discovery_mmr import diversity_setting_to_penalty
     from discovery_recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
@@ -442,6 +444,11 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
+            tags=tuple(
+                str(tag)
+                for tag in genre_cache.get(candidate.get("artist_mbid"), [])
+                if tag is not None
+            ),
             ownership=ownership,
         ))
 
@@ -450,6 +457,9 @@ def recommend_new_music(
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
+        diversity_penalty=diversity_setting_to_penalty(
+            _service_settings.recommendation_diversity_value(_discovery_settings_read)
+        ),
         family_cap=1,
         max_checks=60,
     ))
@@ -1382,6 +1392,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_hires",
     ],
     "auto_acquire_for_me": True,
+    "recommendation_diversity": 0,
     "slskd_downloads_path": str(Path(
         os.environ.get("SLSKD_DOWNLOADS_DIR")
         or os.environ.get("SLSKD_DOWNLOADS_MOUNT")

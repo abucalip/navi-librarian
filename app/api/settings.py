@@ -9,8 +9,52 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from service_settings import (
+    get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
+    set_recommendation_diversity_settings as _set_recommendation_diversity_settings,
+)
 
 router = APIRouter()
+
+
+@router.get("/api/settings/recommendation-diversity")
+def get_recommendation_diversity_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_recommendation_diversity_settings(librarian._discovery_settings_read))
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not read Recommendation diversity settings.",
+        )
+
+
+@router.put("/api/settings/recommendation-diversity")
+def set_recommendation_diversity_settings(payload: dict, librarian=Depends(get_librarian)):
+    value = payload.get("recommendation_diversity")
+    if type(value) is not int or not 0 <= value <= 100:
+        raise HTTPException(
+            status_code=400,
+            detail="recommendation_diversity must be an integer from 0 to 100.",
+        )
+    try:
+        result = parse_result(
+            _set_recommendation_diversity_settings(
+                librarian._discovery_settings_write, value
+            )
+        )
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Invalid Recommendation diversity setting."),
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not save Recommendation diversity settings.",
+        )
 
 
 @router.get("/api/settings/navidrome")

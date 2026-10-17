@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-18 (identity-free MMR evaluator CLI verified; backend preference-contract/integration next)
+Last reviewed: 2026-10-18 (backend recommendation-diversity contract and allocator integration implemented in PR #326; settings UI remains separate)
 
 ## Current focus
 
-**Recommendation diversity preference — offline evaluator CLI completed; backend contract/integration is next.** The existing private fixture was evaluated with `recommendation_mmr_evaluate.py --identity-free` from isolated PR-320 source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64`. The fixture capture records source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The CLI exited 0 and reported 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 candidate rows rejected for hard eligibility or missing scores, 10 baseline recommendations with captured scores, zero network-provider calls, and no provider-tape replay.
+**Recommendation diversity backend — PR #326 open.** The identity-free evaluator CLI completed successfully against the existing private fixture. Its actual output contains six lambda results and no relevance-floor dimension; the earlier 35-combination/floor-sweep reproduction is dismissed as a decision input. Do not run another fixture test for that discrepancy. The fixture and identity-bearing report remain private.
 
-The evaluator reported 10 selected recommendations, 10 unique artists, zero duplicate non-empty artist keys, deterministic repeats, and all selections drawn from its eligible pool at every tested lambda. At lambda 0, mean pairwise similarity was 0.1044 and 7/10 baseline items were retained. At lambda 0.25, similarity was 0.1007 and 7/10 retained. At lambda 0.75, similarity was 0.0591, 7/10 baseline items were retained, and baseline relevance-score retention was 85.5%; lambda 1.0 showed no additional measured benefit. This is one frozen-pool comparison, not future-listen hit-rate/nDCG or proof of broad satisfaction.
+PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of this PR.
 
-**Discard the earlier 35-combination/floor-sweep reproduction as a decision input.** The successful CLI run produced six lambda results and no relevance-floor dimension, so it does not verify that sweep. Do not run another fixture test for this discrepancy. Keep the relevance floor at its default of 0 and production ranking unchanged; do not publish fixture identities or reports. The backend preference-contract/integration work may now proceed, with the settings UI kept separate until API semantics are fixed.
+The code/test revision `84a0f626da5c0293279755b2e2a0111960b19304` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image checks (publishing paused). The documentation-updated PR head `7366e9933ab268deba14d83b6e2309deb53b0e98` also passed all four required workflows; the final merge head must still be checked before merge. PR #326 is not yet merged.
 
-PR #324 merged at `88e56cd3274d5b5ac2f7c67a619eb7ad38b9b4a2`. Production ranking, publishing, and deployment remain unchanged/paused; no deployment or production-runtime verification is claimed.
+Production deployment is not authorized or claimed. Publishing remains paused; no production runtime verification is claimed.
 
 ## Recommendation baseline and prior work
 

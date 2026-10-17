@@ -6,6 +6,9 @@ from pathlib import Path
 
 from service_settings import (
     get_lastfm_settings,
+    get_recommendation_diversity_settings,
+    recommendation_diversity_value,
+    set_recommendation_diversity_settings,
     get_navidrome_settings,
     listenbrainz_username,
     navidrome_config,
@@ -27,6 +30,7 @@ class ServiceSettingsTests(unittest.TestCase):
             "lastfm_api_key": "lastfm-secret",
             "listenbrainz_username": "listener",
             "music_library_path": "",
+            "recommendation_diversity": 0,
         }
         self.writes = []
 
@@ -39,6 +43,35 @@ class ServiceSettingsTests(unittest.TestCase):
 
     def set_music_dir(self, path):
         self.music_dir = path
+
+    def test_recommendation_diversity_setting_is_bounded_persistent_and_fail_safe(self):
+        self.assertEqual(recommendation_diversity_value(self.read_settings), 0)
+        self.assertEqual(
+            json.loads(get_recommendation_diversity_settings(self.read_settings)),
+            {"recommendation_diversity": 0},
+        )
+
+        for value in (0, 75, 100):
+            result = json.loads(set_recommendation_diversity_settings(self.write_settings, value))
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["recommendation_diversity"], value)
+            self.assertEqual(recommendation_diversity_value(self.read_settings), value)
+
+        before = list(self.writes)
+        for invalid in ("75", 1.5, True, None, -1, 101, [], {}):
+            with self.subTest(invalid=invalid):
+                result = json.loads(set_recommendation_diversity_settings(self.write_settings, invalid))
+                self.assertFalse(result["ok"])
+                self.assertEqual(self.writes, before)
+
+        for invalid_stored in ("75", 1.5, True, None, -1, 101, [], {}):
+            self.state["recommendation_diversity"] = invalid_stored
+            with self.subTest(invalid_stored=invalid_stored):
+                self.assertEqual(recommendation_diversity_value(self.read_settings), 0)
+                self.assertEqual(
+                    json.loads(get_recommendation_diversity_settings(self.read_settings)),
+                    {"recommendation_diversity": 0},
+                )
 
     def test_navidrome_settings_never_return_password(self):
         result = json.loads(get_navidrome_settings(self.read_settings, Path("/music")))

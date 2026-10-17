@@ -7,19 +7,20 @@ from discovery_personal_allocator import allocate_personal_recommendations
 
 
 def item(cid, artist=None, album=None, category="adjacent", score=1.0,
-         style="other", family=None, ownership=OwnershipStatus.CLEAR):
+         style="other", family=None, ownership=OwnershipStatus.CLEAR, tags=()):
     return AllocationCandidate(
         candidate_id=cid, artist_key=artist or cid, album_key=album or cid,
         category=category, score=score, diversity_style=style,
-        recent_profile_family=family, ownership=ownership,
+        recent_profile_family=family, ownership=ownership, tags=tags,
     )
 
 
-def request(items, count=3, targets=None, styles=None, max_checks=60):
+def request(items, count=3, targets=None, styles=None, max_checks=60, diversity_penalty=0.0):
     return AllocationRequest(
         candidates=tuple(items), count=count,
         category_targets=targets or {"adjacent": 1, "cross_genre": 1, "adventurous": 1},
         diversity_style_targets=styles or {}, max_checks=max_checks,
+        diversity_penalty=diversity_penalty,
     )
 
 
@@ -35,6 +36,44 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertEqual(dict(result.category_counts), {
             "adjacent": 1, "cross_genre": 1, "adventurous": 1,
         })
+
+    def test_mmr_penalty_changes_candidate_choice_inside_category_allocation(self):
+        candidates = [
+            item("anchor", artist="a", category="adjacent", score=10.0, tags=("jazz", "soul")),
+            item("similar", artist="b", category="adjacent", score=9.8, tags=("jazz", "soul")),
+            item("different", artist="c", category="adjacent", score=9.7, tags=("funk", "afrobeat")),
+        ]
+        legacy = allocate_personal_recommendations(request(
+            candidates, count=3,
+            targets={"adjacent": 3, "cross_genre": 0, "adventurous": 0},
+        ))
+        diverse = allocate_personal_recommendations(request(
+            candidates, count=3,
+            targets={"adjacent": 3, "cross_genre": 0, "adventurous": 0},
+            diversity_penalty=0.5,
+        ))
+        self.assertEqual(legacy.selected_candidate_ids, ("anchor", "similar", "different"))
+        self.assertEqual(diverse.selected_candidate_ids, ("anchor", "different", "similar"))
+        self.assertEqual(dict(diverse.category_counts)["adjacent"], 3)
+
+    def test_mmr_keeps_hard_ownership_gate_and_artist_cap(self):
+        candidates = [
+            item("owned", artist="owned-artist", category="adjacent", score=10.0,
+                 tags=("jazz",), ownership=OwnershipStatus.EXACT_OWNED),
+            item("anchor", artist="a", category="adjacent", score=9.9, tags=("jazz", "soul")),
+            item("similar", artist="b", category="adjacent", score=9.8, tags=("jazz", "soul")),
+            item("different", artist="c", category="adjacent", score=9.7, tags=("funk", "afrobeat")),
+            item("same-artist-alt", artist="a", category="adjacent", score=9.6, tags=("funk",)),
+        ]
+        result = allocate_personal_recommendations(request(
+            candidates, count=3,
+            targets={"adjacent": 3, "cross_genre": 0, "adventurous": 0},
+            diversity_penalty=0.5,
+        ))
+        self.assertEqual(result.selected_candidate_ids, ("anchor", "different", "similar"))
+        self.assertNotIn("owned", result.selected_candidate_ids)
+        self.assertNotIn("same-artist-alt", result.selected_candidate_ids)
+        self.assertEqual(result.checked_count, 4)
 
     def test_diversity_style_reservation_precedes_category_fill(self):
         result = allocate_personal_recommendations(request([

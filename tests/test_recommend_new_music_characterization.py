@@ -76,7 +76,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
     def _run_recommendations(
         self, library_albums, recommendations=None, *, lastfm_stats=None,
         regional_http_status=200, inventory_limit=None, listens=None,
-        genre_tags_by_artist=None,
+        genre_tags_by_artist=None, diversity_setting=0,
     ):
         if recommendations is None:
             recommendations = [{"recording_mbid": "recording-1", "score": 10}]
@@ -119,7 +119,9 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             patch.object(server, "_listenbrainz_username", return_value="test-user"),
             patch.object(server, "_metadata_cache_get", side_effect=cache_get),
             patch.object(server, "_metadata_cache_set"),
-            patch.object(server, "_discovery_settings_read", return_value={}),
+            patch.object(server, "_discovery_settings_read", return_value={
+                "recommendation_diversity": diversity_setting,
+            }),
             patch.object(
                 server, "_lastfm_album_popularity", return_value=lastfm_stats
             ),
@@ -132,6 +134,19 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             ),
         ):
             return json.loads(server.recommend_new_music(count=10))
+
+    def test_persisted_diversity_setting_maps_into_allocation_contract(self):
+        from discovery_personal_allocator import allocate_personal_recommendations
+
+        for setting, expected_penalty in ((0, 0.0), (75, 0.75)):
+            with self.subTest(setting=setting), patch(
+                "discovery_personal_allocator.allocate_personal_recommendations",
+                wraps=allocate_personal_recommendations,
+            ) as allocate:
+                self._run_recommendations([], diversity_setting=setting)
+                request = allocate.call_args.args[0]
+                self.assertEqual(request.diversity_penalty, expected_penalty)
+                self.assertEqual(request.candidates[0].tags, ("jazz",))
 
     def test_clear_inventory_returns_candidate_and_stable_response_shape(self):
         result = self._run_recommendations([])

@@ -10,6 +10,47 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
+RECOMMENDATION_DIVERSITY_KEY = "recommendation_diversity"
+DEFAULT_RECOMMENDATION_DIVERSITY = 0
+
+
+def validate_recommendation_diversity(value):
+    """Return a validated 0–100 integer preference; booleans are not integers here."""
+    if type(value) is not int or not 0 <= value <= 100:
+        return None
+    return value
+
+
+def recommendation_diversity_value(settings_read):
+    """Read a persisted preference safely, falling back for absent/corrupt values."""
+    value = settings_read().get(RECOMMENDATION_DIVERSITY_KEY, DEFAULT_RECOMMENDATION_DIVERSITY)
+    validated = validate_recommendation_diversity(value)
+    return DEFAULT_RECOMMENDATION_DIVERSITY if validated is None else validated
+
+
+def get_recommendation_diversity_settings(settings_read):
+    """Return the stable public settings payload, with a safe default for bad stored data."""
+    return json.dumps({
+        RECOMMENDATION_DIVERSITY_KEY: recommendation_diversity_value(settings_read),
+    })
+
+
+def set_recommendation_diversity_settings(settings_write, value):
+    """Persist a bounded integer preference, refusing invalid input without writing."""
+    validated = validate_recommendation_diversity(value)
+    if validated is None:
+        return json.dumps({
+            "ok": False,
+            "error": "recommendation_diversity must be an integer from 0 to 100.",
+        })
+    settings_write({RECOMMENDATION_DIVERSITY_KEY: validated})
+    return json.dumps({
+        "ok": True,
+        RECOMMENDATION_DIVERSITY_KEY: validated,
+        "message": "Recommendation diversity preference saved.",
+    })
+
+
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
     settings = settings_read()
