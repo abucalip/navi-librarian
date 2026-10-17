@@ -1,15 +1,101 @@
 """Coordination for refreshing cached discovery lists.
 
 Provider calls, list construction, persistence, and locking remain injected so
-this module can be tested without importing the MCP server or contacting APIs.
+this module can be tested without importing the web service or contacting APIs.
 """
 from __future__ import annotations
 
 import json
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from threading import Lock
 from typing import Any
+
+
+def cache_staleness_reason(
+    cached: Mapping[str, Any] | None,
+    *,
+    now: float,
+    max_age_seconds: float,
+) -> str | None:
+    """Return why a cached list needs refreshing, or None while it is fresh.
+
+    Missing and malformed timestamps are stale rather than aborting the whole
+    scheduler cycle. Future timestamps retain the legacy behavior and count as
+    fresh until their age reaches the configured threshold.
+    """
+    if cached is None:
+        return "missing"
+    try:
+        generated_at = float(cached["generated_at"])
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return "invalid_timestamp"
+    if now - generated_at >= max_age_seconds:
+        return "expired"
+    return None
+
+
+def refresh_stale_lists(
+    list_names: Sequence[str],
+    read_cached: Callable[[str], Mapping[str, Any] | None],
+    refresh_one: Callable[[str], Any],
+    *,
+    now: float,
+    max_age_seconds: float,
+) -> list[dict[str, Any]]:
+    """Check each cache and refresh stale lists without one failure blocking others.
+
+    The returned per-list diagnostics intentionally contain only bounded status,
+    stage, and exception-type fields; provider exception messages may contain
+    private URLs or request details and are not copied into scheduler diagnostics.
+    """
+    outcomes: list[dict[str, Any]] = []
+    for list_name in list_names:
+        try:
+            cached = read_cached(list_name)
+        except Exception as exc:
+            outcomes.append({
+                "list": list_name,
+                "status": "read_failed",
+                "stage": "read",
+                "error_type": type(exc).__name__,
+            })
+            continue
+
+        reason = cache_staleness_reason(
+            cached, now=now, max_age_seconds=max_age_seconds
+        )
+        if reason is None:
+            outcomes.append({"list": list_name, "status": "fresh"})
+            continue
+
+        try:
+            result = refresh_one(list_name)
+        except Exception as exc:
+            outcomes.append({
+                "list": list_name,
+                "status": "refresh_failed",
+                "stage": "refresh",
+                "reason": reason,
+                "error_type": type(exc).__name__,
+            })
+            continue
+
+        if isinstance(result, dict) and result.get("ok") is False:
+            status = result.get("status")
+            outcomes.append({
+                "list": list_name,
+                "status": status if status == "already_running" else "refresh_failed",
+                "stage": "refresh",
+                "reason": reason,
+            })
+        else:
+            outcomes.append({
+                "list": list_name,
+                "status": "refreshed",
+                "reason": reason,
+            })
+    return outcomes
 
 
 def refresh_personal(
