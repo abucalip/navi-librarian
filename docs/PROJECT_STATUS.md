@@ -4,6 +4,8 @@ Last reviewed: 2026-10-18 (backend recommendation-diversity contract and allocat
 
 ## Current focus
 
+**Recommendation history persistence — PR preparation in progress.** The latest stored personal recommendation list was the only durable batch; no ranked history existed. The current branch records up to 20 rank-ordered, SHA-256-hashed artist/album identities per successfully persisted personal list, with 30-day retention and a 2,000-row cap, in the same SQLite transaction. This is telemetry/persistence only; ranking is unchanged. Focused tests were added but have not been run locally; exact-head CI remains pending. The soft cooldown is not implemented yet. Settings UI remains a separate coordinated frontend task; do not change UI files in this backend branch.
+
 **Recommendation diversity backend — PR #326 merged.** The identity-free evaluator CLI completed successfully against the existing private fixture. Its actual output contains six lambda results and no relevance-floor dimension; the earlier 35-combination/floor-sweep reproduction is dismissed as a decision input. Do not run another fixture test for that discrepancy. The fixture and identity-bearing report remain private.
 
 PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of the backend PR.
