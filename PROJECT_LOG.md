@@ -1087,3 +1087,14 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - The PR then received documentation updates to docs/PROJECT_STATUS.md and docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. Exact final PR head 2fb8ce7e45188f7f02104cd171ac0d08102279ca passed all four required workflows: Python syntax 39048493243, Docker packaging/full unit suite/build 39048493246 (627 tests passed), container runtime smoke 39048493238, and validation-only multi-architecture image validation 39048493239 (publishing paused). PR #310 squash-merged as 31315a54255762f821cdd9d9949ee11a3ce17fb1. No assistant-side local tests were run.
 - No recommendation policy, API contract, provider behavior, or application code changed. No private capture or live provider data was used. Publishing, deployment, and production-runtime verification remain unperformed.
 - Next: implement Phase 2.1 profile-derived supplementary MusicBrainz tag queries as a separate behavior change. Do not collect further live diagnostic snapshots.
+
+
+## 2026-10-17 — Recommendation Phase 3.1 MMR evaluation seam
+
+- Branch: `recommendation/phase-3-1-mmr-evaluation`, based on main commit `8a6b4a9dd506c95026e12e5b9bd7569a5c380d61`.
+- Added `discovery_mmr.py`, a deterministic offline greedy MMR selector using min-max-normalized relevance, exact artist identity, and Jaccard genre-tag similarity. It enforces one selected candidate per non-empty artist key and provides shortlist metrics for unique artists, pairwise similarity, and original-score retention.
+- Added `tests/test_discovery_mmr.py` for similarity normalization, artist cap, MMR trade-off, deterministic ties, input immutability, metrics, and invalid inputs.
+- Updated `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `docs/PROJECT_STATUS.md` to distinguish the helper from production rollout.
+- No production ranking path is wired to MMR yet. The private replay fixture was not available to this GitHub-only session; no replay result or local test result is claimed. CI has not yet run on a PR head.
+- Publishing, deployment, and production-runtime verification remain unperformed.
+- Next: review the PR, run the focused and full test suites and all four required workflows on the exact final head, then evaluate relevance/diversity against the existing offline replay fixture before deciding on production integration.
