@@ -105,7 +105,8 @@ def _candidate_identities(rows: Iterable[dict[str, Any]]) -> set[tuple[str, str]
 
 
 def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
-                     lambdas: Iterable[float] = DEFAULT_LAMBDAS) -> dict[str, Any]:
+                     lambdas: Iterable[float] = DEFAULT_LAMBDAS,
+                     relevance_floors: Iterable[float] = (0.0, 0.05, 0.1, 0.15, 0.2)) -> dict[str, Any]:
     """Return identity-free relevance/diversity metrics for a validated capture."""
     if limit < 1:
         raise ValueError("limit must be at least 1")
@@ -133,42 +134,45 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
                if overlap_denominator else 1.0)
 
     results = []
-    for lambda_value in lambdas:
-        lambda_value = float(lambda_value)
-        reranked = mmr_rerank(pool, limit=limit, lambda_=lambda_value)
-        ids = [_identity(row) for row in reranked]
-        selected_ids = set(ids)
-        baseline_retained = len(selected_ids & baseline_ids)
-        selected_scores = [float(row["score"]) for row in reranked]
-        baseline_score_by_id = {_identity(row): row["score"] for row in baseline_scored}
-        retained_scores = [baseline_score_by_id[key] for key in ids
-                           if key in baseline_score_by_id]
-        metrics = diversity_metrics(reranked)
-        artists = [_key(row.get("artist_key")) for row in reranked]
-        nonempty_artists = [artist for artist in artists if artist]
-        repeated = mmr_rerank(pool, limit=limit, lambda_=lambda_value)
-        results.append({
-            "lambda": lambda_value,
-            "selected_count": len(reranked),
-            "baseline_top_k_retained": baseline_retained,
-            "baseline_top_k_retention_rate": (
-                baseline_retained / len(baseline_ids) if baseline_ids else 1.0
-            ),
-            "mean_pairwise_similarity": metrics["mean_pairwise_similarity"],
-            "unique_artists": metrics["unique_artists"],
-            "mean_selected_relevance_score": (
-                sum(selected_scores) / len(selected_scores) if selected_scores else 0.0
-            ),
-            "baseline_relevance_score_retention": (
-                sum(retained_scores) / sum(row["score"] for row in baseline_scored)
-                if baseline_scored and sum(row["score"] for row in baseline_scored) != 0
-                else None
-            ),
-            "duplicate_nonempty_artist_keys": len(nonempty_artists) - len(set(nonempty_artists)),
-            "all_selected_from_eligible_pool": all(key in pool_by_id for key in ids),
-            "deterministic_repeat": ids == [_identity(row) for row in repeated],
-            "selected_identities": ids,
-        })
+    for floor_value in relevance_floors:
+        floor_value = float(floor_value)
+        for lambda_value in lambdas:
+            lambda_value = float(lambda_value)
+            reranked = mmr_rerank(pool, limit=limit, lambda_=lambda_value, relevance_floor=floor_value)
+            ids = [_identity(row) for row in reranked]
+            selected_ids = set(ids)
+            baseline_retained = len(selected_ids & baseline_ids)
+            selected_scores = [float(row["score"]) for row in reranked]
+            baseline_score_by_id = {_identity(row): row["score"] for row in baseline_scored}
+            retained_scores = [baseline_score_by_id[key] for key in ids
+                               if key in baseline_score_by_id]
+            metrics = diversity_metrics(reranked)
+            artists = [_key(row.get("artist_key")) for row in reranked]
+            nonempty_artists = [artist for artist in artists if artist]
+            repeated = mmr_rerank(pool, limit=limit, lambda_=lambda_value, relevance_floor=floor_value)
+            results.append({
+                "lambda": lambda_value,
+                "relevance_floor": floor_value,
+                "selected_count": len(reranked),
+                "baseline_top_k_retained": baseline_retained,
+                "baseline_top_k_retention_rate": (
+                    baseline_retained / len(baseline_ids) if baseline_ids else 1.0
+                ),
+                "mean_pairwise_similarity": metrics["mean_pairwise_similarity"],
+                "unique_artists": metrics["unique_artists"],
+                "mean_selected_relevance_score": (
+                    sum(selected_scores) / len(selected_scores) if selected_scores else 0.0
+                ),
+                "baseline_relevance_score_retention": (
+                    sum(retained_scores) / sum(row["score"] for row in baseline_scored)
+                    if baseline_scored and sum(row["score"] for row in baseline_scored) != 0
+                    else None
+                ),
+                "duplicate_nonempty_artist_keys": len(nonempty_artists) - len(set(nonempty_artists)),
+                "all_selected_from_eligible_pool": all(key in pool_by_id for key in ids),
+                "deterministic_repeat": ids == [_identity(row) for row in repeated],
+                "selected_identities": ids,
+            })
 
     return {
         "capture_git_sha": envelope.get("git_sha"),
@@ -201,15 +205,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("capture", help="absolute path to owner-only recommendation capture")
     parser.add_argument("--limit", type=int, default=10)
-    parser.add_argument("--lambdas", default="0,0.1,0.25,0.5,0.75,1",
-                        help="comma-separated MMR lambda grid")
+    parser.add_argument("--lambdas", default="0,0.25,0.5,0.65,0.75,0.85,1",
+                        help="comma-separated MMR similarity-penalty grid")
+    parser.add_argument("--relevance-floors", default="0,0.05,0.1,0.15,0.2",
+                        help="comma-separated minimum normalized relevance floors")
     parser.add_argument("--identity-free", action="store_true",
                         help="omit selected artist/album identities from printed output")
     args = parser.parse_args(argv)
     try:
         envelope = load_capture(Path(args.capture))
         values = [float(value.strip()) for value in args.lambdas.split(",") if value.strip()]
-        report = evaluate_capture(envelope, limit=args.limit, lambdas=values)
+        floors = [float(value.strip()) for value in args.relevance_floors.split(",") if value.strip()]
+        report = evaluate_capture(envelope, limit=args.limit, lambdas=values, relevance_floors=floors)
         if args.identity_free:
             for row in report["lambda_results"]:
                 row.pop("selected_identities", None)
