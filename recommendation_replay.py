@@ -318,8 +318,13 @@ class ProviderTape:
             if event.get("error"):
                 raise RuntimeError(event["error"].get("message", "Recorded HTTP error"))
             import httpx
-            request_url = str(args[0]) if args else "https://invalid.example/"
-            request = httpx.Request("GET", request_url)
+            # HTTPX embeds method and fully resolved URL in HTTPStatusError text.
+            # Preserve both, including query parameters passed separately via kwargs.
+            request_url = event.get("request_url")
+            if not request_url:
+                request_url = str(args[0]) if args else "https://invalid.example/"
+            request_method = event.get("request_method", "GET")
+            request = httpx.Request(request_method, request_url)
             return httpx.Response(
                 int(event["status_code"]),
                 json=event.get("json"),
@@ -334,6 +339,10 @@ class ProviderTape:
                 return response
             event["status_code"] = int(response.status_code)
             event["json"] = body
+            request = getattr(response, "request", None)
+            if request is not None:
+                event["request_method"] = request.method
+                event["request_url"] = str(request.url)
             return response
         except Exception as exc:
             event["error"] = {"type": type(exc).__name__, "message": str(exc)}
