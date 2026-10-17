@@ -420,7 +420,6 @@ def recommend_new_music(
     for source_order, candidate in enumerate(albums.values()):
         candidate_id = str(source_order)
         candidate_by_id[candidate_id] = candidate
-        candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
         title_key = _music_key(candidate["album"])
         same_title = library_by_title.get(title_key, [])
         exact_owned = any(
@@ -444,7 +443,11 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
-            tags=tuple(str(tag) for tag in genre_cache.get(candidate.get('artist_mbid'), []) if tag is not None),
+            tags=tuple(
+                str(tag)
+                for tag in genre_cache.get(candidate.get("artist_mbid"), [])
+                if tag is not None
+            ),
             ownership=ownership,
         ))
 
@@ -453,7 +456,9 @@ def recommend_new_music(
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
-        diversity_penalty=diversity_setting_to_penalty(_service_settings.recommendation_diversity_value(_discovery_settings_read)),
+        diversity_penalty=diversity_setting_to_penalty(
+            _service_settings.recommendation_diversity_value(_discovery_settings_read)
+        ),
         family_cap=1,
         max_checks=60,
     ))
