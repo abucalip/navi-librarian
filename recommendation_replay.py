@@ -209,6 +209,55 @@ def load_capture(path: str | Path) -> dict[str, Any]:
     return envelope
 
 
+def prepare_provider_tape(tape: Any, capture_path: str | None) -> Any:
+    """Return a supplied tape or create a recorder when capture is enabled."""
+    return tape if tape is not None or not capture_path else ProviderTape("record")
+
+
+def prepare_lastfm_callback(
+    capture_path: str | None,
+    gathered_override: Any,
+    supplied_tape: Any,
+    requested_callback: Callable[..., Any] | None,
+    live_callback: Callable[..., Any],
+) -> tuple[Callable[..., Any], list[dict[str, Any]]]:
+    """Select the Last.fm callback and record exactly the values ranking consumes."""
+    calls: list[dict[str, Any]] = []
+    callback = requested_callback or live_callback
+    if capture_path and gathered_override is None and supplied_tape is None:
+        def capture_result(artist: str, album: str) -> Any:
+            value = live_callback(artist, album)
+            calls.append({"artist": artist, "album": album, "result": value})
+            return value
+        callback = capture_result
+    return callback, calls
+
+
+def write_capture_safely(
+    path: str,
+    gathered: dict[str, Any],
+    lastfm_calls: list[dict[str, Any]],
+    provider_tape: Any,
+    output: str,
+    count: int,
+) -> None:
+    """Capture failure must not break recommendation serving; emit a safe warning."""
+    import logging
+    try:
+        write_capture(
+            path,
+            gathered=gathered,
+            lastfm_calls=lastfm_calls,
+            provider_events=provider_tape.events if provider_tape is not None else [],
+            output=output,
+            count=count,
+        )
+    except Exception as exc:
+        logging.getLogger("navidrome_server").warning(
+            "Recommendation replay capture failed (%s).", type(exc).__name__
+        )
+
+
 class ProviderTape:
     """Record/replay every external/cache boundary used by candidate gathering.
 
