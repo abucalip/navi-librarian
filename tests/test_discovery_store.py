@@ -69,7 +69,7 @@ class DiscoveryStoreTests(unittest.TestCase):
         )
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0]["generated_at"], 200_000.0)
-        self.assertEqual(recent_recommendation_history(self.database_path, now=150_000.0), [])
+        self.assertEqual(recent_recommendation_history(\n            self.database_path, now=150_000.0, within_seconds=1_000.0\n        ), [])
 
     def test_non_personal_lists_do_not_record_recommendation_history(self):
         write_list(self.database_path, "classics", {
