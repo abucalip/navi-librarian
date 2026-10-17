@@ -2,6 +2,7 @@ import unittest
 
 from discovery_mmr import (
     candidate_similarity,
+    diversity_setting_to_penalty,
     diversity_metrics,
     mmr_rerank,
     tag_jaccard,
@@ -57,6 +58,22 @@ class DiscoveryMmrTests(unittest.TestCase):
             ["first", "second"],
         )
         self.assertEqual(items, before)
+
+    def test_diversity_setting_maps_to_this_implementation_penalty_direction(self):
+        self.assertEqual(diversity_setting_to_penalty(0), 0.0)
+        self.assertEqual(diversity_setting_to_penalty(75), 0.75)
+        self.assertEqual(diversity_setting_to_penalty(100), 1.0)
+        for value in (-1, 101, 1.5, True):
+            with self.assertRaises(ValueError):
+                diversity_setting_to_penalty(value)
+
+    def test_relevance_floor_uses_original_pool_normalization_and_can_return_sparse_list(self):
+        items = [candidate("high", "a", 10, []), candidate("mid", "b", 7, []), candidate("low", "c", 0, [])]
+        result = mmr_rerank(items, limit=3, lambda_=0, relevance_floor=0.7)
+        self.assertEqual([item["id"] for item in result], ["high", "mid"])
+        self.assertEqual(mmr_rerank(items, limit=3, relevance_floor=1.0)[0]["id"], "high")
+        with self.assertRaises(ValueError):
+            mmr_rerank(items, limit=3, relevance_floor=1.1)
 
     def test_invalid_lambda_and_non_finite_scores_are_rejected(self):
         with self.assertRaises(ValueError):
