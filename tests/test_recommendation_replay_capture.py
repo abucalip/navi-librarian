@@ -196,6 +196,36 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             self.assertEqual(client.get("https://musicbrainz.org", params={"fmt": "json"}).json()["params"], {"fmt": "json"})
         replay.assert_consumed()
 
+    def test_http_error_replay_preserves_method_and_fully_resolved_url(self):
+        import httpx
+
+        request_url = "https://musicbrainz.org/ws/2/recording/abc"
+        params = {"fmt": "json", "inc": "artists"}
+        def live_request(url, **kwargs):
+            request = httpx.Request("GET", url, params=kwargs.get("params"))
+            return httpx.Response(503, json={"error": "temporarily unavailable"}, request=request)
+
+        recorded = ProviderTape("record")
+        live_response = recorded.response("http_get", live_request, request_url, params=params)
+        with self.assertRaises(httpx.HTTPStatusError) as live_error:
+            live_response.raise_for_status()
+
+        replayed = ProviderTape("replay", recorded.events)
+        replay_response = replayed.response(
+            "http_get",
+            lambda *_args, **_kwargs: self.fail("live HTTP request must not run during replay"),
+            request_url,
+            params=params,
+        )
+        with self.assertRaises(httpx.HTTPStatusError) as replay_error:
+            replay_response.raise_for_status()
+
+        self.assertEqual(replay_response.request.method, live_response.request.method)
+        self.assertEqual(str(replay_response.request.url), str(live_response.request.url))
+        self.assertEqual(str(replay_error.exception), str(live_error.exception))
+        self.assertIn("fmt=json", str(replay_error.exception))
+        replayed.assert_consumed()
+
     def test_lastfm_replay_requires_exact_call_order_and_full_consumption(self):
         replay = LastFmReplay([
             {"artist": "A", "album": "One", "result": [{"listeners": 3}, None]},
