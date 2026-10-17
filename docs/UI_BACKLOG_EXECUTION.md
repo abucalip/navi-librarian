@@ -1,7 +1,7 @@
 # UI backlog execution — Session 0 baseline
 
 Last updated: 2026-10-15
-Owner: ZCode (front-end implementation, per root `AGENTS.md`)
+Ownership: any agent may handle front-end work, strictly within the permitted paths in root `AGENTS.md`.
 Scope of this file: session-bootstrap reference. It records the verified state of the
 front-end at a known `main` SHA so later sessions do not re-read the full project
 documentation set.
@@ -1054,7 +1054,7 @@ docs unless the item genuinely requires it. GitHub is the record of what happene
 file is the compressed index into it.
 
 **Impeccable is mandatory every session, not optional.** `AGENTS.md` frames it as "when
-available in ZCode", and that latitude is what caused two sessions (C1, C2) to proceed
+available in the working environment", and that latitude is what caused two sessions (C1, C2) to proceed
 without opening it. Treat it as required:
 
 1. Read the relevant reference file(s) below **before** choosing an approach — not after, to
