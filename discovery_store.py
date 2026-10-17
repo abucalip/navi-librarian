@@ -62,6 +62,61 @@ def write_list(
         db.commit()
 
 
+def record_discovery_refresh_outcome(
+    database_path: str | PathLike[str],
+    *,
+    list_name: str,
+    origin: str,
+    status: str,
+    generated_at: float | None = None,
+    item_count: int | None = None,
+    error_type: str | None = None,
+) -> dict[str, Any]:
+    """Persist only the latest bounded refresh outcome per list and trigger."""
+    import re
+
+    if list_name != "personal":
+        raise ValueError("unsupported discovery list for refresh diagnostics")
+    if origin not in {"manual", "scheduler"}:
+        raise ValueError("unsupported discovery refresh origin")
+    if status not in {"success", "error", "already_running"}:
+        raise ValueError("unsupported discovery refresh status")
+    if item_count is not None and (type(item_count) is not int or item_count < 0):
+        raise ValueError("item_count must be a non-negative integer")
+    if error_type is not None and not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,79}", error_type):
+        error_type = "OtherError"
+
+    timestamp = time.time() if generated_at is None else float(generated_at)
+    outcome = {
+        "list_name": list_name,
+        "origin": origin,
+        "status": status,
+        "generated_at": timestamp,
+        "item_count": item_count,
+        "error_type": error_type,
+    }
+    with sqlite3.connect(database_path, timeout=10) as db:
+        db.execute(
+            """CREATE TABLE IF NOT EXISTS discovery_refresh_outcomes (
+                list_name TEXT NOT NULL,
+                origin TEXT NOT NULL,
+                status TEXT NOT NULL,
+                generated_at REAL NOT NULL,
+                item_count INTEGER,
+                error_type TEXT,
+                PRIMARY KEY (list_name, origin)
+            )"""
+        )
+        db.execute(
+            """INSERT OR REPLACE INTO discovery_refresh_outcomes
+            (list_name, origin, status, generated_at, item_count, error_type)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (list_name, origin, status, timestamp, item_count, error_type),
+        )
+        db.commit()
+    return outcome
+
+
 def record_recommendation_pool_diagnostic(
     database_path: str | PathLike[str],
     recording_mbids: list[str],
@@ -117,6 +172,11 @@ def record_recommendation_pool_diagnostic(
 
         diagnostic = {
             "generated_at": timestamp,
+            "refresh_origin": (
+                metrics.get("refresh_origin")
+                if metrics.get("refresh_origin") in {"direct_api", "manual", "scheduler"}
+                else "unspecified"
+            ),
             "cf_pool_fingerprint": pool_fingerprint,
             "cf_recordings_returned": int(metrics.get("cf_recordings_returned", len(recording_mbids))),
             "cf_recordings_with_metadata": int(metrics.get("cf_recordings_resolved", 0)),
@@ -139,13 +199,18 @@ def record_recommendation_pool_diagnostic(
              json.dumps(diagnostic, ensure_ascii=False, sort_keys=True)),
         )
         db.commit()
-    return diagnostic
+    # Keep the trigger in persisted metrics only; do not expand the API payload.
+    public_diagnostic = dict(diagnostic)
+    public_diagnostic.pop("refresh_origin", None)
+    return public_diagnostic
 
 def record_recommendation_diagnostics(
     database_path: str | PathLike[str],
     gathered: dict[str, Any],
     albums: Any,
     recommendations: list[dict[str, Any]],
+    *,
+    refresh_origin: str = "direct_api",
 ) -> dict[str, Any]:
     """Persist the bounded pool snapshot using the completed gathering result."""
     from collections import Counter
@@ -159,6 +224,7 @@ def record_recommendation_diagnostics(
             for item in recommendations
         ],
         {
+            "refresh_origin": refresh_origin,
             "cf_recordings_returned": gathered.get("cf_recordings_returned", 0),
             "cf_recordings_resolved": gathered.get("cf_recordings_resolved", 0),
             "resolved_album_count": len(albums),
