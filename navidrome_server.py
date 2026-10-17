@@ -447,7 +447,7 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
-            tags=tuple(candidate_tags),
+            tags=tuple(str(tag) for tag in candidate_tags if tag is not None),
             ownership=ownership,
         ))
 
