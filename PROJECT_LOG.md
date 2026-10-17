@@ -1,3 +1,11 @@
+## 2026-10-17 — PR #298 HTTP error replay fidelity fix
+
+- Investigated the private-baseline discrepancy without accessing or printing the private capture. The replay cassette recorded HTTP status/JSON only and rebuilt responses with a GET request using the unexpanded first URL argument. This discarded the original response request's method and fully resolved URL (including query parameters supplied separately), so HTTPX HTTPStatusError text could differ despite matching status counts and recommendation output.
+- Updated HTTP response capture to retain the original request method and resolved URL, and replay to reconstruct the response with those values. Older cassette events retain a compatibility fallback. Added a synthetic HTTPX 503 regression that asserts identical request URL/method and exception text, including query parameters; no ranking/candidate-selection logic changes.
+- Synthetic/focused tests and required workflows must pass on the exact final PR head. No local tests or private fixture replay were run by the assistant. The user must replay the existing private fixture locally; PR #298 remains open until that succeeds and Phase 0 evidence is reviewed. Publishing/deployment remain paused.
+
+---
+
 ## 2026-10-17 — PR #298 extended with private recommendation capture and replay
 
 - Extended the existing open recommendation baseline PR rather than stacking a second PR on its still-unmerged base.
