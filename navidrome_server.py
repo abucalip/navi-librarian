@@ -423,6 +423,7 @@ def recommend_new_music(
     for source_order, candidate in enumerate(albums.values()):
         candidate_id = str(source_order)
         candidate_by_id[candidate_id] = candidate
+        candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
         title_key = _music_key(candidate["album"])
         same_title = library_by_title.get(title_key, [])
         exact_owned = any(
