@@ -54,9 +54,11 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertEqual(primary_recent_family(["Afro-jazz"], {"african": 8}), "jazz")
   self.assertIsNone(primary_recent_family([], {}))
 
- def test_diversity_style_classification_and_overrides(self):
+ def test_diversity_style_classification_and_metadata_precedence(self):
   self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, []), "north_african")
   self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, []), "malian_desert_blues")
+  self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, ["jazz"]), "other")
+  self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, ["jazz"]), "other")
   self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeats"]), "afrobeats")
   self.assertEqual(
    classify_diversity_style({"artist": "Unknown", "regional_styles": ["afro_jazz"]}, ["Raï"]),
@@ -103,6 +105,22 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertLessEqual(sum(item["artist"]=="Same" for item in diversified), 2)
   self.assertLessEqual(sum(item.get("primary_genre_family")=="jazz" for item in diversified), 12)
   self.assertLessEqual(sum(item["anchor_artist"]=="Anchor" for item in diversified), 4)
+
+ def test_artist_name_category_override_only_applies_without_provider_tags(self):
+  from discovery_recommendations import classify_recommendation_category
+  core = {"jazz"}
+  exploration = {"african", "north-african-middle-eastern"}
+  category, families = classify_recommendation_category(
+   {"primary_artist": "Khaled"}, [], core, exploration,
+  )
+  self.assertEqual(category, "adjacent")
+  self.assertIn("north-african-middle-eastern", families)
+  category, families = classify_recommendation_category(
+   {"primary_artist": "Khaled"}, ["jazz"], core, exploration,
+  )
+  self.assertEqual(category, "adjacent")
+  self.assertIn("jazz", families)
+  self.assertNotIn("north-african-middle-eastern", families)
 
  def test_recommendation_candidate_classification_preserves_empty_metadata_defaults(self):
   candidate = {"primary_artist": "Unknown", "artist_mbid": "mbid-1", "discovery_score": 10.0}
