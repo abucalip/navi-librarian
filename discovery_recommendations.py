@@ -6,6 +6,37 @@ import unicodedata
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
+_DISCOVERY_SOURCE_LABELS = {
+    "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
+    "similar_artist_lookup", "library_gap", "new_release",
+    "lastfm_popularity_fallback",
+}
+
+
+def merge_discovery_source(
+    candidate: dict[str, Any],
+    source: str,
+) -> list[str]:
+    """Merge a recognized source label into a candidate without duplicates."""
+    if source not in _DISCOVERY_SOURCE_LABELS:
+        raise ValueError("unsupported discovery source")
+    current = candidate.get("discovery_sources")
+    if not isinstance(current, list):
+        current = (
+            ["listenbrainz_cf"]
+            if candidate.get("discovery_source", "listenbrainz") == "listenbrainz"
+            else []
+        )
+    normalized = []
+    for value in current:
+        if value in _DISCOVERY_SOURCE_LABELS and value not in normalized:
+            normalized.append(value)
+    if source not in normalized:
+        normalized.append(source)
+    candidate["discovery_sources"] = normalized
+    return normalized
+
+
 def music_key(value: Any) -> str:
     value = unicodedata.normalize("NFKD", str(value or ""))
     value = "".join(c for c in value if not unicodedata.combining(c))
