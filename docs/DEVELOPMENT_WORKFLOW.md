@@ -1,6 +1,6 @@
 # Development and Git workflow
 
-Last updated: 2026-10-16 (recommendation/operations audit and server size ratchet adopted)
+Last updated: 2026-10-17 (agent session context search adopted)
 
 ## Authority and responsibilities
 
@@ -13,18 +13,19 @@ Last updated: 2026-10-16 (recommendation/operations audit and server size ratche
 
 Start every task by checking current GitHub `main`, recent commits, open PRs, and relevant CI. Establish one concrete objective and acceptance criteria.
 
-Read documentation according to this map; **consulting a document does not mean rereading every historical entry**:
+**Use the session search tool as the standard retrieval workflow** after checking repository state and reading the project snapshot. See `docs/SESSION_CONTEXT_SEARCH.md`.
 
 1. Read `docs/PROJECT_STATUS.md` for current state and the next action.
-2. Read all of `docs/MODULARIZATION_ROADMAP.md` when choosing extraction work.
-3. Consult `docs/REQUIREMENTS.md` for requirements affected by the change.
-4. Consult `docs/TEST_PLAN.md` for mandatory gates and the tests relevant to the change.
-5. Read the applicable architecture/decision sections and inspect actual implementation, callers, tests, configuration, and package/Docker inclusion.
-6. Search the root `PROJECT_LOG.md` for the relevant module, PR, regression, or decision. Do not read the full chronological log unless the task requires it.
-7. For large legacy responsibilities, inspect actual current line ranges, every production caller, tests that mock the function, and nearby extracted modules before selecting a seam. Specifically check inventory overlap before duplicating library snapshot behavior.
-8. Read this workflow in full when changing the workflow itself; otherwise consult the applicable section.
+2. Run `python scripts/session_search.py "<task-specific concepts>"` from the repository root to retrieve relevant documentation and code snippets. Use `--scope docs` or `--scope code` to narrow results; use `--any` if an all-terms search is too restrictive.
+3. Read all of `docs/MODULARIZATION_ROADMAP.md` when choosing extraction work.
+4. Consult `docs/REQUIREMENTS.md` for requirements affected by the change.
+5. Consult `docs/TEST_PLAN.md` for mandatory gates and tests relevant to the change.
+6. Read the applicable architecture/decision docs and inspect actual implementation, callers, tests, configuration, and package/Docker inclusion. Use search hits as navigation, not as proof that all references have been found.
+7. Search the root `PROJECT_LOG.md` for the relevant module, PR, regression, or decision. Do not read the full chronological log unless the task requires it.
+8. For large legacy responsibilities, inspect actual current line ranges, every production caller, tests that mock the function, and nearby extracted modules before selecting a seam. Specifically check inventory overlap before duplicating library snapshot behavior.
+9. Read this workflow in full when changing the workflow itself; otherwise consult the applicable section.
 
-If a document is stale or contradicts current code or GitHub evidence, verify the discrepancy and update the canonical document. Never use a shorter reading path to skip code inspection, tests, safety checks, or CI.
+If a document is stale or contradicts current code or GitHub evidence, verify the discrepancy and update the canonical document. Never use search or a shorter reading path to skip code inspection, tests, safety checks, or CI.
 
 ## Normal change cycle
 
@@ -55,7 +56,6 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 ## Required verification gates
 
 The Python syntax workflow also runs `scripts/check_server_size.py`; its thresholds and named temporary exception are reviewed architecture controls. The server ceiling is 2,650 lines; new domain logic belongs in a module with direct-import tests, not in `navidrome_server.py`. Size-only changes are not an extraction goal, and the exception must be reduced as the recommendation adapter is decomposed.
-
 
 For each code PR, follow `docs/TEST_PLAN.md`. At minimum:
 - focused regression tests and `python -m unittest discover -s tests -v`;

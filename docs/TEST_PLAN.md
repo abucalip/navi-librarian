@@ -1,6 +1,6 @@
 # Test plan
 
-Last updated: 2026-10-17 (MCP retirement gates added)
+Last updated: 2026-10-17 (agent session search tests added)
 
 This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
@@ -97,3 +97,15 @@ For documentation-only PRs:
 ## Historical evidence
 
 Search the root `PROJECT_LOG.md` by PR number, module, or responsibility to find past test runs. Historical success is context, not a substitute for running required checks on the current revision.
+
+## Agent session context search
+
+The standard agent workflow uses `scripts/session_search.py` to retrieve focused documentation and source snippets rather than ingesting the whole repository. Its regression suite is `tests/test_session_search.py`. Run:
+
+```sh
+python -m unittest discover -s tests -p 'test_session_search.py' -v
+python scripts/session_search.py "session workflow" --scope docs
+python scripts/session_search.py "path traversal symlink" --scope code --json
+```
+
+Verify all-terms and any-term matching, quoted phrase parsing, scope filtering, snippet output, and exclusion of virtual environments/oversized files. Search output is navigation only; code review must still trace callers, configuration, tests, and safety behavior.
