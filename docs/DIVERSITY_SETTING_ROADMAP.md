@@ -1,6 +1,6 @@
 # Recommendation diversity setting roadmap
 
-**Status:** Backend preference contract and MMR allocator integration are implemented in open PR #326; settings UI remains unimplemented and separate. No publishing or deployment is authorized by this document.
+**Status:** Backend preference contract and MMR allocator integration merged in PR #326 at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` (exact PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`; all four required workflows passed, 655 tests passed). Settings UI remains unimplemented and separate. No publishing or deployment is authorized by this document.
 
 ## Goal and slider copy
 
@@ -22,8 +22,8 @@ The actual CLI output contains six lambda results (0, 0.1, 0.25, 0.5, 0.75, 1.0)
 ## Implementation sequence
 
 1. **Offline evaluation:** the owner ran the identity-free evaluator successfully against the existing private fixture in the isolated PR-320 source environment. The actual CLI reported six lambda values and no relevance-floor dimension. The prior 35-combination/floor-sweep reproduction is dismissed as a decision input; do not run another fixture test to reconcile it. The CLI results support treating lambda 0.75 as a candidate mapping point, not a production default. Frozen-pool metrics are not future-listen hit-rate/nDCG.
-2. **Backend preference contract — implemented in PR #326, pending merge:** persist `recommendation_diversity` as a strict integer from 0 to 100. `GET/PUT /api/settings/recommendation-diversity` returns the saved value; missing, boolean, floating-point, string, and out-of-range values are rejected on writes. Absent or corrupt stored values safely read as 0. Value 0 preserves legacy ordering; changes affect the next recommendation generation/refresh. No UI is included.
-3. **Safe MMR integration — implemented in PR #326, pending merge:** apply dynamic MMR ranking within existing allocator passes, only among ownership-clear candidates, using normalized genre tags. Preserve stable artist identity, one album per artist, category/style/family behavior, deterministic ties, bounded checks, and sparse-pool safety. The allocator and MMR remain independently testable; prefer fewer valid results to weak or ineligible matches.
+2. **Backend preference contract — merged in PR #326:** persist `recommendation_diversity` as a strict integer from 0 to 100. `GET/PUT /api/settings/recommendation-diversity` returns the saved value; missing, boolean, floating-point, string, and out-of-range values are rejected on writes. Absent or corrupt stored values safely read as 0. Value 0 preserves legacy ordering; changes affect the next recommendation generation/refresh. No UI is included.
+3. **Safe MMR integration — merged in PR #326:** apply dynamic MMR ranking within existing allocator passes, only among ownership-clear candidates, using normalized genre tags. Preserve stable artist identity, one album per artist, category/style/family behavior, deterministic ties, bounded checks, and sparse-pool safety. The allocator and MMR remain independently testable; prefer fewer valid results to weak or ineligible matches.
 4. **Settings UI:** follow root `AGENTS.md`, `docs/FRONTEND_DESIGN_GUIDE.md`, and permitted files in `AGENTS.md`. Frontend agents edit only approved UI files, scoped UI tests/fixtures, and `docs/UI_BACKLOG_EXECUTION.md`; backend/API/architecture/release changes require coordinated ownership. Show endpoint copy, accessible label, visible value, keyboard support, save/error feedback, and explain that changes take effect on next refresh. Test mobile layout and persistence.
 5. **Rollout:** keep ranking unchanged until calibration, backend contract, integration tests, and UI checks pass. After authorized rollout, evaluate feedback and bounded metrics; lower similarity alone does not prove better recommendations. Publishing remains paused unless explicitly authorized.
 
@@ -36,4 +36,4 @@ The actual CLI output contains six lambda results (0, 0.1, 0.25, 0.5, 0.75, 1.0)
 
 ## Next action
 
-Verify all four required workflows on the exact final head of PR #326, review the final diff, and merge only if the gates pass. After merge, prepare the settings UI as a separate coordinated PR using the documented 0–100 contract and accessible endpoint copy. Do not collect another live capture or publish/deploy; default value 0 preserves existing recommendation ordering.
+Prepare the settings UI as a separate coordinated PR using the documented 0–100 contract and accessible endpoint copy; frontend work must remain within the files permitted by the project ownership guide. Do not collect another live capture or publish/deploy. Default value 0 preserves existing recommendation ordering.
