@@ -2552,9 +2552,6 @@ def _refresh_listening_profile_background():
 
 def _discovery_scheduler():
     """Refresh discovery lists and the listening profile when older than 24 hours."""
-    # Let web startup and first-run authentication settle before the initial provider
-    # refresh. The scheduler remains a daemon and continues hourly after its first pass.
-    time.sleep(10)
     while True:
         try:
             for list_name in (
