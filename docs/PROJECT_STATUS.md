@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (MCP removal PR prepared; verification pending)
+Last reviewed: 2026-10-17 (MCP retirement PR #296 merged; repository-level closeout recorded)
 
 ## Current focus
 
@@ -8,9 +8,9 @@ Last reviewed: 2026-10-17 (MCP removal PR prepared; verification pending)
 
 The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-**MCP retirement implementation:** the focused removal branch deletes the MCP registry, SDK dependency, and standalone transport; removes the unrelated Proxmox MCP entry point and its handler tests; preserves the read-only command allowlist tests and shared Librarian service functions; adds web-startup scheduler lifecycle; and adds MCP-free architecture regressions. The audit and changed-file dispositions are recorded in `docs/MCP_RETIREMENT_PLAN.md`. PR #296 is open; exact-head CI and merge remain pending.
+**MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
 
-**Next action:** verify focused tests and all four required workflows on the exact final PR head, then review and merge only if every gate passes.
+**Next action:** migrate any external MCP clients/configurations that may still target the retired endpoint, if any exist; repository inspection cannot determine this. Do not publish or deploy without separate authorization.
 
 ## Delivery and verification state
 
@@ -21,7 +21,7 @@ The service-default audit found personal/private-network defaults for ListenBrai
 - **Deployment / production runtime:** no deployment or production-runtime verification is claimed.
 - **Configuration note:** existing persisted settings were not migrated; previously saved URLs/usernames may remain until the user changes them.
 - **Deferred issue:** acquisition-dismissal HTTP 409 remains deferred unless reproducibly demonstrated.
-- **MCP:** removal implementation is prepared on `retire/remove-mcp-runtime`; exact PR-head verification and merge remain pending.
+- **MCP retirement:** repository-level plan complete; PR #296 merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. Four required workflows were reported passing on the final PR head. External client/config migration and production runtime are unverified.
 
 ## Documentation map
 
