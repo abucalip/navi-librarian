@@ -1,3 +1,12 @@
+## 2026-10-17 — Phase 2.1 profile-derived supplementary queries (verification pending)
+
+- Started branch `recommendation/profile-derived-tag-queries` from current GitHub main `c6cbd65e872944b08f15ae66df94d15935dccf6e`.
+- Added pure `discovery_tag_queries.py`: up to six queries weighted by decayed recent-artist listening against cached genre tags, plus up to two exploration queries from cached tags associated with the CF candidate pool. Queries are bounded, deduplicated case-insensitively, quote multiword tags, and reject invalid/control-character tags.
+- Replaced the 20 fixed regional supplementary queries with profile-derived selection and removed four fixed regional one-slot allocation targets. Cache reads are bounded to 15 recent artists and 60 candidate artists; no additional live provider is introduced. Existing MusicBrainz request throttling, 30-day result cache, per-query result cap, candidate cap, failure isolation, and primary CF candidates remain in place. Added direct tests for contrasting profiles with unchanged cache, deterministic weighted selection/exploration quota, escaping/invalid tags, and limit validation. Added the helper to Docker packaging.
+- Verification on code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`: Docker packaging/full unit suite/build passed with 631 tests (`39049316950`); Python syntax/size/import-boundary passed (`39049316942`); container runtime smoke passed (`39049316947`); validation-only multi-architecture image validation passed (`39049316962`, publishing paused). Earlier CI attempts exposed two assertion mistakes in the new test expectations; those were corrected before the successful run. No assistant-side local tests were run. A final documentation-only commit requires all four workflows to be checked again on its exact PR-head SHA. Publishing remains paused; no deployment/runtime verification.
+
+---
+
 ## 2026-10-17 — Recommendation Phase 0 closed; Phase 1 profile responsiveness started
 
 - The owner reports using the app since v0.1 publication and that recommendations have remained overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to prioritize profile-responsive ranking without further diagnostic collection. It establishes the product defect, not a definitive technical root cause.

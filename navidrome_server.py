@@ -402,12 +402,9 @@ def recommend_new_music(
         build_personal_recommendation_payload,
     )
 
-    diversity_style_targets = {
-        "north_african": 1,
-        "afrobeats": 1,
-        "afro_jazz": 1,
-        "malian_desert_blues": 1,
-    }
+    # Regional styles are no longer hidden fixed one-slot preferences.
+    # Phase 3 will add measured relevance/diversity re-ranking instead.
+    diversity_style_targets = {}
     targets = {
         "adjacent": (count * 4) // 10,
         "cross_genre": (count * 3) // 10,
