@@ -5,8 +5,10 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from discovery_candidate_gathering import RecommendationProviders
 from recommendation_replay import (
     LastFmReplay,
+    ProviderTape,
     freeze_gathered_inputs,
     load_capture,
     thaw_gathered_inputs,
@@ -102,6 +104,68 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             path.chmod(0o600)
             with self.assertRaisesRegex(ValueError, "checksum mismatch"):
                 load_capture(path)
+
+    def test_provider_tape_replays_cache_api_and_http_without_calling_providers(self):
+        class Response:
+            status_code = 200
+            def __init__(self, payload):
+                self.payload = payload
+            def json(self):
+                return self.payload
+            def raise_for_status(self):
+                return None
+
+        class Client:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def get(self, url, **kwargs):
+                return Response({"url": url, "params": kwargs.get("params", {})})
+
+        def providers(raise_if_called=False):
+            def value(name, result):
+                def call(*args, **kwargs):
+                    if raise_if_called:
+                        raise AssertionError("live provider invoked during replay: " + name)
+                    return result
+                return call
+            return RecommendationProviders(
+                listenbrainz_recent=value("listens", [{"listen": 1}]),
+                listenbrainz_username=value("username", "fixture-user"),
+                music_key=lambda value: str(value).casefold(),
+                metadata_cache_get=value("cache_get", None),
+                metadata_cache_set=value("cache_set", None),
+                is_album_candidate=lambda candidate: True,
+                api_call=value("api_call", {"albumList2": {"album": []}}),
+                items=lambda response: response,
+                http_get=lambda url, **kwargs: Response({"url": url, "params": kwargs.get("params", {})}),
+                http_client=lambda **kwargs: Client(),
+                sleep=lambda seconds: None,
+            )
+
+        record = ProviderTape("record")
+        wrapped = record.wrap(providers())
+        self.assertEqual(wrapped.listenbrainz_recent(days=30), [{"listen": 1}])
+        self.assertEqual(wrapped.listenbrainz_username(), "fixture-user")
+        self.assertIsNone(wrapped.metadata_cache_get("cache-key", ttl_seconds=60))
+        wrapped.metadata_cache_set("cache-key", {"cached": True})
+        self.assertEqual(wrapped.api_call("getAlbumList2", type="newest"), {"albumList2": {"album": []}})
+        self.assertEqual(wrapped.http_get("https://example.test", params={"x": 1}).json()["params"], {"x": 1})
+        with wrapped.http_client(timeout=20, follow_redirects=True) as client:
+            self.assertEqual(client.get("https://musicbrainz.org", params={"fmt": "json"}).json()["params"], {"fmt": "json"})
+
+        replay = ProviderTape("replay", record.events)
+        offline = replay.wrap(providers(raise_if_called=True))
+        self.assertEqual(offline.listenbrainz_recent(days=30), [{"listen": 1}])
+        self.assertEqual(offline.listenbrainz_username(), "fixture-user")
+        self.assertIsNone(offline.metadata_cache_get("cache-key", ttl_seconds=60))
+        offline.metadata_cache_set("cache-key", {"cached": True})
+        self.assertEqual(offline.api_call("getAlbumList2", type="newest"), {"albumList2": {"album": []}})
+        self.assertEqual(offline.http_get("https://example.test", params={"x": 1}).json()["params"], {"x": 1})
+        with offline.http_client(timeout=20, follow_redirects=True) as client:
+            self.assertEqual(client.get("https://musicbrainz.org", params={"fmt": "json"}).json()["params"], {"fmt": "json"})
+        replay.assert_consumed()
 
     def test_lastfm_replay_requires_exact_call_order_and_full_consumption(self):
         replay = LastFmReplay([
