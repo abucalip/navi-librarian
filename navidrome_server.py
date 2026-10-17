@@ -2576,11 +2576,19 @@ def _discovery_scheduler():
         time.sleep(3600)
 
 
+_discovery_scheduler_thread = None
+
+
 def _start_discovery_scheduler():
+    """Start the discovery refresh loop once for the web application process."""
     import threading
-    thread = threading.Thread(
+
+    global _discovery_scheduler_thread
+    if _discovery_scheduler_thread is not None and _discovery_scheduler_thread.is_alive():
+        return
+    _discovery_scheduler_thread = threading.Thread(
         target=_discovery_scheduler,
         name="navidrome-discovery-scheduler",
         daemon=True,
     )
-    thread.start()
+    _discovery_scheduler_thread.start()
