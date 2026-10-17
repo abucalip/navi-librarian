@@ -1,8 +1,8 @@
-# Project instructions — ZCode front-end ownership
+# Project instructions — shared front-end contribution boundaries
 
 Repository: `abucalip/navi-librarian`.
 
-**Read this file before making changes.** GitHub is the single source of truth. The app is a FastAPI web application with extracted UI templates/assets; it is not a separately deployed frontend. Your role is front-end implementation only.
+**Read this file before making changes.** GitHub is the single source of truth. The app is a FastAPI web application with extracted UI templates/assets; it is not a separately deployed frontend. Agents working on front-end matters may implement UI changes, but must stay within the allowed paths below and respect protected ownership boundaries.
 
 ## Mission and product context
 
@@ -69,7 +69,7 @@ Do not change endpoint paths/methods, request or response schemas, auth/session/
 
 ## Design-tool workflow (Impeccable)
 
-Use Impeccable as a design critique and implementation aid when available in ZCode. Start with its critique/audit guidance before styling; use its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility guidance rather than applying a generic template. Apply only recommendations that fit this product and its existing components. Do not blindly run broad redesign commands, add a frontend framework, or introduce new dependencies. Prefer one cohesive, reviewable improvement over sweeping visual churn. Record which Impeccable guidance was applied and what was intentionally rejected in the PR summary.
+Use Impeccable as a design critique and implementation aid when available in your working environment. Start with its critique/audit guidance before styling; use its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility guidance rather than applying a generic template. Apply only recommendations that fit this product and its existing components. Do not blindly run broad redesign commands, add a frontend framework, or introduce new dependencies. Prefer one cohesive, reviewable improvement over sweeping visual churn. Record which Impeccable guidance was applied and what was intentionally rejected in the PR summary.
 
 ## Git and pull-request workflow
 
