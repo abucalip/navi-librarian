@@ -205,7 +205,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         ]
         genre_tags = {
             "artist-1": ["jazz"],
-            "artist-2": ["rock"],
+            "artist-2": ["alternative rock"],
         }
 
         def listens_for(artist, artist_mbid):
