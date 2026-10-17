@@ -112,6 +112,9 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
     payload = envelope.get("payload")
     if not isinstance(payload, dict):
         raise ValueError("Capture payload is missing.")
+    gathered = payload.get("gathered_inputs")
+    if not isinstance(gathered, dict):
+        raise ValueError("Capture gathered_inputs is missing.")
     expected = payload.get("expected_output")
     if not isinstance(expected, dict):
         raise ValueError("Capture expected_output is missing.")
@@ -172,6 +175,8 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
         "capture_schema_version": envelope.get("schema_version"),
         "network_providers_used": 0,
         "provider_tape_replayed": False,
+        "gathered_album_count": len(gathered.get("albums", [])) if isinstance(gathered.get("albums"), list) else None,
+        "gathered_library_album_count": len(gathered.get("library_albums", [])) if isinstance(gathered.get("library_albums"), list) else None,
         "scored_candidate_pool_size": len(pool),
         "baseline_recommendation_count": len(baseline),
         "baseline_top_k_overlap_with_score_order": jaccard,
