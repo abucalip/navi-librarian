@@ -909,3 +909,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Added `docs/MCP_RETIREMENT_PLAN.md` with the audit sequence, focused removal approach, regression requirements, packaging checks, required four-workflow CI gate, and definition of done. The plan explicitly does not authorize publishing or deployment.
 - No implementation code changed and no tests were run locally in this documentation-planning session. Existing historical CI results do not verify this new commit; record exact PR-head CI evidence before merge. Publishing remains paused; no deployment or production runtime verification is claimed.
 - Next action: complete the consumer/reference audit and prepare a focused MCP retirement implementation PR.
+
+## 2026-10-17 — PR #295 merged: MCP retirement plan
+
+- Added `docs/MCP_RETIREMENT_PLAN.md` and updated `docs/PROJECT_STATUS.md` to record the focused migration plan and next action.
+- PR #295 final head: `6fe8a2c11c73da5c95a296cca8bc29657fef7f19`; merge commit: `82146d3c14bb4106ea445eed8d7931eda1eec587`.
+- All four required GitHub Actions workflows passed on the exact final PR head: Python syntax `38989332620`, Docker packaging/full unit suite/build `38989332628`, container runtime smoke `38989332661`, and validation-only multi-architecture `38989332681`. Publishing remained paused.
+- Local tests were not run because this was a documentation-only planning change. No MCP implementation was removed. No publishing, deployment, or production runtime verification is claimed.
+- Next action: complete the MCP consumer/reference audit, then prepare a focused implementation PR preserving shared web/service behavior and safety coverage.
