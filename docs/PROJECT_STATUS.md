@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #303 merged; recommendation observability next step)
+Last reviewed: 2026-10-17 (aggregate recommendation diagnostics PR in progress)
 
 ## Current focus
 
@@ -8,7 +8,7 @@ Last reviewed: 2026-10-17 (PR #303 merged; recommendation observability next ste
 
 All four required workflows passed on PR #303's exact final head `29c793d29c8209153f4a480903df32372bf52fec`: Python syntax run 1521, Docker packaging/full unit suite/build run 1429, container runtime smoke run 1238, and validation-only multi-architecture build run 1282. No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls; the private capture's full metric report has not been inspected in this session, so ranking/source/allocation changes remain gated. Next action: add aggregate candidate-provenance, score-component, profile-evidence, cache, and rejection diagnostics, while preserving ranking behavior and reviewing the real replay baseline before any recommendation-policy changes.
+The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls; the private capture's full metric report has not been inspected in this session, so ranking/source/allocation changes remain gated. Current PR adds aggregate candidate-provenance, score-component, profile-evidence, cache, and rejection diagnostics without changing ranking or public response contracts. Next action: verify all four required workflows on the exact final PR-head SHA, review the private baseline metrics and limitations, then decide whether Phase 0 has enough evidence to advance.
 
 **Recommendation Phase 0 capture/replay is implemented and the private baseline replay succeeded.** On capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, offline replay reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. The comparator checks all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. PR #298 merged at `68a0ee365778dab790ec54e04b54c8c72bd4552c` from final PR head `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`; all four required workflows passed on that exact head. Review baseline metrics and limitations before changing ranking, candidate selection, scoring, or allocation.
 
