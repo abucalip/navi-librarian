@@ -53,11 +53,11 @@ def summarize_candidate_diagnostics(
     unclassified = sum(row.get("assigned_category") == "unclassified" for row in rows)
     genre_available = sum(bool(row.get("genre_metadata_available")) for row in rows)
     raw_profile_counts = gathered.get("recent_family_counts") or {}
-    profile_counts = {
-        str(key): max(0, int(value))
+    valid_profile_counts = [
+        max(0, int(value))
         for key, value in raw_profile_counts.items()
         if str(key) and isinstance(value, (int, float)) and math.isfinite(float(value))
-    }
+    ]
     recent_counts = []
     familiarity_factors = []
     exploration_factors = []
@@ -92,7 +92,9 @@ def summarize_candidate_diagnostics(
             "distinct_recent_artists": len(gathered.get("recent_artists") or {}),
             "artist_mbids_with_recent_listens": len(gathered.get("recent_artist_mbid_counts") or {}),
             "candidate_count_with_genre_metadata": genre_available,
-            "recent_family_counts": dict(sorted(profile_counts.items())),
+            # Keep profile evidence useful without persisting raw family/tag names.
+            "recent_family_count": len(valid_profile_counts),
+            "recent_family_listen_count": sum(valid_profile_counts),
         },
         "eligibility_rejections": {
             "exact_owned": owned,
