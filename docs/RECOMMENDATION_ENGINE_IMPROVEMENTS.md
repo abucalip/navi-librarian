@@ -228,7 +228,7 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-Implement **Phase 0.1 and 0.2 only** in one focused PR: pool-fingerprint diagnostics plus the fixture-based offline replay/metrics harness. Do not change ranking behavior in that PR. Inspect existing persistence/cache/diagnostic structures first, add deterministic tests, and make the output answer whether the next investment should target candidate supply/freshness or scoring/allocation. Trace refresh semantics and debug score/rejection diagnostics (Phase 0.3) can be included only if they remain small and do not dilute this decision gate.
+Implement **Phase 0.1 and 0.2 only** in one focused PR: pool-fingerprint diagnostics plus the fixture-based offline replay/metrics harness. PR #298 (`feat/recommendation-baseline-diagnostics`) has implemented the diagnostic snapshot and deterministic metric functions without ranking changes; code/test head `57011aa17b798b9173dfa9b1a3bc493a4a29f9a2` passed all four required workflows, including 596 unit tests. The checked-in fixture is deliberately synthetic: it validates metric determinism and overlap calculations but is not a measured historical baseline and does not yet replay frozen provider inputs through the engine. Keep Phase 0 **in progress** until a reproducible engine-output baseline is captured from frozen listening, CF, genre, library, and feedback inputs, with future-window listens excluded from generation. Do not change scoring, source selection, or allocation before that gate. Trace refresh semantics and debug score/rejection diagnostics (Phase 0.3) remain deferred.
 
 ## Out of scope unless separately approved
 
