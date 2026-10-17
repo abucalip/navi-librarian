@@ -1,3 +1,14 @@
+## 2026-10-17 — Phase 3.1 MMR offline evaluation prioritized; replay compatibility blocker recorded
+
+- The owner requested that MMR evaluation become the next recommendation-engine priority and that the session close with this recorded.
+- PR #316 remains merged at `f2393fdfb9e793f8d8b7f32a13c2fc754cbd9409`; its pure `discovery_mmr.py` selector and diversity metrics are not integrated into production ranking.
+- Owner ran strict replay of private fixture `baseline-20261017_new.json` against the merged source. Fixture capture SHA is `d8c1f3de5180b35919f55c304d55e5c939dad373`; it contains 83 resolved candidate albums, 10 expected recommendations, and 197 provider events. Replay returned `reproduced: false`, reporting provider call mismatch at event 125. A local diagnostic found the first observed divergence at event index 104: expected operation `http_client.open`, actual operation `metadata_cache_get`. This indicates call-order incompatibility between captured and newer code, not a failed MMR quality result. The fixture was not changed or uploaded.
+- Next priority: create a deterministic offline evaluator that consumes the fixture’s captured `gathered_inputs` and `expected_output` directly, rather than replaying the stale provider-call tape. Compare original top 10 with MMR selections over a documented lambda grid, reporting relevance retention/order changes, unique artists, mean pairwise similarity, hard artist/eligibility invariants, and repeatability. No live providers, app-state writes, or private identities in committed output.
+- Documentation PR #319: branch `recommendation/mmr-offline-evaluation-priority`; initial PR head `9396a64699a82d41caeac49468d56a4990d52828`. No code tests were run in this documentation-only closeout; required workflow results were not available at the time of this entry and must be verified against the final PR head.
+- Production ranking remains unchanged; no publishing, deployment, or runtime verification is authorized or claimed.
+
+---
+
 ## 2026-10-17 — PR #314 merged: metadata-led classification and source provenance
 
 - PR #314, [Make recommendation classification metadata-led and track source provenance](https://github.com/abucalip/navi-librarian/pull/314), merged at `295da73b9d279e944501c5c3d28866e8b1b7123f` from exact final PR head `21e5f8da161613427748e995f5b542c9f24c0859`.
