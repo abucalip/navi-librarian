@@ -228,7 +228,7 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-Phase 0.1 and the deterministic metrics portion of 0.2 are implemented on PR #298. The branch now also adds an opt-in private capture path and strict offline replay of the existing candidate-gathering and ranking pipeline, including captured provider/cache responses and Last.fm results. This adds no ranking changes. The checked-in fixture remains synthetic; it proves helper/cassette behavior, not live listener satisfaction. Keep Phase 0 **in progress** until the new code passes all required workflows on its exact final PR-head SHA and a real private capture successfully reproduces its ordered output. Future-window listens remain evaluation-only. Do not change scoring, source selection, or allocation before that gate. The 14-day outcome evaluation and refresh-semantics investigation remain follow-up work.
+Phase 0.1 and the deterministic metrics portion of 0.2 are implemented on PR #298. Code head `794013c3966c4d2dd9f736ccee4089c8621df943` passed all four required workflows, including 602 unit tests. The branch adds an opt-in private capture path and strict offline replay of candidate gathering and ranking, including captured provider/cache responses and Last.fm results; ranking behavior is unchanged. The checked-in fixture remains synthetic and does not prove live listener satisfaction. Keep Phase 0 **in progress** until a real private capture successfully reproduces its ordered output. Future-window listens remain evaluation-only. Do not change scoring, source selection, or allocation before that gate. The 14-day outcome evaluation and refresh-semantics investigation remain follow-up work.
 
 ## Private real-run capture and offline replay
 
