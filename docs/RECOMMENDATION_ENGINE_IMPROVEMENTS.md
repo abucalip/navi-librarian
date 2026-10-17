@@ -139,7 +139,7 @@ Keep Last.fm popularity capped and normalized as a weak tie-breaker or cold-star
 
 ### Phase 2 — Make candidate generation reflect the current profile
 
-Proceed after Phase 0, and coordinate with Phase 1 so query changes can be evaluated independently from score changes.
+Proceed after the Phase 1 responsiveness changes have been evaluated, and coordinate query changes so they can be evaluated independently from score changes.
 
 #### 2.1 Replace fixed supplementary tag searches
 
