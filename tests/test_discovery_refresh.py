@@ -171,7 +171,7 @@ class DiscoveryRefreshTests(unittest.TestCase):
             "recommendations": 1,
         })
         self.assertEqual(writes, [("personal", {"recommendations": [{"artist": "Björk"}]})])
-        self.assertEqual(calls, [{"count": 7, "_refresh_origin": "scheduler"}])
+        self.assertEqual(calls, [{"count": 7}])
         self.assertEqual(outcomes, [{
             "list_name": "personal", "origin": "scheduler", "status": "success",
             "generated_at": 123.5, "item_count": 1, "error_type": None,
