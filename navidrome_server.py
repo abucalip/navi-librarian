@@ -359,6 +359,7 @@ def recommend_new_music(
         recent_count = recent_artists.get(
             _music_key(candidate["primary_artist"]), 0
         )
+        candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
         apply_familiarity_exploration_bonus(
             candidate, recent_count, candidate_tags, exploration_families
         )
