@@ -25,6 +25,9 @@ from service_settings import (
     set_listenbrainz_settings as _service_set_listenbrainz_settings,
     set_navidrome_settings as _service_set_navidrome_settings,
     get_slskd_settings as _service_get_slskd_settings,
+    get_recommendation_diversity_settings as _service_get_recommendation_diversity_settings,
+    set_recommendation_diversity_settings as _service_set_recommendation_diversity_settings,
+    recommendation_diversity_value as _service_recommendation_diversity_value,
     set_slskd_settings as _service_set_slskd_settings,
     slskd_config as _service_slskd_config,
     test_navidrome_connection as _service_test_navidrome_connection,
@@ -442,6 +445,7 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
+            tags=tuple(candidate_tags),
             ownership=ownership,
         ))
 
@@ -450,6 +454,11 @@ def recommend_new_music(
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
+        diversity_penalty=(
+            __import__("discovery_mmr").diversity_setting_to_penalty(
+                _service_recommendation_diversity_value(_discovery_settings_read)
+            )
+        ),
         family_cap=1,
         max_checks=60,
     ))
@@ -1382,6 +1391,7 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_hires",
     ],
     "auto_acquire_for_me": True,
+    "recommendation_diversity": 0,
     "slskd_downloads_path": str(Path(
         os.environ.get("SLSKD_DOWNLOADS_DIR")
         or os.environ.get("SLSKD_DOWNLOADS_MOUNT")
@@ -1457,6 +1467,18 @@ def discovery_set_navidrome_settings(
         username,
         password,
         music_library_path,
+    )
+
+
+def discovery_get_recommendation_diversity_settings() -> str:
+    """Return the persisted Recommendation diversity preference."""
+    return _service_get_recommendation_diversity_settings(_discovery_settings_read)
+
+
+def discovery_set_recommendation_diversity_settings(value: int) -> str:
+    """Validate and persist the Recommendation diversity preference."""
+    return _service_set_recommendation_diversity_settings(
+        _discovery_settings_write, value
     )
 
 
