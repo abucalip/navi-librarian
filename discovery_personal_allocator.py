@@ -32,9 +32,12 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         )
         for category in ("adjacent", "cross_genre", "adventurous", "unclassified")
     }
-    all_scores = [candidate.score for candidate in candidates]
-    score_low = min(all_scores, default=0.0)
-    score_span = max(all_scores, default=0.0) - score_low
+    eligible_scores = [
+        candidate.score for candidate in candidates
+        if candidate.ownership is OwnershipStatus.CLEAR
+    ]
+    score_low = min(eligible_scores, default=0.0)
+    score_span = max(eligible_scores, default=0.0) - score_low
     selected: list[str] = []
     review: list[str] = []
     selected_counts: Counter[str] = Counter()
@@ -45,12 +48,22 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     checked = 0
 
     def ranked_candidates(items):
-        """Yield candidates by current marginal relevance, recalculating after each pick."""
-        remaining = list(items)
+        """Apply MMR only to ownership-clear candidates at each selection step."""
+        ordered_items = list(items)
         if request.diversity_penalty == 0:
-            yield from remaining
+            yield from ordered_items
             return
-        while remaining:
+        remaining_eligible = [
+            candidate for candidate in ordered_items
+            if candidate.ownership is OwnershipStatus.CLEAR
+        ]
+        for item in ordered_items:
+            if item.ownership is not OwnershipStatus.CLEAR:
+                # Preserve the legacy position and review/rejection behavior for
+                # owned and ambiguous-title candidates; MMR is a soft preference
+                # only among candidates that passed the hard ownership gate.
+                yield item
+                continue
             selected_candidates = [by_id[candidate_id] for candidate_id in selected]
 
             def marginal_score(candidate):
@@ -70,8 +83,8 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                 )
                 return relevance - request.diversity_penalty * similarity
 
-            best = max(remaining, key=marginal_score)
-            remaining.remove(best)
+            best = max(remaining_eligible, key=marginal_score)
+            remaining_eligible.remove(best)
             yield best
 
     def record(candidate: AllocationCandidate, status: str, reason: str) -> None:
