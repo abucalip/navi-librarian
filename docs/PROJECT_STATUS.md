@@ -1,20 +1,17 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #298 replay fidelity fix under verification)
+Last reviewed: 2026-10-17 (PR #299 merged; PR #298 private replay verified, exact-head CI pending)
 
 ## Current focus
 
-**Modularization roadmap complete.** The final audit found no remaining concrete correctness, safety, or testability gap that justifies another extraction. Remaining recommendation and acquisition code is documented orchestration/compatibility wiring. No further size-only extraction is planned.
+**Recommendation Phase 0 capture/replay is implemented and the private baseline replay succeeded.** On source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, offline replay reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. The comparator checks all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. Review baseline metrics and limitations before changing ranking, candidate selection, scoring, or allocation; exact-head CI and final review remain pending.
 
-The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+PR #299 is merged and provides baseline-independent scheduled-refresh diagnostics: freshness classification for missing, expired, malformed, and non-finite timestamps; per-list cache/read/refresh failure isolation; bounded warnings that omit exception messages; and regression coverage. It preserves the 24-hour threshold, hourly cadence, list order, refresh callbacks, and API response contracts. Ranking and candidate selection are unchanged.
 
-**MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
-
-**Recommendation Phase 0 is implemented but not complete.** Open PR #298 adds bounded pool diagnostics, synthetic offline metrics, private capture, and strict offline replay. The private baseline confirmed identical recommendation outputs (10 expected and 10 actual) and ten HTTP 503 metadata failures, but exposed a stable `metadata_lookup_errors` discrepancy. Root cause was confirmed in `recommendation_replay.py`: the HTTP cassette stored status/body but rebuilt requests as GET using the first URL argument, losing the original response request's fully resolved URL/query string. The fix and synthetic regression test are now on the PR branch; exact-head CI and user replay remain pending. Do not change ranking, candidate selection, scoring, or allocation until the private replay succeeds and Phase 0 evidence is reviewed. Publishing/deployment remain paused.
+**PR #299 verification:** final PR head `e830adc7b014a915d31756619e5fadc90106696c`; merge commit `22820fb534ce243c78b1bb30d1f7cbbaaabd36cd`. All four required workflows passed on the exact final head: Python syntax run 1497, Docker packaging/full unit suite/build run 1405, container runtime smoke run 1214, and validation-only multi-architecture validation run 1258. No assistant-side local tests were run. Publishing, deployment, and production-runtime verification are not claimed.
 
 ## Delivery and verification state
 
-- **Recommendation capture/replay:** PR #298 remains open at code head `794013c3966c4d2dd9f736ccee4089c8621df943`. All four required workflows passed on that exact SHA: Python syntax `39022880718`, Docker packaging/full unit suite/build `39022880732` (602 tests), container runtime smoke `39022880724`, and validation-only multi-architecture image validation `39022880734`. No real private capture/replay, merge, publication, deployment, or production-runtime verification is claimed.
 - **MCP retirement plan merged:** PR #295, final PR head `6fe8a2c11c73da5c95a296cca8bc29657fef7f19`, merge commit `82146d3c14bb4106ea445eed8d7931eda1eec587`.
 - **CI on exact PR head:** all four required workflows passed: Python syntax `38989332620`, Docker packaging/full unit suite/build `38989332628`, container runtime smoke `38989332661`, and validation-only multi-architecture `38989332681`. Publishing remains paused.
 - **Local tests:** not run; this was a documentation-only planning change.

@@ -47,6 +47,8 @@ Expected result: no domain-policy imports of `navidrome_server.py`; only explici
 
 ## Recommendation characterization and size ratchet
 
+The directly imported `discovery_refresh` tests cover freshness classification and per-list scheduler failure isolation. Keep scheduler diagnostics bounded: report list, stage, status, and exception type only; do not include provider exception messages, URLs, credentials, or raw recommendation identities.
+
 The enforced size check is `python scripts/check_server_size.py`. Its ceiling is 2,650 lines for `navidrome_server.py`, with a 280-line default top-level-function limit and a temporary named 450-line ceiling for `recommend_new_music()`. `tests/test_server_size_guard.py` must cover in-limit acceptance, file growth, generic function growth, exception-specific boundaries/diagnostics, and invalid Python. The Python syntax workflow runs the guard before the full unit suite; the guard must not change the non-publishing image-validation setting.
 
 

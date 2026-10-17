@@ -1,8 +1,18 @@
+## 2026-10-17 — PR #299 merged: discovery refresh freshness diagnostics
+
+- PR #299, “Improve discovery refresh freshness diagnostics,” merged at `22820fb534ce243c78b1bb30d1f7cbbaaabd36cd`. Exact final PR head: `e830adc7b014a915d31756619e5fadc90106696c`.
+- Added deterministic freshness classification for missing, expired, malformed, and non-finite cache timestamps; isolated cache-read and refresh failures per list; and bounded scheduler warnings that include list, stage, and exception type but omit exception messages/URLs. The scheduler's 24-hour threshold, hourly cadence, list ordering, callbacks, and API response contracts remain unchanged. Recommendation ranking, candidate selection, and allocation are unchanged.
+- All four required workflows passed on the exact final PR head: Python syntax run 1497; Docker packaging/full unit suite/build run 1405; container runtime smoke run 1214; validation-only multi-architecture image validation run 1258. The multi-architecture workflow is validation-only; publishing remains paused.
+- No assistant-side local tests were run. No image publication, deployment, or production-runtime verification is claimed.
+- PR #298's private baseline replay succeeded on source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373` (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). Review baseline metrics and limitations before changing recommendation scoring, candidate selection, or allocation.
+
+---
+
 ## 2026-10-17 — PR #298 HTTP error replay fidelity fix
 
 - Investigated the private-baseline discrepancy without accessing or printing the private capture. The replay cassette recorded HTTP status/JSON only and rebuilt responses with a GET request using the unexpanded first URL argument. This discarded the original response request's method and fully resolved URL (including query parameters supplied separately), so HTTPX HTTPStatusError text could differ despite matching status counts and recommendation output.
 - Updated HTTP response capture to retain the original request method and resolved URL, and replay to reconstruct the response with those values. Older cassette events retain a compatibility fallback. Added a synthetic HTTPX 503 regression that asserts identical request URL/method and exception text, including query parameters; no ranking/candidate-selection logic changes.
-- Synthetic/focused tests and required workflows must pass on the exact final PR head. No local tests or private fixture replay were run by the assistant. The user must replay the existing private fixture locally; PR #298 remains open until that succeeds and Phase 0 evidence is reviewed. Publishing/deployment remain paused.
+- The user replayed the private baseline offline against exact source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`: 10/10 recommendations reproduced, 197 provider events and 40 Last.fm events consumed, zero network providers used. The comparator includes all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. CI on the latest PR head and final review remain pending; publishing/deployment remain paused.
 
 ---
 
@@ -13,9 +23,12 @@
 - Added strict cassette replay for the actual candidate-gathering and ranking entry point. Replay validates request identity and event order, uses captured HTTP responses and cache values, disables provider sleeps, substitutes captured Last.fm results, and skips mutable pool-diagnostic persistence. It fails on missing/extra events or output mismatch.
 - Capture files must be outside the repository, in a mode-700 directory; files are created mode 600 and existing files are never overwritten. Real listening/library/provider data must not be committed or attached to public PRs.
 - Added regression tests for freeze/thaw ordering, private capture permissions, overwrite refusal, checksum tampering, provider cassette replay, and strict Last.fm call order. Added the replay module to Docker packaging and documented setup/replay commands and limitations.
-- No ranking/scoring/allocation behavior was intentionally changed. Exact code head `794013c3966c4d2dd9f736ccee4089c8621df943` passed all four required workflows: Python syntax `39022880718`, Docker packaging/full unit suite/build `39022880732` (602 tests), container runtime smoke `39022880724`, and validation-only multi-architecture image validation `39022880734`. The real private capture/replay still requires the isolated test app's configured settings and has not been performed. PR #298 remains open; no merge, publication, deployment, or production-runtime verification is claimed. Publishing/deployment remain paused.
+- No ranking/scoring/allocation behavior was intentionally changed. Earlier code head `794013c3966c4d2dd9f736ccee4089c8621df943` passed all four required workflows: Python syntax `39022880718`, Docker packaging/full unit suite/build `39022880732` (602 tests), container runtime smoke `39022880724`, and validation-only multi-architecture image validation `39022880734`. The later private capture at `d8c1f3de5180b35919f55c304d55e5c939dad373` replayed successfully offline (10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). CI for the latest head remains unverified; no merge, publication, deployment, or production-runtime verification is claimed. Publishing/deployment remain paused.
 
 ---
+
+---
+
 ## 2026-10-17 — Recommendation Phase 0 diagnostics and offline replay harness
 
 - Started from GitHub main `06c4407f7185db1abfecdad256d7bfd6821327e1`, after confirming no open PRs. Objective: implement recommendation roadmap Phase 0.1/0.2 without changing ranking.
