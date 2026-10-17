@@ -104,7 +104,7 @@ def items(value):
 
 
 def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
-    """Read a bounded section of this MCP server's own source code.
+    """Read a bounded section of the legacy service module's own source code.
 
     Read-only. Only reads this Python file; does not accept file paths.
     Returns at most 250 lines per request.
