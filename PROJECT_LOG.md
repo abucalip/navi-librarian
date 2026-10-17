@@ -1048,3 +1048,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - All four required GitHub Actions workflows passed on the exact final PR head: Python syntax `38989332620`, Docker packaging/full unit suite/build `38989332628`, container runtime smoke `38989332661`, and validation-only multi-architecture `38989332681`. Publishing remained paused.
 - Local tests were not run because this was a documentation-only planning change. No MCP implementation was removed. No publishing, deployment, or production runtime verification is claimed.
 - Next action: complete the MCP consumer/reference audit, then prepare a focused implementation PR preserving shared web/service behavior and safety coverage.
+
+## 2026-10-17 — PR #310: contrasting-profile recommendation adapter regression
+
+- Based on GitHub main fd044b183884e13c20467975276fdea848e1d11e. Branch: test/contrasting-profile-adapter.
+- Extended tests/test_recommend_new_music_characterization.py with injectable listening histories and per-artist cached genre fixtures. The new end-to-end test keeps the two candidates, their provider scores, and genre metadata fixed while changing the recent-listening profile between John Coltrane and Art Blakey. It asserts both candidate score ordering and the top recommendation reverse with the profile; the candidates share the same allocation category so category quota order does not mask ranking behavior.
+- At code-only head 18d7fdd432729f68f3849935cf2848154759b7e1, the focused regression passed as part of the full unit suite: 627 tests passed. All four required workflows passed on that code-only head: Python syntax 39048378481, Docker packaging/full unit suite/build 39048378490, container runtime smoke 39048378488, and validation-only multi-architecture image validation 39048378513 (publishing paused).
+- The PR then received documentation updates to docs/PROJECT_STATUS.md and docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md, with this log entry added for closeout. The final documentation-inclusive PR head must be checked by all four workflows before merge; no assistant-side local tests were run.
+- No recommendation policy, API contract, provider behavior, or application code changed. No private capture or live provider data was used. Publishing, deployment, and production-runtime verification remain unperformed.
+- Next: verify all four workflows on the exact final PR head, merge PR #310 if green, then implement Phase 2.1 profile-derived supplementary MusicBrainz tag queries as a separate behavior change.
