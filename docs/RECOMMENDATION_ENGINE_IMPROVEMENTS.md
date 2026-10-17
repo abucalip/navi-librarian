@@ -235,9 +235,44 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. PR #299 adds scheduled-refresh freshness diagnostics without changing ranking behavior. These are implemented and the PRs' required CI gates passed, but **Phase 0 is not complete until a real private capture is taken in the isolated Mac PR-test environment and successfully replayed offline**. Review the resulting baseline metrics and limitations before selecting ranking or candidate-generation changes.
+PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. The private baseline captured at `d8c1f3de5180b35919f55c304d55e5c939dad373` now replays successfully offline (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). The comparator covers all stable top-level fields except volatile pool diagnostics and Last.fm error state. Review the resulting baseline metrics and limitations before selecting ranking or candidate-generation changes; do not change scoring, source selection, or allocation before that review.
 
-While that user-environment gate is pending, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
+While the captured baseline metrics and limitations are being reviewed, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
+
+## Private real-run capture and offline replay
+
+PR #298 extends Phase 0.2 with a private capture/replay path. A successful recommendation call can write one immutable capture when `LIBRARIAN_RECOMMENDATION_CAPTURE_PATH` is set. The capture contains:
+
+- The exact ordered provider/cache call tape consumed during candidate gathering: ListenBrainz listening history and CF response, MusicBrainz HTTP responses, cache reads/writes, Navidrome inventory API responses, and request identities/arguments.
+- The gathered input snapshot that entered ranking, plus Last.fm popularity results consumed by scoring.
+- The exact output from the captured run, the capture timestamp, schema version, source Git SHA, and SHA-256 integrity hash.
+
+Capture files contain personal listening, library, and provider metadata. They are rejected if placed inside the repository, if the target already exists, or if the containing directory/file permissions are not private. Use an owner-only directory (mode 700); the capture file is created mode 600. Do not commit or attach real captures to a public PR.
+
+### Set up a capture
+
+Run the app from an isolated, identified GitHub PR revision with its test settings configured. Set these variables **before starting that test app**, not on the production service:
+
+```sh
+mkdir -p "$HOME/navi-librarian-test/private-recommendation-fixtures"
+chmod 700 "$HOME/navi-librarian-test/private-recommendation-fixtures"
+export LIBRARIAN_RECOMMENDATION_CAPTURE_PATH="$HOME/navi-librarian-test/private-recommendation-fixtures/baseline-unique.json"
+export LIBRARIAN_RECOMMENDATION_CAPTURE_GIT_SHA="<exact GitHub revision under test>"
+```
+
+Then trigger one successful recommendation refresh in that isolated app. The configured path must be new for each capture; the implementation refuses to overwrite it. The capture attempt is one-shot and clears the environment variable afterward, preventing repeated capture attempts on every refresh. If capture fails, recommendation generation continues and the app logs a warning. The source SHA should be the exact GitHub revision tested, not an unrelated local commit.
+
+### Replay without network access
+
+Use the same isolated source environment (Python dependencies installed) to run:
+
+```sh
+NAVIDROME_LIBRARIAN_DATA_DIR="$(mktemp -d)" python recommendation_replay.py "$HOME/navi-librarian-test/private-recommendation-fixtures/baseline-unique.json"
+```
+
+The temporary data directory prevents module initialization from touching the app's normal persisted database. The replay validates the schema and checksum first, then replays provider/cache responses in strict call order and substitutes captured Last.fm results. It does not call the live provider functions, open real HTTP clients, sleep for provider rate limits, or write pool diagnostics to the application database. A changed call order, missing response, extra/unused tape event, or output mismatch fails the replay. The report compares stable output fields and omits only volatile pool-overlap diagnostics and Last.fm error-state text.
+
+The capture preserves the provider/cache values actually consumed; the saved gathered-input snapshot is included for inspection. This is a reproducibility harness, not an assertion that recommendations are good. The separate T-to-T+14-day outcome evaluation remains a later step and must not feed future listens into generation inputs. The public CI fixture remains synthetic.
 
 ## Out of scope unless separately approved
 

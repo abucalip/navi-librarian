@@ -279,16 +279,29 @@ def recent_listening_profile(days: int = 30) -> str:
     )
 
 
-def recommend_new_music(count: int = 10) -> str:
+def recommend_new_music(
+    count: int = 10,
+    *,
+    _gathered_override=None,
+    _lastfm_popularity_fn=None,
+    _lastfm_available_override=None,
+    _provider_tape=None,
+    _record_diagnostics=True,
+    _capture_path=None,
+) -> str:
     """Recommend albums from ListenBrainz that do not appear to be in Navidrome.
 
     Uses personalized recording recommendations, MusicBrainz metadata,
     recent listening context, and Navidrome album searches.
     Does not modify files or playlists.
     """
+    import os
     import time
     import httpx
     from collections import Counter
+
+    if _capture_path is None:
+        _capture_path = os.environ.get("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH")
 
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
@@ -296,19 +309,25 @@ def recommend_new_music(count: int = 10) -> str:
     from discovery_recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
-        classify_diversity_style,
+        classify_recommendation_candidates,
         classify_recommendation_category,
-        genre_families,
-        primary_recent_family,
-        recent_style_families,
     )
-    from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
-    gathered = gather_recommendation_candidates(RecommendationProviders(
-        listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
-        music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
-        is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
-        http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
-    ))
+    provider_tape = _provider_tape
+    if _gathered_override is not None:
+        gathered = _gathered_override
+    else:
+        from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+        providers = RecommendationProviders(
+            listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
+            music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
+            is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
+            http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
+        )
+        from recommendation_replay import prepare_provider_tape
+        provider_tape = prepare_provider_tape(provider_tape, _capture_path)
+        if provider_tape is not None:
+            providers = provider_tape.wrap(providers)
+        gathered = gather_recommendation_candidates(providers)
     if isinstance(gathered, str):
         return gathered
     listens = gathered["listens"]
@@ -340,60 +359,28 @@ def recommend_new_music(count: int = 10) -> str:
             candidate, recent_count, candidate_tags, exploration_families
         )
 
-    # Classify candidates using available MusicBrainz genres and a separate
-    # regional/style label used to encourage variety in the final shortlist.
-    candidates_by_category = {
-        "adjacent": [],
-        "cross_genre": [],
-        "adventurous": [],
-        "unclassified": [],
-    }
+    candidates_by_category = classify_recommendation_candidates(
+        albums, genre_cache, core_families, exploration_families,
+        recent_family_counts, music_key_fn=_music_key,
+    )
 
-    for candidate in albums.values():
-        tags = genre_cache.get(candidate.get("artist_mbid"), [])
-        candidate["diversity_style"] = classify_diversity_style(candidate, tags)
-        category, families = classify_recommendation_category(
-            candidate, tags, core_families, exploration_families,
-            music_key_fn=_music_key,
-        )
-
-        candidate["genres"] = tags
-        candidate["genre_families"] = sorted(families)
-        candidate["listening_families"] = sorted(recent_style_families(tags))
-        candidate["recent_profile_families"] = [
-            family for family in candidate["listening_families"]
-            if recent_family_counts.get(family, 0) > 0
-        ]
-        candidate["recent_profile_family"] = primary_recent_family(
-            tags, recent_family_counts
-        )
-        profile_family = candidate["recent_profile_family"]
-        matched_profile_families = candidate["recent_profile_families"]
-        if matched_profile_families and recent_family_counts:
-            max_recent_family_count = max(recent_family_counts.values())
-            average_recent_count = sum(
-                recent_family_counts[family]
-                for family in matched_profile_families
-            ) / len(matched_profile_families)
-            profile_match_bonus = (
-                1.0 + 0.10 * (
-                    average_recent_count / max_recent_family_count
-                )
-            )
-            candidate["recent_profile_bonus"] = profile_match_bonus
-            candidate["discovery_score"] *= profile_match_bonus
-        else:
-            candidate["recent_profile_bonus"] = 1.0
-        candidate["discovery_category"] = category
-        candidate["genre_metadata_available"] = bool(tags)
-
-        candidates_by_category[category].append(candidate)
-
-    lastfm_available = bool(_discovery_settings_read().get("lastfm_api_key"))
+    lastfm_available = (
+        bool(_discovery_settings_read().get("lastfm_api_key"))
+        if _lastfm_available_override is None
+        else bool(_lastfm_available_override)
+    )
+    from recommendation_replay import prepare_lastfm_callback
+    lastfm_callback, _lastfm_calls = prepare_lastfm_callback(
+        _capture_path,
+        _gathered_override,
+        _provider_tape,
+        _lastfm_popularity_fn,
+        _lastfm_album_popularity,
+    )
     lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),
         recent_family_counts,
-        _lastfm_album_popularity,
+        lastfm_callback,
     )
 
     for group in candidates_by_category.values():
@@ -618,7 +605,14 @@ def recommend_new_music(count: int = 10) -> str:
         reverse=True,
     )
 
-    return json.dumps({
+    pool_diagnostics = None
+    if _record_diagnostics:
+        from discovery_store import record_recommendation_diagnostics
+        pool_diagnostics = record_recommendation_diagnostics(
+            DISCOVERY_DB, gathered, albums.values(), found
+        )
+
+    result = {
         "source": (
             "ListenBrainz + MusicBrainz + Last.fm + Navidrome"
         ),
@@ -659,6 +653,7 @@ def recommend_new_music(count: int = 10) -> str:
             for style in diversity_style_targets
         },
         "possible_library_matches": possible_matches,
+        "pool_diagnostics": pool_diagnostics,
         "candidate_albums_resolved": len(albums),
         "artists_genre_checked": len(genre_cache),
         "library_albums_indexed": len(library_albums),
@@ -674,7 +669,15 @@ def recommend_new_music(count: int = 10) -> str:
             "alternate editions or artist aliases may need manual review.",
             "Recommendations are read-only and no files or playlists are changed."
         ],
-    }, ensure_ascii=False, indent=2)
+    }
+    encoded = json.dumps(result, ensure_ascii=False, indent=2)
+    if _capture_path and _gathered_override is None and _provider_tape is None:
+        from recommendation_replay import write_capture_safely
+        write_capture_safely(
+            _capture_path, gathered, _lastfm_calls, provider_tape, encoded, count
+        )
+    return encoded
+
 
 
 # Persistent discovery state and settings live in the configurable data directory.

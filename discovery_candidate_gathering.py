@@ -56,6 +56,12 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         recommendations = (
             response.json().get("payload", {}).get("mbids", [])
         )
+        cf_recordings_returned = len(recommendations[:100])
+        cf_recording_mbids = [
+            str(item["recording_mbid"])
+            for item in recommendations[:100]
+            if isinstance(item, dict) and item.get("recording_mbid")
+        ]
     except Exception as exc:
         return json.dumps({
             "error": f"Could not retrieve ListenBrainz recommendations: {exc}"
@@ -70,6 +76,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     # Resolve a bounded number of recordings through MusicBrainz.
     # Group tracks by album before checking Navidrome.
     albums = {}
+    cf_recordings_resolved = 0
     failures = []
     headers = {
         "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"
@@ -112,6 +119,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     recording = response.json()
                     providers.metadata_cache_set(f"mb:recording:{mbid}", recording)
 
+                cf_recordings_resolved += 1
                 credit = recording.get("artist-credit", [])
                 artist = "".join(
                     part.get("name", "") + part.get("joinphrase", "")
@@ -248,6 +256,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     ]
     regional_candidates_added = 0
     regional_results_seen = 0
+    supplementary_cache_hits = 0
+    supplementary_cache_misses = 0
     regional_request_index = 0
 
     with providers.http_client(timeout=20, follow_redirects=True) as client:
@@ -261,6 +271,10 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     cache_key,
                     ttl_seconds=30 * 24 * 60 * 60,
                 )
+                if search_data is None:
+                    supplementary_cache_misses += 1
+                else:
+                    supplementary_cache_hits += 1
 
                 if search_data is None:
                     if regional_request_index:
@@ -523,6 +537,11 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         "library_by_title": library_by_title, "genre_cache": genre_cache,
         "regional_candidates_added": regional_candidates_added,
         "regional_results_seen": regional_results_seen,
+        "cf_recording_mbids": cf_recording_mbids,
+        "cf_recordings_returned": cf_recordings_returned,
+        "cf_recordings_resolved": cf_recordings_resolved,
+        "supplementary_cache_hits": supplementary_cache_hits,
+        "supplementary_cache_misses": supplementary_cache_misses,
         "recent_family_counts": recent_family_counts, "core_families": core_families,
         "exploration_families": exploration_families, "profile_families": profile_families,
     }

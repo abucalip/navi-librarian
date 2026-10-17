@@ -1,5 +1,5 @@
 import unittest
-from discovery_recommendations import artist_identity, classify_diversity_style, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
+from discovery_recommendations import artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates
 
 class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_normalization_and_artist_identity(self):
@@ -103,5 +103,16 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertLessEqual(sum(item["artist"]=="Same" for item in diversified), 2)
   self.assertLessEqual(sum(item.get("primary_genre_family")=="jazz" for item in diversified), 12)
   self.assertLessEqual(sum(item["anchor_artist"]=="Anchor" for item in diversified), 4)
+
+ def test_recommendation_candidate_classification_preserves_empty_metadata_defaults(self):
+  candidate = {"primary_artist": "Unknown", "artist_mbid": "mbid-1", "discovery_score": 10.0}
+  grouped = classify_recommendation_candidates(
+   {"album-1": candidate}, {"mbid-1": []}, set(), set(), {}, music_key_fn=music_key,
+  )
+  self.assertEqual(grouped["unclassified"], [candidate])
+  self.assertEqual(candidate["recent_profile_bonus"], 1.0)
+  self.assertEqual(candidate["discovery_score"], 10.0)
+  self.assertEqual(candidate["genre_families"], [])
+  self.assertFalse(candidate["genre_metadata_available"])
 
 if __name__=="__main__": unittest.main()

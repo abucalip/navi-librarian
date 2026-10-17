@@ -510,3 +510,48 @@ def rank_and_diversify_deep_dive_candidates(
                 break
     return ranked, diversified
 
+
+
+def classify_recommendation_candidates(
+    albums: Mapping[str, dict[str, Any]],
+    genre_cache: Mapping[str, Iterable[str]],
+    core_families: set[str],
+    exploration_families: set[str],
+    recent_family_counts: Mapping[str, int],
+    *,
+    music_key_fn: Callable[[Any], str] = music_key,
+) -> dict[str, list[dict[str, Any]]]:
+    """Enrich recommendation candidates and group them by discovery category."""
+    candidates_by_category = {
+        "adjacent": [], "cross_genre": [], "adventurous": [], "unclassified": [],
+    }
+    for candidate in albums.values():
+        tags = genre_cache.get(candidate.get("artist_mbid"), [])
+        candidate["diversity_style"] = classify_diversity_style(candidate, tags)
+        category, families = classify_recommendation_category(
+            candidate, tags, core_families, exploration_families,
+            music_key_fn=music_key_fn,
+        )
+        candidate["genres"] = tags
+        candidate["genre_families"] = sorted(families)
+        candidate["listening_families"] = sorted(recent_style_families(tags))
+        candidate["recent_profile_families"] = [
+            family for family in candidate["listening_families"]
+            if recent_family_counts.get(family, 0) > 0
+        ]
+        candidate["recent_profile_family"] = primary_recent_family(
+            tags, recent_family_counts
+        )
+        matched = candidate["recent_profile_families"]
+        if matched and recent_family_counts:
+            max_count = max(recent_family_counts.values())
+            average = sum(recent_family_counts[family] for family in matched) / len(matched)
+            bonus = 1.0 + 0.10 * (average / max_count)
+            candidate["recent_profile_bonus"] = bonus
+            candidate["discovery_score"] *= bonus
+        else:
+            candidate["recent_profile_bonus"] = 1.0
+        candidate["discovery_category"] = category
+        candidate["genre_metadata_available"] = bool(tags)
+        candidates_by_category[category].append(candidate)
+    return candidates_by_category

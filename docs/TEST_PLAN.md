@@ -56,6 +56,16 @@ Before extracting any part of `recommend_new_music()`, add deterministic tests w
 
 `scripts/check_server_size.py` enforces the ceiling measured against the exact reviewed GitHub revision; do not substitute the older audit estimate. The guard tests prove acceptance at thresholds and failure above them, and diagnostics name the offending function and measured size. Explicit temporary exceptions require a documented reason and follow-up.
 
+## Recommendation capture/replay
+
+The replay harness is part of recommendation correctness verification. Run its focused tests with:
+
+```sh
+python -m unittest discover -s tests -p 'test_recommendation_replay_capture.py' -v
+```
+
+For a real baseline, run capture only in an isolated environment pinned to an identified GitHub revision and configured with test settings. Keep the capture outside the repository with directory mode 700 and file mode 600. Then run `python recommendation_replay.py /absolute/private/path/capture.json`. The replay must pass checksum/schema validation, consume every provider/cache and Last.fm tape event in order, make zero live provider calls, and reproduce stable recommendation output. A synthetic fixture test does not substitute for this real-capture check. Never attach a private capture to a public PR; CI uses synthetic fixtures only.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

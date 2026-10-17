@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #299 merged; recommendation baseline gate remains open)
+Last reviewed: 2026-10-17 (PR #299 merged; PR #298 private replay verified, exact-head CI pending)
 
 ## Current focus
 
-**Recommendation Phase 0 is implemented but not complete.** PR #298 adds private recommendation capture/replay and deterministic synthetic metrics; a real private capture and successful offline replay still need to be run in the user's isolated Mac test environment. Until that gate is satisfied and the baseline reviewed, do not change ranking, candidate selection, scoring, or allocation.
+**Recommendation Phase 0 capture/replay is implemented and the private baseline replay succeeded.** On source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, offline replay reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. The comparator checks all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. Review baseline metrics and limitations before changing ranking, candidate selection, scoring, or allocation; exact-head CI and final review remain pending.
 
 PR #299 is merged and provides baseline-independent scheduled-refresh diagnostics: freshness classification for missing, expired, malformed, and non-finite timestamps; per-list cache/read/refresh failure isolation; bounded warnings that omit exception messages; and regression coverage. It preserves the 24-hour threshold, hourly cadence, list order, refresh callbacks, and API response contracts. Ranking and candidate selection are unchanged.
 
