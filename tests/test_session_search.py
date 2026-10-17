@@ -18,7 +18,8 @@ class SessionSearchTests(unittest.TestCase):
         (self.root / "docs" / "workflow.md").write_text(
             "# Session workflow\nSearch documentation and code for relevant context.\n", encoding="utf-8"
         )
-        (self.root / "PROJECT_STATUS.md").write_text("Session workflow summary.\\n", encoding="utf-8")\n        (self.root / "app" / "service.py").write_text(
+        (self.root / "PROJECT_STATUS.md").write_text("Session workflow summary.\n", encoding="utf-8")
+        (self.root / "app" / "service.py").write_text(
             "# service\ndef replay_metadata():\n    return 'session context'\n", encoding="utf-8"
         )
         (self.root / ".venv" / "lib" / "ignored.py").write_text(
@@ -41,10 +42,14 @@ class SessionSearchTests(unittest.TestCase):
         self.assertEqual({result.path for result in results}, {"docs/workflow.md", "app/service.py"})
 
     def test_scope_separates_documentation_from_code(self):
-        self.assertEqual([m.path for m in search(self.root, "session workflow", scope="docs")],
-                         ["docs/workflow.md"])
-        self.assertEqual([m.path for m in search(self.root, "session context", scope="code")],
-                         ["app/service.py"])
+        self.assertEqual(
+            {m.path for m in search(self.root, "session workflow", scope="docs")},
+            {"docs/workflow.md", "PROJECT_STATUS.md"},
+        )
+        self.assertEqual(
+            [m.path for m in search(self.root, "session context", scope="code")],
+            ["app/service.py"],
+        )
 
     def test_skips_virtual_environments_and_large_files(self):
         (self.root / "app" / "large.py").write_text("needle " * 100, encoding="utf-8")
