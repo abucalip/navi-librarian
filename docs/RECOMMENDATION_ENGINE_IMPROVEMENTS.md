@@ -99,7 +99,9 @@ Library owners may already own and play music, so evaluate on unowned artists an
 
 PR #299 adds a directly tested stale-reason classifier (missing, expired, invalid timestamp), isolates read/refresh failures per list, and logs bounded list/stage/exception-type diagnostics without provider exception messages. This is operational visibility only; it does not change score, candidate, or allocation policy. CI must confirm the scheduler wiring and existing behavior.
 
-Remaining work after this audit: trace API-triggered versus scheduled refresh outcomes through persistence, then add debug-only candidate provenance, score-component, profile-evidence, cache, and rejection diagnostics.
+Refresh-origin tracing is now implemented on the working branch: the personal-list refresh adapter distinguishes manual refresh requests from the hourly scheduler, passes the origin into the recommendation pool snapshot, and persists only the latest bounded outcome per origin (success, error, or already-running). Persisted outcome data excludes exception messages, URLs, credentials, and candidate identities. CI and final-head review remain required before this is considered complete.
+
+Remaining baseline-independent observability work: add aggregate debug diagnostics for candidate provenance, score components, profile evidence, and eligibility/rejection counts without changing ranking or public response contracts. Review the real replay baseline's limitations before any score, source, or allocation changes.
 
 
 **Acceptance gate for Phase 0**
@@ -235,9 +237,11 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 ## Immediate next step
 
-PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. The private baseline captured at `d8c1f3de5180b35919f55c304d55e5c939dad373` now replays successfully offline (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). The comparator covers all stable top-level fields except volatile pool diagnostics and Last.fm error state. Review the resulting baseline metrics and limitations before selecting ranking or candidate-generation changes; do not change scoring, source selection, or allocation before that review.
+PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. The private baseline captured at `d8c1f3de5180b35919f55c304d55e5c939dad373` replays successfully offline (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). The comparator covers all stable top-level fields except volatile pool diagnostics and Last.fm error state. These results establish replay fidelity, not recommendation quality: the current session has not inspected the private capture's full metric output, and the synthetic fixture is not a substitute for the user's historical replay.
 
-While the captured baseline metrics and limitations are being reviewed, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
+PR #303 adds bounded origin/outcome telemetry for personal-list refreshes, separating manual refresh requests from the hourly scheduler and keeping the latest outcome for each origin. No ranking, candidate selection, allocation, or public response fields are intentionally changed. Verify all required gates on the exact final PR head before treating this step as complete.
+
+Next, add aggregate candidate provenance, score-component, profile-evidence, cache, and rejection diagnostics as a separate baseline-independent observability task. Do not change scoring, source selection, candidate generation, or allocation until the real baseline metrics and limitations have been reviewed.
 
 ## Private real-run capture and offline replay
 

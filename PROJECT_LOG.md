@@ -1,11 +1,20 @@
+## 2026-10-17 — Recommendation Phase 0.3: refresh-origin diagnostics (PR #303 in progress)
+
+- Started from GitHub main merge commit `bb473e99855208606e3bcb76dbf7c1cb9eb09b43` after checking recent commits and the PR #302 merge state. The recommendation roadmap's next baseline-independent observability step is to trace personal-list refresh origin and outcome through persistence.
+- Added origin-aware personal refresh instrumentation for `manual` and `scheduler` triggers. The recommendation adapter receives the origin, pool diagnostics retain it in persisted diagnostic metrics, and SQLite stores only the latest bounded outcome per trigger: success, error, or already-running, with timestamp, optional item count, and exception type only.
+- Added regression coverage for origin propagation, success/error outcomes, per-origin latest-state replacement, rejection of arbitrary origins/statuses, and absence of provider exception messages from persisted outcome telemetry. No ranking, candidate-selection, allocation, or public response-schema changes are intended.
+- Branch: `feat/recommendation-refresh-origin-diagnostics`; base SHA `bb473e99855208606e3bcb76dbf7c1cb9eb09b43`. On code/test head `02d671bd48502fcf789ee072c77eb73684676ca7`, all four required workflows passed: Python syntax/size/import-boundary and acquisition safety run 1519; Docker packaging/full unit suite/build run 1427; container runtime smoke run 1236; validation-only multi-architecture build run 1280. The subsequent documentation-only closeout commit(s) changed the PR head, and no workflow runs are currently reported for the latest SHA; keep PR #303 open until exact-final-head CI is verified. No local tests were run. Publishing remains paused; no deployment/runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — PR #302: Agent session context search workflow
 
 - PR #302 adds `scripts/session_search.py`, a standard-library lexical search tool returning ranked documentation/source snippets. It supports docs/code scopes, quoted phrases, all/any matching, bounded context and file sizes, JSON output, and excludes common generated/virtual-environment/data directories.
 - Added `tests/test_session_search.py` covering query parsing, all/any matching, scope filtering, snippets, ignored directories, file-size bounds, and empty-query rejection.
 - Added `docs/SESSION_CONTEXT_SEARCH.md`; updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and this status to establish focused retrieval as the standard agent workflow. Search remains a navigation aid; GitHub state inspection, canonical-doc reading, caller/test tracing, and all existing verification gates remain mandatory.
 - Initial CI on head `627c442780f26613e76541cbc46e91d6058997b3` exposed one test-fixture assumption: the documentation fixture also contained both query terms. The test was corrected to use a distinctive all-terms query. On corrected code head `157dfa3d18ff253d4de64e91907166d3aba442bb`, all 616 unit tests passed in Docker packaging workflow 1416; Python syntax/size/import-boundary checks passed in workflow 1508; container runtime smoke passed in workflow 1225; validation-only multi-architecture build passed in workflow 1269. Publishing remained paused.
-- PR #302 is open. Documentation closeout commits require a fresh check of all four workflows on the exact final PR-head SHA before merge. No merge, publication, deployment, or production-runtime verification is claimed.
-- Next action: verify all four required workflows on the final PR head, review the final diff, then merge only if every gate passes.
+- PR #302 merged at `bb473e99855208606e3bcb76dbf7c1cb9eb09b43` from final PR head `1baa1d43920974b8a03da60abd84256e3bcbdd35`. The available recorded CI evidence is on corrected code head `157dfa3d18ff253d4de64e91907166d3aba442bb` (616 unit tests and four workflows); this log does not establish that those workflows ran on the exact final PR head. Publishing remains paused; no deployment or production-runtime verification is claimed.
+- The current follow-up is recommendation Phase 0.3 refresh-origin diagnostics in PR #303.
 
 ---
 

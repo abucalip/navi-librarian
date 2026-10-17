@@ -150,20 +150,62 @@ class DiscoveryRefreshTests(unittest.TestCase):
         ])
         self.assertEqual(result, ["personal-result", "classics", "artist_deep_dive", "new_releases"])
 
-    def test_personal_refresh_parses_and_persists_payload(self):
+    def test_personal_refresh_parses_persists_and_records_origin(self):
         writes = []
+        outcomes = []
+        calls = []
+        def recommend(**kwargs):
+            calls.append(kwargs)
+            return '{"recommendations": [{"artist": "Björk"}]}'
         result = refresh_personal(
             Lock(),
-            lambda **kwargs: '{"recommendations": [{"artist": "Björk"}]}',
+            recommend,
             lambda name, payload: writes.append((name, payload)),
             count=7,
             clock=lambda: 123.5,
+            origin="scheduler",
+            record_outcome=outcomes.append,
         )
         self.assertEqual(result, {
             "ok": True, "list": "personal", "generated_at": 123.5,
             "recommendations": 1,
         })
         self.assertEqual(writes, [("personal", {"recommendations": [{"artist": "Björk"}]})])
+        self.assertEqual(calls, [{"count": 7}])
+        self.assertEqual(outcomes, [{
+            "list_name": "personal", "origin": "scheduler", "status": "success",
+            "generated_at": 123.5, "item_count": 1, "error_type": None,
+        }])
+
+    def test_personal_error_records_bounded_outcome_without_persisting_payload(self):
+        outcomes = []
+        result = refresh_personal(
+            Lock(),
+            lambda **kwargs: '{"error": "private provider URL"}',
+            lambda *args: self.fail("failed recommendation must not be persisted"),
+            origin="manual",
+            record_outcome=outcomes.append,
+            clock=lambda: 456.0,
+        )
+        self.assertEqual(result["status"], "error")
+        self.assertEqual(outcomes, [{
+            "list_name": "personal", "origin": "manual", "status": "error",
+            "generated_at": 456.0, "item_count": None, "error_type": None,
+        }])
+        self.assertNotIn("private provider URL", repr(outcomes))
+
+    def test_refresh_outcome_callback_failure_does_not_fail_successful_refresh(self):
+        writes = []
+        def broken_diagnostics(_outcome):
+            raise OSError("private diagnostic backend detail")
+        result = refresh_personal(
+            Lock(),
+            lambda **kwargs: '{"recommendations": [{"artist": "Björk"}]}',
+            lambda name, payload: writes.append((name, payload)),
+            record_outcome=broken_diagnostics,
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(writes), 1)
 
     def test_personal_invalid_json_returns_error_without_write_and_releases_lock(self):
         lock = Lock()
