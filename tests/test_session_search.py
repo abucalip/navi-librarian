@@ -39,7 +39,7 @@ class SessionSearchTests(unittest.TestCase):
 
     def test_any_mode_returns_partial_matches(self):
         results = search(self.root, "workflow metadata", require_all=False)
-        self.assertEqual({result.path for result in results}, {"docs/workflow.md", "app/service.py"})
+        self.assertEqual({result.path for result in results}, {"docs/workflow.md", "app/service.py", "PROJECT_STATUS.md"})
 
     def test_scope_separates_documentation_from_code(self):
         self.assertEqual(
