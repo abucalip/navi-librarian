@@ -75,7 +75,8 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
 
     def _run_recommendations(
         self, library_albums, recommendations=None, *, lastfm_stats=None,
-        regional_http_status=200, inventory_limit=None,
+        regional_http_status=200, inventory_limit=None, listens=None,
+        genre_tags_by_artist=None,
     ):
         if recommendations is None:
             recommendations = [{"recording_mbid": "recording-1", "score": 10}]
@@ -89,7 +90,8 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
                     else {"release-groups": []}
                 )
             if key.startswith("mb:artist-genres:"):
-                return ["jazz"]
+                artist_mbid = key.removeprefix("mb:artist-genres:")
+                return (genre_tags_by_artist or {}).get(artist_mbid, ["jazz"])
             return None
 
         def api_call(method, **params):
@@ -110,7 +112,10 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
 
         with (
             inventory_patch,
-            patch.object(server, "_listenbrainz_recent", return_value=[]),
+            patch.object(
+                server, "_listenbrainz_recent",
+                return_value=[] if listens is None else listens,
+            ),
             patch.object(server, "_listenbrainz_username", return_value="test-user"),
             patch.object(server, "_metadata_cache_get", side_effect=cache_get),
             patch.object(server, "_metadata_cache_set"),
@@ -191,6 +196,66 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
         self.assertGreater(
             result["debug_all_candidates"][0]["discovery_score"],
             result["debug_all_candidates"][1]["discovery_score"],
+        )
+
+    def test_contrasting_recent_profiles_change_candidate_score_order(self):
+        recommendations = [
+            {"recording_mbid": "recording-1", "score": 10},
+            {"recording_mbid": "recording-2", "score": 9.5},
+        ]
+        genre_tags = {
+            "artist-1": ["jazz"],
+            "artist-2": ["rock"],
+        }
+
+        def listens_for(artist, artist_mbid):
+            return [
+                {
+                    "listened_at": 1_800_000_000 + index * 86_400,
+                    "track_metadata": {
+                        "artist_name": artist,
+                        "additional_info": {"artist_mbid": artist_mbid},
+                    },
+                }
+                for index in range(5)
+            ]
+
+        jazz_profile = self._run_recommendations(
+            [],
+            recommendations,
+            listens=listens_for("John Coltrane", "artist-1"),
+            genre_tags_by_artist=genre_tags,
+        )
+        rock_profile = self._run_recommendations(
+            [],
+            recommendations,
+            listens=listens_for("Art Blakey", "artist-2"),
+            genre_tags_by_artist=genre_tags,
+        )
+
+        jazz_scores = {
+            item["artist"]: item["discovery_score"]
+            for item in jazz_profile["debug_all_candidates"]
+        }
+        rock_scores = {
+            item["artist"]: item["discovery_score"]
+            for item in rock_profile["debug_all_candidates"]
+        }
+        self.assertGreater(
+            jazz_scores["John Coltrane"], jazz_scores["Art Blakey"]
+        )
+        self.assertGreater(
+            rock_scores["Art Blakey"], rock_scores["John Coltrane"]
+        )
+        self.assertEqual(
+            jazz_profile["recommendations"][0]["artist"], "John Coltrane"
+        )
+        self.assertEqual(
+            rock_profile["recommendations"][0]["artist"], "Art Blakey"
+        )
+        self.assertEqual(
+            {item["album"] for item in jazz_profile["recommendations"]},
+            {item["album"] for item in rock_profile["recommendations"]},
         )
 
     def test_lastfm_popularity_is_a_capped_bonus_not_the_base_score(self):
