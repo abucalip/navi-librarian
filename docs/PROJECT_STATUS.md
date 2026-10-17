@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (aggregate recommendation diagnostics PR in progress)
+Last reviewed: 2026-10-17 (PR #304 merged; baseline metrics review next)
 
 ## Current focus
 
@@ -8,7 +8,9 @@ Last reviewed: 2026-10-17 (aggregate recommendation diagnostics PR in progress)
 
 All four required workflows passed on PR #303's exact final head `29c793d29c8209153f4a480903df32372bf52fec`: Python syntax run 1521, Docker packaging/full unit suite/build run 1429, container runtime smoke run 1238, and validation-only multi-architecture build run 1282. No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls; the private capture's full metric report has not been inspected in this session, so ranking/source/allocation changes remain gated. Current PR adds aggregate candidate-provenance, score-component, profile-evidence, cache, and rejection diagnostics without changing ranking or public response contracts. Next action: verify all four required workflows on the exact final PR-head SHA, review the private baseline metrics and limitations, then decide whether Phase 0 has enough evidence to advance.
+PR #304 merged at `19435d5deea69b188d920cf375ef924ec3b14a97` from final PR head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`. It adds bounded candidate-source counts, base/final score and bonus summaries, profile evidence, cache counts, and selection/eligibility outcomes to the existing persisted diagnostic record; candidate identities and raw tags are excluded from the aggregates, and the public diagnostic response remains unchanged. All four required workflows passed on that exact head: Python syntax/size/import-boundary run 1531 (`39042482100`), Docker packaging/full unit suite/build run 1439 (`39042482020`), container runtime smoke run 1248 (`39042481923`), and validation-only multi-architecture build run 1292 (`39042481930`). No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
+
+The private PR #298 replay reproduced 10/10 recommendations using 197 provider events and 40 Last.fm events with zero network calls; its full metric report has not been inspected in this session, so ranking/source/allocation changes remain gated. Next action: review the private replay baseline metrics and limitations, then decide whether Phase 0 has enough evidence to advance before changing recommendation policy.
 
 **Recommendation Phase 0 capture/replay is implemented and the private baseline replay succeeded.** On capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, offline replay reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. The comparator checks all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. PR #298 merged at `68a0ee365778dab790ec54e04b54c8c72bd4552c` from final PR head `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`; all four required workflows passed on that exact head. Review baseline metrics and limitations before changing ranking, candidate selection, scoring, or allocation.
 
