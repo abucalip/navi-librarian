@@ -1,6 +1,6 @@
 ## 2026-10-17 — Recommendation Phase 0.3: aggregate diagnostics (PR in progress)
 
-- Started from GitHub main at merge commit `a04d4f4c3b5beed3e29969c75cf812591222dc08` after reviewing the workflow, project status, requirements, test plan, recommendation roadmap, relevant source, and existing diagnostic tests.
+- Started the branch from current GitHub main at `b51ab24dee6cd760c31e6924816143a8658db815` after reviewing the workflow, project status, requirements, test plan, recommendation roadmap, relevant source, and existing diagnostic tests.
 - Added bounded aggregate metrics for candidate source provenance, base/final score and bonus distributions, listening/profile evidence, supplementary cache hit/miss counts, and eligibility/selection outcomes. Metrics contain no candidate names, album titles, or raw tags and remain in the existing persisted pool diagnostic JSON; public response shape and ranking behavior are unchanged.
 - Added deterministic direct-import coverage for summary values and identity omission. Focused tests, full unit suite, and required CI have not yet been run in this assistant session. PR/commit and exact-head workflow evidence will be appended after review. Publishing remains paused; no deployment/runtime verification is claimed.
 
