@@ -288,6 +288,7 @@ def recommend_new_music(
     _provider_tape=None,
     _record_diagnostics=True,
     _capture_path=None,
+    _refresh_origin="direct_api",
 ) -> str:
     """Recommend albums from ListenBrainz that do not appear to be in Navidrome.
 
@@ -609,7 +610,8 @@ def recommend_new_music(
     if _record_diagnostics:
         from discovery_store import record_recommendation_diagnostics
         pool_diagnostics = record_recommendation_diagnostics(
-            DISCOVERY_DB, gathered, albums.values(), found
+            DISCOVERY_DB, gathered, albums.values(), found,
+            refresh_origin=_refresh_origin,
         )
 
     result = {
@@ -850,12 +852,16 @@ def _discovery_auto_acquire_for_me(artist, album):
             _DISCOVERY_AUTO_ACQUIRE_ACTIVE.discard(identity)
 
 
-def _discovery_refresh_personal(count=20):
+def _discovery_refresh_personal(count=20, origin="manual"):
     return discovery_refresh.refresh_personal(
         _DISCOVERY_REFRESH_LOCK,
         recommend_new_music,
         _discovery_write_list,
         count=count,
+        origin=origin,
+        record_outcome=lambda outcome: discovery_store.record_discovery_refresh_outcome(
+            DISCOVERY_DB, **outcome
+        ),
     )
 
 
@@ -2555,7 +2561,7 @@ def _refresh_listening_profile_background():
 
 def _discovery_scheduler_refresh_one(list_name):
     if list_name == "personal":
-        return _discovery_refresh_personal(20)
+        return _discovery_refresh_personal(20, origin="scheduler")
     if list_name == "listening_profile":
         return _refresh_listening_profile_background()
     return _discovery_refresh_other(list_name)
