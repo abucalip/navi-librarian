@@ -10,7 +10,7 @@ PR #308 (bounded diagnostic history) was closed unmerged at the owner's directio
 
 All four required workflows passed on exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`: Python syntax/size/import-boundary run 1560 (`39047871211`); Docker packaging/full unit suite/build run 1468 (`39047871243`, 626 tests passed); container runtime smoke run 1277 (`39047871304`); validation-only multi-architecture image validation run 1321 (`39047871378`). No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-**Next action:** continue the recommendation roadmap with profile-derived supplementary candidate queries (Phase 2.1), using contrasting-profile fixtures and no further live diagnostic collection.
+**Next action:** add an end-to-end contrasting-profile regression through the recommendation adapter to verify that profile changes alter candidate scores/order, then proceed to profile-derived supplementary queries (Phase 2.1) if ranking alone is insufficient. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
