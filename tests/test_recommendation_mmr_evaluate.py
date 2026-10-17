@@ -40,7 +40,7 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
         }
 
     def test_evaluates_lambda_grid_and_checks_hard_artist_and_eligibility_gates(self):
-        report = evaluate_capture(self._envelope(), limit=4, lambdas=[0, 0.5, 1])
+        report = evaluate_capture(self._envelope(), limit=4, lambdas=[0, 0.5, 1], relevance_floors=[0])
         self.assertEqual(report["network_providers_used"], 0)
         self.assertFalse(report["provider_tape_replayed"])
         self.assertEqual(report["scored_candidate_pool_size"], 5)
@@ -51,6 +51,13 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
             self.assertTrue(result["deterministic_repeat"])
             self.assertNotIn(("owned artist", "owned album"), result["selected_identities"])
             self.assertNotIn(("bad artist", "ep"), result["selected_identities"])
+
+    def test_relevance_floor_sweep_can_expose_shortlist_completion_tradeoff(self):
+        report = evaluate_capture(self._envelope(), limit=4, lambdas=[0.75], relevance_floors=[0, 0.5, 0.9])
+        results = report["lambda_results"]
+        self.assertEqual([item["relevance_floor"] for item in results], [0, 0.5, 0.9])
+        self.assertGreaterEqual(results[0]["selected_count"], results[-1]["selected_count"])
+        self.assertTrue(all(item["all_selected_from_eligible_pool"] for item in results))
 
     def test_rejects_missing_scored_pool_instead_of_guessing_scores(self):
         envelope = self._envelope()
