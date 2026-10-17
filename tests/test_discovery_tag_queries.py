@@ -17,7 +17,7 @@ class SupplementaryTagQueryTests(unittest.TestCase):
         )
 
         self.assertNotEqual([item[0] for item in jazz], [item[0] for item in rock])
-        self.assertIn("tag:jazz", [item[0] for item in jazz])
+        self.assertIn("primarytype:album AND tag:jazz", [item[0] for item in jazz])
         self.assertIn('tag:"indie rock"', [item[0] for item in rock])
 
     def test_profile_weight_and_exploration_quota_are_deterministic(self):
