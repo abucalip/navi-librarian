@@ -32,7 +32,7 @@ class SessionSearchTests(unittest.TestCase):
         self.assertEqual(query_terms('Replay "metadata lookup" replay'), ["replay", "metadata lookup"])
 
     def test_all_terms_is_default_and_returns_matching_snippets(self):
-        results = search(self.root, "session context")
+        results = search(self.root, "replay session")
         self.assertEqual([result.path for result in results], ["app/service.py"])
         self.assertIn("session context", results[0].snippets[0]["text"])
 
