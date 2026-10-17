@@ -1098,3 +1098,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Production ranking is unchanged. The private replay fixture was not available to this GitHub-only session; no replay result or assistant-side local test result is claimed. Initial CI exposed an incorrect expected ordering in the MMR trade-off fixture; the fixture scores/lambda were corrected. All four required workflows passed on exact final PR head `f46b7fc23c2e0bdbaceff63cca532379fa2c456e`: Python syntax run 1604 (`39051000774`), Docker packaging/full unit suite/build run 1512 (`39051000938`, 640 tests passed), container runtime smoke run 1321 (`39051000832`), and validation-only multi-architecture image validation run 1365 (`39051000940`, publishing paused).
 - Publishing, deployment, and production-runtime verification remain unperformed.
 - Next: run the existing offline fixture from `~/navi-librarian-test/private-recommendation-fixtures` against merged commit `f2393fdfb9e793f8d8b7f32a13c2fc754cbd9409`; compare baseline vs MMR relevance/diversity before any production integration.
+
+
+## 2026-10-17 — Front-end contribution boundaries generalized
+
+- Removed tool-specific front-end ownership from `AGENTS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/FRONTEND_DESIGN_GUIDE.md`, and `docs/UI_BACKLOG_EXECUTION.md`.
+- Any agent may work on front-end matters, but edits remain restricted to `static/app.css`, `static/app.js`, `static/login.css`, `static/login.js`, `app/templates/*.html`, narrowly scoped front-end tests/fixtures under `tests/`, and `docs/UI_BACKLOG_EXECUTION.md`.
+- Protected backend/API/security, domain, architecture, workflow, dependencies, packaging, deployment, and release-policy files still require explicit approval and coordinated ownership. No application code or runtime behavior changed.
+- Documentation-only change; automated tests and browser checks were not run in this editing step. CI verification on the final PR head remains required.

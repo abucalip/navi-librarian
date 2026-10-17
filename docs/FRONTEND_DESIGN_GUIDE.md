@@ -52,7 +52,7 @@ Do not add mock behavior or invent backend endpoints/fields to make the UI appea
 
 ## 5. Design-tool workflow: Impeccable
 
-Use Impeccable as a critique and implementation aid when available in ZCode. Start with its critique/audit guidance before styling. Use focused guidance such as `polish`, `layout`, `typeset`, `quieter`, or `distill` when appropriate. Consider its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility recommendations.
+Use Impeccable as a critique and implementation aid when available in the working environment. Start with its critique/audit guidance before styling. Use focused guidance such as `polish`, `layout`, `typeset`, `quieter`, or `distill` when appropriate. Consider its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility recommendations.
 
 Apply only recommendations that fit this product and its existing components. Do not run broad redesign commands blindly or treat detector output as a mandate. Prefer one cohesive, reviewable improvement over sweeping visual churn. In the PR summary, record the guidance applied and important recommendations intentionally rejected. If Impeccable is unavailable, state that limitation and continue using this guide; do not claim to have used it.
 
