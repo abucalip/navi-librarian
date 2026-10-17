@@ -8,7 +8,7 @@ Last reviewed: 2026-10-17 (MCP retirement PR #296 merged; repository-level close
 
 PR #299 addresses a separate, baseline-independent observability gap: scheduled discovery refreshes previously failed silently and one list's exception could prevent later lists from being checked in that hourly cycle. The branch adds deterministic freshness classification, per-list failure isolation, bounded warning logs, and regression tests. It does not change recommendation ranking or user-facing response shapes.
 
-**Next action:** verify PR #299's exact-head CI and diff. Keep PR #298's private capture/replay gate open; publishing and deployment remain paused.
+**Verification:** PR #299 head `b870abbc306ba94959b90393bf0a4be8d3c704ad` passed all four required workflows: Python syntax, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture validation. The final diff has been reviewed. The required root `PROJECT_LOG.md` entry is still outstanding because the GitHub contents update was rejected; PR #299 remains open and unmerged until that closeout record is added. Keep PR #298's private capture/replay gate open; publishing and deployment remain paused.
 
 ## Delivery and verification state
 
