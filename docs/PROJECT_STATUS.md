@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-18 (backend recommendation-diversity contract and allocator integration implemented in PR #326; settings UI remains separate)
+Last reviewed: 2026-10-18 (backend recommendation-diversity contract and allocator integration merged; settings UI remains separate)
 
 ## Current focus
 
-**Recommendation diversity backend — PR #326 open.** The identity-free evaluator CLI completed successfully against the existing private fixture. Its actual output contains six lambda results and no relevance-floor dimension; the earlier 35-combination/floor-sweep reproduction is dismissed as a decision input. Do not run another fixture test for that discrepancy. The fixture and identity-bearing report remain private.
+**Recommendation diversity backend — PR #326 merged.** The identity-free evaluator CLI completed successfully against the existing private fixture. Its actual output contains six lambda results and no relevance-floor dimension; the earlier 35-combination/floor-sweep reproduction is dismissed as a decision input. Do not run another fixture test for that discrepancy. The fixture and identity-bearing report remain private.
 
-PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of this PR.
+PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of the backend PR.
 
-The code/test revision `84a0f626da5c0293279755b2e2a0111960b19304` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image checks (publishing paused). The documentation-updated PR head `7366e9933ab268deba14d83b6e2309deb53b0e98` also passed all four required workflows; the final merge head must still be checked before merge. PR #326 is not yet merged.
+PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`. All four required workflows passed on that exact head: Python syntax, Docker packaging/full unit suite (655 tests passed), container runtime smoke test, and validation-only Docker image checks (publishing paused).
 
-Production deployment is not authorized or claimed. Publishing remains paused; no production runtime verification is claimed.
+Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. The next feature step is a separate coordinated settings UI PR.
 
 ## Recommendation baseline and prior work
 
