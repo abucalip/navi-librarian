@@ -107,7 +107,11 @@ class SettingsRoutesTests(unittest.TestCase):
             settings.set_recommendation_diversity_settings(
                 {"recommendation_diversity": 75}, librarian=self.librarian
             ),
-            {"ok": True, "recommendation_diversity": 75},
+            {
+                "ok": True,
+                "recommendation_diversity": 75,
+                "message": "Recommendation diversity preference saved.",
+            },
         )
         self.librarian._discovery_settings_write.assert_called_once_with({
             "recommendation_diversity": 75,
