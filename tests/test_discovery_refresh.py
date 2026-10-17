@@ -194,6 +194,19 @@ class DiscoveryRefreshTests(unittest.TestCase):
         }])
         self.assertNotIn("private provider URL", repr(outcomes))
 
+    def test_refresh_outcome_callback_failure_does_not_fail_successful_refresh(self):
+        writes = []
+        def broken_diagnostics(_outcome):
+            raise OSError("private diagnostic backend detail")
+        result = refresh_personal(
+            Lock(),
+            lambda **kwargs: '{"recommendations": [{"artist": "Björk"}]}',
+            lambda name, payload: writes.append((name, payload)),
+            record_outcome=broken_diagnostics,
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(writes), 1)
+
     def test_personal_invalid_json_returns_error_without_write_and_releases_lock(self):
         lock = Lock()
         writes = []
