@@ -88,6 +88,53 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             self.assertNotIn("recording-b", hashes)
             self.assertNotIn("candidate_diagnostics", second)
 
+    def test_pool_diagnostic_history_is_bounded_and_returns_no_identity_hashes(self):
+        from discovery_store import read_recommendation_diagnostic_history
+
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            for index in range(10):
+                record_recommendation_pool_diagnostic(
+                    db, [f"recording-{index}"], [f"Artist {index}|Album {index}"],
+                    {"cf_recordings_returned": 1, "cf_recordings_resolved": 1,
+                     "resolved_album_count": 1, "refresh_origin": "manual"},
+                    generated_at=100 + index,
+                )
+            history = read_recommendation_diagnostic_history(db)
+            self.assertEqual(len(history), 8)
+            self.assertEqual([item["generated_at"] for item in history],
+                             [102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0, 109.0])
+            self.assertEqual(history[-1]["cf_recording_jaccard_previous"], 0.0)
+            self.assertTrue(all("recording_hashes_json" not in item for item in history))
+            self.assertEqual(history[-1]["refresh_origin"], "manual")
+            with self.assertRaises(ValueError):
+                read_recommendation_diagnostic_history(db, limit=9)
+
+    def test_pool_diagnostic_history_reader_supports_legacy_database(self):
+        from discovery_store import read_recommendation_diagnostic_history
+        import sqlite3
+
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            with sqlite3.connect(db) as connection:
+                connection.execute(
+                    """CREATE TABLE recommendation_pool_diagnostics (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        generated_at REAL NOT NULL,
+                        pool_fingerprint TEXT NOT NULL,
+                        recording_hashes_json TEXT NOT NULL,
+                        recommendation_fingerprint TEXT NOT NULL,
+                        recommendation_hashes_json TEXT NOT NULL,
+                        metrics_json TEXT NOT NULL
+                    )"""
+                )
+                connection.execute(
+                    "INSERT INTO recommendation_pool_diagnostics VALUES (1, 100, 'pool', '[]', 'list', '[]', ?)",
+                    (json.dumps({"generated_at": 100.0, "refresh_origin": "manual"}),),
+                )
+            history = read_recommendation_diagnostic_history(db)
+            self.assertEqual(history, [{"generated_at": 100.0, "refresh_origin": "manual"}])
+
     def test_aggregate_diagnostics_persist_privately_without_public_schema_change(self):
         with tempfile.TemporaryDirectory() as directory:
             db = Path(directory) / "diagnostics.sqlite3"
