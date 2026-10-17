@@ -1,3 +1,26 @@
+## 2026-10-17 — Owner-supplied offline MMR comparison
+
+- Evaluated the private 66-candidate scored pool with lambda values 0, 0.1, 0.25, 0.5, 0.75, and 1.0. The owner supplied aggregate output; candidate identities remain private.
+- All runs returned 10 results, 10 unique artists, no duplicate non-empty artist keys, eligible-pool checks true, and deterministic repeats. Lambda 0 retained 7/10 baseline recommendations, mean pairwise similarity 0.1044, mean raw score 0.1540. Lambda 0.25/0.5 retained 7/10, similarity 0.1007, mean score 0.1539. Lambda 0.75/1.0 retained 7/10, similarity 0.0591 (about 43% lower than lambda 0), mean score 0.1412 (about 8.3% lower), and baseline relevance-score retention 85.5%. Lambda 0.1 retained only 6/10.
+- Preliminary decision: use lambda 0.75 as the candidate for a controlled adapter-integration PR; lambda 1.0 showed no additional reported benefit on this capture. At lambda 0, unique artist count is already 10 because the hard one-per-artist cap remains active, so the measured diversity gain is primarily lower genre/tag similarity. This single frozen comparison does not establish future-listen hit-rate/nDCG or sustained real-world benefit.
+- PR #320 merged at `7fe6003e9317711f49e8757864ff4b0097ea7046` after the final diff review and all four required workflows passed on that exact head: Python syntax `39064208835`, Docker packaging/full unit suite/build `39064208799`, container runtime smoke `39064208857`, and validation-only multi-architecture image validation `39064208813` (publishing paused). No assistant-side local tests were run; the aggregate fixture metrics below were supplied by the owner.
+- Next action: create a controlled adapter integration using lambda 0.75 with characterization tests for eligibility, stable artist identity, missing tags, deterministic output, and unchanged API/persistence/provider behavior. Do not publish or deploy.
+- Publishing, deployment, and runtime verification remain unperformed.
+
+---
+
+## 2026-10-17 — Phase 3.1 offline MMR evaluator implementation
+
+- Branch `feat/offline-mmr-capture-evaluator`, based on main `442f2dcdb1a7824a24eb6a1d80ae9b7b2fbc1996`.
+- Added `recommendation_mmr_evaluate.py`, a provider-free evaluator that validates the existing owner-only capture and compares its captured scored debug candidate pool with the original top 10 across a configurable MMR lambda grid. It does not replay stale provider events, import the application, access network providers, or write application state.
+- Added synthetic tests for lambda-grid metrics, deterministic repeatability, one-per-artist enforcement, explicit owned/ineligible-row rejection, missing score-pool refusal, and invalid limits. Added both files to the Python syntax workflow.
+- The report includes baseline overlap/retention, relevance score retention, unique artists, mean pairwise similarity, hard artist cap, and repeatability. `--identity-free` omits candidate identities from printed output. The evaluator refuses to fabricate scores if `debug_all_candidates` is absent.
+- Limitations: the evaluator's candidate rejection depends on explicit flags/decision labels in the captured debug rows; verify those semantics against the private fixture and gathered library snapshot before interpreting eligibility as fully audited. It does not measure future-listen hit-rate/nDCG. The owner-local capture was not accessible to this session, so no private evaluation or local test run is claimed.
+- Production recommendation ranking is unchanged. Publishing, deployment, and runtime verification remain unperformed. Exact-head CI and full diff review remain pending.
+- Next action: run exact-head required workflows, then execute the evaluator against the unchanged private capture in the isolated environment and review the local results before choosing any lambda or production integration.
+
+---
+
 ## 2026-10-17 — Phase 3.1 MMR offline evaluation prioritized; replay compatibility blocker recorded
 
 - The owner requested that MMR evaluation become the next recommendation-engine priority and that the session close with this recorded.
