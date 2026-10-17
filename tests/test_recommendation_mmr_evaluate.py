@@ -29,7 +29,7 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
             "git_sha": "synthetic-fixture",
             "schema_version": 1,
             "payload": {
-                "gathered_inputs": {},
+                "gathered_inputs": {"albums": [{}, {}, {}], "library_albums": [{}]},
                 "provider_events": [],
                 "lastfm_calls": [],
                 "expected_output": {
