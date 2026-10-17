@@ -38,7 +38,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | DATA-01 | Persist app database and authentication key under the configured data directory, mounted as persistent storage in Docker. | Implemented; verify restart/upgrade |
 | API-01 | Validate API input and return useful HTTP errors rather than exposing internal exceptions or credentials. | Ongoing quality requirement; `/api/acquire` rejects non-boolean `auto_queue` values with HTTP 400 rather than truthiness-coercing strings or numbers. |
 | OPS-01 | Validate reproducible Docker builds for `linux/amd64` and `linux/arm64`; publish to GHCR only after the modularization roadmap is complete and release is explicitly authorized. | Runtime/build validation automated; GHCR publication intentionally paused |
-| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service or the MCP server. | Current deployment design |
+| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service. | Current deployment design |
 
 ## Safety rules for acquisition and deletion
 
