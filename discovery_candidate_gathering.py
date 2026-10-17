@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import json
 from typing import Any, Callable
 
-from discovery_recommendations import decayed_listen_weights
+from discovery_recommendations import decayed_listen_weights, merge_discovery_source
 
 @dataclass(frozen=True)
 class RecommendationProviders:
@@ -386,11 +386,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                         albums[key]["discovery_source"] = (
                             albums[key].get("discovery_source", "listenbrainz")
                         )
-                        sources = albums[key].setdefault(
-                            "discovery_sources", ["listenbrainz_cf"]
-                        )
-                        if source not in sources:
-                            sources.append(source)
+                        merge_discovery_source(albums[key], source)
                         regional_families = albums[key].setdefault(
                             "regional_families", []
                         )
