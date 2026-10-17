@@ -618,6 +618,26 @@ def recommend_new_music(count: int = 10) -> str:
         reverse=True,
     )
 
+    from discovery_store import record_recommendation_pool_diagnostic
+    pool_diagnostics = record_recommendation_pool_diagnostic(
+        DISCOVERY_DB,
+        gathered.get("cf_recording_mbids", []),
+        [
+            f"{item.get('artist', '')}|{item.get('album', '')}"
+            for item in found
+        ],
+        {
+            "cf_recordings_returned": gathered.get("cf_recordings_returned", 0),
+            "cf_recordings_resolved": gathered.get("cf_recordings_resolved", 0),
+            "resolved_album_count": len(albums),
+            "supplementary_cache_hits": gathered.get("supplementary_cache_hits", 0),
+            "supplementary_cache_misses": gathered.get("supplementary_cache_misses", 0),
+            "candidate_counts_by_source": dict(Counter(
+                item.get("discovery_source", "listenbrainz") for item in albums.values()
+            )),
+        },
+    )
+
     return json.dumps({
         "source": (
             "ListenBrainz + MusicBrainz + Last.fm + Navidrome"
@@ -659,6 +679,7 @@ def recommend_new_music(count: int = 10) -> str:
             for style in diversity_style_targets
         },
         "possible_library_matches": possible_matches,
+        "pool_diagnostics": pool_diagnostics,
         "candidate_albums_resolved": len(albums),
         "artists_genre_checked": len(genre_cache),
         "library_albums_indexed": len(library_albums),

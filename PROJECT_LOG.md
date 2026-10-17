@@ -1,3 +1,13 @@
+## 2026-10-17 — Recommendation Phase 0 diagnostics and offline replay harness
+
+- Started from GitHub main `06c4407f7185db1abfecdad256d7bfd6821327e1`, after confirming no open PRs. Objective: implement recommendation roadmap Phase 0.1/0.2 without changing ranking.
+- Added bounded pool fingerprints and one-snapshot SQLite diagnostics. Recording MBIDs and album identities are SHA-256 hashed before persistence; only the latest snapshot is retained. Diagnostics compare current and prior CF pools and final recommendation lists using Jaccard overlap and include provider/cache/source counts.
+- Added deterministic offline replay metric helpers and a frozen synthetic fixture. The harness reports unowned-artist hit rate@k, nDCG@k, artist/style spread, ownership exclusions, eligibility counts, and pool/ranking overlap across contrasting cases. The fixture explicitly documents that it is synthetic, not evidence of live recommendation quality.
+- Wired diagnostics into the existing recommendation response without changing selection/scoring logic. Automated tests and CI are pending; no tests have yet been run in this GitHub-only editing step. Publishing, deployment, and production runtime verification remain paused/unperformed.
+- Branch: `feat/recommendation-baseline-diagnostics`. Next: inspect PR diff, run all four required workflows on the exact final PR-head SHA, fix any regressions, and only then decide whether to merge.
+
+---
+
 ## 2026-10-17 — MCP retirement closeout
 
 - Refreshed GitHub `main`: PR #296's retirement implementation is present at commit `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`; the earlier status/plan text incorrectly still described the PR as open and verification as pending.

@@ -10,7 +10,7 @@ The service-default audit found personal/private-network defaults for ListenBrai
 
 **MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
 
-**Next action:** migrate any external MCP clients/configurations that may still target the retired endpoint, if any exist; repository inspection cannot determine this. Do not publish or deploy without separate authorization.
+**Recommendation improvement:** Phase 0 pool-fingerprint diagnostics and offline fixture metrics are being implemented in a focused PR. Ranking behavior remains unchanged. Publishing and deployment remain paused.
 
 ## Delivery and verification state
 

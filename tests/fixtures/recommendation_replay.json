@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "limitations": [
+    "Synthetic frozen example only; not evidence of real listener satisfaction.",
+    "Future-window artists are evaluation outcomes only and must not enter ranking inputs.",
+    "Compare only against fixtures captured from the same engine revision."
+  ],
+  "cases": [
+    {
+      "case_id": "profile-jazz",
+      "profile_as_of": "2026-01-01T00:00:00Z",
+      "candidate_pool_keys": [
+        "a1",
+        "a2",
+        "a3",
+        "a4"
+      ],
+      "recommendations": [
+        {
+          "artist": "Artist A",
+          "album_key": "a1",
+          "style": "jazz"
+        },
+        {
+          "artist": "Artist B",
+          "album_key": "a2",
+          "style": "soul"
+        },
+        {
+          "artist": "Artist C",
+          "album_key": "a3",
+          "style": "jazz"
+        },
+        {
+          "artist": "Owned Artist",
+          "album_key": "a4",
+          "style": "rock"
+        }
+      ],
+      "owned_artists": [
+        "Owned Artist"
+      ],
+      "future_listened_unowned_artists": [
+        "Artist B",
+        "Artist C"
+      ],
+      "eligibility_rejections": 1,
+      "ambiguous_releases": 0
+    },
+    {
+      "case_id": "profile-brazilian",
+      "profile_as_of": "2026-01-01T00:00:00Z",
+      "candidate_pool_keys": [
+        "a2",
+        "a3",
+        "a5",
+        "a6"
+      ],
+      "recommendations": [
+        {
+          "artist": "Artist D",
+          "album_key": "a5",
+          "style": "brazilian"
+        },
+        {
+          "artist": "Artist B",
+          "album_key": "a2",
+          "style": "soul"
+        },
+        {
+          "artist": "Artist E",
+          "album_key": "a6",
+          "style": "rock"
+        }
+      ],
+      "owned_artists": [],
+      "future_listened_unowned_artists": [
+        "Artist B"
+      ],
+      "eligibility_rejections": 0,
+      "ambiguous_releases": 1
+    }
+  ]
+}
