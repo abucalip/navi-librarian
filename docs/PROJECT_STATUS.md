@@ -8,7 +8,7 @@ Last reviewed: 2026-10-18 (backend recommendation-diversity contract and allocat
 
 PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of this PR.
 
-The code/test revision `84a0f626da5c0293279755b2e2a0111960b19304` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image checks (publishing paused). A documentation-only follow-up is being added to the PR, so the exact final PR head must be checked again before merge. PR #326 is not yet merged.
+The code/test revision `84a0f626da5c0293279755b2e2a0111960b19304` passed all four required workflows: Python syntax, Docker packaging/full unit suite, container runtime smoke test, and validation-only Docker image checks (publishing paused). The documentation-updated PR head `7366e9933ab268deba14d83b6e2309deb53b0e98` also passed all four required workflows; the final merge head must still be checked before merge. PR #326 is not yet merged.
 
 Production deployment is not authorized or claimed. Publishing remains paused; no production runtime verification is claimed.
 
