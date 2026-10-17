@@ -1,3 +1,15 @@
+## 2026-10-17 — Phase 3.1 offline MMR evaluator implementation
+
+- Branch `feat/offline-mmr-capture-evaluator`, based on main `442f2dcdb1a7824a24eb6a1d80ae9b7b2fbc1996`.
+- Added `recommendation_mmr_evaluate.py`, a provider-free evaluator that validates the existing owner-only capture and compares its captured scored debug candidate pool with the original top 10 across a configurable MMR lambda grid. It does not replay stale provider events, import the application, access network providers, or write application state.
+- Added synthetic tests for lambda-grid metrics, deterministic repeatability, one-per-artist enforcement, explicit owned/ineligible-row rejection, missing score-pool refusal, and invalid limits. Added both files to the Python syntax workflow.
+- The report includes baseline overlap/retention, relevance score retention, unique artists, mean pairwise similarity, hard artist cap, and repeatability. `--identity-free` omits candidate identities from printed output. The evaluator refuses to fabricate scores if `debug_all_candidates` is absent.
+- Limitations: the evaluator's candidate rejection depends on explicit flags/decision labels in the captured debug rows; verify those semantics against the private fixture and gathered library snapshot before interpreting eligibility as fully audited. It does not measure future-listen hit-rate/nDCG. The owner-local capture was not accessible to this session, so no private evaluation or local test run is claimed.
+- Production recommendation ranking is unchanged. Publishing, deployment, and runtime verification remain unperformed. Exact-head CI and full diff review remain pending.
+- Next action: run exact-head required workflows, then execute the evaluator against the unchanged private capture in the isolated environment and review the local results before choosing any lambda or production integration.
+
+---
+
 ## 2026-10-17 — Phase 3.1 MMR offline evaluation prioritized; replay compatibility blocker recorded
 
 - The owner requested that MMR evaluation become the next recommendation-engine priority and that the session close with this recorded.
