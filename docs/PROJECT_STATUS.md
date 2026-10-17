@@ -4,13 +4,11 @@ Last reviewed: 2026-10-17 (MCP retirement PR #296 merged; repository-level close
 
 ## Current focus
 
-**Modularization roadmap complete.** The final audit found no remaining concrete correctness, safety, or testability gap that justifies another extraction. Remaining recommendation and acquisition code is documented orchestration/compatibility wiring. No further size-only extraction is planned.
+**Recommendation Phase 0 diagnostics are in progress.** PR #298 adds private recommendation capture/replay and baseline diagnostics; its real-data capture and offline replay remain pending on the user's isolated Mac test environment. Do not change ranking, candidate selection, or allocation before that baseline gate is complete.
 
-The service-default audit found personal/private-network defaults for ListenBrainz, Navidrome, and slskd, and fixed regional recommendation behavior worth revisiting. PR #292 removed the unintended personal/network defaults and added regression assertions; recommendation behavior itself was not changed. Findings and proposed next-session work are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+PR #299 addresses a separate, baseline-independent observability gap: scheduled discovery refreshes previously failed silently and one list's exception could prevent later lists from being checked in that hourly cycle. The branch adds deterministic freshness classification, per-list failure isolation, bounded warning logs, and regression tests. It does not change recommendation ranking or user-facing response shapes.
 
-**MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
-
-**Next action:** migrate any external MCP clients/configurations that may still target the retired endpoint, if any exist; repository inspection cannot determine this. Do not publish or deploy without separate authorization.
+**Next action:** verify PR #299's exact-head CI and diff. Keep PR #298's private capture/replay gate open; publishing and deployment remain paused.
 
 ## Delivery and verification state
 
