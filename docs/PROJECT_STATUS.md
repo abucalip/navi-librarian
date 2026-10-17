@@ -1,16 +1,16 @@
 # Project status
 
-Last reviewed: 2026-10-17 (recommendation Phase 0 closed; profile responsiveness work started)
+Last reviewed: 2026-10-17 (PR #309 merged; profile responsiveness baseline implemented)
 
 ## Current focus
 
 **Recommendation roadmap — Phase 1 profile responsiveness.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
 
-PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. Phase 1 implementation on branch `recommendation/time-decayed-profile` adds deterministic 14-day half-life listen weights and replaces the step-function familiarity multiplier with a smooth curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts are used for scoring/profile evidence. Ownership/release eligibility and the public API response shape are intended to remain unchanged. Focused tests were added for decay, invalid half-life rejection, and the familiarity curve.
+PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. PR #309 merged at `d11dce4d981af4c34aa60a4d9caedb15eb8b6d58` from exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`. It adds deterministic 14-day half-life listen weights, a smooth familiarity curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts drive scoring/profile evidence. Ownership/release eligibility and the public API response shape remain unchanged by intent.
 
-This is an implementation candidate pending exact-head CI and full diff review. No local tests were run in this GitHub-only workflow. Publishing remains paused; no deployment or production-runtime verification is claimed.
+All four required workflows passed on exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`: Python syntax/size/import-boundary run 1560 (`39047871211`); Docker packaging/full unit suite/build run 1468 (`39047871243`, 626 tests passed); container runtime smoke run 1277 (`39047871304`); validation-only multi-architecture image validation run 1321 (`39047871378`). No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-**Next action:** review the complete PR diff and verify all four required workflows on its exact final head. Then evaluate profile responsiveness with deterministic contrasting fixtures and user feedback; do not block on further live diagnostic collection.
+**Next action:** continue the recommendation roadmap with profile-derived supplementary candidate queries (Phase 2.1), using contrasting-profile fixtures and no further live diagnostic collection.
 
 ## Recommendation baseline and prior work
 
