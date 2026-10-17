@@ -12,7 +12,9 @@ All four required workflows passed on exact final PR head `e00d07363c72fcbe971cb
 
 PR #310 merged at `31315a54255762f821cdd9d9949ee11a3ce17fb1` from exact final PR head `2fb8ce7e45188f7f02104cd171ac0d08102279ca`. The contrasting-profile regression reverses both score ordering and the top recommendation when recent listening shifts between artists, with candidate/provider inputs and cached genre metadata held constant. All four required workflows passed on that exact final head: Python syntax `39048493243`, Docker packaging/full unit suite/build `39048493246` (627 tests passed), container runtime smoke `39048493238`, and validation-only multi-architecture image validation `39048493239` (publishing paused). No assistant-side local tests were run; no live provider calls or private captures were used.
 
-**Next action:** implement Phase 2.1 profile-derived supplementary MusicBrainz tag queries. Keep query selection independently testable and bounded, preserve exploration/cache/rate-limit/failure behavior, and test that contrasting profiles select different queries with the same genre cache. Do not collect further live diagnostic snapshots.
+**Current task:** Phase 2.1 implementation is on branch `recommendation/profile-derived-tag-queries`; CI and review are pending. The change adds a pure bounded selector, uses cached genres weighted by the decayed recent-listening profile, reserves two queries for exploration tags from the CF candidate pool, and packages the helper in Docker. Direct tests cover contrasting profiles, deterministic weighting/quota, query escaping, and bounds. Fixed regional tag constants are removed from the supplementary query path.
+
+**Next action:** review the complete diff, verify focused and full tests plus all four required workflows on the exact final PR head, then merge only if green. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
