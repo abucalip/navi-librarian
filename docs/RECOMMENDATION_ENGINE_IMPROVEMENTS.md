@@ -8,7 +8,7 @@ Recommendations should respond meaningfully to changes in recent listening and t
 
 Preserve:
 - Owned-album exclusion, reliable artist identity, and compilation/remix/non-album release filtering.
-- Existing discovery-list/API response contracts, acquisition behavior, persistence, and remaining MCP compatibility.
+- Existing discovery-list/API response contracts, acquisition behavior, and persistence. MCP transport/registration is retired.
 - Bounded provider calls, cache/rate-limit behavior, and graceful failure paths.
 - Deterministic, fixture-driven verification; no live provider dependency for correctness tests.
 - Publishing remains paused. No UI redesign or new discovery mode is part of the first implementation.
@@ -20,6 +20,8 @@ Do not assume a diagnosis before measuring it. In particular, repeated recommend
 The audit inspected `navidrome_server.py::recommend_new_music`, `discovery_candidate_gathering.py`, `discovery_recommendations.py`, `discovery_list_payload.py`, and `app/api/discovery.py`. The audit ran no tests and changed no behavior.
 
 ### Candidate sources and refresh
+
+- Discovery refresh freshness is a separate layer from recommendation candidate/scoring behavior. PR #299 adds direct tests for missing/expired/malformed/non-finite timestamps and isolates cache-read and refresh failures per list, so one failing list does not prevent later lists from being checked in that hourly cycle. The scheduler keeps its existing hourly cadence, 24-hour stale threshold, list order, and callbacks. Warning logs are intentionally bounded to list, stage, and exception type; do not log provider exception messages or URLs.
 
 - **ListenBrainz collaborative filtering (CF) is already the primary candidate source.** Candidate gathering requests `cf/recommendation/user/<user>/recording` with `count=100`, resolves recording MBIDs through MusicBrainz with approximately 1.1-second spacing and a 180-day cache, and groups recordings into albums using the maximum recording score per album. This avoids automatically favoring albums with more tracks.
 - Fixed MusicBrainz tag searches are the **supplementary** candidate source, not the primary recommender. The supplementary path has a fixed set of 20 style/regional tag queries, can add up to 60 candidates, and caches search results for 30 days.
