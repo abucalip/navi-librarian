@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from collections import Counter
@@ -12,6 +13,7 @@ from recommendation_replay import (
     load_capture,
     thaw_gathered_inputs,
     write_capture,
+    write_capture_safely,
 )
 
 
@@ -87,6 +89,26 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                     path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
                     output=expected, count=1, git_sha="other-sha",
                 )
+
+    def test_safe_capture_is_one_shot_and_clears_capture_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            root.chmod(0o700)
+            path = root / "one-shot.json"
+            os.environ["LIBRARIAN_RECOMMENDATION_CAPTURE_PATH"] = str(path)
+            try:
+                write_capture_safely(
+                    str(path),
+                    _gathered(),
+                    [],
+                    ProviderTape("record"),
+                    json.dumps({"recommendations": [], "lastfm_api_configured": False}),
+                    1,
+                )
+                self.assertTrue(path.is_file())
+                self.assertNotIn("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH", os.environ)
+            finally:
+                os.environ.pop("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH", None)
 
     def test_capture_checksum_detects_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
