@@ -1,3 +1,13 @@
+## 2026-10-18 — Identity-free MMR evaluator CLI verified; preference integration unblocked
+
+- The owner ran `recommendation_mmr_evaluate.py --identity-free` in the isolated Python environment from source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64` against the unchanged private fixture captured from source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The command exited 0.
+- Output aggregates: 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 candidate rows rejected for hard eligibility or missing score, 10 baseline recommendations with captured scores, zero network-provider calls, and no provider-tape replay.
+- Six tested lambda values (0, 0.1, 0.25, 0.5, 0.75, 1.0) each returned 10 eligible selections, 10 unique artists, zero duplicate non-empty artist keys, and deterministic repeated results. Lambda 0 mean pairwise similarity was 0.1044; lambda 0.75/1.0 was 0.0591. Lambda 0.75 retained 7/10 baseline items and 85.5% baseline relevance-score retention; lambda 1.0 added no measured benefit.
+- The earlier 35-combination/relevance-floor reproduction is dismissed as a decision input. The actual CLI output has six lambda results and no floor dimension; no further test will be run to reconcile it. Keep relevance floor at its default of 0 and production ranking unchanged.
+- Updated `docs/PROJECT_STATUS.md`, `docs/DIVERSITY_SETTING_ROADMAP.md`, and `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` to record the verified CLI run, evidence limits, and backend preference-contract/integration acceptance criteria. The fixture and identity-bearing report remain private and unchanged.
+- No code behavior, production ranking, publishing, or deployment changed. No assistant-side test or CI result is claimed for this documentation update.
+- **Next action:** implement a focused backend preference-contract/integration PR; keep the settings UI separate until API semantics and backend verification are complete.
+
 ## 2026-10-17 — Owner-supplied offline MMR comparison
 
 - Evaluated the private 66-candidate scored pool with lambda values 0, 0.1, 0.25, 0.5, 0.75, and 1.0. The owner supplied aggregate output; candidate identities remain private.
