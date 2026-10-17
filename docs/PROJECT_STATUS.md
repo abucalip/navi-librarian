@@ -1,16 +1,18 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #310 adds contrasting-profile adapter regression; final-head CI pending)
+Last reviewed: 2026-10-17 (PR #310 merged; contrasting-profile regression verified)
 
 ## Current focus
 
-**Recommendation roadmap — Phase 1 profile responsiveness verification.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
+**Recommendation roadmap — Phase 2.1 profile-derived supplementary queries.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
 
 PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. PR #309 merged at `d11dce4d981af4c34aa60a4d9caedb15eb8b6d58` from exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`. It adds deterministic 14-day half-life listen weights, a smooth familiarity curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts drive scoring/profile evidence. Ownership/release eligibility and the public API response shape remain unchanged by intent.
 
 All four required workflows passed on exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`: Python syntax/size/import-boundary run 1560 (`39047871211`); Docker packaging/full unit suite/build run 1468 (`39047871243`, 626 tests passed); container runtime smoke run 1277 (`39047871304`); validation-only multi-architecture image validation run 1321 (`39047871378`). No assistant-side local tests were run. Publishing remains paused; no deployment or production-runtime verification is claimed.
 
-**Next action:** finish verification and merge PR #310's deterministic end-to-end contrasting-profile regression. Then implement Phase 2.1 profile-derived supplementary tag queries, keeping query selection independently testable and bounded. Do not collect further live diagnostic snapshots.
+PR #310 merged at `31315a54255762f821cdd9d9949ee11a3ce17fb1` from exact final PR head `2fb8ce7e45188f7f02104cd171ac0d08102279ca`. The contrasting-profile regression reverses both score ordering and the top recommendation when recent listening shifts between artists, with candidate/provider inputs and cached genre metadata held constant. All four required workflows passed on that exact final head: Python syntax `39048493243`, Docker packaging/full unit suite/build `39048493246` (627 tests passed), container runtime smoke `39048493238`, and validation-only multi-architecture image validation `39048493239` (publishing paused). No assistant-side local tests were run; no live provider calls or private captures were used.
+
+**Next action:** implement Phase 2.1 profile-derived supplementary MusicBrainz tag queries. Keep query selection independently testable and bounded, preserve exploration/cache/rate-limit/failure behavior, and test that contrasting profiles select different queries with the same genre cache. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 
