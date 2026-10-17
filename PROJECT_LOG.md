@@ -1,3 +1,12 @@
+## 2026-10-17 — Recommendation Phase 0.3: refresh-origin diagnostics (PR #303 in progress)
+
+- Started from GitHub main merge commit `bb473e99855208606e3bcb76dbf7c1cb9eb09b43` after checking recent commits and the PR #302 merge state. The recommendation roadmap's next baseline-independent observability step is to trace personal-list refresh origin and outcome through persistence.
+- Added origin-aware personal refresh instrumentation for `manual` and `scheduler` triggers. The recommendation adapter receives the origin, pool diagnostics retain it in persisted diagnostic metrics, and SQLite stores only the latest bounded outcome per trigger: success, error, or already-running, with timestamp, optional item count, and exception type only.
+- Added regression coverage for origin propagation, success/error outcomes, per-origin latest-state replacement, rejection of arbitrary origins/statuses, and absence of provider exception messages from persisted outcome telemetry. No ranking, candidate-selection, allocation, or public response-schema changes are intended.
+- Branch: `feat/recommendation-refresh-origin-diagnostics`; base SHA `bb473e99855208606e3bcb76dbf7c1cb9eb09b43`. Tests and CI are not yet run for this branch. PR, final SHA, exact-head CI, and merge status will be recorded after verification. Publishing remains paused; no deployment/runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — PR #302: Agent session context search workflow
 
 - PR #302 adds `scripts/session_search.py`, a standard-library lexical search tool returning ranked documentation/source snippets. It supports docs/code scopes, quoted phrases, all/any matching, bounded context and file sizes, JSON output, and excludes common generated/virtual-environment/data directories.
