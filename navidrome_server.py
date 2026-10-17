@@ -285,6 +285,7 @@ def recommend_new_music(
     _gathered_override=None,
     _lastfm_popularity_fn=None,
     _lastfm_available_override=None,
+    _provider_tape=None,
     _record_diagnostics=True,
     _capture_path=None,
 ) -> str:
@@ -316,16 +317,23 @@ def recommend_new_music(
         primary_recent_family,
         recent_style_families,
     )
+    provider_tape = _provider_tape
     if _gathered_override is not None:
         gathered = _gathered_override
     else:
         from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
-        gathered = gather_recommendation_candidates(RecommendationProviders(
+        providers = RecommendationProviders(
             listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
             music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
             is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
             http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
-        ))
+        )
+        if provider_tape is None and _capture_path:
+            from recommendation_replay import ProviderTape
+            provider_tape = ProviderTape("record")
+        if provider_tape is not None:
+            providers = provider_tape.wrap(providers)
+        gathered = gather_recommendation_candidates(providers)
     if isinstance(gathered, str):
         return gathered
     listens = gathered["listens"]
@@ -412,7 +420,7 @@ def recommend_new_music(
         else bool(_lastfm_available_override)
     )
     lastfm_callback = _lastfm_popularity_fn or _lastfm_album_popularity
-    if _capture_path and _gathered_override is None:
+    if _capture_path and _gathered_override is None and _provider_tape is None:
         def _capture_lastfm_result(artist, album):
             value = _lastfm_album_popularity(artist, album)
             _lastfm_calls.append({"artist": artist, "album": album, "result": value})
@@ -727,13 +735,14 @@ def recommend_new_music(
         ],
     }
     encoded = json.dumps(result, ensure_ascii=False, indent=2)
-    if _capture_path and _gathered_override is None:
+    if _capture_path and _gathered_override is None and _provider_tape is None:
         try:
             from recommendation_replay import write_capture
             write_capture(
                 _capture_path,
                 gathered=gathered,
                 lastfm_calls=_lastfm_calls,
+                provider_events=provider_tape.events if provider_tape is not None else [],
                 output=encoded,
                 count=count,
             )
