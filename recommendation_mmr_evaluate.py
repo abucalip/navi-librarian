@@ -149,9 +149,10 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
             metrics = diversity_metrics(reranked)
             artists = [_key(row.get("artist_key")) for row in reranked]
             nonempty_artists = [artist for artist in artists if artist]
-            repeated = mmr_rerank(pool, limit=limit, lambda_=lambda_value)
+            repeated = mmr_rerank(pool, limit=limit, lambda_=lambda_value, relevance_floor=floor_value)
             results.append({
                 "lambda": lambda_value,
+                "relevance_floor": floor_value,
                 "selected_count": len(reranked),
                 "baseline_top_k_retained": baseline_retained,
                 "baseline_top_k_retention_rate": (
