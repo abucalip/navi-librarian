@@ -140,3 +140,33 @@ def record_recommendation_pool_diagnostic(
         )
         db.commit()
     return diagnostic
+
+def record_recommendation_diagnostics(
+    database_path: str | PathLike[str],
+    gathered: dict[str, Any],
+    albums: Any,
+    recommendations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Persist the bounded pool snapshot using the completed gathering result."""
+    from collections import Counter
+
+    albums = list(albums)
+    return record_recommendation_pool_diagnostic(
+        database_path,
+        gathered.get("cf_recording_mbids", []),
+        [
+            f"{item.get('artist', '')}|{item.get('album', '')}"
+            for item in recommendations
+        ],
+        {
+            "cf_recordings_returned": gathered.get("cf_recordings_returned", 0),
+            "cf_recordings_resolved": gathered.get("cf_recordings_resolved", 0),
+            "resolved_album_count": len(albums),
+            "supplementary_cache_hits": gathered.get("supplementary_cache_hits", 0),
+            "supplementary_cache_misses": gathered.get("supplementary_cache_misses", 0),
+            "candidate_counts_by_source": dict(Counter(
+                item.get("discovery_source", "listenbrainz") for item in albums
+            )),
+        },
+    )
+
