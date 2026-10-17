@@ -1,3 +1,13 @@
+## 2026-10-17 — PR #305 in progress: omit raw profile tags from recommendation diagnostics
+
+- Based on current GitHub `main` after PR #304, review found that `recommendation_diagnostics.summarize_candidate_diagnostics()` persisted `profile_evidence.recent_family_counts` with raw family/tag names. This contradicted the explicit privacy claim in the recommendation roadmap and PR #304.
+- The focused fix replaces that map with two aggregates: number of valid recent families and the sum of their listen counts. Regression tests assert representative raw tag names are absent from both the returned summary and persisted diagnostic JSON, while preserving aggregate counts and the existing public response shape.
+- Branch: `fix/private-recommendation-profile-diagnostics`; PR #305. Current implementation is committed on GitHub. No assistant-side local tests were run.
+- Required CI on the exact final PR-head SHA is pending/not yet reported. Publishing remains paused; no deployment or production-runtime verification is claimed.
+- Next: verify all four required workflows on the exact final PR head, review the final diff, then merge only if all gates pass. The private replay metric review remains the next recommendation-policy gate.
+
+---
+
 ## 2026-10-17 — Recommendation Phase 0.3: aggregate diagnostics (PR #304 merged)
 
 - Started the branch from current GitHub main at `b51ab24dee6cd760c31e6924816143a8658db815` after reviewing the workflow, project status, requirements, test plan, recommendation roadmap, relevant source, and existing diagnostic tests.
