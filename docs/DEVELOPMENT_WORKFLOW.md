@@ -46,10 +46,10 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 - Prefer pure or explicitly dependency-injected policy with direct-import tests and a narrow adapter. Do not extract a whole builder or create a broad callback surface just to reduce file size.
 - Stop when the boundary is unclear, tests fail, higher-priority correctness/security/verification work exists, or the extraction adds more complexity than it removes.
 - Treat acquisition/import/deletion and shared-state/locking changes as high risk; isolate them and test safe success and unsafe refusal.
-- Preserve MCP compatibility during routine modularization. MCP retirement requires a separate explicit decision and migration gate.
+- MCP has been retired as a supported interface. Do not reintroduce MCP runtime, registration, or startup paths; preserve the supported web interface and shared service logic.
 - Do not perform size-only slskd refactors. The modularization completion audit is a gated sequence: generate/review `scripts/dep_map.py` output; inventory and decouple AST/source-reading tests; add and enforce the app-to-legacy-server import boundary; audit mutable `MUSIC_DIR` and settings wrappers; then evaluate the acquisition coordinator. Do not skip ahead to extraction.
 - The active roadmap now includes characterization and a provider-injected candidate-gathering seam for `recommend_new_music()`. Characterize behavior before extraction and inspect `discovery_library_snapshot.py` for overlap first.
-- Owner decision recorded: retire the early-development MCP tools `restart_server` and `apply_server_patch` if safe. The focused removal PR preserves the remaining MCP registry and runtime; do not restore either capability without a new explicit owner decision and security review.
+- The MCP registry, SDK dependency, and standalone MCP transport have been removed. Do not restore MCP runtime or registration without a new explicit owner decision and security review.
 - Add a measurable CI size ratchet for `navidrome_server.py` and recorded top-level-function limits. Verify the line-count baseline against the exact main SHA, report offending names/sizes, and permit only explicit temporary exceptions with a removal plan.
 
 ## Required verification gates
