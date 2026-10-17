@@ -59,7 +59,7 @@ def query_terms(query: str) -> list[str]:
 
 def classify_path(path: Path) -> str:
     parts = path.parts
-    if "docs" in parts or path.name.lower() in {"agents.md", "project_log.md", "readme.md"}:
+    if "docs" in parts or path.name.lower() in {\n        "agents.md", "project_log.md", "readme.md", "project_status.md",\n        "requirements.md", "test_plan.md", "development_workflow.md",\n        "architecture.md", "session_context_search.md",\n    }:
         return "docs"
     return "code"
 
