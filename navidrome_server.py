@@ -333,6 +333,7 @@ def recommend_new_music(
         return gathered
     listens = gathered["listens"]
     recent_artists = gathered["recent_artists"]
+    recent_artist_play_counts = gathered.get("recent_artist_play_counts", recent_artists)
     recent_artist_mbid_counts = gathered["recent_artist_mbid_counts"]
     albums = gathered["albums"]
     failures = gathered["failures"]
@@ -340,6 +341,7 @@ def recommend_new_music(
     library_by_title = gathered["library_by_title"]
     genre_cache = gathered["genre_cache"]
     recent_family_counts = gathered["recent_family_counts"]
+    recent_family_play_counts = gathered.get("recent_family_play_counts", recent_family_counts)
     core_families = gathered["core_families"]
     exploration_families = gathered["exploration_families"]
     profile_families = gathered["profile_families"]
@@ -476,7 +478,7 @@ def recommend_new_music(
         candidate = candidate_by_id[candidate_id]
         result = build_personal_recommendation_payload(
             candidate,
-            recent_artists.get(_music_key(candidate["primary_artist"]), 0),
+            recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
         result["ownership_check"] = (
             "No exact normalized album-title match found in the indexed "
@@ -575,7 +577,7 @@ def recommend_new_music(
             "album": candidate["album"],
             "diversity_style": candidate.get("diversity_style", "other"),
             "score": candidate["score"],
-            "recent_artist_play_count": recent_artists.get(
+            "recent_artist_play_count": recent_artist_play_counts.get(
                 _music_key(candidate["primary_artist"]), 0
             ),
             "exploration_family_match": bool(families & exploration_families),
@@ -628,9 +630,9 @@ def recommend_new_music(
         "regional_search_results_seen": regional_results_seen,
         "recent_history_days": 30,
         "recent_listens_retrieved": len(listens),
-        "recent_genre_profile_listens_classified": sum(recent_family_counts.values()),
+        "recent_genre_profile_listens_classified": sum(recent_family_play_counts.values()),
         "recent_genre_family_counts": dict(
-            recent_family_counts.most_common()
+            recent_family_play_counts.most_common()
         ),
         "selected_recent_genre_families": dict(selected_profile_families),
         "lastfm_api_configured": lastfm_available,
