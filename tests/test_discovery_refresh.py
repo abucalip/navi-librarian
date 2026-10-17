@@ -1,10 +1,136 @@
 import unittest
 from threading import Lock
 
-from discovery_refresh import refresh_all, refresh_other, refresh_personal
+from discovery_refresh import (
+    cache_staleness_reason,
+    refresh_all,
+    refresh_other,
+    refresh_personal,
+    refresh_stale_lists,
+)
 
 
 class DiscoveryRefreshTests(unittest.TestCase):
+    def test_cache_staleness_classifies_missing_expired_fresh_and_bad_timestamps(self):
+        self.assertEqual(
+            cache_staleness_reason(None, now=100, max_age_seconds=24),
+            "missing",
+        )
+        self.assertEqual(
+            cache_staleness_reason({"generated_at": 76}, now=100, max_age_seconds=24),
+            "expired",
+        )
+        self.assertIsNone(
+            cache_staleness_reason({"generated_at": 77}, now=100, max_age_seconds=24)
+        )
+        self.assertIsNone(
+            cache_staleness_reason({"generated_at": 101}, now=100, max_age_seconds=24)
+        )
+        for cached in ({}, {"generated_at": None}, {"generated_at": "bad"}):
+            with self.subTest(cached=cached):
+                self.assertEqual(
+                    cache_staleness_reason(cached, now=100, max_age_seconds=24),
+                    "invalid_timestamp",
+                )
+
+    def test_scheduler_refreshes_stale_lists_and_keeps_fresh_lists(self):
+        reads = {
+            "missing": None,
+            "expired": {"generated_at": 10},
+            "fresh": {"generated_at": 95},
+        }
+        refreshed = []
+        outcomes = refresh_stale_lists(
+            ["missing", "expired", "fresh"],
+            reads.__getitem__,
+            lambda name: refreshed.append(name) or {"ok": True},
+            now=100,
+            max_age_seconds=24,
+        )
+        self.assertEqual(refreshed, ["missing", "expired"])
+        self.assertEqual(
+            outcomes,
+            [
+                {"list": "missing", "status": "refreshed", "reason": "missing"},
+                {"list": "expired", "status": "refreshed", "reason": "expired"},
+                {"list": "fresh", "status": "fresh"},
+            ],
+        )
+
+    def test_scheduler_read_failure_does_not_block_later_lists(self):
+        refreshed = []
+
+        def read(name):
+            if name == "broken":
+                raise OSError("private provider URL must not be surfaced")
+            return None
+
+        outcomes = refresh_stale_lists(
+            ["broken", "later"],
+            read,
+            lambda name: refreshed.append(name) or {"ok": True},
+            now=100,
+            max_age_seconds=24,
+        )
+        self.assertEqual(refreshed, ["later"])
+        self.assertEqual(outcomes[0], {
+            "list": "broken",
+            "status": "read_failed",
+            "stage": "read",
+            "error_type": "OSError",
+        })
+        self.assertNotIn("private provider URL", repr(outcomes))
+
+    def test_scheduler_refresh_failure_does_not_block_later_lists(self):
+        refreshed = []
+
+        def refresh(name):
+            if name == "broken":
+                raise RuntimeError("private details")
+            refreshed.append(name)
+            return {"ok": True}
+
+        outcomes = refresh_stale_lists(
+            ["broken", "later"],
+            lambda name: None,
+            refresh,
+            now=100,
+            max_age_seconds=24,
+        )
+        self.assertEqual(refreshed, ["later"])
+        self.assertEqual(outcomes[0], {
+            "list": "broken",
+            "status": "refresh_failed",
+            "stage": "refresh",
+            "reason": "missing",
+            "error_type": "RuntimeError",
+        })
+
+    def test_scheduler_records_failed_refresh_result_without_provider_details(self):
+        outcomes = refresh_stale_lists(
+            ["personal"],
+            lambda name: None,
+            lambda name: {"ok": False, "status": "error", "details": "secret"},
+            now=100,
+            max_age_seconds=24,
+        )
+        self.assertEqual(outcomes, [{
+            "list": "personal",
+            "status": "refresh_failed",
+            "stage": "refresh",
+            "reason": "missing",
+        }])
+
+    def test_scheduler_preserves_already_running_status(self):
+        outcomes = refresh_stale_lists(
+            ["personal"],
+            lambda name: None,
+            lambda name: {"ok": False, "status": "already_running"},
+            now=100,
+            max_age_seconds=24,
+        )
+        self.assertEqual(outcomes[0]["status"], "already_running")
+
     def test_refresh_all_preserves_callback_order_and_results(self):
         calls = []
         def personal(count):
