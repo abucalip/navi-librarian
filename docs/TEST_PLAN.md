@@ -1,6 +1,6 @@
 # Test plan
 
-Last updated: 2026-10-16 (recommendation characterization and size-ratchet gates added)
+Last updated: 2026-10-17 (MCP retirement gates added)
 
 This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
@@ -11,7 +11,7 @@ This document defines the **verification baseline**, not a chronological record 
 3. **Syntax and static checks:** run the repository's Python syntax/acquisition-safety workflow and applicable syntax checks.
 4. **API and package checks:** exercise relevant API contracts and verify changed modules are included by Docker/package configuration.
 5. **Safety cases:** for acquisition, import, cleanup, and deletion, test intended success and unsafe refusal. Cover canonical-root validation, traversal/symlink escape, ambiguous paths, unrelated-file preservation, no-overwrite behavior, incomplete files, and relevant state/race boundaries.
-6. **Compatibility:** for extracted code, test direct imports and the legacy adapter/public interface. Preserve MCP behavior until a separate retirement decision authorizes a change.
+6. **Supported interfaces:** verify the web application imports and starts without MCP SDK/runtime initialization; preserve public web/API contracts and shared service behavior. MCP compatibility is retired.
 7. **Full diff review:** inspect every changed file, callers, test fixtures, imports, package inclusion, error paths, and unintended changes.
 
 ## Required GitHub Actions workflows
@@ -35,7 +35,7 @@ python scripts/dep_map.py --output docs/architecture/dependency-map.json
 
 The Python syntax workflow also generates `dependency-map.json` and uploads it as the `modularization-dependency-map` artifact (14-day retention). Review that artifact against the exact source revision before treating the graph gate as complete. Commit a repository copy only when it has been reviewed against the exact source revision. It is a static-import aid, not proof of runtime reachability; inspect dynamic imports, dependency injection, package/Docker inclusion, and compatibility entry points separately.
 
-Use `docs/architecture/AST_TEST_INVENTORY.md` as the current inventory of tests that read `navidrome_server.py` as source or parse it with `ast`; update the inventory as coupling changes. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/MCP compatibility tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
+Use `docs/architecture/AST_TEST_INVENTORY.md` as the current inventory of tests that read `navidrome_server.py` as source or parse it with `ast`; update the inventory as coupling changes. Behavior tests should import the extracted production module directly; keep narrowly scoped source-contract tests only where the source layout itself is the requirement, and retain adapter/public web-contract tests as applicable. Never delete or weaken acquisition safety coverage as part of decoupling tests.
 
 Before declaring modularization complete, inspect all Python references under `app/`. The CI guard `scripts/check_app_legacy_imports.py` enforces the current reviewed exception: only `app/api/dependencies.py:get_librarian` may contain a direct `navidrome_server` import, and it must remain lazy. Its regression tests must cover the allowed adapter and rejection of other paths, functions, and module-level imports. Update the allowlist only with an explicit architecture review. Inspect all Python references under `app/`:
 
@@ -43,7 +43,7 @@ Before declaring modularization complete, inspect all Python references under `a
 grep -r "navidrome_server" app/ --include="*.py"
 ```
 
-Expected result: no domain-policy imports of `navidrome_server.py`; only explicitly documented compatibility adapters may remain. On the current audit baseline, `app/api/dependencies.py` intentionally performs a lazy import in `get_librarian()` to preserve the web API's legacy-service adapter, and the MCP/server compatibility surface also remains. Review every match and its import timing; do not treat a grep exit code alone as proof. The allowlist-aware CI check is implemented in `scripts/check_app_legacy_imports.py` (PR #254). The only permitted direct import is the lazy compatibility adapter `app/api/dependencies.py:get_librarian`; review every match and import timing when architecture changes. The AST map traverses imports inside functions and therefore reports this lazy edge in the static `app.main` closure even though `tests/test_auth_routes_integration.py` verifies that importing the web app does not initialize `navidrome_server`.
+Expected result: no domain-policy imports of `navidrome_server.py`; only explicitly documented compatibility adapters may remain. On the current audit baseline, `app/api/dependencies.py` intentionally performs a lazy import in `get_librarian()` to preserve the web API's legacy-service adapter, and the legacy service adapter remains; MCP registration/runtime is retired. Review every match and its import timing; do not treat a grep exit code alone as proof. The allowlist-aware CI check is implemented in `scripts/check_app_legacy_imports.py` (PR #254). The only permitted direct import is the lazy compatibility adapter `app/api/dependencies.py:get_librarian`; review every match and import timing when architecture changes. The AST map traverses imports inside functions and therefore reports this lazy edge in the static `app.main` closure even though `tests/test_auth_routes_integration.py` verifies that importing the web app does not initialize `navidrome_server`.
 
 ## Recommendation characterization and size ratchet
 

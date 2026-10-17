@@ -1,13 +1,13 @@
 # Product requirements
 
-Last updated: 2026-10-14
+Last updated: 2026-10-17 (MCP retirement)
 
 This is the user-facing behavior ledger. If implementation and this document disagree, do not silently assume either is correct: clarify the intended behavior, update this ledger, and add a regression test.
 
 ## Product goals
 
 - Help the user discover albums that are not already in their Navidrome library.
-- Provide a web UI while preserving the existing MCP entry point and discovery logic.
+- Provide a supported web UI and preserve the shared discovery logic; MCP is not a supported interface.
 - Support acquisition through an existing slskd service with explicit controls and safeguards.
 - Make state and settings survive container restarts and upgrades.
 - Prefer small, testable changes and preserve working behavior when extending the UI.
@@ -27,7 +27,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | ACQ-01 | The user can request an album without being navigated away from the current discovery page. | Browser-source regression added; CI and manual verification pending |
 | ACQ-02 | After Get is clicked, the button should visibly change to a red `requested` state and prevent duplicate requests while the request is pending/successful. On a failed request, restore a usable state and show an error. | Browser-source regression added; CI and manual verification pending |
 | ACQ-03 | Each acquisition card has a persistent Dismiss control regardless of acquisition state. | Browser-source regression and API success/validation tests added; CI and manual verification pending |
-| ACQ-04 | Dismissing an acquisition removes its acquisition entry and deletes the files in that album's associated folder, as requested by the user. The implementation must resolve the correct folder, stay within configured roots, and reject ambiguous/unsafe paths. | Cleanup logic is extracted to `acquisition_cleanup.py`; legacy MCP callers use a compatibility wrapper. Six refusal/success cases and neighbor preservation are now direct-import tests in `tests/test_acquisition_cleanup.py`. PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`; no live slskd or production deletion test is claimed. HTTP 409 remains deferred because it was not reproduced. |
+| ACQ-04 | Dismissing an acquisition removes its acquisition entry and deletes the files in that album's associated folder, as requested by the user. The implementation must resolve the correct folder, stay within configured roots, and reject ambiguous/unsafe paths. | Cleanup logic is extracted to `acquisition_cleanup.py`; web API callers use the shared cleanup implementation. Six refusal/success cases and neighbor preservation are now direct-import tests in `tests/test_acquisition_cleanup.py`. PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`; no live slskd or production deletion test is claimed. HTTP 409 remains deferred because it was not reproduced. |
 | ACQ-05 | slskd candidates are grouped by their actual remote folder/path; punctuation, edition suffixes, and Unicode normalization should be handled without merging unrelated candidates. | Implemented in development history; preserve regression tests |
 | ACQ-06 | Acquisition/import must not overwrite or delete unrelated library content. Validate file completeness and paths before any destructive or import operation. | Import safety and dismissal refusal/preservation cases are retained; cleanup tests now directly import the extracted production implementation. PR #54 exact head `79bb2854e362786661264eb55fe1697aa0ac6596` passed all four required workflows and merged at `982e39122a401b8b68d75e38423dbb93711b4abd`. No live production-folder deletion test performed. |
 | ACQ-07 | If an exact slskd artist+album query returns no usable peer file payloads, try a small bounded set of broader query variants. Keep album/artist candidate checks unchanged and report each query plus slskd-reported and collected response counts. | Implemented on PR #21 branch; automated CI passed on prior code/test revision, latest diagnostic-message test pending CI, live regression retest pending |
@@ -38,7 +38,7 @@ This is the user-facing behavior ledger. If implementation and this document dis
 | DATA-01 | Persist app database and authentication key under the configured data directory, mounted as persistent storage in Docker. | Implemented; verify restart/upgrade |
 | API-01 | Validate API input and return useful HTTP errors rather than exposing internal exceptions or credentials. | Ongoing quality requirement; `/api/acquire` rejects non-boolean `auto_queue` values with HTTP 400 rather than truthiness-coercing strings or numbers. |
 | OPS-01 | Validate reproducible Docker builds for `linux/amd64` and `linux/arm64`; publish to GHCR only after the modularization roadmap is complete and release is explicitly authorized. | Runtime/build validation automated; GHCR publication intentionally paused |
-| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service or the MCP server. | Current deployment design |
+| OPS-02 | Keep Navidrome and slskd as external services; the web container must not start a second copy of either service. | Current deployment design |
 
 ## Safety rules for acquisition and deletion
 

@@ -1,4 +1,4 @@
-"""Tests for the command allowlist used by the separate Proxmox MCP entry point."""
+"""Tests for the read-only Proxmox diagnostic command allowlist."""
 import unittest
 
 from read_only_command_policy import is_allowed_read_only_command

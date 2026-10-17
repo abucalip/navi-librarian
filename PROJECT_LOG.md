@@ -1,3 +1,13 @@
+## 2026-10-17 — MCP retirement implementation prepared
+
+- Audited current GitHub `main` against `docs/MCP_RETIREMENT_PLAN.md`. The 25-entry registry in `mcp_registry.py`, the `mcp==2.3.0` requirement, the Docker COPY reference, and the `navidrome_server.py` streamable-HTTP startup block were the Librarian runtime/package references. The broader audit also found `server.py`, a separate un-packaged Proxmox MCP entry point with a hardcoded SSH identity/host. `compose.yaml` defines only the web service and exposes its configured web port; no separate Librarian MCP service is configured.
+- All 25 registry-referenced function definitions are retained in this focused change to avoid deleting behavior based solely on MCP registration. Web routes continue using shared service functions through the lazy adapter; any MCP-only helper definitions are no longer registered or exposed by a transport and may be reviewed separately for dead-code cleanup. Removed MCP registration/transport/package wiring, replaced the registry tests with MCP-free architecture checks, and left existing acquisition/import/cleanup safety tests intact.
+- Audit uncovered that the standalone MCP block also started the discovery scheduler, while the supported Uvicorn web entry point did not. Added idempotent scheduler startup from the FastAPI startup hook so scheduled refresh remains available under the supported entry point.
+- Removed the unrelated `server.py` Proxmox MCP entry point and its handler tests; retained `read_only_command_policy.py` and its rejection tests for shell composition, invalid IDs, and unsafe device paths. Updated the MCP retirement plan, requirements, test plan, workflow, status, and project log. External MCP clients or user-specific configuration cannot be determined from repository inspection; no such consumer is defined in the inspected Compose configuration.
+- Branch: `retire/remove-mcp-runtime`. PR #296 is open; exact-head CI and verification evidence are pending. No local tests have been run from this GitHub-only workflow; do not infer passing tests or CI. Publishing remains paused. No deployment or production runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — Post-closeout hygiene: remove orphan patch scripts and tighten server ceiling
 
 - Starting from `main` after PR #290 merge (`c20e931de22fe30cc3378867cbbebe56b28a91a4`), reviewed the closed modularization roadmap and size-guard/testing documentation.

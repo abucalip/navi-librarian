@@ -104,7 +104,7 @@ def items(value):
 
 
 def get_server_source(start_line: int = 1, end_line: int = 200) -> str:
-    """Read a bounded section of this MCP server's own source code.
+    """Read a bounded section of the legacy service module's own source code.
 
     Read-only. Only reads this Python file; does not accept file paths.
     Returns at most 250 lines per request.
@@ -2576,21 +2576,19 @@ def _discovery_scheduler():
         time.sleep(3600)
 
 
+_discovery_scheduler_thread = None
+
+
 def _start_discovery_scheduler():
+    """Start the discovery refresh loop once for the web application process."""
     import threading
-    thread = threading.Thread(
+
+    global _discovery_scheduler_thread
+    if _discovery_scheduler_thread is not None and _discovery_scheduler_thread.is_alive():
+        return
+    _discovery_scheduler_thread = threading.Thread(
         target=_discovery_scheduler,
         name="navidrome-discovery-scheduler",
         daemon=True,
     )
-    thread.start()
-
-
-if __name__ == "__main__":
-    _start_discovery_scheduler()
-    import sys
-    from mcp_registry import create_mcp_server
-
-    create_mcp_server(sys.modules[__name__]).run(
-        transport="streamable-http", host="127.0.0.1", port=8000
-    )
+    _discovery_scheduler_thread.start()

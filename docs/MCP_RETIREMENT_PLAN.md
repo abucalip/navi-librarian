@@ -1,7 +1,7 @@
 # MCP Retirement Plan
 
 Last updated: 2026-10-17
-Status: **Planned — not yet implemented or verified**
+Status: **Removal implementation prepared in PR; verification and merge pending**
 
 ## Objective
 
@@ -23,6 +23,23 @@ The current repository has not fully retired MCP:
 - Earlier work removed the high-risk `restart_server` and `apply_server_patch` tools. Do not restore them.
 
 These are repository-source observations; they do not establish whether any external MCP client or live installation currently uses the interface. Verify consumers before removal.
+
+## Consumer/reference audit (2026-10-17)
+
+Audited the current GitHub `main` source and package/runtime configuration before editing:
+
+| Reference | Finding | Disposition |
+|---|---|---|
+| `mcp_registry.py` | Registers 25 service functions; includes no longer supported restart/patch tools. | Delete registry. The underlying service functions remain available to the web layer. |
+| `server.py` | A separate, non-Librarian Proxmox MCP entry point imports the same SDK, contains a hardcoded local SSH identity/host, and is exercised by `tests/test_proxmox_mcp_handler.py`. It is not packaged or referenced by the web app. | Remove this unrelated MCP entry point and its handler tests rather than retain a second MCP runtime or private-network defaults in this repository. Keep `read_only_command_policy.py` and its shell-composition/traversal rejection tests. |
+| `navidrome_server.py` standalone block | Only direct MCP transport startup; binds streamable HTTP to loopback port 8000 and starts the scheduler as a side effect. | Remove transport/startup block. Keep shared service and scheduler functions. |
+| `requirements.txt` | `mcp==2.3.0` is the only declared MCP SDK dependency found in the inspected package manifest. | Remove dependency. |
+| `Dockerfile` | Explicit COPY list includes `mcp_registry.py`; no separate MCP service exists in `compose.yaml`. | Remove registry from image contents. Web service remains on its configured port. |
+| `tests/test_mcp_registry.py` | Tests registration behavior and the old 25-tool registry. | Replace with retirement regressions; keep existing API, recommendation, acquisition, and safety tests intact. |
+| `app/api/dependencies.py` and `app/main.py` | Web routes lazily call shared `navidrome_server` functions; no need for MCP registration. The web entry point did not start the scheduler, while the removed standalone block did. | Keep lazy adapter; start the idempotent scheduler from web application startup. |
+| Requirements, test plan, workflow docs, status, and project log | Some still described MCP as supported or required compatibility. | Update to the web-only supported interface and MCP-free verification contract. |
+
+The audit also found and removed the unrelated Proxmox MCP entry point (`server.py`), which was not part of the web application or Docker image and hardcoded an SSH identity/host. Its read-only command allowlist and rejection tests remain. No repository-defined external MCP consumer or separate Compose MCP service was found in the inspected configuration. GitHub source inspection cannot establish whether an external client or existing user configuration still targets the former loopback endpoint; that remains unverified. The existing Compose deployment exposes the web port, not port 8000. The 25 registered function implementations were not deleted; they remain shared service functionality.
 
 ## Principles and constraints
 
@@ -126,4 +143,4 @@ MCP retirement is complete only when:
 
 ## Current next action
 
-Perform the consumer/reference audit on current GitHub `main`, then implement the smallest focused retirement PR. This document records a plan, not evidence that any retirement implementation or verification has occurred.
+PR #296 is open. Complete focused tests and verify all four required workflows on the exact final PR-head SHA. Merge only after those gates pass. This document records a plan, not evidence that any retirement implementation or verification has occurred.

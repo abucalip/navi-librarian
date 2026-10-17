@@ -46,6 +46,32 @@ app = FastAPI(
     version="0.1.0",
 )
 
+_discovery_scheduler_start_timer = None
+
+
+def _schedule_discovery_scheduler_startup():
+    """Start the legacy service scheduler after web startup has settled."""
+    import threading
+
+    global _discovery_scheduler_start_timer
+    if (
+        _discovery_scheduler_start_timer is not None
+        and _discovery_scheduler_start_timer.is_alive()
+    ):
+        return
+    _discovery_scheduler_start_timer = threading.Timer(
+        10,
+        lambda: get_librarian()._start_discovery_scheduler(),
+    )
+    _discovery_scheduler_start_timer.daemon = True
+    _discovery_scheduler_start_timer.start()
+
+
+@app.on_event("startup")
+def _start_discovery_scheduler():
+    """Schedule refresh startup without blocking authentication or route startup."""
+    _schedule_discovery_scheduler_startup()
+
 _APP_ROOT = Path(__file__).resolve().parent.parent
 _STATIC_DIR = _APP_ROOT / "static"
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
