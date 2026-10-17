@@ -1167,3 +1167,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - The pure MMR helper now supports an optional relevance floor defaulting to zero; the offline evaluator sweeps floor values and lambda values. Default production ranking remains unchanged because the production adapter does not invoke the helper.
 - No assistant-side local tests were run and the private fixture was not accessed. Do not choose a nonzero floor or implement preference integration until the owner runs the evaluator against the existing private fixture and reviews identity-free aggregate metrics. No live capture, publication, deployment, or production-runtime verification is claimed.
 - Next action: owner-fixture offline calibration; do not collect another live snapshot.
+
+
+## 2026-10-17 — Owner-fixture MMR relevance-floor sweep reviewed
+
+- Retrieved the existing owner-only capture from the private abucalip/reports repository; did not modify it or commit candidate identities/report output. Capture source SHA: d8c1f3de5180b35919f55c304d55e5c939dad373.
+- Aggregate structure: 83 gathered albums, 1,733 library albums, 83 debug candidate rows, 66 scored/rankable candidates, 10 baseline recommendations, and captured scores for all 10 baseline recommendations. The 35 combinations covered lambda 0, 0.25, 0.5, 0.65, 0.75, 0.85, 1 and relevance floors 0, 0.05, 0.1, 0.15, 0.2.
+- At floor 0 or 0.05, all lambdas returned 10 items and retained 7/10 baseline items. Lambda 0 had mean pairwise similarity 0.1044; lambda 0.75/0.85/1 had 0.0591 and about 85.5% baseline relevance-score retention at lambda ≥0.25. Lambda 1 showed no additional benefit. Floors ≥0.1 returned only seven items, retained 4/10 baseline items and 70.3% baseline relevance score, and raised mean pairwise similarity to about 0.216. Decision: keep floor 0; do not set a production lambda/default based on one frozen capture.
+- **Verification limitation:** these aggregates came from a JavaScript reproduction of the inspected merged Python evaluator/MMR logic; the actual Python CLI was not executed in a Python runtime. Do not claim CLI verification. Next action is to run recommendation_mmr_evaluate.py --identity-free in the isolated Python environment and compare results. No live provider calls, production changes, publishing, deployment, or runtime verification occurred.
