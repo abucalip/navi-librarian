@@ -1,224 +1,240 @@
-# Recommendation engine: audit findings, research, and proposed improvements
+# Recommendation engine improvement roadmap
 
-Status: planning and research only. This document records the 2026-10-17 hardcoding audit and follow-up research into DroppedNeedle and public recommendation-system approaches. It does not authorize changing recommendation behavior by itself. Implement a focused behavior change in a later PR after inspecting the current implementation and writing characterization/regression tests.
+Status: planning only. This roadmap consolidates the 2026-10-17 hardcoding audit, implementation evidence from `main` at `a977016a6f260d87518a595e22fb641963893b9c`, the DroppedNeedle review, and recommendation-system research. It prioritizes diagnosis and offline measurement before ranking changes. This document does not authorize publishing or deployment.
 
-## Goal
+## Goal and guardrails
 
-Recommendations should respond meaningfully to changes in recent listening and the library, avoid repetitive lists, and balance relevance with discovery. Keep eligibility and ownership correctness, provider safety, response contracts, and existing acquisition behavior intact. Avoid hidden personal taste assumptions and fixed artist/genre preferences unless they are explicit, configurable product choices.
+Recommendations should respond meaningfully to changes in recent listening and the library, avoid repetitive lists, and balance relevance with novelty and useful exploration.
 
-## Current diagnosis
+Preserve:
+- Owned-album exclusion, reliable artist identity, and compilation/remix/non-album release filtering.
+- Existing discovery-list/API response contracts, acquisition behavior, persistence, and remaining MCP compatibility.
+- Bounded provider calls, cache/rate-limit behavior, and graceful failure paths.
+- Deterministic, fixture-driven verification; no live provider dependency for correctness tests.
+- Publishing remains paused. No UI redesign or new discovery mode is part of the first implementation.
 
-### Fixed supplementary discovery queries
+Do not assume a diagnosis before measuring it. In particular, repeated recommendations may arise from candidate supply, scoring/allocation, cache/persisted-list freshness, or some combination.
 
-discovery_candidate_gathering.py contains a fixed set of 20 MusicBrainz tag searches covering regional/style families, including North African music, African styles, Brazilian music, jazz, soul, and rock. The supplementary path can add up to 60 candidates, with up to five new candidates per query, and its search results are cached for 30 days. This makes the same discovery directions recur even when listening changes.
+## Current implementation baseline (verified by read-only audit)
 
-### Fixed regional-style selection targets
+The audit inspected `navidrome_server.py::recommend_new_music`, `discovery_candidate_gathering.py`, `discovery_recommendations.py`, `discovery_list_payload.py`, and `app/api/discovery.py`. The audit ran no tests and changed no behavior.
 
-navidrome_server.py::recommend_new_music() supplies one-slot targets for north_african, afrobeats, afro_jazz, and malian_desert_blues. These targets are not calculated from recent listening and can reserve recommendation capacity for those styles regardless of the current profile.
+### Candidate sources and refresh
 
-### Artist-specific classification overrides
+- **ListenBrainz collaborative filtering (CF) is already the primary candidate source.** Candidate gathering requests `cf/recommendation/user/<user>/recording` with `count=100`, resolves recording MBIDs through MusicBrainz with approximately 1.1-second spacing and a 180-day cache, and groups recordings into albums using the maximum recording score per album. This avoids automatically favoring albums with more tracks.
+- Fixed MusicBrainz tag searches are the **supplementary** candidate source, not the primary recommender. The supplementary path has a fixed set of 20 style/regional tag queries, can add up to 60 candidates, and caches search results for 30 days.
+- CF output is externally generated on ListenBrainz's schedule, and at most 100 recordings are requested. Repeated refreshes may therefore receive a similar candidate pool even after listening changes. This is a hypothesis to measure, not yet a proven root cause.
+- Discovery output is persisted through `discovery_refresh.py`. Refresh triggers, scheduler behavior, and list freshness must be traced separately from candidate/scoring behavior.
+- Artist genre metadata is cached for 90 days; Last.fm album popularity is cached for 30 days. Stable metadata caching can remain long-lived if profile-dependent ranking is recalculated.
 
-discovery_recommendations.py contains explicit artist-name sets used for regional/style classification. These exceptions can override metadata-driven classification and overlap with the fixed regional discovery preferences. Prefer metadata-based classification; retain only individually justified, documented exceptions if provider metadata demonstrably fails.
+### Existing score composition
 
-### Personalization signals and caches
+The current score is multiplicative:
 
-The engine reads recent ListenBrainz listens over a rolling 30-day window and uses MusicBrainz genre tags for a bounded candidate pool (up to 60 candidate artists plus up to 15 recently scrobbled artists when slots are available). Artist genre metadata is cached for 90 days and Last.fm album popularity for 30 days. Caching is not inherently wrong, but the scoring and query-selection layers must allow current listening to influence ranking even when metadata is cached.
+```
+discovery_score = CF score
+                × familiarity
+                × exploration-family bonus
+                × recent-profile bonus
+                × Last.fm popularity bonus
+```
 
-### Refresh behavior is a separate question
+| Term | Current behavior | Audit implication |
+|---|---|---|
+| Familiarity | 0.75–1.35 based on recent plays of the candidate artist; 0 plays gets 1.35, 11+ plays gets 0.75 | Step function, 1.8× spread; strongly rewards unheard artists |
+| Exploration-family | 1.00 or 1.10 | Flat bonus when a candidate's family is in the exploration set |
+| Recent profile | 1.00–1.10, calculated as 1 + 0.10 × average family share | Recent listening changes score by at most 10% |
+| Last.fm popularity | Up to approximately 1.12, using log-scaled listeners/playcount | Applied only to the top 40 candidates after earlier terms; can further bias the head of the pool |
 
-Discovery lists are persisted by discovery_refresh.py. The audit did not establish every UI action's refresh behavior or measure whether stale list state contributes to the observed repetition. Verify refresh triggers and scheduler behavior separately from algorithm changes.
+Listening counts currently use a flat 30-day window without recency weighting. Taken together, the current score appears novelty-biased rather than strongly taste-responsive: recent-profile influence is comparatively weak while familiarity has the largest spread. Confirm with the evaluation harness before selecting new weights.
 
-## Lessons from DroppedNeedle
+The Last.fm path divides out and re-applies the profile bonus when tags change the family match. This may be correct but is fragile; a single score-component record would be easier to reason about and test.
 
-Reviewed the public [DroppedNeedle repository](https://github.com/DroppedNeedle/DroppedNeedle), its README, and its [feature documentation](https://www.droppedneedle.com/docs/features). Its documented discovery design combines several distinct entry points rather than relying on one undifferentiated recommendation list.
+### Allocation, feedback, and hidden preferences
 
-### 1. Blend independent candidate sources
+- Allocation targets are 40% adjacent, 30% cross-genre, and the remainder adventurous, plus four fixed one-slot regional targets. `family_cap=1` and `max_checks=60` are also configured. Inspect `discovery_personal_allocator.py` to establish precisely what `family_cap` constrains before changing it.
+- The four fixed regional slots and fixed supplementary tag searches can reserve capacity without current profile evidence. Replace these with profile-derived selection; do not ban those styles.
+- `discovery_recommendations.py` contains artist-name sets used as regional/style classification overrides. Prefer normalized provider metadata and tags. Retain any exception only with a documented reason and regression test.
+- Feedback actions (`save`, `dismiss`, `dismiss_artist`, `remove_for_me`) currently filter stored lists in `discovery_list_payload.py`; they do not affect scoring or query selection.
+- Candidates already expose `recent_profile_bonus`, `lastfm_popularity_bonus`, `genres`, `discovery_category`, and `diversity_style`. Add backend/debug-only diagnostics before building UI explanations.
 
-DroppedNeedle describes a discovery queue drawing from similar artists, library gaps, fresh releases, global charts, and ListenBrainz/Last.fm listening patterns. Its home page also separates trending artists, popular albums, recently added music, genre links, and personalised “Because You Listened To” rows.
+## Roadmap and decision gates
 
-**Application to Librarian:** treat sources as candidate generators with explicit provenance, not as hard-coded category quotas. Candidate sources worth evaluating:
+Phases are ordered by dependency and evidence. Do not skip measurement to tune weights by intuition. Each phase should be a focused, reviewable PR (split independent work only when it does not obscure the decision gate).
 
-- Recent listening and artist similarity.
-- MusicBrainz genre/tag exploration seeded from the current profile.
-- Library gaps / collection-building opportunities.
-- New releases by artists already represented in the library.
-- ListenBrainz collaborative recommendations, if the recording-to-album mapping and provider availability are useful enough.
-- A bounded popularity/trending source as a weak fallback or optional lane, never the dominant personal signal.
+### Phase 0 — Diagnose candidate supply and establish a measurable baseline
 
-Merge, deduplicate, validate eligibility, and rank the combined candidate pool. Track which source(s) proposed each candidate so tests and explanations can show why it appeared. A source's existence must not guarantee a slot in the final list.
+**Priority: first implementation unit. No ranking behavior changes in this phase.**
 
-### 2. Separate discovery modes by intent
+#### 0.1 Pool-fingerprint diagnostic
 
-DroppedNeedle's documented weekly ListenBrainz exploration playlist is distinct from its more familiar personalised recommendations and charts. This suggests that one ranking cannot simultaneously optimize familiarity, novelty, and broad exploration without making trade-offs invisible.
+On each recommendation refresh, record privacy-conscious, bounded diagnostic data:
+- Fingerprint/set of CF recording MBIDs (do not log credentials or raw personal data beyond the identifiers needed for this diagnostic).
+- Number of recordings returned, number resolved, and resolved album count.
+- Jaccard overlap of the current CF recording set with the previous refresh's set.
+- Supplementary-query cache hit rate and candidate counts by source.
+- Profile/list refresh timestamp and final list identity/overlap where available.
 
-**Application to Librarian:** preserve the product's existing lists, but give each an explicit intent:
-- **Personal discoveries:** strongest response to recent listening, with a controlled amount of adjacent novelty.
-- **Classics / collection-building:** quality/relevance and meaningful library gaps, not simply global popularity.
-- **Artist Deep Dives:** explore artists already in the library, without letting one artist dominate a row.
-- **New Releases:** recency and reliable artist identity/album eligibility.
+Determine where to store this safely and whether existing diagnostics or cache records already cover part of it. Keep this diagnostic bounded and avoid turning normal logs into a high-volume per-recording trace.
 
-Do not add new UI modes as part of the first algorithm fix. First make candidate generation and ranking responsive within the existing contracts.
+**Decision gate:** high CF overlap suggests a candidate-supply/freshness limitation; low CF overlap with repeated final lists points toward scoring, allocation, eligibility, or persisted-output behavior. Do not infer causation from one refresh pair.
 
-### 3. Use listening history as a signal, not a fixed identity
+#### 0.2 Fixture-based offline replay harness
 
-The app documentation says personalised discovery depends on connecting ListenBrainz or Last.fm, and offers “Because You Listened To” recommendations. This is a useful product pattern: show a clear connection to actual listening and do not imply personalisation when no usable history exists.
+Build a deterministic harness from frozen fixtures for listening history, CF payload, genre cache, and relevant feedback/library state. No live provider calls should be required. Replay chronologically: use listens through day T to generate recommendations, then inspect whether recommended **unowned artists** appear in listens during T to T+14 days.
 
-**Application to Librarian:** keep recent listens as a first-class, time-sensitive ranking signal. For each candidate, record which recent artists/listens or profile features contributed to its score. A changed listening history should be able to change both query selection and the candidate order; cached genres should enrich that calculation but must not freeze it.
+Report:
+- Artist-level hit-rate@k and nDCG@k (album-level outcomes are too sparse for the primary replay measure).
+- Responsiveness: candidate-pool overlap and ranking changes between contrasting profiles.
+- Novelty, intra-list diversity, artist/style spread, repeat rate, and relevance retention.
+- Eligibility/rejection counts for owned albums and ineligible/ambiguous releases.
 
-### 4. Keep source evidence and explanations
+Library owners may already own and play music, so evaluate on unowned artists and treat replay hit rate as a relative comparison, not an absolute prediction of user satisfaction. Avoid leakage: future-window listens must not enter the profile or candidate-generation fixtures for day T. Document fixture construction and the limits of historical replay.
 
-DroppedNeedle's discover cards expose album details and previews before a user requests or skips them. Librarian is album-first and has acquisition actions, so confidence and explanation are particularly useful.
+#### 0.3 Trace refresh and expose score diagnostics
 
-**Application to Librarian:** add internal candidate diagnostics first: source(s), relevant seed artist(s), recent-listening contribution, genre/tag overlap, popularity contribution, novelty/familiarity, ownership/eligibility rejection reason, and final score components. User-facing explanations can be a later UI task; do not make this backend research depend on a UI redesign.
+Trace refresh triggers, scheduled refreshes, persisted list reads/writes, and cache boundaries. Confirm whether each user refresh regenerates user-dependent output as intended. Expose a debug-only candidate record with source provenance, per-term score breakdown, relevant seed/profile evidence, cache diagnostics, and rejection reasons.
 
-### Limits of the comparison
+**Acceptance gate for Phase 0**
+- Repeated-pool vs repeated-ranking hypotheses can be distinguished from recorded evidence.
+- The replay harness is deterministic on frozen inputs and reports the metrics above.
+- Baseline output is captured before any scoring, source, or allocation change.
+- Existing output schemas and recommendation behavior are unchanged.
 
-DroppedNeedle's public docs establish the product's discovery features, not the exact implementation or measured recommendation quality. Do not assume its source code uses a particular ranking formula, collaborative-filtering model, or diversity algorithm unless code-level evidence confirms it. Reuse ideas and testable patterns, not unverified internals.
+### Phase 1 — Make listening signals time-sensitive and proportionate
 
-## Findings from recommendation-system research and music services
+Only proceed after Phase 0 identifies ranking/profile responsiveness as a meaningful contributor. Use the replay harness for every candidate formula.
 
-### 1. Re-rank for diversity and serendipity after relevance scoring
+#### 1.1 Time-decayed profile
 
-Music recommender research notes that systems optimized only for similarity/popularity can over-specialize and repeatedly suggest familiar material. Serendipity-oriented greedy re-ranking research finds that diversity can improve serendipity, but that increasing diversity too far can reduce accuracy. Diversity should therefore be controlled rather than maximized blindly. See Kotkov et al., [“How does serendipity affect diversity in recommender systems?”](https://link.springer.com/article/10.1007/s00607-018-0687-5) and the review [“Current challenges and visions in music recommender systems research”](https://link.springer.com/article/10.1007/s13735-018-0154-2).
+Replace the flat 30-day count as the sole signal with a decay such as `weight = 0.5 ** (age_days / half_life_days)`, starting with a half-life near 14 days. Retain a longer window (for example, 90 days) to distinguish stable taste from short-term drift. Derive artist and family/tag weights from decayed counts.
 
-**Recommended technique: greedy marginal relevance/diversity re-ranking.** First compute relevance scores. Then select the next album by balancing its relevance against similarity to already selected albums, for example:
+Use those weights both in scoring and supplementary query selection. Keep profile computation separate from cached provider metadata so cached genres do not freeze the profile.
 
-    selection_score(candidate) = relevance(candidate) - lambda * max_similarity(candidate, selected)
+#### 1.2 Rebalance familiarity and profile relevance
 
-The similarity can combine artist identity, shared MusicBrainz tags/genres, and other available metadata. Start with a simple, deterministic implementation and a small configurable penalty. Avoid adding a machine-learning dependency before the simpler method is measured. A related standard technique is Maximal Marginal Relevance (MMR); treat it as a candidate design, not an assumed requirement.
+Replace the step-function familiarity term with a smooth curve. Its peak should occur at low-but-nonzero familiarity so the engine can recommend adjacent artists, not only never-played artists. Rebalance the profile term so current listening can compete on a similar order of magnitude with familiarity.
 
-For an album-oriented result set, diversity should be evaluated across both artists and styles. Enforce one album per artist where product requirements already demand it; do not rely on the softer diversity penalty to replace a hard eligibility rule.
+Choose curve/weights using replay metrics and controlled contrasting profiles, not intuition. Inspect the current multiplicative score for interactions; consider representing components explicitly and calculating the final score once to avoid fragile divide/re-apply behavior in the Last.fm tag path.
 
-### 2. Consider collaborative recommendations as a separate candidate source
+Keep Last.fm popularity capped and normalized as a weak tie-breaker or cold-start fallback. It must not routinely overpower personal relevance.
 
-ListenBrainz documents a collaborative-filtering recording recommendation endpoint that returns MusicBrainz recording IDs and scores. It also provides a Weekly Exploration playlist based on collaborative filtering, intended to surface music the user has not heard. The recommendation endpoint is explicitly documented as experimental, and data/playlist generation has its own update schedule.
+**Acceptance gate:** replay results show more responsiveness without an unacceptable regression in relevance, novelty, diversity, or deterministic repeatability. Numeric targets should be chosen after baseline collection rather than invented in advance.
 
-Sources: [ListenBrainz recommendation API](https://listenbrainz.readthedocs.io/en/latest/users/api/recommendation.html), [ListenBrainz documentation](https://listenbrainz.readthedocs.io/en/latest/), and [ListenBrainz data update intervals](https://github.com/metabrainz/listenbrainz-server/blob/master/docs/general/data-update-intervals.rst).
+### Phase 2 — Make candidate generation reflect the current profile
 
-**Application to Librarian:** investigate this as an optional candidate generator, not as a wholesale replacement for the current album-ranking engine. Assess:
-- Whether the user's ListenBrainz identity and endpoint are available and reliably configured.
-- How many returned recording MBIDs map to usable MusicBrainz release groups/albums.
-- How to aggregate recording scores to album candidates without letting albums with many tracks gain an unfair advantage.
-- How to filter owned albums, compilations/remixes/non-album releases, and ambiguous artist identities.
-- Endpoint freshness, empty/204 responses, rate limits, and fallback behavior.
+Proceed after Phase 0, and coordinate with Phase 1 so query changes can be evaluated independently from score changes.
 
-Because the API is experimental and recording-level, this should follow the baseline responsiveness and diversity work rather than block it.
+#### 2.1 Replace fixed supplementary tag searches
 
-### 3. Use similar-artist data as a bridge, not as truth
+Derive a bounded set of MusicBrainz tag queries from the highest-weighted tags in recent artists' cached genres and tags that co-occur among strong CF candidates. Keep a small exploration quota whose tags are drawn from the broader candidate pool, rather than from fixed regional constants.
 
-Last.fm's official API exposes artist.getSimilar, with a similarity match value and optional MusicBrainz ID. See [Last.fm API documentation](https://www.last.fm/api/show/artist.getSimilar) and the [Last.fm API overview](https://www.last.fm/api).
+Remove fixed regional one-slot targets and replace them with measured diversity selection (Phase 3) or profile-derived allocation. If the owner wants specific regional styles favored, expose them as explicit, empty-by-default pinned interests rather than code constants.
 
-**Application to Librarian:** similar artists can bridge from recent listens to candidates not represented by the current fixed genre queries. Seed the lookup from a small, weighted set of recent artists, prefer MBIDs over names, and aggregate scores from multiple seeds. Reduce the influence of an artist that is only weakly related or appears as a single stale seed. Cache provider results according to provider limits, but recalculate the profile-dependent weights on each refresh.
+Keep candidate caps, rate limits, diagnostics, and graceful provider-failure behavior. Query selection must respond to changed profile fixtures even when the genre cache is unchanged.
 
-Do not let Last.fm album popularity stand in for taste. Popularity is a weak tie-breaker or cold-start fallback and should be capped/normalized so it cannot swamp the personal score.
+#### 2.2 Review classification overrides and source provenance
 
-### 4. Evaluate diversity as a product outcome, not a genre quota
+Replace artist-name classification sets with normalized provider tags where possible. Any remaining exception must document why metadata is insufficient and include direct regression coverage.
 
-A longitudinal study of diversified music recommendations found that exposure to varied recommendations can affect curiosity and openness to less familiar music. It supports measuring discovery quality beyond immediate similarity, but does not prescribe a universal diversity level for every listener. See Porcaro, Gómez, and Castillo, [“Assessing the Impact of Music Recommendation Diversity on Listeners”](https://dl.acm.org/doi/10.1145/3608487).
+Track all source provenance for each candidate (CF, profile-derived tags, similar-artist lookup, library gap, new release, or optional popularity fallback). Merge and deduplicate sources before eligibility/ranking; a source's presence must not guarantee a fixed number of slots.
 
-**Application to Librarian:** measure both whether recommendations track recent listening and whether the result set contains useful variety. Do not substitute fixed regional quotas for measured diversity. Keep a configurable exploration component that is derived from the current profile and broad candidate pool, with safeguards against a single tag or source monopolizing the result.
+**Acceptance gate:** contrasting profiles generate different supplementary queries where metadata supports it; exploration remains available but is not a hidden personal preference; provider calls remain bounded.
 
-### 5. Keep a clean distinction between freshness and metadata caching
+### Phase 3 — Improve list diversity and recommendation freshness
 
-ListenBrainz documents different refresh schedules for raw listens, statistics, similarity data, and generated playlists. This reinforces that “recent listening”, “provider metadata”, and “precomputed recommendation output” are different freshness domains.
+#### 3.1 Greedy MMR-style re-ranking
 
-**Application to Librarian:** inspect each cache and persisted list independently. Record cache key, TTL, purpose, and whether it contains user-dependent output or relatively stable catalog metadata. Do not shorten all TTLs indiscriminately. User-dependent ranking should be recomputed when a discovery refresh is requested, even if catalog metadata remains cached.
+After relevance scoring and hard eligibility/artist caps, apply a deterministic greedy marginal relevance/diversity re-ranker. Start with the concrete similarity:
+- 1.0 for the same artist.
+- Otherwise Jaccard overlap between MusicBrainz tag sets.
 
-## Proposed design for Librarian
+Use `selection_score = relevance_score - lambda × max_similarity(candidate, selected)` as the initial form. Evaluate `lambda` with the Phase 0 replay harness. Do not let soft diversity penalties replace hard product constraints, including one-album-per-artist requirements where applicable. Preserve high-relevance candidates unless measured results justify a trade-off.
 
-### Phase 0 — Characterize the current engine and refresh path
+This replaces the four fixed regional slots as the diversity mechanism; it does not prohibit regional styles from being recommended.
 
-1. Inspect current main implementations and callers for recent_listening_profile(), recommend_new_music(), candidate gathering, scoring/allocation, discovery_recommendations.py, discovery_refresh.py, and relevant tests.
-2. Trace every refresh trigger and persisted discovery-list read/write. Establish whether the observed repetition is from candidate generation, ranking, caching, or stale displayed output.
-3. Add/confirm deterministic diagnostics for candidate counts by source, profile timestamp/window, cache hit/miss, rejection reason, final score components, and selected output.
-4. Capture baseline behavior on fixtures before altering algorithms.
+#### 3.2 Recommendation history and cooldown
 
-### Phase 1 — Remove hidden preference and improve responsiveness
+First inspect `discovery_store.py` and existing persistence to see whether recommendation batches are already retained. If not, persist a minimal batch history (album identity, timestamp, rank) sufficient for repeat-rate metrics and comparisons.
 
-1. **Remove forced regional quotas.** Remove the four fixed regional-style targets or replace them with profile-derived allocation and a general exploration floor. Do not remove those genres from consideration; make their representation responsive rather than guaranteed.
-2. **Make supplementary discovery profile-driven.** Derive a bounded set of MusicBrainz tag queries from recent listens, available artist genres, and library context. Preserve rate limits, bounded candidate counts, failure diagnostics, and an exploration path for unfamiliar styles.
-3. **Simplify artist-specific overrides.** Prefer provider metadata and normalized tags. Keep exceptions only with a documented reason and direct regression coverage.
-4. **Review scoring influence.** Characterize how recent artist familiarity, recent-family bonuses, Last.fm popularity, initial candidate scores, and allocation interact. Prevent popularity or fixed seed scores from routinely overpowering current listening.
-5. **Fix refresh semantics if proven stale.** If the refresh trace shows persisted output is not regenerated when expected, correct that as a separate, testable root-cause fix.
+Use history for a soft, time-limited cooldown when candidates are otherwise comparable. Define expiry explicitly; never permanently exclude a candidate merely because it was previously shown. Account for missing/deleted albums and storage growth.
 
-### Phase 2 — Reduce list repetition
+#### 3.3 Feedback as a bounded signal
 
-1. Apply a small, deterministic diversity-aware re-ranker after eligibility and relevance scoring.
-2. Penalize duplicate artists and near-identical style profiles in the same result set; keep any product-required hard artist limits as hard constraints.
-3. Prefer less recently recommended candidates when relevance is otherwise comparable, if recommendation history is available. Define the time window explicitly and avoid permanent exclusion.
-4. Track the provenance of each candidate so source diversity can be inspected. Do not force each source to contribute a fixed number of albums.
-5. Only introduce randomized tie-breaking if a deterministic seed is injected and tests prove repeatability; stable deterministic diversity is preferable initially.
+Use feedback in ranking/query selection, not only stored-list filtering:
+- `dismiss_artist`: apply a decaying soft penalty to that artist and a weaker penalty to its dominant tags.
+- `save`: use the saved album/artist as a positive similarity seed for ranking and supplementary query selection.
+- `dismiss`: penalize that album only; do not generalize to its artist or genre.
+- `remove_for_me`: preserve its existing semantics; do not silently reinterpret it as a global dislike.
 
-### Phase 3 — Add external candidate sources only when justified
+Define separate time windows/decay rules and expiry for positive/negative signals. Do not create permanent exclusion. Add regression tests using injected feedback rows, including expiry and ensuring album-level dismissal does not penalize sibling albums.
 
-1. Prototype ListenBrainz collaborative recommendations with recording-to-album mapping and clear diagnostics.
-2. Prototype Last.fm similar-artist candidates seeded by current listening, with popularity treated separately.
-3. Compare the extra sources against the simpler profile-driven MusicBrainz approach before keeping them. Avoid broadening the architecture or adding dependencies without measurable improvement.
+**Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
-## Test and evaluation plan
+### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 
-Use provider-injected fixtures; do not rely on live provider APIs for correctness tests.
+These are candidates for experiments, not committed additions. Check existing modules and source overlap before implementation.
 
-### Core behavioral tests
+1. **Library gaps / deep dives:** for artists with several owned albums, find missing studio albums via MusicBrainz release groups. Inspect `discovery_new_releases.py`, classics modules, and existing library snapshot logic first to avoid duplicate inventory/catalog work.
+2. **Similar artists seeded by recent listening:** evaluate Last.fm `artist.getSimilar` or a ListenBrainz similarity endpoint only if current official documentation confirms the endpoint and its behavior. Seed from a small weighted set of recent artists, prefer MBIDs, aggregate evidence from multiple seeds, and downweight weak/stale matches. Cache provider results while recalculating profile-dependent weights on each refresh.
+3. **Wider ListenBrainz CF pool:** check current official documentation for pagination or artist-type/filter parameters. The current code requests `count=100`; do not assume additional parameters exist until confirmed.
+4. **Popularity/trending fallback:** only consider it as a capped cold-start or optional lane, never as a dominant personal signal.
 
-- Two materially different recent-listening histories lead to changed profile-derived queries and/or candidate ranking when candidate metadata supports the difference.
-- Identical inputs and deterministic settings produce identical results.
-- A candidate supported by multiple recent seed artists scores appropriately relative to one supported only by a weak/stale seed.
-- Fixed regional preferences and artist-name overrides no longer dominate results in the absence of profile evidence.
-- Popularity cannot routinely overpower relevant personal signals.
-- Candidate results remain bounded and provider failures degrade safely.
-- Cached genre/similarity metadata can be reused without freezing profile-dependent ranking.
-- Refresh actions regenerate user-dependent output when intended; persisted results have observable freshness metadata or equivalent diagnostics.
-- Diversity re-ranking reduces repeated artists/styles in a controlled fixture without displacing all high-relevance candidates.
-- The same artist is never duplicated where a product rule forbids it.
-- Optional collaborative recommendations handle empty, stale, malformed, and unmappable recording IDs safely.
+For each lane, compare against the Phase 0 baseline and simpler profile-driven sources. Retain only sources that improve measured outcomes enough to justify operational complexity, cache/rate-limit cost, and failure modes. ListenBrainz's recording-level CF endpoint is already in use; do not describe it as a new prototype or replacement.
 
-### Metrics to report in tests/diagnostics
+## Lessons and design patterns retained from prior research
 
-- **Responsiveness:** overlap and ranking changes between contrasting listening profiles.
-- **Novelty:** fraction of recommendations whose artist/album is not in recent listening history (separate from library ownership).
-- **Intra-list diversity:** unique artists and genre/tag spread, plus average pairwise candidate similarity if metadata supports it.
-- **Repeat rate:** overlap with previous recommendation batches over a defined period.
-- **Relevance guardrails:** score distribution and retention of high-relevance candidates before/after re-ranking.
-- **Eligibility correctness:** owned-album, compilation/remix/non-album, and artist-identity rejection counts.
+### DroppedNeedle: distinct sources and discovery intents
 
-Do not set arbitrary numeric targets before collecting a baseline. First make the metrics reproducible, then agree on target thresholds.
+The public [DroppedNeedle repository](https://github.com/DroppedNeedle/DroppedNeedle) and [feature documentation](https://www.droppedneedle.com/docs/features) describe discovery entry points including similar artists, library gaps, fresh releases, charts, ListenBrainz/Last.fm patterns, and “Because You Listened To” rows. This supports using independent candidate generators with provenance and keeping existing lists focused on distinct intents:
+- **Personal discoveries:** recent-listening responsiveness with controlled adjacent novelty.
+- **Classics / collection-building:** meaningful library gaps and relevance, not popularity alone.
+- **Artist Deep Dives:** explore owned artists without letting one artist dominate a row.
+- **New Releases:** recency plus reliable artist identity and release eligibility.
 
-## Acceptance criteria
+Do not add new UI modes in the initial backend work. The public docs establish product features, not DroppedNeedle's exact internal algorithm or measured quality; do not attribute unverified ranking internals to it.
 
-- No hidden, fixed genre quotas remain in personal recommendations unless documented as an explicit product policy.
-- Candidate query selection and ranking are influenced by recent listening and library context, while preserving bounded exploration.
-- Controlled different-profile tests demonstrate meaningful query/ranking changes without relying on live provider APIs.
-- Identical fixtures and deterministic inputs produce repeatable results.
-- Diversity re-ranking measurably reduces repetitive artists/styles on controlled fixtures without collapsing relevance.
-- Missing genre metadata or provider failures degrade safely and do not cause popular/fixed-seed candidates to dominate by accident.
-- Refresh behavior is verified; any stale persisted output is fixed only when the root cause is established.
-- Ownership, artist identity, release eligibility, response schema, and acquisition regression tests remain passing.
-- Any cache TTL change is justified by measured impact and provider limits, not shortened indiscriminately.
+### Recommendation-system research
 
-## Invariants and constraints
+- **Diversity after relevance:** research on serendipity/diversity indicates that diversity can improve discovery but excessive diversification can reduce accuracy. Use measured, controlled re-ranking rather than arbitrary quotas. See Kotkov et al., [“How does serendipity affect diversity in recommender systems?”](https://link.springer.com/article/10.1007/s00607-018-0687-5) and [“Current challenges and visions in music recommender systems research”](https://link.springer.com/article/10.1007/s13735-018-0154-2).
+- **Listener outcomes:** work on diversified music recommendations supports measuring discovery outcomes beyond similarity, but does not prescribe a universal diversity level. See Porcaro, Gómez, and Castillo, [“Assessing the Impact of Music Recommendation Diversity on Listeners”](https://dl.acm.org/doi/10.1145/3608487).
+- **ListenBrainz freshness:** CF recording recommendations are experimental and provider-generated output has its own update schedule. Keep provider-output freshness distinct from profile freshness, metadata cache TTL, and persisted-list freshness. See the [ListenBrainz recommendation API](https://listenbrainz.readthedocs.io/en/latest/users/api/recommendation.html), [ListenBrainz documentation](https://listenbrainz.readthedocs.io/en/latest/), and [data update intervals](https://github.com/metabrainz/listenbrainz-server/blob/master/docs/general/data-update-intervals.rst).
+- **Similar artists:** Last.fm's official API exposes `artist.getSimilar` with a match value and optional MBID. Treat this as evidence, not truth, and verify provider behavior before implementation. See [Last.fm artist.getSimilar](https://www.last.fm/api/show/artist.getSimilar) and the [Last.fm API overview](https://www.last.fm/api).
 
-- Keep owned-album exclusion, compilation/remix/non-album filtering, artist identity checks, and existing album/release eligibility rules.
-- Preserve response schemas, acquisition behavior, and the remaining MCP compatibility surface unless separately approved.
-- Keep provider calls bounded and failures non-fatal where existing behavior requires graceful degradation.
-- No publishing or deployment is authorized by this document; image publishing remains paused.
-- The first implementation should be a small behavior change with focused tests, not a full recommender rewrite or new machine-learning stack.
+## Evaluation checklist for every behavior-changing phase
 
-## Research references
+Use frozen, provider-injected fixtures. For each change, compare with the Phase 0 baseline and report:
+- Artist-level hit-rate@k and nDCG@k on unowned artists in the T+14-day replay window.
+- Responsiveness: candidate-set overlap and ranking changes across contrasting histories.
+- Novelty, intra-list diversity, unique artists/styles, average pairwise tag similarity where available, and batch repeat rate.
+- Relevance guardrails, including retention of high-relevance candidates before/after re-ranking.
+- Ownership and release eligibility/rejection counts.
+- Determinism, bounded candidate/provider work, and safe handling of empty, malformed, stale, or unmappable provider data.
+- Cache hits/misses and freshness at the correct layer (CF output, metadata, supplementary query results, persisted recommendation list).
 
-- DroppedNeedle repository and documented features: https://github.com/DroppedNeedle/DroppedNeedle and https://www.droppedneedle.com/docs/features
-- ListenBrainz collaborative recording recommendations: https://listenbrainz.readthedocs.io/en/latest/users/api/recommendation.html
-- ListenBrainz data update intervals: https://github.com/metabrainz/listenbrainz-server/blob/master/docs/general/data-update-intervals.rst
-- Last.fm similar artists API: https://www.last.fm/api/show/artist.getSimilar
-- Kotkov, Veijalainen, Wang, “How does serendipity affect diversity in recommender systems?”: https://link.springer.com/article/10.1007/s00607-018-0687-5
-- “Current challenges and visions in music recommender systems research”: https://link.springer.com/article/10.1007/s13735-018-0154-2
-- Porcaro, Gómez, Castillo, “Assessing the Impact of Music Recommendation Diversity on Listeners”: https://dl.acm.org/doi/10.1145/3608487
+Do not set arbitrary numeric targets until the baseline exists. Keep hit rate relative rather than absolute, avoid future-data leakage, and state the fixture/replay limitations.
+
+## Cross-phase acceptance criteria
+
+- No hidden fixed regional slots or hard-coded personal taste preferences remain in personal recommendations unless explicitly documented as a product setting.
+- Candidate generation and ranking respond to recent listening and library context while retaining bounded exploration.
+- Identical fixtures/settings produce identical results.
+- Diversity and cooldown reduce repetition without collapsing relevance or violating hard artist/eligibility constraints.
+- Feedback influences only the intended scope, decays/expires, and is covered by regression tests.
+- Missing metadata and provider failures degrade safely; popularity does not accidentally dominate personal signals.
+- Refresh semantics are verified; fix stale output only when the root cause is established.
+- Existing ownership, artist identity, release eligibility, response schema, acquisition, and MCP compatibility tests remain passing.
+- Cache TTL changes are justified by evidence/provider limits rather than shortened indiscriminately.
+
+## Immediate next step
+
+Implement **Phase 0.1 and 0.2 only** in one focused PR: pool-fingerprint diagnostics plus the fixture-based offline replay/metrics harness. Do not change ranking behavior in that PR. Inspect existing persistence/cache/diagnostic structures first, add deterministic tests, and make the output answer whether the next investment should target candidate supply/freshness or scoring/allocation. Trace refresh semantics and debug score/rejection diagnostics (Phase 0.3) can be included only if they remain small and do not dilute this decision gate.
 
 ## Out of scope unless separately approved
 
-- Rewriting the whole recommendation engine.
-- Broad modularization; the modularization roadmap is complete.
-- Shortening every cache duration without measuring its effect.
-- Removing legitimate eligibility and ownership safety rules.
-- UI redesign or adding new discovery modes as part of the first backend fix.
+- Rewriting the recommender or adding a machine-learning stack.
+- Further broad modularization; its roadmap is complete.
+- New UI modes or UI redesign as part of initial backend changes.
+- Removing ownership/release eligibility or safety checks.
+- Shortening all cache TTLs without evidence.
 - Publishing or deploying an image.
