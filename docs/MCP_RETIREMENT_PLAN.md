@@ -142,4 +142,4 @@ MCP retirement is complete only when:
 
 ## Current next action
 
-Complete focused tests and verify all four required workflows on the exact final PR-head SHA. Merge only after those gates pass. This document records a plan, not evidence that any retirement implementation or verification has occurred.
+PR #296 is open. Complete focused tests and verify all four required workflows on the exact final PR-head SHA. Merge only after those gates pass. This document records a plan, not evidence that any retirement implementation or verification has occurred.
