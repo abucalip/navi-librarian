@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-17 (agent session context search in progress; PR pending)
+Last reviewed: 2026-10-17 (PR #302 open; final-head CI verification required)
 
 ## Current focus
 
-**New standard workflow: focused session context retrieval.** `scripts/session_search.py` searches docs and code and returns ranked snippets; see `docs/SESSION_CONTEXT_SEARCH.md`. The workflow now requires agents to run it after checking GitHub state and reading this status, then inspect canonical docs, source, callers, and tests. This is implemented on branch `tools/session-context-search`; tests/CI and merge are pending. Next action: run focused and full test suites, review the complete diff, then verify all required workflows on the final PR head.
+**New standard workflow: focused session context retrieval.** `scripts/session_search.py` searches docs and code and returns ranked snippets; see `docs/SESSION_CONTEXT_SEARCH.md`. Agents should run it after checking GitHub state and reading this status, then inspect canonical docs, source, callers, and tests. PR #302 is open on branch `tools/session-context-search`. On corrected code head `157dfa3d18ff253d4de64e91907166d3aba442bb`, all 616 unit tests and all four required workflows passed (runs 1508, 1416, 1225, 1269); a final project-log closeout commit changed the PR head, so all four gates must be rechecked on the exact latest SHA before merge. Next action: verify final-head CI and review the complete diff.
 
 **Recommendation Phase 0 capture/replay is implemented and the private baseline replay succeeded.** On capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, offline replay reproduced 10/10 recommendations, consumed 197 provider events and 40 Last.fm events, and used zero network providers. The comparator checks all stable top-level fields except `pool_diagnostics` and `lastfm_last_error`. PR #298 merged at `68a0ee365778dab790ec54e04b54c8c72bd4552c` from final PR head `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`; all four required workflows passed on that exact head. Review baseline metrics and limitations before changing ranking, candidate selection, scoring, or allocation.
 
