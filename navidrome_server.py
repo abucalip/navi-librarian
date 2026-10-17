@@ -11,6 +11,7 @@ import slskd_transfers as _slskd_transfers_module
 import listenbrainz_client as _listenbrainz_client
 import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
+import service_settings as _service_settings
 from music_paths import default_music_dir as _default_music_dir_from_environment
 import navidrome_client as _navidrome_client
 from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
@@ -25,9 +26,6 @@ from service_settings import (
     set_listenbrainz_settings as _service_set_listenbrainz_settings,
     set_navidrome_settings as _service_set_navidrome_settings,
     get_slskd_settings as _service_get_slskd_settings,
-    get_recommendation_diversity_settings as _service_get_recommendation_diversity_settings,
-    set_recommendation_diversity_settings as _service_set_recommendation_diversity_settings,
-    recommendation_diversity_value as _service_recommendation_diversity_value,
     set_slskd_settings as _service_set_slskd_settings,
     slskd_config as _service_slskd_config,
     test_navidrome_connection as _service_test_navidrome_connection,
@@ -361,7 +359,6 @@ def recommend_new_music(
         recent_count = recent_artists.get(
             _music_key(candidate["primary_artist"]), 0
         )
-        candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
         apply_familiarity_exploration_bonus(
             candidate, recent_count, candidate_tags, exploration_families
         )
@@ -447,7 +444,7 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
-            tags=tuple(str(tag) for tag in candidate_tags if tag is not None),
+            tags=tuple(str(tag) for tag in genre_cache.get(candidate.get('artist_mbid'), []) if tag is not None),
             ownership=ownership,
         ))
 
@@ -456,11 +453,7 @@ def recommend_new_music(
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
-        diversity_penalty=(
-            diversity_setting_to_penalty(
-                _service_recommendation_diversity_value(_discovery_settings_read)
-            )
-        ),
+        diversity_penalty=diversity_setting_to_penalty(_service_settings.recommendation_diversity_value(_discovery_settings_read)),
         family_cap=1,
         max_checks=60,
     ))
@@ -1469,18 +1462,6 @@ def discovery_set_navidrome_settings(
         username,
         password,
         music_library_path,
-    )
-
-
-def discovery_get_recommendation_diversity_settings() -> str:
-    """Return the persisted Recommendation diversity preference."""
-    return _service_get_recommendation_diversity_settings(_discovery_settings_read)
-
-
-def discovery_set_recommendation_diversity_settings(value: int) -> str:
-    """Validate and persist the Recommendation diversity preference."""
-    return _service_set_recommendation_diversity_settings(
-        _discovery_settings_write, value
     )
 
 
