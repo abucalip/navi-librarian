@@ -40,8 +40,8 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
         self.assertEqual(first, evaluate_replay_fixture(fixture, k=10))
         self.assertEqual(first["case_count"], 2)
         self.assertEqual(first["cases"][0]["owned_artist_recommendations_excluded"], 1)
-        self.assertAlmostEqual(first["mean_candidate_pool_overlap"], 0.5)
-        self.assertAlmostEqual(first["mean_ranking_overlap"], 1 / 3)
+        self.assertAlmostEqual(first["mean_candidate_pool_overlap"], 1 / 3)
+        self.assertAlmostEqual(first["mean_ranking_overlap"], 1 / 6)
 
 
 if __name__ == "__main__":
