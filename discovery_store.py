@@ -187,6 +187,7 @@ def record_recommendation_pool_diagnostic(
             "supplementary_cache_hits": int(metrics.get("supplementary_cache_hits", 0)),
             "supplementary_cache_misses": int(metrics.get("supplementary_cache_misses", 0)),
             "candidate_counts_by_source": dict(metrics.get("candidate_counts_by_source", {})),
+            "candidate_diagnostics": metrics.get("candidate_diagnostics", {}),
             "profile_list_generated_at": timestamp,
         }
         db.execute(
@@ -202,6 +203,7 @@ def record_recommendation_pool_diagnostic(
     # Keep the trigger in persisted metrics only; do not expand the API payload.
     public_diagnostic = dict(diagnostic)
     public_diagnostic.pop("refresh_origin", None)
+    public_diagnostic.pop("candidate_diagnostics", None)
     return public_diagnostic
 
 def record_recommendation_diagnostics(
