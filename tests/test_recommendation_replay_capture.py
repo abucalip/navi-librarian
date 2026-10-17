@@ -72,6 +72,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                 path,
                 gathered=_gathered(),
                 lastfm_calls=[{"artist": "Fixture Artist", "album": "Fixture Album", "result": [None, None]}],
+                provider_events=[],
                 output=expected,
                 count=1,
                 git_sha="fixture-sha",
@@ -82,7 +83,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             self.assertEqual(envelope["payload"]["count"], 1)
             with self.assertRaises(FileExistsError):
                 write_capture(
-                    path, gathered=_gathered(), lastfm_calls=[],
+                    path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
                     output=expected, count=1, git_sha="other-sha",
                 )
 
@@ -92,7 +93,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             root.chmod(0o700)
             path = root / "capture.json"
             write_capture(
-                path, gathered=_gathered(), lastfm_calls=[],
+                path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
                 output=json.dumps({"recommendations": []}), count=1, git_sha="fixture",
             )
             envelope = json.loads(path.read_text(encoding="utf-8"))
