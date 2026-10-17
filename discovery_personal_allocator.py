@@ -198,7 +198,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         for category in ("adjacent", "cross_genre", "adventurous"):
             if selected_counts[category] >= request.category_targets.get(category, 0):
                 continue
-            for candidate in ordered_by_category[category]:
+            for candidate in ranked_candidates(ordered_by_category[category]):
                 if selected_counts[category] >= request.category_targets.get(category, 0):
                     break
                 consider(candidate)
