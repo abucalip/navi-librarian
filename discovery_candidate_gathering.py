@@ -232,34 +232,50 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             except Exception as exc:
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
-    # Supplement personalized recommendations with regional music discovery.
-    # Search release groups by community tags, with cached results and a
-    # conservative request rate. These candidates still pass through the
-    # normal genre classification and Navidrome ownership checks.
-    regional_queries = [
-        # Interleave regional discovery with the genres appearing in recent
-        # scrobbles, so one broad tag cannot consume the whole candidate budget.
-        ('primarytype:album AND tag:rai', 'north-african-middle-eastern', 'north_african'),
-        ('primarytype:album AND tag:afrobeats', 'african', 'afrobeats'),
-        ('primarytype:album AND tag:"afro-jazz"', 'african', 'afro_jazz'),
-        ('primarytype:album AND tag:"desert blues"', 'african', 'malian_desert_blues'),
-        ('primarytype:album AND tag:"bossa nova"', 'brazilian', 'other'),
-        ('primarytype:album AND tag:soul', 'rnb-soul', 'other'),
-        ('primarytype:album AND tag:jazz', 'jazz', 'other'),
-        ('primarytype:album AND tag:rock', 'rock', 'other'),
-        ('primarytype:album AND tag:gnawa', 'north-african-middle-eastern', 'north_african'),
-        ('primarytype:album AND tag:afrobeat', 'african', 'other'),
-        ('primarytype:album AND tag:"acid jazz"', 'jazz', 'other'),
-        ('primarytype:album AND tag:samba', 'brazilian', 'other'),
-        ('primarytype:album AND tag:"malian blues"', 'african', 'malian_desert_blues'),
-        ('primarytype:album AND tag:"neo-soul"', 'rnb-soul', 'other'),
-        ('primarytype:album AND tag:chaabi', 'north-african-middle-eastern', 'north_african'),
-        ('primarytype:album AND tag:mpb', 'brazilian', 'other'),
-        ('primarytype:album AND tag:highlife', 'african', 'other'),
-        ('primarytype:album AND tag:wassoulou', 'african', 'malian_desert_blues'),
-        ('primarytype:album AND tag:amazigh', 'north-african-middle-eastern', 'north_african'),
-        ('primarytype:album AND tag:"north african"', 'north-african-middle-eastern', 'north_african'),
-    ]
+    # Select supplementary queries from cached listening-profile genres and
+    # reserve a small exploration quota for tags found in the CF candidate pool.
+    # Cache reads are bounded and do not add provider calls or bypass TTL policy.
+    from discovery_tag_queries import select_supplementary_tag_queries
+
+    profile_tags_by_artist = {}
+    for artist_id, _weight in recent_artist_mbid_counts.most_common(15):
+        try:
+            tags = providers.metadata_cache_get(
+                f"mb:artist-genres:{artist_id}",
+                ttl_seconds=90 * 24 * 60 * 60,
+            )
+            if isinstance(tags, (list, tuple)):
+                profile_tags_by_artist[artist_id] = tags
+        except Exception:
+            # Supplementary discovery must not fail because one cache read failed.
+            continue
+
+    candidate_pool_tags = []
+    seen_candidate_artist_ids = set()
+    for candidate in sorted(
+        albums.values(), key=lambda album: album["score"], reverse=True
+    ):
+        artist_id = candidate.get("artist_mbid")
+        if not artist_id or artist_id in seen_candidate_artist_ids:
+            continue
+        seen_candidate_artist_ids.add(artist_id)
+        try:
+            tags = providers.metadata_cache_get(
+                f"mb:artist-genres:{artist_id}",
+                ttl_seconds=90 * 24 * 60 * 60,
+            )
+        except Exception:
+            continue
+        if isinstance(tags, (list, tuple)):
+            candidate_pool_tags.extend(tags)
+        if len(seen_candidate_artist_ids) >= 60:
+            break
+
+    regional_queries = select_supplementary_tag_queries(
+        recent_artist_mbid_counts,
+        profile_tags_by_artist,
+        candidate_pool_tags,
+    )
     regional_candidates_added = 0
     regional_results_seen = 0
     supplementary_cache_hits = 0
