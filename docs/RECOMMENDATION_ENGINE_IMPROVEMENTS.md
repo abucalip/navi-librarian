@@ -237,7 +237,7 @@ Do not set arbitrary numeric targets until the baseline exists. Keep hit rate re
 
 PR #298 implements Phase 0.1/0.2 infrastructure: bounded diagnostics, deterministic synthetic metrics, and an opt-in private capture/offline replay harness. The private baseline captured at `d8c1f3de5180b35919f55c304d55e5c939dad373` now replays successfully offline (10/10 recommendations; 197 provider events; 40 Last.fm events; zero network providers). The comparator covers all stable top-level fields except volatile pool diagnostics and Last.fm error state. Review the resulting baseline metrics and limitations before selecting ranking or candidate-generation changes; do not change scoring, source selection, or allocation before that review.
 
-While that user-environment gate is pending, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
+While the captured baseline metrics and limitations are being reviewed, keep work to baseline-independent observability or documentation with clear acceptance criteria. Do not treat synthetic fixtures as evidence of live recommendation quality, and do not change scoring, source selection, candidate generation, or allocation ahead of the real baseline.
 
 ## Private real-run capture and offline replay
 
