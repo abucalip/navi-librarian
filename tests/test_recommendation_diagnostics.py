@@ -70,8 +70,7 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             second = record_recommendation_pool_diagnostic(
                 db, ["recording-b", "recording-c"], ["Artist|Album"],
                 {"cf_recordings_returned": 2, "cf_recordings_resolved": 2, "resolved_album_count": 2,
-                 "refresh_origin": "scheduler"},
-                generated_at=200,
+                 "refresh_origin": "scheduler"}, generated_at=200,
             )
             self.assertIsNone(first["cf_recording_jaccard_previous"])
             self.assertEqual(second["cf_recording_jaccard_previous"], 0.333333)
@@ -82,11 +81,11 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 stored = connection.execute(
                     "SELECT metrics_json FROM recommendation_pool_diagnostics"
                 ).fetchone()[0]
+                hashes = connection.execute(
+                    "SELECT recording_hashes_json FROM recommendation_pool_diagnostics"
+                ).fetchone()[0]
             self.assertEqual(json.loads(stored)["refresh_origin"], "scheduler")
-            import sqlite3
-            with sqlite3.connect(db) as connection:
-                row = connection.execute("SELECT recording_hashes_json FROM recommendation_pool_diagnostics").fetchone()
-            self.assertNotIn("recording-b", row[0])
+            self.assertNotIn("recording-b", hashes)
             self.assertNotIn("candidate_diagnostics", second)
 
     def test_aggregate_diagnostics_persist_privately_without_public_schema_change(self):
@@ -96,7 +95,7 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 "cf_recording_mbids": ["recording-id"],
                 "cf_recordings_returned": 1,
                 "cf_recordings_resolved": 1,
-                "recent_family_counts": {"jazz": 2},
+                "recent_family_counts": {"private-style-tag": 2},
             }
             candidates = [{
                 "artist": "Private Artist", "album": "Private Album",
@@ -119,7 +118,9 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 ).fetchone()[0])
             aggregate = stored["candidate_diagnostics"]
             self.assertEqual(aggregate["candidate_count"], 1)
-            self.assertEqual(aggregate["profile_evidence"]["recent_family_counts"], {"jazz": 2})
+            self.assertEqual(aggregate["profile_evidence"]["recent_family_count"], 1)
+            self.assertEqual(aggregate["profile_evidence"]["recent_family_listen_count"], 2)
+            self.assertNotIn("private-style-tag", json.dumps(stored))
             self.assertNotIn("Private Artist", json.dumps(stored))
             self.assertNotIn("Private Album", json.dumps(stored))
 
@@ -128,7 +129,7 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             "listens": [{}, {}, {}],
             "recent_artists": {"artist-a": 2, "artist-b": 1},
             "recent_artist_mbid_counts": {"mbid-a": 2},
-            "recent_family_counts": {"jazz": 3, "soul": 1},
+            "recent_family_counts": {"private-style-tag": 3, "private-style-tag-two": 1},
             "supplementary_cache_hits": 4,
             "supplementary_cache_misses": 2,
         }
@@ -157,11 +158,14 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
         })
         self.assertEqual(result["score_components"]["base_score"]["mean"], 0.375)
         self.assertEqual(result["profile_evidence"]["listens_seen"], 3)
-        self.assertEqual(result["profile_evidence"]["recent_family_counts"], {"jazz": 3, "soul": 1})
+        self.assertEqual(result["profile_evidence"]["recent_family_count"], 2)
+        self.assertEqual(result["profile_evidence"]["recent_family_listen_count"], 4)
         self.assertEqual(result["eligibility_rejections"]["exact_owned"], 1)
         self.assertEqual(result["eligibility_rejections"]["same_title_artist_conflicts"], 1)
         self.assertEqual(result["eligibility_rejections"]["unclassified"], 1)
         encoded = json.dumps(result)
+        self.assertNotIn("private-style-tag", encoded)
+        self.assertNotIn("private-style-tag-two", encoded)
         self.assertNotIn("Private Artist", encoded)
         self.assertNotIn("Private Album", encoded)
 
