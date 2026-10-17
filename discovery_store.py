@@ -53,8 +53,14 @@ def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
     import hashlib
     import unicodedata
 
-    artist = " ".join(unicodedata.normalize("NFKC", str(recommendation.get("artist") or "")).casefold().split())
-    album = " ".join(unicodedata.normalize("NFKC", str(recommendation.get("album") or "")).casefold().split())
+    artist = " ".join(
+        unicodedata.normalize("NFKC", str(recommendation.get("artist") or ""))
+        .casefold().split()
+    )
+    album = " ".join(
+        unicodedata.normalize("NFKC", str(recommendation.get("album") or ""))
+        .casefold().split()
+    )
     if not artist or not album:
         return None
     return hashlib.sha256(f"{artist}\0{album}".encode("utf-8")).hexdigest()
