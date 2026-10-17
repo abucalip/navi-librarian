@@ -128,8 +128,8 @@ def record_recommendation_pool_diagnostic(
     """Persist one bounded, privacy-conscious recommendation-pool snapshot.
 
     Raw recording MBIDs and album identities are never stored. SHA-256 hashes
-    allow set-overlap comparisons with the preceding refresh; only the latest
-    snapshot is retained.
+    allow set-overlap comparisons with the preceding refresh. A bounded history
+    retains at most eight snapshots for longitudinal diagnosis.
     """
     import hashlib
 
@@ -155,10 +155,27 @@ def record_recommendation_pool_diagnostic(
                 metrics_json TEXT NOT NULL
             )"""
         )
+        db.execute(
+            """CREATE TABLE IF NOT EXISTS recommendation_pool_diagnostic_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                generated_at REAL NOT NULL,
+                pool_fingerprint TEXT NOT NULL,
+                recording_hashes_json TEXT NOT NULL,
+                recommendation_fingerprint TEXT NOT NULL,
+                recommendation_hashes_json TEXT NOT NULL,
+                metrics_json TEXT NOT NULL
+            )"""
+        )
         previous = db.execute(
             "SELECT recording_hashes_json, recommendation_hashes_json "
-            "FROM recommendation_pool_diagnostics WHERE id = 1"
+            "FROM recommendation_pool_diagnostic_history ORDER BY id DESC LIMIT 1"
         ).fetchone()
+        if previous is None:
+            # Upgrade smoothly from databases created before history was added.
+            previous = db.execute(
+                "SELECT recording_hashes_json, recommendation_hashes_json "
+                "FROM recommendation_pool_diagnostics WHERE id = 1"
+            ).fetchone()
         previous_recordings = set(json.loads(previous[0])) if previous else set()
         previous_recommendations = set(json.loads(previous[1])) if previous else set()
         current_recordings = set(recording_hashes)
@@ -190,14 +207,32 @@ def record_recommendation_pool_diagnostic(
             "candidate_diagnostics": metrics.get("candidate_diagnostics", {}),
             "profile_list_generated_at": timestamp,
         }
+        encoded_metrics = json.dumps(diagnostic, ensure_ascii=False, sort_keys=True)
+        encoded_recordings = json.dumps(recording_hashes)
+        encoded_recommendations = json.dumps(recommendation_hashes)
+        db.execute(
+            """INSERT INTO recommendation_pool_diagnostic_history
+            (generated_at, pool_fingerprint, recording_hashes_json,
+             recommendation_fingerprint, recommendation_hashes_json, metrics_json)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (timestamp, pool_fingerprint, encoded_recordings,
+             recommendation_fingerprint, encoded_recommendations, encoded_metrics),
+        )
+        # Keep storage bounded regardless of refresh frequency.
+        db.execute(
+            """DELETE FROM recommendation_pool_diagnostic_history
+            WHERE id NOT IN (
+                SELECT id FROM recommendation_pool_diagnostic_history
+                ORDER BY id DESC LIMIT 8
+            )"""
+        )
         db.execute(
             """INSERT OR REPLACE INTO recommendation_pool_diagnostics
             (id, generated_at, pool_fingerprint, recording_hashes_json,
              recommendation_fingerprint, recommendation_hashes_json, metrics_json)
             VALUES (1, ?, ?, ?, ?, ?, ?)""",
-            (timestamp, pool_fingerprint, json.dumps(recording_hashes),
-             recommendation_fingerprint, json.dumps(recommendation_hashes),
-             json.dumps(diagnostic, ensure_ascii=False, sort_keys=True)),
+            (timestamp, pool_fingerprint, encoded_recordings,
+             recommendation_fingerprint, encoded_recommendations, encoded_metrics),
         )
         db.commit()
     # Keep the trigger in persisted metrics only; do not expand the API payload.
@@ -205,6 +240,33 @@ def record_recommendation_pool_diagnostic(
     public_diagnostic.pop("refresh_origin", None)
     public_diagnostic.pop("candidate_diagnostics", None)
     return public_diagnostic
+
+
+def read_recommendation_diagnostic_history(
+    database_path: str | PathLike[str],
+    *,
+    limit: int = 8,
+) -> list[dict[str, Any]]:
+    """Read recent aggregate snapshots without exposing hashed identities."""
+    if type(limit) is not int or not 1 <= limit <= 8:
+        raise ValueError("limit must be an integer between 1 and 8")
+    with sqlite3.connect(database_path, timeout=10) as db:
+        table = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'recommendation_pool_diagnostic_history'"
+        ).fetchone()
+        if table:
+            rows = db.execute(
+                "SELECT metrics_json FROM recommendation_pool_diagnostic_history "
+                "ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        else:
+            # Older databases contain only the current snapshot.
+            rows = db.execute(
+                "SELECT metrics_json FROM recommendation_pool_diagnostics WHERE id = 1"
+            ).fetchall()
+    return [json.loads(row[0]) for row in reversed(rows)]
 
 def record_recommendation_diagnostics(
     database_path: str | PathLike[str],
