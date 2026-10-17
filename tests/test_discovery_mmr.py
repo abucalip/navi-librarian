@@ -41,9 +41,9 @@ class DiscoveryMmrTests(unittest.TestCase):
         items = [
             candidate("anchor", "a", 10, ["jazz", "soul"]),
             candidate("similar", "b", 9.8, ["jazz", "soul"]),
-            candidate("different", "c", 9, ["funk", "afrobeat"]),
+            candidate("different", "c", 9.7, ["funk", "afrobeat"]),
         ]
-        result = mmr_rerank(items, limit=3, lambda_=0.25)
+        result = mmr_rerank(items, limit=3, lambda_=0.5)
         self.assertEqual([item["id"] for item in result], ["anchor", "different", "similar"])
 
     def test_ties_are_deterministic_and_input_is_not_mutated(self):
