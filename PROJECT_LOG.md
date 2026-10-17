@@ -1,3 +1,13 @@
+## 2026-10-17 — Private recommendation baseline reviewed; policy gate remains closed
+
+- Reviewed the owner-provided aggregate report from the private PR #298 capture/replay. The replay reproduced 10/10 recommendations from capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, consumed 197 provider events and 40 Last.fm events, and made zero network provider calls.
+- The captured run returned 100 CF recordings; all 100 had metadata and grouped into 83 resolved albums. It recorded zero metadata lookup errors, zero unclassified recommendations, and met all category targets. Supplementary cache counters were 14 hits and zero misses.
+- CF-recording Jaccard overlap and final-list Jaccard overlap against the previous stored snapshot were both 1.0. This supports only the narrow conclusion that the compared adjacent snapshots were identical. It is not a longitudinal trend and does not prove causation; the snapshot does not establish whether the profile changed between refreshes. The capture limitations include the 100-recording CF cap, incomplete community genre tags, bounded genre metadata lookup, 30-day profile window, cached Last.fm popularity, and imperfect ownership matching.
+- The checked-in offline replay fixture is synthetic and useful for exercising metric calculations; it is not evidence of real-user relevance. The private exact replay validates deterministic reproduction, not future-listen hit-rate/nDCG or profile responsiveness. **Decision: do not change scoring, candidate generation, or allocation yet.** Collect comparable aggregate snapshots across multiple refreshes, preferably including a deliberate listening-profile change, and use CF-vs-final overlap to choose the next diagnosis.
+- Private capture contents remain local and are not committed. This documentation change contains only aggregate metrics and interpretation. No code or ranking behavior changed; CI and PR review are still required on the documentation PR. Publishing remains paused; no deployment/runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — PR #305 merged: omit raw profile tags from recommendation diagnostics
 
 - Based on current GitHub `main` after PR #304, review found that `recommendation_diagnostics.summarize_candidate_diagnostics()` persisted `profile_evidence.recent_family_counts` with raw family/tag names, contradicting the explicit privacy claim in the roadmap and PR #304.
