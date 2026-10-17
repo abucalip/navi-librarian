@@ -101,7 +101,7 @@ PR #299 adds a directly tested stale-reason classifier (missing, expired, invali
 
 Refresh-origin tracing is now implemented on the working branch: the personal-list refresh adapter distinguishes manual refresh requests from the hourly scheduler, passes the origin into the recommendation pool snapshot, and persists only the latest bounded outcome per origin (success, error, or already-running). Persisted outcome data excludes exception messages, URLs, credentials, and candidate identities. CI and final-head review remain required before this is considered complete.
 
-Remaining baseline-independent observability work: add aggregate debug diagnostics for candidate provenance, score components, profile evidence, and eligibility/rejection counts without changing ranking or public response contracts. Review the real replay baseline's limitations before any score, source, or allocation changes.
+Aggregate recommendation diagnostics are now implemented on the current PR branch: bounded source counts, score-component ranges, profile-evidence counts, cache counts, and eligibility/selection outcomes are persisted with the existing pool snapshot. The aggregate omits candidate identities and raw tags and does not expand the public API response. Exact-head CI and diff review remain required before marking this step complete. Review the real replay baseline's limitations before any score, source, or allocation changes.
 
 
 **Acceptance gate for Phase 0**

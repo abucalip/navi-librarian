@@ -6,8 +6,11 @@ from pathlib import Path
 from discovery_store import (
     record_discovery_refresh_outcome,
     record_recommendation_pool_diagnostic,
+    record_recommendation_diagnostics,
 )
-from recommendation_diagnostics import evaluate_replay_fixture, jaccard_overlap
+from recommendation_diagnostics import (
+    evaluate_replay_fixture, jaccard_overlap, summarize_candidate_diagnostics,
+)
 
 
 class RecommendationDiagnosticsTests(unittest.TestCase):
@@ -84,6 +87,83 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
             with sqlite3.connect(db) as connection:
                 row = connection.execute("SELECT recording_hashes_json FROM recommendation_pool_diagnostics").fetchone()
             self.assertNotIn("recording-b", row[0])
+            self.assertNotIn("candidate_diagnostics", second)
+
+    def test_aggregate_diagnostics_persist_privately_without_public_schema_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            gathered = {
+                "cf_recording_mbids": ["recording-id"],
+                "cf_recordings_returned": 1,
+                "cf_recordings_resolved": 1,
+                "recent_family_counts": {"jazz": 2},
+            }
+            candidates = [{
+                "artist": "Private Artist", "album": "Private Album",
+                "discovery_source": "listenbrainz", "score": 0.5,
+                "discovery_score": 0.6, "recent_profile_bonus": 1.0,
+                "lastfm_popularity_bonus": 1.0, "genre_metadata_available": True,
+                "exact_owned": False, "same_title_library_matches": 0,
+                "assigned_category": "adjacent", "selection_decision": "selected",
+            }]
+            public = record_recommendation_diagnostics(
+                db, gathered, [{"artist": "Private Artist", "album": "Private Album"}],
+                [{"artist": "Private Artist", "album": "Private Album"}],
+                candidate_diagnostics=candidates,
+            )
+            self.assertNotIn("candidate_diagnostics", public)
+            import sqlite3
+            with sqlite3.connect(db) as connection:
+                stored = json.loads(connection.execute(
+                    "SELECT metrics_json FROM recommendation_pool_diagnostics"
+                ).fetchone()[0])
+            aggregate = stored["candidate_diagnostics"]
+            self.assertEqual(aggregate["candidate_count"], 1)
+            self.assertEqual(aggregate["profile_evidence"]["recent_family_counts"], {"jazz": 2})
+            self.assertNotIn("Private Artist", json.dumps(stored))
+            self.assertNotIn("Private Album", json.dumps(stored))
+
+    def test_aggregate_candidate_diagnostics_are_bounded_and_identity_free(self):
+        gathered = {
+            "listens": [{}, {}, {}],
+            "recent_artists": {"artist-a": 2, "artist-b": 1},
+            "recent_artist_mbid_counts": {"mbid-a": 2},
+            "recent_family_counts": {"jazz": 3, "soul": 1},
+            "supplementary_cache_hits": 4,
+            "supplementary_cache_misses": 2,
+        }
+        candidates = [
+            {
+                "artist": "Private Artist", "album": "Private Album",
+                "discovery_source": "listenbrainz", "score": 0.5,
+                "discovery_score": 0.75, "recent_profile_bonus": 1.1,
+                "lastfm_popularity_bonus": 1.04, "genre_metadata_available": True,
+                "exact_owned": True, "same_title_library_matches": 1,
+                "assigned_category": "adjacent", "selection_decision": "selected",
+            },
+            {
+                "artist": "Other Private Artist", "album": "Other Private Album",
+                "discovery_source": "musicbrainz_tag_search", "score": 0.25,
+                "discovery_score": 0.3, "recent_profile_bonus": 1.0,
+                "lastfm_popularity_bonus": 1.0, "genre_metadata_available": False,
+                "exact_owned": False, "same_title_library_matches": 0,
+                "assigned_category": "unclassified", "selection_decision": "not_considered",
+            },
+        ]
+        result = summarize_candidate_diagnostics(gathered, candidates)
+        self.assertEqual(result["candidate_count"], 2)
+        self.assertEqual(result["candidate_counts_by_source"], {
+            "listenbrainz": 1, "musicbrainz_tag_search": 1,
+        })
+        self.assertEqual(result["score_components"]["base_score"]["mean"], 0.375)
+        self.assertEqual(result["profile_evidence"]["listens_seen"], 3)
+        self.assertEqual(result["profile_evidence"]["recent_family_counts"], {"jazz": 3, "soul": 1})
+        self.assertEqual(result["eligibility_rejections"]["exact_owned"], 1)
+        self.assertEqual(result["eligibility_rejections"]["same_title_artist_conflicts"], 1)
+        self.assertEqual(result["eligibility_rejections"]["unclassified"], 1)
+        encoded = json.dumps(result)
+        self.assertNotIn("Private Artist", encoded)
+        self.assertNotIn("Private Album", encoded)
 
     def test_frozen_replay_metrics_are_deterministic_and_exclude_owned_artists(self):
         fixture_path = Path(__file__).parent / "fixtures" / "recommendation_replay.json"

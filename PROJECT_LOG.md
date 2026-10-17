@@ -1,3 +1,11 @@
+## 2026-10-17 — Recommendation Phase 0.3: aggregate diagnostics (PR in progress)
+
+- Started the branch from current GitHub main at `b51ab24dee6cd760c31e6924816143a8658db815` after reviewing the workflow, project status, requirements, test plan, recommendation roadmap, relevant source, and existing diagnostic tests.
+- Added bounded aggregate metrics for candidate source provenance, base/final score and bonus distributions, listening/profile evidence, supplementary cache hit/miss counts, and eligibility/selection outcomes. Metrics contain no candidate names, album titles, or raw tags and remain in the existing persisted pool diagnostic JSON; public response shape and ranking behavior are unchanged.
+- Added deterministic direct-import coverage for summary values and identity omission. Focused tests, full unit suite, and required CI have not yet been run in this assistant session. PR/commit and exact-head workflow evidence will be appended after review. Publishing remains paused; no deployment/runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — Recommendation Phase 0.3: refresh-origin diagnostics (PR #303 merged)
 
 - Started from GitHub main merge commit `bb473e99855208606e3bcb76dbf7c1cb9eb09b43` after checking recent commits and the PR #302 merge state. The recommendation roadmap's next baseline-independent observability step was to trace personal-list refresh origin and outcome through persistence.

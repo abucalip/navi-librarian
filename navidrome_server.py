@@ -570,10 +570,15 @@ def recommend_new_music(
                 }
 
         candidate_debug.append({
+            "discovery_source": candidate.get("discovery_source", "listenbrainz"),
             "artist": candidate["artist"],
             "album": candidate["album"],
             "diversity_style": candidate.get("diversity_style", "other"),
             "score": candidate["score"],
+            "recent_artist_play_count": recent_artists.get(
+                _music_key(candidate["primary_artist"]), 0
+            ),
+            "exploration_family_match": bool(families & exploration_families),
             "discovery_score": round(
                 candidate.get("discovery_score", 0), 6
             ),
@@ -612,6 +617,7 @@ def recommend_new_music(
         pool_diagnostics = record_recommendation_diagnostics(
             DISCOVERY_DB, gathered, albums.values(), found,
             refresh_origin=_refresh_origin,
+            candidate_diagnostics=candidate_debug,
         )
 
     result = {

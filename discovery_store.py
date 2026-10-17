@@ -187,6 +187,7 @@ def record_recommendation_pool_diagnostic(
             "supplementary_cache_hits": int(metrics.get("supplementary_cache_hits", 0)),
             "supplementary_cache_misses": int(metrics.get("supplementary_cache_misses", 0)),
             "candidate_counts_by_source": dict(metrics.get("candidate_counts_by_source", {})),
+            "candidate_diagnostics": metrics.get("candidate_diagnostics", {}),
             "profile_list_generated_at": timestamp,
         }
         db.execute(
@@ -202,6 +203,7 @@ def record_recommendation_pool_diagnostic(
     # Keep the trigger in persisted metrics only; do not expand the API payload.
     public_diagnostic = dict(diagnostic)
     public_diagnostic.pop("refresh_origin", None)
+    public_diagnostic.pop("candidate_diagnostics", None)
     return public_diagnostic
 
 def record_recommendation_diagnostics(
@@ -211,11 +213,14 @@ def record_recommendation_diagnostics(
     recommendations: list[dict[str, Any]],
     *,
     refresh_origin: str = "direct_api",
+    candidate_diagnostics: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Persist the bounded pool snapshot using the completed gathering result."""
     from collections import Counter
+    from recommendation_diagnostics import summarize_candidate_diagnostics
 
     albums = list(albums)
+    aggregate = summarize_candidate_diagnostics(gathered, candidate_diagnostics or [])
     return record_recommendation_pool_diagnostic(
         database_path,
         gathered.get("cf_recording_mbids", []),
@@ -233,6 +238,7 @@ def record_recommendation_diagnostics(
             "candidate_counts_by_source": dict(Counter(
                 item.get("discovery_source", "listenbrainz") for item in albums
             )),
+            "candidate_diagnostics": aggregate,
         },
     )
 
