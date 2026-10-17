@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #314 merged; Phase 2.2 complete)
+Last reviewed: 2026-10-17 (Phase 3.1 MMR evaluation helper opened for review)
 
 ## Current focus
 
