@@ -1,11 +1,13 @@
-## 2026-10-18 — Recommendation batch history persistence (PR pending)
+## 2026-10-18 — Recommendation batch history persistence merged (PR #329)
 
 - Branch: `feat/recommendation-batch-history`, based on main commit `547ea225b47c97a8f762f1d8d17d70118b31a643`.
+- PR #329 merged at `85a94f2d66aefc0c1f130d4440546e7135d4e8d7` from exact tested PR head `613fd85715eaedc69f2375daf3cb6da6833c63bb`.
 - Inspection found `discovery_store.py` kept only the current payload for each list and one latest pool diagnostic; no ranked recommendation-batch history was retained.
 - Added bounded history recording to the same SQLite transaction as a successfully written `personal` list. Each row contains only a SHA-256 hash of normalized artist/album identity, generation timestamp, and rank. Raw artist/album labels are not stored in the history table. Retention is capped at 30 days and 2,000 rows; only the top 20 ranked entries per stored batch are recorded.
-- Added read access to recent hashed history and regression tests for hashed identity storage, rank ordering, retention-window filtering, future-row exclusion, and isolation from non-personal lists.
-- Ranking/candidate ordering is unchanged; no cooldown is active. Focused tests and all CI workflows have not yet run on this branch. No local tests were run in this GitHub-only session. No publish, deployment, or runtime verification.
-- Next action: review diff and open PR; run focused/full tests and all four required workflows on the exact final PR-head SHA. Then implement a separately reviewed, measured soft cooldown; coordinate the independent settings UI task with the frontend owner.
+- Added read access to recent hashed history and regression tests for hashed identity storage, rank ordering, retention-window filtering, future-row exclusion, isolation from non-personal lists, and the row cap.
+- All four required workflows passed on exact PR head `613fd85715eaedc69f2375daf3cb6da6833c63bb`: Python syntax `1650` (run `39080590034`), Docker packaging/full unit suite/build `1558` (run `39080590036`, 659 tests passed), container runtime smoke `1367` (run `39080590039`), and validation-only multi-architecture image validation `1411` (run `39080590047`, publishing paused).
+- Ranking/candidate ordering is unchanged; no cooldown is active. No local tests were run in this GitHub-only session. No publish, deployment, or runtime verification.
+- Next action: implement a separately reviewed, measured soft cooldown using this history; keep the Recommendation diversity settings UI with the coordinated frontend owner.
 
 ---
 
