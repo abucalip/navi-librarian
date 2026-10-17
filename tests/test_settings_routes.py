@@ -33,6 +33,8 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/slskd", "GET"),
             ("/api/settings/slskd", "PUT"),
             ("/api/settings/slskd/test", "POST"),
+            ("/api/settings/recommendation-diversity", "GET"),
+            ("/api/settings/recommendation-diversity", "PUT"),
         }
         self.assertEqual(actual, expected)
 
@@ -88,6 +90,42 @@ class SettingsRoutesTests(unittest.TestCase):
         ])
         self.assertEqual(kwargs["slskd_downloads_path"], "/downloads")
         self.assertEqual(kwargs["music_library_path"], "/music")
+
+    def test_get_recommendation_diversity_settings_returns_stable_contract(self):
+        self.librarian.discovery_get_recommendation_diversity_settings.return_value = (
+            '{"recommendation_diversity": 75}'
+        )
+        self.assertEqual(
+            settings.get_recommendation_diversity_settings(librarian=self.librarian),
+            {"recommendation_diversity": 75},
+        )
+        self.librarian.discovery_get_recommendation_diversity_settings.assert_called_once_with()
+
+    def test_set_recommendation_diversity_requires_integer_in_range(self):
+        self.librarian.discovery_set_recommendation_diversity_settings.return_value = (
+            '{"ok": true, "recommendation_diversity": 75}'
+        )
+        self.assertEqual(
+            settings.set_recommendation_diversity_settings(
+                {"recommendation_diversity": 75}, librarian=self.librarian
+            ),
+            {"ok": True, "recommendation_diversity": 75},
+        )
+        self.librarian.discovery_set_recommendation_diversity_settings.assert_called_once_with(75)
+
+        for invalid in ("75", 1.5, True, None, -1, 101, [], {}):
+            with self.subTest(invalid=invalid):
+                self.librarian.discovery_set_recommendation_diversity_settings.reset_mock()
+                with self.assertRaises(HTTPException) as raised:
+                    settings.set_recommendation_diversity_settings(
+                        {"recommendation_diversity": invalid}, librarian=self.librarian
+                    )
+                self.assertEqual(raised.exception.status_code, 400)
+                self.assertEqual(
+                    raised.exception.detail,
+                    "recommendation_diversity must be an integer from 0 to 100.",
+                )
+                self.librarian.discovery_set_recommendation_diversity_settings.assert_not_called()
 
     def test_connection_error_is_sanitized(self):
         self.librarian.discovery_test_slskd_connection.side_effect = RuntimeError("sensitive upstream detail")
