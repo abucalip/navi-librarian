@@ -320,7 +320,7 @@ def decayed_listen_weights(
 
 def apply_familiarity_exploration_bonus(
     candidate: dict[str, Any],
-    recent_artist_count: int,
+    recent_artist_count: float,
     genre_tags: Iterable[str],
     exploration_families: set[str],
 ) -> float:
