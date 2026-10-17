@@ -75,7 +75,8 @@ def select_supplementary_tag_queries(
         slug = re.sub(r"[^a-z0-9]+", "_", tag.casefold()).strip("_") or "other"
         from discovery_recommendations import genre_families
         families = sorted(genre_families([tag]))
-        family = families[0] if families else "other"\n        selected.append((_query_for_tag(tag), family, f"{source}:{slug}"))
+        family = families[0] if families else "other"
+        selected.append((_query_for_tag(tag), family, f"{source}:{slug}"))
 
     for key, _weight in sorted(weights.items(), key=lambda item: (-item[1], item[0]))[:profile_limit]:
         append(display_tags[key], "profile")
@@ -87,7 +88,9 @@ def select_supplementary_tag_queries(
             exploration_tags.setdefault(tag.casefold(), tag)
     # Preserve the input order: the caller supplies tags from candidates ranked
     # by CF score, so earlier unseen tags come from stronger candidates.
-    exploration = [\n        tag for key, tag in exploration_tags.items() if key not in selected_keys\n    ]
+    exploration = [
+        tag for key, tag in exploration_tags.items() if key not in selected_keys
+    ]
     for tag in exploration[:exploration_limit]:
         append(tag, "explore")
 
