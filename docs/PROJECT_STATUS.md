@@ -10,7 +10,7 @@ The service-default audit found personal/private-network defaults for ListenBrai
 
 **MCP retirement:** PR #296 is merged at `f5cb56cbb4712bc9919e74e94e7ccf5cbe7effb7`. The registry, SDK dependency, standalone transport/startup path, Docker registry inclusion, and unrelated Proxmox MCP entry point were removed; shared web/service logic and command-policy safety tests remain. The four required workflows were reported passing on the final PR head. See `docs/MCP_RETIREMENT_PLAN.md` for the consumer audit and closeout.
 
-**Recommendation improvement:** PR #298 adds pool-fingerprint diagnostics and a deterministic offline metrics harness without ranking changes. CI passed on code head `57011aa17b798b9173dfa9b1a3bc493a4a29f9a2` (596 tests, all four workflows). Exact-head CI for the current documentation follow-up is pending; a real captured engine baseline remains outstanding. The checked-in replay fixture is synthetic and proves harness determinism only. Publishing and deployment remain paused.
+**Recommendation improvement:** PR #298 now includes pool diagnostics, offline metrics, a private real-run capture format, a strict provider/cache response cassette, and an offline replay command that reruns candidate gathering and ranking without live providers. Capture is opt-in via `LIBRARIAN_RECOMMENDATION_CAPTURE_PATH`; real captures must remain outside Git with owner-only permissions. Ranking behavior is unchanged. The checked-in fixture remains synthetic, so real-capture reproducibility and exact-final-head CI are still required before Phase 0 is complete. Publishing and deployment remain paused.
 
 ## Delivery and verification state
 
