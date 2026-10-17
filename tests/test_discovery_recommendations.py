@@ -73,7 +73,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeats"]), "afrobeats")
   self.assertEqual(
    classify_diversity_style({"artist": "Unknown", "regional_styles": ["afro_jazz"]}, ["Raï"]),
-   "afro_jazz",
+   "north_african",
   )
   self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Indie rock"]), "other")
 
