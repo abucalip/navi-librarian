@@ -6,6 +6,7 @@ from pathlib import Path
 from discovery_store import (
     record_discovery_refresh_outcome,
     record_recommendation_pool_diagnostic,
+    record_recommendation_diagnostics,
 )
 from recommendation_diagnostics import (
     evaluate_replay_fixture, jaccard_overlap, summarize_candidate_diagnostics,
