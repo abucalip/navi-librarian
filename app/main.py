@@ -46,6 +46,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
+@app.on_event("startup")
+def _start_discovery_scheduler():
+    """Keep scheduled discovery refreshes running under the supported web entry point."""
+    get_librarian()._start_discovery_scheduler()
+
 _APP_ROOT = Path(__file__).resolve().parent.parent
 _STATIC_DIR = _APP_ROOT / "static"
 _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
