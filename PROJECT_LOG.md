@@ -1,3 +1,13 @@
+## 2026-10-17 — Agent session context search workflow
+
+- Added `scripts/session_search.py`, a standard-library lexical search tool that returns ranked documentation/source snippets, supports docs/code scopes, quoted terms, all/any matching, bounded context, JSON output, and skips common generated/virtual-environment/data paths.
+- Added `tests/test_session_search.py` for query parsing, all/any matching, scope filtering, snippet output, ignored directories, file-size bounds, and empty-query rejection.
+- Added `docs/SESSION_CONTEXT_SEARCH.md` and updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md` to make focused retrieval the default agent workflow. The search results are navigation aids only; GitHub state inspection, canonical-doc reading, caller/test tracing, and all existing verification gates remain mandatory.
+- Branch: `tools/session-context-search`. Commit sequence includes the search utility, regression tests, retrieval guide, workflow/test/status updates. PR and final head SHA pending. Tests and CI have not yet been run on this branch; merge, publication, deployment, and runtime verification are not claimed.
+- Next action: review the complete diff, run the focused and full test suites where an identified GitHub revision can be tested, open a PR, and verify all required workflows on its exact final head.
+
+---
+
 ## 2026-10-17 — PR #298 merged: recommendation diagnostics and offline capture/replay
 
 - PR #298, “Add recommendation diagnostics and offline capture/replay,” merged at `68a0ee365778dab790ec54e04b54c8c72bd4552c`. Exact final PR head: `a3bdfd7bff6785c1fd17e422a26a7fde36170fad`.
