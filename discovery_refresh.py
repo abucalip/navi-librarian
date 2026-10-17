@@ -147,7 +147,7 @@ def refresh_personal(
         return {"ok": False, "status": "already_running", "list": "personal"}
     try:
         try:
-            raw = recommend(count=count, _refresh_origin=origin)
+            raw = recommend(count=count)
         except Exception as exc:
             _record_refresh_outcome(
                 record_outcome, origin=origin, status="error",
