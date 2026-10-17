@@ -12,10 +12,11 @@ MAX_TAG_LENGTH = 64
 
 
 def _clean_tag(value: Any) -> str:
-    tag = " ".join(str(value or "").strip().split())
-    if not tag or len(tag) > MAX_TAG_LENGTH:
+    raw = str(value or "").strip()
+    if any(ord(char) < 32 for char in raw):
         return ""
-    if any(ord(char) < 32 for char in tag):
+    tag = " ".join(raw.split())
+    if not tag or len(tag) > MAX_TAG_LENGTH:
         return ""
     return tag
 
