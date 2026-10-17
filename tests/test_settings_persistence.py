@@ -23,6 +23,7 @@ class SettingsPersistenceTests(unittest.TestCase):
             "slskd_downloads_path": str(self.downloads),
             "quality_priority": ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"],
             "navidrome_password": "",
+            "recommendation_diversity": 0,
         }
         self.store = SettingsPersistence(
             self.database, self.defaults, lambda: self.music_dir,
@@ -34,6 +35,11 @@ class SettingsPersistenceTests(unittest.TestCase):
         self.assertEqual(self.store.read()["listenbrainz_username"], "Björk")
         with sqlite3.connect(self.database) as db:
             self.assertEqual(db.execute("SELECT value_json FROM discovery_settings WHERE setting_key='navidrome_password'").fetchone()[0], '"secret"')
+
+    def test_recommendation_diversity_defaults_and_persists(self):
+        self.assertEqual(self.store.read()["recommendation_diversity"], 0)
+        self.store.write({"recommendation_diversity": 75})
+        self.assertEqual(self.store.read()["recommendation_diversity"], 75)
 
     def test_corrupt_json_is_ignored_and_defaults_survive(self):
         self.store.initialize()
