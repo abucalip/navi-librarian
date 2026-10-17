@@ -279,16 +279,30 @@ def recent_listening_profile(days: int = 30) -> str:
     )
 
 
-def recommend_new_music(count: int = 10) -> str:
+def recommend_new_music(
+    count: int = 10,
+    *,
+    _gathered_override=None,
+    _lastfm_popularity_fn=None,
+    _lastfm_available_override=None,
+    _record_diagnostics=True,
+    _capture_path=None,
+) -> str:
     """Recommend albums from ListenBrainz that do not appear to be in Navidrome.
 
     Uses personalized recording recommendations, MusicBrainz metadata,
     recent listening context, and Navidrome album searches.
     Does not modify files or playlists.
     """
+    import logging
+    import os
     import time
     import httpx
     from collections import Counter
+
+    if _capture_path is None:
+        _capture_path = os.environ.get("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH")
+    _lastfm_calls = []
 
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
@@ -302,13 +316,16 @@ def recommend_new_music(count: int = 10) -> str:
         primary_recent_family,
         recent_style_families,
     )
-    from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
-    gathered = gather_recommendation_candidates(RecommendationProviders(
-        listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
-        music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
-        is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
-        http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
-    ))
+    if _gathered_override is not None:
+        gathered = _gathered_override
+    else:
+        from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+        gathered = gather_recommendation_candidates(RecommendationProviders(
+            listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
+            music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
+            is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
+            http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
+        ))
     if isinstance(gathered, str):
         return gathered
     listens = gathered["listens"]
@@ -389,11 +406,22 @@ def recommend_new_music(count: int = 10) -> str:
 
         candidates_by_category[category].append(candidate)
 
-    lastfm_available = bool(_discovery_settings_read().get("lastfm_api_key"))
+    lastfm_available = (
+        bool(_discovery_settings_read().get("lastfm_api_key"))
+        if _lastfm_available_override is None
+        else bool(_lastfm_available_override)
+    )
+    lastfm_callback = _lastfm_popularity_fn or _lastfm_album_popularity
+    if _capture_path and _gathered_override is None:
+        def _capture_lastfm_result(artist, album):
+            value = _lastfm_album_popularity(artist, album)
+            _lastfm_calls.append({"artist": artist, "album": album, "result": value})
+            return value
+        lastfm_callback = _capture_lastfm_result
     lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),
         recent_family_counts,
-        _lastfm_album_popularity,
+        lastfm_callback,
     )
 
     for group in candidates_by_category.values():
@@ -618,27 +646,29 @@ def recommend_new_music(count: int = 10) -> str:
         reverse=True,
     )
 
-    from discovery_store import record_recommendation_pool_diagnostic
-    pool_diagnostics = record_recommendation_pool_diagnostic(
-        DISCOVERY_DB,
-        gathered.get("cf_recording_mbids", []),
-        [
-            f"{item.get('artist', '')}|{item.get('album', '')}"
-            for item in found
-        ],
-        {
-            "cf_recordings_returned": gathered.get("cf_recordings_returned", 0),
-            "cf_recordings_resolved": gathered.get("cf_recordings_resolved", 0),
-            "resolved_album_count": len(albums),
-            "supplementary_cache_hits": gathered.get("supplementary_cache_hits", 0),
-            "supplementary_cache_misses": gathered.get("supplementary_cache_misses", 0),
-            "candidate_counts_by_source": dict(Counter(
-                item.get("discovery_source", "listenbrainz") for item in albums.values()
-            )),
-        },
-    )
+    pool_diagnostics = None
+    if _record_diagnostics:
+        from discovery_store import record_recommendation_pool_diagnostic
+        pool_diagnostics = record_recommendation_pool_diagnostic(
+            DISCOVERY_DB,
+            gathered.get("cf_recording_mbids", []),
+            [
+                f"{item.get('artist', '')}|{item.get('album', '')}"
+                for item in found
+            ],
+            {
+                "cf_recordings_returned": gathered.get("cf_recordings_returned", 0),
+                "cf_recordings_resolved": gathered.get("cf_recordings_resolved", 0),
+                "resolved_album_count": len(albums),
+                "supplementary_cache_hits": gathered.get("supplementary_cache_hits", 0),
+                "supplementary_cache_misses": gathered.get("supplementary_cache_misses", 0),
+                "candidate_counts_by_source": dict(Counter(
+                    item.get("discovery_source", "listenbrainz") for item in albums.values()
+                )),
+            },
+        )
 
-    return json.dumps({
+    result = {
         "source": (
             "ListenBrainz + MusicBrainz + Last.fm + Navidrome"
         ),
@@ -695,7 +725,24 @@ def recommend_new_music(count: int = 10) -> str:
             "alternate editions or artist aliases may need manual review.",
             "Recommendations are read-only and no files or playlists are changed."
         ],
-    }, ensure_ascii=False, indent=2)
+    }
+    encoded = json.dumps(result, ensure_ascii=False, indent=2)
+    if _capture_path and _gathered_override is None:
+        try:
+            from recommendation_replay import write_capture
+            write_capture(
+                _capture_path,
+                gathered=gathered,
+                lastfm_calls=_lastfm_calls,
+                output=encoded,
+                count=count,
+            )
+        except Exception as exc:
+            logging.getLogger(__name__).warning(
+                "Recommendation replay capture failed (%s).", type(exc).__name__
+            )
+    return encoded
+
 
 
 # Persistent discovery state and settings live in the configurable data directory.
