@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -126,6 +127,7 @@ def write_capture(
     *,
     gathered: dict[str, Any],
     lastfm_calls: list[dict[str, Any]],
+    provider_events: list[dict[str, Any]],
     output: str,
     count: int,
     git_sha: str | None = None,
@@ -152,6 +154,7 @@ def write_capture(
         "count": int(count),
         "gathered_inputs": freeze_gathered_inputs(gathered),
         "lastfm_calls": lastfm_calls,
+        "provider_events": provider_events,
         "expected_output": expected_output,
     }
     envelope = {
@@ -193,9 +196,141 @@ def load_capture(path: str | Path) -> dict[str, Any]:
         raise ValueError("Capture checksum mismatch; refusing replay.")
     if not isinstance(payload.get("lastfm_calls"), list):
         raise ValueError("Capture Last.fm call tape is missing.")
+    if not isinstance(payload.get("provider_events"), list):
+        raise ValueError("Capture provider response tape is missing.")
     if not isinstance(payload.get("expected_output"), dict):
         raise ValueError("Capture expected output is missing.")
     return envelope
+
+
+class ProviderTape:
+    """Record/replay every external/cache boundary used by candidate gathering.
+
+    Replay compares call identity and serves captured results only. It never
+    calls the wrapped provider functions or opens a real HTTP client.
+    """
+    _GENERIC = (
+        "listenbrainz_recent", "listenbrainz_username", "metadata_cache_get",
+        "metadata_cache_set", "api_call",
+    )
+
+    def __init__(self, mode: str, events: list[dict[str, Any]] | None = None):
+        if mode not in {"record", "replay"}:
+            raise ValueError("Provider tape mode must be 'record' or 'replay'.")
+        self.mode = mode
+        self.events = list(events or [])
+        self._index = 0
+
+    def _event(self, operation: str, args: Any, kwargs: Any) -> dict[str, Any] | None:
+        normalized_args = json.loads(_canonical_json(args))
+        normalized_kwargs = json.loads(_canonical_json(kwargs))
+        if self.mode == "record":
+            event = {"operation": operation, "args": normalized_args, "kwargs": normalized_kwargs}
+            self.events.append(event)
+            return event
+        if self._index >= len(self.events):
+            raise RuntimeError("Offline replay requested an uncaptured provider call: " + operation)
+        event = self.events[self._index]
+        self._index += 1
+        if (
+            event.get("operation") != operation
+            or event.get("args") != normalized_args
+            or event.get("kwargs") != normalized_kwargs
+        ):
+            raise RuntimeError("Offline replay provider call mismatch at event " + str(self._index - 1))
+        return event
+
+    def call(self, operation: str, function: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        event = self._event(operation, args, kwargs)
+        if self.mode == "replay":
+            if event.get("error"):
+                raise RuntimeError(event["error"].get("message", "Recorded provider error"))
+            return event.get("result")
+        try:
+            result = function(*args, **kwargs)
+        except Exception as exc:
+            event["error"] = {"type": type(exc).__name__, "message": str(exc)}
+            raise
+        event["result"] = result
+        return result
+
+    def response(self, operation: str, function: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        event = self._event(operation, args, kwargs)
+        if self.mode == "replay":
+            if event.get("error"):
+                raise RuntimeError(event["error"].get("message", "Recorded HTTP error"))
+            import httpx
+            request_url = str(args[0]) if args else "https://invalid.example/"
+            request = httpx.Request("GET", request_url)
+            return httpx.Response(
+                int(event["status_code"]),
+                json=event.get("json"),
+                request=request,
+            )
+        try:
+            response = function(*args, **kwargs)
+            try:
+                body = response.json()
+            except Exception as exc:
+                event["error"] = {"type": type(exc).__name__, "message": str(exc)}
+                return response
+            event["status_code"] = int(response.status_code)
+            event["json"] = body
+            return response
+        except Exception as exc:
+            event["error"] = {"type": type(exc).__name__, "message": str(exc)}
+            raise
+
+    def wrap(self, providers: Any) -> Any:
+        """Wrap the injected RecommendationProviders value for capture/replay."""
+        wrapped = {}
+        for name in self._GENERIC:
+            original = getattr(providers, name)
+            wrapped[name] = lambda *a, _name=name, _fn=original, **kw: self.call(_name, _fn, *a, **kw)
+
+        original_http_get = providers.http_get
+        wrapped["http_get"] = lambda *a, **kw: self.response("http_get", original_http_get, *a, **kw)
+
+        original_factory = providers.http_client
+        tape = self
+
+        class ClientProxy:
+            def __init__(self, client):
+                self._client = client
+            def __enter__(self):
+                self._client.__enter__()
+                return self
+            def __exit__(self, *args):
+                return self._client.__exit__(*args)
+            def get(self, *args, **kwargs):
+                return tape.response("http_client.get", self._client.get, *args, **kwargs)
+
+        class ReplayClient:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def get(self, *args, **kwargs):
+                return tape.response("http_client.get", lambda *a, **kw: None, *args, **kwargs)
+
+        def http_client(*args, **kwargs):
+            tape._event("http_client.open", args, kwargs)
+            if tape.mode == "replay":
+                return ReplayClient()
+            return ClientProxy(original_factory(*args, **kwargs))
+
+        wrapped["http_client"] = http_client
+        if self.mode == "replay":
+            wrapped["sleep"] = lambda *_args, **_kwargs: None
+        else:
+            wrapped["sleep"] = providers.sleep
+        return replace(providers, **wrapped)
+
+    def assert_consumed(self) -> None:
+        if self._index != len(self.events):
+            raise RuntimeError(
+                f"Offline replay left {len(self.events) - self._index} provider tape events unused."
+            )
 
 
 class LastFmReplay:
@@ -251,7 +386,8 @@ def main(argv: list[str] | None = None) -> int:
             _record_diagnostics=False,
         )
         actual = json.loads(actual_text)
-        lastfm.assert_consumed()
+        lastfm_calls.assert_consumed()
+        provider_tape.assert_consumed()
         expected = payload["expected_output"]
         matches = _comparable_output(actual) == _comparable_output(expected)
         report = {
@@ -260,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
             "reproduced": matches,
             "expected_recommendations": len(expected.get("recommendations", [])),
             "actual_recommendations": len(actual.get("recommendations", [])),
-            "network_providers_used": 0,
+            "network_providers_used": 0,\n            "provider_events_replayed": len(payload["provider_events"]),\n            "lastfm_events_replayed": len(payload["lastfm_calls"]),
             "comparison": "all stable output fields except volatile pool diagnostics and Last.fm error state",
         }
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
