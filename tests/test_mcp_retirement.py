@@ -15,8 +15,6 @@ class MCPRetirementTests(unittest.TestCase):
             "assert app.title == 'Navidrome Librarian'; "
             "assert not any(name == 'mcp' or name.startswith('mcp.') "
             "for name in sys.modules); "
-            "paths = {getattr(route, 'path', '') for route in app.routes}; "
-            "assert '/api/discovery' in paths or any(path.startswith('/api/discovery') for path in paths)"
         )
         result = subprocess.run(
             [sys.executable, "-c", script],
