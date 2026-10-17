@@ -1,10 +1,10 @@
 ## 2026-10-17 — MCP retirement implementation prepared
 
 - Audited current GitHub `main` against `docs/MCP_RETIREMENT_PLAN.md`. The 25-entry registry in `mcp_registry.py`, the `mcp==2.3.0` requirement, the Docker COPY reference, and the `navidrome_server.py` streamable-HTTP startup block were the runtime/package references identified. `compose.yaml` defines only the web service and exposes its configured web port; no separate MCP service is configured.
-- The registry's functions are shared service functions used by the web adapter; they are retained. Removed only MCP registration/transport/package wiring. Removed the old registry tests and added MCP-free architecture checks. Existing acquisition/import/cleanup safety tests were not deleted or weakened.
+- All 25 registry-referenced function definitions are retained in this focused change to avoid deleting behavior based solely on MCP registration. Web routes continue using shared service functions through the lazy adapter; any MCP-only helper definitions are no longer registered or exposed by a transport and may be reviewed separately for dead-code cleanup. Removed MCP registration/transport/package wiring, replaced the registry tests with MCP-free architecture checks, and left existing acquisition/import/cleanup safety tests intact.
 - Audit uncovered that the standalone MCP block also started the discovery scheduler, while the supported Uvicorn web entry point did not. Added idempotent scheduler startup from the FastAPI startup hook so scheduled refresh remains available under the supported entry point.
 - Updated the MCP retirement plan, requirements, test plan, workflow, status, and project log. External MCP clients or user-specific configuration cannot be determined from repository inspection; no such consumer is defined in the inspected Compose configuration.
-- Branch: `retire/remove-mcp-runtime`. PR creation and verification evidence are pending. No local tests have been run from this GitHub-only workflow; do not infer passing tests or CI. Publishing remains paused. No deployment or production runtime verification is claimed.
+- Branch: `retire/remove-mcp-runtime`. PR #296 is open; exact-head CI and verification evidence are pending. No local tests have been run from this GitHub-only workflow; do not infer passing tests or CI. Publishing remains paused. No deployment or production runtime verification is claimed.
 
 ---
 
