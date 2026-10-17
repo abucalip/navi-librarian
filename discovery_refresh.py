@@ -101,6 +101,33 @@ def refresh_stale_lists(
     return outcomes
 
 
+def _record_refresh_outcome(
+    callback: Callable[[dict[str, Any]], None] | None,
+    *,
+    origin: str,
+    status: str,
+    generated_at: float | None = None,
+    item_count: int | None = None,
+    error_type: str | None = None,
+) -> None:
+    """Persist bounded refresh telemetry without affecting refresh behavior."""
+    if callback is None:
+        return
+    outcome: dict[str, Any] = {
+        "list_name": "personal",
+        "origin": origin,
+        "status": status,
+        "generated_at": generated_at,
+        "item_count": item_count,
+        "error_type": error_type,
+    }
+    try:
+        callback(outcome)
+    except Exception:
+        # Diagnostics must never turn a successful refresh into a failure.
+        pass
+
+
 def refresh_personal(
     lock: Lock,
     recommend: Callable[..., Any],
@@ -108,24 +135,54 @@ def refresh_personal(
     *,
     count: int = 20,
     clock: Callable[[], float] = time.time,
+    origin: str = "manual",
+    record_outcome: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
-    """Refresh the personal list, retaining the existing non-blocking lock contract."""
+    """Refresh the personal list and record a bounded manual/scheduler outcome."""
     if not lock.acquire(blocking=False):
+        _record_refresh_outcome(
+            record_outcome, origin=origin, status="already_running",
+            generated_at=clock(),
+        )
         return {"ok": False, "status": "already_running", "list": "personal"}
     try:
-        raw = recommend(count=count)
+        try:
+            raw = recommend(count=count, _refresh_origin=origin)
+        except Exception as exc:
+            _record_refresh_outcome(
+                record_outcome, origin=origin, status="error",
+                generated_at=clock(), error_type=type(exc).__name__,
+            )
+            raise
         try:
             payload = json.loads(raw) if isinstance(raw, str) else raw
         except (ValueError, TypeError):
             payload = {"error": "Recommendation engine returned invalid JSON."}
         if not isinstance(payload, dict) or payload.get("error"):
+            _record_refresh_outcome(
+                record_outcome, origin=origin, status="error",
+                generated_at=clock(),
+            )
             return {"ok": False, "status": "error", "details": payload}
-        write_list("personal", payload)
+        try:
+            write_list("personal", payload)
+        except Exception as exc:
+            _record_refresh_outcome(
+                record_outcome, origin=origin, status="error",
+                generated_at=clock(), error_type=type(exc).__name__,
+            )
+            raise
+        generated_at = clock()
+        item_count = len(payload.get("recommendations", []))
+        _record_refresh_outcome(
+            record_outcome, origin=origin, status="success",
+            generated_at=generated_at, item_count=item_count,
+        )
         return {
             "ok": True,
             "list": "personal",
-            "generated_at": clock(),
-            "recommendations": len(payload.get("recommendations", [])),
+            "generated_at": generated_at,
+            "recommendations": item_count,
         }
     finally:
         lock.release()
