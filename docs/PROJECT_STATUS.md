@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-17 (PR #310 merged; contrasting-profile regression verified)
+Last reviewed: 2026-10-17 (Phase 2.2 classification/provenance PR in progress)
 
 ## Current focus
 
-**Recommendation roadmap — Phase 2.2 classification overrides and source provenance.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes.
+**Recommendation roadmap — Phase 2.2 classification overrides and source provenance.** The owner has used the app since v0.1 publication and reports that recommendations have stayed overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to move beyond Phase 0; no further diagnostic snapshots are required before ranking changes. Current implementation branch: `recommendation/classification-provenance`; provider tags now take precedence over name-based classification exceptions when present, and candidates retain merged provenance for CF/profile-tag/exploration-tag sources, which is passed to aggregate diagnostics. Focused tests, full suite, and exact-head CI are pending; an initial CI run exposed one old test expectation that conflicted with the new metadata-precedence rule, and the assertion has been updated.
 
 PR #308 (bounded diagnostic history) was closed unmerged at the owner's direction because longitudinal collection is no longer needed. PR #309 merged at `d11dce4d981af4c34aa60a4d9caedb15eb8b6d58` from exact final PR head `e00d07363c72fcbe971cb9b08432cd1f5bddf46e`. It adds deterministic 14-day half-life listen weights, a smooth familiarity curve peaking at low-but-nonzero familiarity, and raises the profile relevance multiplier cap from 10% to 25%. Raw play counts remain intact for payload/display fields; weighted counts drive scoring/profile evidence. Ownership/release eligibility and the public API response shape remain unchanged by intent.
 
@@ -16,7 +16,7 @@ PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR
 
 All four required workflows passed on exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`: Python syntax/size/import-boundary `39049404041`, Docker packaging/full unit suite/build `39049404031`, container runtime smoke `39049404044`, and validation-only multi-architecture image validation `39049404139` (publishing paused). On preceding code/documentation head `f4eaa44642003ea233cd1f66274746286732d6d4`, the full unit suite reported 631 tests passed. No assistant-side local tests were run; publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** implement Phase 2.2: audit classification overrides and candidate source provenance. Do not collect further live diagnostic snapshots.
+**Next action:** verify and review the Phase 2.2 classification/provenance branch on its exact final PR head. If accepted and merged, begin Phase 3.1 diversity re-ranking evaluation. Do not collect further live diagnostic snapshots.
 
 ## Recommendation baseline and prior work
 

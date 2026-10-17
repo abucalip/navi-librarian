@@ -47,7 +47,23 @@ def summarize_candidate_diagnostics(
 
     rows = list(candidates)
     decisions = Counter(str(row.get("selection_decision") or "unknown") for row in rows)
-    sources = Counter(str(row.get("discovery_source") or "listenbrainz") for row in rows)
+    sources = Counter()
+    allowed_sources = {
+        "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
+        "similar_artist_lookup", "library_gap", "new_release",
+        "lastfm_popularity_fallback", "listenbrainz", "musicbrainz_tag_search",
+    }
+    for row in rows:
+        provenance = row.get("discovery_sources")
+        if isinstance(provenance, (list, tuple, set)):
+            normalized = {
+                str(source) for source in provenance if str(source) in allowed_sources
+            }
+            if normalized:
+                sources.update(normalized)
+                continue
+        legacy_source = str(row.get("discovery_source") or "listenbrainz")
+        sources[legacy_source if legacy_source in allowed_sources else "unknown"] += 1
     owned = sum(bool(row.get("exact_owned")) for row in rows)
     title_conflicts = sum(int(row.get("same_title_library_matches") or 0) > 0 for row in rows)
     unclassified = sum(row.get("assigned_category") == "unclassified" for row in rows)

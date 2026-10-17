@@ -151,10 +151,19 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 "assigned_category": "unclassified", "selection_decision": "not_considered",
             },
         ]
+        candidates[0]["discovery_sources"] = [
+            "listenbrainz_cf", "profile_tag_search"
+        ]
+        candidates[1]["discovery_sources"] = [
+            "musicbrainz_tag_search", "exploration_tag_search"
+        ]
         result = summarize_candidate_diagnostics(gathered, candidates)
         self.assertEqual(result["candidate_count"], 2)
         self.assertEqual(result["candidate_counts_by_source"], {
-            "listenbrainz": 1, "musicbrainz_tag_search": 1,
+            "exploration_tag_search": 1,
+            "listenbrainz_cf": 1,
+            "musicbrainz_tag_search": 1,
+            "profile_tag_search": 1,
         })
         self.assertEqual(result["score_components"]["base_score"]["mean"], 0.375)
         self.assertEqual(result["profile_evidence"]["listens_seen"], 3)

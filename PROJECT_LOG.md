@@ -1,3 +1,14 @@
+## 2026-10-17 — Phase 2.2 classification and source provenance (PR pending)
+
+- Started branch `recommendation/classification-provenance` from GitHub main at `e700fe0d88ae576c5812fc22530f5acbbff1f618`, after reading the development workflow, project status, requirements, test plan, recommendation roadmap, relevant implementation/tests, and current recent commits/open-PR search.
+- Changed recommendation category and diversity-style classification so normalized provider genre tags take precedence over artist-name exceptions whenever tags exist. Existing artist-name/style fallbacks remain only when provider tags are absent; regression tests cover both fallback behavior and conflicting available metadata.
+- Added `discovery_sources` provenance to candidates in the active personal recommendation pipeline: ListenBrainz CF, profile-derived tag search, and candidate-pool exploration tag search. Duplicate candidate records merge source labels without duplicates through a directly tested helper. The existing singular `discovery_source` remains for compatibility, and the provenance list is passed into aggregate diagnostics without entering the public response payload.
+- Updated aggregate diagnostics to count recognized source labels per candidate, with a bounded allowlist and legacy-field fallback. Source counts contain no candidate identities or raw genre/query tags. Additional source types are allowlisted for future use but are not claimed as active in this pipeline.
+- Initial CI on head `8f5781fea649372fefcf6d5a036c6b5fc9b3fe87` ran 633 unit tests and exposed one stale assertion that expected a query-derived style hint to override an available `Raï` provider tag. Updated the expectation to `north_african`, matching the intended metadata-first rule. A follow-up change keeps `discovery_sources` out of the public debug payload while supplying it only to the private aggregate diagnostic summarizer. Verification on the resulting final head is pending.
+- Focused tests, full unit suite, four required workflows on the exact final PR head, PR review, merge, and production verification are pending. Publishing remains paused; no deployment or runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — PR #312 merged: profile-derived supplementary queries
 
 - PR #312 merged at `5b23b08556c467a67b0b6cdbe7148dc069eda6f1` from exact final PR head `dc957f9eb1d817fcc2117f819c0d12be6663b142`.

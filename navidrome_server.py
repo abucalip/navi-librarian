@@ -613,10 +613,25 @@ def recommend_new_music(
     pool_diagnostics = None
     if _record_diagnostics:
         from discovery_store import record_recommendation_diagnostics
+        source_by_candidate = {
+            (_music_key(candidate.get("artist", "")), _music_key(candidate.get("album", ""))):
+                candidate.get("discovery_sources", [])
+            for candidate in albums.values()
+        }
+        diagnostic_candidate_debug = [
+            {
+                **row,
+                "discovery_sources": source_by_candidate.get(
+                    (_music_key(row.get("artist", "")), _music_key(row.get("album", ""))),
+                    [],
+                ),
+            }
+            for row in candidate_debug
+        ]
         pool_diagnostics = record_recommendation_diagnostics(
             DISCOVERY_DB, gathered, albums.values(), found,
             refresh_origin=_refresh_origin,
-            candidate_diagnostics=candidate_debug,
+            candidate_diagnostics=diagnostic_candidate_debug,
         )
 
     result = {

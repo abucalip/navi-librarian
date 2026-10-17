@@ -6,6 +6,37 @@ import unicodedata
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
+_DISCOVERY_SOURCE_LABELS = {
+    "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
+    "similar_artist_lookup", "library_gap", "new_release",
+    "lastfm_popularity_fallback",
+}
+
+
+def merge_discovery_source(
+    candidate: dict[str, Any],
+    source: str,
+) -> list[str]:
+    """Merge a recognized source label into a candidate without duplicates."""
+    if source not in _DISCOVERY_SOURCE_LABELS:
+        raise ValueError("unsupported discovery source")
+    current = candidate.get("discovery_sources")
+    if not isinstance(current, list):
+        current = (
+            ["listenbrainz_cf"]
+            if candidate.get("discovery_source", "listenbrainz") == "listenbrainz"
+            else []
+        )
+    normalized = []
+    for value in current:
+        if value in _DISCOVERY_SOURCE_LABELS and value not in normalized:
+            normalized.append(value)
+    if source not in normalized:
+        normalized.append(source)
+    candidate["discovery_sources"] = normalized
+    return normalized
+
+
 def music_key(value: Any) -> str:
     value = unicodedata.normalize("NFKD", str(value or ""))
     value = "".join(c for c in value if not unicodedata.combining(c))
@@ -181,7 +212,12 @@ def classify_recommendation_category(
     artist_key = music_key_fn(
         candidate.get("primary_artist") or candidate.get("artist", "")
     )
-    regional_family = _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES.get(artist_key)
+    # Provider genre tags take precedence over artist-name exceptions. Names are
+    # only a last-resort fallback when metadata is unavailable.
+    regional_family = (
+        _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES.get(artist_key)
+        if not tags else None
+    )
     if regional_family:
         families.add(regional_family)
 
@@ -414,13 +450,16 @@ def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) 
         candidate.get("primary_artist") or candidate.get("artist", "")
     )
     tag_text = " ".join(tags).casefold()
+    # Query-derived hints and name exceptions are fallbacks only. When provider
+    # tags exist, classify from those normalized tags instead of hardcoded taste.
     regional_style_hints = candidate.get("regional_styles", [])
-    for style_hint in (
-        "north_african", "afrobeats", "afro_jazz",
-        "malian_desert_blues",
-    ):
-        if style_hint in regional_style_hints:
-            return style_hint
+    if not tag_text:
+        for style_hint in (
+            "north_african", "afrobeats", "afro_jazz",
+            "malian_desert_blues",
+        ):
+            if style_hint in regional_style_hints:
+                return style_hint
 
     north_african_names = {
         "chebmami", "khaled", "chebkhaled", "faudel", "rachidtaha",
@@ -434,7 +473,7 @@ def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) 
     }
 
     if (
-        artist_key in north_african_names
+        (not tag_text and artist_key in north_african_names)
         or any(term in tag_text for term in (
             "raï", "rai", "chaabi", "gnawa", "amazigh",
             "north african", "north-african", "maghreb", "algerian",
@@ -451,7 +490,7 @@ def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) 
     )):
         return "afro_jazz"
     if (
-        artist_key in desert_blues_names
+        (not tag_text and artist_key in desert_blues_names)
         or any(term in tag_text for term in (
             "desert blues", "malian blues", "malian guitar", "tuareg",
             "assouf", "wassoulou",
