@@ -1,4 +1,4 @@
-"""Strict allowlist for the separate read-only Proxmox MCP entry point.
+"""Strict allowlist for read-only Proxmox diagnostic commands.
 
 Commands are passed to SSH as a remote shell command, so validation must reject
 anything except the small set of diagnostic command forms approved below.
