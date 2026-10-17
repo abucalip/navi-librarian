@@ -1,10 +1,11 @@
-## 2026-10-17 — Agent session context search workflow
+## 2026-10-17 — PR #302: Agent session context search workflow
 
-- Added `scripts/session_search.py`, a standard-library lexical search tool that returns ranked documentation/source snippets, supports docs/code scopes, quoted terms, all/any matching, bounded context, JSON output, and skips common generated/virtual-environment/data paths.
-- Added `tests/test_session_search.py` for query parsing, all/any matching, scope filtering, snippet output, ignored directories, file-size bounds, and empty-query rejection.
-- Added `docs/SESSION_CONTEXT_SEARCH.md` and updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and `docs/PROJECT_STATUS.md` to make focused retrieval the default agent workflow. The search results are navigation aids only; GitHub state inspection, canonical-doc reading, caller/test tracing, and all existing verification gates remain mandatory.
-- Branch: `tools/session-context-search`. Commit sequence includes the search utility, regression tests, retrieval guide, workflow/test/status updates. PR and final head SHA pending. Tests and CI have not yet been run on this branch; merge, publication, deployment, and runtime verification are not claimed.
-- Next action: review the complete diff, run the focused and full test suites where an identified GitHub revision can be tested, open a PR, and verify all required workflows on its exact final head.
+- PR #302 adds `scripts/session_search.py`, a standard-library lexical search tool returning ranked documentation/source snippets. It supports docs/code scopes, quoted phrases, all/any matching, bounded context and file sizes, JSON output, and excludes common generated/virtual-environment/data directories.
+- Added `tests/test_session_search.py` covering query parsing, all/any matching, scope filtering, snippets, ignored directories, file-size bounds, and empty-query rejection.
+- Added `docs/SESSION_CONTEXT_SEARCH.md`; updated `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and this status to establish focused retrieval as the standard agent workflow. Search remains a navigation aid; GitHub state inspection, canonical-doc reading, caller/test tracing, and all existing verification gates remain mandatory.
+- Initial CI on head `627c442780f26613e76541cbc46e91d6058997b3` exposed one test-fixture assumption: the documentation fixture also contained both query terms. The test was corrected to use a distinctive all-terms query. On corrected code head `157dfa3d18ff253d4de64e91907166d3aba442bb`, all 616 unit tests passed in Docker packaging workflow 1416; Python syntax/size/import-boundary checks passed in workflow 1508; container runtime smoke passed in workflow 1225; validation-only multi-architecture build passed in workflow 1269. Publishing remained paused.
+- PR #302 is open. Documentation closeout commits require a fresh check of all four workflows on the exact final PR-head SHA before merge. No merge, publication, deployment, or production-runtime verification is claimed.
+- Next action: verify all four required workflows on the final PR head, review the final diff, then merge only if every gate passes.
 
 ---
 
