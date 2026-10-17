@@ -142,7 +142,7 @@ def refresh_personal(
     if not lock.acquire(blocking=False):
         _record_refresh_outcome(
             record_outcome, origin=origin, status="already_running",
-            generated_at=clock(),
+            generated_at=clock() if record_outcome is not None else None,
         )
         return {"ok": False, "status": "already_running", "list": "personal"}
     try:
@@ -151,7 +151,7 @@ def refresh_personal(
         except Exception as exc:
             _record_refresh_outcome(
                 record_outcome, origin=origin, status="error",
-                generated_at=clock(), error_type=type(exc).__name__,
+                generated_at=clock() if record_outcome is not None else None, error_type=type(exc).__name__,
             )
             raise
         try:
@@ -161,7 +161,7 @@ def refresh_personal(
         if not isinstance(payload, dict) or payload.get("error"):
             _record_refresh_outcome(
                 record_outcome, origin=origin, status="error",
-                generated_at=clock(),
+                generated_at=clock() if record_outcome is not None else None,
             )
             return {"ok": False, "status": "error", "details": payload}
         try:
@@ -169,7 +169,7 @@ def refresh_personal(
         except Exception as exc:
             _record_refresh_outcome(
                 record_outcome, origin=origin, status="error",
-                generated_at=clock(), error_type=type(exc).__name__,
+                generated_at=clock() if record_outcome is not None else None, error_type=type(exc).__name__,
             )
             raise
         generated_at = clock()
