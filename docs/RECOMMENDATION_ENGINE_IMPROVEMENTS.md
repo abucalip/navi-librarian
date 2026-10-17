@@ -1,6 +1,6 @@
 # Recommendation engine improvement roadmap
 
-Status: planning only. This roadmap consolidates the 2026-10-17 hardcoding audit, implementation evidence from `main` at `a977016a6f260d87518a595e22fb641963893b9c`, the DroppedNeedle review, and recommendation-system research. It prioritizes diagnosis and offline measurement before ranking changes. This document does not authorize publishing or deployment.
+Status: active implementation. Phase 0 is closed for prioritization based on the owner's sustained real-world evidence; this is not a claim that the exact technical root cause has been proven. This roadmap consolidates the 2026-10-17 hardcoding audit, implementation evidence from `main` at `a977016a6f260d87518a595e22fb641963893b9c`, the DroppedNeedle review, and recommendation-system research. It uses deterministic diagnostics and offline measurement to guide changes, while owner-reported sustained real-world failure can prioritize ranking responsiveness without claiming a proven technical root cause. This document does not authorize publishing or deployment.
 
 ## Goal and guardrails
 
@@ -107,31 +107,31 @@ Refresh-origin tracing is now implemented on the working branch: the personal-li
 Aggregate recommendation diagnostics are implemented and merged in PR #304. Bounded source counts, base/final score and bonus distributions, profile-evidence counts, cache counts, and eligibility/selection outcomes are persisted with the existing pool snapshot. The aggregate omits candidate identities and raw tags and does not expand the public API response. All four required workflows passed on exact final head `808ed2621ec5a3e9db3a05083e5fb1dcc828e4cb`; merge commit `19435d5deea69b188d920cf375ef924ec3b14a97`. Review the real replay baseline's metrics and limitations before any score, source, or allocation changes.
 
 
-**Baseline review decision (2026-10-17):** the private exact replay succeeded (10/10 recommendations, 197 provider events, 40 Last.fm events, zero network providers). The associated diagnostic snapshot has identical CF and final-list sets versus the previous stored snapshot (Jaccard 1.0 each), but this single pair is insufficient to pass the causal diagnosis gate. The public synthetic fixture demonstrates the metric harness, not real-user relevance; the private exact replay verifies reproducibility, not future-listen hit-rate/nDCG or profile responsiveness. Phase 0 therefore remains open.
+**Phase 0 decision (2026-10-17): closed for prioritization at the owner's direction.** The private exact replay was reproducible (10/10 recommendations, 197 provider events, 40 Last.fm events, zero network providers) and the compared CF/final-list snapshots were identical (Jaccard 1.0 each). More importantly, the owner reports sustained use since v0.1 publication and overwhelmingly unchanged recommendations despite daily listening-history changes. Treat this longitudinal product experience as sufficient evidence to begin improving responsiveness. Do not require more snapshot collection before proceeding. The capture and synthetic fixture remain useful regression/evaluation tools, but neither proves a specific technical root cause or future-listen relevance.
 
-Next evidence needed: comparable aggregate snapshots from multiple refreshes, with timestamps/origins and, if feasible, a deliberate listening-profile change between observations. If CF overlap remains high, investigate provider candidate-supply freshness; if CF overlap falls while final lists remain stable, inspect eligibility, scoring/allocation, and persisted-output behavior. Keep policy unchanged until the evidence supports a specific cause.
+The initial implementation target is the ranking/profile path: weight recent listens more strongly, reduce the coarse familiarity step function, and strengthen profile-derived influence while keeping cached metadata separate from profile calculations. Candidate-source and persisted-list freshness can be revisited only if behavior-focused tests and subsequent user evaluation show that ranking responsiveness is insufficient.
 
-**Acceptance gate for Phase 0**
-- Repeated-pool vs repeated-ranking hypotheses can be distinguished from recorded evidence.
-- The replay harness is deterministic on frozen inputs and reports the metrics above.
-- Baseline output is captured before any scoring, source, or allocation change.
-- Existing output schemas and recommendation behavior are unchanged.
+**Acceptance gate for Phase 0 — accepted for prioritization**
+- Existing capture/replay and aggregate diagnostics are available for reproducibility and regression investigation.
+- The owner has supplied sustained real-world evidence that current recommendations do not respond adequately to changing listening history.
+- Further diagnostic collection is not a prerequisite for behavior changes.
+- Existing ownership, release eligibility, API contracts, and safe provider-call limits remain invariants.
 
 ### Phase 1 — Make listening signals time-sensitive and proportionate
 
-Only proceed after Phase 0 identifies ranking/profile responsiveness as a meaningful contributor. Use the replay harness for every candidate formula.
+Proceed based on the owner's sustained real-world evidence that recommendations remain overwhelmingly unchanged while listening history changes daily. Use deterministic fixtures and the existing replay harness for each candidate formula; do not wait for further live diagnostic snapshots.
 
 #### 1.1 Time-decayed profile
 
-Replace the flat 30-day count as the sole signal with a decay such as `weight = 0.5 ** (age_days / half_life_days)`, starting with a half-life near 14 days. Retain a longer window (for example, 90 days) to distinguish stable taste from short-term drift. Derive artist and family/tag weights from decayed counts.
+Replace flat scrobble counts with a 14-day half-life decay anchored to ListenBrainz listen timestamps, deriving artist and family/tag weights from the same per-listen weights. The initial implementation keeps the existing 30-day retrieval window to avoid changing provider/capture contracts; consider a longer stable-taste window separately if the responsiveness checks show it is needed.
 
 Use those weights both in scoring and supplementary query selection. Keep profile computation separate from cached provider metadata so cached genres do not freeze the profile.
 
 #### 1.2 Rebalance familiarity and profile relevance
 
-Replace the step-function familiarity term with a smooth curve. Its peak should occur at low-but-nonzero familiarity so the engine can recommend adjacent artists, not only never-played artists. Rebalance the profile term so current listening can compete on a similar order of magnitude with familiarity.
+Replace the step-function familiarity term with a smooth curve peaking at low-but-nonzero weighted familiarity, rather than awarding the maximum only to never-played artists. The current implementation begins with a bounded smooth curve and decayed inputs, and increases the profile multiplier cap from 10% to 25% so current taste can compete more strongly with familiarity and popularity.
 
-Choose curve/weights using replay metrics and controlled contrasting profiles, not intuition. Inspect the current multiplicative score for interactions; consider representing components explicitly and calculating the final score once to avoid fragile divide/re-apply behavior in the Last.fm tag path.
+Choose curve/weights using deterministic contrasting profiles and the existing replay harness, supplemented by the owner's qualitative evaluation. Inspect the current multiplicative score for interactions; consider representing components explicitly and calculating the final score once to avoid fragile divide/re-apply behavior in the Last.fm tag path.
 
 Keep Last.fm popularity capped and normalized as a weak tie-breaker or cold-start fallback. It must not routinely overpower personal relevance.
 
@@ -139,7 +139,7 @@ Keep Last.fm popularity capped and normalized as a weak tie-breaker or cold-star
 
 ### Phase 2 — Make candidate generation reflect the current profile
 
-Proceed after Phase 0, and coordinate with Phase 1 so query changes can be evaluated independently from score changes.
+Proceed after the Phase 1 responsiveness changes have been evaluated, and coordinate query changes so they can be evaluated independently from score changes.
 
 #### 2.1 Replace fixed supplementary tag searches
 

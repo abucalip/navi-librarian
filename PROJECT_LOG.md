@@ -1,3 +1,13 @@
+## 2026-10-17 — Recommendation Phase 0 closed; Phase 1 profile responsiveness started
+
+- The owner reports using the app since v0.1 publication and that recommendations have remained overwhelmingly the same despite daily changes in listening history. This is accepted as sufficient real-world evidence to prioritize profile-responsive ranking without further diagnostic collection. It establishes the product defect, not a definitive technical root cause.
+- Closed PR #308, “Add bounded recommendation diagnostic history,” unmerged at the owner's direction; its diagnostic-history implementation was not incorporated into main.
+- Started branch `recommendation/time-decayed-profile` from main `6f9dc1c0073690d78862fa95f510984397ee65e2`. Added deterministic per-listen weights using a 14-day half-life relative to the newest dated listen; undated legacy/test records retain equal weight so existing fixtures remain compatible. Used weighted artist/artist-MBID/family counts for ranking/profile calculations while preserving raw counts for public play-count fields.
+- Replaced the familiarity step function with a smooth bounded curve peaking at low-but-nonzero weighted familiarity, and raised the profile relevance multiplier cap from 10% to 25% so current taste can compete more strongly with familiarity and popularity. Added focused tests for deterministic decay, invalid half-life rejection, curve shape, and profile-score response to contrasting family weights. Existing ownership and release eligibility paths were not intentionally changed.
+- No assistant-side local tests were run. Exact final-head CI, replay compatibility, and full diff review remain pending. Publishing remains paused; no deployment or production-runtime verification is claimed.
+
+---
+
 ## 2026-10-17 — Private recommendation baseline reviewed; policy gate remains closed
 
 - Reviewed the owner-provided aggregate report from the private PR #298 capture/replay. The replay reproduced 10/10 recommendations from capture/source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`, consumed 197 provider events and 40 Last.fm events, and made zero network provider calls.

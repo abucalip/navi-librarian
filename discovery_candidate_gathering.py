@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import json
 from typing import Any, Callable
 
+from discovery_recommendations import decayed_listen_weights
+
 @dataclass(frozen=True)
 class RecommendationProviders:
     listenbrainz_recent: Callable[..., Any]
@@ -30,19 +32,23 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         }, ensure_ascii=False, indent=2)
 
     recent_artists = Counter()
+    recent_artist_play_counts = Counter()
     recent_artist_mbid_counts = Counter()
-    for listen in listens:
+    listen_weights = decayed_listen_weights(listens, half_life_days=14.0)
+    for listen, weight in zip(listens, listen_weights):
         metadata = listen.get("track_metadata", {})
         artist = metadata.get("artist_name")
         if artist:
-            recent_artists[providers.music_key(artist)] += 1
+            key = providers.music_key(artist)
+            recent_artists[key] += weight
+            recent_artist_play_counts[key] += 1
         additional_info = metadata.get("additional_info", {})
         artist_mbid = additional_info.get("artist_mbid")
         artist_mbids = additional_info.get("artist_mbids", [])
         if not artist_mbid and isinstance(artist_mbids, list) and artist_mbids:
             artist_mbid = artist_mbids[0]
         if artist_mbid:
-            recent_artist_mbid_counts[artist_mbid] += 1
+            recent_artist_mbid_counts[artist_mbid] += weight
 
     try:
         response = providers.http_get(
@@ -503,7 +509,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     # dynamic: jazz, soul, rock, Brazilian music, and other families rise or
     # fall with the user's listening over the rolling 30-day window.
     recent_family_counts = Counter()
-    for listen in listens:
+    recent_family_play_counts = Counter()
+    for listen, weight in zip(listens, listen_weights):
         metadata = listen.get("track_metadata", {})
         additional_info = metadata.get("additional_info", {})
         artist_mbid = additional_info.get("artist_mbid")
@@ -513,7 +520,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         if not artist_mbid:
             continue
         for family in recent_style_families(genre_cache.get(artist_mbid, [])):
-            recent_family_counts[family] += 1
+            recent_family_counts[family] += weight
+            recent_family_play_counts[family] += 1
 
     # Core interests are used to identify close recommendations.
     # African and North African/Middle Eastern music are explicit
@@ -531,6 +539,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
 
     return {
         "listens": listens, "recent_artists": recent_artists,
+        "recent_artist_play_counts": recent_artist_play_counts,
         "recent_artist_mbid_counts": recent_artist_mbid_counts,
         "albums": albums, "failures": failures,
         "library_albums": library_albums,
@@ -542,6 +551,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         "cf_recordings_resolved": cf_recordings_resolved,
         "supplementary_cache_hits": supplementary_cache_hits,
         "supplementary_cache_misses": supplementary_cache_misses,
-        "recent_family_counts": recent_family_counts, "core_families": core_families,
+        "recent_family_counts": recent_family_counts,
+        "recent_family_play_counts": recent_family_play_counts,
+        "core_families": core_families,
         "exploration_families": exploration_families, "profile_families": profile_families,
     }
