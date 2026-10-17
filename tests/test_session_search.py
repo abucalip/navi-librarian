@@ -18,7 +18,7 @@ class SessionSearchTests(unittest.TestCase):
         (self.root / "docs" / "workflow.md").write_text(
             "# Session workflow\nSearch documentation and code for relevant context.\n", encoding="utf-8"
         )
-        (self.root / "app" / "service.py").write_text(
+        (self.root / "PROJECT_STATUS.md").write_text("Session workflow summary.\\n", encoding="utf-8")\n        (self.root / "app" / "service.py").write_text(
             "# service\ndef replay_metadata():\n    return 'session context'\n", encoding="utf-8"
         )
         (self.root / ".venv" / "lib" / "ignored.py").write_text(
