@@ -1149,3 +1149,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - All four required workflows passed on exact final head: Python syntax run 1620 (`39066220743`), Docker packaging/full suite/build run 1528 (`39066220749`), container runtime smoke run 1337 (`39066220736`), and validation-only multi-architecture image validation run 1381 (`39066220768`, publishing paused).
 - Documentation-only; no local tests or UI checks were run. Production ranking is unchanged. No publishing, deployment, or runtime verification is claimed.
 - Next: calibrate the diversity-to-lambda mapping and relevance floor offline around lambda 0.75 before backend preference integration.
+
+
+## 2026-10-17 — MMR relevance-floor calibration harness (PR pending)
+
+- Started branch `recommendation/calibrate-mmr-relevance-floor` from current GitHub `main` at `bd1052ae8f963e0aacd90428b04687f4cea36cf4`.
+- Added a pure, validated mapping from the proposed 0–100 diversity setting to this implementation's similarity-penalty weight. Code inspection found that this implementation subtracts `lambda × similarity`, so a higher lambda produces more diversity; the roadmap's prior statement that the slider should map inversely to conventional MMR lambda was inconsistent with the actual formula. The roadmap now records the implementation's real semantics and treats mapping calibration as pending.
+- Extended the provider-free offline evaluator to sweep a bounded lambda grid around 0.75 together with normalized relevance floors (0, 0.05, 0.1, 0.15, 0.2 by default). Floors use the original candidate pool's min-max normalization and may produce shorter lists rather than forcing low-relevance replacements. Added regression coverage for mapping bounds, floor behavior, sparse-list trade-offs, and deterministic repeat checks.
+- No private capture was accessed and no calibration outcome is claimed. The next required step is to run the updated evaluator against the existing private frozen fixture locally and share only identity-free aggregate metrics. No new live capture is needed. Production ranking remains unchanged.
+- Tests and required CI have not yet been run for this branch. Publishing, deployment, and production-runtime verification remain unperformed.
