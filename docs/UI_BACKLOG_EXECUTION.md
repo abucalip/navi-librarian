@@ -1693,3 +1693,39 @@ Screenshots: before (`origin/main`) and after (this branch), each at 1440, 1200,
 **Limitations.** Renders use the reconstructed fixture. The fixture's artwork tiles are blank. The bottom tab bar still scrolls sideways under 620px (existing follow-up, not this PR). The `Dismiss artist` button is text, so its width depends on the label. On a narrow phone it fits beside Get and × in the sandbox renders. Long localized labels were not tested.
 
 **Next action.** Manual pass on the merged head against the documented helper once it is restored, then Phase 3 item 3 (Personal Discoveries).
+
+## 15. Redesign Phase 3 — Personal Discoveries as ranked rows (`ui/phase-3-personal-discoveries`)
+
+Roadmap item: Phase 3, third item (Personal Discoveries). Design system sections applied: 8 (truthfulness rules, rule 2 for an unordered-by-score list: muted position, no red numeral), 9.4 (ranked row), 9.6 (skeleton, status line, empty and error states), 9.2 (Get kept), 12 (accessibility floor). Base: `origin/main` at `7d4f7a8` (PR #369 merged as `68fa6fb`, docs PR #371 merged). PR link and head SHA: recorded in the PR description. Not merged, not deployed.
+
+**Order is the real question.** The personal list is built in `navidrome_server.py` from `allocation.selected_candidate_ids`, which is the allocator's selection order (category quotas and diversity slots), not a `discovery_score` sort. Every personal item does carry a `discovery_score` (`discovery_recommendation_payload.py` always sets it), but that is not the served order, so a numeral would imply a ranking the API did not return. Rows therefore show a muted position (`rank-numeral is-index`, `--text-muted`) and no red numeral, and the status line says "Engine order, not ranked by discovery score". If the server later returns a score-ordered list, the numeral can be enabled with a labelled sort basis, as Discover music does.
+
+**Implemented.** `#personalCards` is now `ranked-list`. `buildPersonalRow` calls the shared `buildRecommendationRow(item, index + 1, {indexed, meta, onDismiss, onDismissArtist})`, so there is no fork. Metadata lines are the category, the API's `reason`, and the Last.fm playcount, each shown only when returned. Dismiss and dismiss-artist call `sendFeedback` with the `personal` list name, which keeps the server's dismiss rules. Loading shows six skeleton rows and removes them before rows render, and on failure. A shared `rankedRowList` flag replaces the New releases-only checks, so both lists use one path.
+
+**Changed behaviour (disclosed).** The old personal editorial card lazily loaded an artist bio for cards whose reason was the "Genre tags connect this artist…" line. The shared row does not do that, the same as Discover music and New releases rows already. The bio fetch (`/api/artist-bio`) is no longer triggered from this list. The album modal is unchanged. Restoring the bio on ranked rows would need a new option on the shared builder, so it is left for a follow-up decision. The old card's category tag is now plain text in the metadata column.
+
+**Unchanged.** Load and Refresh buttons, the status line element, `loadDiscovery`'s request (`/api/discovery/personal?count=30&nonce=…`), the feedback endpoint, the Get state machine (`createGetButton`), the row-open modal (`makeAlbumCardInteractive`), the empty-state copy, and all server code. No backend, API or dependency change. No new endpoint or field was needed, so no contract proposal is required.
+
+**Tests.** New `tests/test_personal_discoveries_ui_contract.py` (`PersonalDiscoveriesRowContractTests`, 10 source checks). `tests/test_new_releases_ui_contract.py` had three assertions on the exact `new_releases`-only skeleton and clear lines. They now check the shared `rankedRowList` flag, with the same behaviour. No behavioural assertion was removed.
+
+**Checks run on the branch head.**
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `python3 -m pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest discover -s tests -v`: 771 tests, OK.
+- `python3 -m unittest tests.test_personal_discoveries_ui_contract tests.test_new_releases_ui_contract tests.test_recommendations_ui_contract -v`: 40 tests, OK.
+
+**Browser checks.** Not run through the `~/navi-librarian-test/test-pr.sh` helper, which is not present in this session. Instead I ran two isolated servers from one sandbox (`NAVIDROME_LIBRARIAN_DATA_DIR` per tree, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` in `sandbox/`, `SLSKD_URL=http://127.0.0.1:9`, no Navidrome configured). One tree is `origin/main`, one is this branch. The personal endpoint was answered by Playwright with reconstructed fixture data, so the DOM and layout are real but the recommendations and artwork are not. This section states it; the PNGs themselves carry no label. Results are in `/mnt/project-files/phase-3-personal-discoveries/screenshots/render-results.json`.
+- Widths 1440, 1200, 900, 620 and 390: rows render as `ranked-row`, `overflowX` is 0 at every width, every button in the list is at least 44px on the branch (on main, 10 buttons were under 44px in the old card grid), and the console shows no errors on the branch. On main the console was also clean.
+- Numerals: five muted `01`–`05` on the branch, computed colour `rgb(180, 172, 159)` (the `--text-muted` value), no red.
+- Loading: six skeleton rows and "Loading…" while the response is delayed; both cleared when rows arrive (`branch-loading-1440.png`).
+- Error: a 502 clears all skeletons and rows and shows the server message (`branch-error-1440.png`). The browser logs the 502 as a console error, which is the intended failure.
+- Dismiss: clicking × posts `action: dismiss` with the artist, album and item metadata to `/api/discovery/feedback`, then reloads the list.
+- Keyboard: Tab order on each row is row link, Get, Not for me, Dismiss artist. Enter on the row opens the album modal and Escape returns focus to the row.
+- Not run: a real Get request (the sandbox has no acquisition path and the brief forbids destructive acquisition), real artwork, a real personal list, and the full manual checklist against a PR head SHA.
+
+**Impeccable.** `impeccable detect` ran through the edit hook on `app/templates/index.html` and `static/app.css`. Its findings on `index.html` are on lines this PR did not touch: the album-modal `<img>` with no `src` (`origin/main` line 269) and the existing `11px` text. `app.css` had no findings. A separate `/impeccable critique` pass was not run in this session. The brief's direction was applied by reusing the shared row, not re-rolling it. `/impeccable document` is not due until Phase 7.
+
+**web-design-guidelines.** The skill fetched the full rule list. It was checked against the changed lines: `aria-live="polite"` on the status line, `aria-hidden` on the decorative index, reduced-motion disables the skeleton pulse (`app.css` line 556), no `transition: all` or `outline: none`, no `...` in new strings, and text truncation and `min-w-0` from the shared row. No new findings on the changed lines.
+
+**Known limitations.** Artist bio lazy load not carried over (see above). Engine order is not a score order, so the list has no ranking numeral. The fixed mobile tab bar overlays the 390px element screenshot (existing; the open follow-up for seven bottom tabs under 620px still applies). The sandbox has no real library, so artwork and recommendations are reconstructed fixture data.

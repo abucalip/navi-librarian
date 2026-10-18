@@ -482,6 +482,9 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   justify-self: end; font: 600 36px/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
   font-variant-numeric: tabular-nums;
 }
+/* Personal Discoveries: a muted position, not a rank. The server order is not a score order, so
+   the red numeral is not used (DESIGN_SYSTEM.md section 8, rule 2). */
+.rank-numeral.is-index { color: var(--text-muted); }
 /* New releases: the release date replaces the numeral (DESIGN_SYSTEM.md section 8). Plain text,
    not red: the red numeral is reserved for real rank order. */
 .row-date {
