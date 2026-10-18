@@ -16,9 +16,10 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import math
 from typing import Any, Callable
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _REPOSITORY_ROOT = Path(__file__).resolve().parent
 
 
@@ -32,6 +33,7 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
         "listens": gathered["listens"],
         "recent_artists": dict(gathered["recent_artists"]),
         "recent_artist_mbid_counts": dict(gathered["recent_artist_mbid_counts"]),
+        "recent_artist_play_counts": dict(gathered.get("recent_artist_play_counts", gathered["recent_artists"])),
         "albums": [
             {"key": list(key), "value": value}
             for key, value in gathered["albums"].items()
@@ -48,6 +50,7 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
         "supplementary_cache_hits": gathered.get("supplementary_cache_hits", 0),
         "supplementary_cache_misses": gathered.get("supplementary_cache_misses", 0),
         "recent_family_counts": dict(gathered["recent_family_counts"]),
+        "recent_family_play_counts": dict(gathered.get("recent_family_play_counts", gathered["recent_family_counts"])),
         "core_families": sorted(gathered["core_families"]),
         "exploration_families": sorted(gathered["exploration_families"]),
         "profile_families": sorted(gathered["profile_families"]),
@@ -57,10 +60,10 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
 def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
     """Restore ranking inputs without importing or invoking provider clients."""
     required = {
-        "listens", "recent_artists", "recent_artist_mbid_counts", "albums",
+        "listens", "recent_artists", "recent_artist_mbid_counts", "recent_artist_play_counts", "albums",
         "failures", "library_albums", "library_by_title", "genre_cache",
         "regional_candidates_added", "regional_results_seen",
-        "recent_family_counts", "core_families", "exploration_families",
+        "recent_family_counts", "recent_family_play_counts", "core_families", "exploration_families",
         "profile_families",
     }
     missing = sorted(required - payload.keys())
@@ -80,6 +83,7 @@ def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
         "listens": payload["listens"],
         "recent_artists": Counter(payload["recent_artists"]),
         "recent_artist_mbid_counts": Counter(payload["recent_artist_mbid_counts"]),
+        "recent_artist_play_counts": Counter(payload["recent_artist_play_counts"]),
         "albums": albums,
         "failures": payload["failures"],
         "library_albums": payload["library_albums"],
@@ -93,6 +97,7 @@ def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
         "supplementary_cache_hits": payload.get("supplementary_cache_hits", 0),
         "supplementary_cache_misses": payload.get("supplementary_cache_misses", 0),
         "recent_family_counts": Counter(payload["recent_family_counts"]),
+        "recent_family_play_counts": Counter(payload["recent_family_play_counts"]),
         "core_families": set(payload["core_families"]),
         "exploration_families": set(payload["exploration_families"]),
         "profile_families": set(payload["profile_families"]),
@@ -131,6 +136,7 @@ def write_capture(
     output: str,
     count: int,
     git_sha: str | None = None,
+    ranking_context: dict[str, Any] | None = None,
 ) -> Path:
     """Write one immutable, checksummed, owner-only capture outside the repo."""
     target = _check_private_path(Path(path), must_exist=False)
@@ -156,9 +162,11 @@ def write_capture(
             ).stdout.strip()
         except (OSError, subprocess.CalledProcessError):
             sha = "unknown"
+    frozen_ranking_context = _validate_ranking_context(ranking_context)
     payload = {
         "count": int(count),
         "gathered_inputs": freeze_gathered_inputs(gathered),
+        "ranking_context": frozen_ranking_context,
         "lastfm_calls": lastfm_calls,
         "provider_events": provider_events,
         "expected_output": expected_output,
@@ -186,13 +194,39 @@ def write_capture(
     return target
 
 
+def _validate_ranking_context(value: Any) -> dict[str, Any]:
+    """Validate every mutable ranking input that must be frozen for replay."""
+    if not isinstance(value, dict):
+        raise ValueError("Capture is missing frozen ranking context; recapture with the current version.")
+    required = {"ranking_now", "history", "diversity_setting"}
+    missing = sorted(required - value.keys())
+    if missing:
+        raise ValueError("Ranking context is missing required fields: " + ", ".join(missing))
+    timestamp = value["ranking_now"]
+    if isinstance(timestamp, bool) or not isinstance(timestamp, (int, float)) or not math.isfinite(float(timestamp)):
+        raise ValueError("Ranking context ranking_now must be a finite timestamp.")
+    history = value["history"]
+    if not isinstance(history, list) or any(not isinstance(row, dict) for row in history):
+        raise ValueError("Ranking context history must be a list of objects.")
+    for row in history:
+        if not {"identity_hash", "generated_at", "rank"} <= row.keys():
+            raise ValueError("Ranking context history row is missing required fields.")
+    diversity = value["diversity_setting"]
+    if type(diversity) is not int or not 0 <= diversity <= 100:
+        raise ValueError("Ranking context diversity_setting must be an integer from 0 to 100.")
+    return {"ranking_now": float(timestamp), "history": history, "diversity_setting": diversity}
+
+
 def load_capture(path: str | Path) -> dict[str, Any]:
     target = _check_private_path(Path(path), must_exist=True)
     try:
         envelope = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ValueError("Capture is not readable valid JSON.") from exc
-    if envelope.get("schema_version") != SCHEMA_VERSION:
+    version = envelope.get("schema_version")
+    if version == 1:
+        raise ValueError("Legacy schema v1 capture lacks frozen ranking context; recapture with the current version.")
+    if version != SCHEMA_VERSION:
         raise ValueError("Unsupported recommendation capture schema version.")
     payload = envelope.get("payload")
     if not isinstance(payload, dict):
@@ -206,6 +240,8 @@ def load_capture(path: str | Path) -> dict[str, Any]:
         raise ValueError("Capture provider response tape is missing.")
     if not isinstance(payload.get("expected_output"), dict):
         raise ValueError("Capture expected output is missing.")
+    _validate_ranking_context(payload.get("ranking_context"))
+    thaw_gathered_inputs(payload.get("gathered_inputs", {}))
     return envelope
 
 
@@ -240,6 +276,8 @@ def write_capture_safely(
     provider_tape: Any,
     output: str,
     count: int,
+    *,
+    ranking_context: dict[str, Any],
 ) -> None:
     """Capture failure must not break recommendation serving; emit a safe warning."""
     import logging
@@ -251,6 +289,7 @@ def write_capture_safely(
             provider_events=provider_tape.events if provider_tape is not None else [],
             output=output,
             count=count,
+            ranking_context=ranking_context,
         )
     except Exception as exc:
         logging.getLogger("navidrome_server").warning(
@@ -441,21 +480,21 @@ def main(argv: list[str] | None = None) -> int:
         envelope = load_capture(args.capture)
         payload = envelope["payload"]
         gathered = thaw_gathered_inputs(payload["gathered_inputs"])
+        ranking_context = _validate_ranking_context(payload["ranking_context"])
         lastfm = LastFmReplay(payload["lastfm_calls"])
-        provider_tape = ProviderTape("replay", payload["provider_events"])
-        # Import only after the capture is validated. Candidate gathering uses
-        # the strict cassette, and ranking uses captured Last.fm results.
+        # The frozen post-gathering snapshot is authoritative. Provider events
+        # remain provenance for the capture and are deliberately not replayed.
         import navidrome_server
         actual_text = navidrome_server.recommend_new_music(
             count=int(payload["count"]),
-            _provider_tape=provider_tape,
+            _gathered_override=gathered,
+            _ranking_context_override=ranking_context,
             _lastfm_popularity_fn=lastfm,
             _lastfm_available_override=bool(payload["expected_output"].get("lastfm_api_configured")),
             _record_diagnostics=False,
         )
         actual = json.loads(actual_text)
         lastfm.assert_consumed()
-        provider_tape.assert_consumed()
         expected = payload["expected_output"]
         matches = _comparable_output(actual) == _comparable_output(expected)
         report = {
@@ -465,8 +504,10 @@ def main(argv: list[str] | None = None) -> int:
             "expected_recommendations": len(expected.get("recommendations", [])),
             "actual_recommendations": len(actual.get("recommendations", [])),
             "network_providers_used": 0,
-            "provider_events_replayed": len(payload["provider_events"]),
+            "provider_events_replayed": 0,
+            "provider_events_provenance_only": len(payload["provider_events"]),
             "lastfm_events_replayed": len(payload["lastfm_calls"]),
+            "provider_event_policy": "provenance only; frozen gathered inputs are authoritative",
             "comparison": "all stable output fields except volatile pool diagnostics and Last.fm error state",
         }
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
