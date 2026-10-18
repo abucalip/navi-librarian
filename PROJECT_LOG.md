@@ -1,3 +1,14 @@
+## 2026-10-18 — Private schema-v2 recommendation baseline replay verified
+
+- PR #350 merged as `dc3e5a3a8ea704bbc66aa1d1b43dc4e9594fd2be`. The owner captured a fresh schema-v2 fixture in the isolated PR #350 test environment and ran the replay script against the fixture's declared source revision.
+- Replay reported `reproduced: true`: 5 expected recommendations and 5 actual recommendations. The comparison covered all stable output fields except volatile pool diagnostics and Last.fm error state.
+- Replay consumed 19 captured Last.fm responses, used zero network providers, replayed zero provider events, and retained 225 provider events as provenance only. The fixture remains outside GitHub; no recommendation identities, listening history, library contents, or provider payloads were committed.
+- This validates deterministic replay for this one frozen capture only. It does not measure recommendation relevance, future-listen hit rate, or responsiveness to listening changes. The prior schema-v1 fixture remains unchanged.
+- No application code changed and no new tests were run in this capture/replay session; this is owner-run isolated-environment verification. PR #350's four required CI workflows had passed on its exact final PR head `0b69d0e7c42fd621ee903a8becf7791293a35d46`. Publishing, deployment, and production-runtime verification remain unclaimed.
+- Next action: establish a valid time-separated snapshot/listening-history pair, then design an offline chronological evaluation with explicit limitations. Do not infer quality from successful replay.
+
+---
+
 ## 2026-10-18 — Deterministic recommendation replay contract
 
 - PR #350 (`fix/deterministic-recommendation-replay`) implements snapshot-authoritative replay, frozen ranking context (timestamp/history/diversity), and preservation of raw plus weighted play-count maps. Provider events are provenance only; Last.fm calls remain strict and fully consumed. Capture schema is v2; schema-v1 captures fail explicitly and require recapture.
