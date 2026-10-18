@@ -104,6 +104,23 @@ def _candidate_identities(rows: Iterable[dict[str, Any]]) -> set[tuple[str, str]
     return {_identity(row) for row in rows}
 
 
+def _category(row: dict[str, Any]) -> str:
+    value = row.get("discovery_category") or row.get("category") or "unknown"
+    return _key(value) or "unknown"
+
+
+def _category_counts(rows: Iterable[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        category = _category(row)
+        counts[category] = counts.get(category, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _category_mix(counts: dict[str, int], total: int) -> dict[str, float]:
+    return {category: count / total for category, count in counts.items()} if total else {}
+
+
 def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
                      lambdas: Iterable[float] = DEFAULT_LAMBDAS,
                      relevance_floors: Iterable[float] = (0.0, 0.05, 0.1, 0.15, 0.2)) -> dict[str, Any]:
@@ -143,12 +160,16 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
             selected_ids = set(ids)
             baseline_retained = len(selected_ids & baseline_ids)
             selected_scores = [float(row["score"]) for row in reranked]
+            mean_score = sum(selected_scores) / len(selected_scores) if selected_scores else 0.0
             baseline_score_by_id = {_identity(row): row["score"] for row in baseline_scored}
             retained_scores = [baseline_score_by_id[key] for key in ids
                                if key in baseline_score_by_id]
             metrics = diversity_metrics(reranked)
             artists = [_key(row.get("artist_key")) for row in reranked]
             nonempty_artists = [artist for artist in artists if artist]
+            selected_tags = {_key(tag) for row in reranked for tag in row.get("tags", []) if _key(tag)}
+            untagged = [row for row in reranked if not row.get("tags")]
+            category_counts = _category_counts(reranked)
             repeated = mmr_rerank(pool, limit=limit, lambda_=lambda_value, relevance_floor=floor_value)
             results.append({
                 "lambda": lambda_value,
@@ -160,9 +181,17 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
                 ),
                 "mean_pairwise_similarity": metrics["mean_pairwise_similarity"],
                 "unique_artists": metrics["unique_artists"],
-                "mean_selected_relevance_score": (
-                    sum(selected_scores) / len(selected_scores) if selected_scores else 0.0
-                ),
+                "genre_coverage_count": len(selected_tags),
+                "category_counts": category_counts,
+                "category_mix": _category_mix(category_counts, len(reranked)),
+                "untagged_selected_count": len(untagged),
+                "untagged_selected_share": len(untagged) / len(reranked) if reranked else 0.0,
+                "untagged_promoted_vs_score_top_k": len({
+                    _identity(row) for row in untagged
+                } - {_identity(row) for row in original_top if not row.get("tags")}),
+                "mean_selected_raw_score": mean_score,
+                "mean_selected_relevance_score": mean_score,
+                "mean_raw_score_retention_vs_lambda_0": None,
                 "baseline_relevance_score_retention": (
                     sum(retained_scores) / sum(row["score"] for row in baseline_scored)
                     if baseline_scored and sum(row["score"] for row in baseline_scored) != 0
@@ -174,6 +203,18 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
                 "selected_identities": ids,
             })
 
+    # Compare each lambda against lambda=0 at the same relevance floor.
+    zero_score_by_floor = {}
+    for result in results:
+        if result["lambda"] == 0.0:
+            zero_score_by_floor.setdefault(result["relevance_floor"], result["mean_selected_raw_score"])
+    for result in results:
+        baseline_score = zero_score_by_floor.get(result["relevance_floor"])
+        result["mean_raw_score_retention_vs_lambda_0"] = (
+            result["mean_selected_raw_score"] / baseline_score
+            if baseline_score not in (None, 0.0) else None
+        )
+
     return {
         "capture_git_sha": envelope.get("git_sha"),
         "capture_schema_version": envelope.get("schema_version"),
@@ -183,6 +224,11 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
         "gathered_library_album_count": len(gathered.get("library_albums", [])) if isinstance(gathered.get("library_albums"), list) else None,
         "scored_candidate_pool_size": len(pool),
         "baseline_recommendation_count": len(baseline),
+        "baseline_category_counts": _category_counts(baseline),
+        "baseline_category_mix": _category_mix(_category_counts(baseline), len(baseline)),
+        "baseline_genre_coverage_count": len({_key(tag) for row in baseline for tag in row.get("tags", []) if _key(tag)}),
+        "baseline_untagged_count": sum(1 for row in baseline if not row.get("tags")),
+        "baseline_untagged_share": sum(1 for row in baseline if not row.get("tags")) / len(baseline) if baseline else 0.0,
         "baseline_top_k_overlap_with_score_order": jaccard,
         "baseline_candidates_with_captured_scores": len(baseline_scored),
         "candidate_rows_rejected_for_hard_eligibility_or_missing_score": (
@@ -190,10 +236,10 @@ def evaluate_capture(envelope: dict[str, Any], *, limit: int = 10,
         ),
         "lambda_results": results,
         "interpretation_notes": [
-            "Scores are captured discovery_score values; MMR min-max-normalizes relevance within this candidate pool.",
+            "Scores are captured discovery_score values; MMR uses descending average-rank relevance within this candidate pool.",
             "This frozen single-run comparison is not a future-listen hit-rate or nDCG evaluation.",
-            "Missing tags contribute zero tag similarity; exact non-empty artist identity still contributes similarity 1.",
-            "Candidate identities are included only in this local report. Do not publish or attach the report.",
+            "Missing tags are treated conservatively by the MMR similarity policy; exact non-empty artist identity remains authoritative.",
+            "The CLI can omit selected identities with --identity-free; keep all identity-bearing reports private.",
             "The evaluator excludes rows explicitly marked owned/ineligible and requires finite captured scores; inspect the local fixture's field semantics before treating those flags as a complete eligibility audit.",
         ],
     }

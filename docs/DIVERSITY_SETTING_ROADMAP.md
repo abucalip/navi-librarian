@@ -71,13 +71,15 @@ Precompute each candidate's normalized tag set as a `frozenset` once per rerank/
 
 ### 4. Add final-shortlist quality and category guardrails
 
-MMR is applied inside allocator passes (adjacent, cross-genre, adventurous), so lower pairwise similarity within a pass does not prove that the final shortlist has a healthier overall mix. Extend the offline evaluator to report:
-- relevance-score retention against lambda 0;
-- final-shortlist genre/tag coverage;
-- category counts/mix compared with the baseline and existing allocator policy;
+**Implementation in progress:** the offline evaluator now reports per-shortlist category counts/mix, unique normalized tag coverage, untagged selected count/share, untagged promotions versus score-ordered top-k, baseline top-k retention, and mean raw-score retention against lambda 0 at the same relevance floor. These are descriptive diagnostics, not a production rollout gate; the private fixture has not been rerun for this change.
+
+MMR is applied inside allocator passes (adjacent, cross-genre, adventurous), so lower pairwise similarity within a pass does not prove that the final shortlist has a healthier overall mix. The evaluator now reports:
+- mean raw-score retention against lambda 0 at the same relevance floor;
+- final-shortlist unique genre/tag coverage;
+- category counts and category share for comparison against lambda 0 and the existing allocator policy;
 - mean pairwise similarity;
-- selected/promoted untagged-candidate share;
-- baseline top-k retention and selected count/eligibility.
+- selected untagged count/share and count promoted beyond score-ordered top-k;
+- baseline top-k retention, selected count, eligibility, and determinism.
 
 Define a rollout gate with a reviewed minimum relevance-retention threshold and a category-mix check that prevents diversity settings from unexpectedly collapsing or over-concentrating the shortlist. Do not change existing hard category quotas or allocator behavior merely to make a metric look better. A lower similarity score alone is not success.
 
@@ -124,4 +126,4 @@ The audit reported that a shallow clone could not establish the ancestry of `ef8
 
 ## Next action
 
-Rank-based normalization merged in PR #338 at `8ce1fc0de31135653781edc231e5f77698cb8773`, from exact CI-verified head `5eda37a77a2c623b06843a87800e306a16e92412`. PR #340 now addresses missing-tag novelty bias: absent tags are treated conservatively so they cannot earn a diversity advantage, while disjoint fully tagged pairs retain zero similarity. The UI remains blocked until exact-head CI passes and final-shortlist quality/category/untagged-share guardrails are implemented and reviewed. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
+Evaluator guardrail metrics and synthetic regression coverage are implemented in the current PR branch; no private fixture was rerun and no rollout thresholds are approved. Rank-based normalization merged in PR #338 at `8ce1fc0de31135653781edc231e5f77698cb8773`, from exact CI-verified head `5eda37a77a2c623b06843a87800e306a16e92412`. PR #340 now addresses missing-tag novelty bias: absent tags are treated conservatively so they cannot earn a diversity advantage, while disjoint fully tagged pairs retain zero similarity. The UI remains blocked until exact-head CI passes and final-shortlist quality/category/untagged-share guardrails are implemented and reviewed. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
