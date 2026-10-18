@@ -29,7 +29,8 @@ def candidate_similarity(left: Mapping[str, Any], right: Mapping[str, Any]) -> f
     Exact artist identity is authoritative. For different/unknown artists, an
     empty tag set means similarity is unknown, not evidence of dissimilarity.
     Return the conservative maximum so an untagged candidate cannot win an MMR
-    tie merely because metadata is missing. Fully tagged candidates continue to
+    tie merely because metadata is missing. This avoids rewarding absent metadata;
+    it does not assert that the candidates are musically similar. Fully tagged candidates continue to
     use Jaccard similarity, including a zero score for genuinely disjoint tags.
     """
     left_artist = str(left.get("artist_key") or "").strip().casefold()
