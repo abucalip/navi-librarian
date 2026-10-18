@@ -114,6 +114,16 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         nonlocal checked
         category = candidate.category
         style = candidate.diversity_style
+
+        # Identity is a hard eligibility constraint, so report it before soft
+        # diversity/category caps. Otherwise a duplicate can retain a stale
+        # recent-family rejection even after final fallback has relaxed that cap.
+        identity = (candidate.artist_key, candidate.album_key)
+        if identity in processed:
+            record(candidate, "duplicate_candidate",
+                   "The same artist and album identity was already processed.")
+            return
+
         style_target = request.diversity_style_targets.get(style, 0)
         if not allow_over_style_target and style_target and selected_styles[style] >= style_target:
             record(candidate, "diversity_style_target_filled",
@@ -125,14 +135,6 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                 and family and selected_families[family] >= request.family_cap):
             record(candidate, "recent_genre_cap_reached",
                    f"The recent-listening family {family} already has a recommendation; another family is preferred.")
-            return
-
-        identity = (candidate.artist_key, candidate.album_key)
-        if identity in processed:
-            decisions.setdefault(candidate.candidate_id, CandidateDecision(
-                candidate.candidate_id, "duplicate_candidate",
-                "The same artist and album identity was already processed.",
-            ))
             return
         if checked >= request.max_checks:
             record(candidate, "not_considered",
