@@ -120,8 +120,20 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         # recent-family rejection even after final fallback has relaxed that cap.
         identity = (candidate.artist_key, candidate.album_key)
         if identity in processed:
-            record(candidate, "duplicate_candidate",
-                   "The same artist and album identity was already processed.")
+            # Preserve the more important ownership diagnostic for an owned
+            # duplicate; otherwise a duplicate row could hide an ownership
+            # rejection in the candidate-level report.
+            if candidate.ownership is OwnershipStatus.EXACT_OWNED:
+                record(candidate, "already_owned",
+                       "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory.")
+            elif candidate.ownership is OwnershipStatus.TITLE_CONFLICT:
+                if candidate.candidate_id not in review:
+                    review.append(candidate.candidate_id)
+                record(candidate, "held_for_ownership_review",
+                       "The album title exists in Navidrome under a different artist credit; manual review is recommended.")
+            else:
+                record(candidate, "duplicate_candidate",
+                       "The same artist and album identity was already processed.")
             return
 
         style_target = request.diversity_style_targets.get(style, 0)
