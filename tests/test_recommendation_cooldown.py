@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from discovery_allocation_contract import AllocationCandidate, OwnershipStatus
-from discovery_cooldown import apply_history_cooldown, cooldown_adjusted_score
+from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score
 from discovery_store import recommendation_identity_hash, write_list
 
 
