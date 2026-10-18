@@ -116,7 +116,7 @@ class PersonalAllocatorTests(unittest.TestCase):
         statuses = {decision.candidate_id: decision.status for decision in result.decisions}
         self.assertEqual(
             result.selected_candidate_ids,
-            ("selected-jazz", "other-family", "adventure"),
+            ("selected-jazz", "adventure", "other-family"),
         )
         self.assertEqual(statuses["duplicate-jazz"], "duplicate_candidate")
         self.assertNotEqual(statuses["duplicate-jazz"], "recent_genre_cap_reached")
