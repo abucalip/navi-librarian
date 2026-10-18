@@ -604,6 +604,7 @@ def recommend_new_music(
                 candidate.get("lastfm_popularity_bonus", 1.0), 3
             ),
             "assigned_category": category,
+            "allocation_category": candidate.get("discovery_category", "unclassified"),
             "genre_metadata_available": bool(tags),
             "exact_owned": exact_owned,
             "same_title_library_matches": len(same_title),
