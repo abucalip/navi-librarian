@@ -141,6 +141,45 @@ class PersonalAllocatorTests(unittest.TestCase):
             result.selected_candidate_ids, ("adjacent-second", "cross-first")
         )
 
+    def test_sparse_categories_and_family_cap_fallback_fill_requested_count(self):
+        candidates = []
+        # Match the observed 19-candidate category shape: 8 adjacent, 6
+        # cross-genre, and 5 unclassified candidates, with no adventurous pool.
+        categories = (
+            ["adjacent"] * 8
+            + ["cross_genre"] * 6
+            + ["unclassified"] * 5
+        )
+        for index, category in enumerate(categories):
+            ownership = (
+                OwnershipStatus.EXACT_OWNED if index < 4
+                else OwnershipStatus.CLEAR
+            )
+            family = "jazz" if 4 <= index < 14 else None
+            candidates.append(item(
+                f"candidate-{index}",
+                artist=f"artist-{index}",
+                album=f"album-{index}",
+                category=category,
+                score=100 - index,
+                family=family,
+                ownership=ownership,
+            ))
+
+        result = allocate_personal_recommendations(request(
+            candidates,
+            count=10,
+            targets={"adjacent": 4, "cross_genre": 3, "adventurous": 3},
+        ))
+
+        self.assertEqual(len(result.selected_candidate_ids), 10)
+        self.assertEqual(len(set(result.selected_candidate_ids)), 10)
+        self.assertFalse(set(result.selected_candidate_ids) & {
+            candidate.candidate_id for candidate in candidates
+            if candidate.ownership is not OwnershipStatus.CLEAR
+        })
+        self.assertLessEqual(result.checked_count, 60)
+
     def test_check_budget_is_bounded(self):
         items = [item(f"a{i}", category="adjacent", score=100-i) for i in range(60)]
         items += [item("cross", category="cross_genre"), item("adventure", category="adventurous")]
