@@ -89,7 +89,6 @@ def _default_music_dir():
 MUSIC_DIR = _default_music_dir()
 
 
-
 def api_call(method, **params):
     """Compatibility adapter for the extracted Navidrome API client."""
     return _navidrome_client.api_call(
@@ -290,6 +289,7 @@ def recommend_new_music(
     _record_diagnostics=True,
     _capture_path=None,
     _refresh_origin="direct_api",
+    _ranking_context_override=None,
 ) -> str:
     """Recommend albums from ListenBrainz that do not appear to be in Navidrome.
 
@@ -400,7 +400,7 @@ def recommend_new_music(
         OwnershipStatus,
     )
     from discovery_personal_allocator import allocate_personal_recommendations
-    from recommendation_cooldown import apply_history_cooldown
+    from recommendation_cooldown import prepare_ranking_inputs
     from discovery_recommendation_payload import (
         build_personal_recommendation_payload,
     )
@@ -450,16 +450,16 @@ def recommend_new_music(
             ownership=ownership,
         ))
 
+    cooled_candidates, ranking_context = prepare_ranking_inputs(
+        allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override, now_fn=time.time,
+        diversity_setting_fn=lambda: _service_settings.recommendation_diversity_value(_discovery_settings_read),
+    )
     allocation = allocate_personal_recommendations(AllocationRequest(
-        candidates=tuple(apply_history_cooldown(
-            allocation_candidates, candidate_by_id, DISCOVERY_DB, now=time.time()
-        )),
+        candidates=tuple(cooled_candidates),
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
-        diversity_penalty=diversity_setting_to_penalty(
-            _service_settings.recommendation_diversity_value(_discovery_settings_read)
-        ),
+        diversity_penalty=diversity_setting_to_penalty(ranking_context["diversity_setting"]),
         family_cap=1,
         max_checks=60,
     ))
@@ -706,10 +706,10 @@ def recommend_new_music(
     if _capture_path and _gathered_override is None and _provider_tape is None:
         from recommendation_replay import write_capture_safely
         write_capture_safely(
-            _capture_path, gathered, _lastfm_calls, provider_tape, encoded, count
+            _capture_path, gathered, _lastfm_calls, provider_tape, encoded, count,
+            ranking_context=ranking_context,
         )
     return encoded
-
 
 
 # Persistent discovery state and settings live in the configurable data directory.
@@ -1830,7 +1830,6 @@ def _discovery_filename_key(value):
 def _discovery_match_completed_album_files(folder, candidate):
     """Compatibility wrapper for strict completion-file matching."""
     return _acquisition_match_completed_album_files(folder, candidate)
-
 
 
 def _discovery_inspect_completed_album(download_root, candidate):

@@ -14,6 +14,13 @@ This document defines the **verification baseline**, not a chronological record 
 6. **Supported interfaces:** verify the web application imports and starts without MCP SDK/runtime initialization; preserve public web/API contracts and shared service behavior. MCP compatibility is retired.
 7. **Full diff review:** inspect every changed file, callers, test fixtures, imports, package inclusion, error paths, and unintended changes.
 
+## Deterministic recommendation replay
+
+- New captures must freeze the ordered post-gathering inputs, including both weighted and raw play-count maps, plus the ranking timestamp, effective recommendation-history rows, and validated diversity setting.
+- Replay must rank from those frozen inputs and use the captured Last.fm response tape without live calls. Provider events are provenance only in snapshot-authoritative replay and must not be reported as consumed.
+- Schema-v1 captures lack complete ranking context and must fail with an explicit recapture instruction; they must not silently use current database history, time, or settings.
+- Regression tests must verify snapshot authority, ranking-context validation, schema-version refusal, full Last.fm tape consumption, and unchanged live-provider isolation.
+
 ## Required GitHub Actions workflows
 
 After the final code or documentation commit, verify all four workflows on the **exact final PR-head SHA**:
