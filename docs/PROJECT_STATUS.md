@@ -12,7 +12,7 @@ PR #326 adds persistent `recommendation_diversity` preference storage, strict `G
 
 PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`. All four required workflows passed on that exact head: Python syntax, Docker packaging/full unit suite (655 tests passed), container runtime smoke test, and validation-only Docker image checks (publishing paused).
 
-Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. The next feature step is a separate coordinated settings UI PR.
+Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** determine whether the existing private offline evaluator can compare the merged cooldown against baseline using identity-free aggregates; if not, leave cooldown tuning explicitly uncalibrated rather than collecting another live capture. The Recommendation diversity settings UI remains blocked until its calibration, normalization, missing-tag neutrality, and shortlist guardrail gates are satisfied.
 
 ## Recommendation baseline and prior work
 
