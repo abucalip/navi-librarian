@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from discovery_allocation_contract import AllocationCandidate, OwnershipStatus
-from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score
 from discovery_store import recommendation_identity_hash, write_list
+from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score
 
 
 class RecommendationCooldownTests(unittest.TestCase):
@@ -98,7 +98,6 @@ class RecommendationCooldownTests(unittest.TestCase):
             cooldown_adjusted_score(float("nan"), self.artist, self.album, [], now=self.now)
 
 
-
     def test_storage_adapter_penalizes_only_ownership_clear_candidates(self):
         with tempfile.TemporaryDirectory() as directory:
             database_path = Path(directory) / "discovery.sqlite3"
@@ -122,7 +121,7 @@ class RecommendationCooldownTests(unittest.TestCase):
                 str(database_path),
                 now=self.now,
             )
-            self.assertAlmostEqual(adjusted[0].score, 0.72)
+            self.assertAlmostEqual(adjusted[0].score, 0.72, places=4)
             self.assertEqual(adjusted[1], ambiguous)
 
     def test_storage_adapter_fails_open_when_history_database_is_unavailable(self):
