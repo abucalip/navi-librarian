@@ -1,6 +1,6 @@
 # Design system — "Chart Rundown"
 
-Status: **proposed; AGENTS.md now points here (PR #349), decisions D1–D6 open** · Last updated: 2026-10-18 · Mode: Operate
+Status: **proposed; AGENTS.md points here (PR #349); decisions D1–D6 recorded in section 15 (Phase 0)** · Last updated: 2026-10-18 · Mode: Operate
 
 This is the target design system for the Librarian redesign. It supersedes the visual-identity section of `docs/FRONTEND_DESIGN_GUIDE.md` once approved (see `docs/REDESIGN_ROADMAP.md`, Phase 0). Nothing here is implemented yet; the shipped tokens in `static/app.css` remain authoritative until Phase 1 lands. Impeccable's `DESIGN.md` is generated from the *built* system at the end of Phase 1 and again at the end of the redesign, not before.
 
@@ -238,13 +238,15 @@ No hero banner, right rail, neon or green accent, gradients, glass, glow, nested
 
 The migration is done as a token remap first (no layout change) and verified with the computed-style comparison method used in PR #194, then followed by component work.
 
-## 15. Open decisions
+## 15. Decisions
 
-| ID | Decision | Default if undecided |
+Recorded by the owner on 2026-10-18 during Redesign Phase 0 (PR PHASE0_PR). Evidence is in `docs/UI_BACKLOG_EXECUTION.md` section 9.
+
+| ID | Decision | Outcome |
 |---|---|---|
-| D1 | Retire the 3D dashboard ring for a static tile strip | Retire |
-| D2 | Keep red as both brand mark and error glyph, pending CVD check | Keep, with the red rule |
-| D3 | Approve vendored fonts and icon sprite (new files under `static/`) | Approve |
-| D4 | Right rail for live acquisitions on ≥1440px screens | Not included; revisit after Phase 5 |
-| D5 | Global search scope: page-scoped client filter only | Page-scoped |
-| D6 | Replace the cassette mark (`assets/cassette.png`) | Keep until a replacement is supplied |
+| D1 | Retire the 3D dashboard ring for a static tile strip | **Retire** (Phase 4) |
+| D2 | Keep red as both brand mark and error glyph | **Keep, with the red rule.** Added by the colour-vision check: error and caution always carry different glyphs and labels, never colour alone (red and amber converge under deuteranopia, dE 8.1; yellow and amber are marginal even with normal vision, dE 16.4). Simulation by one published model, not a test with people |
+| D3 | Approve vendored fonts and icon sprite (new files under `static/`) | **Approve** (unblocks Phase 1) |
+| D4 | Right rail for live acquisitions on 1440px and wider | **Not included**; revisit after Phase 5 |
+| D5 | Global search scope | **Library-wide.** This replaces the earlier page-scoped default. It needs a backend search endpoint and result schema, so it is a contract proposal under `docs/REDESIGN_ROADMAP.md` section 6; no proposal is written yet and no backend work is authorized. Consequence, not stated by the owner: the Phase 2 top-bar search can only be library-wide once a contract is approved; until then the page-scoped client filter is the only search that needs no backend change |
+| D6 | Replace the cassette mark (`assets/cassette.png`) | **Keep until a replacement is supplied** |

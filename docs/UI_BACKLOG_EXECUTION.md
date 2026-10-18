@@ -1230,3 +1230,165 @@ Recorded here because the verifier itself is not published.
   `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
 - **No horizontal overflow** at 1440, 390, or 360 px in the measured states.
 - **No browser console or page errors** during an authenticated pass over all eight pages.
+
+
+## 9. Redesign Phase 0 baseline (2026-10-18)
+
+Status: **measured and recorded; docs-only PR** (roadmap Phase 0). Nothing in `static/`, `app/templates/`, `tests/` or backend code was changed. Implemented: docs only. Automated tests: run (below). Browser-tested: baseline capture only (not a UI change). Merged / published / deployed / runtime-verified: **no**.
+
+### 9.1 Pinned baseline and environment
+
+| Item | Value |
+|---|---|
+| Application source measured | `main` at `dc3e5a3a8ea704bbc66aa1d1b43dc4e9594fd2be` ("Fix deterministic recommendation replay inputs", #350) |
+| Branch base | `main` at `359737959e6cedca9200e7f88049235e49c819b5` (#351). `git diff --name-only dc3e5a3..3597379` lists only `PROJECT_LOG.md` and `docs/PROJECT_STATUS.md`, so the front end and application code are byte-identical to what was measured |
+| Browser | Chromium 141.0.7390.37, headless, driven by Playwright 1.56.0 (Chromium only; no Firefox or WebKit) |
+| OS / runtime | Ubuntu 24.04.5 LTS, Linux 6.18.44 x86_64 (cloud sandbox, not the owner's macOS machine); Python 3.13.16; Node v22.22.0 |
+| Dependencies | `pip install --break-system-packages -r requirements.txt` (fastapi 0.143.0, uvicorn 0.54.0, httpx 0.28.1, python-dotenv 1.2.4, mutagen 1.48.1) |
+| `python -m unittest discover -s tests` | **709 tests, OK** on `dc3e5a3` (2.256 s) and again on `3597379` (2.287 s) |
+| `node --check static/app.js`, `python -m compileall app static` | both clean on `3597379` |
+
+### 9.2 How the baseline was captured, and deviations from the documented procedure
+
+- **The documented helper was not used.** `~/navi-librarian-test/test-pr.sh` is installed on the owner's macOS machine and does not exist in this sandbox; it is also PR-oriented (downloads an open PR head), and this baseline is of `main`. The isolation it prescribes was reproduced by hand: `uvicorn app.main:app` on `127.0.0.1:8189` from the checkout, with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` pointing at a sandbox directory outside the repository, `SLSKD_URL=http://127.0.0.1:9` with an empty API key (slskd disabled), and Navidrome, Last.fm and ListenBrainz unconfigured. `git status` stayed clean throughout; no real data was touched.
+- **Test auth:** the owner account was created through the real first-run form (`POST /api/auth/setup`); the password is random, kept only in the sandbox, and not recorded here. The helper's per-PR app-data persistence behavior was not exercised.
+- **Two states per page.** *live* is the real app with an empty sandbox (no library, no listening history). *reconstructed* serves fictional API responses for the read endpoints only (`/api/dashboard-picks`, `/api/recommendations`, `/api/discovery/*`, `/api/artwork`, `/api/artist-bio`, `/api/album-details`, `/api/acquisitions` and its stream) through browser request interception; the real `app.js` then builds the DOM. Fixture fields are limited to fields `app.js` reads and statuses it handles. Names are fictional; one item has no artwork, one has very long names. The acquisition vocabulary shown is `downloading`, `download_complete_waiting_for_folder`, `imported`, `no_matches`, `queue_failed`, `slskd_error`, `settings_required`. **Reconstructed screenshots show how the current UI renders such data, not real library content.** Settings reads only real endpoints, so it has a live state only.
+- **Outbound access is allowlisted in the sandbox, so Google Fonts could not load.** Every capture ran with fallback fonts instead of Barlow Condensed, IBM Plex Sans and IBM Plex Mono. **Typography in the baseline screenshots is therefore not what the owner sees.** Layout and overflow measurements may differ slightly from a machine with the web fonts.
+- Pages were reached by clicking the rail (Settings through the header menu). Full-page screenshots; for reconstructed pages the capture scrolls the page first so lazily loaded artwork can load, then returns to the top. The album modal is a fixed overlay, so its screenshots are viewport captures (1440x900 down to 390x900) of the first Discover music card. The dashboard ring animates continuously, so each frame is one arbitrary moment.
+- Not captured (skips): the Settings tabs other than the default Navidrome tab (slskd, Last.fm, ListenBrainz); live-state album modal (no cards without a library); keyboard walk-through, failed-Get and pending-Get states, dismiss confirmation, login failure message, 360px width, and any real-library content.
+
+### 9.3 Visual baseline: 8 pages, modal and login at 5 widths
+
+Each cell is `scrollWidth/clientWidth of the document · console errors · failed network requests`. Console errors and failed requests exclude the blocked Google Fonts request, which occurred exactly once in every one of the 90 captures and is reported separately in 9.4. **No capture had horizontal overflow (document or body) and none raised a page error.** All 90 captures succeeded; none was skipped.
+
+| Page | State | 1440 | 1200 | 900 | 620 | 390 |
+|---|---|---|---|---|---|---|
+| Login (first-run setup) | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Login (sign-in) | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Dashboard | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Dashboard | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Discover music | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Discover music | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| New releases | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| New releases | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Personal Discoveries | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Personal Discoveries | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Add to your collection | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Add to your collection | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Artist Deep Dives | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Artist Deep Dives | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Acquisition status | live | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Acquisition status | reconstructed | 1440/1440 · 0 · 0 | 1200/1200 · 0 · 0 | 900/900 · 0 · 0 | 620/620 · 0 · 0 | 390/390 · 0 · 0 |
+| Settings | live | 1440/1440 · 1 · 1 | 1200/1200 · 1 · 1 | 900/900 · 1 · 1 | 620/620 · 1 · 1 | 390/390 · 1 · 1 |
+| Album modal (viewport capture) | reconstructed | 1440/1440 · 4 · 4 | 1200/1200 · 4 · 4 | 900/900 · 4 · 4 | 620/620 · 4 · 4 | 390/390 · 4 · 4 |
+
+Artwork loaded / cards in the reconstructed state (one item has no artwork by design, so 11/12 and 9/10 are the full set): Dashboard 9/10, 9/10, 9/10, 3/10, 2/10 at the five widths (the 3D ring only loads covers that face the viewer at narrow widths); Discover music, New releases, Personal Discoveries and Add to your collection 11/12 at every width; Artist Deep Dives 11/12 at 1440 to 620 and 9/12 at 390 (covers in off-screen horizontal tracks load on scroll).
+
+Observations, cause not investigated: the page footer text starts beneath the left rail and is clipped on its left edge at 1440 (live and reconstructed Dashboard); in full-page screenshots the rail ends at viewport height rather than page height, which may be an artifact of full-page capture.
+
+### 9.4 Known errors present on the baseline
+
+| ID | Finding | Evidence | Owner of fix |
+|---|---|---|---|
+| B1 | `GET /api/settings/listenbrainz` returns **502** whenever no ListenBrainz username is saved, so every Settings load on a fresh install logs one failed request and one console error (Settings, live, all five widths). | The route converts any exception to 502. Calling `discovery_get_listenbrainz_settings()` under the sandbox environment raises `ValueError("Configure a valid ListenBrainz username in Settings.")` from `service_settings.py:72`; identical with `LISTENBRAINZ_USERNAME` unset or empty. The other three settings endpoints return 200. Server log: 6 x 502, all this route. | Backend (protected paths). Not changed here. Until fixed, "no console or network errors" on a fresh-data run cannot be met on Settings, and later PRs should cite B1 rather than treat it as a regression. |
+| B2 | The album modal requests **four third-party images at runtime**: `https://cdn.simpleicons.org/applemusic/FA243C`, `.../spotify/1DB954`, `.../bandcamp/1DA0C3` and `https://community.qobuz.com/s/Qobuz_logo_black-l2kk.jpg`. They failed in this sandbox (egress allowlist), so the platform-link icons are missing in the modal screenshots. | Source: `static/app.js` lines 560-563. 4 failed requests and 4 console errors per modal capture. | Front end. Conflicts with the redesign rule of no runtime third-party assets; belongs in the icon work (Phase 1 sprite) and the modal slice (Phase 6). |
+| B3 | Google Fonts `@import` in `static/app.css` and `static/login.css` (already known; removed by Phase 1). | 1 request to `fonts.googleapis.com` per page load, blocked in the sandbox. | Front end, Phase 1. |
+
+### 9.5 Performance baseline
+
+Method: Chromium via Playwright, a new browser context for every run (cache disabled, authenticated session), network and CPU throttled through the DevTools protocol. **Throttle profile:** 150 ms added latency, 1.6 Mbit/s down (about 200 KiB/s), 750 Kbit/s up, CPU 4x slowdown, 1440x900 viewport. After load there is an 8 s observation window for layout shift, long tasks and late requests. Each scenario was run three times; all three values are shown as run 1 / run 2 / run 3.
+
+- *Dashboard*: cold load of `/` (live state, empty sandbox).
+- *Discover music*: cold load of `/`, then immediate navigation to Discover music by clicking the rail (the app is a single-page shell, so there is no separate cold load of Discover). Live state, so the list is empty.
+
+| Metric | Dashboard | Discover music |
+|---|---|---|
+| Transfer, app requests (bytes) | 206610 / 206610 / 206610 | 206845 / 206845 / 206845 |
+| Request count, app (same origin) | 8 / 8 / 8 | 9 / 9 / 9 |
+| Request count, Google Fonts (blocked) | 1 / 1 / 1 | 1 / 1 / 1 |
+| First contentful paint (ms) | 1108 / 1172 / 1160 | 1192 / 1204 / 1160 |
+| Largest contentful paint (ms) | 1108 / 1172 / 1160 | 1192 / 1204 / 1160 |
+| Cumulative layout shift | 0 / 0 / 0 | 0 / 0 / 0 |
+| Load event end (ms) | 1344 / 1417 / 1393 | 1417 / 1425 / 1401 |
+| Time to interactive, estimate (ms) | 1108 / 1172 / 1160 | 1192 / 1204 / 1160 |
+
+Transfer by type, identical in all runs: document 17,872 B; stylesheets 46,103 B; scripts 110,661 B; images 31,659 B (the cassette); fetches 315 B (Dashboard) and 550 B (Discover music). Transfer sizes track the file sizes on disk, so no compression was observed. LCP element in all six runs is `#dashboardHeading`.
+
+Limits of these numbers, stated plainly:
+- **Google Fonts are not in the transfer total or the timings.** The request was blocked at the sandbox proxy, so it failed in a few milliseconds. On a real network the `@import` adds at least one stylesheet round trip plus the font files and delays first paint, so FCP and LCP here are **optimistic**, and font-swap layout shift is **not measured** (CLS 0 is for fallback fonts). The number and size of the Google Fonts font files were not observed (only the single stylesheet request), so the `<= 150 KB` font budget in the design system has no current-state baseline from this run.
+- Time to interactive is **not** Lighthouse's metric. It is my own heuristic (FCP, pushed past any long task that ends within the following 5 s). Each run had one long task of 54 to 76 ms, ending before FCP, so the estimate equals FCP and carries little information.
+- Populated-state weight (artwork images) was not measured; reconstructed responses are served locally and have no real transfer cost.
+- Local server on loopback; only the emulated latency and bandwidth apply.
+
+### 9.6 Contrast re-measurement (`docs/DESIGN_SYSTEM.md` section 4.1)
+
+Measured with my own WCAG 2.1 relative-luminance script on the token values in the document (34 pairs: the 28 text pairs in the table plus the stated `--edge-strong`, `--on-accent`, `--chart-red-text` and `--edge` figures). **31 of 34 agree with the document to within 0.01** (30 numeric values plus the "at least 5.4" bound for `--text-subtle` on surface). Two more differ only because the document rounds prose figures: `--chart-red-text` on raised is 6.22 (document "6.2") and `--edge` on ink is 1.43 (document "1.4"). Every text pair clears 4.5:1; the lowest is `--chart-red` on `--surface-hover` at **4.65** (margin 0.15). `--edge-strong` is 3.28 on raised and 3.60 on surface (both above 3.0). `--text-subtle` on `--surface` is 5.85 (document: at least 5.4).
+
+One real difference: `--edge` on `--surface` is **1.33**, not 1.4. `--edge` is decorative only, so no accessibility requirement is affected; the document's figure could be corrected to "1.3 to 1.4". This PR does not edit section 4.1.
+
+This is a computation on token values. It is not the rendered-build re-measurement that Phase 1 owes.
+
+### 9.7 Color-vision check (decision D2)
+
+Swatches of `--chart-red #ff5a3c`, `--accent #f5d33f`, `--ok #86d39b` and `--caution #f0a640` on `--surface #1c1a18`, simulated with the Machado, Oliveira and Fernandes (2009) matrices at full severity in linear RGB. Difference is CIEDE2000 (dE): under 10 is hard to tell apart, 10 to 20 marginal, over 20 clear. Render: `cvd-swatches.png` (see 9.9). This is a simulation by one published model, not a test with people.
+
+| Pair | Normal | Protanopia | Deuteranopia | Tritanopia |
+|---|---|---|---|---|
+| chart-red vs accent | 44.2 | 27.4 | 15.6 marginal | 28.3 |
+| chart-red vs ok | 61.3 | 23.9 | 16.7 marginal | 64.1 |
+| chart-red vs caution | 27.0 | 17.4 marginal | 8.1 **hard** | 17.4 marginal |
+| accent vs ok | 28.9 | 16.1 marginal | 18.9 marginal | 41.4 |
+| accent vs caution | 16.4 marginal | 10.4 marginal | 7.5 **hard** | 11.7 marginal |
+| ok vs caution | 37.8 | 14.4 marginal | 15.7 marginal | 50.4 |
+
+Findings:
+- Under protanopia and deuteranopia the red, yellow and amber swatches collapse into one olive-yellow family. **Red vs amber is hard to tell apart under deuteranopia (dE 8.1) and yellow vs amber under deuteranopia (7.5)**; yellow vs amber is already marginal with normal vision (16.4) and also marginal under protanopia (10.4) and tritanopia (11.7).
+- Lightness does not rescue any pair: luminance contrast between any two state colors is at most 2.71:1 (`--chart-red` vs `--accent` under protanopia). Color alone cannot carry state; this supports the existing rule that every state has a glyph and a text label. In the swatch render the glyphs and labels stay legible in all four views.
+- Every state color keeps at least 4.09:1 on `--surface` under simulation. The lowest is `--chart-red` under protanopia (4.09); numerals are large text, and `--chart-red-text` exists for small text.
+- **Red as brand vs red as error (D2):** both use one token, so they are identical to each other for every viewer; color never separates them. What separates them is glyph ("!"), message, `role`, and position (numerals only in the rank column). Red stays clearly distinct from body text under all simulations (dE 29.2 to 39.2 vs `--text`; 19.8 to 29.1 vs `--text-muted`).
+- **Recommendation: keep** red as both, under the red rule, with one addition the evidence supports: error and caution always use different glyphs and labels, never color alone, because red and amber converge for deuteranopes. Changing the brand mark to the yellow family would not fix the weakest pair (yellow vs amber) and would put "selected" and "brand" on the same color. This is a judgment from a simulation; the dual meaning is semantic, and the check cannot settle it.
+
+### 9.8 Manual checklist (`docs/LOCAL_UI_TESTING.md`), baseline run
+
+Against `main` `dc3e5a3` with the reproduced isolation (9.2), not the helper. This is a baseline capture, not a UI-change gate.
+
+| # | Item | Result |
+|---|---|---|
+| 1 | App starts; first-run setup and sign-in | **Pass**: account created through the setup form, redirected to `/`; sign-in page renders. Per-PR data persistence across SHAs not exercised |
+| 2 | Dashboard layout, artwork, navigation | **Pass** for rendering in live and reconstructed states; the reconstructed ring shows artwork |
+| 3 | Discovery lists load and refresh | **Partial**: lists load empty in the live state; first visits trigger `POST /api/discovery/<name>/refresh` (200); no real data to refresh. Reconstructed lists render |
+| 4 | Artist/album navigation and details | **Partial**: modal opens, shows 7 reconstructed tracks, at all five widths; no real album data |
+| 5 | Settings load, save, reload | **Skip** for save and reload (nothing saved). Load: **Fail** on B1 (502 on the ListenBrainz read) |
+| 6 | Get/request state | **Skip**: no Get was triggered |
+| 7 | Acquisition status | **Pass** for rendering the empty state (live) and 7 reconstructed statuses; live updates and reconnect not tested |
+| 8 | Error/recovery states | **Skip** (not exercised beyond B1 and B2 observed as-is) |
+| 9 | Performance | Recorded in 9.5 |
+| 10 | No unexpected console or server errors | **Fail** on B1 and B2; otherwise none. Server log: 1,060 x 200, 6 x 502 (B1), 1 x 405 (a `HEAD /login` from my own reachability probe) |
+
+### 9.9 Screenshot inventory and location
+
+Per the owner's decision, **the screenshots are not in the repository**; this report is the only committed artifact. 91 PNGs were produced in the session workspace (`/tmp/claude-0/-home-claude/caca3a47-2bb4-5be5-9b93-5c19ed9df9ce/scratchpad/shots/`), which does not persist beyond the session. File names:
+
+- `login-setup-<w>.png` and `login-signin-<w>.png` (10): login page, first-run and sign-in variants.
+- `live-<page>-<w>.png` (40): Dashboard, Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives, Acquisition status, Settings; `<page>` is `dashboard`, `discover`, `new-releases`, `personal`, `collection`, `deep-dives`, `acquisitions`, `settings`.
+- `reconstructed-<page>-<w>.png` (35): the same pages except Settings.
+- `reconstructed-album-modal-<w>.png` (5): modal, viewport capture.
+- `cvd-swatches.png` (1): color-vision simulation render.
+
+`<w>` is 1440, 1200, 900, 620 or 390. If the owner wants them kept, they must be copied out of the session workspace before it is discarded.
+
+### 9.10 Decisions recorded (owner, 2026-10-18)
+
+| ID | Decision | Outcome |
+|---|---|---|
+| D1 | Retire the 3D dashboard ring for a static tile strip | **Retire** (default) |
+| D2 | Red as brand mark and error glyph | **Keep, with the red rule** (recommended); error and caution always use distinct glyphs |
+| D3 | Vendored fonts and icon sprite | **Approve** (default) |
+| D4 | Right rail for live acquisitions at 1440px and wider | **Not included** (default); revisit after Phase 5 |
+| D5 | Global search scope | **Library-wide** (changes the page-scoped default). This needs a backend search endpoint, which is a contract proposal under roadmap section 6; none is written in this PR |
+| D6 | Replace the cassette mark | **Keep until a replacement is supplied** (default) |
+| Storage | Baseline screenshots | **Outside the repository** (default); report only is committed |
+
+### 9.11 Limitations
+
+Single browser (Chromium 141, headless) on Linux, not the owner's macOS setup; documented helper not used (9.2); Google Fonts blocked, so typography, FCP/LCP and font-swap shift are not representative (9.5); third-party modal icons blocked (B2); populated states are reconstructed from fictional fixtures; no real library, listening history or Get action; TTI is a heuristic; the CVD result is a model simulation; no screen reader, keyboard walk-through, or 360px capture; Settings tabs other than Navidrome not captured; screenshots are not persisted in the repository.
