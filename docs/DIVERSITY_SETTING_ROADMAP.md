@@ -39,7 +39,7 @@ This is one 66-candidate frozen pool with a 10-item baseline, not evidence of fu
 
 ### 1. Offline slider calibration — measured, single-fixture result
 
-Completed the identity-free sweep against the existing private frozen fixture only. The fixture checksum/schema validated; no provider events were replayed and zero network providers were used. The run used 66 scored candidates, 17 rows rejected for explicit hard-rejection/missing-score handling, and the captured 10-item baseline. All 21 settings returned 10 eligible candidates, 10 unique artists, and deterministic repeated selections. No selected candidates lacked tags in this fixture.
+Completed the identity-free sweep against the existing private frozen fixture only. The fixture checksum/schema validated; no provider events were replayed and zero network providers were used. The run used 66 scored candidates, 17 rows rejected for explicit hard-rejection/missing-score handling, and the captured 10-item baseline. All 21 settings returned 10 candidates from the evaluator's rankable pool, 10 unique artists, and deterministic repeated selections. No selected candidates lacked tags in this fixture.
 
 | Slider setting (penalty λ) | Mean pairwise similarity | Baseline items retained | Mean selected raw-score retention vs setting 0 | Baseline relevance-score retention |
 |---|---:|---:|---:|---:|
