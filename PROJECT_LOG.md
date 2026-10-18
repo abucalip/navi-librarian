@@ -1241,3 +1241,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - **Changes:** documentation records the feasibility result and explicitly leaves cooldown constants uncalibrated. No application code, private fixture, identity-bearing report, or production data was changed. No tests or fixture evaluation were run.
 - **Next action:** the separately scoped identity-free 0–100 diversity sweep against the existing private fixture, with relevance floor fixed at 0. The fixture is not available in the GitHub-only environment; no new capture and no rerun of the dismissed 35-combination/floor sweep.
 - **Delivery state:** PR #336 merged at `91bc647c5300d42d10f6bd393645a481c6d25474` from exact head `1c4f958d662ead5b5a3f5ea4485b1e8f17efb20f`. All four required workflows passed on that exact head: Python syntax check `1670` (`39122256427`), Docker packaging `1578` (`39122256409`), container runtime smoke `1387` (`39122256392`), and validation-only Docker image check `1431` (`39122256401`, publishing paused). Documentation-only change; no tests or private fixture evaluation were run. Publishing, deployment, and runtime verification remain paused/unclaimed.
+
+
+## 2026-10-18 — Rank-based recommendation relevance normalization (PR #338 pending)
+
+- Branch: `recommendation/rank-normalization-pool-stability`, based on GitHub `main` at PR base `d42164e5930d4ee37e2a310a95871dbea3bd7bc8`.
+- Replaced min-max relevance normalization in `discovery_mmr.py` with descending average-rank normalization into [0, 1]. Equal scores share relevance; a constant-score pool assigns all candidates relevance 1; selection tie-breaking remains deterministic by original input order.
+- Added tests for score-scale/gap invariance, tied and constant-score pools, and updated relevance-floor expectations. Updated the diversity roadmap and project status. No private fixture replay, live providers, UI work, publishing, deployment, or runtime verification was performed.
+- PR #338 exact head at this entry: `722972033c1470030f9ff986e5e474b7bd8283c4`. Required CI was in progress; no test or CI pass is claimed. No assistant-side local tests were run.
+- Next action: confirm all four required workflows on the exact final PR head, fix any failures, and merge only after review and gates pass. Then address missing-tag neutrality; keep the diversity UI blocked.
