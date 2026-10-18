@@ -1,3 +1,13 @@
+## 2026-10-18 — Cross-pool recommendation MMR merged
+
+- PR #347 merged as `9ace84947c13f2549fe0669b6a0c1a30af4c2349`; final PR head was `5ae39d5cdc0fb7abad2036d30ac1aa0a6ae5780f`.
+- All four required workflows passed on the exact final PR head: Python syntax run 1710, Docker packaging/full unit suite/build run 1618 (706 tests passed), container runtime smoke run 1427, and validation-only multi-architecture image validation run 1471. Publishing remains paused.
+- Added cross-pool deterministic MMR tests and capped the diversity mapping at lambda 0.75 for settings 75–100. Synthetic correctness checks do not establish future-listen quality or broad calibration.
+- Settings UI remains blocked; no private fixture rerun, image publication, deployment, or production runtime verification was performed.
+- Next action: collect/review broader recommendation-quality evidence before deciding whether diversity-setting UI calibration can proceed.
+
+---
+
 ## 2026-10-18 — Cross-pool recommendation MMR verification (PR pending)
 
 - Added deterministic tests using two deliberately different pools: one with a large score outlier and a close-tag cluster; another with a larger pool, tied ranks, and sparse tags. Tests check repeatability, shortlist size, unique artists, and rank-order invariance under score rescaling.
