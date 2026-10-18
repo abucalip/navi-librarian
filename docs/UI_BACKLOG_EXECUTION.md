@@ -1827,7 +1827,7 @@ Not run: the live-library check (skipped; for the owner to run locally against t
 
 ## 18. Redesign Phase 4 — Dashboard as a static tile strip (`ui/phase-4-dashboard-tiles`)
 
-Roadmap item: Phase 4, Dashboard (first bullet). Decision D1 (retire the 3D ring for a static tile strip) is applied; the owner's D1 outcome is recorded in `docs/DESIGN_SYSTEM.md` section 15 as "Retire". PR link and head SHA are in the PR. Not merged, not deployed.
+Roadmap item: Phase 4, Dashboard (first bullet). Decision D1 (retire the 3D ring for a static tile strip) is applied; the owner's D1 outcome is recorded in `docs/DESIGN_SYSTEM.md` section 15 as "Retire". PR #381 (head `8714d95`, branch `ui/phase-4-dashboard-tiles`). CI on `8714d95` passed (compile, validate-container, test-and-build, container-smoke: all success), with no review threads. The owner ran the dashboard on the live library and reported it looks good. Merged by squash after the owner's instruction. Not deployed.
 
 Design system sections applied: 8 (Dashboard row: artwork tile strip, unranked, no numerals), 9.1 (focus ring, 44px Get), 9.2 (Get state machine kept: pending, then requested only after the server answers), 9.6 (loading, empty and error copy), 10 (icon sprite unchanged), 11 (reduced motion: the ring's ambient loop and drag inertia are removed, and native smooth scrolling is turned off by the global reduced-motion rule), 12 (accessibility floor), 15 (D1).
 
@@ -1869,5 +1869,5 @@ Design system sections applied: 8 (Dashboard row: artwork tile strip, unranked, 
 - The shared `attachArtwork` image attributes are unchanged (see above).
 - The strip has no arrow buttons; the native scroller and keys are the only controls. That matches the genre rows at widths where they overflow.
 
-**Next action.** The owner runs the dashboard on a live library against the PR head SHA, confirms the tile strip and the Get and dialog behavior, and decides whether to merge. Phase 4 is then complete, and Phase 5 (Acquisitions) can start.
+**Next action.** Phase 5 (Acquisitions) is the next roadmap phase. Phase 4 is complete with this PR merged; deployment is the owner's call.
 
