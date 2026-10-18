@@ -288,9 +288,11 @@ The capture preserves the provider/cache values actually consumed; the saved gat
 
 ## Private capture replay audit — 2026-10-18
 
-A new private capture dated 2026-10-18 was replayed against its declared source SHA `4c2a0f09ebbbe374cf93049d17d4c3265fc5d589`. Replay was offline: 207 provider events and 40 Last.fm responses were consumed, with zero live provider calls. It produced 10 recommendations against 10 expected and 59 debug candidates in both expected and actual output, but stable output did not reproduce. A privacy-safe field comparison identified differences in `recommendations` and `debug_all_candidates`; the recommended album/artist identity set and ordering both differed.
+A private capture from the pre-PR #350 replay implementation failed stable-output comparison despite equal recommendation/candidate counts. PR #350 subsequently froze ranking time, effective recommendation-history rows, and the diversity setting; the owner then replayed a fresh schema-v2 capture against its declared source revision successfully, with zero live provider calls. That newer result supersedes the old mismatch as the current reproducibility baseline; do not treat the pre-fix capture as evidence of a remaining current failure.
 
-This is a **replay reproducibility failure**, not evidence that the captured recommendation list is bad or good. Equal counts do not identify the cause. Investigate the replay tape, captured ranking inputs, and ranking/allocation implementation at the exact source SHA before accepting this capture as a deterministic fixture. Keep the real capture private; do not commit it, attach it to a PR, print its identities, or draw quality conclusions from it. Chronological T-to-T+14-day evaluation remains blocked until a valid time-separated pair exists and the generation snapshot is trustworthy.
+A follow-up source audit identified a separate issue important for **counterfactual profile replay**: `recommend_new_music()` mutates the gathered album dictionaries while ranking, but capture serialization happens after ranking returns. Consequently `freeze_gathered_inputs()` could preserve derived fields such as `recent_profile_bonus` and Last.fm tags/stats from the original profile. A same-profile replay can mask this because scoring recalculates the same bonus, while changing the profile can incorrectly divide out a bonus from the original profile. The fix is to strip ranking-derived fields when freezing and thawing candidate snapshots, while retaining gathering/provider fields and order. Regression coverage must verify the frozen candidate is pristine and preserves unrelated provider metadata.
+
+Keep the real capture private; do not commit it, attach it to a PR, print its identities, or draw quality conclusions from it. After this counterfactual-snapshot fix is merged and verified, use the private frozen snapshot and public timestamped listening history to compare actual engine outputs for the first/last five-day profiles. This is a responsiveness evaluation, not a future-listen outcome test; the available capture postdates both listening windows.
 
 ## Chronological listening-history audit — 2026-10-18
 
@@ -313,7 +315,7 @@ A preliminary diagnostic applied the existing familiarity multiplier to captured
 4. Keep the two evaluations separate: profile responsiveness can be tested without future listening; future listening is optional, independent observational evidence and is not Librarian's objective.
 5. Do not tune ranking weights or claim quality gains from the current one-capture comparison. The replay mismatch documented above must be resolved before treating a capture as a deterministic evaluator fixture.
 
-Status: history parsing and descriptive window comparison completed; familiarity-component arithmetic is diagnostic only. Full-engine first/last-profile replay and a valid chronological outcome evaluation were not run in this session. No application code or tests were changed and no live provider calls were made.
+Status: history parsing and descriptive window comparison completed; familiarity-component arithmetic is diagnostic only. Counterfactual snapshot sanitation is being fixed in PR `recommendation/replay-pristine-ranking-snapshot`; focused and full CI are pending. Full-engine first/last-profile replay and a valid chronological outcome evaluation have not been run. No live provider calls were made.
 
 ## Out of scope unless separately approved
 

@@ -27,6 +27,32 @@ def _canonical_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+# These fields are derived while ranking mutates the gathered candidate objects.
+# Captures must preserve the provider/gathering state, not a post-ranking snapshot;
+# otherwise counterfactual profile runs can inherit bonuses from the original profile.
+_RANKING_DERIVED_CANDIDATE_FIELDS = frozenset({
+    "discovery_score",
+    "discovery_category",
+    "diversity_style",
+    "recent_profile_family",
+    "recent_profile_families",
+    "recent_profile_bonus",
+    "lastfm_listeners",
+    "lastfm_playcount",
+    "lastfm_tags",
+    "lastfm_popularity_bonus",
+    "listening_families",
+})
+
+
+def _raw_candidate_input(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Copy a gathered candidate without mutable ranking-derived fields."""
+    return {
+        key: value for key, value in candidate.items()
+        if key not in _RANKING_DERIVED_CANDIDATE_FIELDS
+    }
+
+
 def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
     """Serialize the exact post-provider inputs consumed by ranking, preserving order."""
     return {
@@ -35,7 +61,7 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
         "recent_artist_mbid_counts": dict(gathered["recent_artist_mbid_counts"]),
         "recent_artist_play_counts": dict(gathered.get("recent_artist_play_counts", gathered["recent_artists"])),
         "albums": [
-            {"key": list(key), "value": value}
+            {"key": list(key), "value": _raw_candidate_input(value)}
             for key, value in gathered["albums"].items()
         ],
         "failures": gathered["failures"],
@@ -78,7 +104,7 @@ def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
         tuple_key = (str(key[0]), str(key[1]))
         if tuple_key in albums:
             raise ValueError("Replay contains duplicate album keys.")
-        albums[tuple_key] = value
+        albums[tuple_key] = _raw_candidate_input(value)
     return {
         "listens": payload["listens"],
         "recent_artists": Counter(payload["recent_artists"]),

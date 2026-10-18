@@ -17,7 +17,7 @@ This document defines the **verification baseline**, not a chronological record 
 ## Deterministic recommendation replay
 
 - New captures must freeze the ordered post-gathering inputs, including both weighted and raw play-count maps, plus the ranking timestamp, effective recommendation-history rows, and validated diversity setting.
-- Replay must rank from those frozen inputs and use the captured Last.fm response tape without live calls. Provider events are provenance only in snapshot-authoritative replay and must not be reported as consumed.
+- Replay must rank from pristine frozen post-gathering inputs and use the captured Last.fm response tape without live calls. Candidate dictionaries are mutated by scoring, so freeze/thaw must remove ranking-derived fields (including prior profile and Last.fm bonuses) while preserving provider/gathering metadata and candidate order. Provider events are provenance only in snapshot-authoritative replay and must not be reported as consumed.
 - Schema-v1 captures lack complete ranking context and must fail with an explicit recapture instruction; they must not silently use current database history, time, or settings.
 - Regression tests must verify snapshot authority, ranking-context validation, schema-version refusal, full Last.fm tape consumption, and unchanged live-provider isolation.
 
