@@ -1507,7 +1507,7 @@ Status: see the PR description. Applied and rejected guidance is recorded there,
 
 ## 11. Redesign Phase 2 — shell, slice A (left rail)
 
-Status: **implemented on `ui/phase-2-shell-rail`** (roadmap Phase 2, item "left rail with icons and three groups, 232px; Acquisitions count as a numeral"). Implemented: yes. Automated tests: run (11.4). Browser-tested: partial, sandbox only (11.5). Merged / published / deployed / runtime-verified: **no**. PR head SHA and link: recorded in the PR description. Design-system sections applied: 9.3 (rail item, count as numeral), 10 (sprite icons), 13 (no eyebrow or mono label). No backend, API, auth or acquisition change.
+Status: **implemented on `ui/phase-2-shell-rail`; merged in PR #355** (roadmap Phase 2, item "left rail with icons and three groups, 232px; Acquisitions count as a numeral"). Implemented: yes. Automated tests: run (11.4). Browser-tested: partial, sandbox only (11.5). Merged: **yes** (PR #355, merge `981c244`, head `8817691`). Published / deployed / runtime-verified: **no**. Design-system sections applied: 9.3 (rail item, count as numeral), 10 (sprite icons), 13 (no eyebrow or mono label). No backend, API, auth or acquisition change.
 
 ### 11.1 What changed
 
