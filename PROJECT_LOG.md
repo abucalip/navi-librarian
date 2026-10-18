@@ -1,3 +1,14 @@
+## 2026-10-18 — Identity-free recommendation-diversity sweep
+
+- Evaluated the existing private frozen fixture offline at all 21 penalty values from 0.00 to 1.00 in 0.05 increments, with relevance floor fixed at 0. The capture schema/checksum validated. No provider tape was replayed, zero network providers were used, and no fixture or identity-bearing report was committed.
+- Fixture aggregates: 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 rejected rows under the evaluator's explicit hard-rejection/missing-score rules, and 10 baseline recommendations. All settings returned 10 candidates from the evaluator's rankable pool, 10 unique artists, and deterministic repeated selections; no selected candidate lacked tags in this capture.
+- Identity-free curve: setting 0 similarity 0.1044, 7/10 baseline items retained, baseline relevance-score retention 85.6%. Settings 5–15: similarity 0.1016, 6/10 retained, baseline score retention 80.6%. Settings 20–70: similarity 0.1007, 7/10 retained, baseline score retention 85.5%. Settings 75–100: similarity 0.0591, 7/10 retained, baseline score retention 85.5%. Mean selected raw discovery score at 0.75 is 91.72% of setting 0; settings above 0.75 showed no additional measured benefit.
+- Provisional recommendation: cap the effective penalty at 0.75; do not present a linear 0–1 slider as evidence-calibrated. Candidate guardrail for explicit review: at least 90% mean selected raw score versus setting 0 and at least 7/10 baseline items retained. These single-fixture metrics are not future-listen hit-rate/nDCG or broad quality evidence.
+- Updated `docs/DIVERSITY_SETTING_ROADMAP.md` with the measured curve, distinctions between relevance metrics, provisional mapping/cap and review gate. Updated `docs/PROJECT_STATUS.md`; settings UI remains blocked pending normalization/pool stability, missing-tag neutrality, and final-shortlist guardrails.
+- Private fixture and identity-bearing report remain local/private. The dismissed 35-combination/floor sweep was not rerun; no new capture, provider call, code behavior change, publishing, or deployment.
+- Next action: implement rank-based relevance normalization and cross-pool stability tests, then address missing-tag neutrality and final-shortlist quality/category guardrails before any UI work.
+
+---
 ## 2026-10-18 — Recommendation batch history persistence merged (PR #329)
 
 - Branch: `feat/recommendation-batch-history`, based on main commit `547ea225b47c97a8f762f1d8d17d70118b31a643`.

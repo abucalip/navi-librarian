@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-18 (PR #336 merged; diversity fixture sweep remains pending)
+Last reviewed: 2026-10-18 (identity-free diversity sweep completed; documentation PR in progress)
 
 ## Current focus
 
@@ -14,7 +14,7 @@ PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR
 
 PR #336 merged at `91bc647c5300d42d10f6bd393645a481c6d25474` from exact head `1c4f958d662ead5b5a3f5ea4485b1e8f17efb20f`. All four required workflows passed on that exact head: Python syntax check run `1670` (`39122256427`), Docker packaging run `1578` (`39122256409`), container runtime smoke run `1387` (`39122256392`), and validation-only Docker image run `1431` (`39122256401`, publishing paused). Documentation-only; no tests or private fixture evaluation were run.
 
-Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** run the already-planned identity-free 0–100 diversity sweep against the existing private fixture only, with relevance floor fixed at 0; do not collect another capture or rerun the dismissed 35-combination/floor sweep. The assistant's GitHub-only environment does not contain the private fixture, so this owner-environment step remains pending. The Recommendation diversity settings UI remains blocked until calibration, normalization, missing-tag neutrality, and shortlist guardrail gates are satisfied.
+Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** implement rank-based relevance normalization (preferred) and cross-pool stability tests. The identity-free 0–100 sweep is complete against the existing private fixture with relevance floor fixed at 0; no live capture was collected and the dismissed 35-combination/floor sweep was not rerun. The Recommendation diversity settings UI remains blocked until normalization, missing-tag neutrality, and final-shortlist quality/category guardrails are satisfied.
 
 ## Recommendation baseline and prior work
 

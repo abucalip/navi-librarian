@@ -37,18 +37,24 @@ This is one 66-candidate frozen pool with a 10-item baseline, not evidence of fu
 
 ## Revised implementation sequence and gates
 
-### 1. Offline slider calibration — next action, before UI
+### 1. Offline slider calibration — measured, single-fixture result
 
-Use the existing evaluator and existing frozen fixture only. Run an identity-free lambda sweep over the full candidate slider range (0–100, step 5 or 10) and record the mapping, relevance-retention, and similarity curves. Do not capture live data, replay providers, commit fixture identities, or reopen the dismissed 35-combination result.
+Completed the identity-free sweep against the existing private frozen fixture only. The fixture checksum/schema validated; no provider events were replayed and zero network providers were used. The run used 66 scored candidates, 17 rows rejected for explicit hard-rejection/missing-score handling, and the captured 10-item baseline. All 21 settings returned 10 candidates from the evaluator's rankable pool, 10 unique artists, and deterministic repeated selections. No selected candidates lacked tags in this fixture.
 
-Use the curve to:
-- choose a mapping that gives useful control where results actually change;
-- cap or compress the slider's upper end when benefit plateaus (the current evidence shows no measured gain from lambda 0.75 to 1.0);
-- identify flat regions where a linear slider would imply a false sense of precision;
-- document the limitations of this single fixture rather than presenting it as general quality proof.
+| Slider setting (penalty λ) | Mean pairwise similarity | Baseline items retained | Mean selected raw-score retention vs setting 0 | Baseline relevance-score retention |
+|---|---:|---:|---:|---:|
+| 0 (0.00) | 0.1044 | 7/10 | 100.0% | 85.6% |
+| 5–15 (0.05–0.15) | 0.1016 | 6/10 | 99.99% | 80.6% |
+| 20–70 (0.20–0.70) | 0.1007 | 7/10 | 99.92% | 85.5% |
+| 75–100 (0.75–1.00) | 0.0591 | 7/10 | 91.72% | 85.5% |
 
-Do not set a numeric relevance threshold by intuition. Propose a minimum relevance-retention guardrail from the observed baseline and have it explicitly reviewed before UI copy or rollout is approved.
+The grouped ranges represent every tested setting in steps of five: metrics were identical within each range. Compared with setting 0, similarity falls only about 2.7–3.5% through λ=0.70, then falls about 43.4% at λ=0.75. There is no measured additional benefit from λ=0.80 through 1.00. Mean selected raw discovery score at λ=0.75 is about 8.3% lower than at λ=0; baseline top-10 retention remains 7/10. At λ=0.05–0.15, only 6/10 baseline items are retained, and baseline relevance-score retention falls to 80.6%.
 
+**Calibration recommendation (provisional, not production approval):** cap the effective penalty at λ=0.75; values above that are indistinguishable on this fixture and add no measured benefit. Do not ship a simple linear 0–1 mapping as if each slider increment has a meaningful effect. The evidence supports a clear high-diversity transition near 75, but does not identify a useful smooth mapping through the broad flat middle. Treat any piecewise mapping as provisional until normalization and cross-pool behavior are tested.
+
+**Candidate relevance guardrail for explicit review:** require at least 90% of setting-0 mean selected raw discovery score and retain at least 7/10 baseline items. λ=0.75 passes those observed single-fixture checks (91.72%, 7/10); λ=0.05–0.15 fails the baseline-retention part. This is a candidate review threshold derived from this observed trade-off, not a future-listen hit-rate/nDCG guarantee or an approved rollout gate.
+
+Limitations: one frozen 66-candidate pool, a 10-item output, and one captured baseline; captured discovery scores are not future user outcomes. The baseline relevance-score-retention metric is distinct from mean selected raw-score retention versus setting 0. Identity-bearing rows and the raw report remain local/private and are not committed.
 ### 2. Correct relevance normalization and prove pool stability
 
 The current min-max relevance normalization depends on the candidate pool: one high-scoring outlier can compress other scores, changing the effective relevance/diversity trade-off for the same lambda. Evaluate and adopt rank-based relevance normalization (preferred initial option) or a clipped z-score alternative with defined behavior for ties, small pools, and constant scores.
@@ -118,4 +124,4 @@ The audit reported that a shallow clone could not establish the ancestry of `ef8
 
 ## Next action
 
-Run the identity-free 0–100 lambda sweep, step 5 or 10, against the **existing private frozen fixture only**, then document the curves and propose the slider mapping/cap and relevance-retention gate. Do not run the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
+Next: correct relevance normalization and add cross-pool stability tests. Keep the UI blocked while missing-tag neutrality and final-shortlist quality/category guardrails remain open. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
