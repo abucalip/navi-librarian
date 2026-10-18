@@ -1,3 +1,13 @@
+## 2026-10-18 — Deterministic recommendation replay contract
+
+- Implemented a snapshot-authoritative replay contract: ranking consumes the frozen post-gathering snapshot and frozen ranking context (timestamp, effective recommendation-history rows, and diversity setting). The snapshot now preserves raw and weighted play-count counters.
+- Provider response events are retained as capture provenance and explicitly reported as not replayed; the Last.fm response tape remains strict and must be fully consumed. No live provider calls are part of replay.
+- Capture schema advanced to v2. Schema-v1 captures are rejected with a clear recapture instruction because they lack frozen ranking context; the private `baseline-20261018.json` remains unchanged and is not considered a valid deterministic fixture.
+- Added regression coverage for ranking-input freeze/thaw, schema-v1 refusal, and replay wiring. Code and documentation were prepared on `fix/deterministic-recommendation-replay`; final PR SHA, focused/full tests, and CI are pending at session closeout. No merge, publication, deployment, or runtime verification occurred.
+- Next action: inspect the exact PR-head diff and verify the four required workflows; then create a fresh private schema-v2 capture and replay it at the declared source revision.
+
+---
+
 ## 2026-10-18 — Private recommendation capture replay audit
 
 - Audited the new private capture `baseline-20261018.json` against its declared source revision `4c2a0f09ebbbe374cf93049d17d4c3265fc5d589` (PR #342 source). The capture remains outside GitHub; no personal listening/library/provider data or identity-bearing comparison output was added to the repository.
