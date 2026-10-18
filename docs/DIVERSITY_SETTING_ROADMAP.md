@@ -71,17 +71,18 @@ Precompute each candidate's normalized tag set as a `frozenset` once per rerank/
 
 ### 4. Add final-shortlist quality and category guardrails
 
-**Implementation in progress:** the offline evaluator now reports per-shortlist category counts/mix, unique normalized tag coverage, untagged selected count/share, untagged promotions versus score-ordered top-k, baseline top-k retention, and mean raw-score retention against lambda 0 at the same relevance floor. These are descriptive diagnostics, not a production rollout gate; the private fixture has not been rerun for this change.
+**Evaluator metrics merged in PR #341; rollout-gate proposal below is documented but not approved.** The evaluator reports per-shortlist category counts/shares, unique normalized tag coverage, selected untagged count/share, untagged promotions versus score-ordered top-k, baseline top-k retention, and mean raw-score retention against lambda 0 at the same relevance floor. The private fixture has not been rerun with these newer metrics.
 
-MMR is applied inside allocator passes (adjacent, cross-genre, adventurous), so lower pairwise similarity within a pass does not prove that the final shortlist has a healthier overall mix. The evaluator now reports:
-- mean raw-score retention against lambda 0 at the same relevance floor;
-- final-shortlist unique genre/tag coverage;
-- category counts and category share for comparison against lambda 0 and the existing allocator policy;
-- mean pairwise similarity;
-- selected untagged count/share and count promoted beyond score-ordered top-k;
-- baseline top-k retention, selected count, eligibility, and determinism.
+MMR runs inside allocator passes (adjacent, cross-genre, adventurous), so lower pairwise similarity alone does not prove that the final shortlist has a healthier overall mix. The evaluator's lambda-zero result is the within-pool reference; compare settings only when candidate inputs, eligibility rules, requested shortlist size, and relevance floor are identical.
 
-Define a rollout gate with a reviewed minimum relevance-retention threshold and a category-mix check that prevents diversity settings from unexpectedly collapsing or over-concentrating the shortlist. Do not change existing hard category quotas or allocator behavior merely to make a metric look better. A lower similarity score alone is not success.
+**Proposed rollout gate for review (not an approval to expose the UI):**
+1. **Relevance:** mean selected raw discovery score must be at least 90% of the lambda-zero result, using the same pool and floor. This is a relative ranking-score guardrail, not a future-listen quality metric.
+2. **Baseline continuity:** retain at least 7 of the baseline top 10 items for a 10-item baseline. For other baseline sizes, require at least 70% retention, rounded up; report both count and fraction so small baselines cannot hide a large regression.
+3. **Category mix:** no category that represented at least two baseline items may disappear from the shortlist; no category share may rise by more than 10 percentage points versus lambda zero. Compare category counts and shares, not just a global similarity score. These are regression guardrails, not instructions to alter existing allocator quotas.
+4. **Coverage and missing metadata:** report unique normalized tag coverage, selected untagged count/share, and untagged promotions beyond score-ranked top-k. Any unexplained increase in untagged promotion blocks approval for review; do not award a setting credit merely for reducing similarity.
+5. **Safety and stability:** preserve requested shortlist length when the eligible pool can fill it, ownership/release eligibility, artist uniqueness, deterministic repeated output, and bounded work. Any violation blocks rollout regardless of aggregate scores.
+
+**Evidence boundary:** the 90% raw-score and 7/10 baseline-retention values are provisional thresholds motivated by the earlier single-fixture sweep, not universal quality guarantees. The category thresholds are proposed policy for review; the existing fixture has not been evaluated with PR #341's category metrics, so their pass/fail status is unknown. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, or claim this gate has passed. A later owner-authorized evaluation may use only the existing private fixture and identity-free output; until the thresholds and measured category results are reviewed, keep the Settings UI blocked. Do not change existing hard category quotas or allocator behavior merely to make metrics pass.
 
 ### 5. Backend implementation follow-up
 
@@ -126,4 +127,4 @@ The audit reported that a shallow clone could not establish the ancestry of `ef8
 
 ## Next action
 
-Evaluator guardrail metrics and synthetic regression coverage are implemented in the current PR branch; no private fixture was rerun and no rollout thresholds are approved. Rank-based normalization merged in PR #338 at `8ce1fc0de31135653781edc231e5f77698cb8773`, from exact CI-verified head `5eda37a77a2c623b06843a87800e306a16e92412`. PR #340 now addresses missing-tag novelty bias: absent tags are treated conservatively so they cannot earn a diversity advantage, while disjoint fully tagged pairs retain zero similarity. The UI remains blocked until exact-head CI passes and final-shortlist quality/category/untagged-share guardrails are implemented and reviewed. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
+PR #338's rank-based normalization and PR #340's conservative missing-tag handling are merged; PR #341's identity-free evaluator metrics and synthetic regressions are also merged and CI-verified. This session documents a provisional relevance/category rollout gate only. The existing private fixture was not rerun with the newer evaluator metrics, so category-gate results remain unknown and the gate is not passed or approved. Keep the Settings UI blocked. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
