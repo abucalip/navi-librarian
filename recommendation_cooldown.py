@@ -73,3 +73,47 @@ def cooldown_adjusted_score(
             break
 
     return value * (1.0 - penalty)
+
+
+
+def apply_history_cooldown(
+    allocation_candidates: Iterable[Any],
+    candidate_by_id: Mapping[str, Mapping[str, Any]],
+    database_path: str,
+    *,
+    now: float,
+) -> list[Any]:
+    """Apply cooldown to ownership-clear allocation inputs, failing open on storage errors."""
+    import sqlite3
+    from dataclasses import replace
+
+    from discovery_store import recent_recommendation_history
+
+    candidates = list(allocation_candidates)
+    try:
+        history = recent_recommendation_history(database_path, now=now)
+    except (OSError, sqlite3.Error, TypeError, ValueError):
+        # A diagnostic/ranking preference must not take down discovery when
+        # the optional history table is unavailable or the database is busy.
+        return candidates
+    if not history:
+        return candidates
+
+    adjusted = []
+    for candidate in candidates:
+        if getattr(candidate.ownership, "value", None) != "clear":
+            adjusted.append(candidate)
+            continue
+        source = candidate_by_id.get(candidate.candidate_id)
+        if not isinstance(source, Mapping):
+            adjusted.append(candidate)
+            continue
+        score = cooldown_adjusted_score(
+            candidate.score,
+            str(source.get("primary_artist") or source.get("artist") or ""),
+            str(source.get("album") or ""),
+            history,
+            now=now,
+        )
+        adjusted.append(replace(candidate, score=score))
+    return adjusted
