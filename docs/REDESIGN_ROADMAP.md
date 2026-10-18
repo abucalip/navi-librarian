@@ -1,6 +1,6 @@
 # Redesign roadmap — "Chart Rundown"
 
-Status: **proposed, pending owner approval** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `af412e3`
+Status: **proposed; governance edits applied in PR #349, pending merge** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `af412e3`
 
 This is the proposed authoritative roadmap for redesigning the Librarian web UI against `docs/DESIGN_SYSTEM.md`. It replaces the backlog in `docs/FRONTEND_DESIGN_GUIDE.md` section 8 once approved. It does not change code. Product truth is in `PRODUCT.md`; the direction contract is in `.impeccable/surfaces/app-templates-index-html.md`.
 
@@ -21,14 +21,14 @@ This is the proposed authoritative roadmap for redesigning the Librarian web UI 
 
 ## 3. Governance changes needed first (Phase 0)
 
-The owner has said the current UI restrictions will be updated. Proposed text, for the owner to apply or amend. This roadmap does not edit `AGENTS.md`.
+The owner asked for these edits on 2026-10-18; they are applied in the same PR as this roadmap (PR #349) and take effect when it merges. The table records what changed. Design-system decisions D1–D6 are still open and their defaults apply until the owner decides.
 
 | File | Proposed change |
 |---|---|
-| `AGENTS.md` | Allow `static/fonts/**`, `static/icons.svg`, `static/vendor/**` and `docs/DESIGN_SYSTEM.md`, `docs/REDESIGN_ROADMAP.md` in normal scope. Replace "preserve the established type, color, spacing" with "follow `docs/DESIGN_SYSTEM.md`". Keep every protected backend, API, security and deployment boundary unchanged. |
-| `docs/FRONTEND_DESIGN_GUIDE.md` | Point sections 2, 3 and 8 at the design system and this roadmap. Move yellow/red and the Barlow/Plex trio from "established" to "superseded by DESIGN_SYSTEM.md". Keep section 4 (interaction, accessibility) and section 6 (boundaries) as is. |
-| `docs/UI_BACKLOG_EXECUTION.md` | Add a pointer to this roadmap; keep the evidence history. |
-| `docs/TEST_PLAN.md` | Add a visual-baseline step (Phase 0) and the viewport matrix below. |
+| `AGENTS.md` | Applied: allow `static/fonts/**`, `static/icons.svg`, `static/vendor/**` and `docs/DESIGN_SYSTEM.md`, `docs/REDESIGN_ROADMAP.md` in normal scope. Replace "preserve the established type, color, spacing" with "follow `docs/DESIGN_SYSTEM.md`". Keep every protected backend, API, security and deployment boundary unchanged. |
+| `docs/FRONTEND_DESIGN_GUIDE.md` | Applied: point sections 2, 3 and 8 at the design system and this roadmap. Move yellow/red and the Barlow/Plex trio from "established" to "superseded by DESIGN_SYSTEM.md". Keep section 4 (interaction, accessibility) and section 6 (boundaries) as is. |
+| `docs/UI_BACKLOG_EXECUTION.md` | Applied: add a pointer to this roadmap; keep the evidence history. |
+| `docs/TEST_PLAN.md` | Applied: add a visual-baseline step (Phase 0) and the viewport matrix below. |
 
 "No external asset dependencies" stays true: fonts and icons are vendored and served from `/static`, not loaded from a CDN. Because `app/main.py` treats `/static/` as public, vendored files need no backend change.
 

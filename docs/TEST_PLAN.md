@@ -70,6 +70,14 @@ For a real baseline, run capture only in an isolated environment pinned to an id
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
 
+Redesign slices (`docs/REDESIGN_ROADMAP.md`) add these requirements:
+- **Viewport matrix:** render every affected page at 1440, 1200, 900, 620 and 390px and record horizontal overflow, console errors and network errors per width.
+- **Visual baseline:** compare against the Phase 0 baseline captured on the identified `main` SHA; attach before/after screenshots. State which states were populated from reconstructed DOM rather than a real library.
+- **Token-only changes:** prove purity by comparing computed styles old versus new for the affected selectors; report differences, which must be only the intended value changes.
+- **Contrast:** measure text and control-boundary contrast on the rendered build for any color change; report the pairs and ratios.
+- **Contract tests:** when a `tests/*_ui_contract.py` assertion changes because a class name or structure changed intentionally, show the before and after assertion and the reason; never delete or weaken a behavioral assertion.
+- **Impeccable:** record `impeccable detect` findings applied and rejected when a UI slice is finished.
+
 ## Reporting states separately
 
 Track these states independently:

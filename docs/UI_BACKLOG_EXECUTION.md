@@ -6,6 +6,11 @@ Scope of this file: session-bootstrap reference. It records the verified state o
 front-end at a known `main` SHA so later sessions do not re-read the full project
 documentation set.
 
+**Redesign pointer (2026-10-18).** The current front-end queue is `docs/REDESIGN_ROADMAP.md`, applying
+`docs/DESIGN_SYSTEM.md`. The backlog state below is history and evidence: it records what shipped and
+how it was measured, and the redesign must preserve the behavior and accessibility it established.
+Update this file in the same PR as each redesign slice.
+
 This file does not replace root `AGENTS.md` or `docs/FRONTEND_DESIGN_GUIDE.md`; those
 remain authoritative. It only compresses the parts a front-end session needs.
 

@@ -1,6 +1,6 @@
 # Design system — "Chart Rundown"
 
-Status: **proposed, pending owner approval** · Last updated: 2026-10-18 · Mode: Operate
+Status: **proposed; AGENTS.md now points here (PR #349), decisions D1–D6 open** · Last updated: 2026-10-18 · Mode: Operate
 
 This is the target design system for the Librarian redesign. It supersedes the visual-identity section of `docs/FRONTEND_DESIGN_GUIDE.md` once approved (see `docs/REDESIGN_ROADMAP.md`, Phase 0). Nothing here is implemented yet; the shipped tokens in `static/app.css` remain authoritative until Phase 1 lands. Impeccable's `DESIGN.md` is generated from the *built* system at the end of Phase 1 and again at the end of the redesign, not before.
 

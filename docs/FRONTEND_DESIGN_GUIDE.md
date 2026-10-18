@@ -1,8 +1,10 @@
 # Front-end design guide
 
-Last updated: 2026-10-14
+Last updated: 2026-10-18
 
-This is the canonical, agent-independent design reference for Navidrome Librarian's web UI. Read it before planning or implementing any front-end change. Root `AGENTS.md` defines mandatory entry instructions, ownership, and protected paths; this document defines the visual direction, design workflow, and prioritized UI backlog.
+This is the canonical, agent-independent design reference for Navidrome Librarian's web UI. Read it before planning or implementing any front-end change. Root `AGENTS.md` defines mandatory entry instructions, ownership, and protected paths; this document defines interaction, accessibility, and boundary rules and the design workflow.
+
+> **Redesign notice (2026-10-18).** The visual identity (color, type, icons, motion, layout) and the prioritized backlog are now defined by `docs/DESIGN_SYSTEM.md` and `docs/REDESIGN_ROADMAP.md`. Where this guide and those documents disagree about appearance, they win. Sections 4, 6, 7 and 9 remain in force for interaction, accessibility, boundaries and workflow.
 
 ## 1. Product objective
 
@@ -10,7 +12,9 @@ Make Navidrome Librarian feel like a deliberately designed, specialist music-dis
 
 The interface helps a user explore their Navidrome library and listening taste, discover music, and request acquisitions through existing backend services. The UI must present those capabilities clearly without duplicating discovery, recommendation, acquisition, or import logic in browser code.
 
-## 2. Established visual identity
+## 2. Pre-redesign visual identity (superseded by `docs/DESIGN_SYSTEM.md`)
+
+This section records the identity the shipped app still renders until each roadmap phase lands. It is no longer the target. Yellow and red, Barlow Condensed, IBM Plex Sans and Mono, 4–6px radii and the neutral grey ground are replaced by the Chart Rundown tokens, type, icons and layout. The product character (confident, functional, music-focused, artwork-led) carries over.
 
 - **Foundation:** dark grey surfaces and backgrounds.
 - **Accents:** yellow for deliberate emphasis, primary actions, and selected states; red for destructive actions and errors. Never communicate state by color alone.
@@ -28,12 +32,12 @@ Do not introduce these by default:
 - Purple/blue gradients, neon glows, or glassmorphism.
 - Rounded cards around every section, nested cards, or excessive borders and shadows.
 - Oversized headings or repetitive icon + heading + description layouts.
-- Unnecessary icons, emojis, badges, or colorful status pills for every metadata value.
+- Unnecessary icons, emojis, badges, or colorful status pills for every metadata value. (The approved Lucide sprite is for navigation and actions with labels; decorative icons are still out.)
 - Gratuitous animation, decorative noise, or dashboard grids imposed on every screen.
 - One-off styles that duplicate existing tokens or component behavior.
-- External asset dependencies, analytics, trackers, frontend frameworks, build systems, or new packages without approval.
+- Runtime third-party asset dependencies (CDN fonts, remote icons or scripts), analytics, trackers, frontend frameworks, build systems, or new packages without approval. Self-hosted fonts and the icon sprite named in `AGENTS.md` are approved.
 
-A visual treatment is justified when it improves hierarchy, comprehension, feedback, or interaction—not merely because a design tool suggests it.
+A visual treatment is justified when it improves hierarchy, comprehension, feedback, or interaction—not merely because a design tool suggests it. `docs/DESIGN_SYSTEM.md` section 13 lists the anti-patterns specific to the new world.
 
 ## 4. Interaction, accessibility, and responsive craft
 
@@ -54,7 +58,7 @@ Do not add mock behavior or invent backend endpoints/fields to make the UI appea
 
 Use Impeccable as a critique and implementation aid when available in the working environment. Start with its critique/audit guidance before styling. Use focused guidance such as `polish`, `layout`, `typeset`, `quieter`, or `distill` when appropriate. Consider its design-system, hierarchy, spacing, typography, contrast, responsive, and accessibility recommendations.
 
-Apply only recommendations that fit this product and its existing components. Do not run broad redesign commands blindly or treat detector output as a mandate. Prefer one cohesive, reviewable improvement over sweeping visual churn. In the PR summary, record the guidance applied and important recommendations intentionally rejected. If Impeccable is unavailable, state that limitation and continue using this guide; do not claim to have used it.
+Apply only recommendations that fit `docs/DESIGN_SYSTEM.md` and the existing components. The Chart Rundown direction is already chosen (`PRODUCT.md`, `.impeccable/surfaces/`); do not re-roll it. Do not run broad redesign commands blindly or treat detector output as a mandate. Prefer one cohesive, reviewable improvement over sweeping visual churn. In the PR summary, record the guidance applied and important recommendations intentionally rejected. If Impeccable is unavailable, state that limitation and continue using this guide; do not claim to have used it.
 
 ## 6. Ownership and architecture boundaries
 
@@ -65,7 +69,9 @@ Root `AGENTS.md` is authoritative for allowed files and protected ownership. In 
 - `static/login.css`
 - `static/login.js`
 - `app/templates/*.html`
-- narrowly scoped front-end tests/fixtures under `tests/`
+- narrowly scoped front-end tests/fixtures under `tests/`, including the `*_ui_contract.py` files
+- vendored self-hosted assets: `static/fonts/**`, `static/icons.svg`, `static/vendor/**` (with license files)
+- the front-end design documents listed in `AGENTS.md`
 
 Reading backend code or tests to understand behavior does not grant permission to edit them. Do not change application assembly, routes, authentication/security, API paths or schemas, domain services, discovery/recommendation logic, acquisition/import lifecycle, persistence, filesystem operations, dependencies, workflows, deployment, or project-wide safety/release controls without explicit approval and coordinated ownership.
 
@@ -84,18 +90,11 @@ The existing API is authoritative. If a UI need requires a new endpoint, field, 
 
 If the PR head changes after manual testing, retest the new SHA or explicitly state that the report covers an earlier SHA. Record implemented, automated-tested, browser-tested, merged, published, deployed, and runtime-verified as separate states. CI or a merge is not deployment evidence.
 
-## 8. Prioritized design backlog
+## 8. Backlog and roadmap
 
-This is the working front-end backlog, reconciled with PR #66 and its follow-up verification recorded in the project documentation. Re-inspect current `main` and open UI PRs before starting an item; update this list when priorities or completion evidence change.
+The working backlog is `docs/REDESIGN_ROADMAP.md` (Phases 0–7), applying `docs/DESIGN_SYSTEM.md`. Re-inspect current `main` and open UI PRs before starting an item, and update the roadmap's status and PR links in the same PR as the work.
 
-1. **State craft** — establish consistent, purposeful loading, empty, error, success, and recovery presentation across the app. Preserve correct semantics and actionable feedback.
-2. **Per-section layouts** — refine artist exploration, library, acquisition, and settings into distinct task-appropriate compositions that share the established design language.
-3. **Get/request button consolidation** — align the modal, artwork-overlay, and card-action variants into one consistent interaction pattern without changing API or acquisition semantics.
-4. **Type/token cleanup** — consolidate duplicated values into shared tokens and tighten the type scale without broad visual churn.
-5. **Responsive controls** — improve navigation, filters, and acquisition cards at narrow viewport widths.
-6. **Continue visual audit** — after the above, inspect for the next highest-impact issue and re-prioritize based on evidence.
-
-**Completed:** Login-page alignment (PR #66, merged as recorded in `docs/PROJECT_STATUS.md` and `PROJECT_LOG.md`). The page now follows the app's design tokens, typography, button treatment, and focus styling. Manual verification reported desktop/narrow viewport and failed-sign-in behavior passing; keyboard focus modality and the first-run setup variant were explicitly recorded as skips in the test report. Do not reopen this item unless new evidence identifies a regression or remaining defect.
+**Previously completed (history, do not redo):** login-page alignment (PR #66), state craft, Get/request consolidation, per-section layouts for acquisition, deep dive, recommendations and classics, token naming and 44px targets, accessibility items C1–C7, skip link and tabs ARIA. Evidence and measurements are in `docs/UI_BACKLOG_EXECUTION.md`. The redesign restyles these without changing the behavior and accessibility properties they established.
 
 ## 9. Front-end PR acceptance checklist
 
@@ -108,10 +107,10 @@ This is the working front-end backlog, reconciled with PR #66 and its follow-up 
 - [ ] Rendered UI and browser console/network errors are inspected on the exact tested SHA.
 - [ ] Before/after screenshots and Impeccable decisions are included for visual changes.
 - [ ] Complete diff is reviewed; skipped checks and limitations are explicit.
-- [ ] The PR identifies the backlog item addressed and any backlog changes.
+- [ ] The PR identifies the roadmap phase and item addressed, the design-system sections applied, and any roadmap changes.
 
 ## 10. Source of truth and maintenance
 
-This file on GitHub `main` is the canonical design guide. Do not rely on PR #66 comments, chat history, local-only files, or an agent-specific memory as the sole source of design instructions. Root `AGENTS.md` must link here, and the development workflow and test plan must keep pointing to this guide.
+This file on GitHub `main` is the canonical guide for interaction, accessibility, boundaries and workflow; `docs/DESIGN_SYSTEM.md` is canonical for appearance and `docs/REDESIGN_ROADMAP.md` for sequencing. Do not rely on PR #66 comments, chat history, local-only files, or an agent-specific memory as the sole source of design instructions. Root `AGENTS.md` must link here, and the development workflow and test plan must keep pointing to this guide.
 
 When a design decision or priority changes, update this guide and the relevant project status/log documentation through a focused PR. Keep historical verification evidence in the project log; do not convert skipped or unverified work into a pass.
