@@ -1,3 +1,14 @@
+## 2026-10-18 — PR #352 merged: redesign Phase 0 baseline and owner decisions
+
+- PR #352 squash-merged at `40c551b831f782de2f3000b844b7491689bea9b8` from exact final PR head `47791ffe638d80f1ecaf97d2c48648354710cc18`.
+- All four required workflows passed on that exact head: Python syntax run 1733 (`39142873499`); Docker packaging/full unit suite/build run 1641 (`39142873452`); container runtime smoke run 1450 (`39142873440`); validation-only multi-architecture image validation run 1494 (`39142873438`, publishing paused).
+- Documentation-only merge: records the Phase 0 baseline, owner decisions D1–D6, contrast remeasurement, colour-vision findings, and roadmap status. No application code changed.
+- Verification caveats remain: Chromium 141 on Linux only; Google Fonts and third-party modal assets were blocked, so typography and some performance results are incomplete; populated states were reconstructed; no real-library Get action, keyboard walkthrough, screen-reader pass, or manual browser verification of a UI change. Existing backend issue B1 (ListenBrainz settings endpoint returns 502 when username is unset) and B2 (album modal third-party images) remain documented, untouched.
+- Publishing, deployment, and runtime verification were not performed. Publishing remains paused.
+- Next UI action: start Phase 1 (tokens, self-hosted fonts, icon sprite) from current GitHub `main`. The recommendation-engine evaluation track remains separate: a valid time-separated recommendation snapshot and independent future listening history have not yet been established; do not infer quality from deterministic replay.
+
+---
+
 ## 2026-10-18 — Private schema-v2 recommendation baseline replay verified
 
 - PR #350 merged as `dc3e5a3a8ea704bbc66aa1d1b43dc4e9594fd2be`. The owner captured a fresh schema-v2 fixture in the isolated PR #350 test environment and ran the replay script against the fixture's declared source revision.
