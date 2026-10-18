@@ -10,12 +10,32 @@
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
+<!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation.
+     It sits ahead of the header element so the header's gear button does not displace it as the first tab stop. -->
+<a class="skip-link" href="#content">Skip to content</a>
 <header>
   <h1>Navidrome Librarian</h1>
-  <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
+  <div class="header-tools">
+    <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
+    <div class="header-menu">
+      <button id="appMenuButton" class="header-menu-toggle" type="button"
+              aria-label="Settings and account" title="Settings and account"
+              aria-expanded="false" aria-controls="appMenu">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div id="appMenu" class="header-menu-panel" hidden>
+        <button type="button" data-page="settings">Settings</button>
+        <div class="header-menu-separator" role="separator"></div>
+        <button type="button" id="logoutButton">Log out</button>
+      </div>
+    </div>
+  </div>
 </header>
-<!-- First stop in the tab order. Hidden until focused, so keyboard users can skip navigation. -->
-<a class="skip-link" href="#content">Skip to content</a>
 <main id="content" tabindex="-1">
   <!-- This sidebar is one of two <nav> landmarks in the document; the other is the album
        modal's platform links. Where a landmark type repeats, each instance needs its own
@@ -47,8 +67,6 @@
       <button data-page="artistDeepDive">Artist Deep Dives</button>
       <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
     </div>
-    <button data-page="settings">Settings</button>
-    <button id="logoutButton" type="button">Log out</button>
   </nav>
 
   <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
