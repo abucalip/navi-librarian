@@ -10,22 +10,38 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 
+def _normalized_tags(values: Iterable[Any]) -> set[str]:
+    return {str(value).strip().casefold() for value in values if str(value).strip()}
+
+
 def tag_jaccard(left: Iterable[Any], right: Iterable[Any]) -> float:
     """Return Jaccard similarity for normalized, case-insensitive tag sets."""
-    a = {str(value).strip().casefold() for value in left if str(value).strip()}
-    b = {str(value).strip().casefold() for value in right if str(value).strip()}
+    a = _normalized_tags(left)
+    b = _normalized_tags(right)
     if not a and not b:
         return 0.0
     return len(a & b) / len(a | b)
 
 
 def candidate_similarity(left: Mapping[str, Any], right: Mapping[str, Any]) -> float:
-    """Use exact artist identity first, otherwise genre-tag Jaccard overlap."""
+    """Return artist/tag similarity without granting novelty for missing tags.
+
+    Exact artist identity is authoritative. For different/unknown artists, an
+    empty tag set means similarity is unknown, not evidence of dissimilarity.
+    Return the conservative maximum so an untagged candidate cannot win an MMR
+    tie merely because metadata is missing. This avoids rewarding absent metadata;
+    it does not assert that the candidates are musically similar. Fully tagged candidates continue to
+    use Jaccard similarity, including a zero score for genuinely disjoint tags.
+    """
     left_artist = str(left.get("artist_key") or "").strip().casefold()
     right_artist = str(right.get("artist_key") or "").strip().casefold()
     if left_artist and right_artist and left_artist == right_artist:
         return 1.0
-    return tag_jaccard(left.get("tags") or (), right.get("tags") or ())
+    left_tags = _normalized_tags(left.get("tags") or ())
+    right_tags = _normalized_tags(right.get("tags") or ())
+    if not left_tags or not right_tags:
+        return 1.0
+    return len(left_tags & right_tags) / len(left_tags | right_tags)
 
 
 def diversity_setting_to_penalty(value: int) -> float:
@@ -77,11 +93,6 @@ def mmr_rerank(
 
     if not pool or limit == 0:
         return []
-    # Normalize by relative rank, not score magnitude. Min-max normalization
-    # lets a single score outlier compress every other candidate's relevance,
-    # making the same lambda behave differently across score distributions.
-    # Average ranks give equal scores equal relevance; ties remain deterministic
-    # in selection because the original input order still breaks MMR ties.
     ranked = sorted(pool, key=lambda item: item["_mmr_score"], reverse=True)
     rank_by_identity: dict[int, float] = {}
     start = 0
@@ -100,8 +111,6 @@ def mmr_rerank(
             1.0 if constant_pool else 1.0 - rank_by_identity[id(item)] / denominator
         )
 
-    # Apply the floor against the original pool normalization. Do not renormalize
-    # the surviving candidates, which would erase the meaning of the floor.
     selected: list[dict[str, Any]] = []
     selected_artists: set[str] = set()
     remaining = [item for item in pool if item["_mmr_relevance"] >= relevance_floor]

@@ -1258,3 +1258,13 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Replaced min-max normalization with descending average-rank relevance. Equal scores share relevance; constant-score pools assign relevance 1; selection ties remain deterministic. Added score-gap/scale, tie, constant-pool, and relevance-floor regressions.
 - All four workflows passed on the exact head: syntax/safety `1682` (`39124360180`), packaging/unit tests/build `1590` (`39124360039`), container smoke `1399` (`39124359849`), non-publishing multi-architecture validation `1443` (`39124359917`). No assistant-side local tests or private fixture replay.
 - Publishing remains paused; no UI, publication, deployment, or runtime verification. Next: missing-tag neutrality tests, then final-shortlist quality/category metrics.
+
+
+## 2026-10-18 — PR #340: MMR missing-tag novelty bias
+
+- Branch `recommendation/mmr-missing-tag-neutrality`, based on GitHub main `f61a01f3895ac59b7833c008771138d4499ef661`.
+- Changed `discovery_mmr.py::candidate_similarity`: exact artist identity remains authoritative; when either candidate lacks usable genre tags, similarity is conservatively treated as 1.0 so absent metadata cannot earn an unearned diversity bonus. Fully tagged, disjoint candidates still have similarity 0.0. This is a conservative missing-data policy, not evidence that untagged albums are actually similar.
+- Added direct regressions for either/both candidates untagged, genuinely disjoint tagged pairs, and shortlist ordering so an untagged candidate does not jump ahead of a genuinely dissimilar tagged candidate solely because its metadata is absent.
+- Updated `docs/DIVERSITY_SETTING_ROADMAP.md` and `docs/PROJECT_STATUS.md`; final-shortlist relevance/category/genre-coverage/untagged-share guardrails remain the next task. Settings UI remains blocked.
+- Exact PR head before documentation commits: `e8ad28c28a22d1b6a256ab02dfde65614dda208c`; docs commits follow, so all four required workflows must be checked against the final PR head before merge. At the time of the first check, Python syntax and Docker packaging/full unit suite/build had succeeded; container smoke had succeeded; non-publishing multi-architecture validation was still in progress. No local tests or private fixture replay were run by the assistant.
+- No live providers, fixture identities, UI, publication, deployment, or production runtime were used or verified. Publishing remains paused.

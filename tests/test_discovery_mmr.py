@@ -27,6 +27,35 @@ class DiscoveryMmrTests(unittest.TestCase):
             1.0,
         )
 
+    def test_missing_tags_do_not_earn_novelty_bonus(self):
+        tagged = candidate("tagged", "a", 1, ["jazz"])
+        untagged_left = candidate("untagged-left", "b", 1, [])
+        untagged_right = candidate("untagged-right", "c", 1, [])
+        partially_missing = candidate("partially-missing", "d", 1, ["jazz"])
+
+        self.assertEqual(candidate_similarity(tagged, untagged_left), 1.0)
+        self.assertEqual(candidate_similarity(untagged_left, tagged), 1.0)
+        self.assertEqual(candidate_similarity(untagged_left, untagged_right), 1.0)
+        self.assertEqual(candidate_similarity(partially_missing, untagged_left), 1.0)
+
+    def test_genuinely_disjoint_tagged_candidates_remain_dissimilar(self):
+        self.assertEqual(
+            candidate_similarity(
+                candidate("jazz", "a", 1, ["jazz", "bebop"]),
+                candidate("afrobeat", "b", 1, ["afrobeat", "funk"]),
+            ),
+            0.0,
+        )
+
+    def test_mmr_does_not_promote_untagged_candidate_over_tagged_alternative(self):
+        items = [
+            candidate("anchor", "a", 10, ["jazz"]),
+            candidate("untagged", "b", 9.8, []),
+            candidate("dissimilar", "c", 9.7, ["afrobeat"]),
+        ]
+        result = mmr_rerank(items, limit=3, lambda_=0.6)
+        self.assertEqual([item["id"] for item in result], ["anchor", "dissimilar", "untagged"])
+
     def test_lambda_zero_preserves_relevance_order_with_artist_cap(self):
         items = [
             candidate("first", "a", 10, ["jazz"]),
@@ -92,8 +121,6 @@ class DiscoveryMmrTests(unittest.TestCase):
             candidate("second", "b", 5, []),
             candidate("third", "c", 1, []),
         ]
-        # The tied top candidates retain equal relevance; original input order
-        # breaks their selection tie when there is no diversity penalty.
         self.assertEqual(
             [item["id"] for item in mmr_rerank(tied, limit=3, lambda_=0)],
             ["first", "second", "third"],
