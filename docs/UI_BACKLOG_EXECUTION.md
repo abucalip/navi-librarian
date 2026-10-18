@@ -1824,3 +1824,50 @@ Not run: the live-library check (skipped; for the owner to run locally against t
 **Known limitations.** The fixture has no artwork, so the artwork corner shows placeholders only. The Dashboard item of Phase 4 is not in this PR (waits on D1). The confirm-step finding is open. The 390px bottom tab bar issue from Phase 2 is unchanged.
 
 **Next action.** The owner runs Artist Deep Dives on a live library locally against the PR head SHA (including Not for me on a sandbox folder), and decides on the confirm step before the Dashboard item starts.
+
+## 18. Redesign Phase 4 — Dashboard as a static tile strip (`ui/phase-4-dashboard-tiles`)
+
+Roadmap item: Phase 4, Dashboard (first bullet). Decision D1 (retire the 3D ring for a static tile strip) is applied; the owner's D1 outcome is recorded in `docs/DESIGN_SYSTEM.md` section 15 as "Retire". PR #381 (head `8714d95`, branch `ui/phase-4-dashboard-tiles`). CI on `8714d95` passed (compile, validate-container, test-and-build, container-smoke: all success), with no review threads. The owner ran the dashboard on the live library and reported it looks good. Merged by squash after the owner's instruction. Not deployed.
+
+Design system sections applied: 8 (Dashboard row: artwork tile strip, unranked, no numerals), 9.1 (focus ring, 44px Get), 9.2 (Get state machine kept: pending, then requested only after the server answers), 9.6 (loading, empty and error copy), 10 (icon sprite unchanged), 11 (reduced motion: the ring's ambient loop and drag inertia are removed, and native smooth scrolling is turned off by the global reduced-motion rule), 12 (accessibility floor), 15 (D1).
+
+**What changed.**
+- The 3D coverflow ring (`buildDashboardRing`, `ringFlatten`, the `RING_*` constants, the ambient drift, the drag and key steering) is removed from `static/app.js`. The strip is the flat scroller that was already the fallback. Its CSS (`.is-ring`, `.ring-scene`, `.ring-stage`, `.ring-card`, `rotateY`, `translateZ`, `perspective`) is removed.
+- Each tile is now an `article` with no focus stop of its own. One named `button` (`.dashboard-tile-open`, "View details for ALBUM by ARTIST") covers the tile and opens the album dialog. It comes first in the DOM, so it is the first focus stop. The Get control sits in the artwork corner as its own focus stop, not nested inside the open button. This follows the ranked-row pattern (9.4) that Phase 3 shipped.
+- The album dialog returns focus to the open button that opened it, not to the non-focusable article (`openAlbumModal(card, returnFocus = card)`).
+- The strip takes the genre-row scroller treatment: a tab stop, a name, arrow, Home and End keys, and a visible focus ring. It is attached once at startup, so shuffles do not stack listeners.
+- Tiles are unranked. No numeral is shown, and the random order is not presented as a ranking.
+- Shuffle is disabled while a request is pending, so two responses cannot race into the strip.
+- Copy: "Drag the ring, or focus it and use ← →" is now "Scroll the row, or focus it and use ← →."
+
+**Not changed.** `GET /api/dashboard-picks` and its parameters, the response handling and the `isAlbumRecommendation` filter, the Get request (`POST /api/acquire`) and its state machine, the album dialog contents, all backend code, and the artwork loader.
+
+**Tests.** `tests/test_ui_keyboard_and_feedback_contract.py`: the `DashboardRingTests` class was removed because it asserted ring code that no longer exists. It is replaced by `DashboardTileStripTests` (10 contracts: no ring or 3D transforms; unranked; one named open control and a separate Get; the tile article is not a focus stop; focus returns to the open button; metadata hidden from assistive tech; the Get state machine; shuffle guard; the strip as a named, focusable scroller with a focus ring; the open control's focus ring and coverage). Two existing assertions were updated narrowly, with a reason written in the test: the scroll-helper wiring (now the strip and the genre rows), and the focus-return expression (`albumModalReturnFocus = returnFocus`). The behavior each one protects is the same, and nothing was deleted to make a test pass.
+
+**Checks run (head: see PR).**
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest discover -s tests -v`: 788 tests, OK.
+- `python3 -m unittest tests.test_ui_keyboard_and_feedback_contract -v`: 29 tests, OK.
+
+**Browser checks (sandbox, RECONSTRUCTED fixture, not the owner's helper).** Two isolated uvicorn servers: `origin/main` (`4b76226`) on 8301 and this branch on 8302, each with sandbox data, music and downloads paths outside the repo, `SLSKD_URL=http://127.0.0.1:9` with an empty key, Navidrome unconfigured. The sandbox owner account was created with `POST /api/auth/setup`. `/api/dashboard-picks` was answered by Playwright with a fixture of ten albums (labelled RECONSTRUCTED), `/api/artwork` returned no artwork, and `/api/acquire` was answered with a fixture reply, so no request reached slskd. Chromium 1194 through Playwright.
+- Widths 1440, 1200, 900, 620, 390 on both servers. Branch: 10 tiles, 0 numerals, no ring, document overflow 0 at every width, open control 216px (covers the tile), Get 46×46 at every width. The strip scrolls inside its container.
+- Keyboard (branch, 1440): ArrowRight and End scroll the strip; Tab from the strip lands on the first tile's open control; Enter opens the dialog; Escape returns focus to that open control.
+- Get (branch): click gives `is-pending`, `aria-busy="true"` and disabled; after the server reply, `requested` with the "Acquisition requested" label. The request payload carried the correct artist.
+- Shuffle (branch): rebuilds the strip to 10 tiles.
+- Empty state: "No suggestions yet. Open a discovery page and refresh its list first." Error state: the server's message is shown and the strip is empty.
+- Reduced motion (`prefers-reduced-motion: reduce`): the strip's computed `scroll-behavior` is `auto`.
+- Console: the branch shows no errors on the dashboard. When the album dialog opens, four `ERR_TUNNEL_CONNECTION_FAILED` errors appear. `main` shows the same four with the same flow, so they predate this change. They come from the dialog's third-party logo requests (B2 in the known limits), which the sandbox cannot reach.
+- Screenshots: `/mnt/project-files/phase-4-dashboard-tiles/screenshots/` (before = `main`, after = branch).
+
+**Impeccable and web-design-guidelines.** The web-interface guidelines rules were fetched this time and checked against the changed files. Applied: `aria-hidden` on decorative tile text; `:focus-visible` on the overlay and the strip; no `transition: all`; the loading copy ends with `…`; the Get control has an accessible name; the open control covers the whole tile so the dead zone is gone. Rejected or out of scope: `<img>` width and height and the `loading="lazy"` attribute live in the shared `attachArtwork` helper, which predates this change and is used by other lists, so it is left for a separate slice. Impeccable: `impeccable context` was run and the product and design context was read. The full critique workflow was **not** run, so no Impeccable finding is claimed. The `impeccable detect` run was not done.
+
+**Known limitations.**
+- No live library: tiles show placeholders. The live-library check is the owner's, against the PR head SHA.
+- Only the Chromium check was run. No screen reader was tested.
+- The shared `attachArtwork` image attributes are unchanged (see above).
+- The strip has no arrow buttons; the native scroller and keys are the only controls. That matches the genre rows at widths where they overflow.
+
+**Next action.** Phase 5 (Acquisitions) is the next roadmap phase. Phase 4 is complete with this PR merged; deployment is the owner's call.
+

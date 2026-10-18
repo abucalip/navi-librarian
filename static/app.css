@@ -208,36 +208,17 @@ p { line-height: 1.55; }
 .cards.acquisition-grid .download-progress { margin: 13px 13px 0; }
 .dashboard-carousel { display: flex; gap: 15px; overflow-x: auto; padding: 3px 2px 15px; scroll-snap-type: x proximity; scrollbar-color: var(--edge-strong) var(--surface); scrollbar-width: thin; scroll-behavior: smooth; }
 .dashboard-carousel > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
-/* Coverflow ring for the dashboard picks. The flat flex row above stays the default and the
-   fallback — app.js adds .is-ring only once the stage is built, so a script that fails leaves
-   a usable list rather than an empty scene. Card geometry comes from custom properties set in
-   app.js, so the ring can be retuned from one place.
-
-   Overflow is hidden here rather than on the 3D context: clipping an element that establishes
-   preserve-3d flattens its children, so the clip has to sit outside .ring-scene. */
-.dashboard-carousel.is-ring { display: block; padding: 16px 0 0; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; }
-.dashboard-carousel.is-ring:active { cursor: grabbing; }
-.ring-scene { perspective: 2000px; }
-.ring-stage { position: relative; width: var(--ring-card-width, 218px); height: var(--ring-height, 330px); margin: 0 auto; transform-style: preserve-3d; }
-/* Rear cards drop their card chrome entirely rather than only fading the labels. Leaving the
-   .card background and border in place drew a dark plaque under every piece of artwork, since
-   the text area was still occupying space at opacity 0. With the chrome transparent a rear card
-   is just its artwork; no layout property is animated to achieve that. */
-.dashboard-carousel.is-ring .ring-card { position: absolute; top: 50%; left: 0; width: var(--ring-card-width, 218px); backface-visibility: hidden; pointer-events: none; opacity: .4; background: transparent; border-color: transparent; transform: translateY(-50%) rotateY(calc(var(--ring-index) * var(--ring-step))) translateZ(var(--ring-radius)); transition: opacity .28s cubic-bezier(.16,1,.3,1), background-color .28s cubic-bezier(.16,1,.3,1), border-color .28s cubic-bezier(.16,1,.3,1); }
-.dashboard-carousel.is-ring .ring-card .card-art { border-bottom-color: transparent; transition: border-color .28s cubic-bezier(.16,1,.3,1); }
-.dashboard-carousel.is-ring .ring-card.is-front { opacity: 1; pointer-events: auto; background: var(--surface); border-color: var(--edge); box-shadow: 0 22px 48px rgba(0,0,0,.52); }
-.dashboard-carousel.is-ring .ring-card.is-front .card-art { border-bottom-color: var(--edge); }
-/* Only the front card carries its copy. At the rear cards' angle and depth the text would be
-   unreadable, and the reference pattern's own stated weakness is that its cards say nothing
-   about the album at all — here the front card keeps every label and the Get action. */
-.dashboard-carousel.is-ring .ring-card > :not(.card-art) { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
-.dashboard-carousel.is-ring .ring-card.is-front > :not(.card-art) { opacity: 1; }
-/* The "cover not found" copy belongs to the card a user is looking at, not to the ring. */
-.dashboard-carousel.is-ring .ring-card .card-art-placeholder { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
-.dashboard-carousel.is-ring .ring-card.is-front .card-art-placeholder { opacity: 1; }
-.dashboard-carousel.is-ring .ring-card .get-album { opacity: 0; transition: opacity .28s cubic-bezier(.16,1,.3,1); }
-.dashboard-carousel.is-ring .ring-card.is-front .get-album { opacity: 1; }
-.dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+/* Dashboard picks: a static, unranked strip of artwork tiles (DESIGN_SYSTEM.md 8, D1). The strip
+   is the native scroller above; it takes a tab stop so the arrow, Home and End keys work on it. */
+.dashboard-carousel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+/* One named button covers the whole tile and opens the album dialog. It sits under Get (z 3),
+   and its focus ring is drawn inside the clipped tile. The selector has three classes so it beats
+   the generic `.card > :not(.card-art)` side margins, which would otherwise inset it by 13px. */
+.dashboard-tile { position: relative; }
+.dashboard-tile.card > .dashboard-tile-open { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
+.dashboard-tile.card > .dashboard-tile-open:hover { background: transparent; border: 0; }
+.dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.dashboard-tile-meta { min-width: 0; }
 .dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .dashboard-carousel-heading p { margin: 0; color: var(--text-muted); font-size: 12px; }
 .dashboard-carousel-heading button { margin-left: auto; }
@@ -387,8 +368,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* The genre rows are native scroll containers. A card inside one is already reachable by Tab,
    but the container itself was not focusable, so the row could only be walked one card at a
    time. The ring has to be drawn on the container now that it is the thing that takes focus.
-   The dashboard list is no longer a scroller — it is a ring, so its focus target is the front
-   card, styled with the ring itself below. */
+   The dashboard strip takes the same treatment, styled in the dashboard block below. */
 .genre-row-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* Transient acquisition feedback. Deliberately visual only: app.js hides .notyf from
