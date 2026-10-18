@@ -1446,5 +1446,7 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Branch `recommendation/score-attribution-shortlist-diagnostics`, based on GitHub main `b4bc707186e2b9202264e960018b59b4cb3a1cd6`.
 - Extended `recommendation_profile_comparison.py` with aggregate distributions for discovery score, recent-profile bonus, Last.fm popularity bonus, recent artist play count, and exploration-family match share. Added allocation decision/category counts, selected rank distribution, and score-ranked top-k overlap/Jaccard with the final shortlist.
 - Reports omit candidate identities and per-candidate scores. Added a synthetic regression asserting deterministic aggregate values and identity-free output.
-- PR #366 is open. No local tests or private capture replay were run by the assistant. CI must be verified against the exact final PR head after the documentation commits. No live providers, publishing, deployment, or runtime verification.
-- Next action: confirm all four required workflows on the final PR head, then inspect aggregate diagnostics from the existing owner-only capture before choosing any ranking behavior change.
+- PR #366 merged at `0588ec0cc8b0ed5ad32c596c5d2c5e314f107639` from exact tested head `deabda7d04f66909a6da5b2fec7dc889ed27a200`.
+- All four required workflows passed on that exact head: syntax/full suite `39160186431`, Docker packaging/full suite/build `39160186619` (739 tests), container runtime smoke `39160186497`, and validation-only multi-architecture image validation `39160186550` (publishing paused).
+- An earlier test expectation failed and was corrected before the final successful run. No assistant-side local tests or private capture replay. No live providers, publication, deployment, or production-runtime verification.
+- Next action: inspect aggregate diagnostics from the existing owner-only capture before choosing any ranking behavior change.

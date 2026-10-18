@@ -4,9 +4,9 @@ Last reviewed: 2026-10-18 (owner-side full-engine profile responsiveness compari
 
 ## Current focus
 
-**Recommendation score attribution / shortlist diagnostics (PR #366 open).** The offline first/last-profile evaluator now includes aggregate score-component distributions and allocation/shortlist metrics to distinguish rank movement from selection effects. Regression coverage was added; the exact-head CI gate remains pending. This is a frozen-pool responsiveness diagnostic, not a quality or future-listen outcome evaluation. Private captures remain private and publishing remains paused.
+**Recommendation score attribution / shortlist diagnostics — PR #366 merged.** Merge commit `0588ec0cc8b0ed5ad32c596c5d2c5e314f107639`, exact tested PR head `deabda7d04f66909a6da5b2fec7dc889ed27a200`. All four required workflows passed on that exact head: Python syntax/full suite run `39160186431`, Docker packaging/full suite/build run `39160186619` (739 tests passed), container runtime smoke run `39160186497`, and validation-only multi-architecture image validation run `39160186550`. The evaluator now reports aggregate score components, allocation decisions, selected rank distribution, and score-ranked top-k overlap without candidate identities or per-candidate scores. No local tests or private capture replay were run by the assistant; publishing remains paused.
 
-**Next action:** verify all four required workflows on PR #366's exact final head, then inspect identity-free aggregates from the existing private comparison before deciding whether any ranking change is warranted.
+**Next action:** run the merged evaluator against the existing owner-only capture and timestamped history, then inspect the aggregate diagnostics to explain why the top-five membership stayed fixed despite rank movement. Keep the capture and identity-bearing artifacts private; do not tune weights until these metrics are reviewed.
 
 
 
