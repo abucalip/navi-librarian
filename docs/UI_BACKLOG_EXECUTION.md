@@ -1234,7 +1234,7 @@ Recorded here because the verifier itself is not published.
 
 ## 9. Redesign Phase 0 baseline (2026-10-18)
 
-Status: **measured and recorded; docs-only PR** (roadmap Phase 0). Nothing in `static/`, `app/templates/`, `tests/` or backend code was changed. Implemented: docs only. Automated tests: run (below). Browser-tested: baseline capture only (not a UI change). Merged / published / deployed / runtime-verified: **no**.
+Status: **measured and recorded; docs-only PR** (roadmap Phase 0). Nothing in `static/`, `app/templates/`, `tests/` or backend code was changed. Implemented: docs only. Automated tests: run (below). Browser-tested: baseline capture only (not a UI change). Merged: **yes** (PR #352, merge `40c551b`). Published / deployed / runtime-verified: **no**.
 
 ### 9.1 Pinned baseline and environment
 
@@ -1395,7 +1395,7 @@ Single browser (Chromium 141, headless) on Linux, not the owner's macOS setup; d
 
 ## 10. Redesign Phase 1 — foundations (tokens, self-hosted fonts, icon sprite)
 
-Status: **implemented on `ui/phase-1-foundations`** (roadmap Phase 1, item list in `docs/REDESIGN_ROADMAP.md` section 4). Implemented: yes. Automated tests: run (10.5). Browser-tested: partial, see 10.6 and 10.9. Merged / published / deployed / runtime-verified: **no**. Roadmap items applied: `docs/DESIGN_SYSTEM.md` sections 4.1, 5, 10, 14 and 15 (D3). No layout change; no backend, API, auth or acquisition change.
+Status: **implemented on `ui/phase-1-foundations`** (roadmap Phase 1, item list in `docs/REDESIGN_ROADMAP.md` section 4). Implemented: yes. Automated tests: run (10.5). Browser-tested: partial, see 10.6 and 10.9. Merged: **yes** (PR #353, merge `255f1ed`). Published / deployed / runtime-verified: **no**. Roadmap items applied: `docs/DESIGN_SYSTEM.md` sections 4.1, 5, 10, 14 and 15 (D3). No layout change; no backend, API, auth or acquisition change.
 
 ### 10.1 What changed
 
