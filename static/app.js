@@ -35,7 +35,7 @@ function showPage(name) {
 function moveNavBlob() {
   const blob = document.querySelector('.nav-blob');
   if (!blob) return;
-  const active = document.querySelector('.nav-list > button.active');
+  const active = document.querySelector('.nav-list button.active');
   if (!active) { blob.hidden = true; return; }
   blob.hidden = false;
   blob.style.transform = 'translateY(' + active.offsetTop + 'px)';

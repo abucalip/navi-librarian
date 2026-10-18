@@ -1,6 +1,6 @@
 # Redesign roadmap — "Chart Rundown"
 
-Status: **governance edits merged (PR #349); Phase 0 merged (PR #352); Phase 1 implemented on `ui/phase-1-foundations` (PR link in section 4, Phase 1), not merged** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `7b356a8` for Phase 1
+Status: **governance edits merged (PR #349); Phase 0 merged (PR #352); Phase 1 merged (PR #353); Phase 2 in progress: rail slice on `ui/phase-2-shell-rail` (PR link in section 4, Phase 2), not merged** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `995094a` for Phase 2
 
 This is the proposed authoritative roadmap for redesigning the Librarian web UI against `docs/DESIGN_SYSTEM.md`. It replaces the backlog in `docs/FRONTEND_DESIGN_GUIDE.md` section 8 once approved. It does not change code. Product truth is in `PRODUCT.md`; the direction contract is in `.impeccable/surfaces/app-templates-index-html.md`.
 
@@ -60,6 +60,8 @@ Goal: new look at the token level, no layout change.
 - Exit: all pages render with new tokens; no horizontal overflow at the five widths; no console or network errors; no external font request; contrast table passes AA; all automated checks pass on the exact head.
 
 ### Phase 2 — Shell (M)
+
+Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral count, footer offset) is on `ui/phase-2-shell-rail`, PR link in `docs/UI_BACKLOG_EXECUTION.md` section 11. Open for the owner: the top-bar search (D5, library-wide, needs a contract, see section 9) and whether a third System group returns (Settings is in the header menu per PR #327).
 
 - Left rail with icons and three groups, 232px; top bar with breadcrumb, page-scoped search and the settings/user menu; Acquisitions count as a numeral.
 - Responsive rail: icon rail under 900px, bottom tab bar under 620px. Remove the goo filter and spring easing; replace the blob with a `translateY` bar. Resolve the Settings/Log out placement already flagged in `UI_BACKLOG_EXECUTION.md` 5b.

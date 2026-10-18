@@ -1504,3 +1504,78 @@ Status: see the PR description. Applied and rejected guidance is recorded there,
 - Type-scale tokens (`--text-*`) are defined but not yet applied to elements.
 - Display 600 and body/mono 700 weights render with the nearest shipped face (see 10.6).
 - Owner blockers unchanged: B1 (backend-owned 502), B2 (third-party images in the album modal, owner decision still needed: vendor brand marks with licences, or use text links; not decided here, left for Phase 6 unless the owner asks earlier).
+
+## 11. Redesign Phase 2 — shell, slice A (left rail)
+
+Status: **implemented on `ui/phase-2-shell-rail`** (roadmap Phase 2, item "left rail with icons and three groups, 232px; Acquisitions count as a numeral"). Implemented: yes. Automated tests: run (11.4). Browser-tested: partial, sandbox only (11.5). Merged / published / deployed / runtime-verified: **no**. PR head SHA and link: recorded in the PR description. Design-system sections applied: 9.3 (rail item, count as numeral), 10 (sprite icons), 13 (no eyebrow or mono label). No backend, API, auth or acquisition change.
+
+### 11.1 What changed
+
+- **Rail markup** (`app/templates/index.html`): seven items keep their accessible names, routes and `data-page` values. Each gets a decorative sprite icon from `static/icons.svg` (`layout-dashboard`, `download`, `compass`, `calendar-plus`, `user-round`, `library`, `mic-vocal`). Items sit in two `role="group"` containers with visible labels: **Collection** (Dashboard, Acquisitions) and **Discover** (Recommendations, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives).
+- **Width:** one token, `--rail-w: 232px`. Main and footer offsets are derived from it (`calc(var(--rail-w) + 34px)` at desktop, `+ 18px` at 1200px). At 900px the rail is 200px, not 232px, to fit an icon plus label (see 11.3).
+- **Footer:** the footer sits outside `<main>`, so it had no rail offset and its text ran under the fixed rail at 1440px (the Phase 1 limitation recorded in 10.6). It now takes the same offset as main.
+- **Count:** the Acquisitions count is plain tabular text (`.nav-count`), not a pill. It stays hidden at zero, as before.
+- **Removed:** the mono `YOUR COLLECTION` heading (10px mono, the eyebrow pattern the craft floor refuses). Replaced by the two group labels at 12px body text.
+- **Indicator:** the goo blob is still present in this slice. It is replaced in slice B with the responsive rail. Its height is 44px to match the new row height, and `moveNavBlob` now finds the active item inside the groups (`static/app.js`).
+- **Touch targets:** rail rows are 44px tall (`min-height`), up from about 40px.
+
+### 11.2 Decisions taken without the owner (state these in review)
+
+1. **No System group.** The surface brief names three groups. Settings and Log out already live in the header menu (section 5m, PR #327), and `tests/test_header_menu_ui_contract.py` asserts they are not in the rail. Adding Settings back to a System group would reverse that merged decision, so the rail has two groups. Whether a third group returns is an owner call; it is recorded as open in `docs/REDESIGN_ROADMAP.md` Phase 2.
+2. **Collection before Discover.** The brief lists Discover first. Dashboard is the landing page, so its group leads. Order change only; no item moved.
+3. **Terminology kept.** The discover page is "Recommendations" in the rail, as users know it. The design system's shorter "Discover music" name is not adopted here, to avoid a silent rename.
+4. **Interim 900px width.** A 184px rail clips "Recommendations" once an icon is added. The 900px rule is widened to 200px in this slice. Slice B replaces that band with an icon-only rail, so the 200px value is transitional.
+
+### 11.3 Problems found by rendering, not by reading
+
+- At 900px, with icons added at 184px, "Recommendations" ran past the active highlight. Fixed by the 200px interim width above.
+- The footer clip at 1440px (Phase 1 limitation). Fixed by the offset above; verified in the 1440 render.
+
+### 11.4 Checks actually run (on the branch, before the PR head was pushed)
+
+| Check | Result |
+|---|---|
+| `node --check static/app.js` | ok |
+| `python -m compileall -q app static` | ok |
+| `python -m unittest tests.test_shell_rail_ui_contract tests.test_header_menu_ui_contract tests.test_fonts_and_icons_ui_contract` | 37 tests, OK |
+| `python -m unittest discover -s tests` | 726 tests, OK |
+
+The new `tests/test_shell_rail_ui_contract.py` (11 tests) is additive: no existing assertion was changed or deleted. It pins the accessible names and routes of the seven items, the two named groups, that each icon names an existing sprite symbol, the decorative icon attributes, the `--rail-w` token and the footer offset, the absence of the old eyebrow, the numeral count, the blob selector, and the 44px row height.
+
+### 11.5 Browser checks (sandbox, not the owner's helper)
+
+`~/navi-librarian-test/test-pr.sh` is **not present** in this container, so the documented helper was not run. Instead: `uvicorn app.main:app` on `127.0.0.1:8101` with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` under a sandbox directory outside the repository, `SLSKD_URL=http://127.0.0.1:9`, empty key. Chromium 141 via Playwright. Fresh data (no library); the account was created through the setup route.
+
+| Width | Dashboard, Recommendations, Acquisitions: overflow / console / failed / external |
+|---|---|
+| 1440 | 0 px / none / none / none |
+| 1200 | 0 px / none / none / none |
+| 900 | 0 px / none / none / none |
+| 620 | 0 px / none / none / none |
+| 390 | 0 px / none / none / none |
+
+- **Settings** (opened through the header menu) at all five widths: no overflow; one console error, `502` on `GET /api/settings/listenbrainz`. That is **B1**, pre-existing on `main` and recorded in 10.6. A second, unrelated `failed` entry (`/api/acquisitions/stream`) came from the capture script navigating away from Acquisitions while its stream was open. It is not an app error.
+- **Keyboard:** from the skip link, Tab reaches the gear, then each of the seven rail items in order. Every stop shows a 2px solid outline. Every rail row measured 44px tall.
+- **Active-download count:** the sandbox has no jobs, so the count was **reconstructed in the DOM** (set to `3` and un-hidden in the page) for a screenshot only. The numeral renders as plain text. This is labelled reconstructed, not a real acquisition state.
+- **Screenshots:** before captures (dashboard, five widths) and after captures (dashboard, recommendations, acquisitions, five widths) are under `/tmp/claude-0/shots/` in the working container, not in the repository. They are not attached to the repository.
+- **Contrast:** the rail labels use `--text-muted` and `--text-subtle` tokens already measured in Phase 1 (10.6). The active row is `--accent-dim` fill with `--text`. The active row was not separately re-measured.
+
+### 11.6 Impeccable
+
+- **Read before editing:** the surface brief (`.impeccable/surfaces/app-templates-index-html.md`), the product brief and design system (`docs/DESIGN_SYSTEM.md` 9.3, 10, 11, 13), and the craft-floor reference. The `docs/UI_BACKLOG_EXECUTION.md` protocol points at `.pi/skills/impeccable/reference/`, which is **not in this repository**; the same guidance was read from the plugin skill.
+- **Applied:** icons from one drawn library in one stroke weight (sprite symbols, not Unicode glyphs); group labels as text, not an eyebrow or a numbered section; a single width token; the footer given the same offset as main; the count as a numeral rather than a pill.
+- **Rejected:** a third System group (see 11.2); changing the discover label to the brief's "Discover music"; any new motion in this slice (the blob and its spring are slice B's job, and are not extended here).
+- **Detector:** the design hook ran on the template and stylesheet edits. On `index.html` it reported two findings, both **pre-existing on `main`** and outside this slice: `broken-image` (the album modal `<img id="albumModalArtwork">` has no `src` until JS sets it) and `tiny-text` (sub-12px text). Both are left standing for their own items. The stylesheet scan reported no issues.
+
+### 11.7 Limitations
+
+- Fresh data only. The rail count is reconstructed, not observed from a real job.
+- Two groups, not three (11.2).
+- Top-bar search and breadcrumb are not in this slice. The breadcrumb is not started. The search is blocked by D5 (library-wide scope needs a backend contract; see `docs/DESIGN_SYSTEM.md` section 15 and `docs/REDESIGN_ROADMAP.md` section 9).
+- The 620px and below bar is still the horizontal scroller with labels (it now shows icons too). The bottom tab bar and icon-only 620–900 rail are slice B.
+- Chromium only. No screen-reader pass. No reduced-motion check of the blob, which is unchanged in this slice.
+- The documented helper was not run (11.5).
+
+### 11.8 Next action
+
+Slice B: icon-only rail between 620 and 900px, bottom tab bar under 620px, goo filter and spring easing removed, indicator as a `translateY` bar. Owner input still needed on D5 before the top-bar search.
