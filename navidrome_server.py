@@ -666,6 +666,12 @@ def recommend_new_music(
         "debug_all_candidates": candidate_debug,
 
         "category_targets": targets,
+        "allocator_checked_count": allocation.checked_count,
+        "allocator_max_checks": 60,
+        "allocator_phase_diagnostics": dict(allocation.phase_diagnostics),
+        "allocator_decision_counts": dict(Counter(
+            decision.status for decision in allocation.decisions
+        )),
         "category_counts": dict(selected_counts),
         "category_shortfalls": {
             category: max(0, target - selected_counts.get(category, 0))
