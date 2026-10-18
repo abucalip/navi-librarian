@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-18 (rank-based relevance normalization implementation in progress)
+Last reviewed: 2026-10-18 (rank-based relevance normalization merged)
 
 ## Current focus
 
@@ -14,7 +14,7 @@ PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR
 
 PR #336 merged at `91bc647c5300d42d10f6bd393645a481c6d25474` from exact head `1c4f958d662ead5b5a3f5ea4485b1e8f17efb20f`. All four required workflows passed on that exact head: Python syntax check run `1670` (`39122256427`), Docker packaging run `1578` (`39122256409`), container runtime smoke run `1387` (`39122256392`), and validation-only Docker image run `1431` (`39122256401`, publishing paused). Documentation-only; no tests or private fixture evaluation were run.
 
-Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** verify rank-based relevance normalization and cross-pool tests on the exact final PR head, then address missing-tag neutrality. The identity-free 0–100 sweep is complete against the existing private fixture with relevance floor fixed at 0; no live capture was collected and the dismissed 35-combination/floor sweep was not rerun. The Recommendation diversity settings UI remains blocked until normalization, missing-tag neutrality, and final-shortlist quality/category guardrails are satisfied.
+Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** address missing-tag neutrality in MMR similarity, including tests for either/both candidates untagged and genuinely dissimilar tagged pairs; then add final-shortlist quality/category metrics. Rank-based normalization merged in PR #338 at `8ce1fc0de31135653781edc231e5f77698cb8773`, from exact CI-verified head `5eda37a77a2c623b06843a87800e306a16e92412`. The identity-free 0–100 sweep is complete against the existing private fixture with relevance floor fixed at 0; no live capture was collected and the dismissed 35-combination/floor sweep was not rerun. The Recommendation diversity settings UI remains blocked until normalization, missing-tag neutrality, and final-shortlist quality/category guardrails are satisfied.
 
 ## Recommendation baseline and prior work
 

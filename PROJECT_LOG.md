@@ -1250,3 +1250,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Added tests for score-scale/gap invariance, tied and constant-score pools, and updated relevance-floor expectations. Updated the diversity roadmap and project status. No private fixture replay, live providers, UI work, publishing, deployment, or runtime verification was performed.
 - PR #338 exact head at this entry: `722972033c1470030f9ff986e5e474b7bd8283c4`. Required CI was in progress; no test or CI pass is claimed. No assistant-side local tests were run.
 - Next action: confirm all four required workflows on the exact final PR head, fix any failures, and merge only after review and gates pass. Then address missing-tag neutrality; keep the diversity UI blocked.
+
+
+## 2026-10-18 — PR #338 merged: rank-based relevance normalization
+
+- PR #338 squash-merged at `8ce1fc0de31135653781edc231e5f77698cb8773`, from exact CI-verified head `5eda37a77a2c623b06843a87800e306a16e92412`.
+- Replaced min-max normalization with descending average-rank relevance. Equal scores share relevance; constant-score pools assign relevance 1; selection ties remain deterministic. Added score-gap/scale, tie, constant-pool, and relevance-floor regressions.
+- All four workflows passed on the exact head: syntax/safety `1682` (`39124360180`), packaging/unit tests/build `1590` (`39124360039`), container smoke `1399` (`39124359849`), non-publishing multi-architecture validation `1443` (`39124359917`). No assistant-side local tests or private fixture replay.
+- Publishing remains paused; no UI, publication, deployment, or runtime verification. Next: missing-tag neutrality tests, then final-shortlist quality/category metrics.
