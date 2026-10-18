@@ -46,6 +46,15 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     processed: set[tuple[str, str]] = set()
     decisions: dict[str, CandidateDecision] = {}
     checked = 0
+    phase_diagnostics = {
+        "diversity_reservation_attempts": 0,
+        "category_quota_attempts": 0,
+        "family_cap_relaxation_attempts": 0,
+        "quota_retry_attempts": 0,
+        "unclassified_fallback_attempts": 0,
+        "final_fallback_entered": 0,
+        "final_fallback_attempts": 0,
+    }
 
     def ranked_candidates(items):
         """Apply MMR only to ownership-clear candidates at each selection step."""
@@ -164,6 +173,10 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         if style not in request.diversity_style_targets and family:
             selected_families[family] += 1
 
+    def consider_in_phase(candidate: AllocationCandidate, phase: str, **kwargs) -> None:
+        phase_diagnostics[f"{phase}_attempts"] += 1
+        consider(candidate, **kwargs)
+
     # Reserve configured diversity slots first, in mapping insertion order.
     for style, target in request.diversity_style_targets.items():
         if len(selected) >= request.count or checked >= request.max_checks:
@@ -179,7 +192,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         ):
             if selected_styles[style] >= target:
                 break
-            consider(candidate)
+            consider_in_phase(candidate, "diversity_reservation")
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -189,7 +202,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             target = request.category_targets.get(category, 0)
             if selected_counts[category] >= target:
                 break
-            consider(candidate)
+            consider_in_phase(candidate, "category_quota")
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
         if len(selected) >= request.count or checked >= request.max_checks:
@@ -202,7 +215,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         for candidate in ranked_candidates(ordered_by_category[category]):
             if selected_counts[category] >= request.category_targets.get(category, 0):
                 break
-            consider(candidate, allow_over_family_cap=True)
+            consider_in_phase(candidate, "family_cap_relaxation", allow_over_family_cap=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -214,7 +227,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             for candidate in ranked_candidates(ordered_by_category[category]):
                 if selected_counts[category] >= request.category_targets.get(category, 0):
                     break
-                consider(candidate)
+                consider_in_phase(candidate, "quota_retry")
                 if len(selected) >= request.count or checked >= request.max_checks:
                     break
             if len(selected) >= request.count or checked >= request.max_checks:
@@ -223,11 +236,12 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     # Use unclassified candidates before relaxing all remaining policy limits.
     if len(selected) < request.count and checked < request.max_checks:
         for candidate in ranked_candidates(ordered_by_category["unclassified"]):
-            consider(candidate, allow_over_quota=True)
+            consider_in_phase(candidate, "unclassified_fallback", allow_over_quota=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
     if len(selected) < request.count and checked < request.max_checks:
+        phase_diagnostics["final_fallback_entered"] = 1
         category_order = {
             "adjacent": 0,
             "cross_genre": 1,
@@ -249,8 +263,8 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             fallback_base, key=lambda item: item.score, reverse=True
         )
         for candidate in ranked_candidates(remaining):
-            consider(candidate, allow_over_quota=True,
-                     allow_over_family_cap=True, allow_over_style_target=True)
+            consider_in_phase(candidate, "final_fallback", allow_over_quota=True,
+                              allow_over_family_cap=True, allow_over_style_target=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -261,4 +275,5 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         decisions=tuple(decisions.values()),
         category_counts=dict(selected_counts),
         checked_count=checked,
+        phase_diagnostics=phase_diagnostics,
     )
