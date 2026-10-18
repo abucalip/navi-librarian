@@ -1734,7 +1734,7 @@ Roadmap item: Phase 3, third item (Personal Discoveries). Merged: PR #372 as `f1
 
 ## 16. Redesign Phase 3 — Add to your collection as ranked rows (`ui/phase-3-add-to-collection`)
 
-Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). Design system sections applied: 8 (rows with acquisition focus, Get prominent; rule 2 for an order that is not a score ranking: muted position, no red numeral, basis named in the status line; rule 4, no numeral derived from data the API does not return), 9.2 (Get state machine kept), 9.4 (ranked row), 9.6 (skeleton, status line, empty and error states), 12 (accessibility floor). Base: `origin/main` at `31ef78a` (PR #374 merged). PR #375, head `279e65e`. Not merged, not deployed.
+Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). Design system sections applied: 8 (rows with acquisition focus, Get prominent; rule 2 for an order that is not a score ranking: muted position, no red numeral, basis named in the status line; rule 4, no numeral derived from data the API does not return), 9.2 (Get state machine kept), 9.4 (ranked row), 9.6 (skeleton, status line, empty and error states), 12 (accessibility floor). Base: `origin/main` at `31ef78a` (PR #374 merged). PR #375, merged as squash `5c9e3e9` (head `2a70386`) on 2026-10-18. Not deployed.
 
 **Endpoint and fields.** The page uses `GET /api/discovery/classics?count=100&nonce=…` (unchanged) and the feedback endpoint `POST /api/discovery/feedback` with `dismiss` and `dismiss_artist`. Fields read: `artist`, `album`, `discovery_type` / `discovery_category`, `reason`, `anchor_artist`, `lastfm_playcount`, `year`. No endpoint or field was added or invented. No contract proposal is needed.
 
