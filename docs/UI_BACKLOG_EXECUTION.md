@@ -1774,3 +1774,53 @@ Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). 
 **Known limitations.** The title tooltip no longer carries the year. The 390px bottom tab bar overlaps the list (the open follow-up for seven bottom tabs under 620px). Artwork is absent in the fixture. The live-library check is for Hamdi to run.
 
 **Next action.** Hamdi runs this page on a live library locally against the PR head SHA, and decides whether to merge.
+
+## 17. Redesign Phase 4 — Artist Deep Dives (`ui/phase-4-artist-deep-dives`, PR #378, merged)
+
+Merged as squash `fb596c7` on 2026-10-18 after CI on head `2ff746e` (compile, test-and-build, validate-container, container-smoke: all success), no open review threads, and owner instruction to merge. Not deployed. The live-library check and the confirm-step decision remain with the owner.
+
+Roadmap item: Phase 4, Artist Deep Dives (the Dashboard item waits on decision D1 and is not in this PR). Design system sections applied: 8 (the composition for Artist Deep Dives: genre sections, artist-led tiles, a horizontal strip per genre that shows arrows only when it overflows), 9.1 (icon button: 44×44 hit area, 20px sprite icon, `aria-label`, focus ring), 9.2 (Get control, unchanged), 10 (icons from `static/icons.svg`), 12 (accessibility and touch-target floor). Base: `origin/main` at `da908b5` (PR #376, which records PR #375 as merged). PR 375 (`5c9e3e9`) was already recorded in the roadmap on `main`.
+
+**What was already on `main`.** Genre sections (`.genre-row`) with a horizontal `.genre-row-track`, one artist-led card per album, a genre heading with the album count, arrows that are hidden and removed from the tab order unless the track overflows (`syncArrows`, re-checked on resize and on content change), and the existing `/api/discovery/artist_deep_dive` request, pool size (150), 15-per-genre cap and one-album-per-artist rule. This PR does not change any of that.
+
+**What changed.**
+- Arrows: the text glyphs `<` and `>` (display face, 36px, with a text shadow) are now the sprite's `chevron-left` and `chevron-right` at 20px in the 44×44 hit area. The `::after` expansion is gone because the box is already 44px. The hover scale is gone; hover is a colour change to `--accent-hover`.
+- Not for me: the text `×` is now the sprite's `x` icon at 20px in a 44×44 hit area (it was about 16×16 with a 3px padding). The text shadow is removed. Hover goes to `--text` (the same hover as the ranked-row dismiss). The focus ring sits inside the artwork corner (`outline-offset: -4px`), because the artwork is clipped. Its `title`, `aria-label` and action are unchanged.
+- Genre count: "15 albums" was 10px mono; it is now 13px (`--text-sm`) in the body face, `--text-muted`, tabular numerals. Mono is kept for technical metadata only (DESIGN_SYSTEM.md 5).
+- Copy: a one-album genre now reads "1 album", not "1 albums".
+- A small `spriteIcon(name)` helper in `static/app.js` builds the `<svg><use>` with DOM APIs. The name is always a literal; nothing from the API is put into markup.
+
+**Not changed.** Get and its state machine, the row-open modal, Not for me and its request (`POST /api/discovery/feedback`, `action: dismiss`), the endpoint and its parameters, the grouping and ordering rules, the status line, the empty-state copy, and all server code. No endpoint, field or dependency was added. No contract proposal is needed.
+
+**Dismiss and the confirm step (finding, not changed).** The roadmap's Phase 4 item says Dismiss is "kept with its confirm step". `main` has no confirm step for this control: the click posts `dismiss` at once and the list reloads. There is no `confirm(` in the history of `static/app.js`. DESIGN_SYSTEM.md 9.1 asks for a confirm before any Dismiss. This PR keeps the current behavior, as AGENTS.md requires, and does not add a confirm. The owner should decide whether to add one in a separate PR, or to correct the roadmap wording.
+
+**Tests.** `tests/test_artist_deep_dive_ui_contract.py` gains five source contracts: sprite icons for the arrows and Not for me with names kept; the helper builds nodes without `innerHTML`; no `text-shadow` and 44px boxes on both controls; the count uses the body face; the singular/plural label. The existing three assertions are unchanged; none of them was weakened.
+
+**Checks run on the branch (before the PR head was pushed).**
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- Focused: `python3 -m unittest tests.test_artist_deep_dive_ui_contract tests.test_add_to_collection_ui_contract tests.test_classics_card_ui_contract -v`: 26 tests, OK (before the pluralize test was added; that test is in the full run).
+- Full: `python3 -m unittest discover -s tests -v`: 792 tests, OK.
+
+**Browser checks (sandbox, not the owner's helper).** `~/navi-librarian-test/test-pr.sh` is not present in this session, so the helper was not run. Two isolated uvicorn servers ran from the same sandbox layout: `origin/main` `da908b5` on 8201 and this branch on 8202, each with its own `NAVIDROME_LIBRARIAN_DATA_DIR`, sandbox `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR`, and `SLSKD_URL=http://127.0.0.1:9`. A sandbox owner account was created with `POST /api/auth/setup` on each server. `/api/discovery/artist_deep_dive` was answered by Playwright with a **RECONSTRUCTED FIXTURE** (22 albums in four genres: 15 jazz, 4 rock, 2 African, 1 electronic; no artwork; "COVER NOT FOUND" placeholders). Scripts: `render.mjs` and `keys.mjs`, copied with the screenshots to `/mnt/project-files/phase-4-artist-deep-dives/screenshots/`.
+
+| Width | Before: small targets (×) | After: small targets | Arrows visible (sections 1–4) | Overflow-x, after | Console errors, after | Failed requests, after |
+|---|---|---|---|---|---|---|
+| 1440 | 22 | 0 | jazz only | 0 | 0 | 0 |
+| 1200 | 22 | 0 | jazz only | 0 | 0 | 0 |
+| 900 | 22 | 0 | jazz, rock | 0 | 0 | 0 |
+| 620 | 22 | 0 | jazz, rock | 0 | 0 | 0 |
+| 390 | 22 | 0 | jazz, rock, African | 0 | 0 | 0 |
+
+Before and after screenshots: `before-{1440,1200,900,620,390}.png` and `after-{...}.png` in the screenshot folder. Keyboard: Tab reaches a 44px Not for me control with a visible 2px accent ring inside the artwork corner; Enter on the right chevron scrolls the Jazz track from 2px to 926px; Enter on Not for me posts `{action: "dismiss", artist, album, metadata}` to `/api/discovery/feedback` (intercepted in the sandbox, not sent to a real server) and the list reloads.
+
+Not run: the live-library check (skipped; for the owner to run locally against the PR head); a real Dismiss against a server (not run; the endpoint was intercepted); a real Get request (not run; the sandbox has no acquisition path, and the brief forbids it without authorization); reduced-motion emulation (not run; the global `prefers-reduced-motion` rule that sets `scroll-behavior: auto` is unchanged); a screen-reader pass (not run, as before); the full manual checklist from `docs/TEST_PLAN.md` against the exact PR head SHA (not run through the helper).
+
+**Impeccable.** `impeccable context` ran at the start of the session. `critique` was applied to the rendered page at five widths (the findings above are from the renders, not from reading the CSS alone). Applied: sprite icons in place of glyphs and text shadows; 44px targets; the count in the body face; the focus ring kept inside the clipped artwork. Rejected: adding a confirm step (behavior, not design; it needs the owner's decision); adding a new genre tile style or a different strip layout (the current structure already matches DESIGN_SYSTEM.md section 8); hover scale (not in the motion table). `impeccable detect` on `static/app.css`, `static/app.js` and `app/templates/index.html` reports 48 advisory notes, down from 51 on `main`. None of the 48 is on a line this PR wrote; the remaining ones are pre-existing (the album modal backdrop, the Get button font size, the type ramp and literal colours that Phase 1 and Phase 7 are to clear).
+
+**web-design-guidelines.** The skill's WebFetch of the rules URL returned a summary, not the rule list, so the rules were **not** checked line by line. The changed controls were checked by reading against the categories it names (focus visibility, accessible names on icon-only controls, touch targets, reduced motion, no `transition: all`, no overflow): the new controls have `aria-label`, a visible focus ring and 44px boxes; the new CSS adds no transition. This is a limitation, not a pass.
+
+**Known limitations.** The fixture has no artwork, so the artwork corner shows placeholders only. The Dashboard item of Phase 4 is not in this PR (waits on D1). The confirm-step finding is open. The 390px bottom tab bar issue from Phase 2 is unchanged.
+
+**Next action.** The owner runs Artist Deep Dives on a live library locally against the PR head SHA (including Not for me on a sandbox folder), and decides on the confirm step before the Dashboard item starts.

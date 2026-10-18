@@ -1649,6 +1649,20 @@ function genreRowLabel(key) {
   return labels[key] || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
+/** Icon from the vendored sprite (DESIGN_SYSTEM.md 10). The name is always a literal, so no
+ *  markup is built from data; the element is created with DOM APIs, not innerHTML. */
+function spriteIcon(name) {
+  const svgNs = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNs, 'svg');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const use = document.createElementNS(svgNs, 'use');
+  use.setAttribute('href', '/static/icons.svg#' + name);
+  svg.append(use);
+  return svg;
+}
+
 /** ResizeObservers watching genre-row overflow, disconnected on every re-render. */
 const genreRowObservers = [];
 const genreRowResizeHandlers = [];
@@ -1737,18 +1751,18 @@ async function loadDiscovery(name, options = {}) {
         const heading = document.createElement('div');
         heading.className = 'genre-row-heading';
         addTextElement(heading, 'h3', '', genreRowLabel(genre));
-        addTextElement(heading, 'span', 'genre-row-count', `${genreItems.length} albums`);
+        addTextElement(heading, 'span', 'genre-row-count', pluralize(genreItems.length, 'album', 'albums'));
         const arrows = document.createElement('div');
         arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
         makeScrollTrackFocusable(track, genreRowLabel(genre) + ' albums');
         const arrowList = [];
-        for (const [symbol, direction] of [['<', -1], ['>', 1]]) {
+        for (const [icon, direction] of [['chevron-left', -1], ['chevron-right', 1]]) {
           const arrow = document.createElement('button');
           arrow.className = 'genre-row-arrow';
           arrow.type = 'button';
-          arrow.textContent = symbol;
+          arrow.append(spriteIcon(icon));
           arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');
           arrow.addEventListener('click', () => scrollTrackBy(track, direction * trackScrollStep(track)));
           arrows.append(arrow);
@@ -1883,7 +1897,7 @@ async function loadDiscovery(name, options = {}) {
 
       const notForMe = document.createElement('button');
       notForMe.className = 'deep-dive-dismiss';
-      notForMe.textContent = '×';
+      notForMe.append(spriteIcon('x'));
       notForMe.title = 'Not for me';
       notForMe.setAttribute('aria-label', notForMe.title);
       notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name));
