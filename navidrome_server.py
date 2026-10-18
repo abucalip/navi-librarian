@@ -89,7 +89,6 @@ def _default_music_dir():
 MUSIC_DIR = _default_music_dir()
 
 
-
 def api_call(method, **params):
     """Compatibility adapter for the extracted Navidrome API client."""
     return _navidrome_client.api_call(
@@ -452,8 +451,7 @@ def recommend_new_music(
         ))
 
     cooled_candidates, ranking_context = prepare_ranking_inputs(
-        allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override,
-        now_fn=time.time,
+        allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override, now_fn=time.time,
         diversity_setting_fn=lambda: _service_settings.recommendation_diversity_value(_discovery_settings_read),
     )
     allocation = allocate_personal_recommendations(AllocationRequest(
@@ -712,7 +710,6 @@ def recommend_new_music(
             ranking_context=ranking_context,
         )
     return encoded
-
 
 
 # Persistent discovery state and settings live in the configurable data directory.
@@ -1833,7 +1830,6 @@ def _discovery_filename_key(value):
 def _discovery_match_completed_album_files(folder, candidate):
     """Compatibility wrapper for strict completion-file matching."""
     return _acquisition_match_completed_album_files(folder, candidate)
-
 
 
 def _discovery_inspect_completed_album(download_root, candidate):
