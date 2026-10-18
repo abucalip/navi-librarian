@@ -15,8 +15,7 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
-from discovery_recommendations import decayed_listen_weights, recent_style_families
-from discovery_recommendations import music_key
+from discovery_recommendations import decayed_listen_weights, recent_style_families, music_key
 from recommendation_replay import load_capture, thaw_gathered_inputs, _validate_ranking_context
 
 _DAY = 24 * 60 * 60
@@ -85,8 +84,6 @@ def build_profile_variant(
     listens: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Clone the frozen snapshot and replace only listen-derived profile fields."""
-    from discovery_recommendations import music_key as normalize_music_key
-
     gathered = copy.deepcopy(gathered_template)
     weights = decayed_listen_weights(listens, half_life_days=14.0)
     recent_artists: Counter[str] = Counter()
@@ -101,7 +98,7 @@ def build_profile_variant(
         metadata = listen.get("track_metadata") or {}
         artist = metadata.get("artist_name")
         if artist:
-            key = normalize_music_key(artist)
+            key = music_key(artist)
             recent_artists[key] += weight
             artist_play_counts[key] += 1
         mbid = _artist_mbid(listen)
@@ -182,7 +179,84 @@ def _recommendation_identities(output: Mapping[str, Any]) -> list[tuple[str, str
     ]
 
 
-def compare_outputs(first: Mapping[str, Any], last: Mapping[str, Any]) -> dict[str, Any]:
+def _distribution(values: list[float]) -> dict[str, float | int | None]:
+    """Summarize numeric components without exposing per-candidate values."""
+    if not values:
+        return {"count": 0, "mean": None, "min": None, "max": None}
+    return {
+        "count": len(values),
+        "mean": round(sum(values) / len(values), 6),
+        "min": round(min(values), 6),
+        "max": round(max(values), 6),
+    }
+
+
+def summarize_score_and_shortlist(output: Mapping[str, Any], count: int) -> dict[str, Any]:
+    """Attribute aggregate score components and report shortlist/allocation effects.
+
+    Candidate identities, labels, and per-candidate scores are intentionally
+    excluded from the returned report.
+    """
+    rows = list(output.get("debug_all_candidates", []))
+    rec_ids = set(_recommendation_identities(output))
+    ranked = _ranked_identities(output)
+    rank_by_id = {identity: index + 1 for index, identity in enumerate(ranked)}
+    selected_rows = [
+        row for row in rows
+        if _identity(row) in rec_ids
+    ]
+    statuses = Counter(str(row.get("selection_decision") or "unknown") for row in rows)
+    selected_categories = Counter(
+        str(row.get("assigned_category") or "unknown") for row in selected_rows
+    )
+    all_categories = Counter(
+        str(row.get("assigned_category") or "unknown") for row in rows
+    )
+    selected_ranks = [
+        rank_by_id[_identity(row)] for row in selected_rows
+        if _identity(row) in rank_by_id
+    ]
+    component_names = (
+        "discovery_score", "recent_profile_bonus", "lastfm_popularity_bonus",
+        "recent_artist_play_count",
+    )
+    components = {
+        name: _distribution([
+            float(row[name]) for row in rows
+            if isinstance(row.get(name), (int, float))
+            and not isinstance(row.get(name), bool)
+            and math.isfinite(float(row[name]))
+        ])
+        for name in component_names
+    }
+    components["exploration_family_match_share"] = round(
+        sum(bool(row.get("exploration_family_match")) for row in rows) / len(rows), 6
+    ) if rows else 0.0
+    components["profile_bonus_above_neutral_share"] = round(
+        sum(float(row.get("recent_profile_bonus", 1.0) or 1.0) > 1.0 for row in rows) / len(rows), 6
+    ) if rows else 0.0
+    components["popularity_bonus_above_neutral_share"] = round(
+        sum(float(row.get("lastfm_popularity_bonus", 1.0) or 1.0) > 1.0 for row in rows) / len(rows), 6
+    ) if rows else 0.0
+    top_k_ids = set(ranked[:count])
+    return {
+        "candidate_count": len(rows),
+        "component_distributions": components,
+        "allocation_decision_counts": dict(sorted(statuses.items())),
+        "category_candidate_counts": dict(sorted(all_categories.items())),
+        "selected_category_counts": dict(sorted(selected_categories.items())),
+        "selected_rank_distribution": _distribution([float(rank) for rank in selected_ranks]),
+        "selected_in_score_ranked_top_k": sum(identity in top_k_ids for identity in rec_ids),
+        "requested_count": count,
+        "returned_count": len(rec_ids),
+        "score_ranked_top_k_overlap": len(top_k_ids & rec_ids),
+        "score_ranked_top_k_jaccard": round(
+            len(top_k_ids & rec_ids) / len(top_k_ids | rec_ids), 6
+        ) if top_k_ids or rec_ids else 1.0,
+    }
+
+
+def compare_outputs(first: Mapping[str, Any], last: Mapping[str, Any], count: int = 5) -> dict[str, Any]:
     """Produce aggregate-only responsiveness metrics; never serialize identities."""
     first_recs = _recommendation_identities(first)
     last_recs = _recommendation_identities(last)
@@ -218,6 +292,8 @@ def compare_outputs(first: Mapping[str, Any], last: Mapping[str, Any]) -> dict[s
         "shared_candidates_max_rank_displacement": max(displacements, default=0),
         "ranked_candidate_order_changed": first_rank != last_rank,
         "recommendation_order_changed": first_recs != last_recs,
+        "score_and_shortlist_first": summarize_score_and_shortlist(first, count),
+        "score_and_shortlist_last": summarize_score_and_shortlist(last, count),
     }
 
 
@@ -255,10 +331,9 @@ def evaluate(capture_path: str, history_path: str) -> dict[str, Any]:
 
     first_output, first_tape = run(first_gathered)
     last_output, last_tape = run(last_gathered)
-    # Repeat each condition to verify deterministic output with identical inputs.
     first_repeat, _ = run(first_gathered)
     last_repeat, _ = run(last_gathered)
-    comparison = compare_outputs(first_output, last_output)
+    comparison = compare_outputs(first_output, last_output, int(payload["count"]))
     comparison["first_profile_repeatable"] = (
         _recommendation_identities(first_output) == _recommendation_identities(first_repeat)
         and _ranked_identities(first_output) == _ranked_identities(first_repeat)
@@ -307,7 +382,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         print(json.dumps(evaluate(args.capture, args.history), ensure_ascii=False, indent=2))
     except Exception as exc:
-        # Do not include exception messages, which may contain personal identities.
         print(json.dumps({"completed": False, "error_type": type(exc).__name__,
                           "error": "Offline profile comparison could not be completed."}))
         return 1
