@@ -1439,3 +1439,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Results: 5 recommendations from each profile; membership overlap 5/5 (Jaccard 1.0); two recommendation positions changed. Full ranked candidate order changed; 17 shared candidates changed rank, with maximum displacement 14 places. Both profile runs were deterministic on repeat.
 - Interpretation: the ranker responds to the changed profile, but the final top-five membership is stable on this frozen pool. The result does not prove relevance/quality, production candidate freshness, profile-driven query generation, future-listen hit-rate/nDCG, or causal listening effects. The capture was taken after both windows and therefore cannot be used as a chronological future-outcome replay.
 - **Next action:** inspect score-component attribution and shortlist/allocation effects using identity-free aggregate diagnostics and deterministic tests. Explain why ranked positions change without top-five membership change before tuning weights. No new live capture, provider request, publishing, deployment, or runtime verification.
+
+
+## 2026-10-18 — PR #366 score attribution and shortlist diagnostics
+
+- Branch `recommendation/score-attribution-shortlist-diagnostics`, based on GitHub main `b4bc707186e2b9202264e960018b59b4cb3a1cd6`.
+- Extended `recommendation_profile_comparison.py` with aggregate distributions for discovery score, recent-profile bonus, Last.fm popularity bonus, recent artist play count, and exploration-family match share. Added allocation decision/category counts, selected rank distribution, and score-ranked top-k overlap/Jaccard with the final shortlist.
+- Reports omit candidate identities and per-candidate scores. Added a synthetic regression asserting deterministic aggregate values and identity-free output.
+- PR #366 is open. No local tests or private capture replay were run by the assistant. CI must be verified against the exact final PR head after the documentation commits. No live providers, publishing, deployment, or runtime verification.
+- Next action: confirm all four required workflows on the final PR head, then inspect aggregate diagnostics from the existing owner-only capture before choosing any ranking behavior change.
