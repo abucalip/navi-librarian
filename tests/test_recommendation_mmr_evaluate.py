@@ -95,5 +95,16 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
             evaluate_capture(self._envelope(), limit=0)
 
 
+
+    def test_uses_assigned_category_from_captured_debug_pool(self):
+        envelope = self._envelope()
+        pool = envelope["payload"]["expected_output"]["debug_all_candidates"]
+        for item in pool[:5]:
+            item["assigned_category"] = "adjacent"
+            item.pop("discovery_category", None)
+        report = evaluate_capture(envelope, limit=4, lambdas=[0], relevance_floors=[0])
+        self.assertEqual(report["lambda_results"][0]["category_counts"], {"adjacent": 4})
+        self.assertEqual(report["baseline_category_counts"], {"adjacent": 5})
+
 if __name__ == "__main__":
     unittest.main()
