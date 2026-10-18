@@ -44,7 +44,7 @@ class DiscoveryMmrTests(unittest.TestCase):
             candidate("similar", "b", 9.8, ["jazz", "soul"]),
             candidate("different", "c", 9.7, ["funk", "afrobeat"]),
         ]
-        result = mmr_rerank(items, limit=3, lambda_=0.5)
+        result = mmr_rerank(items, limit=3, lambda_=0.6)
         self.assertEqual([item["id"] for item in result], ["anchor", "different", "similar"])
 
     def test_ties_are_deterministic_and_input_is_not_mutated(self):
@@ -69,21 +69,21 @@ class DiscoveryMmrTests(unittest.TestCase):
 
     def test_rank_normalization_is_invariant_to_score_scale_and_gaps(self):
         first_pool = [
-            candidate("top", "a", 100, []),
-            candidate("middle", "b", 90, []),
-            candidate("bottom", "c", 80, []),
+            candidate("top", "a", 100, ["jazz"]),
+            candidate("middle", "b", 90, ["jazz"]),
+            candidate("bottom", "c", 80, ["funk"]),
         ]
         rescaled_pool = [
-            candidate("top", "a", 10000, []),
-            candidate("middle", "b", 9000, []),
-            candidate("bottom", "c", 8000, []),
+            candidate("top", "a", 10000, ["jazz"]),
+            candidate("middle", "b", 9000, ["jazz"]),
+            candidate("bottom", "c", 8000, ["funk"]),
         ]
         first = mmr_rerank(first_pool, limit=3, lambda_=0)
         rescaled = mmr_rerank(rescaled_pool, limit=3, lambda_=0)
         self.assertEqual([item["id"] for item in first], [item["id"] for item in rescaled])
         self.assertEqual(
-            [item["id"] for item in mmr_rerank(first_pool, limit=3, lambda_=0.4)],
-            [item["id"] for item in mmr_rerank(rescaled_pool, limit=3, lambda_=0.4)],
+            [item["id"] for item in mmr_rerank(first_pool, limit=3, lambda_=0.6)],
+            [item["id"] for item in mmr_rerank(rescaled_pool, limit=3, lambda_=0.6)],
         )
 
     def test_equal_scores_share_rank_relevance_and_constant_pool_is_safe(self):
