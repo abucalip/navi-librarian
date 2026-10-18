@@ -67,6 +67,47 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         self.assertEqual(restored["core_families"], original["core_families"])
         self.assertEqual(restored["library_by_title"], original["library_by_title"])
 
+    def test_freeze_and_thaw_strip_mutable_ranking_fields_from_candidates(self):
+        gathered = _gathered()
+        candidate = next(iter(gathered["albums"].values()))
+        candidate.update({
+            "discovery_score": 0.91,
+            "discovery_category": "adjacent",
+            "diversity_style": "jazz",
+            "recent_profile_family": "jazz",
+            "recent_profile_families": ["jazz"],
+            "recent_profile_bonus": 1.25,
+            "lastfm_listeners": 1234,
+            "lastfm_playcount": 5678,
+            "lastfm_tags": ["jazz"],
+            "lastfm_popularity_bonus": 1.1,
+            "listening_families": ["jazz"],
+            "provider_specific_field": "preserve me",
+        })
+
+        frozen = freeze_gathered_inputs(gathered)
+        frozen_candidate = frozen["albums"][0]["value"]
+        self.assertEqual(frozen_candidate["score"], 0.5)
+        self.assertEqual(frozen_candidate["provider_specific_field"], "preserve me")
+        for key in (
+            "discovery_score", "discovery_category", "diversity_style",
+            "recent_profile_family", "recent_profile_families",
+            "recent_profile_bonus", "lastfm_listeners", "lastfm_playcount",
+            "lastfm_tags", "lastfm_popularity_bonus", "listening_families",
+        ):
+            self.assertNotIn(key, frozen_candidate)
+
+        thawed_candidate = next(iter(thaw_gathered_inputs(frozen)["albums"].values()))
+        self.assertEqual(thawed_candidate["score"], 0.5)
+        self.assertEqual(thawed_candidate["provider_specific_field"], "preserve me")
+        for key in (
+            "discovery_score", "discovery_category", "diversity_style",
+            "recent_profile_family", "recent_profile_families",
+            "recent_profile_bonus", "lastfm_listeners", "lastfm_playcount",
+            "lastfm_tags", "lastfm_popularity_bonus", "listening_families",
+        ):
+            self.assertNotIn(key, thawed_candidate)
+
     def test_capture_is_private_checksummed_and_not_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
