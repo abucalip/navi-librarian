@@ -1,3 +1,11 @@
+## 2026-10-18 — PR #370 underfill diagnostics refined after owner replay
+
+- Owner-side private schema-v2 comparison on PR #370 source reported 5 recommendations from 10 requested, 19 resolved candidates, final fallback entered with 19 attempts, 14 checked candidates against the 60-check budget, and decisions reported as 4 already-owned, 10 recent-family-cap-reached, and 5 selected. Both profiles showed the same aggregate outcome; capture/history and identity-bearing rows remain private.
+- Code inspection found that the final fallback explicitly allows over the recent-family cap, so retaining 10 final family-cap statuses is inconsistent with the pass sequence. Duplicate identity was checked after the family cap; a duplicate could retain an earlier cap decision through `decisions.setdefault`. PR #370 now checks normalized identity before soft caps and adds a deterministic regression. This changes diagnostic attribution, not selection behavior.
+- The check budget was not reached. The true reason the unique shortlist stops at five is not yet established; duplicate identities and artist-level eligibility may account for some remaining rows. No ranking weights, ownership checks, or selection policy were changed. Next: rerun the private evaluator against the updated PR head and share only aggregate diagnostics. Publishing/deployment remain paused.
+
+---
+
 ## 2026-10-18 — PR #353 merged; recommendation chronology findings recorded
 
 - PR #353 (“ui: Redesign Phase 1 foundations”) squash-merged at `255f1ed62e4ce3d3bc85dea478f214e10a7a8d22` from exact final PR head `ed6c18a9e4ca6abd43d41911dc4ce920c5ab1c84`.
