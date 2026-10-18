@@ -105,7 +105,7 @@ def _candidate_identities(rows: Iterable[dict[str, Any]]) -> set[tuple[str, str]
 
 
 def _category(row: dict[str, Any]) -> str:
-    value = row.get("discovery_category") or row.get("category") or "unknown"
+    value = row.get("discovery_category") or row.get("assigned_category") or row.get("category") or "unknown"
     return _key(value) or "unknown"
 
 
