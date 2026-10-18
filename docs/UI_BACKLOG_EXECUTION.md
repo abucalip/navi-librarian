@@ -1579,3 +1579,30 @@ The new `tests/test_shell_rail_ui_contract.py` (11 tests) is additive: no existi
 ### 11.8 Next action
 
 Slice B: icon-only rail between 620 and 900px, bottom tab bar under 620px, goo filter and spring easing removed, indicator as a `translateY` bar. Owner input still needed on D5 before the top-bar search.
+
+## 12. Redesign Phase 2 — shell, slice B (responsive rail)
+
+Status: **implemented on `ui/phase-2-shell-slice-b`; not merged; PR link pending.** Roadmap Phase 2, responsive rail: icon-only rail 621–900px, bottom tab bar under 620px, goo filter and spring easing removed, blob replaced by a `translateY` indicator. Design-system sections applied: 9.3 (rail item, active = 3px bar plus `--surface-raised`), 11 (motion: indicator `transform` on `--dur` / `--ease-out`, reduced motion ends at once), 12 (landmarks, skip link, 44px targets, focus).
+
+Settings and Log out: already in the header menu (PR #327). No placement change in this slice; `tests/test_header_menu_ui_contract.py` still asserts the rail excludes them.
+
+### 12.1 What changed
+
+- `app/templates/index.html`: the SVG goo filter and the blob layer are removed. A single `.nav-indicator` bar sits in `.nav-list`. Each rail button gets a `title` (tooltip for icon-only use). Names, groups, routes and `aria-label`s are unchanged.
+- `static/app.css`: `.nav-indicator` slides with `transform` only. `nav button.active` uses `--surface-raised`. At 621–900px the rail is 72px (`--rail-w`), labels and group names are visually hidden but stay in the accessibility tree, and the count is absolutely positioned on the icon. Under 620px the rail becomes a bottom tab bar (icon above label, `min-height` 56px, `env(safe-area-inset-bottom)`, horizontal scroll when tabs overflow), and the main content offset is recomputed.
+- `static/app.js`: `moveNavBlob` renamed to `moveNavIndicator`, same translateY logic on `.nav-indicator`.
+- `tests/test_shell_rail_ui_contract.py`: the blob-locating assertion now checks the indicator (reason: blob removed). The dashboard active-markup regex allows the new `title` attribute. New tests cover goo/spring removal, transform-only motion with reduced-motion handling, the 621–900px icon-only rule, the under-620px tab bar, and tooltips. No assertion was removed.
+
+### 12.2 Verification (exact head: see PR body)
+
+- `node --check static/app.js`: pass. `python -m compileall -q app static`: pass.
+- `python -m unittest discover -s tests`: 732 tests, OK (after `pip install -r requirements.txt --break-system-packages`).
+- Rendering: Playwright (Chromium at `/opt/pw-browsers/chromium`) against the local app on sandbox data paths (`NAVIDROME_LIBRARIAN_DATA_DIR` outside the repo, `SLSKD_URL=http://127.0.0.1:9`). Widths 1440, 1200, 900, 620, 390. Measured: no horizontal page overflow at any width; rail 232px at 1440/1200, 72px at 900, bottom bar 64px tall at 620/390; indicator top matches the active button's top at 1440, 1200 and 900; rail and tab targets ≥44px (tab buttons 63px); zero console or page errors on the dashboard. Keyboard: Tab order is skip link, header settings toggle, Dashboard, Acquisitions, Recommendations, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives, then Shuffle picks.
+- Not run: the documented `~/navi-librarian-test/test-pr.sh` helper (not present in this environment), so the TEST_PLAN manual checklist items 3–10 (discovery loads, album detail, settings save, Get, acquisitions, error states) were **not** run and are recorded as skips. Populated states are not verified: there is no library, so the dashboard shows its empty state.
+- Impeccable: `impeccable detect` and `/impeccable critique` were not run in this session; the guidance applied is limited to the design-system rules listed above. The web-design-guidelines review was not run either.
+
+### 12.3 Known limits
+
+- Under 620px the seven tabs (with two-line labels) exceed the screen width, so the bar scrolls sideways. A shorter label set or a "More" tab is an owner decision, not made here.
+- B1 (`GET /api/settings/listenbrainz` returns 502 with no username) is backend-owned and unchanged. B2 (third-party images in the album modal) is still open.
+- Top-bar search (D5) and a third System group remain out of scope.

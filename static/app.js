@@ -25,20 +25,20 @@ function showPage(name) {
     el.classList.toggle('active', el.dataset.page === name));
   // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
   $('appMenuButton').classList.toggle('is-current', name === 'settings');
-  moveNavBlob();
+  moveNavIndicator();
   syncNavAria();
 }
 
-// Slide the navigation indicator to the active item using translateY only. The blob is
-// height-locked to a nav row, so only the offset changes; animating top would force layout
-// on every navigation. Rows inside .nav-list share one width, so no width term is needed.
-function moveNavBlob() {
-  const blob = document.querySelector('.nav-blob');
-  if (!blob) return;
+// Slide the navigation indicator to the active item using translateY only. The indicator is a
+// fixed-height bar, so only the offset changes; animating top would force layout on every
+// navigation. Rows inside .nav-list share one width, so no width term is needed.
+function moveNavIndicator() {
+  const indicator = document.querySelector('.nav-indicator');
+  if (!indicator) return;
   const active = document.querySelector('.nav-list button.active');
-  if (!active) { blob.hidden = true; return; }
-  blob.hidden = false;
-  blob.style.transform = 'translateY(' + active.offsetTop + 'px)';
+  if (!active) { indicator.hidden = true; return; }
+  indicator.hidden = false;
+  indicator.style.transform = 'translateY(' + active.offsetTop + 'px)';
 }
 
 // The reference component ships no aria-selected or role=tablist, so this is added here:
@@ -126,10 +126,10 @@ document.querySelectorAll('button[data-go]').forEach(button =>
 // Place the indicator once layout is settled, and keep it aligned when the rail is
 // resized. offsetTop is only meaningful after layout, so the first move waits a frame.
 syncNavAria();
-requestAnimationFrame(moveNavBlob);
-window.addEventListener('resize', moveNavBlob);
+requestAnimationFrame(moveNavIndicator);
+window.addEventListener('resize', moveNavIndicator);
 // Web fonts change row metrics after first paint; re-align once they are ready.
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveNavBlob);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveNavIndicator);
 
 async function requestJSON(url) {
   const response = await fetch(url);
