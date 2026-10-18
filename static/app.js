@@ -1324,6 +1324,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   title.setAttribute('title', album || 'Untitled album');
   main.append(title);
   addTextElement(main, 'p', 'row-artist', artist || 'Unknown artist');
+  if (options.artistBio) attachArtistBio(row, main, artist);
   row.append(main);
   // The release-date column already shows the year, so a release-date row carries no year badge.
   if (!options.releaseDate) {
@@ -1432,6 +1433,9 @@ function buildNewReleaseRow(item) {
 function buildPersonalRow(item, index) {
   return buildRecommendationRow(item, index + 1, {
     indexed: true,
+    // Only rows whose reason says the artist connects to the listener's own genres get a bio,
+    // as the editorial card did. The bio is fetched when the row scrolls near the viewport.
+    artistBio: /Genre tags connect this artist to your established musical interests/i.test(item.reason || ''),
     meta: [
       item.discovery_category ? item.discovery_category.replaceAll('_', ' ') : '',
       item.reason,
@@ -1440,6 +1444,29 @@ function buildPersonalRow(item, index) {
     onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'personal'),
     onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal')
   });
+}
+
+// Lazy artist bio for a ranked row. Same contract as the editorial card: one request per artist
+// (cached in artistBioRequests), made only when the row is near the viewport, and the paragraph
+// stays hidden unless the API returns a bio. Text is set with textContent.
+function attachArtistBio(row, container, artist) {
+  const bio = addTextElement(container, 'p', 'artist-bio', '');
+  bio.hidden = true;
+  const loadBio = () => {
+    if (row.dataset.bioRequested) return;
+    row.dataset.bioRequested = 'true';
+    const bioKey = artist.trim().toLocaleLowerCase();
+    cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+      .then(result => {
+        if (!result || !result.bio) return;
+        bio.textContent = result.bio;
+        bio.hidden = false;
+      })
+      .catch(() => {});
+  };
+  bioLoaders.set(row, loadBio);
+  if (artistBioObserver) artistBioObserver.observe(row);
+  else loadBio();
 }
 
 // Discover music metadata lines. Each line appears only when the API returned the value.
