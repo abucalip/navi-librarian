@@ -31,7 +31,11 @@ class ClassicsCardTitleTests(unittest.TestCase):
         self.assertIn("overflow: hidden", body)
 
     def test_no_other_section_gets_the_title_clamp(self):
-        self.assertEqual(len(re.findall(r"-webkit-line-clamp", self.css)), 1)
+        # Narrow update (ranked rows, DESIGN_SYSTEM.md 9.4): Discover music rows also clamp their
+        # titles to two lines. The classics clamp stays the only clamp on a .card; no other
+        # section may add one.
+        self.assertEqual(len(re.findall(r"-webkit-line-clamp", self.css)), 2)
+        self.assertIn(".ranked-row h3 {", self.css)
 
     def test_classics_title_carries_full_name_and_year_as_tooltip(self):
         self.assertIn("if (name === 'classics') title.title", self.js)

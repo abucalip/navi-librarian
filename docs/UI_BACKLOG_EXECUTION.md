@@ -1607,3 +1607,42 @@ Settings and Log out: already in the header menu (PR #327). No placement change 
 - Under 620px the seven tabs (with two-line labels) exceed the screen width, so the bar scrolls sideways. A shorter label set or a "More" tab is an owner decision, not made here.
 - B1 (`GET /api/settings/listenbrainz` returns 502 with no username) is backend-owned and unchanged. B2 (third-party images in the album modal) is still open.
 - Top-bar search (D5) and a third System group remain out of scope.
+
+## 13. Redesign Phase 3 — Discover music as ranked rows (`ui/phase-3-discover-music`)
+
+Roadmap item: Phase 3, first item (Discover music). Design system sections applied: 9.4 (ranked row), 8 (rank numerals and truthfulness), 9.6 (skeleton, empty, error), 12 (accessibility floor). Base: `origin/main` at `b4bc707` (the brief named `45f2f4e`; main had advanced).
+
+**Implemented.** `#recommendationCards` is an ordered list of `article.ranked-row` rows instead of the card grid. Each row: numeral (display face, red text), 64px artwork, title and artist, plain-text metadata, Get and dismiss as separate controls. The whole row opens the album modal, as before. Numerals appear only when the sort basis is a real order: server order ("Recommended order"), complete `discovery_score`, or complete `lastfm_listeners`. Any sort with missing values, and the A–Z sort, shows no numerals, and the count line names the basis. Loading shows opacity-pulse skeleton rows; a failed generation is shown in the count line as well as the diagnostics panel.
+
+**Unchanged.** Get state machine and `searchAlbum`, dismiss storage key and filtering, search/category/sort controls and their order, modal, refresh behaviour, endpoints, schemas and server code. No backend, API or dependency change.
+
+**Contract tests.** `tests/test_recommendations_ui_contract.py`: new `RankedRowContractTests` class (additive). `tests/test_classics_card_ui_contract.py`: `test_no_other_section_gets_the_title_clamp` changed from exactly one `-webkit-line-clamp` to exactly two, because the ranked-row title also clamps to two lines; the test still rejects any third clamp. The classics tooltip guard is untouched (the row title uses `setAttribute`, so the single `title.title =` guard still holds).
+
+**Impeccable.** Loaded `impeccable:impeccable`; ran `context` and `critique` on the page (findings in the PR). Applied: row composition from 9.4, token-based type sizes for metadata (`--text-xs`, `--text-sm`), transform-only hover bar, reduced-motion rules, 44px get and dismiss targets. Rejected: a sparkline or score ring (not in the system), a pill per metadata value (section 13 anti-pattern; genres are plain text), a stronger category chip (kept as plain text). The `999px` pill radius on Get is the 9.2 "pill with label in rows" rule, not a new radius. `impeccable detect` ran on the three changed files; its remaining font-size and radius notes are the existing values across `static/app.css`, and its `tiny-text` and `broken-image` notes on `index.html` are on the pre-existing modal artwork image and existing 11px text, not on this change. Not changed.
+
+**web-design-guidelines.** The skill's source URL returned a summary, not the full rule list, so the review was against the summarized categories (focus, reduced motion, truncation, tabular numerals, labelled icon buttons, live region). Nothing from it was applied beyond what the design system already requires.
+
+**Checks run on the working tree before the PR head was pushed:**
+- `node --check static/app.js`: OK.
+- `python3 -m compileall -q app static`: OK.
+- `python3 -m unittest discover -s tests -v`: OK, 745 tests, 0 failures.
+- `pip install -r requirements.txt --break-system-packages`: OK.
+
+**Browser checks** (sandbox, not the documented helper): `~/navi-librarian-test/test-pr.sh` is not present in this container, so `uvicorn app.main:app` was run on `127.0.0.1:8189` with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR`, `SLSKD_DOWNLOADS_DIR` under a directory outside the repo, `SLSKD_URL=http://127.0.0.1:9`, empty key, Navidrome unconfigured. Chromium from `/opt/pw-browsers/chromium`, driven by Playwright. Data was fresh (no library); the six albums were injected through `renderRecommendations` as **reconstructed DOM**, labelled as such.
+
+| Check | Result |
+|---|---|
+| Horizontal overflow at 1440, 1200, 900, 620, 390px | Pass (0px at all five) |
+| Rendered rows, long album and artist names, missing artwork, missing score | Pass (screenshots only, reconstructed DOM) |
+| Sort basis labels for original, score, popularity, artist | Pass |
+| Keyboard: row focus, Get is a separate stop, dismiss is a separate stop, Enter opens modal, Escape returns focus to row | Pass |
+| Failed generation shows the error in the count line | Pass (502 from a route stub) |
+| Console | One expected error: the stubbed 502 |
+| Loading skeleton rows rendered | Not checked visually (the loading state was only reached between click and the stubbed 502) |
+| Get request state machine against a live server | Skip (no Navidrome configured; Get was not clicked) |
+| Live library, populated states, real artwork | Skip (fresh data, no library) |
+| Screen reader | Skip (not run) |
+| Before/after screenshots | Captured in `~/rt/shots/` in the sandbox (`before-*.png`, `after-*.png`); not uploaded to the PR |
+
+**Limitations.** Artwork in the reconstructed DOM is absent, so the artwork tile is the placeholder colour only. `--text-sm` and `--text-xs` resolve to rem values; a browser with a non-default root size changes them proportionally. The modal artwork `<img>` without a `src` (pre-existing) is still flagged by the detector.
+

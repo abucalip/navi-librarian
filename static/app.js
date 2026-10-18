@@ -717,7 +717,7 @@ async function openAlbumModal(card) {
 }
 
 document.addEventListener('click', event => {
-  const card = event.target.closest && event.target.closest('.card[data-album-title]');
+  const card = event.target.closest && event.target.closest('.card[data-album-title], .ranked-row[data-album-title]');
   if (!card || event.target.closest('button, a, input, select, textarea')) return;
   openAlbumModal(card);
 });
@@ -726,7 +726,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
   else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});
   if (event.key === 'Tab' && albumModalOpen) trapAlbumModalFocus(event);
-  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title]')) {
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title], .ranked-row[data-album-title]')) {
     event.preventDefault(); openAlbumModal(event.target);
   }
 });
@@ -1251,106 +1251,117 @@ function applyRecommendationFilters() {
       ));
   }
 
+  const basis = rankingBasis(sort, filtered);
   $('recommendationCount').textContent =
-    `Showing ${filtered.length} of ${allRecommendations.length} recommendations`;
+    `Showing ${filtered.length} of ${allRecommendations.length} recommendations · ${basis.label}`;
 
-  for (const item of filtered) {
-    const card = document.createElement('article');
-    card.className = 'card editorial-card';
-    const artist = item.artist || item.album_artist || '';
-    const album = item.album || item.title || item.name || '';
-    makeAlbumCardInteractive(card, artist, album, item);
-    attachArtwork(card, artist, album);
-    const artContainer = card.querySelector('.card-art');
-    artContainer.append(createGetButton(artist, album, item));
-    const dismissButton = document.createElement('button');
-    dismissButton.className = 'deep-dive-dismiss';
-    dismissButton.textContent = '×';
-    dismissButton.title = 'Not for me';
-    dismissButton.setAttribute('aria-label', 'Not for me');
-    dismissButton.addEventListener('click', () => {
-      const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
-      const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
-      dismissed.add(key);
-      localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
-      applyRecommendationFilters();
-    });
-    artContainer.append(dismissButton);
-
-    const categoryName = (item.discovery_category || 'Unclassified')
-      .replaceAll('_', ' ');
-
-    addTextElement(card, 'p', 'card-category', categoryName);
-
-    const title = document.createElement('h3');
-    title.append(document.createTextNode(item.album || item.title || item.name || 'Untitled album'));
-    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
-    if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
-    card.append(title);
-    ensureAlbumYearBadge(card);
-
-    addTextElement(
-      card, 'p', 'card-artist',
-      item.artist || item.album_artist || 'Unknown artist'
-    );
-
-    const genres = [
-      ...(Array.isArray(item.genres) ? item.genres : []),
-      ...(Array.isArray(item.genre_families) ? item.genre_families : [])
-    ];
-
-    if (genres.length) {
-      const genreList = document.createElement('div');
-      genreList.className = 'genre-list';
-
-      for (const genre of [...new Set(genres)]) {
-        addTextElement(genreList, 'span', 'genre-tag', genre);
-      }
-
-      card.append(genreList);
-    }
-
-    if (item.diversity_style) {
-      addTextElement(
-        card, 'p', 'card-meta',
-        'Style: ' + item.diversity_style.replaceAll('_', ' ')
-      );
-    }
-
-    const listeners = numeric(item.lastfm_listeners);
-    if (listeners !== null) {
-      addTextElement(
-        card, 'p', 'card-meta',
-        'Last.fm artist listeners: ' + listeners.toLocaleString()
-      );
-    }
-
-    const score = numeric(item.discovery_score);
-    if (score !== null) {
-      addTextElement(
-        card, 'p', 'card-meta',
-        'Discovery score: ' + score.toFixed(4)
-      );
-    }
-
-    if (item.discovery_source) {
-      addTextElement(
-        card, 'p', 'card-source',
-        'Source: ' + item.discovery_source.replaceAll('_', ' ')
-      );
-    }
-
-    cards.append(card);
-  }
+  filtered.forEach((item, index) => {
+    cards.append(buildRecommendationRow(item, basis.numbered ? index + 1 : null));
+  });
 
   if (!filtered.length) {
     addTextElement(
-      cards, 'p', '',
+      cards, 'p', 'ranked-empty',
       allRecommendations.length
         ? 'No recommendations match these filters. Try another search or category.'
         : 'No recommendations returned. Generate recommendations to try again.'
     );
   }
+}
+
+// Describes the order the rows are shown in. A numeral is only honest when the order is a real
+// one the API returns (server order, discovery_score, lastfm_listeners); a sort that has missing
+// values, or an alphabetical sort, shows no numerals and says so (DESIGN_SYSTEM.md section 8).
+function rankingBasis(sort, items) {
+  const numeric = value =>
+    value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+  const complete = field => items.length > 0 && items.every(item => numeric(item[field]));
+  if (sort === 'score') {
+    return complete('discovery_score')
+      ? {label: 'Ranked by discovery score', numbered: true}
+      : {label: 'Sorted by discovery score; some albums have no score', numbered: false};
+  }
+  if (sort === 'popularity') {
+    return complete('lastfm_listeners')
+      ? {label: 'Ranked by Last.fm artist listeners', numbered: true}
+      : {label: 'Sorted by Last.fm artist listeners; some albums have no count', numbered: false};
+  }
+  if (sort === 'artist') return {label: 'Sorted A–Z by artist', numbered: false};
+  return {label: 'Recommended order', numbered: true};
+}
+
+// One ranked row (DESIGN_SYSTEM.md 9.4): numeral, artwork, title and artist, metadata, action.
+// The whole row opens the album modal; the Get and dismiss controls are separate focus stops.
+// Built with text APIs only; every value from the API is set through textContent or as text nodes.
+function buildRecommendationRow(item, rank) {
+  const row = document.createElement('article');
+  row.className = 'ranked-row';
+  const artist = item.artist || item.album_artist || '';
+  const album = item.album || item.title || item.name || '';
+  makeAlbumCardInteractive(row, artist, album, item);
+
+  const numeral = document.createElement('span');
+  numeral.className = 'rank-numeral';
+  numeral.setAttribute('aria-hidden', 'true');
+  if (rank !== null) numeral.textContent = String(rank).padStart(2, '0');
+  row.append(numeral);
+
+  attachArtwork(row, artist, album);
+
+  const main = document.createElement('div');
+  main.className = 'row-main';
+  const title = document.createElement('h3');
+  title.textContent = album || 'Untitled album';
+  title.setAttribute('title', album || 'Untitled album');
+  main.append(title);
+  addTextElement(main, 'p', 'row-artist', artist || 'Unknown artist');
+  row.append(main);
+  const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, row.dataset.releaseYear);
+  if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
+  ensureAlbumYearBadge(row);
+
+  const meta = document.createElement('div');
+  meta.className = 'row-meta';
+  addTextElement(meta, 'p', 'row-meta-line row-category', (item.discovery_category || 'Unclassified').replaceAll('_', ' '));
+  const genres = [...new Set([
+    ...(Array.isArray(item.genres) ? item.genres : []),
+    ...(Array.isArray(item.genre_families) ? item.genre_families : [])
+  ])];
+  if (genres.length) addTextElement(meta, 'p', 'row-meta-line', genres.join(' · '));
+  if (item.diversity_style) {
+    addTextElement(meta, 'p', 'row-meta-line', 'Style: ' + item.diversity_style.replaceAll('_', ' '));
+  }
+  const listeners = item.lastfm_listeners;
+  if (listeners !== null && listeners !== undefined && Number.isFinite(Number(listeners))) {
+    addTextElement(meta, 'p', 'row-meta-line', 'Last.fm artist listeners: ' + Number(listeners).toLocaleString());
+  }
+  if (item.discovery_score !== null && item.discovery_score !== undefined && Number.isFinite(Number(item.discovery_score))) {
+    addTextElement(meta, 'p', 'row-meta-line', 'Discovery score: ' + Number(item.discovery_score).toFixed(4));
+  }
+  if (item.discovery_source) {
+    addTextElement(meta, 'p', 'row-meta-line row-source', 'Source: ' + item.discovery_source.replaceAll('_', ' '));
+  }
+  row.append(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'row-actions';
+  actions.append(createGetButton(artist, album, item));
+  const dismissButton = document.createElement('button');
+  dismissButton.type = 'button';
+  dismissButton.className = 'deep-dive-dismiss';
+  dismissButton.textContent = '×';
+  dismissButton.title = 'Not for me';
+  dismissButton.setAttribute('aria-label', 'Not for me');
+  dismissButton.addEventListener('click', () => {
+    const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
+    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
+    dismissed.add(key);
+    localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
+    applyRecommendationFilters();
+  });
+  actions.append(dismissButton);
+  row.append(actions);
+  return row;
 }
 
 $('recommendationSearch').addEventListener('input', applyRecommendationFilters);
@@ -1362,17 +1373,38 @@ $('checkConnection').addEventListener('click', async () => {
   await testServiceConnection('/api/settings/navidrome/test', 'connection');
 });
 
+// Loading variant of the ranked row (DESIGN_SYSTEM.md 9.6): same grid, opacity pulse only.
+// Hidden from assistive tech; the count line above carries the loading status.
+function skeletonRows(count) {
+  return Array.from({length: Math.min(Math.max(count, 1), 20)}, () => {
+    const row = document.createElement('div');
+    row.className = 'ranked-row is-skeleton';
+    row.setAttribute('aria-hidden', 'true');
+    for (const cls of ['rank-numeral', 'skeleton-art', 'skeleton-main', 'skeleton-meta']) {
+      const part = document.createElement('span');
+      part.className = cls;
+      row.append(part);
+    }
+    return row;
+  });
+}
+
 $('loadRecommendations').addEventListener('click', async () => {
   const button = $('loadRecommendations');
   button.disabled = true;
   button.textContent = 'Generating…';
-  $('recommendationCards').replaceChildren();
+  allRecommendations = [];
+  $('recommendationCount').textContent = 'Generating recommendations…';
+  $('recommendationCards').replaceChildren(...skeletonRows(Number($('count').value) || 5));
   $('recommendationDebug').textContent = '';
   try {
     const data = await requestJSON(
       '/api/recommendations?count=' + encodeURIComponent($('count').value));
     renderRecommendations(data);
   } catch (error) {
+    // The failure is shown where the user is looking, not only in the diagnostics panel.
+    $('recommendationCards').replaceChildren();
+    $('recommendationCount').textContent = 'Recommendations could not be loaded: ' + error.message;
     $('recommendationDebug').textContent = error.message;
   } finally {
     button.disabled = false;

@@ -130,7 +130,10 @@
           </select>
         </div>
       </div>
-      <div id="recommendationCards" class="cards"></div>
+      <!-- Ranked rows (DESIGN_SYSTEM.md 9.4): an ordered list of albums, one row each. The
+           ranked-list class replaces the card grid; numerals only appear where the sort basis
+           is a real order, and the basis is named in the count line above. -->
+      <div id="recommendationCards" class="ranked-list"></div>
       <details>
         <summary>Recommendation diagnostics</summary>
         <pre id="recommendationDebug" class="muted"></pre>
