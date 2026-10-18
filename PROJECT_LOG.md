@@ -1,10 +1,10 @@
 ## 2026-10-18 — Deterministic recommendation replay contract
 
-- Implemented a snapshot-authoritative replay contract: ranking consumes the frozen post-gathering snapshot and frozen ranking context (timestamp, effective recommendation-history rows, and diversity setting). The snapshot now preserves raw and weighted play-count counters.
-- Provider response events are retained as capture provenance and explicitly reported as not replayed; the Last.fm response tape remains strict and must be fully consumed. No live provider calls are part of replay.
-- Capture schema advanced to v2. Schema-v1 captures are rejected with a clear recapture instruction because they lack frozen ranking context; the private `baseline-20261018.json` remains unchanged and is not considered a valid deterministic fixture.
-- Added regression coverage for ranking-input freeze/thaw, schema-v1 refusal, and replay wiring. Code and documentation were prepared on `fix/deterministic-recommendation-replay`; final PR SHA, focused/full tests, and CI are pending at session closeout. No merge, publication, deployment, or runtime verification occurred.
-- Next action: inspect the exact PR-head diff and verify the four required workflows; then create a fresh private schema-v2 capture and replay it at the declared source revision.
+- PR #350 (`fix/deterministic-recommendation-replay`) implements snapshot-authoritative replay, frozen ranking context (timestamp/history/diversity), and preservation of raw plus weighted play-count maps. Provider events are provenance only; Last.fm calls remain strict and fully consumed. Capture schema is v2; schema-v1 captures fail explicitly and require recapture.
+- The private `baseline-20261018.json` was not copied into GitHub and remains unchanged/unsupported for deterministic replay because it is schema v1. No private listening/library/provider data was committed.
+- All four required workflows passed on implementation SHA `b21947e5ffcd8d1fa18f988f7ed71b66d6be790b`: Python syntax run 1721 (`39138586798`); Docker packaging/full unit suite/build run 1629 (`39138586663`, 709 tests); container runtime smoke run 1438 (`39138586675`); validation-only multi-architecture image validation run 1482 (`39138586817`, publishing paused). Initial size-ratchet failure on `b8389454726f37101a1e26d41f46410c0c4dd652` was fixed by moving ranking-input preparation into `recommendation_cooldown.py`; the server remains at the 2,650-line limit.
+- A documentation-only closeout update is being committed after that successful implementation SHA; required workflows must be checked again on the exact resulting PR head. PR remains open/unmerged; no publication, deployment, or production runtime verification occurred.
+- Next action: verify all four workflows on the final PR head, then create a fresh private schema-v2 capture and replay it against its declared source revision before resuming chronological recommendation evaluation.
 
 ---
 
