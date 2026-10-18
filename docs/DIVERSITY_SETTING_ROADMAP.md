@@ -57,7 +57,7 @@ The grouped ranges represent every tested setting in steps of five: metrics were
 Limitations: one frozen 66-candidate pool, a 10-item output, and one captured baseline; captured discovery scores are not future user outcomes. The baseline relevance-score-retention metric is distinct from mean selected raw-score retention versus setting 0. Identity-bearing rows and the raw report remain local/private and are not committed.
 ### 2. Correct relevance normalization and prove pool stability
 
-The current min-max relevance normalization depends on the candidate pool: one high-scoring outlier can compress other scores, changing the effective relevance/diversity trade-off for the same lambda. Evaluate and adopt rank-based relevance normalization (preferred initial option) or a clipped z-score alternative with defined behavior for ties, small pools, and constant scores.
+The prior min-max relevance normalization depended on score magnitude and could let one high-scoring outlier compress other scores. The first implementation now uses descending average ranks normalized to [0, 1]: equal scores receive equal relevance, a one-item pool receives relevance 1, and constant-score pools remain deterministic. This makes the lambda scale independent of raw score gaps, though rank changes caused by a genuinely different candidate pool can still change relevance. Cross-pool tests are required before treating the setting as calibrated.
 
 Add deterministic tests that apply the same setting to at least two deliberately different candidate pools and verify the intended cross-pool behavior. Document what “the same setting means” operationally; do not claim perfect invariance where the underlying candidate distributions genuinely differ.
 
@@ -124,4 +124,4 @@ The audit reported that a shallow clone could not establish the ancestry of `ef8
 
 ## Next action
 
-Next: correct relevance normalization and add cross-pool stability tests. Keep the UI blocked while missing-tag neutrality and final-shortlist quality/category guardrails remain open. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
+Next: complete cross-pool normalization review and then address missing-tag neutrality. The rank-normalization implementation is a candidate change pending exact-head CI; the UI remains blocked while missing-tag neutrality and final-shortlist quality/category guardrails remain open. Do not rerun the dismissed 35-combination reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
