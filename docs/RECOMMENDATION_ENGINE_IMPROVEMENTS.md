@@ -333,3 +333,10 @@ Status: history parsing and descriptive window comparison completed; familiarity
 - Removing ownership/release eligibility or safety checks.
 - Shortening all cache TTLs without evidence.
 - Publishing or deploying an image.
+
+
+## Score attribution and shortlist diagnostics (PR #366, 2026-10-18)
+
+The profile-comparison evaluator now reports aggregate distributions for the final discovery score, recent-profile multiplier, Last.fm popularity multiplier, recent artist play counts, and exploration-family match share. It also reports allocation decision counts, candidate/selected category counts, the selected candidates' score-rank distribution, and overlap/Jaccard between the score-ranked top-k and the final allocated shortlist. These diagnostics are aggregate-only: no candidate identities or per-candidate score rows are serialized. The metrics help separate scoring/rank movement from allocation effects; they do not establish relevance or future-listen quality. Deterministic synthetic regression coverage is included. PR #366 is open; required CI on the final head must pass before this work is accepted. Publishing remains paused.
+
+**Next action:** inspect aggregate score-component and shortlist diagnostics from the same private frozen comparison, explain why the final five remain unchanged despite rank movement, and only then decide whether a focused ranking/allocation behavior change is justified. Keep private captures and identity-bearing artifacts outside GitHub.
