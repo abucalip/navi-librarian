@@ -68,3 +68,11 @@ PR #299 is merged and provides baseline-independent scheduled-refresh diagnostic
 | Required automated and manual verification | `docs/TEST_PLAN.md` |
 | Focused documentation/code retrieval for agent sessions | `docs/SESSION_CONTEXT_SEARCH.md` and `scripts/session_search.py` |
 | Development, review, merge, and release process | `docs/DEVELOPMENT_WORKFLOW.md` |
+
+## Recommendation shortlist underfill — phase instrumentation
+
+The owner-side schema-v2 replay returned 5 of 10 recommendations from 19 resolved candidates. The aggregate report shows four owned candidates, ten recent-family-cap decisions, five selected, and unmet adjacent/adventurous/cross-genre targets of 4/3/3. A synthetic pool with the same category counts can fill ten, so the private pool's stopping path still needs evidence.
+
+Draft PR #370 now instruments allocator pass execution without changing selection policy. Aggregate diagnostics include actual allocator decision counts, checked candidates versus the 60-check ceiling, and attempts/entry state for diversity reservation, category quota, family-cap relaxation, quota retry, unclassified fallback, and final fallback. The offline profile evaluator exposes these fields without candidate identities. Focused regressions cover fallback-phase diagnostics.
+
+No ranking weights, ownership gates, or allocation policy have been changed. Re-run the owner-only evaluator from the latest PR #370 source and share only aggregate diagnostics. Do not merge until those results identify the cause and exact-head CI passes. Publishing/deployment remain paused.
