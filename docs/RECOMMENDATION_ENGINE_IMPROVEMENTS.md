@@ -2,6 +2,51 @@
 
 Status: active implementation. Phase 0 is closed for prioritization based on the owner's sustained real-world evidence; this is not a claim that the exact technical root cause has been proven. This roadmap consolidates the 2026-10-17 hardcoding audit, implementation evidence from `main` at `a977016a6f260d87518a595e22fb641963893b9c`, the DroppedNeedle review, and recommendation-system research. It uses deterministic diagnostics and offline measurement to guide changes, while owner-reported sustained real-world failure can prioritize ranking responsiveness without claiming a proven technical root cause. This document does not authorize publishing or deployment.
 
+## Revised priorities after the 2026-10-18 roadmap review
+
+This section supersedes the ordering in the phase list below where they conflict. Phase text is kept as history; the phase numbers are not a schedule. Evidence is bounded and aggregate-only; no artist identities or private listening rows are recorded here.
+
+### What the evidence now shows
+
+Source: the owner's private schema-v2 capture (`baseline-20261018-v2`, captured after both listening windows) and the 407-listen ListenBrainz export (2026-10-04 to 2026-10-18, about 13.4 days).
+
+1. **Candidate supply is concentrated before ranking runs.** Of the 100 ListenBrainz CF recordings in the capture, 92 belonged to two artists. Those two artists were about 10% of the 407-listen export. The 100 recordings resolved to 19 albums from 8 artists. All 19 candidates came from CF; the supplementary MusicBrainz tag lane contributed zero candidates in this run.
+2. **The pool is largely owned or duplicated.** Of the 19 candidates, 12 were already owned, 2 were duplicate identities, and 5 were selected. Only about 7 candidates were unowned before dedupe, so the shortfall to ten is a supply problem first, not a scoring or family-cap problem. This matches the corrected PR #370 replay.
+3. **Ranking changes cannot fix membership when the pool is this narrow.** The profile comparison showed 17 of 19 candidates changing rank while the top-five set stayed identical. With most candidates from two artists, weight changes (Phase 1) have little room to alter which albums reach the list.
+4. **The likely driver of the pool is a history-window mismatch, not yet proven.** Librarian's profile uses a 30-day window. ListenBrainz CF is generated from the account's listening history on the provider's own schedule, and the two dominant artists are a small share of the recent window. Hypothesis: CF reflects long-term history, so a 30-day profile cannot steer it. This explains the owner's observation that lists stay unchanged while daily listening changes. Not yet measured. The export here covers only about 13 days.
+5. **Genre-lookup resilience is a secondary gap.** In the same capture, 12 of 14 recorded failures were artist-genre lookups that returned HTTP 503. The genre lookup path does not retry, unlike the recording lookup path, which retries 503 with backoff. Those artists then fall back to name-based classification and can land in `unclassified` (5 of 19 candidates). This affects category allocation more than supply.
+
+### Revised ordering
+
+**P1. Pool-level supply diagnostic (no behavior change).** Add bounded aggregates at the gathering boundary: distinct artists in the CF pool, top-2 artist share, resolved albums per artist, unowned unique albums before and after dedupe, and per-source yield. Report these in the existing aggregate diagnostics and the offline evaluator. Acceptance: the owner's frozen capture reproduces the figures above from aggregate output alone.
+
+**P2. Establish the history-window question before changing sources.** Confirm the owner's ListenBrainz all-time listen count and the CF input window (documented or measured against the provider). Acceptance: a written decision on whether CF reflects all-time history. If yes, the fix is in supply, not weights. If no, investigate provider output freshness and persisted-list freshness (Phase 0.3).
+
+**P3. Bounded replenishment of the CF pool.** The ListenBrainz recording endpoint documents an `offset` parameter as well as `count`. Consider paging beyond the current `count=100` cap, with a fixed page budget. Each extra page adds MusicBrainz resolution calls at the ~1.1 s spacing, so the budget must be explicit. Options to evaluate offline:
+- Page 2 or 3 of CF, with an artist cap applied before MusicBrainz resolution so that recordings from the two dominant artists do not consume the budget.
+- Skip resolution for recordings whose artist is already known to be owned, using the library index, to save calls. Ownership must still be checked on the resolved album; this is an optimization, not a relaxation.
+
+Acceptance: more eligible unique unowned albums and a higher fill rate on the frozen pool, with ownership, identity, eligibility, and provider-call counts unchanged or bounded. Report the offline result before any live change.
+
+**P4. Resilience of the genre-lookup path.** Give the artist-genre lookup the same bounded 503 retry used by recording lookups, and do not cache failures. Acceptance: fewer `unclassified` candidates in replay; provider calls stay within the existing budget; no change to ownership or eligibility.
+
+**P5. Reactivate the supplementary lane only with a measured yield.** The profile-derived tag lane (PR #312) produced no candidates in the capture because its two searches returned 503. Add a yield metric per query before tuning it. If the lane still yields nothing under normal provider conditions, consider Phase 4 item 2 (similar-artist seeds) as a comparison, after checking the provider's current documentation.
+
+**Deferred until P1–P3 show a supply gain:** weight retuning (Phase 1.2), MMR re-ranking evaluation on a narrow pool (Phase 3.1), and cooldown calibration (Phase 3.2). MMR and cooldown cannot act on candidates that are not in the pool.
+
+### New ideas to evaluate (not committed)
+
+- **Two-sided check on CF freshness:** compare CF pool overlap across two replays spaced by a known listening change to test whether CF moves at all. Requires a new frozen capture, so it must be justified by P2 first.
+- **Feedback as supply signal:** ListenBrainz documents recommendation feedback. Whether submitting feedback influences future CF output is unverified; check provider documentation before any design.
+- **Owned-artist coverage lane:** for artists the owner already has, surface missing albums (Phase 4 item 1). This adds supply that is both owned-adjacent and unowned, and it does not depend on CF concentration.
+
+### Open questions for the owner
+
+These would change the roadmap:
+1. Should Librarian intentionally keep recommendations close to heavily played artists, or should it actively surface more artists from outside the CF pool? (Recommended: diversify supply, because the stated goal is discovery beyond the existing library.)
+2. How far back does the ListenBrainz account's history go, and is the 30-day window a deliberate product choice? (Recommended: confirm before changing the window.)
+3. Is an extra MusicBrainz budget of a few seconds per run acceptable, given the ~1.1 s spacing? (Recommended: yes, bounded to one or two extra pages.)
+
 ## Goal and guardrails
 
 Recommendations should respond meaningfully to changes in recent listening and the library, avoid repetitive lists, and balance relevance with novelty and useful exploration.
