@@ -1,7 +1,9 @@
-# Header gear menu — Settings and Log out (plan)
+# Header gear menu — Settings and Log out (plan, now merged)
 
-Last updated: 2026-10-17
-Status: **plan only. No front-end file has been changed.**
+Last updated: 2026-10-18
+Status: **merged as PR #327 (commit `4951374` on `main`).** The implementation follows §9 of
+this plan. The text below is kept as the record of the plan. Where the plan and the merged code
+differ, the merged code is authoritative.
 Base: GitHub `main` at `9a8a8f1` ("docs: generalize frontend contribution ownership").
 Line numbers below are against that SHA and will drift; re-inspect before implementing.
 

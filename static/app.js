@@ -1627,6 +1627,9 @@ async function loadDiscovery(name, options = {}) {
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
       if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
+      // Classics titles are clamped to two lines (see #classicsCards in app.css). A clamped name
+      // would otherwise be unreadable on screen, so the full name and year are offered on hover.
+      if (name === 'classics') title.title = year !== null && !isDeepDive ? `${album} (${year})` : album;
       ensureAlbumYearBadge(card);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.
