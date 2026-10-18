@@ -485,6 +485,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* Personal Discoveries: a muted position, not a rank. The server order is not a score order, so
    the red numeral is not used (DESIGN_SYSTEM.md section 8, rule 2). */
 .rank-numeral.is-index { color: var(--text-muted); }
+.ranked-row .artist-bio { margin: 4px 0 0; color: var(--text-muted); font: 400 12px/1.45 var(--body); }
 /* New releases: the release date replaces the numeral (DESIGN_SYSTEM.md section 8). Plain text,
    not red: the red numeral is reserved for real rank order. */
 .row-date {

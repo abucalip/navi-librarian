@@ -91,6 +91,22 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
         self.assertIn("personal: 'No personal discoveries yet.", self.js)
         self.assertIn("need Last.fm or ListenBrainz configured in Settings", self.js)
 
+    def test_artist_bio_is_gated_on_the_connection_reason_as_the_card_was(self):
+        body = self._function_body("function buildPersonalRow(", "function attachArtistBio(")
+        self.assertIn("artistBio: /Genre tags connect this artist to your established musical interests/i.test(item.reason || ''),", body)
+
+    def test_artist_bio_uses_the_existing_endpoint_cache_and_text_api(self):
+        body = self._function_body("function attachArtistBio(", "// Discover music metadata lines.")
+        self.assertIn("cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))", body)
+        self.assertIn("bio.textContent = result.bio;", body)
+        self.assertIn("if (artistBioObserver) artistBioObserver.observe(row);", body)
+        self.assertNotIn("innerHTML", body)
+
+    def test_artist_bio_is_only_attached_to_rows_that_ask_for_it(self):
+        builder = self._function_body("function buildRecommendationRow(", "$('recommendationSearch').addEventListener")
+        self.assertIn("if (options.artistBio) attachArtistBio(row, main, artist);", builder)
+        self.assertIn(".ranked-row .artist-bio", self.css)
+
 
 if __name__ == "__main__":
     unittest.main()
