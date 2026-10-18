@@ -99,9 +99,9 @@ The 90% raw-score and 7/10 baseline-retention values remain provisional threshol
 
 ### 5. Backend implementation follow-up
 
-After calibration design is agreed, implement rank-based (or approved alternative) normalization, missing-tag neutrality, precomputed tag sets, evaluator metrics, and regression tests in focused PR(s). Inspect all callers and preserve the current contract: setting 0 exactly bypasses MMR; ownership, release eligibility, artist cap, category policy, deterministic behavior, bounded work, API responses, and persistence remain unchanged.
+The foundational implementation is merged: PR #338 added rank-based relevance normalization, PR #340 removed the missing-tag novelty advantage, PR #341 added final-shortlist quality/category metrics, and PR #345 fixed captured `assigned_category` lookup in the evaluator. Do not repeat those implementation tasks. The next backend priority is deterministic cross-pool tests using at least two materially different candidate pools, including score outliers, ties, sparse metadata, and different pool sizes. Define the operational interpretation of the same setting across pools and use those tests to choose/review a non-linear setting-to-penalty mapping consistent with the observed provisional cap at 0.75.
 
-Update the stale `navidrome_server.py` comment that says “Phase 3 will add measured relevance/diversity re-ranking” once the new behavior is actually implemented and verified. Do not make the comment-only correction a substitute for fixing the substantive issues.
+Preserve the current contract: setting 0 exactly bypasses MMR; ownership, release eligibility, artist cap, category policy, deterministic behavior, bounded work, API responses, and persistence remain unchanged. Update the stale `navidrome_server.py` comment that says “Phase 3 will add measured relevance/diversity re-ranking” only as part of a focused follow-up after the substantive cross-pool work is addressed.
 
 ### 6. Settings UI — only after gates 1–5
 
