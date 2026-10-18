@@ -1,3 +1,17 @@
+## 2026-10-18 — Identity-free diversity rollout-gate evaluation
+
+- The owner approved applying the provisional relevance/category thresholds to the existing private frozen fixture. No new capture was collected; the dismissed 35-combination/floor reproduction was not rerun.
+- Found and fixed an evaluator schema mismatch in PR #345: captured `debug_all_candidates` rows use `assigned_category`, but the evaluator previously ignored that field and silently reported `unknown` category metrics. Added a synthetic regression test. PR #345 merged at `490afbaca5ed48cfbe8c78a6c5622cf9e6a0de04` from exact final PR head `80f6fb881e0da32fa0088153eca374e3c21cf416`.
+- All four required workflows passed on that exact head: Python syntax `39126978342`, Docker packaging/full unit suite/build `39126978446` (704 tests passed), container runtime smoke `39126978284`, and validation-only multi-architecture image validation `39126978293` (publishing paused).
+- Offline identity-free evaluation used the existing schema-v1 capture (captured source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`; fixture SHA-256 `d74877fd8635cfbd390a66f338389a3c8d91aa27c10ad10cc11e78b10182eb21`; payload SHA-256 `5dc522d622ada3bbe3fc12a2bf674b05b1345c7a02b9d67bed20b62549368d8e`). It validated the checksum/schema, used 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 rejected rows, and 10 baseline recommendations. The sweep evaluated all 21 settings from 0–100 in increments of 5 with relevance floor fixed at 0; zero network providers and no provider-tape replay.
+- Baseline categories were adjacent 4, adventurous 3, cross-genre 3; baseline normalized tag coverage was 72 and no baseline recommendation was untagged. All 21 settings returned 10 eligible candidates, 10 unique artists, no duplicate non-empty artist keys, deterministic repeated selections, and zero untagged selections/promotions.
+- Settings 0–10: similarity 0.10440, 7/10 retained, 100.00% mean raw-score retention, category mix 40/30/30%. Setting 15: similarity 0.06719, 8/10 retained, 91.80% retention, mix 50/20/30%. Settings 20–75: similarity 0.06275, 7/10 retained, 91.79% retention, mix 50/20/30%. Settings 80–85: 81.14% raw-score retention and mix 60/20/20% (+20pp adjacent concentration); settings 90–100 also retain only 6/10 baseline items, with setting 100 retaining 72.17% of baseline raw score.
+- Under the provisional per-setting gate, settings 0–75 pass and settings 80–100 fail. The result supports retaining 75 as a provisional effective cap, not approving a production mapping: the result is one frozen candidate pool, not future-listen hit-rate/nDCG or cross-pool evidence. The raw fixture and identity-bearing report remain private and are not committed.
+- Publishing, deployment, and production-runtime verification remain unperformed. Settings UI stays blocked.
+- Next action: add deterministic cross-pool tests for rank-normalized MMR and review a slider mapping consistent with the measured cap before considering UI work.
+
+---
+
 ## 2026-10-18 — Identity-free recommendation-diversity sweep
 
 - Evaluated the existing private frozen fixture offline at all 21 penalty values from 0.00 to 1.00 in 0.05 increments, with relevance floor fixed at 0. The capture schema/checksum validated. No provider tape was replayed, zero network providers were used, and no fixture or identity-bearing report was committed.

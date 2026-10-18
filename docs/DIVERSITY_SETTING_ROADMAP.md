@@ -63,7 +63,7 @@ Add deterministic tests that apply the same setting to at least two deliberately
 
 ### 3. Remove the missing-tag diversity advantage
 
-Currently, `candidate_similarity` returns 0 when either album lacks genre tags. That treats unknown metadata as maximum novelty and can unfairly promote untagged candidates. Replace this with a neutral prior or exclude unknown-tag pairs from the diversity penalty, choosing a policy that does not award a diversity bonus merely for missing tags.
+PR #340 merged the conservative policy: exact same-artist identity is authoritative; when either candidate lacks tags, similarity is treated conservatively as 1.0 so missing metadata does not earn a novelty bonus. Synthetic regression tests cover missing-tag neutrality and known disjoint tags. The frozen fixture selected no untagged candidates, so its aggregate result does not exercise this edge case beyond the synthetic tests.
 
 Add regression tests for one or both candidates missing tags, both candidates missing tags, and genuinely dissimilar known-tag pairs. Track the share/count of selected or promoted untagged albums in evaluator output so the effect is visible. Preserve graceful behavior for sparse metadata.
 
@@ -71,24 +71,37 @@ Precompute each candidate's normalized tag set as a `frozenset` once per rerank/
 
 ### 4. Add final-shortlist quality and category guardrails
 
-**Evaluator metrics merged in PR #341; rollout-gate proposal below is documented but not approved.** The evaluator reports per-shortlist category counts/shares, unique normalized tag coverage, selected untagged count/share, untagged promotions versus score-ordered top-k, baseline top-k retention, and mean raw-score retention against lambda 0 at the same relevance floor. The private fixture has not been rerun with these newer metrics.
+**Evaluator metrics and captured-category lookup merged in PR #341 and PR #345.** PR #345 fixed a schema mismatch: captured debug candidate rows store `assigned_category`, while the evaluator previously recognized only `discovery_category` and `category`, silently returning `unknown` for shortlist category metrics. The identity-free run below uses the existing frozen fixture after that fix. The evaluator reports per-shortlist category counts/shares, unique normalized tag coverage, selected untagged count/share, untagged promotions versus score-ordered top-k, baseline top-k retention, and mean raw-score retention against lambda 0 at the same relevance floor.
 
 MMR runs inside allocator passes (adjacent, cross-genre, adventurous), so lower pairwise similarity alone does not prove that the final shortlist has a healthier overall mix. The evaluator's lambda-zero result is the within-pool reference; compare settings only when candidate inputs, eligibility rules, requested shortlist size, and relevance floor are identical.
 
-**Proposed rollout gate for review (not an approval to expose the UI):**
+**Provisional rollout gate applied with owner approval for this evaluation (not an approval to expose the UI):**
 1. **Relevance:** mean selected raw discovery score must be at least 90% of the lambda-zero result, using the same pool and floor. This is a relative ranking-score guardrail, not a future-listen quality metric.
 2. **Baseline continuity:** retain at least 7 of the baseline top 10 items for a 10-item baseline. For other baseline sizes, require at least 70% retention, rounded up; report both count and fraction so small baselines cannot hide a large regression.
 3. **Category mix:** no category that represented at least two baseline items may disappear from the shortlist; no category share may rise by more than 10 percentage points versus lambda zero. Compare category counts and shares, not just a global similarity score. These are regression guardrails, not instructions to alter existing allocator quotas.
 4. **Coverage and missing metadata:** report unique normalized tag coverage, selected untagged count/share, and untagged promotions beyond score-ranked top-k. Any unexplained increase in untagged promotion blocks approval for review; do not award a setting credit merely for reducing similarity.
 5. **Safety and stability:** preserve requested shortlist length when the eligible pool can fill it, ownership/release eligibility, artist uniqueness, deterministic repeated output, and bounded work. Any violation blocks rollout regardless of aggregate scores.
 
-**Evidence boundary:** the 90% raw-score and 7/10 baseline-retention values are provisional thresholds motivated by the earlier single-fixture sweep, not universal quality guarantees. The category thresholds are proposed policy for review; the existing fixture has not been evaluated with PR #341's category metrics, so their pass/fail status is unknown. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, or claim this gate has passed. A later owner-authorized evaluation may use only the existing private fixture and identity-free output; until the thresholds and measured category results are reviewed, keep the Settings UI blocked. Do not change existing hard category quotas or allocator behavior merely to make metrics pass.
+**Evaluation result (existing private fixture only):** the capture checksum/schema validated. Fixture file SHA-256: `d74877fd8635cfbd390a66f338389a3c8d91aa27c10ad10cc11e78b10182eb21`; payload SHA-256: `5dc522d622ada3bbe3fc12a2bf674b05b1345c7a02b9d67bed20b62549368d8e`; captured source SHA: `d8c1f3de5180b35919f55c304d55e5c939dad373`. The run used 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 rejected rows, and the captured 10-item baseline. It evaluated all 21 settings from 0 to 100 in increments of 5 with relevance floor fixed at 0, used zero network providers, replayed no provider tape, and emitted identity-free output only. Baseline categories were adjacent 4, adventurous 3, cross-genre 3; baseline tag coverage was 72 and baseline untagged count was zero.
+
+| Settings | Mean pairwise similarity | Baseline retained | Mean raw-score retention vs 0 | Category mix | Gate |
+|---|---:|---:|---:|---|---|
+| 0–10 | 0.10440 | 7/10 | 100.00% | 40/30/30% | Pass |
+| 15 | 0.06719 | 8/10 | 91.80% | 50/20/30% | Pass |
+| 20–75 | 0.06275 | 7/10 | 91.79% | 50/20/30% | Pass |
+| 80–85 | 0.04104 | 7/10 | 81.14% | 60/20/20% | Fail: score and category concentration |
+| 90–95 | 0.03883 | 6/10 | 81.10% | 60/20/20% | Fail: score, baseline, and category concentration |
+| 100 | 0.02753 | 6/10 | 72.17% | 60/20/20% | Fail: score, baseline, and category concentration |
+
+All settings returned 10 eligible candidates with 10 unique artists, zero duplicate non-empty artist keys, deterministic repeated selections, and zero untagged selections/promotions. The category share increase is +10 percentage points at settings 15–75 (the proposed limit) and +20pp at 80–100. The provisional gate therefore passes per setting through 75 and fails at 80 and above on this fixture. The similarity reduction is about 40% at settings 20–75 and about 60% at setting 100 versus setting 0.
+
+The 90% raw-score and 7/10 baseline-retention values remain provisional thresholds motivated by single-fixture evidence, not universal quality guarantees. This is not future-listen hit-rate/nDCG evidence or proof of cross-pool stability. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, or disclose candidate identities. Keep the Settings UI blocked until cross-pool behavior and a reviewed setting-to-penalty mapping are established; do not change allocator quotas merely to make metrics pass.
 
 ### 5. Backend implementation follow-up
 
-After calibration design is agreed, implement rank-based (or approved alternative) normalization, missing-tag neutrality, precomputed tag sets, evaluator metrics, and regression tests in focused PR(s). Inspect all callers and preserve the current contract: setting 0 exactly bypasses MMR; ownership, release eligibility, artist cap, category policy, deterministic behavior, bounded work, API responses, and persistence remain unchanged.
+The foundational implementation is merged: PR #338 added rank-based relevance normalization, PR #340 removed the missing-tag novelty advantage, PR #341 added final-shortlist quality/category metrics, and PR #345 fixed captured `assigned_category` lookup in the evaluator. Do not repeat those implementation tasks. The next backend priority is deterministic cross-pool tests using at least two materially different candidate pools, including score outliers, ties, sparse metadata, and different pool sizes. Define the operational interpretation of the same setting across pools and use those tests to choose/review a non-linear setting-to-penalty mapping consistent with the observed provisional cap at 0.75.
 
-Update the stale `navidrome_server.py` comment that says “Phase 3 will add measured relevance/diversity re-ranking” once the new behavior is actually implemented and verified. Do not make the comment-only correction a substitute for fixing the substantive issues.
+Preserve the current contract: setting 0 exactly bypasses MMR; ownership, release eligibility, artist cap, category policy, deterministic behavior, bounded work, API responses, and persistence remain unchanged. Update the stale `navidrome_server.py` comment that says “Phase 3 will add measured relevance/diversity re-ranking” only as part of a focused follow-up after the substantive cross-pool work is addressed.
 
 ### 6. Settings UI — only after gates 1–5
 
@@ -127,4 +140,4 @@ The audit reported that a shallow clone could not establish the ancestry of `ef8
 
 ## Next action
 
-PR #338's rank-based normalization and PR #340's conservative missing-tag handling are merged; PR #341's identity-free evaluator metrics and synthetic regressions are also merged and CI-verified. PR #343 merged the provisional relevance/category rollout-gate proposal at `18f5411ee9bdffd7cbc2bbdfdaaa4c90f099d3de` from exact CI-verified head `0145d35155a94137402b9958c3d07c5456b0229a`. The gate remains proposed, not approved or passed: the existing private fixture was not rerun with the newer evaluator metrics, so category-gate results remain unknown. Next action: review the thresholds, then only if authorized evaluate the existing private fixture with identity-free output. Keep the Settings UI blocked. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
+PR #345 fixed the evaluator's `assigned_category` lookup and merged at `490afbaca5ed48cfbe8c78a6c5622cf9e6a0de04` from final CI-verified head `80f6fb881e0da32fa0088153eca374e3c21cf416`. All four required workflows passed on that exact head; the Docker packaging workflow ran 704 unit tests successfully. The owner-approved provisional rollout gate was then evaluated identity-free against the existing private fixture at relevance floor 0: settings 0–75 pass the per-setting thresholds, settings 80–100 fail. This remains one frozen pool, not cross-pool or future-listen quality evidence. Next action: add deterministic cross-pool rank-normalization tests and review a setting-to-penalty mapping; keep the Settings UI blocked. Do not rerun the dismissed 35-combination/floor reproduction, collect a new live capture, publish fixture identities, implement the UI, publish an image, or deploy.
