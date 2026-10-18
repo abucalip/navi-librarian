@@ -1646,3 +1646,50 @@ Roadmap item: Phase 3, first item (Discover music). Design system sections appli
 
 **Limitations.** Artwork in the reconstructed DOM is absent, so the artwork tile is the placeholder colour only. `--text-sm` and `--text-xs` resolve to rem values; a browser with a non-default root size changes them proportionally. The modal artwork `<img>` without a `src` (pre-existing) is still flagged by the detector.
 
+
+## 14. Redesign Phase 3 — New releases with a release-date column (`ui/phase-3-new-releases`)
+
+Roadmap item: Phase 3, second item (New releases). Design system sections applied: 8 (row "New releases": rows ordered by release date, date column in place of numerals; truthfulness rules), 9.4 (ranked row), 9.6 (skeleton, status line, empty and error states), 9.2 (Get kept), 12 (accessibility floor). PR #369 (head `dc7f877`). Base: `origin/main` at `de340b7` (PR #365 merge). Confirmed with `gh api repos/abucalip/navi-librarian/commits/main`.
+
+**Implemented.** `#newReleasesCards` is an ordered list (`ranked-list`) of the shared `article.ranked-row` rows. `buildRecommendationRow` takes an optional `options` argument instead of being forked: `releaseDate` puts a date column in the leading position, `meta` replaces the Discover metadata lines, and `onDismiss` / `onDismissArtist` route to the existing `sendFeedback` endpoint. Discover music calls the function with no options and produces the same DOM as before. The date comes from the API's `first_release_date` (returned by `discovery_new_releases.build_new_release_response`, which already sorts newest first). `releaseDateParts` accepts only `YYYY-MM-DD`, `YYYY-MM` or `YYYY`; anything else leaves the column empty. No date or order is invented. The status line names the sort basis: "Sorted by release date, newest first". No numerals on this list. The year badge is omitted on release rows because the date column shows the year. The date is also added to the row's accessible name, because the row is a button. Skeleton rows show while loading and are removed before rows render, and on failure. The empty-state copy is unchanged.
+
+**Unchanged.** Load and Refresh buttons and `loadDiscovery` request flow, the endpoint and its parameters, the empty-state copy, the Get state machine (`searchAlbum`, `POST /api/acquire`, `ok:false` handling), the dismiss and dismiss-artist feedback calls, the row-open modal and keyboard handling, and all server code. No backend, API or dependency change. No new clamp, so the classics clamp test is untouched.
+
+**Contract tests.** New file `tests/test_new_releases_ui_contract.py` (`NewReleasesRowContractTests`, 14 source checks). `tests/test_recommendations_ui_contract.py` and `tests/test_classics_card_ui_contract.py` are unchanged. Their assertions still hold against the shared builder.
+
+**Impeccable.** Ran `impeccable detect` on `static/app.css`, `static/app.js` and `app/templates/index.html`. None of the findings fall on lines this PR added. Pre-existing findings: the album-modal `<img>` with no `src` (populated by JS on open), 11px text in `index.html`, the `.card-art::after` stripe, the 999px pill radius on Get, and the 28px and 18px sizes on `.rank-numeral` and `.ranked-row h3` from PR #365. The `.ranked-row::before` 3px stripe is the hover bar DESIGN_SYSTEM 9.4 specifies, so it is kept on purpose. The `/impeccable critique` skill was not run as an interactive pass in this session. Instead I reviewed the 1440, 620 and 390px renders by eye against 8 and 9.4.
+
+**web-design-guidelines.** The skill's source URL returned a condensed summary, not the full rule text, so this review checked against the categories it lists: focus visibility, reduced motion for the skeleton, truncation and `min-w-0`, tabular numerals on the date, labelled controls, live status region, and anchors versus buttons. Nothing in the summary flagged the changed lines. The full rule list was not checked.
+
+**Checks run on the working tree (before the PR head was pushed):**
+- `node --check static/app.js`: OK.
+- `python3 -m compileall -q app static`: OK.
+- `pip install -r requirements.txt --break-system-packages`: OK.
+- `python3 -m unittest discover -s tests -v`: OK, 760 tests, 0 failures (one new test failed on a wrong literal during writing; fixed before this run).
+
+**Browser checks (reconstructed DOM, sandbox servers).** The documented helper `~/navi-librarian-test/test-pr.sh` is not present in this container, so uvicorn was run by hand on `127.0.0.1:8091` (`origin/main`) and `127.0.0.1:8092` (this branch). Both used sandbox paths outside the repo (`NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR`, `SLSKD_DOWNLOADS_DIR`), `SLSKD_URL=http://127.0.0.1:9`, and no slskd key. The owner account was created through `POST /api/auth/setup`. Playwright ran against Chromium 1194. The list response, `POST /api/discovery/feedback` and `POST /api/acquire` were intercepted with a fixture. The fixture is **reconstructed**: four albums with dates `2026-03-14`, `2025-11`, `2025` and missing. No real library, no MusicBrainz data, no artwork.
+
+| Check | Result |
+|---|---|
+| Horizontal overflow at 1440, 1200, 900, 620, 390px | Pass (scrollWidth = innerWidth at all five) |
+| Date column shows API dates in three shapes; missing date leaves the column empty | Pass |
+| Numerals on the list | Pass (0 at all widths) |
+| Touch targets for Get, × and Dismiss artist at 390px | Pass (none under 44px) |
+| Title truncation (two lines) at 620 and 390 | Pass (screenshots) |
+| Loading: "Loading…" with six skeleton rows, cleared on response | Pass (screenshot taken while the response was held) |
+| Error (HTTP 500): rows cleared, server message in the status line | Pass |
+| Sort basis in the status line | Pass ("4 items · Sorted by release date, newest first") |
+| Keyboard: focus row, Tab order Get → × → Dismiss artist → next row | Pass |
+| Dismiss (×) sends `action: "dismiss"` to the existing feedback endpoint; before build sends the same body | Pass (parity) |
+| Get: `ok:false` → failed state; `ok:true` → requested state | Pass (both builds the same) |
+| Console and network | One expected error (the intentional 500 from the error check). No other errors or failed requests |
+| Row-open modal and Escape | Skip (not run in this harness; the modal path is untouched code) |
+| Screen reader | Skip (not run) |
+| Live Get against the server | Skip (`/api/acquire` was mocked; slskd disabled; no download started) |
+| Real library, real artwork, populated MusicBrainz data | Skip (not available in the sandbox) |
+
+Screenshots: before (`origin/main`) and after (this branch), each at 1440, 1200, 900, 620 and 390px, plus loading and error at 1440. Copied to `/mnt/project-files/phase-3-new-releases/screenshots/`.
+
+**Limitations.** Renders use the reconstructed fixture. The fixture's artwork tiles are blank. The bottom tab bar still scrolls sideways under 620px (existing follow-up, not this PR). The `Dismiss artist` button is text, so its width depends on the label. On a narrow phone it fits beside Get and × in the sandbox renders. Long localized labels were not tested.
+
+**Next action.** Owner review of this PR's before and after screenshots, then a manual pass on the exact head SHA using the helper once it is restored.

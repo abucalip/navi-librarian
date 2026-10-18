@@ -72,7 +72,7 @@ Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral 
 ### Phase 3 — Ranked list component and Discover pages (L)
 
 - Build the ranked row (design system 9.4) as one reusable component, including skeleton, empty, error and loading variants.
-- Status: item 1 (Discover music) implemented in PR #365 on `ui/phase-3-discover-music` (not merged, not deployed). Ranked row, skeleton, empty and error variants exist for Discover music only; New releases and later pages are not started.
+- Status: item 1 (Discover music) implemented in PR #365 on `ui/phase-3-discover-music` (not merged, not deployed). Item 2 (New releases) implemented in PR #369 on `ui/phase-3-new-releases` (not merged, not deployed): the shared ranked row with a release-date column in place of numerals, skeleton loading, and the sort basis in the status line; evidence in `docs/UI_BACKLOG_EXECUTION.md` section 14. Personal Discoveries and later pages are not started.
 - Convert, one PR each: Discover music, then New releases (date column), Personal Discoveries, Add to your collection.
 - Rank numerals follow the truthfulness rules in design system section 8. Add a visible sort-basis label.
 - Long names, missing artwork and failed requests are exercised in each PR.

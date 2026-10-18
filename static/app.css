@@ -482,6 +482,15 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   justify-self: end; font: 600 36px/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
   font-variant-numeric: tabular-nums;
 }
+/* New releases: the release date replaces the numeral (DESIGN_SYSTEM.md section 8). Plain text,
+   not red: the red numeral is reserved for real rank order. */
+.row-date {
+  justify-self: end; min-width: 0; display: grid; justify-items: end; gap: 3px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.row-date-day { font: 600 16px/1.2 var(--display); color: var(--text); white-space: nowrap; }
+.row-date-year { font: 500 12px/1.2 var(--mono); color: var(--text-muted); }
+.row-dismiss-artist { min-height: 44px; }
 .ranked-row .card-art {
   width: 64px; height: 64px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
   background: var(--surface-raised);
@@ -530,6 +539,8 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   .rank-numeral { font-size: 28px; }
   .ranked-row h3 { font-size: 18px; }
   .ranked-row .rank-numeral { grid-column: 1; grid-row: 1; }
+  .ranked-row.is-dated { grid-template-columns: 56px 52px minmax(0, 1fr); }
+  .ranked-row .row-date { grid-column: 1; grid-row: 1; }
   .ranked-row .card-art { grid-column: 2; grid-row: 1; }
   .row-main { grid-column: 3; grid-row: 1; }
   .row-meta { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 2px 12px; }

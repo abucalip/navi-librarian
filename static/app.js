@@ -1293,18 +1293,26 @@ function rankingBasis(sort, items) {
 // One ranked row (DESIGN_SYSTEM.md 9.4): numeral, artwork, title and artist, metadata, action.
 // The whole row opens the album modal; the Get and dismiss controls are separate focus stops.
 // Built with text APIs only; every value from the API is set through textContent or as text nodes.
-function buildRecommendationRow(item, rank) {
+// `options` lets other lists reuse this row (New releases): `releaseDate` puts the API's
+// first_release_date in the leading column instead of a numeral, `meta` replaces the Discover
+// metadata lines, and `onDismiss` / `onDismissArtist` route dismissal to the server feedback
+// that list already uses instead of the Discover local list.
+function buildRecommendationRow(item, rank, options = {}) {
   const row = document.createElement('article');
-  row.className = 'ranked-row';
+  row.className = options.releaseDate ? 'ranked-row is-dated' : 'ranked-row';
   const artist = item.artist || item.album_artist || '';
   const album = item.album || item.title || item.name || '';
   makeAlbumCardInteractive(row, artist, album, item);
 
-  const numeral = document.createElement('span');
-  numeral.className = 'rank-numeral';
-  numeral.setAttribute('aria-hidden', 'true');
-  if (rank !== null) numeral.textContent = String(rank).padStart(2, '0');
-  row.append(numeral);
+  if (options.releaseDate) {
+    row.append(releaseDateColumn(item, row));
+  } else {
+    const numeral = document.createElement('span');
+    numeral.className = 'rank-numeral';
+    numeral.setAttribute('aria-hidden', 'true');
+    if (rank !== null) numeral.textContent = String(rank).padStart(2, '0');
+    row.append(numeral);
+  }
 
   attachArtwork(row, artist, album);
 
@@ -1316,12 +1324,108 @@ function buildRecommendationRow(item, rank) {
   main.append(title);
   addTextElement(main, 'p', 'row-artist', artist || 'Unknown artist');
   row.append(main);
-  const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, row.dataset.releaseYear);
-  if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
-  ensureAlbumYearBadge(row);
+  // The release-date column already shows the year, so a release-date row carries no year badge.
+  if (!options.releaseDate) {
+    const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, row.dataset.releaseYear);
+    if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
+    ensureAlbumYearBadge(row);
+  }
 
   const meta = document.createElement('div');
   meta.className = 'row-meta';
+  if (options.meta) {
+    for (const line of options.meta) if (line) addTextElement(meta, 'p', 'row-meta-line', line);
+  } else {
+    addRecommendationMeta(meta, item);
+  }
+  row.append(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'row-actions';
+  actions.append(createGetButton(artist, album, item));
+  const dismissButton = document.createElement('button');
+  dismissButton.type = 'button';
+  dismissButton.className = 'deep-dive-dismiss';
+  dismissButton.textContent = '×';
+  dismissButton.title = 'Not for me';
+  dismissButton.setAttribute('aria-label', 'Not for me');
+  dismissButton.addEventListener('click', () => {
+    if (options.onDismiss) {
+      options.onDismiss(artist, album, item);
+      return;
+    }
+    const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
+    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
+    dismissed.add(key);
+    localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
+    applyRecommendationFilters();
+  });
+  actions.append(dismissButton);
+  if (options.onDismissArtist) {
+    const dismissArtist = document.createElement('button');
+    dismissArtist.type = 'button';
+    dismissArtist.className = 'row-dismiss-artist';
+    dismissArtist.textContent = 'Dismiss artist';
+    dismissArtist.addEventListener('click', () => options.onDismissArtist(artist, album, item));
+    actions.append(dismissArtist);
+  }
+  row.append(actions);
+  return row;
+}
+
+const monthAbbreviations = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Formats first_release_date as the API returns it: YYYY-MM-DD, or a partial YYYY-MM or YYYY
+// from MusicBrainz. Returns null for anything else, so the column stays empty rather than
+// showing a date the server did not return (DESIGN_SYSTEM.md section 8).
+function releaseDateParts(value) {
+  const match = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/.exec(String(value || '').trim());
+  if (!match) return null;
+  const [, year, monthText, dayText] = match;
+  const month = monthText ? Number(monthText) : 0;
+  const day = dayText ? Number(dayText) : 0;
+  if (monthText && (month < 1 || month > 12)) return null;
+  if (dayText && (day < 1 || day > 31)) return null;
+  const monthName = month ? monthAbbreviations[month - 1] : '';
+  return {
+    day: day ? `${day} ${monthName}` : monthName,
+    year,
+    label: [day || '', monthName, year].filter(Boolean).join(' ')
+  };
+}
+
+// The leading column of a release-date row: the release date in place of the rank numeral.
+// Missing or unrecognised dates leave the column empty. The date is also added to the row's
+// accessible name, because the row is a button and its visible children are not announced.
+function releaseDateColumn(item, row) {
+  const column = document.createElement('span');
+  column.className = 'row-date';
+  const parts = releaseDateParts(item.first_release_date);
+  if (parts) {
+    if (parts.day) addTextElement(column, 'span', 'row-date-day', parts.day);
+    addTextElement(column, 'span', 'row-date-year', parts.year);
+    row.setAttribute('aria-label', `${row.getAttribute('aria-label')}, released ${parts.label}`);
+  }
+  return column;
+}
+
+// New releases rows (DESIGN_SYSTEM.md section 8). The list is ordered by release date on the
+// server (newest first), which the status line names. Dismiss goes through the same feedback
+// endpoint the card used, so the server's dismiss and dismiss-artist rules still apply.
+function buildNewReleaseRow(item) {
+  return buildRecommendationRow(item, null, {
+    releaseDate: true,
+    meta: [
+      item.reason,
+      item.discovery_source ? 'Source: ' + item.discovery_source.replaceAll('_', ' ') : ''
+    ],
+    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'new_releases'),
+    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases')
+  });
+}
+
+// Discover music metadata lines. Each line appears only when the API returned the value.
+function addRecommendationMeta(meta, item) {
   addTextElement(meta, 'p', 'row-meta-line row-category', (item.discovery_category || 'Unclassified').replaceAll('_', ' '));
   const genres = [...new Set([
     ...(Array.isArray(item.genres) ? item.genres : []),
@@ -1341,27 +1445,6 @@ function buildRecommendationRow(item, rank) {
   if (item.discovery_source) {
     addTextElement(meta, 'p', 'row-meta-line row-source', 'Source: ' + item.discovery_source.replaceAll('_', ' '));
   }
-  row.append(meta);
-
-  const actions = document.createElement('div');
-  actions.className = 'row-actions';
-  actions.append(createGetButton(artist, album, item));
-  const dismissButton = document.createElement('button');
-  dismissButton.type = 'button';
-  dismissButton.className = 'deep-dive-dismiss';
-  dismissButton.textContent = '×';
-  dismissButton.title = 'Not for me';
-  dismissButton.setAttribute('aria-label', 'Not for me');
-  dismissButton.addEventListener('click', () => {
-    const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
-    const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
-    dismissed.add(key);
-    localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
-    applyRecommendationFilters();
-  });
-  actions.append(dismissButton);
-  row.append(actions);
-  return row;
 }
 
 $('recommendationSearch').addEventListener('input', applyRecommendationFilters);
@@ -1516,13 +1599,16 @@ async function loadDiscovery(name, options = {}) {
   // Observers outlive the nodes they watch unless disconnected here, so a section that is
   // reloaded repeatedly would accumulate them.
   disconnectGenreRowObservers();
-  target.replaceChildren();
+  // New releases shows skeleton rows while it loads (DESIGN_SYSTEM.md 9.6). They are removed
+  // as soon as the response arrives, before any row is rendered, and on failure.
+  target.replaceChildren(...(name === 'new_releases' ? skeletonRows(6) : []));
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
 
   try {
     const poolCount = name === 'artist_deep_dive' ? 150 : name === 'classics' ? 100 : 30;
     const data = await requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`);
+    if (name === 'new_releases') target.replaceChildren();
     let items = data.items || data.recommendations || [];
     if (name !== 'for_me') items = items.filter(isAlbumRecommendation);
     if ((name === 'classics' || name === 'artist_deep_dive') && options.rotate) {
@@ -1631,10 +1717,17 @@ async function loadDiscovery(name, options = {}) {
     }
 
     if (items.length || data.generated_at) {
-      discoveryStatus(name, pluralize(items.length, 'item', 'items'));
+      const count = pluralize(items.length, 'item', 'items');
+      discoveryStatus(name, name === 'new_releases' && items.length
+        ? count + ' · Sorted by release date, newest first'
+        : count);
     }
 
     for (const item of items) {
+      if (name === 'new_releases') {
+        target.append(buildNewReleaseRow(item));
+        continue;
+      }
       const artist = item.artist || item.album_artist || 'Unknown artist';
       const album = item.album || item.title || 'Untitled album';
       const isDeepDive = name === 'artist_deep_dive';
@@ -1745,6 +1838,7 @@ async function loadDiscovery(name, options = {}) {
       setStatusState(empty, 'empty');
     }
   } catch (error) {
+    if (name === 'new_releases') target.replaceChildren();
     discoveryStatus(name, error.message);
   }
 }
