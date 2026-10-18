@@ -147,6 +147,13 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
             "category_targets_met": True,
             "recommendations_returned": 2,
             "candidate_albums_resolved": 3,
+            "allocator_checked_count": 3,
+            "allocator_max_checks": 60,
+            "allocator_phase_diagnostics": {
+                "final_fallback_entered": 1,
+                "final_fallback_attempts": 4,
+            },
+            "allocator_decision_counts": {"selected": 2, "already_owned": 1},
             "debug_all_candidates": [
                 {"artist": "A", "album": "One", "discovery_score": 10.0,
                  "recent_profile_bonus": 1.2, "lastfm_popularity_bonus": 1.0,
@@ -187,6 +194,11 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
         self.assertTrue(diagnostics["allocator_category_targets_met"])
         self.assertEqual(diagnostics["allocator_recommendations_returned"], 2)
         self.assertEqual(diagnostics["allocator_candidate_albums_resolved"], 3)
+        self.assertEqual(diagnostics["allocator_checked_count"], 3)
+        self.assertEqual(diagnostics["allocator_max_checks"], 60)
+        self.assertEqual(diagnostics["allocator_phase_diagnostics"]["final_fallback_entered"], 1)
+        self.assertEqual(diagnostics["allocator_phase_diagnostics"]["final_fallback_attempts"], 4)
+        self.assertEqual(diagnostics["allocator_decision_counts"], {"already_owned": 1, "selected": 2})
         self.assertEqual(diagnostics["component_distributions"]["discovery_score"]["mean"], 9.0)
         self.assertEqual(diagnostics["component_distributions"]["profile_bonus_above_neutral_share"], 0.666667)
         self.assertNotIn('"A"', json.dumps(diagnostics))
