@@ -48,8 +48,8 @@ _RECOMMENDATION_HISTORY_RETENTION_SECONDS = 30 * 24 * 60 * 60
 _RECOMMENDATION_HISTORY_MAX_ROWS = 2000
 
 
-def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
-    """Hash normalized artist/album identity without retaining personal labels."""
+def recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
+    """Return a SHA-256 hash of normalized artist/album identity."""
     import hashlib
     import unicodedata
 
@@ -64,6 +64,11 @@ def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
     if not artist or not album:
         return None
     return hashlib.sha256(f"{artist}\0{album}".encode("utf-8")).hexdigest()
+
+
+def _recommendation_identity_hash(recommendation: dict[str, Any]) -> str | None:
+    """Compatibility alias for the persisted-history identity contract."""
+    return recommendation_identity_hash(recommendation)
 
 
 def _ensure_recommendation_history_schema(db: sqlite3.Connection) -> None:
