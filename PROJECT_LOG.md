@@ -1,3 +1,13 @@
+## 2026-10-18 — Owner replay explains five-item recommendation shortlist (PR #370)
+
+- Owner reran the private schema-v2 comparison against the corrected diagnostic source. Both profile windows resolved 19 candidates and reported 12 `already_owned`, 2 `duplicate_candidate`, and 5 `selected`; the counts account for all 19 rows. Final fallback was entered; checked count was 14/60.
+- This explains the underfill on this frozen snapshot: only five eligible unique unowned candidates remained after ownership and duplicate protections. The check budget was not exhausted. The previous 10 recent-family-cap rejections were stale diagnostic attribution; the corrected output now reports owned/duplicate/selected outcomes.
+- Both profiles still return the same five recommendations (Jaccard 1.0), with two positions changing and broader candidate rank movement. This establishes ranking responsiveness, but not top-five membership responsiveness, quality, or future-listen outcomes.
+- No private capture, history, candidate identity, or per-candidate score was added to GitHub. No weights, ownership rules, or selection policy were changed.
+- Next: keep PR #370 scoped to aggregate diagnostics; after its final review, investigate candidate supply separately with aggregate eligibility/source counts and deterministic bounded-replenishment tests. Preserve all safety constraints and provider limits. Publishing/deployment remain paused.
+
+---
+
 ## 2026-10-18 — PR #370 underfill diagnostics refined after owner replay
 
 - Owner-side private schema-v2 comparison on PR #370 source reported 5 recommendations from 10 requested, 19 resolved candidates, final fallback entered with 19 attempts, 14 checked candidates against the 60-check budget, and decisions reported as 4 already-owned, 10 recent-family-cap-reached, and 5 selected. Both profiles showed the same aggregate outcome; capture/history and identity-bearing rows remain private.
