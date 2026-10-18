@@ -413,9 +413,7 @@ def recommend_new_music(
     }
     targets["adventurous"] = count - sum(targets.values())
 
-    # Prepare immutable policy inputs in original album insertion order. The
-    # adapter owns identity normalization and the Navidrome ownership lookup;
-    # the allocator itself has no provider/library access or mutable callbacks.
+    # Prepare immutable policy inputs; the adapter owns identity and ownership lookup.
     candidate_by_id = {}
     allocation_candidates = []
     for source_order, candidate in enumerate(albums.values()):
@@ -453,7 +451,9 @@ def recommend_new_music(
         ))
 
     allocation = allocate_personal_recommendations(AllocationRequest(
-        candidates=tuple(apply_history_cooldown(allocation_candidates, candidate_by_id, DISCOVERY_DB, now=time.time())),
+        candidates=tuple(apply_history_cooldown(
+            allocation_candidates, candidate_by_id, DISCOVERY_DB, now=time.time()
+        )),
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
