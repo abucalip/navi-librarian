@@ -9,6 +9,7 @@ from discovery_candidate_gathering import RecommendationProviders
 from recommendation_replay import (
     LastFmReplay,
     ProviderTape,
+    main as replay_main,
     freeze_gathered_inputs,
     load_capture,
     thaw_gathered_inputs,
@@ -22,6 +23,7 @@ def _gathered():
         "listens": [{"track_metadata": {"artist_name": "Fixture Artist"}}],
         "recent_artists": Counter({"fixtureartist": 2}),
         "recent_artist_mbid_counts": Counter({"artist-mbid": 2}),
+        "recent_artist_play_counts": Counter({"fixtureartist": 1}),
         "albums": {
             ("fixtureartist", "fixturealbum"): {
                 "artist": "Fixture Artist",
@@ -44,6 +46,7 @@ def _gathered():
         "supplementary_cache_hits": 0,
         "supplementary_cache_misses": 20,
         "recent_family_counts": Counter({"jazz": 2}),
+        "recent_family_play_counts": Counter({"jazz": 1}),
         "core_families": {"jazz", "rock"},
         "exploration_families": {"african"},
         "profile_families": {"jazz", "rock", "african"},
@@ -59,6 +62,8 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         self.assertEqual(list(restored["albums"].values()), list(original["albums"].values()))
         self.assertIsInstance(restored["recent_artists"], Counter)
         self.assertIsInstance(restored["recent_family_counts"], Counter)
+        self.assertEqual(restored["recent_artist_play_counts"], original["recent_artist_play_counts"])
+        self.assertEqual(restored["recent_family_play_counts"], original["recent_family_play_counts"])
         self.assertEqual(restored["core_families"], original["core_families"])
         self.assertEqual(restored["library_by_title"], original["library_by_title"])
 
@@ -79,6 +84,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                 output=expected,
                 count=1,
                 git_sha="fixture-sha",
+                ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 25},
             )
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             envelope = load_capture(path)
@@ -88,6 +94,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                 write_capture(
                     path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
                     output=expected, count=1, git_sha="other-sha",
+                    ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 25},
                 )
 
     def test_safe_capture_is_one_shot_and_clears_capture_environment(self):
@@ -104,6 +111,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
                     ProviderTape("record"),
                     json.dumps({"recommendations": [], "lastfm_api_configured": False}),
                     1,
+                    ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 0},
                 )
                 self.assertTrue(path.is_file())
                 self.assertNotIn("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH", os.environ)
@@ -118,6 +126,7 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             write_capture(
                 path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
                 output=json.dumps({"recommendations": []}), count=1, git_sha="fixture",
+                ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 0},
             )
             envelope = json.loads(path.read_text(encoding="utf-8"))
             envelope["payload"]["count"] = 99
@@ -125,6 +134,51 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             path.chmod(0o600)
             with self.assertRaisesRegex(ValueError, "checksum mismatch"):
                 load_capture(path)
+
+    def test_schema_v1_capture_is_rejected_as_missing_ranking_context(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            root.chmod(0o700)
+            path = root / "capture.json"
+            write_capture(
+                path, gathered=_gathered(), lastfm_calls=[], provider_events=[],
+                output=json.dumps({"recommendations": []}), count=1, git_sha="fixture",
+                ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 0},
+            )
+            envelope = json.loads(path.read_text(encoding="utf-8"))
+            envelope["schema_version"] = 1
+            path.write_text(json.dumps(envelope), encoding="utf-8")
+            path.chmod(0o600)
+            with self.assertRaisesRegex(ValueError, "lacks frozen ranking context"):
+                load_capture(path)
+
+    def test_replay_uses_frozen_snapshot_and_ranking_context_not_provider_tape(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            root.chmod(0o700)
+            path = root / "capture.json"
+            expected = {"recommendations": [], "lastfm_api_configured": False}
+            write_capture(
+                path, gathered=_gathered(), lastfm_calls=[], provider_events=[{"operation": "provenance"}],
+                output=json.dumps(expected), count=1, git_sha="fixture",
+                ranking_context={"ranking_now": 1234.5, "history": [], "diversity_setting": 25},
+            )
+            def fake_recommend(**kwargs):
+                self.assertEqual(kwargs["count"], 1)
+                self.assertEqual(list(kwargs["_gathered_override"]["albums"]), [("fixtureartist", "fixturealbum")])
+                self.assertEqual(kwargs["_ranking_context_override"], {"ranking_now": 1234.5, "history": [], "diversity_setting": 25})
+                self.assertNotIn("_provider_tape", kwargs)
+                return json.dumps(expected)
+            output = StringIO()
+            with patch("navidrome_server.recommend_new_music", side_effect=fake_recommend), redirect_stdout(output):
+                self.assertEqual(replay_main([str(path)]), 0)
+            report = json.loads(output.getvalue())
+            self.assertTrue(report["reproduced"])
+            self.assertEqual(report["provider_events_replayed"], 0)
+            self.assertEqual(report["provider_events_provenance_only"], 1)
 
     def test_provider_tape_replays_cache_api_and_http_without_calling_providers(self):
         class Response:

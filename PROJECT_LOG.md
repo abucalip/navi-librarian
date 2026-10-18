@@ -1,3 +1,13 @@
+## 2026-10-18 — Deterministic recommendation replay contract
+
+- PR #350 (`fix/deterministic-recommendation-replay`) implements snapshot-authoritative replay, frozen ranking context (timestamp/history/diversity), and preservation of raw plus weighted play-count maps. Provider events are provenance only; Last.fm calls remain strict and fully consumed. Capture schema is v2; schema-v1 captures fail explicitly and require recapture.
+- The private `baseline-20261018.json` was not copied into GitHub and remains unchanged/unsupported for deterministic replay because it is schema v1. No private listening/library/provider data was committed.
+- All four required workflows passed on exact PR head `0b69d0e7c42fd621ee903a8becf7791293a35d46`: Python syntax run 1723 (`39138710922`); Docker packaging/full unit suite/build run 1631 (`39138710645`, 709 tests); container runtime smoke run 1440 (`39138710718`); validation-only multi-architecture image validation run 1484 (`39138710654`, publishing paused). Initial size-ratchet failure on `b8389454726f37101a1e26d41f46410c0c4dd652` was fixed by moving ranking-input preparation into `recommendation_cooldown.py`; the server remains at the 2,650-line limit.
+- This documentation-only follow-up will trigger the same four workflows on its resulting PR head. PR remains open/unmerged; no publication, deployment, or production runtime verification occurred.
+- Next action: verify all four workflows on the final PR head, then create a fresh private schema-v2 capture and replay it against its declared source revision before resuming chronological recommendation evaluation.
+
+---
+
 ## 2026-10-18 — Private recommendation capture replay audit
 
 - Audited the new private capture `baseline-20261018.json` against its declared source revision `4c2a0f09ebbbe374cf93049d17d4c3265fc5d589` (PR #342 source). The capture remains outside GitHub; no personal listening/library/provider data or identity-bearing comparison output was added to the repository.

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from discovery_allocation_contract import AllocationCandidate, OwnershipStatus
 from discovery_store import recommendation_identity_hash, write_list
-from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score
+from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score, prepare_ranking_inputs
 
 
 class RecommendationCooldownTests(unittest.TestCase):
@@ -97,6 +97,29 @@ class RecommendationCooldownTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cooldown_adjusted_score(float("nan"), self.artist, self.album, [], now=self.now)
 
+
+    def test_replay_context_freezes_history_time_and_diversity_setting(self):
+        candidate = AllocationCandidate(
+            candidate_id="only", artist_key="artist", album_key="album",
+            category="adjacent", score=0.8, ownership=OwnershipStatus.CLEAR,
+        )
+        context = {
+            "ranking_now": self.now,
+            "history": [self.row()],
+            "diversity_setting": 37,
+        }
+        def unexpected_live_read():
+            raise AssertionError("replay must not read the current clock or settings")
+        adjusted, actual_context = prepare_ranking_inputs(
+            [candidate],
+            {"only": {"artist": self.artist, "album": self.album}},
+            "/nonexistent-parent/discovery.sqlite3",
+            context,
+            now_fn=unexpected_live_read,
+            diversity_setting_fn=unexpected_live_read,
+        )
+        self.assertEqual(actual_context, context)
+        self.assertAlmostEqual(adjusted[0].score, 0.72)
 
     def test_storage_adapter_penalizes_only_ownership_clear_candidates(self):
         with tempfile.TemporaryDirectory() as directory:
