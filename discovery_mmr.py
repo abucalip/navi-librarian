@@ -49,11 +49,17 @@ def diversity_setting_to_penalty(value: int) -> float:
 
     Here lambda_ is the penalty subtracted for similarity, so larger values
     produce more diversification (unlike the relevance-weight convention used
-    in some MMR descriptions). Keep this mapping pure and explicitly tested.
+    in some MMR descriptions). Values 0–75 map linearly to 0.00–0.75; values
+    75–100 saturate at 0.75, the provisional single-pool guardrail cap. This is
+    a conservative backend mapping, not evidence that the UI is ready: cross-pool
+    tests guard behavior, while future-listen quality and broader calibration
+    remain unproven.
     """
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
         raise ValueError("diversity setting must be an integer from 0 to 100")
-    return value / 100.0
+    # The existing single-pool gate failed from setting 80 upward. Ramp to
+    # lambda=0.75, then saturate instead of implying stronger is better.
+    return min(value, 75) / 100.0
 
 
 def mmr_rerank(
