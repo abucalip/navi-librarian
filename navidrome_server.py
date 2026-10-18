@@ -453,9 +453,7 @@ def recommend_new_music(
         ))
 
     allocation = allocate_personal_recommendations(AllocationRequest(
-        candidates=tuple(apply_history_cooldown(
-            allocation_candidates, candidate_by_id, DISCOVERY_DB, now=time.time()
-        )),
+        candidates=tuple(apply_history_cooldown(allocation_candidates, candidate_by_id, DISCOVERY_DB, now=time.time())),
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
