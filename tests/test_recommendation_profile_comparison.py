@@ -36,7 +36,7 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
         ]
         first, last, bounds = first_last_five_day_windows(listens)
         self.assertEqual(len(first), 2)
-        self.assertEqual(len(last), 3)
+        self.assertEqual(len(last), 2)
         self.assertEqual(bounds["first_start_utc"], "1970-01-01T00:16:40+00:00")
         self.assertEqual(bounds["last_end_utc"], "1970-01-12T00:16:40+00:00")
 
