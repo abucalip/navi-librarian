@@ -96,6 +96,10 @@ Report:
 
 Library owners may already own and play music, so evaluate on unowned artists and treat replay hit rate as a relative comparison, not an absolute prediction of user satisfaction. Avoid leakage: future-window listens must not enter the profile or candidate-generation fixtures for day T. Document fixture construction and the limits of historical replay.
 
+
+**Full-engine profile responsiveness harness merged in PR #361 (2026-10-18).** `recommendation_profile_comparison.py` compares the first and last five days of timestamped ListenBrainz history using the existing owner-only schema-v2 capture. It changes only listen-derived artist/family weights while holding the captured candidate pool, library/ownership snapshot, Last.fm responses, ranking timestamp, recommendation history, and diversity setting fixed. It replays captured Last.fm values by identity, fails closed on missing coverage, and emits aggregate-only metrics. The evaluator's CI passed (733 tests and all four required workflows) on exact PR head `257a2fa37ab0831e42769463107a2f05c1e7b220`; merge commit `054b7aa71d632821f3d7a3811ab5f24f63003366`. The actual owner-side comparison is pending. Because the available capture postdates both windows, this is a responsiveness experiment only—not future-listen hit-rate/nDCG or a causal quality measure.
+
+
 #### 0.3 Trace refresh and expose score diagnostics
 
 **Refresh/freshness audit started in PR #299.** Manual reads return persisted discovery lists rather than regenerating them. The scheduler checks five cached records hourly and refreshes records at least 24 hours old. Personal refresh is synchronous at the explicit refresh entry point; other discovery refreshes are launched in background threads. The scheduler previously wrapped the entire list loop in one silent exception handler, so a read/refresh failure could stop processing later lists for that hour without leaving a useful diagnostic.
