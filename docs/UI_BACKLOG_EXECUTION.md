@@ -101,8 +101,9 @@ From `docs/FRONTEND_DESIGN_GUIDE.md` section 8.
 
 1. ~~**State craft**~~ — done in PR #121.
 2. **Per-section layouts** — **partially done.** Acquisition (PR #128), artist deep dive
-   (PR #184) and recommendations (PR #215) are differentiated. Still on the plain `.cards`
-   grid: New Releases, Personal Discoveries and Classics, plus Settings, which has its own
+   (PR #184), recommendations (PR #215) and Classics (this PR, section 5n) are differentiated.
+   Still on the plain `.cards`
+   grid: New Releases and Personal Discoveries, plus Settings, which has its own
    layout but no composition work. The guide's instruction is "do not force every page into the
    same dashboard grid", so each remaining section needs its own justification rather than a
    sweep. Recommendations was picked because its defect was the control stack rather than the
@@ -1040,7 +1041,7 @@ by reading source.
 - Deliberately **not** a pill or a badge, because `docs/FRONTEND_DESIGN_GUIDE.md` section 3
   lists colourful status pills among the anti-patterns to avoid.
 
-## 5m. Header settings menu (plan: `docs/STATUS_ICON_DEV.md`)
+## 5m. Header settings menu (merged PR #327; plan in `docs/STATUS_ICON_DEV.md`)
 
 Settings and Log out moved out of the sidebar into a gear button at the top right of the
 header. Activating the gear opens a small disclosure with those two items. Acquisitions stays
@@ -1071,6 +1072,24 @@ Verification on the branch (head SHA recorded in the PR, not here):
 
 Not verified: Safari (focus rule written for it, not exercised), a real screen reader, reduced
 motion in a browser, and the CI workflows and manual gate on the exact PR head.
+
+## 5n. Classics card titles (item 2, per-section layouts)
+
+- **Problem.** Classics ("Add to your collection") sits on the four-column `.cards` grid of square
+  artwork, which is 278px wide on a 1440px viewport. Long album names wrapped to four lines, so
+  card heights and action rows were uneven across the section.
+- **Tested and rejected:** the acquisition-grid layout (`cards acquisition-grid`). It fixes the
+  wrapping but drops desktop to three columns with 603px cards, and collapses phone to one column,
+  roughly doubling the scroll length. Density was the trade-off the guide asks to be deliberate.
+- **Change.** Classics titles are clamped to two lines, scoped to `#classicsCards`. The full album
+  name and year are the title's tooltip, so no text is lost. Other sections are unchanged.
+- **Measured** (1440px and 390px, mocked discovery data with long names; screenshots in the PR):
+  no title exceeds two lines; three of eighteen clamped titles lose their visible year, which
+  remains in the tooltip; no horizontal overflow; console errors are only the pre-existing
+  missing-asset 404s and the blocked external font request.
+- **Not verified:** the full manual browser gate in `docs/LOCAL_UI_TESTING.md` on the PR head,
+  keyboard tooltip access (tooltips are pointer-only; the full name stays in the DOM for
+  assistive tech), Safari, and real Navidrome data.
 
 ## 6. Session protocol
 
