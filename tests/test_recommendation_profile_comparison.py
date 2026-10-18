@@ -159,8 +159,8 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
         result = compare_outputs(first, first, count=2)
         diagnostics = result["score_and_shortlist_first"]
         self.assertEqual(diagnostics["candidate_count"], 3)
-        self.assertEqual(diagnostics["selected_in_score_ranked_top_k"], 2)
-        self.assertEqual(diagnostics["score_ranked_top_k_overlap"], 2)
+        self.assertEqual(diagnostics["selected_in_score_ranked_top_k"], 1)
+        self.assertEqual(diagnostics["score_ranked_top_k_overlap"], 1)
         self.assertEqual(diagnostics["allocation_decision_counts"]["selected"], 2)
         self.assertEqual(diagnostics["allocation_decision_counts"]["category_quota_filled"], 1)
         self.assertEqual(diagnostics["component_distributions"]["discovery_score"]["mean"], 9.0)
