@@ -1446,6 +1446,28 @@ function buildPersonalRow(item, index) {
   });
 }
 
+// Add to your collection rows (DESIGN_SYSTEM.md sections 8 and 9.4). The server orders candidates
+// by an exploration score that includes random jitter, and Load albums rotates them on the client,
+// so the order is not a ranking. Rows show a muted position and no red rank numeral, and the
+// status line says what the order is. Not for me and Dismiss artist go through the server
+// feedback endpoint for this list, as the old card did, and the artist bio follows the same
+// connection-reason rule as the card.
+function buildClassicsRow(item, index) {
+  const hasBio = /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
+  return buildRecommendationRow(item, index + 1, {
+    indexed: true,
+    artistBio: hasBio,
+    meta: [
+      (item.discovery_type || item.discovery_category || '').replaceAll('_', ' '),
+      item.anchor_artist ? 'Similar to ' + item.anchor_artist : '',
+      hasBio ? '' : item.reason,
+      item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
+    ],
+    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'classics'),
+    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics')
+  });
+}
+
 // Lazy artist bio for a ranked row. Same contract as the editorial card: one request per artist
 // (cached in artistBioRequests), made only when the row is near the viewport, and the paragraph
 // stays hidden unless the API returns a bio. Text is set with textContent.
@@ -1646,7 +1668,7 @@ async function loadDiscovery(name, options = {}) {
   disconnectGenreRowObservers();
   // The ranked-row lists show skeleton rows while they load (DESIGN_SYSTEM.md 9.6). They are
   // removed as soon as the response arrives, before any row is rendered, and on failure.
-  const rankedRowList = name === 'new_releases' || name === 'personal';
+  const rankedRowList = name === 'new_releases' || name === 'personal' || name === 'classics';
   target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
@@ -1768,12 +1790,18 @@ async function loadDiscovery(name, options = {}) {
         ? count + ' · Sorted by release date, newest first'
         : name === 'personal' && items.length
           ? count + ' · Engine order, not ranked by discovery score'
-          : count);
+          : name === 'classics' && items.length
+            ? count + ' · Picked for exploration, not ranked by score'
+            : count);
     }
 
     for (const [index, item] of items.entries()) {
       if (name === 'personal') {
         target.append(buildPersonalRow(item, index));
+        continue;
+      }
+      if (name === 'classics') {
+        target.append(buildClassicsRow(item, index));
         continue;
       }
       if (name === 'new_releases') {
@@ -1804,9 +1832,6 @@ async function loadDiscovery(name, options = {}) {
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
       if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
-      // Classics titles are clamped to two lines (see #classicsCards in app.css). A clamped name
-      // would otherwise be unreadable on screen, so the full name and year are offered on hover.
-      if (name === 'classics') title.title = year !== null && !isDeepDive ? `${album} (${year})` : album;
       ensureAlbumYearBadge(card);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.

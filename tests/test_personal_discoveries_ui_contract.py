@@ -83,7 +83,8 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
         self.assertNotIn("discovery_score", body, "the score is not shown as a rank or a metadata line here")
 
     def test_loading_shows_skeleton_rows_and_failure_clears_them(self):
-        self.assertIn("const rankedRowList = name === 'new_releases' || name === 'personal';", self.js)
+        # Narrow update (Phase 3 item 4): Add to your collection is a ranked list too.
+        self.assertIn("const rankedRowList = name === 'new_releases' || name === 'personal' || name === 'classics';", self.js)
         self.assertIn("target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));", self.js)
         self.assertIn("if (rankedRowList) target.replaceChildren();\n    discoveryStatus(name, error.message);", self.js)
 

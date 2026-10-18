@@ -343,10 +343,6 @@ p { line-height: 1.55; }
 .card > :not(.card-art) { margin-left: 13px; margin-right: 13px; }
 .card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent); background: #353124; border-left: 2px solid var(--accent); border-radius: 0; font: 500 9px/1.4 var(--mono); letter-spacing: .055em; text-transform: uppercase; }
 .card h3 { margin-top: 0; margin-bottom: 4px; font: 600 20px/1.1 var(--display); letter-spacing: .005em; overflow-wrap: anywhere; }
-/* Classics is a four-column grid of square artwork. Long album names wrapped to four lines and
-   pushed the action row down, so the section read as uneven. Two lines keep the rows aligned;
-   the full name is on the title's tooltip (app.js). Other sections keep their full titles. */
-#classicsCards .card h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .card-artist { margin-top: 0; margin-bottom: 13px; color: var(--text-muted); font-size: 12px; }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
 .genre-tag { padding: 3px 6px; color: var(--text-muted); background: var(--surface-raised); border: 1px solid var(--edge); border-radius: 2px; font: 10px/1.35 var(--mono); }
