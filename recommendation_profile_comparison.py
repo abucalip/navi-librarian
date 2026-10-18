@@ -212,6 +212,12 @@ def summarize_score_and_shortlist(output: Mapping[str, Any], count: int) -> dict
     all_categories = Counter(
         str(row.get("assigned_category") or "unknown") for row in rows
     )
+    selected_allocation_categories = Counter(
+        str(row.get("allocation_category") or "unknown") for row in selected_rows
+    )
+    all_allocation_categories = Counter(
+        str(row.get("allocation_category") or "unknown") for row in rows
+    )
     selected_ranks = [
         rank_by_id[_identity(row)] for row in selected_rows
         if _identity(row) in rank_by_id
@@ -245,6 +251,20 @@ def summarize_score_and_shortlist(output: Mapping[str, Any], count: int) -> dict
         "allocation_decision_counts": dict(sorted(statuses.items())),
         "category_candidate_counts": dict(sorted(all_categories.items())),
         "selected_category_counts": dict(sorted(selected_categories.items())),
+        "allocation_category_candidate_counts": dict(sorted(all_allocation_categories.items())),
+        "selected_allocation_category_counts": dict(sorted(selected_allocation_categories.items())),
+        "allocator_category_targets": dict(sorted(
+            (str(key), int(value)) for key, value in output.get("category_targets", {}).items()
+        )),
+        "allocator_category_counts": dict(sorted(
+            (str(key), int(value)) for key, value in output.get("category_counts", {}).items()
+        )),
+        "allocator_category_shortfalls": dict(sorted(
+            (str(key), int(value)) for key, value in output.get("category_shortfalls", {}).items()
+        )),
+        "allocator_category_targets_met": output.get("category_targets_met"),
+        "allocator_recommendations_returned": output.get("recommendations_returned", len(rec_ids)),
+        "allocator_candidate_albums_resolved": output.get("candidate_albums_resolved"),
         "selected_rank_distribution": _distribution([float(rank) for rank in selected_ranks]),
         "selected_in_score_ranked_top_k": sum(identity in top_k_ids for identity in rec_ids),
         "requested_count": count,
