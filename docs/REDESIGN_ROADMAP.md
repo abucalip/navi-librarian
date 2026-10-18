@@ -83,6 +83,7 @@ Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral 
 - Dashboard: static artwork tile strip replaces the ring (if D1 approved), keeping the "Ten from the collection" picks, Get on each tile, and keyboard operation.
 - Artist Deep Dives: genre sections with artist-led rows, strips that scroll only when they overflow, dismiss kept with its confirm step and server-side safety.
 - Exit: dismiss path tested only on the sandbox folder; behavior parity with `main`.
+- Status: Artist Deep Dives implemented on `ui/phase-4-artist-deep-dives` (not merged, not deployed). The genre sections, artist-led tiles and overflow-only strips were already on `main` (`da908b5`); this PR brings the arrows, the Not for me control and the genre count onto the design system (sprite chevrons and × icons, 44px hit areas, no text-shadow, body-face count, singular "1 album"). Finding: `main` has **no confirm step** for Not for me (it posts at once, as it did before; no `confirm()` exists in the history of `static/app.js`), so the roadmap's "kept with its confirm step" describes behavior that is not there. This PR keeps the existing behavior and does not add a confirm step; the owner decides. Evidence in `docs/UI_BACKLOG_EXECUTION.md` section 17. Dashboard (item 1 of this phase) waits on decision D1.
 
 ### Phase 5 — Acquisitions (M)
 

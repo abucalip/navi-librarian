@@ -245,16 +245,13 @@ p { line-height: 1.55; }
 .genre-row { min-width: 0; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
-.genre-row-count { color: var(--text-subtle); font: 10px/1.4 var(--mono); }
+.genre-row-count { color: var(--text-muted); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
 .genre-row-arrows { display: flex; gap: 6px; margin-left: auto; }
 .genre-row-arrows[hidden] { display: none; }
-/* 44x44 minimum touch target. The glyph stays 36px as designed; a transparent
-   pseudo-element expands the pressable area so the mark is unchanged but the target
-   meets the minimum. layout.md asks to keep touch targets usable even when the visible
-   mark is small, which is what this does rather than growing the arrow. */
-.genre-row-arrow { position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--accent); font: 700 36px/.8 var(--display); text-shadow: 0 1px 0 #9a8127; }
-.genre-row-arrow::after { content: ""; position: absolute; inset: -3px; }
-.genre-row-arrow:hover { background: transparent; color: #ffe477; transform: scale(1.12); }
+/* 44x44 hit area with a 20px chevron from the sprite (DESIGN_SYSTEM.md 9.1, 10). The arrows
+   are only rendered visible when the track overflows (see syncArrows in app.js). */
+.genre-row-arrow { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--accent); }
+.genre-row-arrow:hover { background: transparent; color: var(--accent-hover); }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: var(--edge-strong) var(--surface); scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
@@ -288,8 +285,11 @@ p { line-height: 1.55; }
 .card h3 .album-year { margin-left: 5px; color: var(--text-muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
 .card .artist-bio { margin-top: 7px; color: var(--text-muted); font: 400 12px/1.45 var(--body); }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; font-size: 11px; }
-.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 5px; right: 8px; display: grid; place-items: center; width: auto; height: auto; padding: 0 3px; border: 0; border-radius: 0; background: transparent; color: var(--chart-red-text); font: 700 30px/.95 var(--body); text-shadow: 0 2px 5px #000, 0 0 10px rgba(0,0,0,.9); box-shadow: none; }
-.card .card-art .deep-dive-dismiss:hover { background: transparent; color: var(--chart-red-text); border: 0; transform: scale(1.12); }
+/* 44x44 hit area in the artwork corner, 20px sprite icon (DESIGN_SYSTEM.md 9.1). The icon is
+   inside the clipped artwork, so its focus ring is drawn inside the box. */
+.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--chart-red-text); box-shadow: none; }
+.card .card-art .deep-dive-dismiss:hover { background: transparent; color: var(--text); border: 0; }
+.card .card-art .deep-dive-dismiss:focus-visible { outline-offset: -4px; }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
 .card .card-actions .get-album { width: 44px; height: 44px; font-size: 11px; }
 /* One get/request control. The modal, artwork-overlay and card-action variants were
