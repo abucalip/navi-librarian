@@ -237,9 +237,10 @@ def evaluate(capture_path: str, history_path: str) -> dict[str, Any]:
 
     def run(gathered: dict[str, Any]) -> tuple[dict[str, Any], IdentityLastFmReplay]:
         lastfm = IdentityLastFmReplay(payload["lastfm_calls"])
+        gathered_for_run = copy.deepcopy(gathered)
         raw = navidrome_server.recommend_new_music(
             count=int(payload["count"]),
-            _gathered_override=gathered,
+            _gathered_override=gathered_for_run,
             _ranking_context_override=ranking_context,
             _lastfm_popularity_fn=lastfm,
             _lastfm_available_override=bool(
