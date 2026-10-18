@@ -76,11 +76,25 @@ def mmr_rerank(
 
     if not pool or limit == 0:
         return []
-    scores = [item["_mmr_score"] for item in pool]
-    low, high = min(scores), max(scores)
-    span = high - low
+    # Normalize by relative rank, not score magnitude. Min-max normalization
+    # lets a single score outlier compress every other candidate's relevance,
+    # making the same lambda behave differently across score distributions.
+    # Average ranks give equal scores equal relevance; ties remain deterministic
+    # in selection because the original input order still breaks MMR ties.
+    ranked = sorted(pool, key=lambda item: item["_mmr_score"], reverse=True)
+    rank_by_identity: dict[int, float] = {}
+    start = 0
+    while start < len(ranked):
+        end = start + 1
+        while end < len(ranked) and ranked[end]["_mmr_score"] == ranked[start]["_mmr_score"]:
+            end += 1
+        average_rank = (start + end - 1) / 2.0
+        for item in ranked[start:end]:
+            rank_by_identity[id(item)] = average_rank
+        start = end
+    denominator = max(1, len(ranked) - 1)
     for item in pool:
-        item["_mmr_relevance"] = 1.0 if span == 0.0 else (item["_mmr_score"] - low) / span
+        item["_mmr_relevance"] = 1.0 - rank_by_identity[id(item)] / denominator
 
     # Apply the floor against the original pool normalization. Do not renormalize
     # the surviving candidates, which would erase the meaning of the floor.
