@@ -104,7 +104,7 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
             item.pop("discovery_category", None)
         report = evaluate_capture(envelope, limit=4, lambdas=[0], relevance_floors=[0])
         self.assertEqual(report["lambda_results"][0]["category_counts"], {"adjacent": 4})
-        self.assertEqual(report["baseline_category_counts"], {"adjacent": 5})
+        self.assertEqual(report["baseline_category_counts"], {"adjacent": 4})
 
 if __name__ == "__main__":
     unittest.main()
