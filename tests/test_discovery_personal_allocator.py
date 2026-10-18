@@ -100,6 +100,27 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertEqual(statuses["duplicate"], "duplicate_candidate")
         self.assertEqual(statuses["second-album"], "artist_already_selected")
 
+    def test_duplicate_identity_takes_precedence_over_family_cap_diagnostic(self):
+        result = allocate_personal_recommendations(request([
+            item("selected-jazz", artist="artist-a", album="same",
+                 category="adjacent", score=10, family="jazz"),
+            item("duplicate-jazz", artist="artist-a", album="same",
+                 category="cross_genre", score=8, family="jazz"),
+            item("other-family", artist="artist-b", album="other",
+                 category="cross_genre", score=7, family="jazz"),
+            item("adventure", artist="artist-c", album="adventure",
+                 category="adventurous", score=6, family="ambient"),
+        ], count=3, targets={
+            "adjacent": 1, "cross_genre": 1, "adventurous": 1,
+        }))
+        statuses = {decision.candidate_id: decision.status for decision in result.decisions}
+        self.assertEqual(
+            result.selected_candidate_ids,
+            ("selected-jazz", "other-family", "adventure"),
+        )
+        self.assertEqual(statuses["duplicate-jazz"], "duplicate_candidate")
+        self.assertNotEqual(statuses["duplicate-jazz"], "recent_genre_cap_reached")
+
     def test_owned_candidates_are_rejected_and_title_conflicts_go_to_review(self):
         result = allocate_personal_recommendations(request([
             item("owned", category="adjacent", ownership=OwnershipStatus.EXACT_OWNED),
