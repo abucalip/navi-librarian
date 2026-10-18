@@ -42,10 +42,10 @@ Acceptance: more eligible unique unowned albums and a higher fill rate on the fr
 
 ### Open questions for the owner
 
-These would change the roadmap:
-1. Should Librarian intentionally keep recommendations close to heavily played artists, or should it actively surface more artists from outside the CF pool? (Recommended: diversify supply, because the stated goal is discovery beyond the existing library.)
-2. How far back does the ListenBrainz account's history go, and is the 30-day window a deliberate product choice? (Recommended: confirm before changing the window.)
-3. Is an extra MusicBrainz budget of a few seconds per run acceptable, given the ~1.1 s spacing? (Recommended: yes, bounded to one or two extra pages.)
+Answered by the owner (2026-10-18):
+1. Diversify supply. Later, expose a settings slider that lets users choose between maximum exploration and staying close to their taste. Supply work (P1–P3) comes first; the slider is a later product decision and must map onto the existing diversity-setting contract.
+2. The ListenBrainz history available to the owner goes back only about two weeks, and the 30-day profile window was not a deliberate choice. Replace the 30-day window in the profile design (P2) with an explicit decision, and keep the CF-history hypothesis open because two weeks of history is shorter than the provider's full record.
+3. Yes. An extra MusicBrainz budget of a few seconds per run is acceptable, bounded to one or two extra CF pages (P3).
 
 ## Goal and guardrails
 
