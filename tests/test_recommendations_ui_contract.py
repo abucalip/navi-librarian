@@ -220,5 +220,47 @@ class RecommendationsUIContractTests(unittest.TestCase):
         )
 
 
+class RankedRowContractTests(unittest.TestCase):
+    """Discover music ranked rows (DESIGN_SYSTEM.md 9.4, 8). Source contracts only."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.html = INDEX_HTML.read_text(encoding="utf-8")
+        cls.js = APP_JS.read_text(encoding="utf-8")
+        cls.css = APP_CSS.read_text(encoding="utf-8")
+
+    def test_results_use_the_ranked_list_not_the_card_grid(self):
+        self.assertIn('id="recommendationCards" class="ranked-list"', self.html)
+        self.assertNotIn('id="recommendationCards" class="cards"', self.html)
+
+    def test_numerals_only_when_the_sort_basis_is_a_real_order(self):
+        self.assertIn("if (sort === 'artist') return {label: 'Sorted A–Z by artist', numbered: false};", self.js)
+        self.assertIn("filtered.forEach((item, index) => {", self.js)
+        self.assertIn("basis.numbered ? index + 1 : null", self.js)
+        self.assertIn("numeral.setAttribute('aria-hidden', 'true');", self.js)
+
+    def test_score_and_popularity_hide_numerals_when_values_are_missing(self):
+        self.assertIn("complete('discovery_score')", self.js)
+        self.assertIn("complete('lastfm_listeners')", self.js)
+
+    def test_sort_basis_is_named_in_the_count_line(self):
+        self.assertIn("· ${basis.label}`", self.js)
+
+    def test_row_keeps_modal_open_and_separate_get_and_dismiss_stops(self):
+        self.assertIn(".ranked-row[data-album-title]", self.js)
+        start = self.js.index("function buildRecommendationRow(")
+        builder = self.js[start:self.js.index("$('recommendationSearch').addEventListener", start)]
+        self.assertIn("makeAlbumCardInteractive(row, artist, album, item);", builder)
+        self.assertIn("actions.append(createGetButton(artist, album, item));", builder)
+        self.assertIn("dismissButton.setAttribute('aria-label', 'Not for me');", builder)
+        self.assertNotIn("innerHTML", builder, "rows must be built with text APIs only")
+
+    def test_failed_generation_is_reported_in_the_count_line(self):
+        self.assertIn("'Recommendations could not be loaded: ' + error.message", self.js)
+
+    def test_row_motion_is_transform_only(self):
+        self.assertIn("transform: scaleY(0); transition: transform var(--dur) var(--ease-out);", self.css)
+
+
 if __name__ == "__main__":
     unittest.main()

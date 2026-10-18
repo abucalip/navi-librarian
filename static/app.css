@@ -258,7 +258,7 @@ p { line-height: 1.55; }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: var(--edge-strong) var(--surface); scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
-.card.editorial-card, #acquisitionCards > .card, #recommendationCards > .card { cursor: pointer; }
+.card.editorial-card, #acquisitionCards > .card { cursor: pointer; }
 .album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.78); backdrop-filter: blur(5px); }
 .album-modal-backdrop[hidden] { display: none; }
 .album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
@@ -459,4 +459,85 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 @media (prefers-reduced-motion: reduce) {
   .get-album.is-pending .get-album-arc { animation: none; }
   .get-album.requested .get-album-tick { animation: none; stroke-dashoffset: 0; }
+}
+
+/* Ranked rows (DESIGN_SYSTEM.md 9.4, 9.6). Discover music renders an ordered list, not a card grid.
+   Grid: numeral 72px, artwork 64px, title and artist (flex), metadata, action. Numerals are the
+   display face in red, shown only where the sort basis is a real order (section 8). */
+.ranked-list { display: flex; flex-direction: column; border-top: 1px solid var(--edge); }
+.ranked-row {
+  position: relative; min-width: 0; cursor: pointer;
+  display: grid; grid-template-columns: 72px 64px minmax(0, 1fr) minmax(0, 220px) auto;
+  align-items: center; gap: 0 16px; padding: 12px 16px 12px 18px;
+  background: var(--surface); border-bottom: 1px solid var(--edge);
+}
+.ranked-row::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  transform: scaleY(0); transition: transform var(--dur) var(--ease-out);
+}
+.ranked-row:hover { background: var(--surface-hover); }
+.ranked-row:hover::before { transform: scaleY(1); }
+.ranked-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rank-numeral {
+  justify-self: end; font: 600 36px/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
+  font-variant-numeric: tabular-nums;
+}
+.ranked-row .card-art {
+  width: 64px; height: 64px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+.ranked-row .card-art::after { display: none; }
+.ranked-row .card-art-placeholder { padding: 0; font-size: 0; }
+.ranked-row .card-art-placeholder::before { content: none; }
+.row-main { min-width: 0; }
+.ranked-row h3 {
+  margin: 0; font: 600 20px/1.15 var(--display); letter-spacing: .005em; color: var(--text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
+}
+.ranked-row h3 .album-year { margin-left: 6px; color: var(--text-muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.row-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-meta { min-width: 0; color: var(--text-muted); font-size: var(--text-xs); }
+.row-meta-line { margin: 0; overflow-wrap: anywhere; }
+.row-meta-line + .row-meta-line { margin-top: 2px; }
+.row-category { color: var(--text); font-weight: 600; }
+.row-source { color: var(--text-subtle); }
+.row-actions { display: flex; align-items: center; gap: 8px; }
+.ranked-row .get-album { width: auto; height: 44px; min-width: 64px; padding: 0 16px; border-radius: 999px; font-size: 12px; }
+.ranked-row .get-album-glyph { width: 22px; height: 22px; }
+.ranked-row .deep-dive-dismiss {
+  width: 44px; height: 44px; padding: 0; display: grid; place-items: center;
+  background: transparent; border: 1px solid var(--edge-strong); border-radius: 4px;
+  color: var(--text-muted); font: 400 24px/1 var(--body);
+}
+.ranked-row .deep-dive-dismiss:hover { color: var(--text); }
+.ranked-empty { margin: 16px 0; color: var(--text-muted); }
+
+/* Loading variant: the same grid as a row, with an opacity pulse only (section 11). */
+.ranked-row.is-skeleton { cursor: default; pointer-events: none; animation: skeleton-pulse 1.4s ease-in-out infinite; }
+.ranked-row.is-skeleton::before { display: none; }
+.ranked-row.is-skeleton .rank-numeral { width: 40px; height: 32px; background: var(--surface-raised); border-radius: var(--radius-chip); }
+.ranked-row .skeleton-art { width: 64px; height: 64px; background: var(--surface-raised); border-radius: var(--radius-control); }
+.ranked-row .skeleton-main { display: block; height: 40px; width: min(100%, 320px); background: var(--surface-raised); border-radius: var(--radius-chip); }
+.ranked-row .skeleton-meta { display: block; height: 36px; width: 100%; background: var(--surface-raised); border-radius: var(--radius-chip); }
+@keyframes skeleton-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+@media (max-width: 1200px) { .ranked-row { grid-template-columns: 64px 56px minmax(0, 1fr) minmax(0, 180px) auto; } .ranked-row .card-art { width: 56px; height: 56px; } .ranked-row .skeleton-art { width: 56px; height: 56px; } }
+@media (max-width: 620px) {
+  .ranked-row {
+    grid-template-columns: 36px 52px minmax(0, 1fr); gap: 10px 12px; padding: 12px 10px 12px 14px;
+  }
+  .ranked-row .card-art, .ranked-row .skeleton-art { width: 52px; height: 52px; }
+  .rank-numeral { font-size: 28px; }
+  .ranked-row h3 { font-size: 18px; }
+  .ranked-row .rank-numeral { grid-column: 1; grid-row: 1; }
+  .ranked-row .card-art { grid-column: 2; grid-row: 1; }
+  .row-main { grid-column: 3; grid-row: 1; }
+  .row-meta { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .row-meta-line + .row-meta-line { margin-top: 0; }
+  .row-actions { grid-column: 2 / -1; grid-row: 3; justify-self: start; }
+  .ranked-row.is-skeleton .rank-numeral { width: 28px; height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ranked-row::before { transition: none; }
+  .ranked-row.is-skeleton { animation: none; }
 }
