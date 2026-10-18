@@ -183,6 +183,7 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertGreater(result.phase_diagnostics["unclassified_fallback_attempts"], 0)
         self.assertEqual(result.phase_diagnostics["final_fallback_attempts"], 0)
 
+    # The phase counters must explain why a shortlist can stop below its target.
     def test_final_fallback_phase_is_reported_when_category_and_family_caps_block_fill(self):
         candidates = [
             item("selected-a", artist="artist-a", category="adjacent", score=10),
