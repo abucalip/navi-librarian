@@ -124,6 +124,36 @@ class RecommendationCooldownTests(unittest.TestCase):
             self.assertAlmostEqual(adjusted[0].score, 0.72, places=4)
             self.assertEqual(adjusted[1], ambiguous)
 
+    def test_sparse_pool_keeps_the_candidate_and_repeat_runs_are_deterministic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database_path = Path(directory) / "discovery.sqlite3"
+            write_list(database_path, "personal", {
+                "recommendations": [{"artist": self.artist, "album": self.album}],
+            }, generated_at=self.now - 60)
+            candidate = AllocationCandidate(
+                candidate_id="only", artist_key="artist", album_key="album",
+                category="adjacent", score=0.8, ownership=OwnershipStatus.CLEAR,
+            )
+            source = {"only": {"artist": self.artist, "album": self.album}}
+            first = apply_history_cooldown(
+                [candidate], source, str(database_path), now=self.now,
+            )
+            second = apply_history_cooldown(
+                [candidate], source, str(database_path), now=self.now,
+            )
+            self.assertEqual(len(first), 1)
+            self.assertEqual(first, second)
+            self.assertGreater(first[0].score, 0.0)
+
+    def test_cooldown_cap_preserves_a_material_relevance_gap(self):
+        history = [self.row(age=0, rank=1) for _ in range(20)]
+        high_relevance = cooldown_adjusted_score(
+            1.0, self.artist, self.album, history, now=self.now,
+        )
+        lower_relevance = 0.6
+        self.assertAlmostEqual(high_relevance, 0.75)
+        self.assertGreater(high_relevance, lower_relevance)
+
     def test_storage_adapter_fails_open_when_history_database_is_unavailable(self):
         candidate = AllocationCandidate(
             candidate_id="clear", artist_key="artist", album_key="album",
