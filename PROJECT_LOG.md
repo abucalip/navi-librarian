@@ -1209,3 +1209,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Preserved the explicit decision to dismiss the prior 35-combination/floor-sweep reproduction. The proposed sweep is a separate scoped evaluation using the existing fixture only; no live capture or fixture/report publication is authorized.
 - Recorded the audit's uncertainty about full ancestry verification for PR #326 rather than claiming it independently verified. The stale `navidrome_server.py` comment is listed for correction with the implementation follow-up.
 - This is a documentation-only change. No tests, evaluator sweep, CI, UI checks, publication, or deployment were run as part of this session. The roadmap remains uncalibrated until the next action is actually performed.
+
+
+## 2026-10-18 — Soft recommendation-history cooldown (PR pending)
+
+- Branch: `recommendation/soft-history-cooldown`, based on GitHub `main` at `2e8cdfcebd69565fe3a92742e43fccb8826c4377`.
+- Added `recommendation_cooldown.py`: repeat exposure contributes a rank-weighted soft score penalty (10% for rank 1 down to 0.5% for rank 20), decayed with a seven-day half-life, capped at 25%, and ignored after 30 days. The constants are explicit starting policy, not calibrated quality claims.
+- Integrated the adjustment into personal recommendation allocation only for candidates already classified as ownership-clear. It changes scores, never filters candidates, and fails open when the optional history read errors. Persisted identity hashing is now exposed through `discovery_store.recommendation_identity_hash()` while retaining the prior private helper as an alias; the SHA-256 normalization/separator remains compatible with existing rows.
+- Added deterministic tests for no-history behavior, rank weighting, half-life, expiry, future/malformed rows, cumulative cap, missing identity, ownership-gate preservation, and storage failure. Tests have **not** been run locally in this GitHub-only session; exact-head CI is pending.
+- Updated the recommendation roadmap and project status. No private fixture was replayed, no live capture was collected, and no publishing/deployment/runtime verification occurred. The next step is to review the complete PR diff and all four required workflows on the exact final PR-head SHA, then decide whether to merge or leave tuning open.
