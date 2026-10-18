@@ -3,7 +3,7 @@
 - Added deterministic tests using two deliberately different pools: one with a large score outlier and a close-tag cluster; another with a larger pool, tied ranks, and sparse tags. Tests check repeatability, shortlist size, unique artists, and rank-order invariance under score rescaling.
 - Changed the backend 0–100 diversity-setting mapping to ramp linearly from λ=0 at setting 0 to λ=0.75 at setting 75, then saturate at λ=0.75 through setting 100. This conservative piecewise mapping follows the existing single-pool provisional gate (settings 0–75 passed; 80–100 failed) without claiming cross-pool or future-listen quality calibration.
 - Updated `docs/DIVERSITY_SETTING_ROADMAP.md` and `docs/PROJECT_STATUS.md`. Settings UI remains blocked. No private fixture was rerun or committed; no live capture, publishing, deployment, or production-runtime verification.
-- Verification state at PR preparation: tests and exact-head CI pending. Record the final PR head, all four required workflow results, merge state, and next action after CI completes.
+- Code head `2bcecb50e09fb6864f97100c2e093b5022226a94` passed all four required workflows: Python syntax run `1708` (`39128352041`), Docker packaging/full unit suite/build run `1616` (`39128352047`, 706 tests passed), container runtime smoke run `1425` (`39128352031`), and validation-only multi-architecture image validation run `1469` (`39128352038`, publishing paused). The documentation closeout commit changes the PR head, so rerun all four required workflows against that exact final head before merge. Merge and release/deployment state remain pending.
 
 ---
 
