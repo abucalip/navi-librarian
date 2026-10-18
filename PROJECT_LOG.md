@@ -1400,12 +1400,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - The settings UI remains blocked. Next action: review the proposed thresholds; only after explicit authorization, evaluate the existing private fixture using identity-free output and assess the category/untagged metrics. Do not rerun the dismissed 35-combination/floor reproduction or collect a new live capture.
 
 
-## 2026-10-18 — Pristine candidate snapshots for counterfactual recommendation replay (PR pending)
+## 2026-10-18 — Pristine candidate snapshots for counterfactual recommendation replay (PR #356 open)
 
 - Base: GitHub `main` at `995094ab01b1cd5ff18c90048a7fe235928cd05f`; branch `recommendation/replay-pristine-ranking-snapshot`.
 - Source inspection found that recommendation scoring mutates the gathered album dictionaries before the capture is serialized. The frozen candidate payload could therefore contain profile-derived `recent_profile_bonus`, Last.fm tags/stats, and other ranking fields from the original profile. A same-profile replay can conceal this; a counterfactual profile run can incorrectly divide out a bonus from the original profile.
 - Updated `recommendation_replay.py` to strip known ranking-derived candidate fields both when freezing and thawing, while preserving candidate order and other gathering/provider fields. Added a regression test covering each derived field and preservation of an unrelated provider-specific field.
 - Updated the recommendation roadmap, test plan, and project status. Clarified that PR #350 established a successful fresh schema-v2 same-profile replay; the older pre-fix mismatch is historical, while pristine snapshots are still required for profile substitution.
 - Commits on branch: code `a267a8272d004fbb9526f36f5bf00ef60505714d`; test `28ef9f7dc14eaa20e1f81f043e534eab8ec9f646`; roadmap `000cff6027252450145e4fe898d40c89a4b26663`; test plan `87ff01034eea2fc29f04532638980ce776d93e3f`; status `c3f1fcef12af35fe3ffaec8756dcf9c050a6c008`.
-- Assistant-side local tests were not run; CI has not yet been checked on the final PR head. The private capture was not retrieved or modified, and no live providers were called. No publication, deployment, or runtime verification.
+- Assistant-side local tests were not run; PR #356 is open; the initial workflow/status query returned no runs or status checks for initial head `bd35eb0a13b01545a66a9e648648a765bf0e83e8`; final-head CI remains unverified. The private capture was not retrieved or modified, and no live providers were called. No publication, deployment, or runtime verification.
 - Next action: review the complete branch diff, open a PR, and verify all four required workflows on its exact final head. After merge, run the owner-only first/last-profile responsiveness comparison using the sanitized frozen snapshot and public history; do not report future-listen quality from this post-window capture.
