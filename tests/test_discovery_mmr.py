@@ -75,8 +75,8 @@ class DiscoveryMmrTests(unittest.TestCase):
         ]
         rescaled_pool = [
             candidate("top", "a", 10000, ["jazz"]),
-            candidate("middle", "b", 9000, ["jazz"]),
-            candidate("bottom", "c", 8000, ["funk"]),
+            candidate("middle", "b", 9999, ["jazz"]),
+            candidate("bottom", "c", 1, ["funk"]),
         ]
         first = mmr_rerank(first_pool, limit=3, lambda_=0)
         rescaled = mmr_rerank(rescaled_pool, limit=3, lambda_=0)
