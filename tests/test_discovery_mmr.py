@@ -67,7 +67,7 @@ class DiscoveryMmrTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 diversity_setting_to_penalty(value)
 
-    def test_rank_normalization_is_invariant_to_score_scale_and_outliers(self):
+    def test_rank_normalization_is_invariant_to_score_scale_and_gaps(self):
         first_pool = [
             candidate("top", "a", 100, []),
             candidate("middle", "b", 90, []),
@@ -110,7 +110,7 @@ class DiscoveryMmrTests(unittest.TestCase):
 
     def test_relevance_floor_uses_original_pool_normalization_and_can_return_sparse_list(self):
         items = [candidate("high", "a", 10, []), candidate("mid", "b", 7, []), candidate("low", "c", 0, [])]
-        result = mmr_rerank(items, limit=3, lambda_=0, relevance_floor=0.7)
+        result = mmr_rerank(items, limit=3, lambda_=0, relevance_floor=0.4)
         self.assertEqual([item["id"] for item in result], ["high", "mid"])
         self.assertEqual(mmr_rerank(items, limit=3, relevance_floor=1.0)[0]["id"], "high")
         with self.assertRaises(ValueError):
