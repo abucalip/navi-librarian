@@ -1,8 +1,8 @@
 """Soft, time-limited repeat penalty for personal recommendation ranking.
 
 This policy only adjusts the score of candidates that have already passed the
-hard ownership gate. It never excludes an item. Defaults are explicit policy
-constants, not fixture-calibrated quality claims.
+hard ownership gate. It never excludes an item or changes candidate count.
+Defaults are explicit policy constants, not fixture-calibrated quality claims.
 """
 from __future__ import annotations
 
