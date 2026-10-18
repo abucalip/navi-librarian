@@ -76,26 +76,31 @@ def cooldown_adjusted_score(
 
 
 
+def read_history_for_cooldown(database_path: str, *, now: float) -> list[dict[str, Any]]:
+    """Read the exact history input for ranking, preserving fail-open behavior."""
+    import sqlite3
+    from discovery_store import recent_recommendation_history
+
+    try:
+        return recent_recommendation_history(database_path, now=now)
+    except (OSError, sqlite3.Error, TypeError, ValueError):
+        # History is a soft preference; storage failures must not block discovery.
+        return []
+
+
 def apply_history_cooldown(
     allocation_candidates: Iterable[Any],
     candidate_by_id: Mapping[str, Mapping[str, Any]],
     database_path: str,
     *,
     now: float,
+    history_override: Iterable[Mapping[str, Any]] | None = None,
 ) -> list[Any]:
     """Apply cooldown to ownership-clear allocation inputs, failing open on storage errors."""
-    import sqlite3
     from dataclasses import replace
 
-    from discovery_store import recent_recommendation_history
-
     candidates = list(allocation_candidates)
-    try:
-        history = recent_recommendation_history(database_path, now=now)
-    except (OSError, sqlite3.Error, TypeError, ValueError):
-        # A diagnostic/ranking preference must not take down discovery when
-        # the optional history table is unavailable or the database is busy.
-        return candidates
+    history = list(history_override) if history_override is not None else read_history_for_cooldown(database_path, now=now)
     if not history:
         return candidates
 
