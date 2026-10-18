@@ -179,6 +179,25 @@ class PersonalAllocatorTests(unittest.TestCase):
             if candidate.ownership is not OwnershipStatus.CLEAR
         })
         self.assertLessEqual(result.checked_count, 60)
+        self.assertEqual(result.phase_diagnostics["final_fallback_entered"], 0)
+        self.assertGreater(result.phase_diagnostics["unclassified_fallback_attempts"], 0)
+        self.assertEqual(result.phase_diagnostics["final_fallback_attempts"], 0)
+
+    def test_final_fallback_phase_is_reported_when_category_and_family_caps_block_fill(self):
+        candidates = [
+            item("selected-a", artist="artist-a", category="adjacent", score=10),
+            item("selected-x", artist="artist-x", category="cross_genre", score=9),
+            item("family-a", artist="artist-b", category="adjacent", score=8, family="jazz"),
+            item("family-x", artist="artist-c", category="cross_genre", score=7, family="rock"),
+            item("family-u", artist="artist-d", category="unclassified", score=6, family="jazz"),
+        ]
+        result = allocate_personal_recommendations(request(
+            candidates, count=4,
+            targets={"adjacent": 1, "cross_genre": 1, "adventurous": 2},
+        ))
+        self.assertEqual(result.phase_diagnostics["final_fallback_entered"], 1)
+        self.assertGreater(result.phase_diagnostics["final_fallback_attempts"], 0)
+        self.assertLessEqual(result.checked_count, 60)
 
     def test_check_budget_is_bounded(self):
         items = [item(f"a{i}", category="adjacent", score=100-i) for i in range(60)]
