@@ -1,3 +1,13 @@
+## 2026-10-18 — PR #370 merged: recommendation shortlist underfill diagnostics
+
+- PR #370 squash-merged as `6256fd375db0d9c93870f78b632b60390c9ee31f` from exact tested head `e8fac4e737ce75e11210c964af5a50e4ca9bdede`.
+- All four required workflows passed on that exact PR head: Python syntax/acquisition safety run `39173185205`; Docker packaging/full suite/build run `39173185161` (790 tests); container runtime smoke run `39173185160`; validation-only multi-architecture image validation run `39173185157` (publishing paused).
+- The owner-side private schema-v2 replay resolved 19 rows per profile: 12 already-owned, 2 duplicate identities, 5 selected. Final fallback was entered; checked count was 14/60. The underfill on this frozen snapshot is candidate supply after ownership and duplicate protections, not check-budget exhaustion. The earlier family-cap outcomes were stale diagnostic attribution. No ranking/selection policy or ownership protection changed.
+- The top-five set remained identical across profiles (Jaccard 1.0) despite rank movement; this is not recommendation-quality or future-listen evidence. Private capture/history and candidate identities remain outside GitHub. No image publication, deployment, or runtime verification occurred.
+- Next action: separately investigate candidate supply using aggregate eligibility/source counts and deterministic bounded-replenishment tests while preserving ownership, duplicate identity, release-type filtering, provider limits, and deterministic replay. Publishing remains paused.
+
+---
+
 ## 2026-10-18 — Owner replay explains five-item recommendation shortlist (PR #370)
 
 - Owner reran the private schema-v2 comparison against the corrected diagnostic source. Both profile windows resolved 19 candidates and reported 12 `already_owned`, 2 `duplicate_candidate`, and 5 `selected`; the counts account for all 19 rows. Final fallback was entered; checked count was 14/60.
