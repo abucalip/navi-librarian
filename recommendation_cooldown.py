@@ -7,7 +7,7 @@ Defaults are explicit policy constants, not fixture-calibrated quality claims.
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 from discovery_store import recommendation_identity_hash
@@ -122,3 +122,34 @@ def apply_history_cooldown(
         )
         adjusted.append(replace(candidate, score=score))
     return adjusted
+
+
+
+def prepare_ranking_inputs(
+    allocation_candidates: Iterable[Any],
+    candidate_by_id: Mapping[str, Mapping[str, Any]],
+    database_path: str,
+    ranking_context_override: Mapping[str, Any] | None,
+    *,
+    now_fn: Callable[[], float],
+    diversity_setting_fn: Callable[[], int],
+) -> tuple[list[Any], dict[str, Any]]:
+    """Resolve frozen or live ranking inputs and return cooldown-adjusted candidates."""
+    if ranking_context_override is None:
+        ranking_now = now_fn()
+        ranking_history = read_history_for_cooldown(database_path, now=ranking_now)
+        diversity_setting = diversity_setting_fn()
+    else:
+        ranking_now = float(ranking_context_override["ranking_now"])
+        ranking_history = list(ranking_context_override["history"])
+        diversity_setting = ranking_context_override["diversity_setting"]
+    context = {
+        "ranking_now": ranking_now,
+        "history": ranking_history,
+        "diversity_setting": diversity_setting,
+    }
+    adjusted = apply_history_cooldown(
+        allocation_candidates, candidate_by_id, database_path,
+        now=ranking_now, history_override=ranking_history,
+    )
+    return adjusted, context
