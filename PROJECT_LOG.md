@@ -1277,3 +1277,11 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Conservative missing-tag similarity handling and regressions are merged. No local tests or private fixture replay were run in this session; no live provider, UI, publishing, deployment, or production-runtime verification is claimed.
 - Updated `docs/PROJECT_STATUS.md` on main at commit `7e504e303634bd0dd7fc3d103ad87348ab828c69`.
 - Next action: implement final-shortlist relevance/category/genre-coverage/untagged-share guardrails. Keep the Recommendation diversity settings UI blocked until the remaining gates are reviewed. Publishing remains paused.
+
+
+## 2026-10-18 — Final-shortlist evaluator guardrails (PR pending)
+
+- Branch: `recommendation/final-shortlist-guardrails`, based on GitHub `main` at `043a432e5e1c095a07f3523405f3907bb7ab9a64`.
+- Extended the provider-free MMR evaluator with category counts/shares, unique genre/tag coverage, untagged selected count/share, untagged promotions relative to score-ordered top-k, and mean raw-score retention against lambda 0 at the same relevance floor. Corrected evaluator interpretation notes to describe rank-based normalization and conservative missing-tag similarity.
+- Added synthetic regression coverage for the new aggregate metrics and lambda-zero reference behavior. No private fixture was accessed or rerun; no live providers, UI, publishing, deployment, or runtime verification was performed. The identity-bearing private fixture/report remain untouched.
+- Acceptance gate still open: inspect exact-head CI, review category/relevance trade-offs against existing identity-free fixture metrics only if the owner runs the existing fixture, and define a rollout gate before UI work. Publishing remains paused.

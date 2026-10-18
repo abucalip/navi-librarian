@@ -59,6 +59,31 @@ class RecommendationMmrEvaluateTests(unittest.TestCase):
         self.assertGreaterEqual(results[0]["selected_count"], results[-1]["selected_count"])
         self.assertTrue(all(item["all_selected_from_eligible_pool"] for item in results))
 
+    def test_reports_identity_free_quality_and_category_metrics(self):
+        envelope = self._envelope()
+        pool = envelope["payload"]["expected_output"]["debug_all_candidates"]
+        pool[0]["discovery_category"] = "adjacent"
+        pool[1]["discovery_category"] = "adjacent"
+        pool[2]["discovery_category"] = "cross_genre"
+        pool[3]["discovery_category"] = "adventurous"
+        pool[4]["discovery_category"] = "adventurous"
+        report = evaluate_capture(envelope, limit=4, lambdas=[0.5, 0], relevance_floors=[0])
+        results = {item["lambda"]: item for item in report["lambda_results"]}
+        baseline = results[0]
+        diversified = results[0.5]
+        self.assertIn("adjacent", baseline["category_counts"])
+        self.assertAlmostEqual(sum(baseline["category_mix"].values()), 1.0)
+        self.assertGreaterEqual(baseline["genre_coverage_count"], 1)
+        self.assertGreaterEqual(baseline["untagged_selected_count"], 0)
+        self.assertGreaterEqual(baseline["untagged_selected_share"], 0.0)
+        self.assertIsNotNone(diversified["mean_raw_score_retention_vs_lambda_0"])
+        self.assertAlmostEqual(baseline["mean_raw_score_retention_vs_lambda_0"], 1.0)
+        self.assertIn("category_counts", diversified)
+        self.assertIn("untagged_promoted_vs_score_top_k", diversified)
+        self.assertIn("baseline_category_mix", report)
+        self.assertIn("baseline_genre_coverage_count", report)
+        self.assertIn("baseline_untagged_share", report)
+
     def test_rejects_missing_scored_pool_instead_of_guessing_scores(self):
         envelope = self._envelope()
         envelope["payload"]["expected_output"].pop("debug_all_candidates")
