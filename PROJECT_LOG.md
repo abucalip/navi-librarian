@@ -1221,3 +1221,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Exact-head CI passed: Python syntax/acquisition safety run `1663` (`39082723833`); Docker packaging/full unit suite/build run `1571` (`39082723818`, 691 tests passed); container runtime smoke run `1380` (`39082723841`); validation-only multi-architecture image validation run `1424` (`39082723824`, publishing paused).
 - Initial CI on prior head `9514d74e7e88e6cb061b5a90652d200ed6a69097` found the missing Docker COPY entry and a too-strict floating-point assertion. Both were fixed; subsequent final-head workflows passed. No assistant-side local tests or private fixture replay were run.
 - Publishing, deployment, and production-runtime verification were not performed. Cooldown calibration remains open; do not collect another live capture or publish private fixture data. The next useful action is an identity-free comparison on the existing private offline fixture if it can evaluate cooldown without reconstructing a new live capture.
+
+
+## 2026-10-18 — Recommendation cooldown calibration feasibility
+
+- **Repository baseline:** `main` at `ee87ef18ef41bed49a841e0996980487cac7dca5`; PR #332 cooldown implementation remains merged at `1fdd01b1878be10544358450cb9f2a4a1d03d5d2` from tested head `692722e019e671a3cd4cef67698743d359f205e9`.
+- **Feasibility result:** the existing private capture/evaluator cannot establish a real baseline-vs-cooldown quality comparison. The capture stores gathered inputs and captured output/debug scores but not the SQLite recommendation-history rows consumed by `recommendation_cooldown.apply_history_cooldown`. `recommendation_mmr_evaluate.py` only reranks captured scores with MMR; it neither applies the cooldown nor replays the provider tape. Synthesizing history would only measure a hypothetical scenario, not the observed effect.
+- **Changes:** documentation records the feasibility result and explicitly leaves cooldown constants uncalibrated. No application code, private fixture, identity-bearing report, or production data was changed. No tests or fixture evaluation were run.
+- **Next action:** the separately scoped identity-free 0–100 diversity sweep against the existing private fixture, with relevance floor fixed at 0. The fixture is not available in the GitHub-only environment; no new capture and no rerun of the dismissed 35-combination/floor sweep.
+- **Delivery state:** documentation PR pending; publishing, deployment, and runtime verification remain paused/unclaimed.
