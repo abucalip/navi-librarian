@@ -77,7 +77,7 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
     def test_focus_ring_is_drawn_on_the_scroll_container(self):
         self.assertIn(
             ".genre-row-track:focus-visible "
-            "{ outline: 2px solid var(--yellow); outline-offset: 2px; border-radius: 4px; }",
+            "{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }",
             self.css,
         )
 
@@ -224,7 +224,7 @@ class DashboardRingTests(unittest.TestCase):
         self.assertIn("else if (!wide && RING.stage) ringFlatten();", sync)
 
     def test_ring_joins_the_existing_token_and_control_vocabulary(self):
-        self.assertIn(".dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--yellow);", self.css)
+        self.assertIn(".dashboard-carousel.is-ring .ring-card:focus-visible { outline: 2px solid var(--accent);", self.css)
         # Depth is an offset plus a soft blur, not a halo.
         self.assertIn("box-shadow: 0 22px 48px rgba(0,0,0,.52);", self.css)
         self.assertIn('aria-label="Random album recommendations"', self.index)

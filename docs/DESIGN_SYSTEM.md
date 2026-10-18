@@ -1,6 +1,6 @@
 # Design system — "Chart Rundown"
 
-Status: **proposed; AGENTS.md points here (PR #349); decisions D1–D6 recorded in section 15 (Phase 0)** · Last updated: 2026-10-18 · Mode: Operate
+Status: **proposed; AGENTS.md points here (PR #349); decisions D1–D6 recorded in section 15 (Phase 0); tokens, fonts and icon sprite implemented in Phase 1 (`ui/phase-1-foundations`, see `docs/UI_BACKLOG_EXECUTION.md` section 10)** · Last updated: 2026-10-18 · Mode: Operate
 
 This is the target design system for the Librarian redesign. It supersedes the visual-identity section of `docs/FRONTEND_DESIGN_GUIDE.md` once approved (see `docs/REDESIGN_ROADMAP.md`, Phase 0). Nothing here is implemented yet; the shipped tokens in `static/app.css` remain authoritative until Phase 1 lands. Impeccable's `DESIGN.md` is generated from the *built* system at the end of Phase 1 and again at the end of the redesign, not before.
 
@@ -53,7 +53,7 @@ All values are proposals. Contrast was computed with WCAG 2.1 relative luminance
 | `--surface` | `#1c1a18` | Panels, inputs |
 | `--surface-raised` | `#252220` | Menus, modal, selected row |
 | `--surface-hover` | `#2d2926` | Row and control hover |
-| `--edge` | `#34302c` | Dividers, decorative only (1.4:1) |
+| `--edge` | `#34302c` | Dividers, decorative only (1.33:1 on `--surface`; corrected from 1.4 by the Phase 0 token check, not yet re-measured on the rendered build) |
 | `--edge-strong` | `#787168` | Input and control boundaries (3.28:1 on raised, 3.60:1 on surface) |
 | `--text` | `#f4efe6` | Primary text |
 | `--text-muted` | `#b4ac9f` | Secondary text |
