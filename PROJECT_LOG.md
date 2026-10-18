@@ -1428,3 +1428,14 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - The owner independently replayed the private schema-v2 capture against PR #350 source SHA `dc3e5a3a8ea704bbc66aa1d1b43dc4e9594fd2be`: 5/5 recommendations reproduced, 19 Last.fm responses replayed, zero network providers used, and 225 provider events treated as provenance only. The private capture and history were not committed or exposed.
 - The first/last-window comparison has **not** been run yet. The capture postdates both windows, so the comparison measures profile responsiveness on a frozen candidate/library snapshot only; it cannot establish future-listen hit-rate/nDCG or causal listening outcomes.
 - **Next action:** run the merged evaluator locally against `baseline-20261018-v2.json` and `abucalip/reports/listenbrainz-history.json`; retain the capture/history and any identity-bearing artifacts outside GitHub.
+
+
+## 2026-10-18 — Owner-side full-engine profile responsiveness comparison
+
+- Evaluator: merged `recommendation_profile_comparison.py` from PR #361, source commit `054b7aa71d632821f3d7a3811ab5f24f63003366`. Private schema-v2 capture source SHA: `dc3e5a3a8ea704bbc66aa1d1b43dc4e9594fd2be`. History: 407 timestamped listens; private capture and history remained outside GitHub.
+- Windows: first five days 2026-10-04 16:01:36Z through 2026-10-09 16:01:36Z; last five days 2026-10-13 00:47:28Z through 2026-10-18 00:47:28Z.
+- First profile: 138 listens, 35 normalized artists, 120 artist-MBID listens, 60 genre-classified listens, 6 profile families. Last profile: 132 listens, 63 normalized artists, 111 artist-MBID listens, 26 genre-classified listens, 4 profile families.
+- Controls: same 19-candidate pool, library/ownership snapshot, ranking timestamp, recommendation history, diversity setting 0, and captured Last.fm responses. Each run used 19 captured Last.fm entries; zero network providers used.
+- Results: 5 recommendations from each profile; membership overlap 5/5 (Jaccard 1.0); two recommendation positions changed. Full ranked candidate order changed; 17 shared candidates changed rank, with maximum displacement 14 places. Both profile runs were deterministic on repeat.
+- Interpretation: the ranker responds to the changed profile, but the final top-five membership is stable on this frozen pool. The result does not prove relevance/quality, production candidate freshness, profile-driven query generation, future-listen hit-rate/nDCG, or causal listening effects. The capture was taken after both windows and therefore cannot be used as a chronological future-outcome replay.
+- **Next action:** inspect score-component attribution and shortlist/allocation effects using identity-free aggregate diagnostics and deterministic tests. Explain why ranked positions change without top-five membership change before tuning weights. No new live capture, provider request, publishing, deployment, or runtime verification.
