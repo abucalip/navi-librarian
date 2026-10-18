@@ -51,5 +51,50 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         )
 
 
+    def test_arrows_and_not_for_me_use_sprite_icons_with_names_kept(self):
+        # Phase 4 (DESIGN_SYSTEM.md 9.1, 10): text glyphs were replaced with sprite icons.
+        # The accessible names and the Not for me action are unchanged.
+        self.assertIn("function spriteIcon(name)", self.js)
+        self.assertIn("arrow.append(spriteIcon(icon));", self.js)
+        self.assertIn("[['chevron-left', -1], ['chevron-right', 1]]", self.js)
+        self.assertIn("notForMe.append(spriteIcon('x'));", self.js)
+        self.assertNotIn("arrow.textContent = symbol;", self.js)
+        self.assertNotIn("notForMe.textContent = '×';", self.js)
+        self.assertIn("arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');", self.js)
+        self.assertIn("notForMe.setAttribute('aria-label', notForMe.title);", self.js)
+        self.assertIn("notForMe.title = 'Not for me';", self.js)
+
+    def test_sprite_icon_helper_builds_nodes_without_innerhtml(self):
+        start = self.js.index("function spriteIcon(name)")
+        helper = self.js[start:self.js.index("\n}\n", start)]
+        self.assertIn("document.createElementNS(svgNs, 'use')", helper)
+        self.assertIn("'/static/icons.svg#' + name", helper)
+        self.assertNotIn("innerHTML", helper)
+
+    def test_deep_dive_controls_have_no_text_shadow_and_meet_44px(self):
+        def rule(selector):
+            start = self.css.index(selector + " {")
+            return self.css[start:self.css.index("}", start)]
+        arrow = rule(".genre-row-arrow")
+        dismiss = rule(".card .card-art .deep-dive-dismiss")
+        self.assertNotIn("text-shadow", arrow)
+        self.assertNotIn("text-shadow", dismiss)
+        self.assertIn("width: 44px; height: 44px;", arrow)
+        self.assertIn("width: 44px; height: 44px;", dismiss)
+
+    def test_genre_count_uses_body_face_not_mono(self):
+        rule_start = self.css.index(".genre-row-count {")
+        rule = self.css[rule_start:self.css.index("}", rule_start)]
+        self.assertIn("var(--body)", rule)
+        self.assertNotIn("var(--mono)", rule)
+        self.assertIn("var(--text-sm)", rule)
+
+
+    def test_genre_count_pluralizes_correctly(self):
+        # "1 album", not "1 albums"; the count is a real count of the rendered row.
+        self.assertIn("pluralize(genreItems.length, 'album', 'albums')", self.js)
+        self.assertNotIn("`${genreItems.length} albums`", self.js)
+
+
 if __name__ == "__main__":
     unittest.main()
