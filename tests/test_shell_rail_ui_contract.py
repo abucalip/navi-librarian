@@ -46,7 +46,8 @@ class RailStructureTests(unittest.TestCase):
 
     def test_only_dashboard_is_marked_active_in_shipped_markup(self):
         self.assertEqual(self.rail.count('class="active"'), 1)
-        self.assertRegex(self.rail, r'<button class="active" data-page="dashboard">')
+        # Reason: the title attribute (icon-only tooltip) was added in slice B.
+        self.assertRegex(self.rail, r'<button class="active" data-page="dashboard"[^>]*>')
 
     def test_rail_has_two_named_groups(self):
         groups = re.findall(r'<div class="nav-group" role="group" aria-labelledby="(\w+)">', self.rail)
@@ -86,10 +87,45 @@ class RailStructureTests(unittest.TestCase):
         self.assertNotIn("background", count_rule.group(1))
         self.assertNotIn("border-radius", count_rule.group(1))
 
-    def test_blob_indicator_locates_the_active_item_inside_groups(self):
+    def test_indicator_locates_the_active_item_inside_groups(self):
+        # Reason for this change (Phase 2 slice B): the goo blob was replaced by a translateY bar.
         self.assertIn("document.querySelector('.nav-list button.active')", self.js)
         self.assertNotIn(".nav-list > button", self.js)
-        self.assertIn(".nav-list button { position: relative; z-index: 1; }", self.css)
+        self.assertIn('<div class="nav-indicator" aria-hidden="true"></div>', self.rail)
+        self.assertIn("indicator.style.transform = 'translateY(' + active.offsetTop + 'px)';", self.js)
+
+    def test_goo_filter_and_spring_easing_are_removed(self):
+        self.assertNotIn("nav-goo", self.html)
+        self.assertNotIn("nav-blob", self.css)
+        self.assertNotIn("nav-blob", self.js)
+        self.assertNotIn("cubic-bezier(.34,1.56", self.css)
+        self.assertNotIn("filter: url(", self.css)
+
+    def test_indicator_moves_with_transform_only_and_honours_reduced_motion(self):
+        self.assertRegex(self.css, r"\.nav-indicator \{[^}]*transition: transform var\(--dur\) var\(--ease-out\);")
+        self.assertIn(".nav-indicator { transition: none; }", self.css)
+
+    def test_icon_only_rail_between_621_and_900px_keeps_names_hidden_not_removed(self):
+        block = re.search(r"@media \(max-width: 900px\) and \(min-width: 621px\) \{(.*?)\n\}", self.css, re.S)
+        self.assertIsNotNone(block)
+        self.assertIn(":root { --rail-w: 72px; }", block.group(1))
+        self.assertIn("nav button > span:not(.nav-count), .nav-group-label { position: absolute; width: 1px; height: 1px;", block.group(1))
+        self.assertIn("clip: rect(0, 0, 0, 0);", block.group(1))
+        self.assertNotIn("display: none", block.group(1))
+
+    def test_phone_under_620px_uses_a_bottom_tab_bar(self):
+        block = re.search(r"@media \(max-width: 620px\) \{\n(.*?)\n\}", self.css, re.S)
+        self.assertIsNotNone(block)
+        text = block.group(1)
+        self.assertIn("nav { inset: auto 0 0 0;", text)
+        self.assertIn("padding: 0 4px env(safe-area-inset-bottom, 0px);", text)
+        self.assertIn("main { margin: 94px 14px 0;", text)
+        self.assertIn(".nav-indicator { display: none; }", text)
+
+    def test_every_rail_item_has_a_tooltip_title_matching_its_name(self):
+        for label in ["Dashboard", "Acquisitions", "Recommendations", "New releases",
+                      "Personal Discoveries", "Add to your collection", "Artist Deep Dives"]:
+            self.assertIn(f'title="{label}"', self.rail, msg=label)
 
     def test_rail_items_meet_the_44px_target_floor(self):
         self.assertRegex(self.css, r"nav button \{[^}]*min-height: 44px;")
