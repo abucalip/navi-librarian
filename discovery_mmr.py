@@ -94,8 +94,11 @@ def mmr_rerank(
             rank_by_identity[id(item)] = average_rank
         start = end
     denominator = max(1, len(ranked) - 1)
+    constant_pool = ranked[0]["_mmr_score"] == ranked[-1]["_mmr_score"]
     for item in pool:
-        item["_mmr_relevance"] = 1.0 - rank_by_identity[id(item)] / denominator
+        item["_mmr_relevance"] = (
+            1.0 if constant_pool else 1.0 - rank_by_identity[id(item)] / denominator
+        )
 
     # Apply the floor against the original pool normalization. Do not renormalize
     # the surviving candidates, which would erase the meaning of the floor.
