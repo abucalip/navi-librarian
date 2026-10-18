@@ -91,7 +91,10 @@ class DiscoveryMmrTests(unittest.TestCase):
     def test_diversity_setting_maps_to_this_implementation_penalty_direction(self):
         self.assertEqual(diversity_setting_to_penalty(0), 0.0)
         self.assertEqual(diversity_setting_to_penalty(75), 0.75)
-        self.assertEqual(diversity_setting_to_penalty(100), 1.0)
+        self.assertEqual(diversity_setting_to_penalty(50), 0.5)
+        self.assertEqual(diversity_setting_to_penalty(75), 0.75)
+        self.assertEqual(diversity_setting_to_penalty(80), 0.75)
+        self.assertEqual(diversity_setting_to_penalty(100), 0.75)
         for value in (-1, 101, 1.5, True):
             with self.assertRaises(ValueError):
                 diversity_setting_to_penalty(value)
@@ -134,6 +137,66 @@ class DiscoveryMmrTests(unittest.TestCase):
             [item["id"] for item in mmr_rerank(constant, limit=3, lambda_=0.5)],
             ["first", "second", "third"],
         )
+
+    def test_same_setting_is_deterministic_across_different_pool_shapes(self):
+        # Pool A has a score outlier and a close jazz cluster. Pool B is larger,
+        # contains tied ranks, and has sparse tags. Lambda is applied to
+        # within-pool normalized rank relevance, not raw score magnitudes.
+        pools = [
+            [
+                candidate("anchor-a", "artist-a", 1000000, ["jazz", "soul"]),
+                candidate("similar-a", "artist-b", 9.9, ["jazz", "soul"]),
+                candidate("different-a", "artist-c", 9.8, ["funk", "afrobeat"]),
+                candidate("untagged-a", "artist-d", 9.7, []),
+            ],
+            [
+                candidate("anchor-b", "artist-e", 100, ["jazz", "soul"]),
+                candidate("similar-b", "artist-f", 90, ["jazz", "soul"]),
+                candidate("tie-b1", "artist-g", 80, ["jazz"]),
+                candidate("tie-b2", "artist-h", 80, ["funk"]),
+                candidate("different-b", "artist-i", 70, ["afrobeat", "funk"]),
+                candidate("untagged-b", "artist-j", 60, []),
+                candidate("tail-b", "artist-k", 10, ["classical"]),
+            ],
+        ]
+        penalty = diversity_setting_to_penalty(75)
+        self.assertEqual(penalty, 0.75)
+
+        for pool, limit in zip(pools, (3, 5)):
+            with self.subTest(pool_size=len(pool)):
+                first = mmr_rerank(pool, limit=limit, lambda_=penalty)
+                repeated = mmr_rerank(pool, limit=limit, lambda_=penalty)
+                self.assertEqual(first, repeated)
+                self.assertEqual(len(first), limit)
+                self.assertEqual(len({row["artist_key"] for row in first}), limit)
+                self.assertEqual(first[0]["id"], pool[0]["id"])
+
+    def test_same_setting_keeps_rank_semantics_under_score_rescaling_in_each_pool(self):
+        pools = [
+            [
+                candidate("top", "a", 1000, ["jazz", "soul"]),
+                candidate("near", "b", 99, ["jazz", "soul"]),
+                candidate("different", "c", 98, ["funk"]),
+                candidate("tail", "d", 1, ["classical"]),
+            ],
+            [
+                candidate("top", "a", 10, ["jazz", "soul"]),
+                candidate("near", "b", 9.9, ["jazz", "soul"]),
+                candidate("different", "c", 9.8, ["funk"]),
+                candidate("tail", "d", 9.7, ["classical"]),
+            ],
+        ]
+        scaled = [
+            [dict(row, score=row["score"] * 37.0 + 123.0) for row in pool]
+            for pool in pools
+        ]
+        penalty = diversity_setting_to_penalty(60)
+        for original, rescaled in zip(pools, scaled):
+            with self.subTest(scores=[row["score"] for row in original]):
+                self.assertEqual(
+                    [row["id"] for row in mmr_rerank(original, limit=3, lambda_=penalty)],
+                    [row["id"] for row in mmr_rerank(rescaled, limit=3, lambda_=penalty)],
+                )
 
     def test_relevance_floor_uses_original_pool_normalization_and_can_return_sparse_list(self):
         items = [candidate("high", "a", 10, []), candidate("mid", "b", 7, []), candidate("low", "c", 0, [])]
