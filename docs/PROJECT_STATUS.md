@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-18 (cross-pool MMR verification and capped setting mapping in PR)
+Last reviewed: 2026-10-18 (PR #347 merged: cross-pool MMR tests and provisional penalty cap)
 
 ## Current focus
 
-**Recommendation-diversity cross-pool verification — PR in progress; UI still blocked.** The current branch adds deterministic MMR tests for materially different pool sizes, a high score outlier, tied ranks, sparse tags, score rescaling, and repeatability. The setting maps linearly through 75 to λ=0.75 and saturates from 75–100 at λ=0.75, matching the provisional single-pool cap without claiming the mapping is fully calibrated. Code head `2bcecb50e09fb6864f97100c2e093b5022226a94` passed all four required workflows: Python syntax run `1708` (`39128352041`), Docker packaging/full unit suite/build run `1616` (`39128352047`, 706 tests passed), container runtime smoke run `1425` (`39128352031`), and validation-only multi-architecture image validation run `1469` (`39128352038`, publishing paused). A documentation closeout commit follows, so exact-head workflows must be rerun after that commit. Keep the Settings UI blocked; the tests do not establish future-listen quality or broad cross-pool quality. Publishing/deployment remain paused.
+**Recommendation-diversity cross-pool verification — PR #347 merged; UI still blocked.** The current branch adds deterministic MMR tests for materially different pool sizes, a high score outlier, tied ranks, sparse tags, score rescaling, and repeatability. The setting maps linearly through 75 to λ=0.75 and saturates from 75–100 at λ=0.75, matching the provisional single-pool cap without claiming the mapping is fully calibrated. PR #347 merged as `9ace84947c13f2549fe0669b6a0c1a30af4c2349`. All four required workflows passed on its exact final PR head `5ae39d5cdc0fb7abad2036d30ac1aa0a6ae5780f`: Python syntax run `1710` (`39128476967`), Docker packaging/full unit suite/build run `1618` (`39128476975`, 706 tests passed), container runtime smoke run `1427` (`39128476976`), and validation-only multi-architecture image validation run `1471` (`39128476973`, publishing paused). Keep the Settings UI blocked; the tests do not establish future-listen quality or broad cross-pool quality. Publishing/deployment remain paused.
 
 **Previous recommendation-diversity rollout gate — evaluated on the existing private fixture; UI still blocked.**
 
