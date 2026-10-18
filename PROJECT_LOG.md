@@ -1268,3 +1268,12 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - Updated `docs/DIVERSITY_SETTING_ROADMAP.md` and `docs/PROJECT_STATUS.md`; final-shortlist relevance/category/genre-coverage/untagged-share guardrails remain the next task. Settings UI remains blocked.
 - Exact PR head before documentation commits: `e8ad28c28a22d1b6a256ab02dfde65614dda208c`; docs commits follow, so all four required workflows must be checked against the final PR head before merge. At the time of the first check, Python syntax and Docker packaging/full unit suite/build had succeeded; container smoke had succeeded; non-publishing multi-architecture validation was still in progress. No local tests or private fixture replay were run by the assistant.
 - No live providers, fixture identities, UI, publication, deployment, or production runtime were used or verified. Publishing remains paused.
+
+
+## 2026-10-18 — PR #340 merged: MMR missing-tag novelty bias
+
+- PR #340 merged by squash; merge commit `2e2958115adb27ca72f6a526211424bb8fb2bb65`, exact final PR head `fbf1276948cf85832da7df7c376482eb12100873`.
+- All four required workflows passed on that exact head: Python syntax run 1689 (`39124983951`), Docker packaging/full unit suite/build run 1597 (`39124983946`), container runtime smoke run 1406 (`39124983965`), and validation-only multi-architecture image validation run 1450 (`39124983988`, publishing paused).
+- Conservative missing-tag similarity handling and regressions are merged. No local tests or private fixture replay were run in this session; no live provider, UI, publishing, deployment, or production-runtime verification is claimed.
+- Updated `docs/PROJECT_STATUS.md` on main at commit `7e504e303634bd0dd7fc3d103ad87348ab828c69`.
+- Next action: implement final-shortlist relevance/category/genre-coverage/untagged-share guardrails. Keep the Recommendation diversity settings UI blocked until the remaining gates are reviewed. Publishing remains paused.
