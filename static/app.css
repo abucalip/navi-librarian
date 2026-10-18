@@ -21,6 +21,8 @@
   /* Scale, spacing, radius and motion tokens (DESIGN_SYSTEM.md sections 5, 6, 7, 11). */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
   --radius-chip: 2px; --radius-control: 4px; --radius-panel: 6px;
+  /* Left rail width (DESIGN_SYSTEM.md section 9.3). Content and footer offsets derive from it. */
+  --rail-w: 232px;
   --dur-fast: 120ms; --dur: 180ms; --dur-slow: 260ms; --ease-out: cubic-bezier(.2,.8,.2,1);
   --text-xs: .75rem; --text-sm: .8125rem; --text-base: .9375rem; --text-md: 1.0625rem;
   --text-lg: 1.25rem; --text-xl: 1.5rem; --text-2xl: 1.875rem;
@@ -79,16 +81,19 @@ header p { margin: 0; color: var(--text-muted); font-size: 12px; letter-spacing:
 .header-menu-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent); }
 .header-menu-separator { height: 1px; margin: 4px 0; background: var(--edge); }
 @media (prefers-reduced-motion: reduce) { .header-menu-panel:not([hidden]) { animation: none; } }
-main { max-width: none; margin: 112px 34px 0 254px; padding: 0 0 60px; }
+main { max-width: none; margin: 112px 34px 0 calc(var(--rail-w) + 34px); padding: 0 0 60px; }
 nav {
-  position: fixed; z-index: 15; inset: 82px auto 0 0; width: 220px;
+  position: fixed; z-index: 15; inset: 82px auto 0 0; width: var(--rail-w);
   display: flex; flex-direction: column; align-items: stretch; gap: 4px; overflow-y: auto;
   padding: 23px 13px; background: var(--ink-rail); border-right: 1px solid var(--edge);
 }
-/* Scoped to the sidebar. Unscoped, this rule also matched the album modal's
-   platform-links <nav>, rendering the sidebar's "YOUR COLLECTION" heading across the
-   top of a completely unrelated navigation inside the dialog. */
-main > nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: var(--text-subtle); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; }
+/* Group labels are plain text, not a mono eyebrow. The old "YOUR COLLECTION" heading was
+   scoped to the sidebar because an unscoped rule also matched the album modal's platform-links
+   <nav> and rendered the sidebar's heading inside the dialog. */
+.nav-group { display: flex; flex-direction: column; gap: 4px; }
+.nav-group + .nav-group { margin-top: 20px; }
+.nav-group-label { margin: 0 0 6px; padding: 0 12px; color: var(--text-subtle); font: 500 var(--text-xs)/1.4 var(--body); letter-spacing: .02em; }
+.icon { display: block; flex: 0 0 auto; width: 20px; height: 20px; }
 /* The sliding indicator tracks the active item with translateY only. Animating top or
    height would trigger layout on every nav change; transform stays on the compositor. */
 .nav-list {
@@ -104,18 +109,18 @@ main > nav::before { content: "YOUR COLLECTION"; padding: 0 12px 10px; color: va
   filter: url(#nav-goo); isolation: isolate;
 }
 .nav-blob {
-  position: absolute; inset: 0 0 auto 0; height: 40px;
+  position: absolute; inset: 0 0 auto 0; height: 44px;
   background: var(--accent-dim); border-radius: 3px;
   transform: translateY(0);
   transition: transform 380ms cubic-bezier(.34,1.56,.64,1);
 }
-.nav-list > button { position: relative; z-index: 1; }
-nav button { position: relative; width: 100%; padding: 10px 12px 10px 15px; text-align: left; color: var(--text-muted); background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
+.nav-list button { position: relative; z-index: 1; }
+nav button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px 10px 15px; text-align: left; color: var(--text-muted); background: transparent; border: 0; border-radius: 3px; font-size: 13px; }
 nav button:hover { color: var(--text); background: var(--surface-raised); }
 nav button.active { color: var(--text); background: transparent; box-shadow: none; }
 nav button.active::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent); border-radius: 3px 0 0 3px; }
-nav button.active .nav-count { background: var(--surface); color: var(--accent); }
-.nav-count { float: right; min-width: 20px; margin-left: 8px; padding: 1px 5px; border-radius: 10px; color: var(--on-accent); background: var(--accent); font: 500 10px/1.6 var(--mono); text-align: center; }
+/* The active-download count is a plain numeral, not a pill (DESIGN_SYSTEM.md section 9.3). */
+.nav-count { margin-left: auto; font: 500 13px/1 var(--body); font-variant-numeric: tabular-nums; }
 .nav-count[hidden] { display: none; }
 /* Parity with the previous active treatment, minus the inset bar the blob now implies. */
 nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -388,7 +393,9 @@ pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text
 .quality-priority-moves button:disabled { cursor: not-allowed; opacity: .35; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
-footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--edge); color: var(--text-subtle); font: 10px/1.6 var(--mono); }
+/* The footer sits outside <main>, so it takes the same rail offset directly. Without it the
+   footer text ran under the fixed rail at 1440px. */
+footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; border-top: 1px solid var(--edge); color: var(--text-subtle); font: 10px/1.6 var(--mono); }
 
 /* The genre rows are native scroll containers. A card inside one is already reachable by Tab,
    but the container itself was not focusable, so the row could only be walked one card at a
@@ -417,8 +424,8 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--edge);
 .notyf__icon--success { background: var(--ok); }
 .notyf__icon--error { background: var(--chart-red); }
 
-@media (max-width: 1200px) { .cards:not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: 238px; margin-right: 25px; } }
-@media (max-width: 900px) { nav { width: 184px; } main { margin-left: 205px; margin-right: 20px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
+@media (max-width: 1200px) { .cards:not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } footer { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } }
+@media (max-width: 900px) { nav { width: 200px; } main { margin-left: 221px; margin-right: 20px; } footer { margin-left: 221px; margin-right: 20px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; } }
 @media (max-width: 620px) {
   header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: 24px; } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   nav { inset: 70px 0 auto 0; width: auto; height: 54px; flex-direction: row; align-items: center; gap: 3px; padding: 5px 10px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--edge); }
@@ -426,11 +433,15 @@ footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--edge);
   /* Below 620px the rail becomes a horizontal scroller, so a vertical blob would be
      pointing the wrong way. Drop it and keep a flat underline for the active item. */
   .nav-list { flex-direction: row; align-items: center; gap: 3px; }
+  /* Groups sit side by side in the bar; their labels stay in the DOM for the group names. */
+  .nav-group { flex-direction: row; gap: 3px; }
+  .nav-group + .nav-group { margin-top: 0; }
+  .nav-group-label { display: none; }
   .nav-blob-layer { display: none; }
   .nav-blob { display: none; }
   nav button.active::before { inset: auto 0 0 0; width: auto; height: 3px; border-radius: 0; }
   nav button.active { box-shadow: inset 0 -3px var(--accent); }
-  main { margin: 148px 14px 0; padding-bottom: 36px; } .panel h2 { font-size: 30px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .cards.acquisition-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
+  main { margin: 148px 14px 0; padding-bottom: 36px; } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: 30px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .cards.acquisition-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
 @media (max-width: 360px) { .cards:not(.acquisition-grid) { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }

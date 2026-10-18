@@ -61,13 +61,22 @@
     </svg>
     <div class="nav-list">
       <div class="nav-blob-layer" aria-hidden="true"><div class="nav-blob"></div></div>
-      <button class="active" data-page="dashboard">Dashboard</button>
-      <button data-page="recommendations">Recommendations</button>
-      <button data-page="newReleases">New releases</button>
-      <button data-page="personalDiscoveries">Personal Discoveries</button>
-      <button data-page="classics">Add to your collection</button>
-      <button data-page="artistDeepDive">Artist Deep Dives</button>
-      <button data-page="acquisitions">Acquisitions <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
+      <!-- Groups follow the surface brief (Discover, Collection). The dashboard sits in
+           Collection and leads it, because it is the landing page. Settings and Log out
+           stay in the header menu (UI_BACKLOG_EXECUTION 5m), so there is no System group. -->
+      <div class="nav-group" role="group" aria-labelledby="navGroupCollection">
+        <p id="navGroupCollection" class="nav-group-label">Collection</p>
+        <button class="active" data-page="dashboard"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#layout-dashboard"></use></svg><span>Dashboard</span></button>
+        <button data-page="acquisitions"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#download"></use></svg><span>Acquisitions</span> <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
+      </div>
+      <div class="nav-group" role="group" aria-labelledby="navGroupDiscover">
+        <p id="navGroupDiscover" class="nav-group-label">Discover</p>
+        <button data-page="recommendations"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#compass"></use></svg><span>Recommendations</span></button>
+        <button data-page="newReleases"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#calendar-plus"></use></svg><span>New releases</span></button>
+        <button data-page="personalDiscoveries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#user-round"></use></svg><span>Personal Discoveries</span></button>
+        <button data-page="classics"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#library"></use></svg><span>Add to your collection</span></button>
+        <button data-page="artistDeepDive"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#mic-vocal"></use></svg><span>Artist Deep Dives</span></button>
+      </div>
     </div>
   </nav>
 
