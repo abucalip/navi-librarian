@@ -1,6 +1,6 @@
 # Redesign roadmap — "Chart Rundown"
 
-Status: **governance edits merged (PR #349); Phase 0 baseline and decisions recorded in PR #352 (open, not merged)** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `af412e3`
+Status: **governance edits merged (PR #349); Phase 0 merged (PR #352); Phase 1 implemented on `ui/phase-1-foundations` (PR link in section 4, Phase 1), not merged** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `7b356a8` for Phase 1
 
 This is the proposed authoritative roadmap for redesigning the Librarian web UI against `docs/DESIGN_SYSTEM.md`. It replaces the backlog in `docs/FRONTEND_DESIGN_GUIDE.md` section 8 once approved. It does not change code. Product truth is in `PRODUCT.md`; the direction contract is in `.impeccable/surfaces/app-templates-index-html.md`.
 
@@ -47,6 +47,8 @@ Status: **done in PR #352 (2026-10-18), pending owner merge.** Baseline measured
 - Exit: approved docs, baseline artifacts stored where the owner chooses, decisions recorded.
 
 ### Phase 1 — Foundations: tokens, fonts, icons (M)
+
+Status: **implemented on `ui/phase-1-foundations`, PR open, not merged.** PR link: see the pull request for branch `ui/phase-1-foundations`. Evidence, token audit, browser results and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 10. Not yet verified: fonts and contrast on populated states, and the manual checklist against the exact head SHA.
 
 Goal: new look at the token level, no layout change.
 - Vendor WOFF2 subsets for Big Shoulders Display, Schibsted Grotesk and JetBrains Mono under `static/fonts/` with OFL license files; remove the Google Fonts `@import`; preload the display face; `font-display: swap`.

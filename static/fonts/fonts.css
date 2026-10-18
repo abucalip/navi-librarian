@@ -1,0 +1,31 @@
+/* Self-hosted Latin subsets (SIL Open Font License 1.1; see LICENSE-*.txt in this folder).
+   Display face is preloaded by the HTML pages. Weights not shipped here resolve to the nearest
+   shipped weight, which the browser does without synthesis. */
+@font-face {
+  font-family: "Big Shoulders Display"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("big-shoulders-display-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Big Shoulders Display"; font-style: normal; font-weight: 800; font-display: swap;
+  src: url("big-shoulders-display-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("schibsted-grotesk-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("schibsted-grotesk-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("schibsted-grotesk-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("jetbrains-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}

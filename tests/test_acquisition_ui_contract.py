@@ -133,7 +133,7 @@ class AsyncGetButtonTests(unittest.TestCase):
 
     def test_working_state_travels_an_accent_arc(self):
         self.assertIn(
-            "stroke: var(--yellow); stroke-dasharray: 15.8 56.46; "
+            "stroke: var(--accent); stroke-dasharray: 15.8 56.46; "
             "animation: get-arc-travel 1.15s linear infinite;",
             self.css,
         )
@@ -141,8 +141,8 @@ class AsyncGetButtonTests(unittest.TestCase):
 
     def test_requested_state_is_an_accent_fill_with_a_drawn_tick(self):
         requested = function_source(self.css, ".get-album.requested {", "/* Failed:")
-        self.assertIn("background: var(--yellow);", requested)
-        self.assertIn("color: var(--on-yellow);", requested)
+        self.assertIn("background: var(--accent);", requested)
+        self.assertIn("color: var(--on-accent);", requested)
         # The red fill this replaced is gone: attention colour is not the confirmed state, and it
         # also carried the dark glow the design detector flags.
         self.assertNotIn("--red", requested)
