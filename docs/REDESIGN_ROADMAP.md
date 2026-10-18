@@ -1,6 +1,6 @@
 # Redesign roadmap — "Chart Rundown"
 
-Status: **governance edits merged (PR #349); Phase 0 merged (PR #352); Phase 1 merged (PR #353); Phase 2 in progress: slice A (rail) merged in PR #355 (merge `981c244`); slice B (icon-only rail 621–900px, bottom tab bar under 620px, goo filter removed) in review on `ui/phase-2-shell-slice-b`, PR link pending** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `995094a` for Phase 2
+Status: **governance edits merged (PR #349); Phase 0 merged (PR #352); Phase 1 merged (PR #353); Phase 2 in progress: slice A (rail) merged in PR #355 (merge `981c244`); slice B (icon-only rail 621–900px, bottom tab bar under 620px, goo filter removed) merged in PR #360 (merge `d789f45`)** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `995094a` for Phase 2
 
 This is the proposed authoritative roadmap for redesigning the Librarian web UI against `docs/DESIGN_SYSTEM.md`. It replaces the backlog in `docs/FRONTEND_DESIGN_GUIDE.md` section 8 once approved. It does not change code. Product truth is in `PRODUCT.md`; the direction contract is in `.impeccable/surfaces/app-templates-index-html.md`.
 
@@ -61,7 +61,7 @@ Goal: new look at the token level, no layout change.
 
 ### Phase 2 — Shell (M)
 
-Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral count, footer offset) merged in PR #355 (merge `981c244`, head `8817691`); evidence in `docs/UI_BACKLOG_EXECUTION.md` section 11. Slice B (icon-only rail 621–900px, bottom tab bar under 620px, goo and spring removed, translateY indicator) is in review; evidence in `docs/UI_BACKLOG_EXECUTION.md` section 12. Not merged. Open for the owner: the top-bar search (D5, library-wide, needs a contract, see section 9) and whether a third System group returns (Settings is in the header menu per PR #327).
+Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral count, footer offset) merged in PR #355 (merge `981c244`, head `8817691`); evidence in `docs/UI_BACKLOG_EXECUTION.md` section 11. Slice B (icon-only rail 621–900px, bottom tab bar under 620px, goo and spring removed, translateY indicator) merged in PR #360 (merge `d789f45`, head `7f2283c`); evidence in `docs/UI_BACKLOG_EXECUTION.md` section 12. Phase 2 open items: the owner decisions on top-bar search (D5) and a third System group. Open for the owner: the top-bar search (D5, library-wide, needs a contract, see section 9) and whether a third System group returns (Settings is in the header menu per PR #327).
 
 - Left rail with icons and three groups, 232px; top bar with breadcrumb, page-scoped search and the settings/user menu; Acquisitions count as a numeral.
 - Responsive rail: icon rail under 900px, bottom tab bar under 620px. Remove the goo filter and spring easing; replace the blob with a `translateY` bar. Resolve the Settings/Log out placement already flagged in `UI_BACKLOG_EXECUTION.md` 5b.
