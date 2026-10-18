@@ -1,3 +1,14 @@
+## 2026-10-18 — Private recommendation capture replay audit
+
+- Audited the new private capture `baseline-20261018.json` against its declared source revision `4c2a0f09ebbbe374cf93049d17d4c3265fc5d589` (PR #342 source). The capture remains outside GitHub; no personal listening/library/provider data or identity-bearing comparison output was added to the repository.
+- The offline replay consumed all 207 provider events and 40 Last.fm responses with zero live provider calls, and generated 10 recommendations versus 10 expected. Replay did **not** reproduce the stable output.
+- A privacy-safe comparison found only `recommendations` and `debug_all_candidates` differed among stable output fields. The expected and actual recommendation counts both equal 10, and both debug candidate lists contain 59 rows, but the recommendation identity sets and order differ.
+- Interpretation is unresolved: equal candidate counts do not establish whether ranking, eligibility, allocation, or incomplete replay inputs caused the mismatch. Do not treat this capture as a validated deterministic replay fixture or use it for quality conclusions until the discrepancy is investigated.
+- No code changes, tests, CI runs, merges, publishing, or deployment occurred in this audit session. Existing private capture was not changed.
+- Next action: inspect the replay harness and recommendation implementation at the exact captured GitHub revision to locate the reproducibility gap before attempting chronological future-listen evaluation.
+
+---
+
 ## 2026-10-18 — Cross-pool recommendation MMR merged
 
 - PR #347 merged as `9ace84947c13f2549fe0669b6a0c1a30af4c2349`; final PR head was `5ae39d5cdc0fb7abad2036d30ac1aa0a6ae5780f`.

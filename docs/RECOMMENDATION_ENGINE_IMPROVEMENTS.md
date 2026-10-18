@@ -286,6 +286,12 @@ The temporary data directory prevents module initialization from touching the ap
 
 The capture preserves the provider/cache values actually consumed; the saved gathered-input snapshot is included for inspection. This is a reproducibility harness, not an assertion that recommendations are good. The separate T-to-T+14-day outcome evaluation remains a later step and must not feed future listens into generation inputs. The public CI fixture remains synthetic.
 
+## Private capture replay audit — 2026-10-18
+
+A new private capture dated 2026-10-18 was replayed against its declared source SHA `4c2a0f09ebbbe374cf93049d17d4c3265fc5d589`. Replay was offline: 207 provider events and 40 Last.fm responses were consumed, with zero live provider calls. It produced 10 recommendations against 10 expected and 59 debug candidates in both expected and actual output, but stable output did not reproduce. A privacy-safe field comparison identified differences in `recommendations` and `debug_all_candidates`; the recommended album/artist identity set and ordering both differed.
+
+This is a **replay reproducibility failure**, not evidence that the captured recommendation list is bad or good. Equal counts do not identify the cause. Investigate the replay tape, captured ranking inputs, and ranking/allocation implementation at the exact source SHA before accepting this capture as a deterministic fixture. Keep the real capture private; do not commit it, attach it to a PR, print its identities, or draw quality conclusions from it. Chronological T-to-T+14-day evaluation remains blocked until a valid time-separated pair exists and the generation snapshot is trustworthy.
+
 ## Out of scope unless separately approved
 
 - Rewriting the recommender or adding a machine-learning stack.
