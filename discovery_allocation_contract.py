@@ -8,7 +8,7 @@ the legacy response payload.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import math
 from types import MappingProxyType
@@ -134,6 +134,7 @@ class AllocationResult:
     decisions: tuple[CandidateDecision, ...]
     category_counts: Mapping[str, int]
     checked_count: int
+    phase_diagnostics: Mapping[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not 1 <= self.requested_count <= MAX_RECOMMENDATION_COUNT:
@@ -154,4 +155,10 @@ class AllocationResult:
             raise ValueError("category counts must be non-negative integers")
         object.__setattr__(
             self, "category_counts", MappingProxyType(dict(self.category_counts))
+        )
+        if any(not isinstance(key, str) or not isinstance(value, int) or value < 0
+               for key, value in self.phase_diagnostics.items()):
+            raise ValueError("phase diagnostics must map names to non-negative integers")
+        object.__setattr__(
+            self, "phase_diagnostics", MappingProxyType(dict(self.phase_diagnostics))
         )

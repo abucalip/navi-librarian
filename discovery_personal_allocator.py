@@ -46,6 +46,15 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     processed: set[tuple[str, str]] = set()
     decisions: dict[str, CandidateDecision] = {}
     checked = 0
+    phase_diagnostics = {
+        "diversity_reservation_attempts": 0,
+        "category_quota_attempts": 0,
+        "family_cap_relaxation_attempts": 0,
+        "quota_retry_attempts": 0,
+        "unclassified_fallback_attempts": 0,
+        "final_fallback_entered": 0,
+        "final_fallback_attempts": 0,
+    }
 
     def ranked_candidates(items):
         """Apply MMR only to ownership-clear candidates at each selection step."""
@@ -105,6 +114,28 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         nonlocal checked
         category = candidate.category
         style = candidate.diversity_style
+
+        # Identity is a hard eligibility constraint, so report it before soft
+        # diversity/category caps. Otherwise a duplicate can retain a stale
+        # recent-family rejection even after final fallback has relaxed that cap.
+        identity = (candidate.artist_key, candidate.album_key)
+        if identity in processed:
+            # Preserve the more important ownership diagnostic for an owned
+            # duplicate; otherwise a duplicate row could hide an ownership
+            # rejection in the candidate-level report.
+            if candidate.ownership is OwnershipStatus.EXACT_OWNED:
+                record(candidate, "already_owned",
+                       "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory.")
+            elif candidate.ownership is OwnershipStatus.TITLE_CONFLICT:
+                if candidate.candidate_id not in review:
+                    review.append(candidate.candidate_id)
+                record(candidate, "held_for_ownership_review",
+                       "The album title exists in Navidrome under a different artist credit; manual review is recommended.")
+            else:
+                record(candidate, "duplicate_candidate",
+                       "The same artist and album identity was already processed.")
+            return
+
         style_target = request.diversity_style_targets.get(style, 0)
         if not allow_over_style_target and style_target and selected_styles[style] >= style_target:
             record(candidate, "diversity_style_target_filled",
@@ -116,14 +147,6 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                 and family and selected_families[family] >= request.family_cap):
             record(candidate, "recent_genre_cap_reached",
                    f"The recent-listening family {family} already has a recommendation; another family is preferred.")
-            return
-
-        identity = (candidate.artist_key, candidate.album_key)
-        if identity in processed:
-            decisions.setdefault(candidate.candidate_id, CandidateDecision(
-                candidate.candidate_id, "duplicate_candidate",
-                "The same artist and album identity was already processed.",
-            ))
             return
         if checked >= request.max_checks:
             record(candidate, "not_considered",
@@ -164,6 +187,10 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         if style not in request.diversity_style_targets and family:
             selected_families[family] += 1
 
+    def consider_in_phase(candidate: AllocationCandidate, phase: str, **kwargs) -> None:
+        phase_diagnostics[f"{phase}_attempts"] += 1
+        consider(candidate, **kwargs)
+
     # Reserve configured diversity slots first, in mapping insertion order.
     for style, target in request.diversity_style_targets.items():
         if len(selected) >= request.count or checked >= request.max_checks:
@@ -179,7 +206,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         ):
             if selected_styles[style] >= target:
                 break
-            consider(candidate)
+            consider_in_phase(candidate, "diversity_reservation")
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -189,7 +216,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             target = request.category_targets.get(category, 0)
             if selected_counts[category] >= target:
                 break
-            consider(candidate)
+            consider_in_phase(candidate, "category_quota")
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
         if len(selected) >= request.count or checked >= request.max_checks:
@@ -202,7 +229,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         for candidate in ranked_candidates(ordered_by_category[category]):
             if selected_counts[category] >= request.category_targets.get(category, 0):
                 break
-            consider(candidate, allow_over_family_cap=True)
+            consider_in_phase(candidate, "family_cap_relaxation", allow_over_family_cap=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -214,7 +241,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             for candidate in ranked_candidates(ordered_by_category[category]):
                 if selected_counts[category] >= request.category_targets.get(category, 0):
                     break
-                consider(candidate)
+                consider_in_phase(candidate, "quota_retry")
                 if len(selected) >= request.count or checked >= request.max_checks:
                     break
             if len(selected) >= request.count or checked >= request.max_checks:
@@ -223,11 +250,12 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     # Use unclassified candidates before relaxing all remaining policy limits.
     if len(selected) < request.count and checked < request.max_checks:
         for candidate in ranked_candidates(ordered_by_category["unclassified"]):
-            consider(candidate, allow_over_quota=True)
+            consider_in_phase(candidate, "unclassified_fallback", allow_over_quota=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
     if len(selected) < request.count and checked < request.max_checks:
+        phase_diagnostics["final_fallback_entered"] = 1
         category_order = {
             "adjacent": 0,
             "cross_genre": 1,
@@ -249,8 +277,8 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             fallback_base, key=lambda item: item.score, reverse=True
         )
         for candidate in ranked_candidates(remaining):
-            consider(candidate, allow_over_quota=True,
-                     allow_over_family_cap=True, allow_over_style_target=True)
+            consider_in_phase(candidate, "final_fallback", allow_over_quota=True,
+                              allow_over_family_cap=True, allow_over_style_target=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
@@ -261,4 +289,5 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         decisions=tuple(decisions.values()),
         category_counts=dict(selected_counts),
         checked_count=checked,
+        phase_diagnostics=phase_diagnostics,
     )

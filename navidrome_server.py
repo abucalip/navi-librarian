@@ -515,7 +515,6 @@ def recommend_new_music(
     # Temporary diagnostics: inspect all resolved candidates before return.
     candidate_debug = []
     candidate_category_counts = Counter()
-
     for candidate in albums.values():
         tags = genre_cache.get(candidate.get("artist_mbid"), [])
         category, families = classify_recommendation_category(
@@ -604,6 +603,7 @@ def recommend_new_music(
                 candidate.get("lastfm_popularity_bonus", 1.0), 3
             ),
             "assigned_category": category,
+            "allocation_category": candidate.get("discovery_category", "unclassified"),
             "genre_metadata_available": bool(tags),
             "exact_owned": exact_owned,
             "same_title_library_matches": len(same_title),
@@ -664,7 +664,8 @@ def recommend_new_music(
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
 
-        "category_targets": targets,
+        "category_targets": targets, "allocator_checked_count": allocation.checked_count, "allocator_max_checks": 60,
+        "allocator_phase_diagnostics": dict(allocation.phase_diagnostics), "allocator_decision_counts": dict(Counter(decision.status for decision in allocation.decisions)),
         "category_counts": dict(selected_counts),
         "category_shortfalls": {
             category: max(0, target - selected_counts.get(category, 0))
