@@ -135,5 +135,38 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
         self.assertNotIn("album", result)
 
 
+    def test_score_and_shortlist_diagnostics_are_aggregate_only(self):
+        first = {
+            "recommendations": [
+                {"artist": "A", "album": "One"},
+                {"artist": "C", "album": "Three"},
+            ],
+            "debug_all_candidates": [
+                {"artist": "A", "album": "One", "discovery_score": 10.0,
+                 "recent_profile_bonus": 1.2, "lastfm_popularity_bonus": 1.0,
+                 "recent_artist_play_count": 2, "exploration_family_match": True,
+                 "assigned_category": "adjacent", "selection_decision": "selected"},
+                {"artist": "B", "album": "Two", "discovery_score": 9.0,
+                 "recent_profile_bonus": 1.0, "lastfm_popularity_bonus": 1.1,
+                 "recent_artist_play_count": 0, "exploration_family_match": False,
+                 "assigned_category": "adjacent", "selection_decision": "category_quota_filled"},
+                {"artist": "C", "album": "Three", "discovery_score": 8.0,
+                 "recent_profile_bonus": 1.1, "lastfm_popularity_bonus": 1.0,
+                 "recent_artist_play_count": 1, "exploration_family_match": False,
+                 "assigned_category": "cross_genre", "selection_decision": "selected"},
+            ],
+        }
+        result = compare_outputs(first, first, count=2)
+        diagnostics = result["score_and_shortlist_first"]
+        self.assertEqual(diagnostics["candidate_count"], 3)
+        self.assertEqual(diagnostics["selected_in_score_ranked_top_k"], 2)
+        self.assertEqual(diagnostics["score_ranked_top_k_overlap"], 2)
+        self.assertEqual(diagnostics["allocation_decision_counts"]["selected"], 2)
+        self.assertEqual(diagnostics["allocation_decision_counts"]["category_quota_filled"], 1)
+        self.assertEqual(diagnostics["component_distributions"]["discovery_score"]["mean"], 9.0)
+        self.assertEqual(diagnostics["component_distributions"]["profile_bonus_above_neutral_share"], 0.666667)
+        self.assertNotIn("artist", json.dumps(diagnostics))
+        self.assertNotIn("album", json.dumps(diagnostics))
+
 if __name__ == "__main__":
     unittest.main()
