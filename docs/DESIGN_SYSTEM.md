@@ -240,7 +240,7 @@ The migration is done as a token remap first (no layout change) and verified wit
 
 ## 15. Decisions
 
-Recorded by the owner on 2026-10-18 during Redesign Phase 0 (PR PHASE0_PR). Evidence is in `docs/UI_BACKLOG_EXECUTION.md` section 9.
+Recorded by the owner on 2026-10-18 during Redesign Phase 0 (PR #352). Evidence is in `docs/UI_BACKLOG_EXECUTION.md` section 9.
 
 | ID | Decision | Outcome |
 |---|---|---|

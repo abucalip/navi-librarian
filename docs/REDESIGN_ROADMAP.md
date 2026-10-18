@@ -1,6 +1,6 @@
 # Redesign roadmap — "Chart Rundown"
 
-Status: **governance edits merged (PR #349); Phase 0 baseline and decisions recorded in PR PHASE0_PR (open, not merged)** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `af412e3`
+Status: **governance edits merged (PR #349); Phase 0 baseline and decisions recorded in PR #352 (open, not merged)** · Last updated: 2026-10-18 · Baseline: GitHub `main` at `af412e3`
 
 This is the proposed authoritative roadmap for redesigning the Librarian web UI against `docs/DESIGN_SYSTEM.md`. It replaces the backlog in `docs/FRONTEND_DESIGN_GUIDE.md` section 8 once approved. It does not change code. Product truth is in `PRODUCT.md`; the direction contract is in `.impeccable/surfaces/app-templates-index-html.md`.
 
@@ -38,7 +38,7 @@ Sizing is relative (S ≈ one PR, one session; M ≈ two or three; L ≈ four or
 
 ### Phase 0 — Authority and baseline (S, docs and harness only)
 
-Status: **done in PR PHASE0_PR (2026-10-18), pending owner merge.** Baseline measured on `main` `dc3e5a3`; results, environment, known errors B1–B3 and limitations are in `docs/UI_BACKLOG_EXECUTION.md` section 9. Decisions D1–D6 recorded. Screenshots are stored outside the repository by the owner's choice. Not exercised: the documented helper (not available in the capture environment), Google Fonts (blocked there, so typography and font timings are not representative), and any real library.
+Status: **done in PR #352 (2026-10-18), pending owner merge.** Baseline measured on `main` `dc3e5a3`; results, environment, known errors B1–B3 and limitations are in `docs/UI_BACKLOG_EXECUTION.md` section 9. Decisions D1–D6 recorded. Screenshots are stored outside the repository by the owner's choice. Not exercised: the documented helper (not available in the capture environment), Google Fonts (blocked there, so typography and font timings are not representative), and any real library.
 
 - Owner approves `DESIGN_SYSTEM.md`, resolves D1–D6, applies the governance edits above.
 - Capture a visual baseline of the current UI: every page plus the modal at 1440, 1200, 900, 620 and 390px, using the documented isolated helper with sandbox paths and slskd disabled. Record exact `main` SHA, browser, and what could not be populated (the helper has no real library, so populated states use reconstructed DOM and are labeled as such).
@@ -146,4 +146,4 @@ If any is approved, write the contract (request, response, failures, why current
 
 ## 9. Open items awaiting the owner
 
-Merge of PR PHASE0_PR. D1–D6 and screenshot storage are decided. Still open: a contract proposal for library-wide search (D5, section 6) before Phase 2 can include it; owner/backend decision on B1 (`GET /api/settings/listenbrainz` returns 502 with no username saved), which affects the "no console or network errors" exit criterion on fresh-data runs; copying baseline screenshots out of the session workspace if the owner wants them kept; optionally re-measuring Google Fonts transfer and font-swap layout shift once on a machine with normal network access.
+Merge of PR #352. D1–D6 and screenshot storage are decided. Still open: a contract proposal for library-wide search (D5, section 6) before Phase 2 can include it; owner/backend decision on B1 (`GET /api/settings/listenbrainz` returns 502 with no username saved), which affects the "no console or network errors" exit criterion on fresh-data runs; copying baseline screenshots out of the session workspace if the owner wants them kept; optionally re-measuring Google Fonts transfer and font-swap layout shift once on a machine with normal network access.
