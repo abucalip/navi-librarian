@@ -87,13 +87,16 @@ class NewReleasesRowContractTests(unittest.TestCase):
         self.assertNotIn("innerHTML", builder, "rows must be built with text APIs only")
 
     def test_loading_shows_skeleton_rows_and_clears_them_before_rendering(self):
-        self.assertIn("target.replaceChildren(...(name === 'new_releases' ? skeletonRows(6) : []));", self.js)
-        self.assertIn("if (name === 'new_releases') target.replaceChildren();", self.js)
+        # Personal Discoveries shares the skeleton path (its own contract is in
+        # test_personal_discoveries_ui_contract.py), so the check is on the shared flag.
+        self.assertIn("const rankedRowList = name === 'new_releases' || name === 'personal';", self.js)
+        self.assertIn("target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));", self.js)
+        self.assertIn("if (rankedRowList) target.replaceChildren();", self.js)
 
     def test_failure_clears_skeleton_rows_and_shows_the_error_message(self):
         start = self.js.index("async function loadDiscovery(")
         body = self.js[start:self.js.index("async function sendFeedback(", start)]
-        self.assertIn("if (name === 'new_releases') target.replaceChildren();\n    discoveryStatus(name, error.message);", body)
+        self.assertIn("if (rankedRowList) target.replaceChildren();\n    discoveryStatus(name, error.message);", body)
 
     def test_release_date_column_is_plain_text_not_the_red_numeral(self):
         start = self.css.index(".row-date {")

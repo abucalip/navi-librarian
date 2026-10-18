@@ -1308,7 +1308,8 @@ function buildRecommendationRow(item, rank, options = {}) {
     row.append(releaseDateColumn(item, row));
   } else {
     const numeral = document.createElement('span');
-    numeral.className = 'rank-numeral';
+    // `indexed` lists show a muted position, not the red rank: the order is not a score order.
+    numeral.className = options.indexed ? 'rank-numeral is-index' : 'rank-numeral';
     numeral.setAttribute('aria-hidden', 'true');
     if (rank !== null) numeral.textContent = String(rank).padStart(2, '0');
     row.append(numeral);
@@ -1421,6 +1422,23 @@ function buildNewReleaseRow(item) {
     ],
     onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'new_releases'),
     onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases')
+  });
+}
+
+// Personal Discoveries rows (DESIGN_SYSTEM.md sections 8 and 9.4). The server returns these in its
+// selection order, which balances categories and diversity styles; it is not a discovery_score
+// order, so rows show a muted position and no red rank numeral. The status line names that basis.
+// Dismiss and dismiss-artist go through the same feedback endpoint the old card used.
+function buildPersonalRow(item, index) {
+  return buildRecommendationRow(item, index + 1, {
+    indexed: true,
+    meta: [
+      item.discovery_category ? item.discovery_category.replaceAll('_', ' ') : '',
+      item.reason,
+      item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
+    ],
+    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'personal'),
+    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal')
   });
 }
 
@@ -1599,16 +1617,17 @@ async function loadDiscovery(name, options = {}) {
   // Observers outlive the nodes they watch unless disconnected here, so a section that is
   // reloaded repeatedly would accumulate them.
   disconnectGenreRowObservers();
-  // New releases shows skeleton rows while it loads (DESIGN_SYSTEM.md 9.6). They are removed
-  // as soon as the response arrives, before any row is rendered, and on failure.
-  target.replaceChildren(...(name === 'new_releases' ? skeletonRows(6) : []));
+  // The ranked-row lists show skeleton rows while they load (DESIGN_SYSTEM.md 9.6). They are
+  // removed as soon as the response arrives, before any row is rendered, and on failure.
+  const rankedRowList = name === 'new_releases' || name === 'personal';
+  target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
 
   try {
     const poolCount = name === 'artist_deep_dive' ? 150 : name === 'classics' ? 100 : 30;
     const data = await requestJSON(`/api/discovery/${name}?count=${poolCount}&nonce=${Date.now()}`);
-    if (name === 'new_releases') target.replaceChildren();
+    if (rankedRowList) target.replaceChildren();
     let items = data.items || data.recommendations || [];
     if (name !== 'for_me') items = items.filter(isAlbumRecommendation);
     if ((name === 'classics' || name === 'artist_deep_dive') && options.rotate) {
@@ -1720,10 +1739,16 @@ async function loadDiscovery(name, options = {}) {
       const count = pluralize(items.length, 'item', 'items');
       discoveryStatus(name, name === 'new_releases' && items.length
         ? count + ' · Sorted by release date, newest first'
-        : count);
+        : name === 'personal' && items.length
+          ? count + ' · Engine order, not ranked by discovery score'
+          : count);
     }
 
-    for (const item of items) {
+    for (const [index, item] of items.entries()) {
+      if (name === 'personal') {
+        target.append(buildPersonalRow(item, index));
+        continue;
+      }
       if (name === 'new_releases') {
         target.append(buildNewReleaseRow(item));
         continue;
@@ -1838,7 +1863,7 @@ async function loadDiscovery(name, options = {}) {
       setStatusState(empty, 'empty');
     }
   } catch (error) {
-    if (name === 'new_releases') target.replaceChildren();
+    if (rankedRowList) target.replaceChildren();
     discoveryStatus(name, error.message);
   }
 }
