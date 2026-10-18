@@ -1775,7 +1775,7 @@ Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). 
 
 **Next action.** Hamdi runs this page on a live library locally against the PR head SHA, and decides whether to merge.
 
-## 17. Redesign Phase 4 — Artist Deep Dives (`ui/phase-4-artist-deep-dives`)
+## 17. Redesign Phase 4 — Artist Deep Dives (`ui/phase-4-artist-deep-dives`, PR #378)
 
 Roadmap item: Phase 4, Artist Deep Dives (the Dashboard item waits on decision D1 and is not in this PR). Design system sections applied: 8 (the composition for Artist Deep Dives: genre sections, artist-led tiles, a horizontal strip per genre that shows arrows only when it overflows), 9.1 (icon button: 44×44 hit area, 20px sprite icon, `aria-label`, focus ring), 9.2 (Get control, unchanged), 10 (icons from `static/icons.svg`), 12 (accessibility and touch-target floor). Base: `origin/main` at `da908b5` (PR #376, which records PR #375 as merged). PR 375 (`5c9e3e9`) was already recorded in the roadmap on `main`.
 
