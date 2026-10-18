@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-18 (cooldown calibration feasibility checked; diversity fixture sweep remains pending)
+Last reviewed: 2026-10-18 (PR #336 merged; diversity fixture sweep remains pending)
 
 ## Current focus
 
@@ -11,6 +11,8 @@ Last reviewed: 2026-10-18 (cooldown calibration feasibility checked; diversity f
 PR #326 adds persistent `recommendation_diversity` preference storage, strict `GET/PUT /api/settings/recommendation-diversity` validation for integer values 0–100, a safe default of 0 for absent/corrupt values, and MMR marginal ranking inside the existing allocator passes. Setting 0 preserves legacy candidate ordering; nonzero values affect only ownership-clear candidates. Existing ownership checks, category/style/family policy, artist cap, deterministic ties, and the 60-check budget remain in place. The settings UI is intentionally not part of the backend PR.
 
 PR #326 merged at `ef8173a4ce47b0b4b1ec72fc567377dbd0cf1dd0` from exact final PR head `f502e6c3e2877ec88b8e8f1a744e4d0fdf6b9c1f`. All four required workflows passed on that exact head: Python syntax, Docker packaging/full unit suite (655 tests passed), container runtime smoke test, and validation-only Docker image checks (publishing paused).
+
+PR #336 merged at `91bc647c5300d42d10f6bd393645a481c6d25474` from exact head `1c4f958d662ead5b5a3f5ea4485b1e8f17efb20f`. All four required workflows passed on that exact head: Python syntax check run `1670` (`39122256427`), Docker packaging run `1578` (`39122256409`), container runtime smoke run `1387` (`39122256392`), and validation-only Docker image run `1431` (`39122256401`, publishing paused). Documentation-only; no tests or private fixture evaluation were run.
 
 Publishing remains paused. No image was published and no deployment or production-runtime verification is claimed. **Next action:** run the already-planned identity-free 0–100 diversity sweep against the existing private fixture only, with relevance floor fixed at 0; do not collect another capture or rerun the dismissed 35-combination/floor sweep. The assistant's GitHub-only environment does not contain the private fixture, so this owner-environment step remains pending. The Recommendation diversity settings UI remains blocked until calibration, normalization, missing-tag neutrality, and shortlist guardrail gates are satisfied.
 
