@@ -100,6 +100,27 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertEqual(statuses["duplicate"], "duplicate_candidate")
         self.assertEqual(statuses["second-album"], "artist_already_selected")
 
+    def test_duplicate_identity_takes_precedence_over_family_cap_diagnostic(self):
+        result = allocate_personal_recommendations(request([
+            item("selected-jazz", artist="artist-a", album="same",
+                 category="adjacent", score=10, family="jazz"),
+            item("duplicate-jazz", artist="artist-a", album="same",
+                 category="cross_genre", score=8, family="jazz"),
+            item("other-family", artist="artist-b", album="other",
+                 category="cross_genre", score=7, family="jazz"),
+            item("adventure", artist="artist-c", album="adventure",
+                 category="adventurous", score=6, family="ambient"),
+        ], count=3, targets={
+            "adjacent": 1, "cross_genre": 1, "adventurous": 1,
+        }))
+        statuses = {decision.candidate_id: decision.status for decision in result.decisions}
+        self.assertEqual(
+            result.selected_candidate_ids,
+            ("selected-jazz", "adventure", "other-family"),
+        )
+        self.assertEqual(statuses["duplicate-jazz"], "duplicate_candidate")
+        self.assertNotEqual(statuses["duplicate-jazz"], "recent_genre_cap_reached")
+
     def test_owned_candidates_are_rejected_and_title_conflicts_go_to_review(self):
         result = allocate_personal_recommendations(request([
             item("owned", category="adjacent", ownership=OwnershipStatus.EXACT_OWNED),
@@ -140,6 +161,65 @@ class PersonalAllocatorTests(unittest.TestCase):
         self.assertEqual(
             result.selected_candidate_ids, ("adjacent-second", "cross-first")
         )
+
+    def test_sparse_categories_and_family_cap_fallback_fill_requested_count(self):
+        candidates = []
+        # Match the observed 19-candidate category shape: 8 adjacent, 6
+        # cross-genre, and 5 unclassified candidates, with no adventurous pool.
+        categories = (
+            ["adjacent"] * 8
+            + ["cross_genre"] * 6
+            + ["unclassified"] * 5
+        )
+        for index, category in enumerate(categories):
+            ownership = (
+                OwnershipStatus.EXACT_OWNED if index < 4
+                else OwnershipStatus.CLEAR
+            )
+            family = "jazz" if 4 <= index < 14 else None
+            candidates.append(item(
+                f"candidate-{index}",
+                artist=f"artist-{index}",
+                album=f"album-{index}",
+                category=category,
+                score=100 - index,
+                family=family,
+                ownership=ownership,
+            ))
+
+        result = allocate_personal_recommendations(request(
+            candidates,
+            count=10,
+            targets={"adjacent": 4, "cross_genre": 3, "adventurous": 3},
+        ))
+
+        self.assertEqual(len(result.selected_candidate_ids), 10)
+        self.assertEqual(len(set(result.selected_candidate_ids)), 10)
+        self.assertFalse(set(result.selected_candidate_ids) & {
+            candidate.candidate_id for candidate in candidates
+            if candidate.ownership is not OwnershipStatus.CLEAR
+        })
+        self.assertLessEqual(result.checked_count, 60)
+        self.assertEqual(result.phase_diagnostics["final_fallback_entered"], 0)
+        self.assertGreater(result.phase_diagnostics["unclassified_fallback_attempts"], 0)
+        self.assertEqual(result.phase_diagnostics["final_fallback_attempts"], 0)
+
+    # The phase counters must explain why a shortlist can stop below its target.
+    def test_final_fallback_phase_is_reported_when_category_and_family_caps_block_fill(self):
+        candidates = [
+            item("selected-a", artist="artist-a", category="adjacent", score=10),
+            item("selected-x", artist="artist-x", category="cross_genre", score=9),
+            item("family-a", artist="artist-b", category="adjacent", score=8, family="jazz"),
+            item("family-x", artist="artist-c", category="cross_genre", score=7, family="rock"),
+            item("family-u", artist="artist-d", category="unclassified", score=6, family="jazz"),
+        ]
+        result = allocate_personal_recommendations(request(
+            candidates, count=4,
+            targets={"adjacent": 1, "cross_genre": 1, "adventurous": 2},
+        ))
+        self.assertEqual(result.phase_diagnostics["final_fallback_entered"], 1)
+        self.assertGreater(result.phase_diagnostics["final_fallback_attempts"], 0)
+        self.assertLessEqual(result.checked_count, 60)
 
     def test_check_budget_is_bounded(self):
         items = [item(f"a{i}", category="adjacent", score=100-i) for i in range(60)]

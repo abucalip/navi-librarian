@@ -1,3 +1,23 @@
+## 2026-10-18 — Owner replay explains five-item recommendation shortlist (PR #370)
+
+- Owner reran the private schema-v2 comparison against the corrected diagnostic source. Both profile windows resolved 19 candidates and reported 12 `already_owned`, 2 `duplicate_candidate`, and 5 `selected`; the counts account for all 19 rows. Final fallback was entered; checked count was 14/60.
+- This explains the underfill on this frozen snapshot: only five eligible unique unowned candidates remained after ownership and duplicate protections. The check budget was not exhausted. The previous 10 recent-family-cap rejections were stale diagnostic attribution; the corrected output now reports owned/duplicate/selected outcomes.
+- Both profiles still return the same five recommendations (Jaccard 1.0), with two positions changing and broader candidate rank movement. This establishes ranking responsiveness, but not top-five membership responsiveness, quality, or future-listen outcomes.
+- No private capture, history, candidate identity, or per-candidate score was added to GitHub. No weights, ownership rules, or selection policy were changed.
+- Next: keep PR #370 scoped to aggregate diagnostics; after its final review, investigate candidate supply separately with aggregate eligibility/source counts and deterministic bounded-replenishment tests. Preserve all safety constraints and provider limits. Publishing/deployment remain paused.
+
+---
+
+## 2026-10-18 — PR #370 underfill diagnostics refined after owner replay
+
+- Owner-side private schema-v2 comparison on PR #370 source reported 5 recommendations from 10 requested, 19 resolved candidates, final fallback entered with 19 attempts, 14 checked candidates against the 60-check budget, and decisions reported as 4 already-owned, 10 recent-family-cap-reached, and 5 selected. Both profiles showed the same aggregate outcome; capture/history and identity-bearing rows remain private.
+- Code inspection found that the final fallback explicitly allows over the recent-family cap, so retaining 10 final family-cap statuses is inconsistent with the pass sequence. Duplicate identity was checked after the family cap; a duplicate could retain an earlier cap decision through `decisions.setdefault`. PR #370 now checks normalized identity before soft caps and adds a deterministic regression. This changes diagnostic attribution, not selection behavior.
+- The check budget was not reached. The true reason the unique shortlist stops at five is not yet established; duplicate identities and artist-level eligibility may account for some remaining rows. No ranking weights, ownership checks, or selection policy were changed.
+- The first diagnostic-precedence attempt at `43411aa29c63cece935475d0328a1d1d0bad4f49` failed two tests: an incorrect expected selection order and an exact-owned candidate diagnostic that was masked as duplicate. Both were fixed. Exact code head `277560ab0185d8b1beb6beafdb4a055b316e3a3b` passed all four required workflows: Python syntax `39172112667`, Docker packaging/full suite/build `39172112675` (777 tests), container runtime smoke `39172112640`, and validation-only multi-architecture validation `39172112650` (publishing paused).
+- Next: rerun the private evaluator against the corrected PR source and share only aggregate diagnostics. Publishing/deployment remain paused.
+
+---
+
 ## 2026-10-18 — PR #353 merged; recommendation chronology findings recorded
 
 - PR #353 (“ui: Redesign Phase 1 foundations”) squash-merged at `255f1ed62e4ce3d3bc85dea478f214e10a7a8d22` from exact final PR head `ed6c18a9e4ca6abd43d41911dc4ce920c5ab1c84`.
@@ -1450,3 +1470,21 @@ The lazy persisted-settings read used by authentication now delegates through `A
 - All four required workflows passed on that exact head: syntax/full suite `39160186431`, Docker packaging/full suite/build `39160186619` (739 tests), container runtime smoke `39160186497`, and validation-only multi-architecture image validation `39160186550` (publishing paused).
 - An earlier test expectation failed and was corrected before the final successful run. No assistant-side local tests or private capture replay. No live providers, publication, deployment, or production-runtime verification.
 - Next action: inspect aggregate diagnostics from the existing owner-only capture before choosing any ranking behavior change.
+
+## Recommendation shortlist underfill investigation — 2026-10-18
+
+The owner ran the merged PR #366 offline profile evaluator against the private schema-v2 capture and timestamped history. It returned five recommendations from a requested ten across 19 ranked candidates; aggregate decision counts were four already-owned, ten `recent_genre_cap_reached`, and five selected. The report's candidate-category counts used the separate genre classifier's `assigned_category`, while allocation uses `discovery_category`; it also omitted the allocator's category targets and shortfalls. Those aggregate counts therefore do not yet identify a root cause.
+
+Branch `investigate/recommendation-shortlist-underfill` adds aggregate-only diagnostics for the actual allocation category, target counts, shortfalls, target satisfaction, and resolved candidate count. It adds a deterministic synthetic test using the same 19-candidate category shape (8 adjacent, 6 cross-genre, 5 unclassified; no adventurous candidates), four owned candidates, and a family-capped pool to verify fallback can fill ten without selecting owned items. The synthetic fallback test passed on code head `0dfe32d098b4acb4c1ce78dfef7422b64189297b`. All four required workflows passed on that code head: Python syntax/acquisition safety run `39168705693` (747 tests), Docker packaging/full suite/build run `39168705729` (747 tests), container runtime smoke run `39168705699`, and validation-only multi-architecture run `39168705788`. The first head, `044237463389a90c1ef7f86e8560550f986a380d`, failed one test because its synthetic output fields were inserted into the wrong test fixture; the fixture was corrected in `0dfe32d098b4acb4c1ce78dfef7422b64189297b`, where both full suites passed. No local tests or private capture replay were run by the assistant. The recorded runs apply to code head `0dfe32d098b4acb4c1ce78dfef7422b64189297b`; any later documentation-only commit requires its own exact-head CI verification. No private capture/history or candidate identities were committed. No ranking weights or allocation policy changed; publishing/deployment remain paused.
+
+**Next action:** owner runs the evaluator from draft PR #370 in the isolated test environment and shares the aggregate-only output. The synthetic test shows that a pool with this category shape can fill ten under suitable ownership/family/artist conditions; it does not reproduce the exact private pool. Use the new actual-allocation-category and target/shortfall metrics to identify the missing constraint before proposing a behavior fix.
+
+## Recommendation shortlist underfill — phase instrumentation continuation (2026-10-18)
+
+Draft PR #370 was extended after the owner shared the aggregate-only schema-v2 profile comparison: 5 recommendations returned from 10 requested, 19 candidates resolved, 4 already owned, 10 recent-family-cap decisions, and category shortfalls against adjacent 4 / adventurous 3 / cross-genre 3 targets. The existing synthetic pool test can fill ten, so the private-pool stopping point remains unresolved.
+
+The allocator contract and pure allocator now expose aggregate phase diagnostics: attempts in diversity reservation, category quota, family-cap relaxation, quota retry, unclassified fallback, plus final-fallback entry and attempts. The server response adds checked count, configured ceiling, and authoritative allocator decision counts; the profile comparison summarizes these fields without serializing identities. Regression tests cover phase reporting and aggregate comparison fields. No ranking/allocation behavior, ownership gates, or provider calls were changed.
+
+CI on intermediate head 622ae19c0ecb67afa9f9a9ff2484690338359e88 exposed the server-size ratchet: navidrome_server.py reached 2656 lines versus the 2650 limit. The diagnostic output was compacted and a redundant blank line removed on the next head; this fix must be verified by CI on the exact final head. Keep captures, listening history, and candidate identities private. Publishing/deployment remain paused.
+
+Next action: verify all four workflows on the final PR head, then have the owner rerun the evaluator from that exact source and share only aggregate diagnostics.
