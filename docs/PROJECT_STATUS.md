@@ -1,6 +1,6 @@
 # Project status
 
-Last reviewed: 2026-10-18 (PR #361 offline profile comparison evaluator merged; owner-side comparison pending)
+Last reviewed: 2026-10-18 (owner-side full-engine profile responsiveness comparison completed)
 
 ## Current focus
 
