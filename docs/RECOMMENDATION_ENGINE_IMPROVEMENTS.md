@@ -47,6 +47,40 @@ Answered by the owner (2026-10-18):
 2. The ListenBrainz history available to the owner goes back only about two weeks, and the 30-day profile window was not a deliberate choice. Replace the 30-day window in the profile design (P2) with an explicit decision, and keep the CF-history hypothesis open because two weeks of history is shorter than the provider's full record.
 3. Yes. An extra MusicBrainz budget of a few seconds per run is acceptable, bounded to one or two extra CF pages (P3).
 
+### Recommendations after the owner's answers and the PR #377 merge
+
+PR #377 is merged (merge commit `ee83330d7736b8b47d8e09883ce2b1ec24018212`). Its head was merged with `main` first (`ef87832`, a merge commit rather than a rebase, so no history was rewritten); all four required checks passed on `ef87832`.
+
+The owner's answer that the ListenBrainz history covers only about two weeks changes the evidence:
+
+- **Hypothesis 4 is weakened.** If the provider's history is only about two weeks, a long-history explanation for CF concentration is unlikely. The two dominant artists were about 10% of the two-week export, yet 92 of 100 CF recordings came from them. The next test is the provider's own behavior (how the CF pool shifts across replays with known listening changes), not the window length.
+- **The 30-day profile window is not a product decision.** Do not lengthen it: the provider only has about two weeks of history. Keep the 14-day half-life and make the window an explicit, documented setting in a later change, after P1–P2 show whether it matters.
+- **Exploration slider (later, backend first).** Map a single user-facing exploration value onto the existing `recommendation_diversity` contract (0–100, MMR penalty) rather than adding a second knob. Record the slider as a product item. Do not build UI in backend PRs.
+- **Supply first.** Recommendations P1 (diagnostics) and P3 (bounded CF paging) remain the first implementation items; P4 (genre-lookup retry) is independent and can ship separately.
+
+### First task (prompt for the next implementation thread)
+
+```
+Goal: add aggregate-only candidate-supply diagnostics at the candidate-gathering boundary (roadmap P1). No change to candidate selection, ranking, allocation, ownership, eligibility, or provider calls.
+
+Read first: docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md (the revised section at the top and P1), docs/PROJECT_STATUS.md, docs/TEST_PLAN.md, discovery_candidate_gathering.py (the CF loop around the recording lookups and the artist-genre lookup), and the existing profile-comparison/offline evaluator and its tests.
+
+Record, as bounded aggregates only (no artist names, album titles, MBIDs, tags, or URLs):
+- CF recordings returned, resolved, and failed (by bounded error class).
+- Distinct artists among resolved CF recordings; share of the top two artists.
+- Resolved albums per artist (top-N shares only).
+- Unowned unique albums before and after duplicate-identity removal, and before and after the artist cap.
+- Yield per candidate source (CF vs supplementary), including zero-yield queries.
+
+Acceptance criteria:
+- Ranking, selection, ownership, eligibility, provider-call counts, and cache behavior are unchanged; prove this with the existing regression tests.
+- New deterministic synthetic tests cover the aggregates, including an empty pool, a single-artist pool, and a provider-failure pool.
+- The offline evaluator reports the new aggregates and needs no live provider.
+- Reproduce, from the owner's frozen capture (aggregate output only, no identities), the figures: 92 of 100 CF recordings from two artists; 19 albums from 8 artists; all 19 candidates from CF; 12 owned, 2 duplicates, 5 selected.
+
+Constraints: branch from current main; keep the diff focused; run the full unit suite and syntax checks; report exact commands and results; do not capture live data; do not commit private captures or identity-bearing output; do not merge or publish.
+```
+
 ## Goal and guardrails
 
 Recommendations should respond meaningfully to changes in recent listening and the library, avoid repetitive lists, and balance relevance with novelty and useful exploration.
