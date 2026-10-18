@@ -401,7 +401,7 @@ def recommend_new_music(
         OwnershipStatus,
     )
     from discovery_personal_allocator import allocate_personal_recommendations
-    from recommendation_cooldown import apply_history_cooldown, read_history_for_cooldown
+    from recommendation_cooldown import prepare_ranking_inputs
     from discovery_recommendation_payload import (
         build_personal_recommendation_payload,
     )
@@ -451,29 +451,17 @@ def recommend_new_music(
             ownership=ownership,
         ))
 
-    if _ranking_context_override is None:
-        ranking_now = time.time()
-        ranking_history = read_history_for_cooldown(DISCOVERY_DB, now=ranking_now)
-        diversity_setting = _service_settings.recommendation_diversity_value(_discovery_settings_read)
-    else:
-        ranking_now = float(_ranking_context_override["ranking_now"])
-        ranking_history = list(_ranking_context_override["history"])
-        diversity_setting = _ranking_context_override["diversity_setting"]
-    ranking_context = {
-        "ranking_now": ranking_now,
-        "history": ranking_history,
-        "diversity_setting": diversity_setting,
-    }
-
+    cooled_candidates, ranking_context = prepare_ranking_inputs(
+        allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override,
+        now_fn=time.time,
+        diversity_setting_fn=lambda: _service_settings.recommendation_diversity_value(_discovery_settings_read),
+    )
     allocation = allocate_personal_recommendations(AllocationRequest(
-        candidates=tuple(apply_history_cooldown(
-            allocation_candidates, candidate_by_id, DISCOVERY_DB,
-            now=ranking_now, history_override=ranking_history,
-        )),
+        candidates=tuple(cooled_candidates),
         count=count,
         category_targets=targets,
         diversity_style_targets=diversity_style_targets,
-        diversity_penalty=diversity_setting_to_penalty(diversity_setting),
+        diversity_penalty=diversity_setting_to_penalty(ranking_context["diversity_setting"]),
         family_cap=1,
         max_checks=60,
     ))
