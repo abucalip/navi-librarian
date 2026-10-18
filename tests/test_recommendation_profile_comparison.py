@@ -165,8 +165,8 @@ class RecommendationProfileComparisonTests(unittest.TestCase):
         self.assertEqual(diagnostics["allocation_decision_counts"]["category_quota_filled"], 1)
         self.assertEqual(diagnostics["component_distributions"]["discovery_score"]["mean"], 9.0)
         self.assertEqual(diagnostics["component_distributions"]["profile_bonus_above_neutral_share"], 0.666667)
-        self.assertNotIn("artist", json.dumps(diagnostics))
-        self.assertNotIn("album", json.dumps(diagnostics))
+        self.assertNotIn('"A"', json.dumps(diagnostics))
+        self.assertNotIn('"One"', json.dumps(diagnostics))
 
 if __name__ == "__main__":
     unittest.main()
