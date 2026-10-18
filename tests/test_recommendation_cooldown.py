@@ -1,7 +1,10 @@
+import tempfile
 import unittest
+from pathlib import Path
 
-from discovery_cooldown import cooldown_adjusted_score
-from discovery_store import recommendation_identity_hash
+from discovery_allocation_contract import AllocationCandidate, OwnershipStatus
+from discovery_cooldown import apply_history_cooldown, cooldown_adjusted_score
+from discovery_store import recommendation_identity_hash, write_list
 
 
 class RecommendationCooldownTests(unittest.TestCase):
@@ -94,6 +97,46 @@ class RecommendationCooldownTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cooldown_adjusted_score(float("nan"), self.artist, self.album, [], now=self.now)
 
+
+
+    def test_storage_adapter_penalizes_only_ownership_clear_candidates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database_path = Path(directory) / "discovery.sqlite3"
+            write_list(database_path, "personal", {
+                "recommendations": [{"artist": self.artist, "album": self.album}],
+            }, generated_at=self.now - 60)
+            clear = AllocationCandidate(
+                candidate_id="clear", artist_key="artist", album_key="album",
+                category="adjacent", score=0.8, ownership=OwnershipStatus.CLEAR,
+            )
+            ambiguous = AllocationCandidate(
+                candidate_id="ambiguous", artist_key="artist2", album_key="album2",
+                category="adjacent", score=0.7, ownership=OwnershipStatus.TITLE_CONFLICT,
+            )
+            adjusted = apply_history_cooldown(
+                [clear, ambiguous],
+                {
+                    "clear": {"primary_artist": self.artist, "album": self.album},
+                    "ambiguous": {"primary_artist": self.artist, "album": self.album},
+                },
+                str(database_path),
+                now=self.now,
+            )
+            self.assertAlmostEqual(adjusted[0].score, 0.72)
+            self.assertEqual(adjusted[1], ambiguous)
+
+    def test_storage_adapter_fails_open_when_history_database_is_unavailable(self):
+        candidate = AllocationCandidate(
+            candidate_id="clear", artist_key="artist", album_key="album",
+            category="adjacent", score=0.8, ownership=OwnershipStatus.CLEAR,
+        )
+        adjusted = apply_history_cooldown(
+            [candidate],
+            {"clear": {"primary_artist": self.artist, "album": self.album}},
+            "/nonexistent-parent/discovery.sqlite3",
+            now=self.now,
+        )
+        self.assertEqual(adjusted, [candidate])
 
 if __name__ == "__main__":
     unittest.main()
