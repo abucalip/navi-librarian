@@ -110,7 +110,7 @@ def apply_history_cooldown(
             continue
         score = cooldown_adjusted_score(
             candidate.score,
-            str(source.get("primary_artist") or source.get("artist") or ""),
+            str(source.get("artist") or source.get("primary_artist") or ""),
             str(source.get("album") or ""),
             history,
             now=now,
