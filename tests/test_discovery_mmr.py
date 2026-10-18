@@ -44,7 +44,7 @@ class DiscoveryMmrTests(unittest.TestCase):
             candidate("similar", "b", 9.8, ["jazz", "soul"]),
             candidate("different", "c", 9.7, ["funk", "afrobeat"]),
         ]
-        result = mmr_rerank(items, limit=3, lambda_=0.5)
+        result = mmr_rerank(items, limit=3, lambda_=0.6)
         self.assertEqual([item["id"] for item in result], ["anchor", "different", "similar"])
 
     def test_ties_are_deterministic_and_input_is_not_mutated(self):
@@ -67,9 +67,50 @@ class DiscoveryMmrTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 diversity_setting_to_penalty(value)
 
+    def test_rank_normalization_is_invariant_to_score_scale_and_gaps(self):
+        first_pool = [
+            candidate("top", "a", 100, ["jazz"]),
+            candidate("middle", "b", 90, ["jazz"]),
+            candidate("bottom", "c", 80, ["funk"]),
+        ]
+        rescaled_pool = [
+            candidate("top", "a", 10000, ["jazz"]),
+            candidate("middle", "b", 9999, ["jazz"]),
+            candidate("bottom", "c", 1, ["funk"]),
+        ]
+        first = mmr_rerank(first_pool, limit=3, lambda_=0)
+        rescaled = mmr_rerank(rescaled_pool, limit=3, lambda_=0)
+        self.assertEqual([item["id"] for item in first], [item["id"] for item in rescaled])
+        self.assertEqual(
+            [item["id"] for item in mmr_rerank(first_pool, limit=3, lambda_=0.6)],
+            [item["id"] for item in mmr_rerank(rescaled_pool, limit=3, lambda_=0.6)],
+        )
+
+    def test_equal_scores_share_rank_relevance_and_constant_pool_is_safe(self):
+        tied = [
+            candidate("first", "a", 5, []),
+            candidate("second", "b", 5, []),
+            candidate("third", "c", 1, []),
+        ]
+        # The tied top candidates retain equal relevance; original input order
+        # breaks their selection tie when there is no diversity penalty.
+        self.assertEqual(
+            [item["id"] for item in mmr_rerank(tied, limit=3, lambda_=0)],
+            ["first", "second", "third"],
+        )
+        constant = [
+            candidate("first", "a", 5, []),
+            candidate("second", "b", 5, []),
+            candidate("third", "c", 5, []),
+        ]
+        self.assertEqual(
+            [item["id"] for item in mmr_rerank(constant, limit=3, lambda_=0.5)],
+            ["first", "second", "third"],
+        )
+
     def test_relevance_floor_uses_original_pool_normalization_and_can_return_sparse_list(self):
         items = [candidate("high", "a", 10, []), candidate("mid", "b", 7, []), candidate("low", "c", 0, [])]
-        result = mmr_rerank(items, limit=3, lambda_=0, relevance_floor=0.7)
+        result = mmr_rerank(items, limit=3, lambda_=0, relevance_floor=0.4)
         self.assertEqual([item["id"] for item in result], ["high", "mid"])
         self.assertEqual(mmr_rerank(items, limit=3, relevance_floor=1.0)[0]["id"], "high")
         with self.assertRaises(ValueError):

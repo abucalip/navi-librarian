@@ -49,8 +49,9 @@ def mmr_rerank(
 ) -> list[dict[str, Any]]:
     """Greedily balance normalized relevance and similarity to selected items.
 
-    Scores are min-max normalized within the pool so lambda has a bounded
-    scale. Ties are deterministic: original input order wins. A blank artist
+    Relevance uses descending average ranks normalized to [0, 1], so raw score
+    magnitude and isolated outliers do not set lambda's scale. Equal scores get
+    equal relevance; selection ties are deterministic by original input order. A blank artist
     key is treated as a unique identity per candidate rather than merging
     unknowns. Input mappings are copied and never mutated.
     """
@@ -76,11 +77,28 @@ def mmr_rerank(
 
     if not pool or limit == 0:
         return []
-    scores = [item["_mmr_score"] for item in pool]
-    low, high = min(scores), max(scores)
-    span = high - low
+    # Normalize by relative rank, not score magnitude. Min-max normalization
+    # lets a single score outlier compress every other candidate's relevance,
+    # making the same lambda behave differently across score distributions.
+    # Average ranks give equal scores equal relevance; ties remain deterministic
+    # in selection because the original input order still breaks MMR ties.
+    ranked = sorted(pool, key=lambda item: item["_mmr_score"], reverse=True)
+    rank_by_identity: dict[int, float] = {}
+    start = 0
+    while start < len(ranked):
+        end = start + 1
+        while end < len(ranked) and ranked[end]["_mmr_score"] == ranked[start]["_mmr_score"]:
+            end += 1
+        average_rank = (start + end - 1) / 2.0
+        for item in ranked[start:end]:
+            rank_by_identity[id(item)] = average_rank
+        start = end
+    denominator = max(1, len(ranked) - 1)
+    constant_pool = ranked[0]["_mmr_score"] == ranked[-1]["_mmr_score"]
     for item in pool:
-        item["_mmr_relevance"] = 1.0 if span == 0.0 else (item["_mmr_score"] - low) / span
+        item["_mmr_relevance"] = (
+            1.0 if constant_pool else 1.0 - rank_by_identity[id(item)] / denominator
+        )
 
     # Apply the floor against the original pool normalization. Do not renormalize
     # the surviving candidates, which would erase the meaning of the floor.
