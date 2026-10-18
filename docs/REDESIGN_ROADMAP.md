@@ -48,7 +48,7 @@ Status: **done in PR #352 (2026-10-18), pending owner merge.** Baseline measured
 
 ### Phase 1 — Foundations: tokens, fonts, icons (M)
 
-Status: **implemented on `ui/phase-1-foundations`, PR open, not merged.** PR link: see the pull request for branch `ui/phase-1-foundations`. Evidence, token audit, browser results and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 10. Not yet verified: fonts and contrast on populated states, and the manual checklist against the exact head SHA.
+Status: **implemented on `ui/phase-1-foundations`, PR open, not merged.** PR: #353 (`ui/phase-1-foundations`). Evidence, token audit, browser results and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 10. Not yet verified: fonts and contrast on populated states, and the manual checklist against the exact head SHA.
 
 Goal: new look at the token level, no layout change.
 - Vendor WOFF2 subsets for Big Shoulders Display, Schibsted Grotesk and JetBrains Mono under `static/fonts/` with OFL license files; remove the Google Fonts `@import`; preload the display face; `font-display: swap`.
