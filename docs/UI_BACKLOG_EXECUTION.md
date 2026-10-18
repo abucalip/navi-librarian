@@ -1731,3 +1731,46 @@ Roadmap item: Phase 3, third item (Personal Discoveries). Merged: PR #372 as `f1
 **Known limitations.** Artist bio lazy load not carried over (see above). Engine order is not a score order, so the list has no ranking numeral. The fixed mobile tab bar overlays the 390px element screenshot (existing; the open follow-up for seven bottom tabs under 620px still applies). The sandbox has no real library, so artwork and recommendations are reconstructed fixture data.
 
 **Follow-up: artist bio on Personal Discoveries rows (`ui/personal-artist-bio`).** The bio that the old editorial card showed for "Genre tags connect this artist…" rows is restored on the ranked rows. `buildRecommendationRow` takes an `artistBio` option, and only Personal Discoveries sets it, when the reason matches that line. `attachArtistBio` reuses the existing `/api/artist-bio` request and cache, the shared intersection observer, and text-only rendering. Discover music and New releases rows are unchanged. Sandbox check on a branch server: only the matching row requested a bio, the paragraph showed in muted text, and the console had no errors. Unit suite: 774 tests, OK. The earlier "changed behaviour" note above is superseded by this follow-up.
+
+## 16. Redesign Phase 3 — Add to your collection as ranked rows (`ui/phase-3-add-to-collection`)
+
+Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). Design system sections applied: 8 (rows with acquisition focus, Get prominent; rule 2 for an order that is not a score ranking: muted position, no red numeral, basis named in the status line; rule 4, no numeral derived from data the API does not return), 9.2 (Get state machine kept), 9.4 (ranked row), 9.6 (skeleton, status line, empty and error states), 12 (accessibility floor). Base: `origin/main` at `31ef78a` (PR #374 merged). Not merged, not deployed.
+
+**Endpoint and fields.** The page uses `GET /api/discovery/classics?count=100&nonce=…` (unchanged) and the feedback endpoint `POST /api/discovery/feedback` with `dismiss` and `dismiss_artist`. Fields read: `artist`, `album`, `discovery_type` / `discovery_category`, `reason`, `anchor_artist`, `lastfm_playcount`, `year`. No endpoint or field was added or invented. No contract proposal is needed.
+
+**Why no numerals ranking.** The server sorts candidates by `exploration_score`, which includes random jitter, and the Load albums control rotates the list on the client. The order is therefore not a stable ranking, so rows show a muted position (`rank-numeral is-index`, `--text-muted`), not a red numeral. The status line says "Picked for exploration, not ranked by score".
+
+**Implemented.** `#classicsCards` is now `ranked-list`. `buildClassicsRow` calls the shared `buildRecommendationRow(item, index + 1, {indexed, artistBio, meta, onDismiss, onDismissArtist})`, so there is no fork. Metadata lines are the category, "Similar to" the anchor artist, the reason (hidden when the artist bio shows, as the card did), and the Last.fm playcount. Dismiss and dismiss-artist still go to the server feedback endpoint with the `classics` list name; the shared row's local dismiss is not used here. The artist bio follows the card's connection-reason rule and the existing `/api/artist-bio` cache. Loading shows six skeleton rows (the `rankedRowList` flag now includes `classics`) and clears on response and on failure. The classics-only title tooltip line and the `#classicsCards .card h3` clamp were removed; the shared row's `.ranked-row h3` provides the two-line clamp.
+
+**Unchanged.** Load albums and Refresh buttons, the status element, `loadDiscovery`'s request, pool size (100), the 30-item cap and three-per-artist cap, the rotate shuffle, the auto-refresh path, the empty-state copy, the Get state machine (`createGetButton`, pending until the server answers), the row-open modal, and all server code. No backend, API or dependency change.
+
+**Behaviour changes (disclosed).**
+- The title tooltip is now the album name alone, not "album (year)". The year stays visible in the row next to the title.
+- Rows show a muted position number (01–05) that the card did not show.
+- Dismiss artist and the × control are now 44px targets (the card's were under 44px).
+
+**Tests.** New `tests/test_add_to_collection_ui_contract.py` (`AddToCollectionRowContractTests`, 16 source checks). Narrow updates with reasons in `tests/test_classics_card_ui_contract.py` (the classics clamp moved to `.ranked-row h3`, so the clamp count is 1; the tooltip guard now checks the shared row; the container assertion now expects `ranked-list`), and the shared `rankedRowList` declaration assertion in `tests/test_personal_discoveries_ui_contract.py` and `tests/test_new_releases_ui_contract.py` now includes `classics`. No behavioural assertion was removed.
+
+**Checks run on the branch head.**
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- Focused: `python3 -m unittest tests.test_add_to_collection_ui_contract tests.test_classics_card_ui_contract tests.test_personal_discoveries_ui_contract tests.test_new_releases_ui_contract tests.test_recommendations_ui_contract -v`: 62 tests, OK.
+- Full: `python3 -m unittest discover -s tests -v`: 787 tests, OK.
+
+**Browser checks (sandbox, not the helper).** `~/navi-librarian-test/test-pr.sh` is not present in this session. Two isolated servers ran from the same sandbox: `origin/main` at `31ef78a` on 8101 and this branch on 8102, with `NAVIDROME_LIBRARIAN_DATA_DIR` per tree, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` under a sandbox directory, and `SLSKD_URL=http://127.0.0.1:9`. No Navidrome library is configured. The classics endpoint was answered by Playwright with a labelled **RECONSTRUCTED FIXTURE** (five albums, no artwork). Script and results: `/mnt/project-files/phase-3-add-to-collection/screenshots/render-classics.mjs` and `classics-render-results.json`.
+- Widths 1440, 1200, 900, 620, 390: `overflowX` 0 on both trees at every width. Branch: five `ranked-row` rows, numerals 01–05 in `rgb(180, 172, 159)` (`--text-muted`), no small targets, zero console errors, zero failed requests. Main: five editorial cards, and × and Dismiss artist under 44px.
+- Loading (branch): six `is-skeleton` rows while the response is delayed (2.5 s); main shows no skeleton. Both show "Rotating suggestions…" because the sandbox check used the rotate path.
+- Error (502): both trees clear rows and show the server message.
+- Not for me: clicking × posts `action: dismiss` with the album metadata to `/api/discovery/feedback` and reloads the list.
+- Keyboard after Load albums: Refresh, row link, Get, Not for me, Dismiss artist, next row link.
+- Not run: a real Get request (the brief forbids acquisition on a sandbox without authorisation, and the sandbox has no acquisition path), a live library and real artwork, Dismiss artist clicked (it would post to the server), reduced-motion emulation, and the full manual checklist against the PR head SHA.
+- Live-library check (other albums by artists who have a full album in the library): **skipped**, for Hamdi to run locally.
+
+**Impeccable.** `/impeccable context` ran. Its `CONTEXT_STALE` note is about `buildPath` in `.impeccable/config.json` and was not acted on. `impeccable detect` ran on `static/app.js` (no findings, regex-only), `app/templates/index.html` (`<img>` with no `src` and 11px text, both in code this PR did not touch) and `static/app.css` (advisory design-system radius, colour and type-ramp literals, all pre-existing; this PR removed one rule and added none). Applied: shared ranked row, muted index instead of a numeral, sort-basis label. Rejected: a red numeral (the order is not a stable score ranking), and a new clamp or tooltip on the shared row (kept to the existing `.ranked-row h3`).
+
+**web-design-guidelines.** The skill's WebFetch of the rules URL returned a summary, not the rule list, so the rules were **not** checked line by line. The summary's categories (focus, touch targets, motion, text overflow, labels) were checked against the changed lines by reading: visible focus is inherited from `.ranked-row:focus-visible` and the button styles; the reduced-motion rule for the skeleton remains in `app.css`; text truncates with the full name in `title`. This is a limitation, not a pass.
+
+**Known limitations.** The title tooltip no longer carries the year. The 390px bottom tab bar overlaps the list (the open follow-up for seven bottom tabs under 620px). Artwork is absent in the fixture. The live-library check is for Hamdi to run.
+
+**Next action.** Hamdi runs this page on a live library locally against the PR head SHA, and decides whether to merge.

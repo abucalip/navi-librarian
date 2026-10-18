@@ -89,7 +89,8 @@ class NewReleasesRowContractTests(unittest.TestCase):
     def test_loading_shows_skeleton_rows_and_clears_them_before_rendering(self):
         # Personal Discoveries shares the skeleton path (its own contract is in
         # test_personal_discoveries_ui_contract.py), so the check is on the shared flag.
-        self.assertIn("const rankedRowList = name === 'new_releases' || name === 'personal';", self.js)
+        # Narrow update (Phase 3 item 4): Add to your collection is a ranked list too.
+        self.assertIn("const rankedRowList = name === 'new_releases' || name === 'personal' || name === 'classics';", self.js)
         self.assertIn("target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));", self.js)
         self.assertIn("if (rankedRowList) target.replaceChildren();", self.js)
 
