@@ -49,8 +49,9 @@ def mmr_rerank(
 ) -> list[dict[str, Any]]:
     """Greedily balance normalized relevance and similarity to selected items.
 
-    Scores are min-max normalized within the pool so lambda has a bounded
-    scale. Ties are deterministic: original input order wins. A blank artist
+    Relevance uses descending average ranks normalized to [0, 1], so raw score
+    magnitude and isolated outliers do not set lambda's scale. Equal scores get
+    equal relevance; selection ties are deterministic by original input order. A blank artist
     key is treated as a unique identity per candidate rather than merging
     unknowns. Input mappings are copied and never mutated.
     """
