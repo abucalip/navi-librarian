@@ -1612,7 +1612,7 @@ Settings and Log out: already in the header menu (PR #327). No placement change 
 
 Roadmap item: Phase 3, first item (Discover music). Design system sections applied: 9.4 (ranked row), 8 (rank numerals and truthfulness), 9.6 (skeleton, empty, error), 12 (accessibility floor). Base: `origin/main` at `b4bc707` (the brief named `45f2f4e`; main had advanced).
 
-**Implemented** (PR #365). `#recommendationCards` is an ordered list of `article.ranked-row` rows instead of the card grid. Each row: numeral (display face, red text), 64px artwork, title and artist, plain-text metadata, Get and dismiss as separate controls. The whole row opens the album modal, as before. Numerals appear only when the sort basis is a real order: server order ("Recommended order"), complete `discovery_score`, or complete `lastfm_listeners`. Any sort with missing values, and the A–Z sort, shows no numerals, and the count line names the basis. Loading shows opacity-pulse skeleton rows; a failed generation is shown in the count line as well as the diagnostics panel.
+**Merged** in PR #365 (squash `de340b7`, merged 2026-10-18 on Hamdi's instruction; head `9af9ae2` had green CI and was mergeable). Not deployed. `#recommendationCards` is an ordered list of `article.ranked-row` rows instead of the card grid. Each row: numeral (display face, red text), 64px artwork, title and artist, plain-text metadata, Get and dismiss as separate controls. The whole row opens the album modal, as before. Numerals appear only when the sort basis is a real order: server order ("Recommended order"), complete `discovery_score`, or complete `lastfm_listeners`. Any sort with missing values, and the A–Z sort, shows no numerals, and the count line names the basis. Loading shows opacity-pulse skeleton rows; a failed generation is shown in the count line as well as the diagnostics panel.
 
 **Unchanged.** Get state machine and `searchAlbum`, dismiss storage key and filtering, search/category/sort controls and their order, modal, refresh behaviour, endpoints, schemas and server code. No backend, API or dependency change.
 
@@ -1646,3 +1646,4 @@ Roadmap item: Phase 3, first item (Discover music). Design system sections appli
 
 **Limitations.** Artwork in the reconstructed DOM is absent, so the artwork tile is the placeholder colour only. `--text-sm` and `--text-xs` resolve to rem values; a browser with a non-default root size changes them proportionally. The modal artwork `<img>` without a `src` (pre-existing) is still flagged by the detector.
 
+**Next:** Phase 3, item 2 (New releases with a date column in place of numerals), in a new thread. Not started.
