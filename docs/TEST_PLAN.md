@@ -73,6 +73,19 @@ python -m unittest discover -s tests -p 'test_recommendation_replay_capture.py' 
 
 For a real baseline, run capture only in an isolated environment pinned to an identified GitHub revision and configured with test settings. Keep the capture outside the repository with directory mode 700 and file mode 600. Then run `python recommendation_replay.py /absolute/private/path/capture.json`. The replay must pass checksum/schema validation, consume every provider/cache and Last.fm tape event in order, make zero live provider calls, and reproduce stable recommendation output. A synthetic fixture test does not substitute for this real-capture check. Never attach a private capture to a public PR; CI uses synthetic fixtures only.
 
+
+### Full-engine profile chronology comparison
+
+Use the offline comparison harness when an owner-only schema-v2 capture and timestamped ListenBrainz history are available:
+
+```sh
+python recommendation_profile_comparison.py /absolute/private/path/capture.json /path/to/listenbrainz-history.json
+```
+
+The harness compares the first five days and last five days of the supplied history against the same frozen post-gathering candidate and library snapshot. It recomputes listen-derived artist/family weights with the production 14-day half-life while holding the ranking timestamp, recommendation history, diversity setting, candidate pool, and ownership snapshot fixed. Captured Last.fm values are replayed by artist/album identity; missing tape coverage fails closed and never falls back to a live provider. Output is aggregate-only and excludes artist/album identities.
+
+This is a profile-responsiveness experiment, not a chronological future-listen hit-rate/nDCG evaluation when the capture postdates the windows. A successful deterministic baseline replay remains a separate gate. Keep both the capture and any identity-bearing reports outside the repository with owner-only permissions.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
