@@ -292,6 +292,29 @@ A new private capture dated 2026-10-18 was replayed against its declared source 
 
 This is a **replay reproducibility failure**, not evidence that the captured recommendation list is bad or good. Equal counts do not identify the cause. Investigate the replay tape, captured ranking inputs, and ranking/allocation implementation at the exact source SHA before accepting this capture as a deterministic fixture. Keep the real capture private; do not commit it, attach it to a PR, print its identities, or draw quality conclusions from it. Chronological T-to-T+14-day evaluation remains blocked until a valid time-separated pair exists and the generation snapshot is trustworthy.
 
+## Chronological listening-history audit — 2026-10-18
+
+The public `abucalip/reports/listenbrainz-history.json` contains 407 timestamped listens spanning about 13.36 days (2026-10-04 to 2026-10-18). A descriptive comparison of the first and last rolling five-day windows found:
+
+- First window: 2026-10-04 16:01:36Z to 2026-10-09 16:01:36Z; 138 listens, 36 distinct artist names, 37 distinct releases.
+- Last window: 2026-10-13 00:47:28Z to 2026-10-18 00:47:28Z; 132 listens, 64 distinct artist names, 77 distinct releases.
+- Eight artist names appeared in both windows; artist-name Jaccard overlap was approximately 0.087 (28 first-window-only and 56 last-window-only artist names). These are descriptive counts, not a recommendation-quality score. Artist-name normalization and window boundaries must be kept consistent in any repeatable evaluator.
+- First-window leaders included The Dave Brubeck Quartet (13), Gorillaz (12), MF DOOM (11), and David Bowie (10). Last-window leaders included Arctic Monkeys (14), Mahmoud Ahmed (11), Antonio Carlos Jobim (10), and Gorillaz (8).
+
+The available `baseline-20261018-v2.json` capture was taken at 2026-10-18 15:41:26Z, after both windows; it records five expected recommendations and a 1,733-album library. It is not an earlier recommendation snapshot and there are no listens in this history after its capture time. Consequently it cannot validly support a future-listen hit-rate, precision/recall, or nDCG evaluation for these recommendations. Using it as though it preceded the first window would introduce temporal leakage. Keep the capture and identity-bearing private evaluation artifacts out of public commits.
+
+A preliminary diagnostic applied the existing familiarity multiplier to captured candidate base scores while holding those base scores fixed and changing only artist listen counts. For example, the multiplier for Arctic Monkeys changed from about 1.147 at zero listens to 0.820 at 14 listens; The Strokes changed from about 0.928 at five listens to 1.147 at three listens. This isolates one formula component only: it is **not** a full recommender replay and says nothing by itself about final rank order because profile families, Last.fm, allocation, eligibility, and diversity also affect output. Do not present its rankings or the raw-score-only overlap as full-engine results.
+
+### Recommendations and next steps
+
+1. Build a genuinely offline, deterministic profile-comparison harness using the real timestamps, but only after establishing a trustworthy frozen generation snapshot and replay tape. Freeze candidate pool, library/ownership eligibility, provider responses, and other non-profile inputs identically across runs; substitute only the defined first/last-window profile.
+2. Execute the actual recommendation engine for both profiles. Compare ordered IDs and score deltas, top-k overlap, novelty/familiarity, artist/release diversity, category allocation, and ownership eligibility. Label this a *responsiveness* test, not a future-listen outcome test.
+3. For outcome evaluation, capture a recommendation list at time T and evaluate against independent listens strictly after T over a predeclared horizon. Exclude all post-T events from generation inputs; report coverage and exposure limitations, and avoid causal claims because Librarian suggests music to acquire but does not influence what the user later chooses to listen to.
+4. Keep the two evaluations separate: profile responsiveness can be tested without future listening; future listening is optional, independent observational evidence and is not Librarian's objective.
+5. Do not tune ranking weights or claim quality gains from the current one-capture comparison. The replay mismatch documented above must be resolved before treating a capture as a deterministic evaluator fixture.
+
+Status: history parsing and descriptive window comparison completed; familiarity-component arithmetic is diagnostic only. Full-engine first/last-profile replay and a valid chronological outcome evaluation were not run in this session. No application code or tests were changed and no live provider calls were made.
+
 ## Out of scope unless separately approved
 
 - Rewriting the recommender or adding a machine-learning stack.
