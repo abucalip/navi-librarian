@@ -1662,3 +1662,22 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - The ~190 s estimate covers all 173 uncached requests in the run, including the 100 recording resolutions this change did not add.
 - Limits: one pass, one profile, one cold state, no pre-change live comparison. The throwaway data directory and worktree were removed on the device.
 - Publishing and deployment remain paused.
+
+## 2026-10-19 — Uncached-budget sweep for CF candidate supply
+
+- Task: check whether the 100 uncached-resolution budget limits candidate supply, using the real gathering path on synthetic fixtures with budgets from 25 to 300. No live call, no code change, no budget, weight, window, eligibility, ownership, or duplicate rule changed.
+- Result (aggregates): on a concentrated cold pool, distinct artists are 3, 6, 10, 15, and 18 at budgets 25, 50, 100, 150, and 200. Shortlist ceiling reaches the 10-slot target only at 100, with no margin. Warm runs skip most dominant-artist recordings through the 10-per-artist cap, so their supply does not depend on the budget.
+- Finding: the personal allocator takes at most one album per artist, and the replenishment gate counts albums. The gate can stay closed while artist supply is short (budget 50: 39 albums, 6 artists).
+- Cost: about 55 s of extra recording spacing per 50 budget units at 1.1 s per call.
+- Verification: offline sweep only; no unit tests run because no code changed. Documentation PR is a draft; CI on its exact head is pending at the time of this entry.
+- Limits: synthetic album structure, no ownership, no non-CF sources, stubbed genres, computed spacing. Not calibrated to the owner's capture.
+- Next action: add a distinct unowned eligible artist count to the aggregate diagnostics and test an artist-based replenishment gate offline. A live aggregate run needs Hamdi's go-ahead in words first.
+
+## 2026-10-19 — Last.fm source and combination study
+
+- Task: test whether a Last.fm similar-artist source can cut batch time without a quality drop, and whether combining it with CF helps. Aggregates only.
+- Measurement: 15 seeds, `artist.getSimilar` on the owner's device, 0 failures, 23.8 s. Top-20 similar artists by match score, one MusicBrainz release-group browse each, 2 HTTP 503 failures, 31.5 s, 672 albums, 236 eligible by release type, 17 eligible artists before ownership and duplicate filtering. Frozen CF capture: about 110 s at budget 100, 7 eligible unowned albums from 5 artists after ownership.
+- Result: the capped Last.fm path takes about 55 s, against about 110 s for CF. Supply is not directly comparable until the ownership filter is applied to the Last.fm side. Quality is not measured.
+- Combinations: running both at today's settings is about 165 s. CF at budget 50 plus a Last.fm top-20 pass is about 110 s. Gated versions are about 55 to 80 s (sketches).
+- Decision: no code change; the Last.fm source is not implemented and no budget, weight, window, eligibility, ownership, or duplicate rule changed.
+- Next action: a prospective quality protocol and an offline gated-combination harness, with ownership and duplicate filters applied to both paths.
