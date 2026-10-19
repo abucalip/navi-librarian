@@ -1990,7 +1990,7 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 ### 20.8 Next action
 Owner: review the diff and the keyboard evidence in 20.5, run the Settings checklist on the exact PR head against the live library (including one real secret save with a blank field preserving the saved value), and merge if satisfied. Next roadmap item in this phase: Login and first-run setup, as a separate PR.
 
-## 21. Redesign Phase 6 — Login and first-run setup (`ui/phase-6-login`)
+## 21. Redesign Phase 6 — Login and first-run setup (`ui/phase-6-login`, merged as #388)
 
 Roadmap item: Phase 6, second bullet (login and first-run setup restyled to the new tokens; the first-run variant was a recorded skip in PR #66 and is tested here). Design system sections applied: 9.7 (forms), 9.1 (buttons), 6 (page head with the 3px chart-red rule), 7 (borders, no shadow), 4.2 (state never by colour alone), 5 (type faces), 11 (reduced motion), 12 (accessibility floor), 13 (anti-patterns). Branched from `origin/main` at `c0856d8`, which includes Settings (PR #386, `ef93112`).
 
@@ -2049,3 +2049,6 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 
 ### 21.8 Next action
 Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run the sign-in and first-run checklist against the exact PR head on the owner's helper (first-run on a deliberately fresh per-run data directory, never by deleting an existing one), and merge if satisfied. Next roadmap item in this phase: album modal, as a separate PR.
+
+### 21.9 Merge record
+Owner-approved merge of PR #388 on 2026-10-19 at head `9d5eb72` (squash commit `a005b1c`). CI green on that head. Deployment not verified.
