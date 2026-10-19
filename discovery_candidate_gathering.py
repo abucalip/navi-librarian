@@ -174,6 +174,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     ttl_seconds=180 * 24 * 60 * 60,
                 )
                 if recording is not None:
+                    cf_skips["cache_known"] += 1
                     # Artist cap before any call: only cache-known artists can be
                     # skipped, because the CF response carries no artist.
                     cached_artist = recording_artist_key(recording, providers.music_key)
@@ -683,7 +684,10 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             "artist_cap_skipped": cf_skips["artist_cap"],
             "uncached_resolution_budget": CF_MAX_UNCACHED_RESOLUTIONS,
             "uncached_resolution_calls": resolution_calls,
+            # Reached means the budget was spent; skipped > 0 means it was exceeded.
+            "uncached_resolution_budget_reached": resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS,
             "resolution_budget_skipped": cf_skips["resolution_budget"],
+            "cache_known_recordings": cf_skips["cache_known"],
         },
         "supplementary": summarize_supplementary_yield(
             supplementary_query_outcomes, planned=len(regional_queries),

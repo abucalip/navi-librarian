@@ -1550,3 +1550,14 @@ The allocator contract and pure allocator now expose aggregate phase diagnostics
 CI on intermediate head 622ae19c0ecb67afa9f9a9ff2484690338359e88 exposed the server-size ratchet: navidrome_server.py reached 2656 lines versus the 2650 limit. The diagnostic output was compacted and a redundant blank line removed on the next head; this fix must be verified by CI on the exact final head. Keep captures, listening history, and candidate identities private. Publishing/deployment remain paused.
 
 Next action: verify all four workflows on the final PR head, then have the owner rerun the evaluator from that exact source and share only aggregate diagnostics.
+
+## P3 lookup-budget verification — 2026-10-19
+
+- Branch `recommendation/p3-budget-verification` from GitHub main `8849e7e372381b508fb966a9069475a752b79310` (PR #393 merge).
+- Verified that the uncached-resolution budget counter in `discovery_candidate_gathering.py` matches its code path: skips are counted only for refused uncached recordings. The owner's earlier 100-call, 0-skip result is consistent with the budget being reached exactly, so no counter defect was found.
+- Added aggregate fields `uncached_resolution_budget_reached` and `cache_known_recordings` to `candidate_supply.cf_paging`. Page-level cache share is not reported.
+- Added synthetic regression tests for exactly-at-budget, one-over-budget, and cache-known recordings after the budget is spent. No live provider calls.
+- Local checks: `python3 -m unittest discover -s tests` passed, 894 tests. Candidate-gathering module: 20 tests passed.
+- Updated `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P3 status. P2 decision unchanged. No weights, windows, ownership, duplicate, or eligibility behavior changed.
+- Not yet verified: exact-head CI on the four required workflows, merge, and any owner-authorized rerun of the page-2 measurement. No publishing or deployment.
+- Next action: after CI passes on the PR head, the owner decides whether to authorize one aggregate rerun that reports the new fields.

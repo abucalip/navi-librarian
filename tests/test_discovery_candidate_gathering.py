@@ -352,7 +352,55 @@ class RecommendationCfPagingTests(unittest.TestCase):
         paging = result["candidate_supply"]["cf_paging"]
         self.assertEqual(paging["uncached_resolution_calls"], 3)
         self.assertEqual(paging["resolution_budget_skipped"], 17)
+        self.assertTrue(paging["uncached_resolution_budget_reached"])
         self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 3)
+
+    def test_exactly_at_uncached_budget_skips_nothing_and_reports_reached(self):
+        pages = {0: [_cf_item(i) for i in range(3)]}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(3)}
+        providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
+
+        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+            result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(len(mb_client.requested), 3)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["resolution_budget_skipped"], 0)
+        self.assertTrue(paging["uncached_resolution_budget_reached"])
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 3)
+
+    def test_one_over_uncached_budget_skips_exactly_one(self):
+        pages = {0: [_cf_item(i) for i in range(4)]}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(4)}
+        providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
+
+        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+            result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(len(mb_client.requested), 3)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["resolution_budget_skipped"], 1)
+        self.assertTrue(paging["uncached_resolution_budget_reached"])
+
+    def test_cache_known_recordings_after_budget_spent_are_still_resolved(self):
+        # rec-0..2 spend the budget; rec-3..5 are cache-known; rec-6..7 are uncached and skipped.
+        pages = {0: [_cf_item(i) for i in range(8)]}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(8)}
+        cache = {f"mb:recording:rec-{i}": recordings[f"rec-{i}"] for i in range(3, 6)}
+        providers, _, mb_client = self._providers(pages=pages, recordings=recordings, cache=cache)
+
+        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+            result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(mb_client.requested, ["rec-0", "rec-1", "rec-2"])
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["cache_known_recordings"], 3)
+        self.assertEqual(paging["resolution_budget_skipped"], 2)
+        self.assertEqual(paging["artist_cap_skipped"], 0)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 6)
 
 
 class _RecordingClient:
