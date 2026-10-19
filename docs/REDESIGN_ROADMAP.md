@@ -110,7 +110,7 @@ Status: item 1 (Settings) merged as PR #386 (`ef93112`), not deployed. Evidence:
 - Regenerate `DESIGN.md` from the finished build; update `docs/DESIGN_SYSTEM.md` where decisions changed.
 - Exit: redesign acceptance (section 7) met.
 
-Status: item 1 (motion table, one pass) merged as PR #392 (squash `46aa68e`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 23. Item 2 (audit, polish and harden) implemented on `ui/phase-7-audit-harden-xnw111`, PR open, not merged or deployed; evidence in `docs/UI_BACKLOG_EXECUTION.md` section 24. The `DESIGN.md` regeneration (end of Phase 7), the real screen-reader pass and the third-party logo question in the album modal remain open.
+Status: item 1 (motion table, one pass) merged as PR #392 (squash `46aa68e`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 23. Item 2 (audit, polish and harden) implemented in PR #394 on `ui/phase-7-audit-harden-xnw111`, PR open, not merged or deployed; evidence in `docs/UI_BACKLOG_EXECUTION.md` section 24. The `DESIGN.md` regeneration (end of Phase 7), the real screen-reader pass and the third-party logo question in the album modal remain open.
 
 ## 5. Per-PR checklist
 

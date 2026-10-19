@@ -2175,7 +2175,7 @@ Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1
 
 Owner: review the diff, the before and after screenshots and the motion audit JSON, and decide the two loop-duration questions in 23.5. Then run the live browser checklist from `docs/TEST_PLAN.md` against the exact PR head SHA on the owner's helper, including sort on Discover music and a Get request, before the remaining Phase 7 items (critique, audit, polish, harden, `DESIGN.md`, and the screen-reader pass).
 
-## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`)
+## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`, PR #394)
 
 Roadmap item: Phase 7, second bullet (audit and critique on every page, polish and harden what they find, fixes that fit the system). Design system sections applied: 4 (colour and contrast), 9.1 and 9.7 (button and form sizing), 9.4 and 9.5 (ranked row and acquisition row roles), 9.8 (modal artwork), 12 (44×44 floor, visible focus, status by text). Base: `origin/main` at `46aa68e`. Section 23 (PR #392) is marked merged here.
 
