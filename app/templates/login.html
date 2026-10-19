@@ -9,14 +9,29 @@
 <link rel="stylesheet" href="/static/fonts/fonts.css">
 <link rel="stylesheet" href="/static/login.css">
 </head>
-<body><main>
-<img class="brand-icon" src="/assets/cassette.png" alt="Vintage cassette tape icon">
-<h1>Navidrome Librarian</h1><p id="intro">Checking app authentication…</p>
+<body>
+<main id="main" class="login-panel">
+<img class="brand-icon" src="/assets/cassette.png" width="64" height="64" alt="Vintage cassette tape icon">
+<h1>Navidrome Librarian</h1>
+<p id="intro" class="intro">Checking app authentication…</p>
 <form id="authForm" hidden>
-<label for="username">Username</label><input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username">
-<label for="password">Password</label><input id="password" name="password" type="password" required minlength="12" maxlength="1024" autocomplete="current-password">
-<div id="confirmationWrap" hidden><label for="confirmation">Confirm password</label><input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password"><p class="hint">Use at least 12 characters. This account controls the whole app.</p></div>
-<button id="submitButton" type="submit">Sign in</button><p id="message" role="alert"></p>
+<div class="field">
+<label for="username">Username</label>
+<input id="username" name="username" required minlength="3" maxlength="64" autocomplete="username" autocapitalize="none" spellcheck="false">
+</div>
+<div class="field">
+<label for="password">Password</label>
+<input id="password" name="password" type="password" required minlength="12" maxlength="1024" autocomplete="current-password">
+</div>
+<div id="confirmationWrap" class="field" hidden>
+<label for="confirmation">Confirm password</label>
+<input id="confirmation" name="confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password" aria-describedby="passwordHint">
+<p id="passwordHint" class="hint">Use at least 12 characters. This account controls the whole app.</p>
+</div>
+<button id="submitButton" type="submit">Sign in</button>
+<p id="message" class="message" role="alert"></p>
 </form>
 </main>
-<script src="/static/login.js" defer></script></body></html>
+<script src="/static/login.js" defer></script>
+</body>
+</html>

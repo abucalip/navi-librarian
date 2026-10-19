@@ -1,48 +1,66 @@
+/* Sign-in and first-run setup. Standalone page: it does not load app.css, so the tokens below
+   copy the Chart Rundown values from static/app.css (DESIGN_SYSTEM.md 4.1, 5, 6, 7, 11). Keep them in step. */
 :root {
   color-scheme: dark;
-  --ink: #141211; --surface: #1c1a18; --surface-hover: #2d2926;
+  --ink: #141211; --surface: #1c1a18; --surface-raised: #252220;
   --edge: #34302c; --edge-strong: #787168;
   --text: #f4efe6; --text-muted: #b4ac9f; --text-subtle: #9c958a;
   --accent: #f5d33f; --accent-hover: #f8e08a; --on-accent: #141211;
-  --chart-red: #ff5a3c;
+  --chart-red: #ff5a3c; --chart-red-text: #ff7b62;
+  --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --radius-control: 4px; --radius-panel: 6px; --radius-chip: 2px;
+  --dur-fast: 120ms; --ease-out: cubic-bezier(.2,.8,.2,1);
+  --text-xs: .75rem; --text-sm: .8125rem; --text-base: .9375rem; --text-2xl: 1.875rem;
   --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --body: "Schibsted Grotesk", sans-serif;
-  --mono: "JetBrains Mono", monospace;
 }
 * { box-sizing: border-box }
 body {
-  margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
-  background: var(--ink); color: var(--text); font: 15px/1.55 var(--body);
+  margin: 0; min-height: 100vh; display: grid; place-items: center; padding: var(--space-5);
+  background: var(--ink); color: var(--text); font: 400 var(--text-base)/1.55 var(--body);
   -webkit-font-smoothing: antialiased;
 }
-main {
-  width: min(100%, 420px); padding: 30px;
-  background: var(--surface); border: 1px solid var(--edge);
-  border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+.login-panel {
+  width: min(100%, 420px); padding: var(--space-6);
+  background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-panel);
 }
 .brand-icon {
-  display: block; width: 76px; height: 76px; object-fit: contain;
-  margin-bottom: 14px; border-radius: 6px;
+  display: block; width: 64px; height: 64px; object-fit: contain;
+  margin-bottom: var(--space-4); border-radius: var(--radius-chip);
 }
+/* Page head: display face, uppercase, with the 3px chart-red rule (DESIGN_SYSTEM.md 6). */
 h1 {
-  margin: 0 0 6px; font: 700 32px/1 var(--display);
-  letter-spacing: .025em; text-transform: uppercase;
+  margin: 0 0 var(--space-3); padding-bottom: var(--space-3); border-bottom: 3px solid var(--chart-red);
+  font: 700 var(--text-2xl)/1 var(--display); letter-spacing: .02em; text-transform: uppercase;
 }
-#intro { margin: 0 0 18px; color: var(--text-muted); }
-label { display: block; margin: 16px 0 5px; color: var(--text-muted); font-size: 13px; font-family: var(--mono); letter-spacing: .03em }
+.intro { margin: 0 0 var(--space-4); color: var(--text-muted); }
+.field { margin-top: var(--space-4) }
+.field:first-of-type { margin-top: 0 }
+label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: var(--text-sm); font-weight: 500 }
 input {
-  width: 100%; padding: 12px; border: 1px solid var(--edge-strong); border-radius: 4px;
-  background: var(--ink); color: var(--text); font: inherit;
+  display: block; width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--edge-strong); border-radius: var(--radius-control);
+  background: var(--surface); color: var(--text); font: inherit;
 }
 input::placeholder { color: var(--text-subtle) }
+.hint { margin: 6px 0 0; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.5 }
+/* Primary action: one per view, yellow fill, 44px target. */
 button {
-  width: 100%; margin-top: 20px; padding: 12px;
-  border: 1px solid var(--accent); border-radius: 4px;
-  background: var(--accent); color: var(--on-accent); font: 600 15px/1 var(--body);
-  cursor: pointer; transition: background .15s ease, border-color .15s ease;
+  display: block; width: 100%; min-height: 44px; margin-top: var(--space-5); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent); border-radius: var(--radius-control);
+  background: var(--accent); color: var(--on-accent); font: 600 var(--text-base)/1 var(--body);
+  cursor: pointer; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 button:hover { background: var(--accent-hover); border-color: var(--accent-hover) }
 button:disabled { opacity: .55; cursor: wait }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
-#message { min-height: 24px; margin: 12px 0 0; color: var(--chart-red); font-size: 14px }
-.hint { margin: 6px 0 0; color: var(--text-muted); font: 400 12px/1.5 var(--mono) }
+/* Errors and caution always carry a glyph and text, never colour alone (DESIGN_SYSTEM.md 4.2). */
+.message { display: flex; gap: var(--space-2); align-items: flex-start; min-height: 24px; margin: var(--space-3) 0 0; color: var(--chart-red-text); font-size: var(--text-sm) }
+.glyph {
+  flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; margin-top: 1px;
+  border: 1.5px solid currentColor; border-radius: 50%; font: 700 var(--text-xs)/1 var(--body);
+}
+.intro.is-error { display: flex; gap: var(--space-2); align-items: flex-start; color: var(--chart-red-text) }
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none }
+}

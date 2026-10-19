@@ -1989,3 +1989,63 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 
 ### 20.8 Next action
 Owner: review the diff and the keyboard evidence in 20.5, run the Settings checklist on the exact PR head against the live library (including one real secret save with a blank field preserving the saved value), and merge if satisfied. Next roadmap item in this phase: Login and first-run setup, as a separate PR.
+
+## 21. Redesign Phase 6 — Login and first-run setup (`ui/phase-6-login`)
+
+Roadmap item: Phase 6, second bullet (login and first-run setup restyled to the new tokens; the first-run variant was a recorded skip in PR #66 and is tested here). Design system sections applied: 9.7 (forms), 9.1 (buttons), 6 (page head with the 3px chart-red rule), 7 (borders, no shadow), 4.2 (state never by colour alone), 5 (type faces), 11 (reduced motion), 12 (accessibility floor), 13 (anti-patterns). Branched from `origin/main` at `c0856d8`, which includes Settings (PR #386, `ef93112`).
+
+### 21.1 Acceptance criteria (stated before implementation)
+- Sign-in and first-run setup both render in the Chart Rundown tokens.
+- First-run keeps its password-confirmation check and its server-side rules: username 3–64 characters, password at least 12, passwords must match. The server message copy is shown unchanged.
+- A failed sign-in shows an accurate error with a glyph and text in a `role="alert"` region, not colour alone.
+- Labelled fields, visible focus, 44px inputs and primary button, no horizontal overflow at 1440, 1200, 900, 620 and 390px, reduced motion honoured, no console or network errors except known limits.
+- No endpoint, request body, auth, session or cookie change. No credential or configuration value in markup. No third-party asset and no Google Fonts import.
+
+### 21.2 What changed
+- `app/templates/login.html`: a field wrapper per input; the confirmation hint is linked to its field with `aria-describedby`; the brand image has intrinsic 64×64 dimensions; the username input has `autocapitalize="none"` and `spellcheck="false"`. Ids, names, `minlength`/`maxlength`, the `role="alert"` message region and the script and stylesheet references are unchanged.
+- `static/login.css`: the page is restyled to the tokens (copied from `static/app.css` because this page does not load `app.css`). Heading uses the display face with a 3px chart-red rule. Labels and hints use the UI face (JetBrains Mono removed from labels). Inputs and the button are 44px minimum. The panel has no shadow. Error text uses `--chart-red-text` with a glyph. Reduced motion removes the button transition.
+- `static/login.js`: errors are built with `textContent` and a decorative `aria-hidden` glyph. The pending state sets `aria-busy` and a progress label ("Signing in…" or "Creating account…"). Non-string `detail` values fall back to "Authentication failed." (previously an array would have rendered as `[object Object]`). A network failure reads "Could not reach the server. Try again." The redirect still happens only after the server accepts the request.
+- `tests/test_login_ui_contract.py` (new): 21 source-contract tests covering the landmark and labels, the alert region, no inline style or script or third-party asset, tokens and no literal colours, no panel shadow, 44px floor, focus, glyph-plus-text errors, reduced motion, display-face scope, no mono labels, the unchanged endpoints and password-confirmation field, redirect ordering, and no `innerHTML`.
+
+### 21.3 Decisions taken without the owner (state these in review)
+- The design system says inputs are 40px and the button is 40px with a 44px touch area. The 44px floor in AGENTS.md and the Settings precedent (section 20) were applied, so inputs and the button are 44px tall.
+- The password-match check stays on the server, as before. The client does not add a second check, so the server copy "Passwords do not match." is the only message.
+- Button label changes while pending ("Signing in…"). This is copy the user did not previously see; it is noted for review.
+- Login password `minlength="12"` on the sign-in form is kept, as before.
+- No new icon was added. The sprite holds the 14 approved icons, and its test requires that exact set. The error glyph is a CSS-drawn "!" in a circle.
+- The `.intro` error on a failed status load gets the same glyph. The intro is not a live region, as before.
+
+### 21.4 Checks actually run
+- `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest tests.test_login_ui_contract -v`: 21 tests, OK.
+- `python3 -m unittest discover -s tests -v` (before the two template attribute edits) and `python3 -m unittest discover -s tests` (final tree): 853 tests, OK each time.
+
+### 21.5 Browser checks (sandbox, not the owner's helper)
+The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in this environment, so it was not used. Servers ran from `git archive` extracts of the committed tree, outside the checkout, with `NAVIDROME_LIBRARIAN_DATA_DIR` set to scratch directories, `SLSKD_URL=http://127.0.0.1:9`, and no live library. Sign-in servers were given a sandbox owner account. Fixture credentials are RECONSTRUCTED sandbox values, not real ones. Playwright (Chromium 1194) drove the renders. Screenshots are in `phase-6-login/screenshots/` in the project folder: `main-*` is the before state (`origin/main`, `c0856d8`), `branch-*` is the after state (the application commit `b639cd1`).
+
+- Width matrix, sign-in and first-run states, both builds, at 1440, 1200, 900, 620 and 390: horizontal overflow 0 everywhere. Inputs and the primary button measure 44px on the branch and 49px and 41px on `main`.
+- Label font: the branch uses Schibsted Grotesk; `main` uses JetBrains Mono.
+- Reduced motion (emulated at 1440): the branch button transition is 0s; `main` keeps 0.15s.
+- Failed sign-in with a wrong password (sandbox account): the branch shows a glyph, the text "Invalid username or password.", `role="alert"`, and restores the button label "Sign in" with no `aria-busy` left behind. The `main` build shows the same copy without a glyph.
+- First-run mismatch (fresh data directory, no account created): the branch shows "Passwords do not match." with a glyph and no console error. The server returned 400 and no account was created.
+- First-run success on a fresh data directory (branch, 390px): the owner account is created, the page redirects to `/`, `/api/auth/status` reports `setup_required: false`, and there are no console errors. That fresh directory is now used by the owner account; the render was re-run on a second fresh directory.
+- Console and network: the only console error on either build in a failed sign-in is the expected `401` from the deliberately wrong password. No third-party host was requested on either build.
+- Impeccable: `npx -y impeccable@4.6.0 detect` on the changed CSS, JS and HTML files printed the notice that the page-level rules did not run on static files, with no findings reported. The same CLI on the live pages (`IMPECCABLE_BROWSER` pointed at a no-sandbox Chromium wrapper) exited 0 with no output. This does not show that the page-level rules ran, so it is recorded as "no findings printed", not as a clean pass.
+- Not run: keyboard-only traversal recorded as a video or sequence; the focus ring was checked in the rendered screenshots only on the username field. Not run: screen-reader pass. Not run: the live library sign-in, real credentials, or the owner's helper checklist.
+
+### 21.6 Impeccable and web-design-guidelines
+- Impeccable `critique` and `audit` passes were not run as full sessions in this environment. The detector results are in 21.5. No critique or audit is claimed.
+- `anthropic-skills:web-design-guidelines`: the fetched guideline source returned a category summary, not the verbatim rule list. The review applied these categories to the three files: labels, focus, autocomplete, inline errors, reduced motion, ellipsis in loading copy, intrinsic image size (applied: `width` and `height` on the brand image), input hints (applied: `autocapitalize` and `spellcheck` on username), and no layout reads in the script. Not claimed as a full verbatim rule review.
+- Applied from the design system: tokens only, display face on the page heading only, 3px chart-red rule, no shadow, 44px targets, glyph plus text for errors.
+- Rejected: a second client-side password-match check (server remains the authority); a new icon for the error (the sprite test pins the 14-icon set); a larger brand mark or new imagery (D6, keep the cassette).
+
+### 21.7 Limitations
+- Chromium only; no screen-reader pass; no physical-device check.
+- The live Navidrome library and real credentials were not tested. The owner runs the live check.
+- Sign-in is still limited to the existing server rules and rate limit (429 copy shown as the server sends it).
+- The error glyph is CSS-drawn; it is decorative and `aria-hidden` on the script-built span.
+
+### 21.8 Next action
+Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run the sign-in and first-run checklist against the exact PR head on the owner's helper (first-run on a deliberately fresh per-run data directory, never by deleting an existing one), and merge if satisfied. Next roadmap item in this phase: album modal, as a separate PR.

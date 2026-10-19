@@ -100,7 +100,7 @@ Status: **merged in PR #383 (merge `a65fabf`), not deployed.** Acquisition cards
 - Album modal: new layout and motion, focus return, Escape, tracklist rhythm.
 - Exit: login, setup and failed sign-in verified; credentials never in markup.
 
-Status: item 1 (Settings) implemented on `ui/phase-6-settings`, PR open, not merged or deployed. Two-column forms, ARIA tabs restyled, 44px move buttons, keyboard focus kept on the moved quality row. Evidence, checks and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 20. Login and first-run setup, and the album modal, are separate PRs and not started.
+Status: item 1 (Settings) merged as PR #386 (`ef93112`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 20. Item 2 (Login and first-run setup) implemented on `ui/phase-6-login`, PR open, not merged or deployed. Tokens, 44px targets, glyph-plus-text errors, first-run variant tested on a fresh data directory. Evidence and limits: `docs/UI_BACKLOG_EXECUTION.md` section 21. The album modal (item 3) is a separate PR and not started.
 
 ### Phase 7 — Motion, polish, hardening (S–M)
 
