@@ -76,6 +76,7 @@ class _Harness:
         self.rg_status = rg_status
         self.rg_types = rg_types
         self.posts = []
+        self.bodies = []
         self.rg_gets = []
         self.mb_client = _MusicBrainzClient(mb_recordings or {})
         self.sleeps = []
@@ -90,20 +91,30 @@ class _Harness:
             if self.rg_status != 200:
                 return _Response({}, status_code=self.rg_status)
             ids = params["release_group_mbids"].split(",")
+            if self.rg_types is None:
+                return _Response({
+                    rg: {"release_group": {"name": f"Album {rg}", "type": "Album"}} for rg in ids
+                })
             return _Response({
-                rg: {"title": f"Album {rg}", "type": "Album"} for rg in ids
-            } if self.rg_types is None else self.rg_types)
+                rg: {"release_group": {"name": meta["title"], "type": meta["type"]}}
+                for rg, meta in self.rg_types.items()
+            })
         offset = params["offset"]
         items = self._recommendations()[offset:offset + 100]
         return _Response({"payload": {"mbids": items}})
 
     def http_post(self, url, json=None, headers=None, timeout=None):
         self.posts.append((url, list(json["recording_mbids"])))
+        self.bodies.append(dict(json))
         if self.batch_status != 200:
             return _Response({}, status_code=self.batch_status)
         if self.batch_entries is not None:
             return _Response(self.batch_entries)
         return _Response({mbid: _entry(int(mbid.split("-")[1])) for mbid in json["recording_mbids"]})
+
+    def assert_inc(self, test):
+        for body in self.bodies:
+            test.assertIn("release", body["inc"].split())
 
     def providers(self):
         return RecommendationProviders(
@@ -166,6 +177,7 @@ class BatchResolutionPathTests(unittest.TestCase):
 
         self.assertEqual(len(harness.posts), 1)
         self.assertEqual(harness.posts[0][0], LISTENBRAINZ_RECORDING_BATCH_URL)
+        harness.assert_inc(self)
         self.assertEqual(len(harness.posts[0][1]), 5)
         self.assertEqual(harness.mb_client.requested, [])
         self.assertEqual(harness.sleeps, [])
@@ -250,6 +262,16 @@ class SynthesizeRecordingTests(unittest.TestCase):
     def _reject(self, title):
         with mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", True):
             return supply.batch_title_marker_rejection(title)
+
+    def test_release_group_response_uses_wrapped_name_field(self):
+        from discovery_batch_metadata import fetch_release_group_metadata
+
+        def get(url, params=None, headers=None, timeout=None):
+            return _Response({"rg-a": {"release_group": {"name": "Quiet Studio", "type": "Album",
+                                                          "date": "2001"}}})
+
+        meta = fetch_release_group_metadata(get, ["rg-a"], headers={})
+        self.assertEqual(meta["rg-a"], {"title": "Quiet Studio", "type": "Album"})
 
     def test_shape_matches_per_recording_resolver_fields(self):
         recording = synthesize_recording(

@@ -13,6 +13,8 @@ from typing import Any, Callable, Mapping
 LISTENBRAINZ_RECORDING_BATCH_URL = "https://api.listenbrainz.org/1/metadata/recording/"
 LISTENBRAINZ_RELEASE_GROUP_URL = "https://api.listenbrainz.org/1/metadata/release_group/"
 # Recordings per batch request. The live sample used 100; larger batches are unverified.
+# Without "release" in inc the response has no release or release-group object.
+BATCH_RECORDING_INCLUDES = "artist release"
 BATCH_RECORDING_CHUNK = 100
 
 
@@ -37,7 +39,7 @@ def fetch_batch_recordings(
     for chunk in _chunks(list(dict.fromkeys(mbids)), BATCH_RECORDING_CHUNK):
         response = post(
             LISTENBRAINZ_RECORDING_BATCH_URL,
-            json={"recording_mbids": chunk},
+            json={"recording_mbids": chunk, "inc": BATCH_RECORDING_INCLUDES},
             headers=dict(headers),
             timeout=timeout,
         )
@@ -62,7 +64,9 @@ def fetch_release_group_metadata(
 ) -> dict[str, Mapping[str, Any]]:
     """Return {release_group_mbid: {"title", "type"}} for the given release groups.
 
-    Only primary type is available from this endpoint. Raises on a non-200 response.
+    The live response wraps fields in a ``release_group`` object and names the
+    title ``name``. Only primary type is available from this endpoint. Raises on
+    a non-200 response.
     """
     results: dict[str, Mapping[str, Any]] = {}
     for chunk in _chunks(list(dict.fromkeys(release_group_mbids)), BATCH_RECORDING_CHUNK):
@@ -80,7 +84,12 @@ def fetch_release_group_metadata(
         for mbid in chunk:
             entry = body.get(mbid)
             if isinstance(entry, dict):
-                results[mbid] = entry
+                group = entry.get("release_group")
+                group = group if isinstance(group, dict) else entry
+                results[mbid] = {
+                    "title": group.get("name") or group.get("title") or "",
+                    "type": group.get("type"),
+                }
     return results
 
 
