@@ -3320,3 +3320,51 @@ No before/after pair is recorded here because the code did not change; the befor
 - Browser checks are sandbox-only, on reconstructed fixtures, not the helper and not the live library. The exact-head manual checklist is for Hamdi.
 - No screen-reader pass.
 - Not merged, not published, not deployed.
+
+## 39. Owner decisions on the open section 16.5 rows (Phase 7 follow-up item 17)
+
+Status: **docs only; no product code changed; branch `ui/owner-decisions-ft85kj` from main `66a8db6` (PR #439); not merged, not published, not deployed.** Records six decisions Hamdi gave on 2026-10-19 in the Librarian Redesign project. The primary button is decided here and built in a separate PR.
+
+### 39.1 Question
+
+`docs/DESIGN_SYSTEM.md` 16.5 left six items open: the icon rail width, the rail label for Discover, the gutters, the primary button, the Dismiss confirm step, and the Get disabled dim. Each needed an owner answer before a later PR could build or change anything.
+
+### 39.2 Decisions
+
+| Row | Item | Decision (Hamdi, 2026-10-19) | Where recorded |
+|---|---|---|---|
+| 1 | Icon rail, 621–900px | 72px, the built value. The doc changes, not the code. | DESIGN_SYSTEM section 6, 16.2 row 1 |
+| 3 | Rail label for the Discover page | "Recommendations". The page heading stays "Discover music". | sections 6 and 8, 16.2 row 3 |
+| 14 | Content gutters | The doc changes to the built values: 34px above 620px, 14px under 620px. | section 6, 16.2 row 14 |
+| 10 | Primary button | Add a yellow primary variant, one per view region. Built in its own PR (section 39.5). | sections 9.1 and 16.2 row 10 |
+| 16 | Dismiss confirm step | None. Dismiss posts at once, as on `main`. | sections 9.1 and 16.2 row 16 |
+| 17 | Get disabled dim | The global `button:disabled` `.55` opacity stays on pending and requested Get. | sections 9.2 and 16.2 row 17 |
+
+Still open, not decided here: the Get boundary over artwork (16.5, follow-up item 12 question b).
+
+### 39.3 What changed
+
+- `docs/DESIGN_SYSTEM.md`: section 6 (gutters, 72px rail, rail group copy), section 8 (Recommendations row), section 9.1 (primary variant decided; Dismiss has no confirm step), section 9.2 (the Get dim), section 16.2 (rows 1, 3, 10 and 14 status; new rows 16 and 17), section 16.5 (decided rows recorded; open rows listed).
+- `docs/REDESIGN_ROADMAP.md`: Phase 4 dismiss line (no confirm step, matching `main`); Phase 7 status (owner decisions; primary button as follow-up item 17).
+- No change to `static/`, `app/`, `tests/` or any protected path.
+
+### 39.4 Acceptance criteria
+
+1. Every decided row in 16.5 has a matching statement in the section it touches.
+2. No section still says "confirm step before any Dismiss" or "64px" or "32px gutters" as the target value.
+3. The rail label on `main` (`Recommendations`) matches the doc.
+4. Diff is docs only.
+
+### 39.5 Follow-up
+
+The primary button is built in a separate PR on its own branch from `main`, with contrast measurement, five-width renders and screenshots. This PR does not build it.
+
+### 39.6 Checks actually run
+
+Recorded in the PR body and the thread handoff for this PR head.
+
+### 39.7 Limitations
+
+- Docs only. No browser or visual check, because no product behaviour changed.
+- The doc values for rows 1, 14 and 3 now match the built code; the code was not checked against the doc for the Phase 4 Dismiss behaviour beyond the finding in section 17.
+
