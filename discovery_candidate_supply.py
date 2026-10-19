@@ -6,6 +6,7 @@ module logs or persists an artist, album, MBID, tag, URL, or exception message.
 """
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -192,6 +193,43 @@ CF_UNDESIRABLE_TITLE_PHRASES = (
     "essential",
     "complete collection",
 )
+# Batch-path title filter (flagged, off by default). The ListenBrainz batch
+# metadata endpoints return no secondary release types, so live, compilation and
+# similar albums are caught here by whole-word title markers instead. Unmarked
+# live albums and compilations still pass; this is a partial safeguard.
+BATCH_TITLE_FILTER_ENABLED = False
+BATCH_TITLE_MARKERS = (
+    "live",
+    "compilation",
+    "unplugged",
+    "remix",
+    "remixes",
+    "karaoke",
+    "tribute",
+    "soundtrack",
+    "bootleg",
+    "greatest hits",
+    "best of",
+)
+_BATCH_TITLE_MARKER_RE = re.compile(
+    r"(?<![a-z0-9])(?:" + "|".join(re.escape(m) for m in BATCH_TITLE_MARKERS) + r")(?![a-z0-9])"
+)
+
+
+def batch_title_marker_rejection(title: str) -> str | None:
+    """Return "batch_title_marker" when a release title carries a live or compilation marker.
+
+    Used only on the batch path, where secondary types are unavailable. Returns
+    None when the flag is off or the title has no whole-word marker.
+    """
+    if not BATCH_TITLE_FILTER_ENABLED:
+        return None
+    normalized = " ".join(str(title or "").casefold().split())
+    if _BATCH_TITLE_MARKER_RE.search(normalized):
+        return "batch_title_marker"
+    return None
+
+
 CF_RELEASE_REJECTIONS = (
     "not_album_primary_type",
     "not_album_candidate",
