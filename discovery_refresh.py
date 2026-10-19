@@ -167,8 +167,15 @@ def refresh_personal(
         )
         return {"ok": False, "status": "already_running", "list": "personal"}
     try:
+        # Cold start: no stored personal list yet. An unreadable store is not cold.
+        cold_start = False
+        if read_previous is not None:
+            try:
+                cold_start = read_previous("personal") is None
+            except Exception:
+                cold_start = False
         try:
-            raw = recommend(count=count)
+            raw = recommend(count=count, **({"_cold_start": True} if cold_start else {}))
         except Exception as exc:
             _record_refresh_outcome(
                 record_outcome, origin=origin, status="error",
