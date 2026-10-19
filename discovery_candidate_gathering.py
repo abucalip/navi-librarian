@@ -15,15 +15,21 @@ from discovery_recommendations import decayed_listen_weights, merge_discovery_so
 
 _RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 _GENRE_LOOKUP_ATTEMPTS = 3
+# Supplementary tag searches get one retry (one 2 s backoff). MusicBrainz declines
+# over-limit requests with 503 until the rate drops, so the lane stops after a
+# query that exhausts this budget instead of sending more requests.
+_TAG_SEARCH_ATTEMPTS = 2
 
-def _get_with_bounded_retry(client, url, *, params, headers, sleep):
+def _get_with_bounded_retry(
+    client, url, *, params, headers, sleep, attempts=_GENRE_LOOKUP_ATTEMPTS
+):
     """Retry transient MusicBrainz statuses a bounded number of times; never cache here."""
     response = None
-    for attempt in range(_GENRE_LOOKUP_ATTEMPTS):
+    for attempt in range(attempts):
         response = client.get(url, params=params, headers=headers)
         if response.status_code not in _RETRYABLE_STATUS_CODES:
             return response
-        if attempt < _GENRE_LOOKUP_ATTEMPTS - 1:
+        if attempt < attempts - 1:
             sleep(2 * (attempt + 1))
     return response
 
@@ -373,9 +379,10 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     regional_request_index = 0
     supplementary_query_outcomes = []
 
+    supplementary_lane_unavailable = False
     with providers.http_client(timeout=20, follow_redirects=True) as client:
         for query, regional_family, regional_style in regional_queries:
-            if regional_candidates_added >= 60:
+            if regional_candidates_added >= 60 or supplementary_lane_unavailable:
                 break
             regional_query_added = 0
             query_error_class = None
@@ -394,7 +401,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     if regional_request_index:
                         providers.sleep(1.1)
 
-                    response = client.get(
+                    response = _get_with_bounded_retry(
+                        client,
                         "https://musicbrainz.org/ws/2/release-group/",
                         params={
                             "query": query,
@@ -402,8 +410,12 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                             "limit": 10,
                         },
                         headers=headers,
+                        sleep=providers.sleep,
+                        attempts=_TAG_SEARCH_ATTEMPTS,
                     )
                     regional_request_index += 1
+                    if response.status_code in _RETRYABLE_STATUS_CODES:
+                        supplementary_lane_unavailable = True
                     response.raise_for_status()
                     search_data = response.json()
                     providers.metadata_cache_set(cache_key, search_data)

@@ -1,3 +1,15 @@
+## 2026-10-19 — P5 supplementary tag-search bounded 503 retry (offline; no live capture)
+
+- Task: roadmap P5 in docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. Decision from code inspection: P1 already records per-query supplementary yield (attempted, zero-yield, failed, not attempted), so the gap was not measurement. The gap was that the MusicBrainz release-group tag search made a single request and called `raise_for_status()`, so one 503 dropped that query. The P4 retry covered artist-genre lookups only. The frozen capture's two tag searches returned 503 and produced no candidates.
+- Behavior: each tag search now gets one retry (one 2 s backoff) on 429/500/502/503/504, reusing `_get_with_bounded_retry` with `attempts=2`. Failures are not cached. If a query still returns a retryable status after its retry, the lane stops and sends no further tag searches. MusicBrainz documents that over-limit requests get 503 until the rate drops, so continuing to send requests would prolong the decline. Worst-case added time is one 2 s backoff plus one request per run.
+- Unchanged: ranking, weights, ownership, duplicate-identity handling, release eligibility, the 1.1 s request spacing, the per-query 5-candidate and 60-candidate caps, and the supplementary cache TTL.
+- Tests: `tests/test_discovery_candidate_gathering.py` adds synthetic cases: one tag-search retry recovers from 503; retry budget returns the last status after two attempts; a persistent 503 stops the lane after the first query's two attempts; a transient 503 then 200 still adds candidates. No live captures or private identities were used.
+- Limits: the lane-stop threshold is a judgment call from MusicBrainz's documented behavior, not measured yield. The frozen capture holds no per-query yield, so the effect on real supply is unmeasured. The lane still runs only when profile genres are cached.
+- Full unit suite: 840 tests OK. `scripts/check_server_size.py` and `scripts/check_app_legacy_imports.py` pass.
+- Next: measure supplementary yield with an owner-authorized, identity-free aggregate run on the next capture.
+
+---
+
 ## 2026-10-19 — P3 bounded CF paging (offline; no live capture)
 
 - Task: roadmap P3. The CF recording endpoint accepts `offset`; the gathering path requested only `count=100`.

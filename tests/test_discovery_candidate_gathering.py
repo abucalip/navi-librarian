@@ -4,6 +4,7 @@ from unittest import mock
 
 from discovery_candidate_gathering import (
     RecommendationProviders,
+    _TAG_SEARCH_ATTEMPTS,
     _get_with_bounded_retry,
     gather_recommendation_candidates,
 )
@@ -45,6 +46,119 @@ class GenreLookupRetryTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(calls, 1)
         self.assertEqual(sleeps, [])
+
+
+class TagSearchRetryTests(unittest.TestCase):
+    def _run(self, statuses):
+        client = _ScriptedClient(statuses)
+        sleeps = []
+        response = _get_with_bounded_retry(
+            client,
+            "https://musicbrainz.org/ws/2/release-group/",
+            params={"query": "tag:synthetic", "fmt": "json", "limit": 10},
+            headers={},
+            sleep=sleeps.append,
+            attempts=_TAG_SEARCH_ATTEMPTS,
+        )
+        return response, client.calls, sleeps
+
+    def test_tag_search_transient_503_recovers_with_one_retry(self):
+        response, calls, sleeps = self._run([503, 200])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(calls, 2)
+        self.assertEqual(sleeps, [2])
+
+    def test_tag_search_retry_budget_is_one_retry_then_returns_last_status(self):
+        response, calls, sleeps = self._run([503, 503, 200])
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(calls, 2)
+        self.assertEqual(sleeps, [2])
+
+
+class SupplementaryLaneStopTests(unittest.TestCase):
+    def _run(self, *, release_group_statuses):
+        mb_client = _TagSearchClient(release_group_statuses)
+        cache = {}
+        for index in range(3):
+            cache[f"mb:recording:rec-{index}"] = _recording("Dominant", index)
+        cache["mb:artist-genres:artist-Dominant"] = ["synthetic jazz", "synthetic soul"]
+        pages = {0: [_cf_item(i) for i in range(3)]}
+        providers = RecommendationProviders(
+            listenbrainz_recent=lambda days: [],
+            listenbrainz_username=lambda: "fixture-user",
+            music_key=lambda value: "".join(str(value).casefold().split()),
+            metadata_cache_get=lambda key, **kwargs: cache.get(key),
+            metadata_cache_set=lambda *args, **kwargs: None,
+            is_album_candidate=lambda candidate: True,
+            api_call=lambda *args, **kwargs: {},
+            items=lambda response: [],
+            http_get=lambda url, params=None, **kwargs: _Response(
+                {"payload": {"mbids": pages.get(params["offset"], [])}}
+            ),
+            http_client=lambda *args, **kwargs: mb_client,
+            sleep=lambda _seconds: None,
+        )
+        result = gather_recommendation_candidates(providers)
+        return result, mb_client
+
+    def test_persistent_503_stops_lane_after_one_bounded_retry(self):
+        result, mb_client = self._run(release_group_statuses=[503] * 20)
+
+        self.assertGreaterEqual(len(mb_client.release_group_queries), 1)
+        # Each query exhausts its two attempts, then the lane stops: no further queries.
+        self.assertEqual(mb_client.release_group_calls, _TAG_SEARCH_ATTEMPTS)
+        supplementary = result["candidate_supply"]["supplementary"]
+        self.assertEqual(supplementary["supplementary_queries_failed"], 1)
+        self.assertEqual(supplementary["supplementary_candidates_added"], 0)
+
+    def test_transient_503_then_success_still_adds_candidates(self):
+        result, mb_client = self._run(release_group_statuses=[503, 200] + [200] * 20)
+
+        supplementary = result["candidate_supply"]["supplementary"]
+        self.assertEqual(supplementary["supplementary_queries_failed"], 0)
+        self.assertGreater(supplementary["supplementary_candidates_added"], 0)
+
+
+class _TagSearchClient:
+    """Serves recording and release-group responses; release-group statuses are scripted."""
+
+    def __init__(self, release_group_statuses):
+        self._statuses = list(release_group_statuses)
+        self.release_group_calls = 0
+        self.release_group_queries = set()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def get(self, url, params=None, headers=None):
+        if "/release-group/" not in url:
+            return _Response({}, status_code=200)
+        self.release_group_calls += 1
+        self.release_group_queries.add((params or {}).get("query"))
+        status = self._statuses.pop(0) if self._statuses else 200
+        if status != 200:
+            return _StatusRaisingResponse(status)
+        return _Response({"release-groups": [{
+            "title": f"Synthetic Album {self.release_group_calls}",
+            "primary-type": "Album",
+            "secondary-types": [],
+            "artist-credit": [{"name": "Synthetic Artist", "artist": {"id": "artist-syn"}}],
+        }]}, status_code=200)
+
+
+class HTTPStatusError(Exception):
+    """Named like the httpx error so the bounded error-class label matches production."""
+
+
+class _StatusRaisingResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+    def raise_for_status(self):
+        raise HTTPStatusError(f"{self.status_code} synthetic")
 
 
 class _ScriptedClient:

@@ -36,6 +36,8 @@ Acceptance: more eligible unique unowned albums and a higher fill rate on the fr
 
 **P5. Reactivate the supplementary lane only with a measured yield.** The profile-derived tag lane (PR #312) produced no candidates in the capture because its two searches returned 503. Add a yield metric per query before tuning it. If the lane still yields nothing under normal provider conditions, consider Phase 4 item 2 (similar-artist seeds) as a comparison, after checking the provider's current documentation.
 
+**P5 status (2026-10-19, draft PR, offline only).** Code inspection showed per-query yield is already recorded by P1, so the gap was retry, not measurement: the tag search made one request and dropped the query on a single 503. The change gives each tag search one bounded retry (2 s backoff, retryable statuses only, failures not cached) and stops the lane after a query that exhausts it, because MusicBrainz declines over-limit requests with 503 until the rate drops. Ranking, ownership, eligibility, and request spacing are unchanged. Acceptance remains open until an identity-free yield measurement on an authorized capture shows whether the lane produces candidates under normal provider conditions.
+
 **Deferred until P1–P3 show a supply gain:** weight retuning (Phase 1.2), MMR re-ranking evaluation on a narrow pool (Phase 3.1), and cooldown calibration (Phase 3.2). MMR and cooldown cannot act on candidates that are not in the pool.
 
 ### New ideas to evaluate (not committed)
