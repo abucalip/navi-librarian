@@ -1,3 +1,14 @@
+## 2026-10-19 — Batch lookup: title filter, flagged resolution, timing, genre-stage breaker (docs only)
+
+- Task: record the batch-lookup work (PRs #429, #430, #431) and the timing and throttling results in the status docs and roadmap, correcting anything they contradicted.
+- Merged changes, all default off: PR #429 (`f33a118`) title-marker filter; PR #430 (`ea383cc`) flagged batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`); PR #431 (`b933d52`) genre-stage circuit breaker. Discogs ruled out.
+- Evidence (aggregate only): title filter flagged 1 of 35 sample release groups. Timing pair at `ea383cc`, one run per mode: 332.5 s with flags off (214 uncached requests) and 105.7 s with them on (85 requests); eligible unowned albums 12 in both. Repeat run with flags on: 254 s, 83 artist-genre attempts for 55 artists, 33 throttled (429 or 5xx).
+- Corrections made: the roadmap said the batch wire format was unchecked and the saving was an estimate; both now reflect the live-response check and the measured pair.
+- Limits: single samples; one profile; no live run on `b933d52`. Breaker and batch flags are unchanged by default.
+- Open decision: whether to enable the breaker and batch flags by default (changes output).
+- Parked: the Last.fm line stays parked; no quality test is started.
+- Publishing and deployment remain paused.
+
 ## 2026-10-19 — Last.fm source: capped check and holdout result (docs only)
 
 - Task: owner asked to record Last.fm as a future recommendation-source setting option and move on with the roadmap.
