@@ -5,6 +5,21 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from discovery_snapshot import serve_snapshot
+
+
+def _owned_predicate(
+    snapshot: Mapping[str, Any],
+    music_key: Callable[[Any], str],
+) -> Callable[[Mapping[str, Any]], bool]:
+    owned = {
+        (music_key(album.get("artist", "")), music_key(album.get("album", "")))
+        for album in snapshot["albums"]
+    }
+    return lambda item: (
+        music_key(item.get("artist", "")), music_key(item.get("album", ""))
+    ) in owned
+
 
 def build_cached_discovery_list_response(
     list_name: str,
@@ -14,8 +29,14 @@ def build_cached_discovery_list_response(
     saved: Mapping[tuple[str, str], dict[str, Any]],
     music_key: Callable[[Any], str],
     is_album_candidate: Callable[[Any], bool],
+    library_snapshot: Callable[[], Mapping[str, Any]] | None = None,
 ) -> str:
-    """Build the legacy JSON response for a cached discovery list."""
+    """Build the legacy JSON response for a cached discovery list.
+
+    For the personal list, ``library_snapshot`` (when given) re-checks stored items
+    against the current library on every read (roadmap 3.4). If the library cannot
+    be read, the stored items are served unfiltered and the diagnostics say so.
+    """
     cached = read_list(list_name)
     if not cached:
         return json.dumps({
@@ -27,6 +48,18 @@ def build_cached_discovery_list_response(
 
     payload = cached["payload"]
     source_items = payload.get("recommendations", []) if list_name == "personal" else payload.get("items", [])
+    stored_total = len(source_items)
+    read_filter = None
+    if list_name == "personal" and library_snapshot is not None:
+        try:
+            owned = _owned_predicate(library_snapshot(), music_key)
+        except Exception:
+            read_filter = {"ownership_checked": False}
+        else:
+            served_payload, counts = serve_snapshot(payload, owned)
+            payload = served_payload
+            source_items = payload.get("recommendations", [])
+            read_filter = {"ownership_checked": True, **counts}
     dismissed_albums = {
         (row["artist_key"], row["album_key"])
         for row in feedback
@@ -53,7 +86,7 @@ def build_cached_discovery_list_response(
     result = {
         "list": list_name,
         "generated_at": cached["generated_at"],
-        "total_before_feedback": len(source_items),
+        "total_before_feedback": stored_total,
         "count": min(count, len(visible)),
         "items": visible[:count],
         "source": payload.get("source"),
@@ -69,6 +102,8 @@ def build_cached_discovery_list_response(
             )
             if key in payload
         }
+        if read_filter is not None:
+            result["diagnostics"]["read_filter"] = read_filter
     for key in (
         "library_artists_considered", "owned_albums_checked",
         "critical_ratings_available", "artists_with_three_or_more_owned_albums",
