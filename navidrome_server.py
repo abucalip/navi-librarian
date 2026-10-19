@@ -888,8 +888,7 @@ def _discovery_refresh_personal(count=20, origin="manual"):
         _DISCOVERY_REFRESH_LOCK,
         lambda **kwargs: recommend_new_music(**kwargs, _refresh_origin=origin),
         _discovery_write_list,
-        count=count,
-        origin=origin,
+        count=count, origin=origin,
         record_outcome=lambda outcome: discovery_store.record_discovery_refresh_outcome(
             DISCOVERY_DB, **outcome
         ),
