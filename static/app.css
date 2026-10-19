@@ -75,7 +75,7 @@ header p { margin: 0; color: var(--text-muted); font-size: var(--text-xs); lette
 @keyframes header-menu-in { from { opacity: 0; } to { opacity: 1; } }
 .header-menu-panel button {
   display: block; width: 100%; min-height: 44px; padding: 10px 14px;
-  color: var(--text); background: transparent; border: 0; border-radius: 3px;
+  color: var(--text); background: transparent; border: 0; border-radius: var(--radius-chip);
   font: 400 var(--text-sm)/1.4 var(--body); text-align: left;
 }
 .header-menu-panel button:hover { background: var(--surface-hover); }
@@ -106,12 +106,12 @@ nav {
    height would force layout on every navigation. The goo filter and spring easing are gone. */
 .nav-indicator {
   position: absolute; left: 0; top: 0; z-index: 2; width: 3px; height: 44px;
-  background: var(--accent); border-radius: 0 3px 3px 0; pointer-events: none;
+  background: var(--accent); border-radius: 0 var(--radius-chip) var(--radius-chip) 0; pointer-events: none;
   transform: translateY(0); transition: transform var(--dur) var(--ease-out);
 }
 .nav-indicator[hidden] { display: none; }
 nav button { position: relative; }
-nav button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px 10px 15px; text-align: left; color: var(--text-muted); background: transparent; border: 0; border-radius: 3px; font-size: var(--text-sm); }
+nav button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 10px 12px 10px 15px; text-align: left; color: var(--text-muted); background: transparent; border: 0; border-radius: var(--radius-chip); font-size: var(--text-sm); }
 nav button:hover { color: var(--text); background: var(--surface-raised); }
 nav button.active { color: var(--text); background: var(--surface-raised); box-shadow: none; }
 /* The active-download count is a plain numeral, not a pill (DESIGN_SYSTEM.md section 9.3). */
