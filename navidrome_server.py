@@ -330,7 +330,7 @@ def recommend_new_music(
         provider_tape = prepare_provider_tape(provider_tape, _capture_path)
         if provider_tape is not None:
             providers = provider_tape.wrap(providers)
-        gathered = gather_recommendation_candidates(providers)
+        gathered = gather_recommendation_candidates(providers, shortlist_target=count)
     if isinstance(gathered, str):
         return gathered
     listens = gathered["listens"]

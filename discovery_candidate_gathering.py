@@ -58,6 +58,12 @@ CF_MAX_UNCACHED_RESOLUTIONS = 100
 # The CF endpoint returns no artist, so uncached recordings must still be
 # resolved to learn their artist; the cap can only skip cache-known artists.
 CF_ARTIST_RESOLUTION_CAP = 10
+# Supplementary tag lane: candidate cap per run, and the extra tag queries a
+# replenishment pass may issue when eligible unowned supply is short. Each extra
+# query costs at most one 1.1 s spacing sleep plus one 2 s retry backoff.
+SUPPLEMENTARY_CANDIDATE_CAP = 60
+REPLENISH_EXTRA_QUERIES = 2
+SHORTLIST_TARGET_DEFAULT = 10
 CF_RECOMMENDATION_URL = (
     "https://api.listenbrainz.org/1/cf/recommendation/user/{username}/recording"
 )
@@ -101,7 +107,194 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
     return recordings, paging
 
 
-def gather_recommendation_candidates(providers: RecommendationProviders) -> dict[str, Any] | str:
+def _run_tag_queries(
+    queries, *, providers, client, headers, albums, failures, state,
+):
+    """Run supplementary MusicBrainz tag searches and add new album candidates.
+
+    ``state`` holds counters and the lane-unavailable flag shared by every pass,
+    so the candidate cap and the stop-on-exhausted-retry rule also bound
+    replenishment. Returns one (added, error_class) pair per query attempted.
+    """
+    outcomes = []
+    for query, regional_family, regional_style in queries:
+        if state["added"] >= SUPPLEMENTARY_CANDIDATE_CAP or state["unavailable"]:
+            break
+        regional_query_added = 0
+        query_error_class = None
+        cache_key = f"mb:release-group-search:{query}"
+        try:
+            search_data = providers.metadata_cache_get(
+                cache_key,
+                ttl_seconds=30 * 24 * 60 * 60,
+            )
+            if search_data is None:
+                state["misses"] += 1
+            else:
+                state["hits"] += 1
+
+            if search_data is None:
+                if state["request_index"]:
+                    providers.sleep(1.1)
+
+                response = _get_with_bounded_retry(
+                    client,
+                    "https://musicbrainz.org/ws/2/release-group/",
+                    params={
+                        "query": query,
+                        "fmt": "json",
+                        "limit": 10,
+                    },
+                    headers=headers,
+                    sleep=providers.sleep,
+                    attempts=_TAG_SEARCH_ATTEMPTS,
+                )
+                state["request_index"] += 1
+                if response.status_code in _RETRYABLE_STATUS_CODES:
+                    state["unavailable"] = True
+                response.raise_for_status()
+                search_data = response.json()
+                providers.metadata_cache_set(cache_key, search_data)
+
+            for group in search_data.get("release-groups", []):
+                state["seen"] += 1
+
+                if group.get("primary-type") != "Album":
+                    continue
+
+                secondary_types = {
+                    str(value).casefold()
+                    for value in group.get("secondary-types", [])
+                }
+                if secondary_types & {
+                    "compilation", "soundtrack", "live",
+                    "remix", "dj-mix",
+                }:
+                    continue
+
+                album_title = group.get("title", "").strip()
+                if not album_title or not providers.is_album_candidate({
+                    "album": album_title,
+                    "primary_type": group.get("primary-type"),
+                    "secondary_types": group.get("secondary-types", []),
+                }):
+                    continue
+
+                credit = group.get("artist-credit", [])
+                artist = "".join(
+                    part.get("name", "") + part.get("joinphrase", "")
+                    for part in credit
+                    if isinstance(part, dict)
+                ).strip()
+
+                primary_artist = next(
+                    (
+                        part.get("name", "")
+                        for part in credit
+                        if isinstance(part, dict) and part.get("name")
+                    ),
+                    artist,
+                )
+
+                artist_mbid = next(
+                    (
+                        part.get("artist", {}).get("id")
+                        for part in credit
+                        if isinstance(part, dict)
+                        and isinstance(part.get("artist"), dict)
+                        and part["artist"].get("id")
+                    ),
+                    None,
+                )
+
+                if not artist or not primary_artist:
+                    continue
+
+                key = (
+                    providers.music_key(primary_artist),
+                    providers.music_key(album_title),
+                )
+
+                source = (
+                    "profile_tag_search"
+                    if regional_style.startswith("profile:")
+                    else "exploration_tag_search"
+                )
+                if key in albums:
+                    albums[key]["discovery_source"] = (
+                        albums[key].get("discovery_source", "listenbrainz")
+                    )
+                    merge_discovery_source(albums[key], source)
+                    regional_families = albums[key].setdefault(
+                        "regional_families", []
+                    )
+                    if regional_family not in regional_families:
+                        regional_families.append(regional_family)
+                    regional_styles = albums[key].setdefault("regional_styles", [])
+                    if regional_style not in regional_styles:
+                        regional_styles.append(regional_style)
+                    continue
+
+                if state["added"] >= SUPPLEMENTARY_CANDIDATE_CAP:
+                    break
+
+                albums[key] = {
+                    "artist": artist,
+                    "primary_artist": primary_artist,
+                    "artist_mbid": artist_mbid,
+                    "album": album_title,
+                    "score": 0.035,
+                    "tracks": [],
+                    "discovery_source": "musicbrainz_tag_search",
+                    "discovery_sources": [source],
+                    "regional_families": [regional_family],
+                    "regional_styles": [regional_style],
+                }
+                state["added"] += 1
+                regional_query_added += 1
+                if regional_query_added >= 5:
+                    break
+
+            if state["added"] >= SUPPLEMENTARY_CANDIDATE_CAP:
+                break
+
+        except Exception as exc:
+            query_error_class = classify_error(exc)
+            failures.append({
+                "source": "musicbrainz_tag_search",
+                "query": query,
+                "error": str(exc),
+            })
+        finally:
+            # Runs on the cap break inside the try, so the final query is recorded too.
+            outcomes.append((regional_query_added, query_error_class))
+    return outcomes
+
+
+def count_eligible_unowned_albums(albums, library_by_title, music_key) -> int:
+    """Count unique candidate albums that could reach the shortlist.
+
+    Mirrors the caller's ownership check: an exact artist and title match is
+    owned, and a same-title album under another artist is a title conflict that
+    goes to review. Neither counts as eligible supply.
+    """
+    identities = set()
+    for candidate in albums.values():
+        same_title = library_by_title.get(music_key(candidate["album"]), [])
+        exact_owned = any(
+            music_key(match.get("artist", "")) == music_key(candidate["primary_artist"])
+            for match in same_title
+        )
+        if not exact_owned and not same_title:
+            identities.add((music_key(candidate["primary_artist"]), music_key(candidate["album"])))
+    return len(identities)
+
+
+def gather_recommendation_candidates(
+    providers: RecommendationProviders,
+    *,
+    shortlist_target: int = SHORTLIST_TARGET_DEFAULT,
+) -> dict[str, Any] | str:
     """Gather providers in legacy order; early errors retain their JSON contract."""
     import time
     import httpx
@@ -303,7 +496,11 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     # Select supplementary queries from cached listening-profile genres and
     # reserve a small exploration quota for tags found in the CF candidate pool.
     # Cache reads are bounded and do not add provider calls or bypass TTL policy.
-    from discovery_tag_queries import select_supplementary_tag_queries
+    from discovery_tag_queries import (
+        MAX_EXPLORATION_QUERIES,
+        MAX_PROFILE_QUERIES,
+        select_supplementary_tag_queries,
+    )
 
     profile_tags_by_artist = {}
     for artist_id, _weight in recent_artist_mbid_counts.most_common(15):
@@ -344,166 +541,17 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         profile_tags_by_artist,
         candidate_pool_tags,
     )
-    regional_candidates_added = 0
-    regional_results_seen = 0
-    supplementary_cache_hits = 0
-    supplementary_cache_misses = 0
-    regional_request_index = 0
+    regional_state = {
+        "added": 0, "seen": 0, "hits": 0, "misses": 0,
+        "request_index": 0, "unavailable": False,
+    }
     supplementary_query_outcomes = []
-
-    supplementary_lane_unavailable = False
     with providers.http_client(timeout=20, follow_redirects=True) as client:
-        for query, regional_family, regional_style in regional_queries:
-            if regional_candidates_added >= 60 or supplementary_lane_unavailable:
-                break
-            regional_query_added = 0
-            query_error_class = None
-            cache_key = f"mb:release-group-search:{query}"
-            try:
-                search_data = providers.metadata_cache_get(
-                    cache_key,
-                    ttl_seconds=30 * 24 * 60 * 60,
-                )
-                if search_data is None:
-                    supplementary_cache_misses += 1
-                else:
-                    supplementary_cache_hits += 1
-
-                if search_data is None:
-                    if regional_request_index:
-                        providers.sleep(1.1)
-
-                    response = _get_with_bounded_retry(
-                        client,
-                        "https://musicbrainz.org/ws/2/release-group/",
-                        params={
-                            "query": query,
-                            "fmt": "json",
-                            "limit": 10,
-                        },
-                        headers=headers,
-                        sleep=providers.sleep,
-                        attempts=_TAG_SEARCH_ATTEMPTS,
-                    )
-                    regional_request_index += 1
-                    if response.status_code in _RETRYABLE_STATUS_CODES:
-                        supplementary_lane_unavailable = True
-                    response.raise_for_status()
-                    search_data = response.json()
-                    providers.metadata_cache_set(cache_key, search_data)
-
-                for group in search_data.get("release-groups", []):
-                    regional_results_seen += 1
-
-                    if group.get("primary-type") != "Album":
-                        continue
-
-                    secondary_types = {
-                        str(value).casefold()
-                        for value in group.get("secondary-types", [])
-                    }
-                    if secondary_types & {
-                        "compilation", "soundtrack", "live",
-                        "remix", "dj-mix",
-                    }:
-                        continue
-
-                    album_title = group.get("title", "").strip()
-                    if not album_title or not providers.is_album_candidate({
-                        "album": album_title,
-                        "primary_type": group.get("primary-type"),
-                        "secondary_types": group.get("secondary-types", []),
-                    }):
-                        continue
-
-                    credit = group.get("artist-credit", [])
-                    artist = "".join(
-                        part.get("name", "") + part.get("joinphrase", "")
-                        for part in credit
-                        if isinstance(part, dict)
-                    ).strip()
-
-                    primary_artist = next(
-                        (
-                            part.get("name", "")
-                            for part in credit
-                            if isinstance(part, dict) and part.get("name")
-                        ),
-                        artist,
-                    )
-
-                    artist_mbid = next(
-                        (
-                            part.get("artist", {}).get("id")
-                            for part in credit
-                            if isinstance(part, dict)
-                            and isinstance(part.get("artist"), dict)
-                            and part["artist"].get("id")
-                        ),
-                        None,
-                    )
-
-                    if not artist or not primary_artist:
-                        continue
-
-                    key = (
-                        providers.music_key(primary_artist),
-                        providers.music_key(album_title),
-                    )
-
-                    source = (
-                        "profile_tag_search"
-                        if regional_style.startswith("profile:")
-                        else "exploration_tag_search"
-                    )
-                    if key in albums:
-                        albums[key]["discovery_source"] = (
-                            albums[key].get("discovery_source", "listenbrainz")
-                        )
-                        merge_discovery_source(albums[key], source)
-                        regional_families = albums[key].setdefault(
-                            "regional_families", []
-                        )
-                        if regional_family not in regional_families:
-                            regional_families.append(regional_family)
-                        regional_styles = albums[key].setdefault("regional_styles", [])
-                        if regional_style not in regional_styles:
-                            regional_styles.append(regional_style)
-                        continue
-
-                    if regional_candidates_added >= 60:
-                        break
-
-                    albums[key] = {
-                        "artist": artist,
-                        "primary_artist": primary_artist,
-                        "artist_mbid": artist_mbid,
-                        "album": album_title,
-                        "score": 0.035,
-                        "tracks": [],
-                        "discovery_source": "musicbrainz_tag_search",
-                        "discovery_sources": [source],
-                        "regional_families": [regional_family],
-                        "regional_styles": [regional_style],
-                    }
-                    regional_candidates_added += 1
-                    regional_query_added += 1
-                    if regional_query_added >= 5:
-                        break
-
-                if regional_candidates_added >= 60:
-                    break
-
-            except Exception as exc:
-                query_error_class = classify_error(exc)
-                failures.append({
-                    "source": "musicbrainz_tag_search",
-                    "query": query,
-                    "error": str(exc),
-                })
-            finally:
-                # Runs on the cap break inside the try, so the final query is recorded too.
-                supplementary_query_outcomes.append((regional_query_added, query_error_class))
+        supplementary_query_outcomes.extend(_run_tag_queries(
+            regional_queries, providers=providers, client=client,
+            headers=headers, albums=albums, failures=failures,
+            state=regional_state,
+        ))
 
     # Build a complete, paginated Navidrome album inventory.
 
@@ -532,6 +580,42 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         title_key = providers.music_key(album.get("name", ""))
         if title_key:
             library_by_title.setdefault(title_key, []).append(album)
+
+    # Replenish only when eligible unowned supply is short of the shortlist target.
+    # The gate needs ownership, so it runs after the inventory above. Extra queries
+    # are the next-ranked tags not already searched, and the pass shares the lane's
+    # candidate cap and stop-on-exhausted-retry rule.
+    eligible_before = count_eligible_unowned_albums(albums, library_by_title, providers.music_key)
+    replenish_triggered = (
+        eligible_before < shortlist_target
+        and not regional_state["unavailable"]
+        and regional_state["added"] < SUPPLEMENTARY_CANDIDATE_CAP
+    )
+    replenish_queries = []
+    replenish_attempted = 0
+    replenish_added_before = regional_state["added"]
+    if replenish_triggered:
+        issued_queries = {query for query, _family, _style in regional_queries}
+        wider_queries = select_supplementary_tag_queries(
+            recent_artist_mbid_counts,
+            profile_tags_by_artist,
+            candidate_pool_tags,
+            profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
+            exploration_limit=MAX_EXPLORATION_QUERIES + REPLENISH_EXTRA_QUERIES,
+        )
+        replenish_queries = [
+            item for item in wider_queries if item[0] not in issued_queries
+        ][:REPLENISH_EXTRA_QUERIES]
+        if replenish_queries:
+            with providers.http_client(timeout=20, follow_redirects=True) as client:
+                replenish_outcomes = _run_tag_queries(
+                    replenish_queries, providers=providers, client=client,
+                    headers=headers, albums=albums, failures=failures,
+                    state=regional_state,
+                )
+            supplementary_query_outcomes.extend(replenish_outcomes)
+            replenish_attempted = len(replenish_outcomes)
+    eligible_after = count_eligible_unowned_albums(albums, library_by_title, providers.music_key)
 
     # Retrieve MusicBrainz genre tags for a bounded number of artists.
     # Cache results by artist MBID and respect the public API rate limit.
@@ -661,9 +745,25 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             "cache_known_recordings": cf_skips["cache_known"],
         },
         "supplementary": summarize_supplementary_yield(
-            supplementary_query_outcomes, planned=len(regional_queries),
+            supplementary_query_outcomes,
+            planned=len(regional_queries) + len(replenish_queries),
         ),
     }
+
+    candidate_supply["replenishment"] = {
+        "shortlist_target": shortlist_target,
+        "eligible_unowned_before": eligible_before,
+        "eligible_unowned_after": eligible_after,
+        "triggered": replenish_triggered,
+        "extra_queries_planned": len(replenish_queries),
+        "extra_queries_attempted": replenish_attempted,
+        "extra_candidates_added": regional_state["added"] - replenish_added_before,
+        "extra_query_cap": REPLENISH_EXTRA_QUERIES,
+    }
+    regional_candidates_added = regional_state["added"]
+    regional_results_seen = regional_state["seen"]
+    supplementary_cache_hits = regional_state["hits"]
+    supplementary_cache_misses = regional_state["misses"]
 
     return {
         "candidate_supply": candidate_supply,
