@@ -75,7 +75,8 @@ class AlbumModalStyleTests(unittest.TestCase):
 
     def test_touch_targets_are_44_pixels(self):
         self.assertRegex(self.block, r"\.album-modal-close \{[^}]*width: 44px; height: 44px;")
-        self.assertRegex(self.block, r"\.album-modal-art-column \.album-platform-links a \{[^}]*width: 44px; height: 44px;")
+        # Platform links are text chips now (PR for DESIGN_SYSTEM.md 16.2 row 12): min-width, not a fixed width, so the name fits.
+        self.assertRegex(self.block, r"\.album-modal-art-column \.album-platform-links a \{[^}]*min-width: 44px; height: 44px;")
         self.assertNotIn("inset: -7px", self.block)
 
     def test_tracklist_rows_are_compact_48_pixels(self):
@@ -102,6 +103,19 @@ class AlbumModalBehaviourGuardTests(unittest.TestCase):
 
     def test_close_returns_focus_to_the_opener_when_still_attached(self):
         self.assertIn("if (returnTo && returnTo.isConnected) returnTo.focus();", self.js)
+
+    def test_platform_links_make_no_third_party_requests(self):
+        # AGENTS.md: no runtime third-party assets. The only URLs the platform links carry are their
+        # search pages, and no image is created for them.
+        start = self.js.index("function setAlbumPlatformLinks(")
+        end = self.js.index("\n}\n", start)
+        body = self.js[start:end]
+        self.assertNotIn("createElement('img')", body)
+        self.assertNotIn('createElement("img")', body)
+        self.assertNotIn("icon", body)
+        for host in ("raw.githubusercontent.com", "simpleicons.org", "community.qobuz.com"):
+            self.assertNotIn(host, self.js)
+        self.assertIn("link.textContent = label;", body)
 
 
 if __name__ == "__main__":

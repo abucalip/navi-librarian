@@ -728,34 +728,25 @@ function applyAlbumYear(card, value) {
 function setAlbumPlatformLinks(artist, album) {
   const query = [artist, album].filter(Boolean).join(' ').trim();
   const encoded = encodeURIComponent(query);
+  // Text labels only: the modal makes no request to a third-party host (AGENTS.md; DESIGN_SYSTEM.md
+  // section 16.2 row 12). Brand logos are not vendored here because they need licence and brand review.
   const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://raw.githubusercontent.com/metabrainz/metabrainz-logos/master/logos/ListenBrainz/SVG/ListenBrainz_logo_icon.svg'],
-    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, 'https://cdn.simpleicons.org/applemusic/FA243C'],
-    ['Spotify', 'https://open.spotify.com/search/' + encoded, 'https://cdn.simpleicons.org/spotify/1DB954'],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://community.qobuz.com/s/Qobuz_logo_black-l2kk.jpg'],
-    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, 'https://cdn.simpleicons.org/bandcamp/1DA0C3']
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded]
   ];
   const nav = $('albumModalPlatformLinks');
   nav.replaceChildren();
-  for (const [label, href, iconUrl] of links) {
+  for (const [label, href] of links) {
     const link = document.createElement('a');
     link.href = href;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
     link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
-    const icon = document.createElement('img');
-    icon.src = iconUrl;
-    icon.alt = '';
-    icon.loading = 'lazy';
-    icon.width = 18;
-    icon.height = 18;
-    icon.onerror = () => {
-      icon.remove();
-      link.textContent = label.slice(0, 2);
-      link.classList.add('platform-icon-fallback');
-    };
-    link.append(icon);
+    link.textContent = label;
     nav.append(link);
   }
 }

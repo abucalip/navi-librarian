@@ -322,12 +322,10 @@ p { line-height: 1.55; }
 .album-modal-art { position: relative; overflow: hidden; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-chip); }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Platform links are 44x44 chips, so the visible target is the touch target. Five chips and four gaps fit the 340px column. */
-.album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; max-width: 100%; min-width: 0; margin: var(--space-2) 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 44px; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; overflow: hidden; border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); text-decoration: none; }
-.album-modal-art-column .album-platform-links a img { display: block; width: 18px; height: 18px; object-fit: contain; }
+.album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row wrap; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; max-width: 100%; min-width: 0; margin: var(--space-2) 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 1 auto; align-items: center; justify-content: center; min-width: 44px; height: 44px; padding: 0 var(--space-3); border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); font: 600 var(--text-xs)/1 var(--body); white-space: nowrap; text-decoration: none; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.album-modal-art-column .album-platform-links .platform-icon-fallback { font: 700 var(--text-xs)/1 var(--mono); }
 .album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; font-size: var(--text-xs); }
 .album-modal-copy h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl)/1.05 var(--display); overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
