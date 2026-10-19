@@ -17,6 +17,7 @@ from pathlib import Path
 import subprocess
 import sys
 import math
+import threading
 from typing import Any, Callable
 
 SCHEMA_VERSION = 2
@@ -295,6 +296,10 @@ def prepare_lastfm_callback(
     return callback, calls
 
 
+_CAPTURE_CLAIM_LOCK = threading.Lock()
+_CLAIMED_CAPTURE_PATHS: set[str] = set()
+
+
 def write_capture_safely(
     path: str,
     gathered: dict[str, Any],
@@ -305,9 +310,19 @@ def write_capture_safely(
     *,
     ranking_context: dict[str, Any],
 ) -> None:
-    """Capture failure must not break recommendation serving; emit a safe warning."""
+    """Capture failure must not break recommendation serving; emit a safe warning.
+
+    The environment variable is process-wide, so overlapping recommendation runs
+    can all carry the same capture path. The first run to finish claims the one-shot
+    capture; later runs in this process skip the write rather than hitting the
+    refuse-to-overwrite check and logging a false failure.
+    """
     import logging
     try:
+        with _CAPTURE_CLAIM_LOCK:
+            if path in _CLAIMED_CAPTURE_PATHS:
+                return
+            _CLAIMED_CAPTURE_PATHS.add(path)
         write_capture(
             path,
             gathered=gathered,
