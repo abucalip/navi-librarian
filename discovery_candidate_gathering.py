@@ -308,6 +308,7 @@ def gather_recommendation_candidates(
     recent_artists = Counter()
     recent_artist_play_counts = Counter()
     recent_artist_mbid_counts = Counter()
+    listens_with_artist_mbid = 0
     listen_weights = decayed_listen_weights(listens, half_life_days=14.0)
     for listen, weight in zip(listens, listen_weights):
         metadata = listen.get("track_metadata", {})
@@ -323,6 +324,7 @@ def gather_recommendation_candidates(
             artist_mbid = artist_mbids[0]
         if artist_mbid:
             recent_artist_mbid_counts[artist_mbid] += weight
+            listens_with_artist_mbid += 1
 
     try:
         recommendations, cf_paging = _fetch_cf_recommendations(providers)
@@ -516,6 +518,7 @@ def gather_recommendation_candidates(
             continue
 
     candidate_pool_tags = []
+    candidate_artist_cache_hits = 0
     seen_candidate_artist_ids = set()
     for candidate in sorted(
         albums.values(), key=lambda album: album["score"], reverse=True
@@ -533,6 +536,7 @@ def gather_recommendation_candidates(
             continue
         if isinstance(tags, (list, tuple)):
             candidate_pool_tags.extend(tags)
+            candidate_artist_cache_hits += 1
         if len(seen_candidate_artist_ids) >= 60:
             break
 
@@ -743,6 +747,18 @@ def gather_recommendation_candidates(
             "uncached_resolution_budget_reached": resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS,
             "resolution_budget_skipped": cf_skips["resolution_budget"],
             "cache_known_recordings": cf_skips["cache_known"],
+        },
+        # Aggregate counts that separate an empty tag input from a cache miss.
+        "tag_lane": {
+            "listens_total": len(listens),
+            "listens_with_artist_mbid": listens_with_artist_mbid,
+            "profile_artist_mbids": len(recent_artist_mbid_counts),
+            "profile_top_artists_considered": len(recent_artist_mbid_counts.most_common(15)),
+            "profile_top_artist_cache_hits": len(profile_tags_by_artist),
+            "profile_tag_count": sum(len(tags) for tags in profile_tags_by_artist.values()),
+            "candidate_artists_considered": len(seen_candidate_artist_ids),
+            "candidate_artist_cache_hits": candidate_artist_cache_hits,
+            "candidate_pool_tag_count": len(candidate_pool_tags),
         },
         "supplementary": summarize_supplementary_yield(
             supplementary_query_outcomes,
