@@ -1561,3 +1561,11 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Updated `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P3 status. P2 decision unchanged. No weights, windows, ownership, duplicate, or eligibility behavior changed.
 - Not yet verified: exact-head CI on the four required workflows, merge, and any owner-authorized rerun of the page-2 measurement. No publishing or deployment.
 - Next action: after CI passes on the PR head, the owner decides whether to authorize one aggregate rerun that reports the new fields.
+
+## P2 freshness check and P3 merge record — 2026-10-19
+
+- PR #395 (P3 budget counters and boundary tests) was squash-merged to `main` as `ba63de7fd39fa39ac1b7d2e9d2d645c91804f06c` from exact head `85ba55a508e93b2921777a8539e4ecb02871d087`. All four required checks passed on that head (compile, test-and-build, container-smoke, validate-container). Local unit suite before merge: 894 tests passed.
+- P2 two-sided freshness check, owner-run on an isolated copy at `ba63de7`: snapshot A 200 returned, 103 resolved, 2 pages; snapshot B 200 returned, 101 resolved, 2 pages; same 30-day window. Overlap 144 shared, Jaccard 0.5625, 56 new, 56 dropped. Both captures passed integrity checks and remain private outside the repository. No identities or listening data were committed.
+- Interpretation limits: one before-and-after pair. Shows CF output moves after a listening change; does not show quality improvement and does not settle whether CF reflects all-time history. P2 decision unchanged (unconfirmed).
+- Publishing and deployment remain paused. No ranking, weight, window, or eligibility change.
+- Next action: decide whether CF freshness needs a second bracketing pair before any supply change, or whether P1–P3 are sufficient to re-evaluate the supply gap.
