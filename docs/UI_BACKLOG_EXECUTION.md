@@ -2966,3 +2966,61 @@ The idle control fails the boundary over light and mid artwork too, so the failu
 - No real screen reader and no real acquisition request. The Get states were rendered from the same markup and CSS, not driven through `searchAlbum`.
 - The sandbox server was not started. The helper and Navidrome were not run, so the manual checklist against the exact head SHA is not done (skip).
 
+## 34. Login input height against the touch-target rule (Phase 7 follow-up item 13)
+
+Status: **measured; docs and measurement only, no CSS change.** Merged state of the item 12 PR: PR #426, squash `f7fb6e6`, recorded in `docs/REDESIGN_ROADMAP.md` follow-up item 12. Branch `ui/phase-7-login-inputs-6rwmwd` (the designated name).
+
+### 34.1 Question
+
+AGENTS.md sets 44x44 as the touch-target floor. `docs/DESIGN_SYSTEM.md` section 9.7 specifies login and form inputs at 40px tall. `static/login.css` sets `input { min-height: 44px }` and `button { min-height: 44px }`. Which height is rendered, and does any control fall under 44px at the five widths? The 40px vs 44px choice is not made here; it is an owner decision in `docs/DESIGN_SYSTEM.md` section 16.5.
+
+### 34.2 Method
+
+- The real app from this branch head (`f7fb6e6` plus the docs commit), served by `uvicorn app.main:app` on `127.0.0.1` from a local sandbox. Two instances: a fresh data directory for the first-run page (no account), and a second data directory with one account created through `POST /api/auth/setup` for the sign-in page. Music directory set to a sandbox folder. No slskd settings were added, so no acquisition service was contacted. No live library, no acquisition, no real data.
+- Chromium through Playwright (`/opt/pw-browsers/chromium-1194`), a new context per width, device scale 1. Heights read with `getBoundingClientRect()` on each `input`, `button` and `label` that is visible.
+- Five widths (1440, 1200, 900, 620, 390). Screenshots are full page. Scripts and the JSON result are in `/mnt/project-files/phase-7-login-inputs/screenshots/` (`measure-login.mjs`, `measure-login.json`).
+
+### 34.3 Results
+
+| Page | Element | 1440 | 1200 | 900 | 620 | 390 | Target 44px? |
+|---|---|---|---|---|---|---|---|
+| Sign-in | Username input | 44 | 44 | 44 | 44 | 44 | met |
+| Sign-in | Password input | 44 | 44 | 44 | 44 | 44 | met |
+| Sign-in | Sign in button | 44 | 44 | 44 | 44 | 44 | met |
+| First-run | Username input | 44 | 44 | 44 | 44 | 44 | met |
+| First-run | Password input | 44 | 44 | 44 | 44 | 44 | met |
+| First-run | Confirm password input | 44 | 44 | 44 | 44 | 44 | met |
+| First-run | Create account button | 44 | 44 | 44 | 44 | 44 | met |
+
+- Horizontal overflow: 0 px at all five widths on both pages.
+- Console errors or warnings: none. Failed or 4xx/5xx requests: none. Requests to third-party hosts: none.
+- The rendered height is the 44px `min-height`, not the 40px in section 9.7. The inputs have a 1px `edge-strong` border, 8px vertical padding and a 15px font.
+- Labels are not targets and were not counted as failing.
+
+### 34.4 Decision
+
+- No target fails the 44px floor, so no touch-target fix is needed at these widths.
+- Decided by Hamdi (2026-10-19): login and first-run inputs stay 44px. Section 9.7 is updated for the login page in the same PR. Section 9.1 (primary button) and other form inputs are not covered.
+- No CSS, template, script or test change. The `tests/*_ui_contract.py` assertions are unchanged.
+
+### 34.5 Skills and tools
+
+- `impeccable detect` ran in two modes. Regex mode on `static/login.css`: 0 findings (the tool scanned one file and reported only that rule classes needing a parsed page did not run). Parsed mode on the live pages through the Impeccable URL scanner, with a Chromium wrapper that adds `--no-sandbox` because the run is as root: `detect --json` returned `[]` for `/login` on the sign-in instance and `[]` for `/login` on the first-run instance.
+- Not run in this PR: `design:accessibility-review`, `anthropic-skills:web-design-guidelines`, and `/impeccable audit` on the login page. They were not run, so no finding is attributed to them. Their checks on the login page (contrast of the placeholder and hint text, focus order, and the reduced-motion rule on the button) are not covered by these measurements and are a follow-up.
+- Impeccable's direction and the rejected or applied guidance: none applied, since the CSS is unchanged.
+
+### 34.6 Checks actually run
+
+- `node --check static/app.js` and `node --check static/login.js`: OK.
+- `python3 -m compileall -q app static`: OK.
+- `pip install --break-system-packages -r requirements.txt`: exit 0.
+- `python3 -m unittest discover -s tests -v`: 934 tests, OK.
+- Browser measurement: see 34.2 and 34.3.
+- The manual checklist against the exact PR head: not run (skip). The `~/navi-librarian-test/test-pr.sh` helper is not installed in this container, and the checklist covers more than a height measurement.
+
+### 34.7 Limitations
+
+- Reconstructed data is not used. The pages are the real app pages, but the sandbox has no Navidrome library, and the sign-in error and the first-run mismatch states were not re-measured in this item.
+- Heights are CSS pixels at device scale 1. Touch-target size on a phone is measured from the layout box, not from the physical tap area.
+- No real screen reader, no keyboard-only run, and no contrast check on the login page in this item.
+- The 40px vs 44px decision is closed for login inputs (section 16.5 of the design system). Other form inputs and the primary button are not measured in this item.
