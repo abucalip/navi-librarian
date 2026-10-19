@@ -32,7 +32,7 @@ class RecommendationProviders:
 CF_PAGE_SIZE = 100
 CF_MAX_PAGES = 2
 # Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
-CF_MAX_UNCACHED_RESOLUTIONS = 200
+CF_MAX_UNCACHED_RESOLUTIONS = 100
 # Recordings per artist resolved before further cached recordings are skipped.
 # The CF endpoint returns no artist, so uncached recordings must still be
 # resolved to learn their artist; the cap can only skip cache-known artists.
