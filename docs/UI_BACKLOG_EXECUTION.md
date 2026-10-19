@@ -3024,3 +3024,74 @@ AGENTS.md sets 44x44 as the touch-target floor. `docs/DESIGN_SYSTEM.md` section 
 - Heights are CSS pixels at device scale 1. Touch-target size on a phone is measured from the layout box, not from the physical tap area.
 - No real screen reader, no keyboard-only run, and no contrast check on the login page in this item.
 - The 40px vs 44px decision is closed for login inputs (section 16.5 of the design system). Other form inputs and the primary button are not measured in this item.
+
+## 35. Manual UI checklist against the current main head (Phase 7 follow-up item 14)
+
+Status: **browser checklist run on main `5f65cb4` in a sandbox; docs-only PR.** No product code changed. Branch `ui/phase-7-manual-checklist-8mip5m`. Merge state: not merged; not published; not deployed.
+
+### 35.1 Question
+
+The roadmap listed the manual checklist against the merged head under "Still not done". This run records the checklist from `docs/LOCAL_UI_TESTING.md` against the exact head `5f65cb4701cffd2a05e6abe8436ab6843241a545` (the main head after PR #428, with PRs #429 and #430 already in it), at the five redesign widths, with console and network observed. Defects found are reported here, not fixed.
+
+### 35.2 Method
+
+- **Helper not used.** `~/navi-librarian-test/test-pr.sh` is not in this container, so the helper's per-PR data path, report and GitHub-side CI read were not available. Every checklist item was run against a local sandbox instead: `uvicorn app.main:app` on `127.0.0.1:8089` from this checkout, with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` set to a scratch directory outside the repository, `SLSKD_URL=http://127.0.0.1:9` and an empty `SLSKD_API_KEY`. No Navidrome instance was configured, so there is no real library.
+- **Fresh data directory** for first-run setup; one owner account created through the real first-run form (sandbox credentials, not recorded here).
+- Chromium through Playwright (`/opt/pw-browsers/chromium`), one browser context, widths 1440, 1200, 900, 620 and 390 CSS px, device scale 1.
+- Per page and width: the visible `section.page`, `scrollWidth` against the viewport, visible controls under 44px, console messages and failed or 4xx/5xx responses.
+- Scripts and JSON are in `/mnt/project-files/phase-7-manual-checklist/screenshots/` (`check.mjs`, `pages.mjs`, `auth.mjs`, `nav390.mjs`, `results.json`, `pages.json`). Screenshots are `login-*`, `p-<page>-<width>.png`, `nav-390-bottom.png`, and the first-run and dashboard captures.
+- Impeccable: `npx --yes impeccable@latest detect` ran on `static/app.css`, `static/login.css`, `app/templates/index.html` and `app/templates/login.html`. Output in `/mnt/project-files/phase-7-manual-checklist/screenshots/impeccable-detect.txt`. Not a full page check: the detector reports that its page rules did not run on the CSS files and only scanned the HTML with regex, so its findings are an undercount.
+
+### 35.3 Checklist results
+
+| # | Item (LOCAL_UI_TESTING.md) | Result | Evidence |
+|---|---|---|---|
+| 1 | App starts; first-run setup and sign-in | **Pass** (setup, wrong-password error, good sign-in, logout, gated `/`). Restart persistence: **skip**, not restarted | `auth.mjs`; `login-*-<w>.png` at five widths (first-run mode) |
+| 2 | Dashboard, artwork, primary navigation | **Pass** for layout and navigation at five widths. Artwork: **skip** (no library) | `p-dashboard-<w>.png`, `nav-390-bottom.png` |
+| 3 | Discovery lists load and refresh | **Skip**: no Navidrome library, so lists show their empty state. Empty states render without errors | `p-recommendations-*`, `p-newReleases-*`, `p-personalDiscoveries-*`, `p-classics-*`, `p-artistDeepDive-*` |
+| 4 | Artist/album navigation and album details | **Skip**: no library fixture. Album modal not opened | — |
+| 5 | Settings load, save, survive reload without exposing credentials | **Partial**. Settings page loads at five widths; the three password inputs on the settings page had zero-length values, both on first load and after reload. Save: **skip** (no safe sandbox Navidrome target was configured) | `pages.json`; `results.json` `settingsPasswordValueLengths` |
+| 6 | Get/request state and duplicate prevention | **Skip**: no library, so no Get control was present to exercise. Server behavior not exercised | — |
+| 7 | Acquisition cards and status for a safe fixture | **Skip**: no acquisition state fixture; the acquisitions page renders with no cards. The rendering of cards was not observed | `p-acquisitions-*` |
+| 8 | Error and recovery states | **Partial**: the sign-in error state (`role="alert"`, "Invalid username or password.") was observed and recovered from on a correct password. Discovery and acquisition error states: **skip** | `auth.mjs` |
+| 9 | Performance (approximate timings) | **Skip**: no timings recorded; the run waited fixed intervals, so it measures nothing about load speed | — |
+| 10 | No unexpected browser-console or server-log errors | **Partial**: see 35.4 | `results.json`, `pages.json`, `server.log` |
+
+Also checked: no horizontal page overflow at 1440, 1200, 900, 620 or 390 on any of the eight pages (`scrollWidth` equal to the viewport for every page and width); no visible control under 44px on any of the eight pages at any width (the measurement counts visible `button`, `a`, `input` and `select` elements; labels were not counted). Keyboard: the first Tab stops were the skip link, the header menu toggle, the active Dashboard button and the Acquisitions button, each with a 2px solid outline. Only the first four stops were recorded, not a full keyboard pass. Screen reader: not run.
+
+### 35.4 Console and network
+
+- **Dashboard, first load after setup, 1440px**: one console warning, `The resource .../static/fonts/big-shoulders-display-700.woff2 was preloaded using link preload but not used within a few seconds`. The same page at the other widths and on later visits showed no warning. This was observed once and not reproduced in the second run. Possible cause (not verified): the preload in `app/templates/index.html` targets the display face before the heading that uses it is painted. Proposed follow-up, not changed here: confirm whether the preloaded face is the one the dashboard heading renders, and either preload that face or drop the preload.
+- **Settings page, every width**: `GET /api/settings/listenbrainz` returns **502 Bad Gateway** on each visit. This is the known backend limit recorded as B1 in the earlier backlog, not a front-end defect. The page renders with the ListenBrainz section in its fallback state. No change proposed here.
+- **Recommendations at 1440px**: `GET /api/acquisitions/stream` reported `ERR_ABORTED` when the page changed. This is the expected close of a server-sent events stream on navigation and is not an error for the user.
+- No page errors (`pageerror`) on any page or width. No other 4xx or 5xx responses during the run.
+
+### 35.5 Defects and observations for the owner (no fix in this PR)
+
+1. **Phone bottom navigation scrolls sideways.** At 390px the bottom bar holds seven destinations (Dashboard, Acquisitions, Recommendations, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives). Its own `scrollWidth` is 717px against a 390px client width (`overflow-x: auto`). The page itself has no horizontal overflow. This is the open owner decision in `docs/DESIGN_SYSTEM.md` section 16.5 (seven destinations vs five). Not fixed here.
+2. **Settings tab strip** (`.settings-tabs`, `app/templates/index.html`) shows the 3px active underline sitting on the strip's own 1px bottom border. Impeccable reports the children as flush against the border. This is the tab pattern rather than a text-clipping defect. Owner call if the strip should get an inset.
+3. **Preload warning** on the dashboard (35.4). Observed once; cause not verified.
+
+### 35.6 Impeccable and skills
+
+- **Impeccable detect: ran.** `npx --yes impeccable@latest detect` on the four UI files reported four findings: `side-tab` on `.card-art::after` (line 393) and `.ranked-row::before` (line 520) in `static/app.css`; `broken-image` on `#albumModalArtwork` (its `src` is set by the modal script at `static/app.js:771` and it hides itself on error at line 862); `cramped-padding` on `.settings-tabs`. Three advisory notes (undocumented `rgba` colours at `static/app.css` lines 356 and 455, and a `999px` radius at line 568) were not counted.
+- **Applied**: none. This PR changes no product code and no UI slice is finished.
+- **Rejected, with reason**: both `side-tab` findings are the design system's own ranked-row stripe and card-art stripe, already recorded in `docs/DESIGN_SYSTEM.md` section 16 (row 9 and the side-stripe finding). `broken-image` is intentional lazy assignment, not a missing image. The `cramped-padding` finding is listed in 35.5 for the owner rather than changed.
+- **Impeccable critique or audit on the rendered pages**: not run as a separate Impeccable pass. The findings above come from `detect` only. The page-level rules needed a parsed page, and the detector's own note says those rules did not run on the CSS files.
+- **web-design-guidelines**: **skipped**. Not run in this item.
+
+### 35.7 Checks actually run (exact commands, results)
+
+- `node --check static/app.js` and `node --check static/login.js`: pass (no output).
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest discover -s tests`: **956 tests, OK**. The redesign notes expected 934; main has advanced since that count with PRs #429 and #430, so the expected number has moved.
+- Browser runs: `check.mjs`, `pages.mjs`, `auth.mjs`, `nav390.mjs` against `127.0.0.1:8089` (results above).
+
+### 35.8 Limitations
+
+- Not the helper. The checklist was run without `test-pr.sh`, against a local sandbox, so the helper's per-PR data persistence, its report and its CI read were not exercised.
+- No real library: artwork, discovery content, album details, Get, acquisition cards and their states are **skipped**, not passed.
+- No restart persistence, no settings save, no timings, no screen-reader or keyboard-only pass.
+- Single run, single device scale. Five widths as listed in 35.2.
+- The Impeccable detector ran on regex patterns over the CSS and the HTML; the undercount it reports applies.
