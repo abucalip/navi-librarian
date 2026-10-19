@@ -35,6 +35,14 @@ class StatusContrastUIContractTests(unittest.TestCase):
         self.assertIn("color: var(--text-muted);", body)
         self.assertIn("cursor: progress;", body)
 
+    def test_card_action_boundary_does_not_use_the_dim_accent(self):
+        # Card actions use the base control boundary (--edge-strong, 3.28 to 3.60:1). The dim
+        # accent measured 1.66 to 2.00:1 on the same grounds, so no card action may set it.
+        for selector in (".card-actions button", ".card-actions button:first-child"):
+            for body in rule_bodies(self.css, selector):
+                self.assertNotIn("--accent-dim", body)
+        self.assertNotIn(".card-actions button:first-child", self.css)
+
 
 if __name__ == "__main__":
     unittest.main()
