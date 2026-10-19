@@ -12,6 +12,8 @@ from collections.abc import Callable, Mapping, Sequence
 from threading import Lock
 from typing import Any
 
+import discovery_snapshot
+
 
 def cache_staleness_reason(
     cached: Mapping[str, Any] | None,
@@ -137,8 +139,15 @@ def refresh_personal(
     clock: Callable[[], float] = time.time,
     origin: str = "manual",
     record_outcome: Callable[[dict[str, Any]], None] | None = None,
+    read_previous: Callable[[str], Mapping[str, Any] | None] | None = None,
+    is_excluded: Callable[[Mapping[str, Any]], bool] | None = None,
 ) -> dict[str, Any]:
-    """Refresh the personal list and record a bounded manual/scheduler outcome."""
+    """Refresh the personal list and record a bounded manual/scheduler outcome.
+
+    When ``read_previous`` is given, a build that the snapshot policy rejects
+    (see ``discovery_snapshot.replacement_decision``) leaves the stored list in
+    place. Without it, behavior is unchanged.
+    """
     if not lock.acquire(blocking=False):
         _record_refresh_outcome(
             record_outcome, origin=origin, status="already_running",
@@ -164,6 +173,24 @@ def refresh_personal(
                 generated_at=clock() if record_outcome is not None else None,
             )
             return {"ok": False, "status": "error", "details": payload}
+        if read_previous is not None:
+            try:
+                stored = read_previous("personal")
+            except Exception:
+                stored = None
+                replace, reason = False, "previous_read_failed"
+            else:
+                replace, reason = discovery_snapshot.replacement_decision(
+                    stored.get("payload") if isinstance(stored, Mapping) else None,
+                    payload,
+                    is_excluded=is_excluded,
+                )
+            if not replace:
+                _record_refresh_outcome(
+                    record_outcome, origin=origin, status="rejected",
+                    generated_at=clock() if record_outcome is not None else None,
+                )
+                return {"ok": False, "status": "rejected", "reason": reason, "list": "personal"}
         try:
             write_list("personal", payload)
         except Exception as exc:
