@@ -515,3 +515,14 @@ Quality: not measured. The frozen CF capture was taken after the listens that wo
 Decision: no change to the budget, weights, windows, eligibility, ownership, or duplicate rules. The Last.fm source is not implemented. Next action: a prospective quality protocol plus an offline harness for the gated combination, with the ownership and duplicate filters applied to both paths before any time or supply comparison.
 
 Limits: one seed set, one profile, one day of measurement; 2 of 20 browses failed; the ownership filter is not applied to the Last.fm side; spacing is partly device-session added; combination times are sketches. Not a satisfaction or quality result.
+
+## Last.fm as a future source option (2026-10-19)
+
+Owner direction: keep Last.fm as an optional recommendation-source setting for later, and move the roadmap forward. It is not a default change and not implemented as a default source.
+
+Measured so far (aggregates only; no identities recorded):
+- Capped path (top 10 seeds from the 407-listen profile, top 20 similar artists, one release-group browse each): about 40 s, 95 candidates across 15 artists, none owned (positive control passed: all 31 albums of the 10 seed artists flagged owned). 4 of 20 browses returned 503 with Retry-After; their effect on supply is unquantified.
+- Holdout (70 listens after 2026-10-18 15:41 UTC, 27 artists): 0 of 15 candidate artists matched, so 0 hits. The frozen CF side matched 3 of 27 artists from 7 eligible albums. Samples are too small to judge quality.
+- Uncapped path (169 browses): 273 to 313 s, not faster than CF.
+
+Next action for the roadmap: prospective quality test once more listens accrue; a source-setting design only if the owner asks for it.
