@@ -135,14 +135,21 @@ main:focus { outline: none; }
 h3 { margin: 0 0 5px; font-size: 16px; line-height: 1.3; }
 p { line-height: 1.55; }
 .panel > p { max-width: 760px; }
-.settings-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 22px 0 20px; border-bottom: 1px solid var(--edge); padding-bottom: 10px; }
-.settings-tabs .settings-tab { padding: 9px 15px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text-muted); background: var(--surface); }
-.settings-tabs .settings-tab.active { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
-.settings-tab-panel { max-width: 760px; }
+/* Settings tabs (DESIGN_SYSTEM.md 9.7). The ARIA tabs pattern is unchanged; the selected tab takes the accent underline and text. */
+.settings-tabs { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 22px 0 24px; border-bottom: 1px solid var(--edge); }
+.settings-tabs .settings-tab { min-height: 44px; margin-bottom: -1px; padding: 0 16px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent; font-size: var(--text-sm); font-weight: 600; }
+.settings-tabs .settings-tab:hover { color: var(--text); border-bottom-color: var(--edge-strong); background: transparent; }
+.settings-tabs .settings-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
+.settings-tab-panel { max-width: 880px; }
 .settings-tab-panel[hidden] { display: none; }
-.settings-tab-panel label { display: block; margin: 14px 0; color: var(--text-muted); font-size: 13px; }
-.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
+.settings-tab-panel label { display: block; margin: 14px 0; color: var(--text-muted); font-size: var(--text-sm); }
+.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; min-height: 40px; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
 .settings-tab-panel button { margin-right: 6px; }
+/* Two columns for fields from 900px up; headings, notes, status lines and the tier list span both. */
+@media (min-width: 900px) {
+  .settings-tab-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+  .settings-tab-panel > h3, .settings-tab-panel > p, .settings-tab-panel > .quality-priority-list { grid-column: 1 / -1; }
+}
 #saveNavidrome, #saveLastfm, #saveListenbrainz, #saveSlskd { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 .muted { color: var(--text-muted); }
 /* Shared state line: one treatment for loading, empty, error, success and
@@ -392,17 +399,17 @@ p { line-height: 1.55; }
 details { margin-top: 18px; border-top: 1px solid var(--edge); padding-top: 12px; }
 summary { color: var(--text-muted); cursor: pointer; font-size: 12px; }
 pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-muted); font: 11px/1.6 var(--mono); }
-#settings label { display: block; margin: 14px 0; color: #c8c8bd; font-size: 12px; }
-#settings input, #settings select { display: block; width: 100%; max-width: 520px; margin-top: 6px; }
-.quality-priority-list { display: grid; gap: 8px; max-width: 620px; margin: 12px 0 18px; padding: 0; list-style: none; }
-.quality-priority-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--edge); border-radius: 4px; background: var(--surface); }
+#settings button { min-height: 44px; }
+.quality-priority-list { display: grid; gap: 8px; max-width: 680px; margin: 12px 0 18px; padding: 0; list-style: none; }
+/* Compact 48px rows for Settings (DESIGN_SYSTEM.md 6). The move buttons keep 44px targets. */
+.quality-priority-item { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 12px; border: 1px solid var(--edge); border-radius: 4px; background: var(--surface); }
 .quality-priority-item.dragging { opacity: .45; border-color: var(--accent); }
 .quality-priority-item.drop-target { border-color: var(--accent); box-shadow: inset 0 2px var(--accent); }
 .quality-priority-grip { color: var(--accent); font: 18px/1 var(--mono); cursor: grab; user-select: none; }
 .quality-priority-position { flex: 0 0 24px; color: var(--accent); font: 11px/1 var(--mono); }
 .quality-priority-label { flex: 1; min-width: 0; font-size: 13px; }
 .quality-priority-moves { display: flex; gap: 4px; }
-.quality-priority-moves button { margin: 0; padding: 5px 8px; font-size: 11px; }
+.quality-priority-moves button { min-width: 44px; min-height: 44px; margin: 0; padding: 0 10px; font-size: var(--text-sm); }
 .quality-priority-moves button:disabled { cursor: not-allowed; opacity: .35; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .discovery-settings { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }

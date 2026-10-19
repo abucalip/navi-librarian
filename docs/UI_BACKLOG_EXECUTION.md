@@ -1929,3 +1929,63 @@ The helper `~/navi-librarian-test/test-pr.sh` is not available in this environme
 
 ### 19.8 Next action
 Owner: run the Phase 5 manual checklist on the exact PR head against a live library (pending, failed and confirmed Get; a real progress row; skip on a stalled job). Merge is the owner's call.
+
+## 20. Redesign Phase 6 — Settings (`ui/phase-6-settings`)
+
+Roadmap item: Phase 6, first bullet (Settings). Design system sections applied: 9.7 (forms and tabs), 9.1 (buttons), 6 (layout, compact rows), 7 (borders), 10 (icons unchanged), 11 (motion: none added), 12 (accessibility floor), 13 (anti-patterns). Branched from `origin/main` at `a65fabf` (PR #383).
+
+### 20.1 Acceptance criteria (stated before implementation)
+- Two-column field layout from 900px; one column below.
+- ARIA tabs pattern kept: roving tabindex, arrow keys, Home and End.
+- Quality-tier order works by keyboard alone, announces the new position, and keeps focus on the moved row.
+- Secret fields are never rendered into markup; a blank secret field still preserves the saved value.
+- Contrast and 44px targets hold; no horizontal overflow at 1440, 1200, 900, 620 and 390px; reduced motion honored; console and network clean apart from known limits.
+
+### 20.2 What changed
+- `static/app.css`: the settings tabs restyled as a bottom-rule tab row (selected tab takes the accent text and 3px accent underline; no pill fills). Two-column grid from 900px for fields, with headings, notes, status lines and the tier list spanning both columns. Inputs 40px tall. Settings buttons 44px. Quality rows 48px (compact). Move buttons 44×44. Hardcoded `#c8c8bd` label grey replaced with `--text-muted`.
+- `static/app.js`: after a keyboard or button move, focus returns to the moved row's same-direction button, or to the other button when the pressed one becomes disabled at the list edge. Before this change, focus fell to `BODY` after the first move (confirmed in the browser check below).
+- `tests/test_settings_ui_contract.py` (new): 13 source-contract tests for the focus return, the announcement live region, roving tabindex, the two-column breakpoint, the 44px floor, token use, no new motion, and secret inputs rendered without a value.
+- No template change, no endpoint, field, request body, or save or load path change. Secret fields keep the existing blank-means-keep behavior in `saveNavidrome`, `saveSlskd` and `saveLastfm`, enforced server-side in `service_settings.py`. ListenBrainz has no secret field.
+
+### 20.3 Decisions taken without the owner (state these in review)
+- The tier reorder already had Move up and Move down buttons, an `aria-live` announcement and drag. Kept all three; the change is focus retention and touch targets, not a new control.
+- Drag reorder is not given a keyboard-only drag. The keyboard path is the buttons, as in `main`.
+- No FLIP list animation was added. Design section 11 allows it on sort change; a reorder animation would add motion for a settings list with six rows and was left out to keep this slice small.
+- The tab row wraps to two lines at 390px rather than scrolling sideways, so no tab is hidden.
+- Field grid uses the existing `.settings-tab-panel` container. The old `#settings input` max-width of 520px is removed so fields fill their column.
+
+### 20.4 Checks actually run
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest tests.test_settings_ui_contract -v`: 13 tests, OK.
+- `python3 -m unittest discover -s tests`: 825 tests, OK. The Phase 5 handoff quoted a baseline of 798 on `main`; this run reports 825 on the branch with 13 new tests added. The 14-test difference from the handoff baseline is not reconciled here.
+- Sandbox servers, outside the checkout, with `NAVIDROME_LIBRARIAN_DATA_DIR` set to a per-run directory, `SLSKD_URL=http://127.0.0.1:9`, and music set to the sandbox path. Branch at `5dfa646` on port 8090; `origin/main` at `a65fabf` (extracted, not checked out) on port 8091. Owner account created on each. No live library and no slskd were connected.
+
+### 20.5 Browser checks (sandbox, not the owner's helper)
+The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in this environment, so it was not used. Fixture data is reconstructed: the quality tiers are the app's six default options and no real Navidrome library is connected. Labelled RECONSTRUCTED.
+- Width matrix (both builds, 1440, 1200, 900, 620, 390): horizontal overflow 0 everywhere. Screenshots: `phase-6-settings/screenshots/` in the project folder (before-*, after-*).
+- Layout: at 1440 the slskd fields sit in two columns; at 390 they stack and the tier rows keep their 44px move buttons inside the row.
+- Keyboard reorder, Enter on Move down of row 1, repeated (RECONSTRUCTED fixture):
+  - `main`: after the first move, focus is on `BODY`; the announcement is set but the user has to tab back to the list.
+  - branch: focus stays on the moved row's Move down button; position reads 02, then 03. Pressing Enter at the bottom edge moves focus to the Move up button; further Enter moves the row back up with focus kept.
+- Console and network: the only error on both builds is `502` from `GET /api/settings/listenbrainz`. This is the known backend limit B1 from the Phase 0 baseline, present on `main` as well, not from this change.
+- Not run: saving a secret on the sandbox to confirm preserve-on-blank end to end. The skip is recorded as a skip; the behavior is covered by the unchanged save paths and the contract tests in 20.4, not by a browser save.
+- Not run: drag reorder in the browser. Mouse drag is unchanged code.
+- Not run: reduced-motion emulation. No motion was added, so there is nothing for it to disable.
+- Not run: contrast measured on the rendered build. Colors used are existing tokens (`--text-muted`, `--accent`, `--edge-strong`).
+
+### 20.6 Impeccable and web-design-guidelines
+- The Impeccable post-edit hook reported no deterministic design-quality issues in `static/app.css`. The full `/impeccable critique` and `/impeccable audit` passes were not run in this session, so none are claimed.
+- Applied from the design system: tokens only in the settings rules, the selected tab marked by an underline as well as color, 44px targets, two-column grid with full-width headings and notes.
+- Rejected: an animated list reorder (section 20.3); a horizontally scrolling tab strip; a numeral on the tier rows beyond the existing position numbers, which are a real saved order.
+- `anthropic-skills:web-design-guidelines` was not run in this session. Not claimed.
+
+### 20.7 Limitations
+- Chromium only. No screen-reader pass.
+- The live Navidrome library and real saved secrets were not tested. The owner runs the live check.
+- The 502 from the ListenBrainz settings endpoint remains (B1, backend, out of scope for the front end).
+- The tab row wraps to two lines at narrow widths; labels were not shortened.
+
+### 20.8 Next action
+Owner: review the diff and the keyboard evidence in 20.5, run the Settings checklist on the exact PR head against the live library (including one real secret save with a blank field preserving the saved value), and merge if satisfied. Next roadmap item in this phase: Login and first-run setup, as a separate PR.
