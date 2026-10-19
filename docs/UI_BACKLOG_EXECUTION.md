@@ -2813,7 +2813,7 @@ Hamdi's review of the PR, then the manual checklist against the exact PR-head SH
 
 ## 32. Screen-reader pass on card actions, Get states and the album modal (Phase 7 follow-up item 11)
 
-Scope: names, roles, state announcement and focus order on the card actions, the Get control, the album modal and acquisition Dismiss. Roadmap follow-up item 11. Branch `ui/phase-7-screen-reader-1deshe` from `origin/main` at `57d68df` (PR #412 is `3905ed9`, already in main). No behaviour, API, auth, Get, Dismiss or settings-secret path changed.
+Scope (PR #425): names, roles, state announcement and focus order on the card actions, the Get control, the album modal and acquisition Dismiss. Roadmap follow-up item 11. Branch `ui/phase-7-screen-reader-1deshe` from `origin/main` at `57d68df` (PR #412 is `3905ed9`, already in main). No behaviour, API, auth, Get, Dismiss or settings-secret path changed.
 
 ### 32.1 Findings on `main` (before)
 
