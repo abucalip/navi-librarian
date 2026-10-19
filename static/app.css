@@ -364,7 +364,8 @@ p { line-height: 1.55; }
 .get-album-arc, .get-album-tick, .get-album-arrow, .get-album-arrow-head { opacity: 0; }
 /* Pending: the request is in flight. Applied before the server answers, so it must not
    read as success — a short accent arc travels the ring instead. */
-.get-album.is-pending { background: var(--surface-raised); border-color: var(--accent-dim); color: var(--text-muted); cursor: progress; }
+/* The boundary keeps the idle control's yellow ring. The dim accent it used (1.7-2.2:1 on the card grounds) failed 3:1; --edge-strong measured 2.99:1 on a hovered row. */
+.get-album.is-pending { background: var(--surface-raised); border-color: var(--accent); color: var(--text-muted); cursor: progress; }
 /* The arc travels by rotating the circle about the glyph centre (transform only, no dash offset). */
 .get-album.is-pending .get-album-arc { opacity: 1; stroke: var(--accent); stroke-dasharray: 15.8 56.46; transform-box: view-box; transform-origin: 22px 22px; animation: get-arc-travel 1.15s linear infinite; }
 @keyframes get-arc-travel { to { transform: rotate(360deg); } }

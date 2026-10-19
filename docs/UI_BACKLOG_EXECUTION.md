@@ -2630,3 +2630,110 @@ Setup: two local uvicorn servers (`app.main:app`), each with its own data direct
 ### 29.7 Next action
 
 Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+
+
+## 30. Redesign Phase 7 — Contrast re-measure of status pairs, follow-up item 9 (`ui/phase-7-contrast-cc6445`)
+
+Roadmap item: Phase 7, follow-up item 9 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 13 of `docs/DESIGN_SYSTEM.md` section 16.2 (contrast on the rendered build, which had been re-measured on Phase 1 empty states only). Base: `origin/main` at `bb25be0` (merge of PR #405, after radius PR #406 merged as `94824aa`). The designated branch name `ui/phase-7-contrast-cc6445` was used (the requested `ui/phase-7-contrast` was not; the server's suffix is the designated name). Design system sections applied: 4.1 (contrast rules), 4.2 (state colours never carry meaning alone), 9.5 and 9.6 (acquisition status row and status line), and 9.2 (Get states). Owner decisions in 16.5, the primary button (row 10), gutters (row 14) and the album modal logos (row 12) are out of scope.
+
+### 30.1 Acceptance criteria (stated before the work)
+
+- Every text-on-background pair for status (status line states, legacy `.error` and `.ok`, acquisition status and glyphs, Get states, the Notyf toasts) is measured with computed colours on the rendered build, before and after.
+- WCAG 2.1 AA: 4.5:1 for text under 24px (or under 18.66px bold), 3:1 for large text and for non-text boundaries and glyphs that carry state.
+- Only failing pairs change, and only to existing tokens. No new colour value.
+- No change to behaviour, API, auth, Get/Dismiss paths, markup or the Get state machine. No horizontal overflow at 1440, 1200, 900, 620 and 390px.
+
+### 30.2 What the measurement found
+
+Method: `measure.mjs` (Playwright, the shipped `static/app.css`) renders each status selector once on five token grounds (`--ink`, `--surface`, `--surface-raised`, `--surface-hover`, `--accent-dim`), reads the computed colour and the effective opaque background (translucent layers composited), and computes WCAG 2.1 relative luminance. Each probe is the real class on a real element, so the stylesheet applies; the probe elements are reconstructed because the sandbox has no acquisitions and no albums. The `--accent-dim` ground was measured to show the failure, but it is not a ground any status text renders on (it is only the active header-menu item, which carries `--text`), so it is excluded from the verdict.
+
+Result, on the four grounds that status text actually renders on (104 pairs):
+
+- **Before: 4 failing pairs, all one control.** `.get-album.is-pending` border (`--accent-dim`) measured 2.15, 2.00, 1.82 and 1.66:1 on ink, surface, raised and hover. The text was 7.03:1 and passed. The pending state is announced by the arc and the muted label, but the control's boundary is the only thing that identifies it as a control on the card, so it fails 1.4.11.
+- **Every status text and glyph pair passed before the change.** The tightest are `status-line is-error` and the legacy `.error` on `--surface-hover` (4.65:1) and `acq-profile` on hover (4.86:1). These pass, with small margins, and are recorded rather than changed.
+- **Toasts pass.** Notyf success and error toasts (`--surface-raised` ground): message text 13.8:1; the icon discs measure 8.89:1 (`--ok`) and 5.10:1 (`--chart-red`) against their glyph.
+
+### 30.3 What changed
+
+| Selector | Old | Now | Why |
+|---|---|---|---|
+| `.get-album.is-pending` (`border-color`) | `var(--accent-dim)` (1.66 to 2.15:1) | `var(--accent)` (9.80 to 12.69:1) | Control boundary, row 13. It keeps the idle control's yellow ring; the pending state still differs from idle by the raised dark fill, the muted label and the travelling arc. |
+
+`--edge-strong` was tried first (the documented control-boundary token). It measured 3.28:1 on raised and 3.60:1 on surface, but 2.99:1 on `--surface-hover`, which is the ranked-row hover ground where the Get pill sits, so it fails. `--accent` clears 3:1 on every ground.
+
+Files changed: `static/app.css` (one declaration, plus its comment); `tests/test_status_contrast_ui_contract.py` (new, two assertions on the stylesheet); `docs/REDESIGN_ROADMAP.md`; `docs/DESIGN_SYSTEM.md` section 16.2 row 13; this section.
+
+Not changed, and found outside scope: `.card-actions button:first-child` (`border-color: var(--accent-dim)`, `app/static/app.css` line 409 area). Its boundary is about 1.8 to 2.0:1 on surface and raised by the token values (computed from the tokens, not probed), but it is a card action, not a status pair. It is recorded for the owner, not fixed here.
+
+### 30.4 Full measurements
+
+Ratios are text (or the glyph, or the boundary where marked) on each ground. "→" shows the value after the change where it changed. Source: `measure.mjs` output, saved as `/mnt/project-files/phase-7-contrast/measure-before.json` and `measure-after.json`, with the script at `/mnt/project-files/phase-7-contrast/measure.mjs`. The table is generated from those files.
+
+| Probe | ink | surface | raised | hover | Min before | Min after |
+|---|---|---|---|---|---|---|
+| status-line is-error | 6.03 | 5.60 | 5.10 | 4.65 | 4.65 | 4.65 |
+| status-line is-success | 10.50 | 9.75 | 8.89 | 8.10 | 8.10 | 8.10 |
+| status-line is-progress | 12.69 | 11.79 | 10.74 | 9.80 | 9.80 | 9.80 |
+| status-line is-loading | 6.30 | 5.85 | 5.33 | 4.86 | 4.86 | 4.86 |
+| status-line is-empty | 6.30 | 5.85 | 5.33 | 4.86 | 4.86 | 4.86 |
+| status-line (default) | 6.30 | 5.85 | 5.33 | 4.86 | 4.86 | 4.86 |
+| error | 6.03 | 5.60 | 5.10 | 4.65 | 4.65 | 4.65 |
+| ok | 10.50 | 9.75 | 8.89 | 8.10 | 8.10 | 8.10 |
+| acq-status is-error | 7.35 | 6.83 | 6.22 | 5.67 | 5.67 | 5.67 |
+| acq-status is-caution | 9.10 | 8.46 | 7.70 | 7.02 | 7.02 | 7.02 |
+| acq-status is-ok | 10.50 | 9.75 | 8.89 | 8.10 | 8.10 | 8.10 |
+| acq-status is-muted | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+| acq-status (active) | 12.69 | 11.79 | 10.74 | 9.80 | 9.80 | 9.80 |
+| acq-stat | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+| acq-profile | 6.30 | 5.85 | 5.33 | 4.86 | 4.86 | 4.86 |
+| acq-percent | 16.31 | 15.15 | 13.80 | 12.59 | 12.59 | 12.59 |
+| acq-transport | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+| get-album (idle) | 12.69 (border 14.25) | 12.69 (border 13.24) | 12.69 (border 12.06) | 12.69 (border 11.00) | 11.00 | 11.00 |
+| get-album is-pending | 7.03 (border 2.15 → 12.69) | 7.03 (border 2.00 → 11.79) | 7.03 (border 1.82 → 10.74) | 7.03 (border 1.66 → 9.80) | 1.66 | 7.03 |
+| get-album requested | 12.69 (border 14.25) | 12.69 (border 13.24) | 12.69 (border 12.06) | 12.69 (border 11.00) | 11.00 | 11.00 |
+| get-album is-failed | 5.10 (border 6.03) | 5.10 (border 5.60) | 5.10 (border 5.10) | 5.10 (border 4.65) | 4.65 | 4.65 |
+| album-modal-status | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+| track-number | 16.31 | 15.15 | 13.80 | 12.59 | 12.59 | 12.59 |
+| row-source | 6.30 | 5.85 | 5.33 | 4.86 | 4.86 | 4.86 |
+| dashboard-picks-status | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+| genre-row-count | 8.31 | 7.72 | 7.03 | 6.41 | 6.41 | 6.41 |
+
+### 30.5 Impeccable and design guidance
+
+- `npx --yes impeccable@latest detect --json static/app.css` (run in this session): **5 findings before, 5 after**, the same five: the two 3px stripes (`.card-art::after`, `.ranked-row::before`, rows 9), two undocumented shadow colours (row 6, accepted), and the 999px pill (section 9.2). The change adds no finding. The PostToolUse design hook also reported no deterministic issue on the edited `static/app.css`.
+- `/impeccable critique`, `/impeccable audit`: **not run** as the Impeccable skill in this session. The judgement is made against section 4.2 (yellow means do this or selected; the pending control keeps the working accent, and the arc is the state) and against the before and after screenshots.
+- `web-design-guidelines` compliance pass: **not run** as a separate skill pass. The change is one declaration; the contract test covers it.
+- Guidance applied: section 4.1's contrast rules, and the control-boundary rule (a boundary needs 3:1, and a boundary that identifies a control is not an ornament).
+- Rejected: `--edge-strong` (fails 2.99:1 on the hover ground; see 30.3); `--text-subtle` as a border (a text token, not a boundary); changing the pending label colour (7.03:1, passes); adding a dedicated pending token (no new token needed).
+
+### 30.6 Checks actually run
+
+- `node --check static/app.js`: passed.
+- `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `python3 -m unittest tests.test_status_contrast_ui_contract -v`: 2 tests, OK.
+- `python3 -m unittest discover -s tests -v`: **Ran 905 tests, OK** on this branch. The same command on `origin/main` (`bb25be0`, in a temporary worktree) ran 903 tests, OK. The difference is the two new tests.
+- `pip install --break-system-packages -r requirements.txt` was run before the suite.
+
+### 30.7 Browser (sandbox, RECONSTRUCTED states, not the owner's helper)
+
+Setup: two local uvicorn servers (`app.main:app`), each with its own data directory under the session scratch folder, `SLSKD_URL=http://127.0.0.1:9` (slskd disabled), sandbox music path, one sandbox account per server. "Before" is a worktree of `origin/main` (`bb25be0`, port 8101). "After" is the working tree of this branch (port 8102). Chromium through Playwright, `prefers-reduced-motion: reduce`.
+
+- Computed-colour measurement (`measure.mjs`): 104 pairs per run, before and after (30.4). **After: 0 failing pairs** on the four grounds. The console had no error or warning, and no request left the local origin, in either run.
+- Screenshots at 1440, 1200, 900, 620 and 390px, before and after, in `/mnt/project-files/phase-7-contrast/screenshots/` as `before-states-<width>-RECONSTRUCTED.png` and `after-states-<width>-RECONSTRUCTED.png`. The state panel is injected into the dashboard with the real stylesheet: four status lines, three acquisition status rows and four Get cards (idle, pending, requested, failed). It is labelled RECONSTRUCTED; the sandbox has no library, acquisitions or albums, so no real state is shown.
+- Overflow: `scrollWidth − innerWidth` was 0 at every width, before and after.
+- Keyboard walk: **skipped**. No focus, role, name or key rule changed; the `:focus-visible` rules are untouched.
+- Screen-reader pass: **skipped**.
+- Real acquisition rows and real album Get states: **skipped** (no fixture in the sandbox). The probes in 30.2 cover the same classes on the shipped stylesheet; they are not a substitute for a live library.
+- The owner's `test-pr.sh` helper: **not run** (not installed in this sandbox). The manual checklist against the exact PR-head SHA is **skipped** and is the next action before merge.
+
+### 30.8 Limitations
+
+- The probes are reconstructed DOM on the real stylesheet. The ratios are computed from the rendered colours, but a live library may place a state on a ground not covered here (the four grounds above are the ones the sandbox pages and the stylesheet use).
+- The `--accent-dim` card action border (30.3) is recorded and not fixed.
+- Margins: `status-line is-error` and the legacy `.error` on `--surface-hover` pass at 4.65:1 and `acq-profile` at 4.86:1. They pass, but any token change to the hover ground would need re-measuring.
+- Measured with the WCAG 2.1 relative-luminance formula on sRGB values, as section 4.1 does. No colour-vision simulation was run.
+
+### 30.9 Next action
+
+Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
