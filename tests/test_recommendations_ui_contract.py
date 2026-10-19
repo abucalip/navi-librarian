@@ -252,7 +252,7 @@ class RankedRowContractTests(unittest.TestCase):
         builder = self.js[start:self.js.index("$('recommendationSearch').addEventListener", start)]
         self.assertIn("makeAlbumCardInteractive(row, artist, album, item);", builder)
         self.assertIn("actions.append(createGetButton(artist, album, item));", builder)
-        self.assertIn("dismissButton.setAttribute('aria-label', 'Not for me');", builder)
+        self.assertIn("dismissButton.setAttribute('aria-label', 'Not for me: ' + album);", builder)
         self.assertNotIn("innerHTML", builder, "rows must be built with text APIs only")
 
     def test_failed_generation_is_reported_in_the_count_line(self):
