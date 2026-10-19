@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-19 (PR #421 merged at d840150; live cold-cache pass recorded)
+Last reviewed: 2026-10-19 (PR #431 merged at b933d52; batch timing and genre-stage findings recorded)
 
 ## Current focus
+
+**ListenBrainz batch lookup and genre-stage throttling — PRs #429, #430 and #431 merged (2026-10-19); all three are off by default.** PR #429 (`f33a118`) adds a flagged title-marker filter for the batch path. PR #430 (`ea383cc`) adds flagged batch resolution behind `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED`; its wire format was checked against a live response. PR #431 (`b933d52`) adds a default-off circuit breaker for the artist-genre stage. One timing pair on the owner's test copy at `ea383cc`: 332.5 s with the flags off and 105.7 s with them on, eligible unowned albums 12 in both (single samples). A repeat run with the flags on took 254 s, with 33 of 83 artist-genre responses throttled (429 or 5xx); the retry helper ignores `Retry-After`, and throttled artists are retried in both prefetch and the genre stage. **Open decision for the owner:** whether to turn the breaker and the batch flags on by default; both change output. Publishing and deployment remain paused.
 
 **Supplementary tag lane: candidate-pool genre prefetch — PR #421 merged as `d840150` (2026-10-19).** Adds the top five CF candidate-pool artists (`CANDIDATE_PREFETCH_LIMIT = 5`) to the pre-lane genre prefetch. Offline cold-cache fixtures plan the same 8 queries and reach the same eligible unowned counts as warm, with no added uncached lookups from the prefetch itself. One live cold-cache pass on the owner's test copy at `d840150` (fresh empty data directory, aggregates only): eligible unowned 45 before and after, so replenishment did not trigger; 8 tag queries planned and issued, 7 with yield and 1 HTTP error; 14 of 15 profile and 6 of 13 candidate genre-cache hits; 65 uncached artist-genre lookups; 2 CF pages and 200 recordings, with the 100-resolution budget fully used. The live estimate of about 190 s counts all uncached requests in the run, including the 100 recording resolutions, which this change did not add. Limits: one pass, one profile, one cold state, no pre-change live comparison. Publishing and deployment remain paused.
 
@@ -113,6 +115,6 @@ No ranking weights, ownership gates, or allocation policy have been changed. Re-
 
 ## Last.fm source option (2026-10-19)
 
-- Recorded as a future recommendation-source setting option (docs only). Not implemented as a default source.
+- Recorded as a possible option in a future recommendations-source setting (docs only). Not implemented as a default source.
 - Holdout result: 0 artist hits for the capped Last.fm path versus 3 of 27 for the frozen CF side (small samples; see docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md).
-- Next action: prospective quality test once more listens accrue.
+- Parked by the owner (2026-10-19): no prospective Last.fm quality test and no combined Last.fm path are being started. Next action: none on this line unless the owner asks for the source-setting design.

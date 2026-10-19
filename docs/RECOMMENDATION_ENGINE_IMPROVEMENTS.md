@@ -539,6 +539,24 @@ Discogs was checked as an alternative: no release-type field or batch endpoint i
 Limits: one 100-recording sample; timings from one device session; the batch path was not wired into gathering when this study was written.
 
 **Flagged batch resolution (2026-10-19, offline, default off).** `CF_BATCH_RESOLUTION_ENABLED` in `discovery_candidate_gathering.py` routes uncached CF recordings through `discovery_batch_metadata.py`: one `POST /1/metadata/recording/` per 100 recordings, then one `GET /1/metadata/release_group/` per 100 release groups, with no MusicBrainz recording calls, no 1.1 s spacing and no recording cache writes. Results are shaped like the MusicBrainz resolver output, so eligibility, ownership, duplicate and budget rules run unchanged. The path runs only when `BATCH_TITLE_FILTER_ENABLED` is also on, and any batch failure falls back to per-recording lookups. Both flags stay off; the path is inert in production until they are changed deliberately.
-- Estimated saving: about 105 to 110 s per run at budget 100 (estimate from the 1.1 s spacing and the sample timings, not a measured run).
-- Remaining gaps: secondary release types are still unavailable (the title filter is partial); the wire format (body key, query parameter, response field names) is taken from the study and has not been checked against a saved live response; the release-group step still needs a call per 100 IDs; the batch size of 100 is the only size tested.
-- Verified offline by 15 stubbed tests (`tests/test_discovery_batch_lookup.py`): flag gating, budget, chunking, fallbacks, title-marker rejection, and MusicBrainz-shaped output.
+- Measured saving on one pair of runs: 332.5 s without the flags and 105.7 s with them (see the timing entry below). Single samples.
+- Remaining gaps: secondary release types are still unavailable (the title filter is partial); the wire format was checked against a live response on one 100-recording sample (the recording POST needs `inc` set to `artist release`); the release-group step still needs a call per 100 IDs; the batch size of 100 is the only size tested.
+- Verified offline by 15 stubbed tests (`tests/test_discovery_batch_lookup.py`): flag gating, budget, chunking, fallbacks, title-marker rejection, and MusicBrainz-shaped output. Merged as PR #430 at `ea383cc`; the title-marker filter is PR #429 at `f33a118`. Discogs was ruled out for this use (no release-type field, token and rate limit, no batch endpoint).
+
+**Batch title filter check (2026-10-19, aggregate only).** On 35 sample release groups the title-marker filter flagged 1. Unmarked live albums and compilations still pass, so the filter is a partial safeguard. It stays off by default.
+
+**Batch path end-to-end timing (2026-10-19, aggregate only, one run per mode).** Owner's test Mac, `origin/main` at `ea383cc`, fresh data directory, count 10, budget 100.
+- Flags off: 332.5 s, 214 uncached requests (135 recording, 3 release-group, 42 artist-genre, 34 other); eligible unowned albums 12.
+- Flags on (`CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED`): 105.7 s, 85 uncached requests (1 batch recording, 1 batch release-group, 3 release-group, 46 artist-genre, 34 other); eligible unowned albums 12.
+- No fallback ran, and the title filter dropped nothing in this run.
+- Limits: one sample per mode, one profile.
+
+**Artist-genre stage under throttling (2026-10-19, aggregate only).** A repeat run with the flags on took 254 s, against 105.7 s in the timing run above. It made 83 artist-genre HTTP attempts for 55 unique artists: 28 repeats, with one artist requested 6 times. 33 of the 83 responses were HTTP 429 or 5xx.
+- The retry helper makes up to 3 attempts per lookup with 2 s and 4 s backoff. It ignores `Retry-After`.
+- Retryable failures are never cached, so a throttled artist is retried in profile prefetch and again in the genre stage.
+- The genre stage had no early stop. The tag lane stops after one exhausted query; the genre stage did not.
+- Draft PR #431 added a circuit breaker behind a default-off flag. It stops the genre stage after 3 consecutive exhausted artists and logs the skipped count. It merged at `b933d52`. Turning it on changes output, so it needs the owner's decision.
+
+**Open decisions for the owner.** Whether to turn on the genre-stage breaker and the batch flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`) by default. Both change output and both remain off.
+
+**Candidate next steps (listed, not started).** Repeat the timing pair for a second sample. Honor `Retry-After` in the retry helper. Negative-cache exhausted artist lookups.
