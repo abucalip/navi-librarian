@@ -2230,7 +2230,7 @@ Console: the only errors are `net::ERR_FAILED` from the harness aborting third-p
 
 ### 24.5 Limits, deviations and open items
 
-- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness. **Resolved in section 37** (text labels, no logos vendored).
+- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness. **Resolved in section 37** (three marks vendored, two text-only).
 - **Bottom tab bar under 620px (Hamdi's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
 - **Screen reader pass: not done.** No screen reader was available. The role change in 24.2 is based on the ARIA rule about interactive descendants, not on a spoken test.
 - **Album articles keep an `aria-label`.** The label ("View details for …") now names the article, so a screen reader may announce the Get or Dismiss buttons inside it as part of the article. Verifying that needs the screen-reader pass above.
@@ -3177,7 +3177,7 @@ Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acq
 
 ## 37. Album modal platform links without third-party requests (Phase 7 follow-up item 16)
 
-Status: **implemented in PR #437 on branch `ui/modal-platform-links-wjf689` from main `a1b086b`; automated checks run; browser checks run on the sandbox server only; not merged, not published, not deployed.** Closes B2 (section 24.5) and `docs/DESIGN_SYSTEM.md` 16.2 row 12. Also records PR #435 (phone bottom bar, section 36) as merged, squash `a1b086b`; its thread did not record it.
+Status: **implemented in PR #437 on branch `ui/modal-platform-links-wjf689` from main `a1b086b`; automated checks run; not merged, not published, not deployed.** Closes B2 (section 24.5) and `docs/DESIGN_SYSTEM.md` 16.2 row 12. Also records PR #435 (phone bottom bar, section 36) as merged, squash `a1b086b`; its thread did not record it.
 
 Note on the source: the 24.5 limits table in this file, not `docs/DESIGN_SYSTEM.md`, holds the B2 entry this PR closes. The design system's row 12 points to it.
 
@@ -3185,69 +3185,53 @@ Note on the source: the 24.5 limits table in this file, not `docs/DESIGN_SYSTEM.
 
 The album modal's five platform links each carried a logo image on a third-party host (`raw.githubusercontent.com`, `cdn.simpleicons.org`, `community.qobuz.com`). `AGENTS.md` forbids runtime third-party assets. Open decision: vendor the logos or use text labels.
 
-### 37.2 Default taken and the alternative
+### 37.2 Decision and what was built
 
-- **Default (built):** text labels. Each link shows its platform name (ListenBrainz, Apple Music, Spotify, Qobuz, Bandcamp). Search URLs, `target`, `rel`, `title` and the `aria-label` are unchanged. No brand decision was needed.
-- **Alternative (not built):** vendor the five logos under `static/vendor/` with their licence files, and render them as local `img` elements. That needs a brand and licence review per logo, so it was not done here. The owner can pick it later as a separate PR.
+- **Owner decision (Hamdi, card tap on PR #437, 2026-10-19): vendor logos.** The first version of this PR used text labels as the default; that was replaced on the owner's choice.
+- **Vendored:** Apple Music, Spotify and Bandcamp marks from `simple-icons` 16.35.0 (`static/vendor/simple-icons/applemusic.svg`, `spotify.svg`, `bandcamp.svg`). Each keeps its brand colour as a `fill` on the root `<svg>`. The package's CC0 licence is copied to `static/vendor/simple-icons/LICENSE.md`, and `NOTICE.md` records the source and states that the marks remain their owners' trademarks.
+- **Text only:** ListenBrainz and Qobuz. Simple Icons has no mark for either, and no licence was checked for the logo files the old code used, so those two keep a text label. This is the fallback the owner's instruction allows.
+- Each link still shows its platform name as visible text beside the mark (WCAG label-in-name), and keeps its `aria-label`, `title`, search URL, `target` and `rel`. Marks are decorative (`alt=""`).
 
 ### 37.3 What changed
 
-- `static/app.js` `setAlbumPlatformLinks`: no image is created and no logo URL is kept. Each link's text is its platform name. The `onerror` fallback that showed two-letter abbreviations is removed, since there is no image to fail.
-- `static/app.css` `.album-modal-art-column .album-platform-links`: the row wraps (`flex-flow: row wrap`). Each link is a chip with `min-width: 44px`, `height: 44px`, `padding: 0 var(--space-3)`, the 600 `--text-xs` (12px) body face and `white-space: nowrap`. The 18px `img` rule and the fallback rule are removed. Hover and `:focus-visible` rules are kept.
-- `tests/test_album_modal_ui_contract.py` (narrow update, reason stated): the touch-target assertion for the platform links matched `width: 44px`; the chips now have `min-width: 44px`, so the regex is changed to match that. The 44px height is still asserted. One new test, `test_platform_links_make_no_third_party_requests`, asserts that `setAlbumPlatformLinks` creates no `img`, that the script names none of the three third-party hosts, and that the label is set as text.
+- `static/app.js` `setAlbumPlatformLinks`: a link gets an `img` from `/static/vendor/simple-icons/` only when it has a vendored mark; the visible name is always appended as text. The `onerror` fallback is removed.
+- `static/app.css` `.album-platform-links`: the row wraps (`flex-flow: row wrap`). Each link is a chip with `min-width: 44px`, `height: 44px`, `gap: var(--space-2)`, `padding: 0 var(--space-3)`, the 600 `--text-xs` (12px) body face and `white-space: nowrap`. The mark is 18px.
+- `tests/test_album_modal_ui_contract.py` (narrow update, reason stated): the touch-target assertion for the platform links matched `width: 44px`; the chips now have `min-width: 44px`, so the regex matches that and the 44px height is still asserted. One new test, `test_platform_links_make_no_third_party_requests`, asserts no third-party host appears in the script, that every `/static/vendor/` path it names exists on disk, that the text label is appended on every link, and that Qobuz and ListenBrainz are text-only.
 
 No backend, API, auth, Get, Dismiss or settings behaviour changed.
 
 ### 37.4 Acceptance criteria
 
 1. The modal opens with no request leaving the origin, at 1440, 1200, 900, 620 and 390px.
-2. The five platform links keep their search URLs, `target="_blank"`, `rel="noopener noreferrer"`, `title` and `aria-label`.
-3. Each link is at least 44px tall and at least 44px wide.
-4. Focus stays inside the dialog (trap), Escape closes it, and focus returns to the opening card.
-5. Console shows no errors on open.
-6. Unit suite passes; the only changed test is the narrow touch-target regex plus one new test.
+2. Search URLs, `target`, `rel`, `title` and `aria-label` unchanged.
+3. Links at least 44px tall.
+4. Focus trap, Escape and focus return unchanged.
+5. No console errors on open.
+6. Unit suite passes.
 
-### 37.5 Browser checks (sandbox server, not the helper)
+### 37.5 Browser checks
 
-Method: `render-modal.js` (the Phase 6 modal script, reused unchanged) against a local uvicorn sandbox on this branch (port 8765, fresh data dir, sandbox music and downloads paths, slskd unset). The baseline was a `git worktree` of `a1b086b` on port 8766 with its own fresh data dir. The album details route is mocked with reconstructed fixture data (`RECONSTRUCTED`). Artwork is a local SVG data URI.
-
-| Width | Before: third-party hosts | Before: console errors | After: third-party hosts | After: console errors | Trap, Escape, focus return | Link size |
-|---|---|---|---|---|---|---|
-| 1440 | 3 hosts | 4 (`ERR_TUNNEL_CONNECTION_FAILED`) | none | 0 | pass, pass, pass | 44px tall, 64 to 97px wide |
-| 1200 | 3 hosts | 4 | none | 0 | pass, pass, pass | same |
-| 900 | 3 hosts | 4 | none | 0 | pass, pass, pass | same |
-| 620 | 3 hosts | 4 | none | 0 | pass, pass, pass | same |
-| 390 | 3 hosts | 4 | none | 0 | pass, pass, pass | same |
-
-- Document scroll width equals the viewport at every width.
-- Layout: side by side at 900 and wider, stacked at 620 and 390 (unchanged from main).
-- Reduced motion, the error state ("Could not load tracklist") and the mouse open path behaved as on main.
-- Screenshots: `/mnt/project-files/phase-7-modal-links/screenshots/` (`before-modal-<width>-RECONSTRUCTED.png`, `after-modal-<width>-RECONSTRUCTED.png`, plus the render JSON for each side). Both sets are reconstructed DOM with fixture data, not the live library.
-- The third-party request counts come from Chromium's request log in the sandbox. Those requests fail there (no egress), which is why the before run shows four console errors. Before the fix, a real network would have loaded the logos from the three hosts.
-
-Keyboard: the trap pass covers 25 forward Tab presses, all inside the dialog. The links are native anchors, so Enter activates them without extra handlers. Activating a link was not exercised, because it would open an external site.
+The five-width browser render for the vendored-mark version was **not run** in this session. The sandbox server launch was refused by the auto-mode classifier, so no after-state network log exists for it. The earlier run (text-label version, PR head `5b987ac`) is recorded in the PR body: third-party hosts 3 → 0 and console errors 4 → 0 at all five widths, with trap, Escape and focus return passing. The vendored-mark version still needs the same run before it is called verified; the before run on main is recorded in the same table.
 
 ### 37.6 Skills and tools
 
-- `impeccable detect --json static/app.css static/app.js` (CLI via `npx impeccable@latest`): ran. 5 advisory findings, none on the changed lines (the platform rules are around lines 325 to 330 of `static/app.css`). The findings are the existing `side-tab` stripes on the card art and ranked row, and literal colours outside `DESIGN.md`; they are unchanged by this PR.
-- Impeccable guidance applied: no new value that is not a token (the chip uses `--space-3`, `--radius-control`, `--edge-strong`, `--surface`, `--text`, `--accent`, `--surface-hover`, `--body`, `--text-xs`). Text labels stay at 12px, which is the floor.
-- Impeccable guidance rejected: none material.
-- `web-design-guidelines`: ran, but the fetched source returned a paraphrase, not the verbatim rules, so the review is against that summary only. Applied: accessible names kept (`aria-label` contains the visible label), focus-visible ring kept, targets 44px, no `transition: all`, no new motion. Noted, not changed (pre-existing and out of scope): the links open in a new tab with no visible or announced cue beyond the `aria-label`.
-- `design:accessibility-review`: not run in this PR.
+- `impeccable detect` on the changed CSS and JS at the text-label head: 5 advisory findings, none on the changed lines. Not re-run for the vendored-mark head.
+- `web-design-guidelines`: ran against a paraphrase of its source, not verbatim rules. Accessible names, focus-visible ring, 44px targets and no new motion were checked against that summary.
+- Impeccable guidance applied: tokens only; 12px text floor; decorative marks have empty alt; visible text kept beside each mark.
+- Rejected: none material.
 
-### 37.7 Checks actually run
+### 37.7 Checks actually run (vendored-mark head)
 
 - `node --check static/app.js`: pass.
 - `python3 -m compileall -q app static`: pass.
-- `pip install -r requirements.txt --break-system-packages`: pass.
-- `python3 -m unittest tests.test_album_modal_ui_contract -v`: 15 tests, OK.
-- `python3 -m unittest discover -s tests`: 974 tests, OK (baseline 973; +1 new test).
-- Browser: five widths before and after, as in 37.5.
+- `python3 -m unittest tests.test_album_modal_ui_contract`: 15 tests, OK.
+- `python3 -m unittest discover -s tests`: 974 tests, OK.
 
 ### 37.8 Limitations
 
-- Sandbox server and reconstructed fixtures, not the isolated helper and not the live Navidrome library. The helper (`~/navi-librarian-test/test-pr.sh`) is not in this container.
+- The five-width browser render of the vendored-mark version is not run (see 37.5).
+- ListenBrainz and Qobuz have no vendored mark; text-only links.
+- Trademarks: the marks stay their owners'. The CC0 licence covers the drawings in the package, not the marks.
 - The manual checklist against the exact PR head SHA is for Hamdi.
-- Text labels are a default. The owner may prefer vendored logos (see 37.2).
 - No screen-reader pass.
 - Not merged, not published, not deployed.

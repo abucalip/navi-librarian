@@ -728,25 +728,34 @@ function applyAlbumYear(card, value) {
 function setAlbumPlatformLinks(artist, album) {
   const query = [artist, album].filter(Boolean).join(' ').trim();
   const encoded = encodeURIComponent(query);
-  // Text labels only: the modal makes no request to a third-party host (AGENTS.md; DESIGN_SYSTEM.md
-  // section 16.2 row 12). Brand logos are not vendored here because they need licence and brand review.
+  // Every image is a local file under /static/vendor (AGENTS.md: no runtime third-party assets).
+  // The visible text is kept beside each mark, so the name never depends on the picture. Only
+  // the services with a vendored mark have an icon (see static/vendor/simple-icons/NOTICE.md).
   const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded],
-    ['Apple Music', 'https://music.apple.com/search?term=' + encoded],
-    ['Spotify', 'https://open.spotify.com/search/' + encoded],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded],
-    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded]
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, null],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, '/static/vendor/simple-icons/applemusic.svg'],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded, '/static/vendor/simple-icons/spotify.svg'],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, null],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, '/static/vendor/simple-icons/bandcamp.svg']
   ];
   const nav = $('albumModalPlatformLinks');
   nav.replaceChildren();
-  for (const [label, href] of links) {
+  for (const [label, href, iconSrc] of links) {
     const link = document.createElement('a');
     link.href = href;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
     link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
-    link.textContent = label;
+    if (iconSrc) {
+      const icon = document.createElement('img');
+      icon.src = iconSrc;
+      icon.alt = '';
+      icon.width = 18;
+      icon.height = 18;
+      link.append(icon);
+    }
+    link.append(label);
     nav.append(link);
   }
 }

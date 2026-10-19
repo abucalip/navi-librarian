@@ -105,17 +105,22 @@ class AlbumModalBehaviourGuardTests(unittest.TestCase):
         self.assertIn("if (returnTo && returnTo.isConnected) returnTo.focus();", self.js)
 
     def test_platform_links_make_no_third_party_requests(self):
-        # AGENTS.md: no runtime third-party assets. The only URLs the platform links carry are their
-        # search pages, and no image is created for them.
+        # AGENTS.md: no runtime third-party assets. Every image the platform links load is a local
+        # vendored file under /static/vendor/simple-icons/, and the script names none of the hosts
+        # the old logo images came from. The visible platform name is set as text on every link.
         start = self.js.index("function setAlbumPlatformLinks(")
         end = self.js.index("\n}\n", start)
         body = self.js[start:end]
-        self.assertNotIn("createElement('img')", body)
-        self.assertNotIn('createElement("img")', body)
-        self.assertNotIn("icon", body)
         for host in ("raw.githubusercontent.com", "simpleicons.org", "community.qobuz.com"):
             self.assertNotIn(host, self.js)
-        self.assertIn("link.textContent = label;", body)
+        for src in re.findall(r"'(/static/vendor/[^']+)'", body):
+            self.assertTrue((ROOT / src.lstrip("/")).is_file(), src)
+        self.assertIn("icon.alt = '';", body)
+        self.assertIn("link.append(label);", body)
+        self.assertIn("link.setAttribute('aria-label',", body)
+        # Qobuz and ListenBrainz have no vendored mark, so they are text-only links.
+        self.assertIn("['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, null]", body)
+        self.assertIn("['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, null]", body)
 
 
 if __name__ == "__main__":
