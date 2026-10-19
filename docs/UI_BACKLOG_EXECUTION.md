@@ -2316,11 +2316,11 @@ The numbers are in `docs/DESIGN_SYSTEM.md` section 16.4. In short: the dashboard
 
 Hamdi reviews this PR's diff (docs only) and decides the owner items in `docs/DESIGN_SYSTEM.md` section 16.5, starting with the rail width and the "Recommendations" label. After that, a follow-up typography PR (drift row 4) and a gradient and colour removal PR (rows 5 to 7), each with before and after screenshots at the five widths. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA of this PR is still to be run by the owner.
 
-## 26. Redesign Phase 7 — Typography to the type ramp, item 4 (`ui/phase-7-typography-zfk4p0`)
+## 26. Redesign Phase 7 — Typography to the type ramp, item 4 (`ui/phase-7-typography-zfk4p0`, PR #398, merged, squash `bce6017`)
 
-Roadmap item: Phase 7, item 4, added by this PR (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes `docs/DESIGN_SYSTEM.md` section 16.2 row 4. Design system sections applied: 5 (type ramp and rules), 9.7 (forms and tabs, unchanged), 12 (floor and performance), 13 (page-head cap). Base: `origin/main` at `173a8fa`, which includes PR #396. PR: this PR (number recorded in the PR body and in the roadmap once opened).
+Roadmap item: Phase 7, item 4, added by this PR (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes `docs/DESIGN_SYSTEM.md` section 16.2 row 4. Design system sections applied: 5 (type ramp and rules), 9.7 (forms and tabs, unchanged), 12 (floor and performance), 13 (page-head cap). Base: `origin/main` at `173a8fa`, which includes PR #396. PR: #398, merged as squash `bce6017`. Head reviewed: `ed34127`; CI on that head was green (compile, test-and-build, container-smoke, validate-container).
 
-Status, kept separate: **implemented**: yes, in `static/app.css` and one narrow test assertion. **Automated-tested**: yes, 26.4. **Browser-tested**: sandbox render at five widths on four pages plus a clipping check on the populated dashboard, 26.5. A keyboard walk, the screen-reader pass and the manual checklist were not run on this change (26.7). **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` and one narrow test assertion. **Automated-tested**: yes, 26.4. **Browser-tested**: sandbox render at five widths on four pages plus a clipping check on the populated dashboard, 26.5. A keyboard walk, the screen-reader pass and the manual checklist were not run on this change (26.7). **Merged**: yes, PR #398, squash `bce6017`, after Hamdi's review and test. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 26.1 Acceptance criteria (stated before the work)
 
