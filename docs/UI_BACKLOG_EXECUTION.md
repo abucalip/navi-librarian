@@ -3177,7 +3177,7 @@ Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acq
 
 ## 37. Album modal platform links without third-party requests (Phase 7 follow-up item 16)
 
-Status: **implemented in PR #437 on branch `ui/modal-platform-links-wjf689` from main `a1b086b`; automated checks run; not merged, not published, not deployed.** Closes B2 (section 24.5) and `docs/DESIGN_SYSTEM.md` 16.2 row 12. Also records PR #435 (phone bottom bar, section 36) as merged, squash `a1b086b`; its thread did not record it.
+Status: **merged as PR #437 (squash `99d0df4`, 2026-10-19), from branch `ui/modal-platform-links-wjf689` and main `a1b086b`; not deployed.** Closes B2 (section 24.5) and `docs/DESIGN_SYSTEM.md` 16.2 row 12. Also records PR #435 (phone bottom bar, section 36) as merged, squash `a1b086b`; its thread did not record it.
 
 Note on the source: the 24.5 limits table in this file, not `docs/DESIGN_SYSTEM.md`, holds the B2 entry this PR closes. The design system's row 12 points to it.
 
