@@ -105,7 +105,7 @@
         <select id="count">
           <option>5</option><option selected>10</option><option>15</option><option>20</option>
         </select>
-        <button id="loadRecommendations">Generate recommendations</button>
+        <button id="loadRecommendations" class="btn-primary">Generate recommendations</button>
       </div>
       <!-- Phase 2: the results, and the controls that narrow them. Search, category and sort
            only mean anything against a set that already exists, so they belong to the result
@@ -217,7 +217,7 @@
       <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
       <p class="muted">Use the path as seen by the Librarian process/container, not a path inside the Navidrome service.</p>
       <p id="connection" class="status status-line">Not checked yet.</p>
-      <p><button id="saveNavidrome">Save settings</button> <button id="checkConnection">Test connection</button></p>
+      <p><button id="saveNavidrome" class="btn-primary">Save settings</button> <button id="checkConnection">Test connection</button></p>
       <p id="navidromeStatus" class="status-line" aria-live="polite"></p>
     </div>
     <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabSlskd" hidden>
@@ -231,7 +231,7 @@
       <p class="muted">Drag rows to set your preferred order. You can also use the Move up / Move down buttons.</p>
       <ol id="qualityPriorityList" class="quality-priority-list" aria-label="Audio quality priority order"></ol>
       <p id="qualityPriorityAnnouncement" class="sr-only" aria-live="polite"></p>
-      <p><button id="saveSlskd">Save settings</button> <button id="testSlskd">Test connection</button></p>
+      <p><button id="saveSlskd" class="btn-primary">Save settings</button> <button id="testSlskd">Test connection</button></p>
       <p id="slskdStatus" class="status-line" aria-live="polite"></p>
     </div>
     <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabLastfm" hidden>
@@ -239,14 +239,14 @@
       <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
       <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
       <p id="lastfmStatus" class="status-line" aria-live="polite"></p>
-      <p><button id="saveLastfm">Save settings</button> <button id="testLastfm">Test connection</button></p>
+      <p><button id="saveLastfm" class="btn-primary">Save settings</button> <button id="testLastfm">Test connection</button></p>
     </div>
     <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabListenbrainz" hidden>
       <h3>ListenBrainz profile</h3>
       <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
       <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
       <p id="listenbrainzStatus" class="status-line" aria-live="polite"></p>
-      <p><button id="saveListenbrainz">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+      <p><button id="saveListenbrainz" class="btn-primary">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
     </div>
   </div>
 </section>
