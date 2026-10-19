@@ -144,7 +144,7 @@ p { line-height: 1.55; }
 .settings-tab-panel { max-width: 880px; }
 .settings-tab-panel[hidden] { display: none; }
 .settings-tab-panel label { display: block; margin: 14px 0; color: var(--text-muted); font-size: var(--text-sm); }
-.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; min-height: 40px; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
+.settings-tab-panel input { display: block; box-sizing: border-box; width: 100%; min-height: 44px; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--edge-strong); border-radius: 4px; color: var(--text); background: var(--surface); }
 .settings-tab-panel button { margin-right: 6px; }
 /* Two columns for fields from 900px up; headings, notes, status lines and the tier list span both. */
 @media (min-width: 900px) {
@@ -286,7 +286,7 @@ p { line-height: 1.55; }
 .dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .dashboard-carousel-heading p { margin: 0; color: var(--text-muted); font-size: 12px; }
 .dashboard-carousel-heading button { margin-left: auto; }
-.dashboard-picks-status { min-height: 18px; color: var(--text-muted); font-size: 11px; }
+.dashboard-picks-status { min-height: 18px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-row { min-width: 0; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
 .genre-row-heading h3 { margin: 0; color: var(--text); font: 600 23px/1.1 var(--display); text-transform: uppercase; letter-spacing: .025em; }
@@ -410,6 +410,12 @@ details { margin-top: 18px; border-top: 1px solid var(--edge); padding-top: 12px
 summary { color: var(--text-muted); cursor: pointer; font-size: 12px; }
 pre, #result { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-muted); font: 11px/1.6 var(--mono); }
 #settings button { min-height: 44px; }
+/* Phase 7 audit (DESIGN_SYSTEM.md 12, 44x44 floor). Measured on the rendered pages at 1440 to 390px:
+   the primary request buttons, the count and filter selects, and the diagnostics disclosure were
+   41 to 43px tall. The skip link is focus-only, but its target still meets the floor when it shows. */
+.controls button, .controls select, .discovery-controls input, .discovery-controls select { min-height: 44px; }
+summary { min-height: 44px; display: list-item; padding-top: 10px; padding-bottom: 10px; }
+.skip-link { min-height: 44px; }
 .quality-priority-list { display: grid; gap: 8px; max-width: 680px; margin: 12px 0 18px; padding: 0; list-style: none; }
 /* Compact 48px rows for Settings (DESIGN_SYSTEM.md 6). The move buttons keep 44px targets. */
 .quality-priority-item { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 12px; border: 1px solid var(--edge); border-radius: 4px; background: var(--surface); }

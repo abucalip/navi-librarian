@@ -2104,7 +2104,7 @@ Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape
 ### 22.7 Next action
 Owner: review the diff and the screenshots in `phase-6-album-modal/screenshots/`, run the album-modal checklist from `docs/TEST_PLAN.md` against the exact PR head on the owner's helper with a live library, and merge if satisfied. Next roadmap item: Phase 7 (motion, polish, hardening).
 
-## 23. Redesign Phase 7 — Motion pass, item 1 (`ui/phase-7-motion-e3ntxn`)
+## 23. Redesign Phase 7 — Motion pass, item 1 (`ui/phase-7-motion-e3ntxn`, PR #392, merged, squash `46aa68e`)
 
 Roadmap item: Phase 7, first bullet (apply the motion table once across the app; verify reduced-motion end states). Design system sections applied: 4.2 (yellow only for state), 9.2 (Get state machine kept), 9.3 (rail indicator), 9.5 and 9.6 (progress bar and skeleton), 9.8 (modal), 11 (motion table and tokens), 12 (reduced motion, accessibility floor). Base: `origin/main` at `759510e`.
 
@@ -2174,3 +2174,79 @@ Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1
 ### 23.7 Next action
 
 Owner: review the diff, the before and after screenshots and the motion audit JSON, and decide the two loop-duration questions in 23.5. Then run the live browser checklist from `docs/TEST_PLAN.md` against the exact PR head SHA on the owner's helper, including sort on Discover music and a Get request, before the remaining Phase 7 items (critique, audit, polish, harden, `DESIGN.md`, and the screen-reader pass).
+
+## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`)
+
+Roadmap item: Phase 7, second bullet (audit and critique on every page, polish and harden what they find, fixes that fit the system). Design system sections applied: 4 (colour and contrast), 9.1 and 9.7 (button and form sizing), 9.4 and 9.5 (ranked row and acquisition row roles), 9.8 (modal artwork), 12 (44×44 floor, visible focus, status by text). Base: `origin/main` at `46aa68e`. Section 23 (PR #392) is marked merged here.
+
+Branch note: the session's designated branch is `ui/phase-7-audit-harden-xnw111`, not the `ui/phase-7-audit-harden` stem in the brief. The PR uses the designated name.
+
+### 24.1 Acceptance criteria
+
+- Every audited page (dashboard, Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives, Acquisitions, the four Settings tabs, login) has no control under 44×44 at 1440, 1200, 900, 620 or 390px, except where stated in 24.5.
+- No horizontal overflow at the five widths. Text contrast meets 4.5:1 (3:1 large) on every rendered text element.
+- Every focusable control shows a visible focus ring when reached by Tab.
+- No album article is a button around its own Get, Dismiss or Try again controls.
+- The album modal shows no broken-image glyph when artwork is absent or fails to load.
+- No behaviour, endpoint, auth, acquisition or Get change. The Get state machine, Dismiss and settings-secret handling are untouched.
+
+### 24.2 What changed
+
+- `static/app.css`: settings text inputs 40px → 44px (`.settings-tab-panel input`); `.controls button`, `.controls select`, `.discovery-controls input` and `select` at `min-height: 44px`; `summary` (the diagnostics disclosure) at 44px; `.skip-link` at 44px; `.dashboard-picks-status` from 11px to `--text-xs` (12px).
+- `static/app.js`: album articles (ranked rows, cards, acquisition rows) no longer carry `role="button"`. They keep `tabindex="0"`, their `aria-label`, and the existing Enter and Space handler that opens the modal. The modal artwork `<img>` is `hidden` until an artwork URL resolves, and hidden again if the URL fails to load (`error` listener).
+- `tests/test_phase7_audit_ui_contract.py` (new, 7 tests): pins each fix above. No existing assertion was edited or removed.
+- `docs/REDESIGN_ROADMAP.md`: PR #392 marked merged in item 1; item 2 status updated.
+
+### 24.3 Measured results (Chromium, reconstructed fixtures)
+
+Harness: `phase-7-audit-harden/screenshots/audit.py` (copied to the shared folder) serves `app/templates/index.html`, `login.html` and `static/` from a checkout and answers `/api` with synthetic data labelled RECONSTRUCTED. The before run used a detached worktree at `46aa68e`, with the same harness.
+
+| Check | Before (`46aa68e`) | After (this branch) |
+|---|---|---|
+| Control or link under 44×44 (instances, 12 page states × 5 widths) | 131 | 0 |
+| Horizontal overflow, max px across renders | 0 | 0 |
+| Text under its contrast threshold | 0 | 0 |
+| Lowest sampled text contrast (1440, dark ground) | 6.3:1 | 6.3:1 |
+| Tab stops without a visible focus ring (dashboard 14, Discover 22) | 0 | 0 |
+| Album articles with `role="button"` containing buttons | every card, ranked row and acquisition row | 0 |
+| Modal opens from a focused article (Enter), closes on Escape | yes | yes |
+| Broken-image glyph in album modal with no artwork | yes (screenshot) | none (screenshot) |
+
+Rendered screenshots: `phase-7-audit-harden/screenshots/{before,after}-{dashboard,recommendations,acquisitions,settings-navidrome,login}-{1440,390}-RECONSTRUCTED.png` and the modal pair. Full JSON: `before-audit.json` and `after-audit.json`.
+
+Console: the only errors are `net::ERR_FAILED` from the harness aborting third-party logo requests (24.5). The before run also showed a 404 for `/assets/cassette.png`, which was a harness path mapping error and is fixed in the harness, not the app.
+
+### 24.4 Checks actually run
+
+- `node --check static/app.js`, `node --check static/login.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass.
+- `python3 -m unittest discover -s tests -v`: 891 tests, OK (baseline on `46aa68e`: 884, OK; +7 from the new audit contract file). Log is in the session workspace.
+- `impeccable detect` (CLI via the Impeccable skill launcher, now available; it was missing in the last session): ran on `static/app.css`, `static/app.js`, `app/templates/index.html`. See 24.6.
+- Automated audit at five widths: run on `46aa68e` and on this branch as in the table above.
+
+### 24.5 Limits, deviations and open items
+
+- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness.
+- **Bottom tab bar under 620px (Hamdi's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
+- **Screen reader pass: not done.** No screen reader was available. The role change in 24.2 is based on the ARIA rule about interactive descendants, not on a spoken test.
+- **Album articles keep an `aria-label`.** The label ("View details for …") now names the article, so a screen reader may announce the Get or Dismiss buttons inside it as part of the article. Verifying that needs the screen-reader pass above.
+- **Live library and the isolated helper: skipped.** `~/navi-librarian-test/test-pr.sh` is not present in this sandbox, and the cloud sandbox has no Navidrome library. Every check above used reconstructed fixtures. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA is not run here and is for Hamdi.
+- **Reduced motion.** This PR changes no animation. The motion checks from section 23 still hold (`tests/test_motion_ui_contract.py` passes).
+- **Remaining font and radius drift.** The detector's advisory notes (about 33) flag literal sizes such as 11px, 13px and 18px, radii of 3px and 999px, and undocumented colours against `DESIGN.md`. They are advisory and not fixed in this PR; they belong to the `DESIGN.md` regeneration and a typography decision at the end of Phase 7.
+
+### 24.6 Impeccable and skill guidance
+
+- **Impeccable CLI and skill:** the `impeccable` CLI ran (`detect`, `context`). The Impeccable skill was loaded for `audit`. Its launcher supplied PRODUCT.md and DESIGN.md, and its craft-floor reference was read before editing.
+- **`impeccable detect` on the changed files (4 findings, all rejected with reason):**
+  - `static/app.css:390` `.card-art::after` and `static/app.css:518` `.ranked-row::before`, flagged as `side-tab` (3px coloured stripe). Rejected: DESIGN_SYSTEM 9.4 specifies the 3px yellow row bar as the ranked-row hover state, and the card-art stripe is the existing accent. Both are kept.
+  - `app/templates/index.html`, `<img id="albumModalArtwork">` with no `src`, flagged `broken-image`. Rejected as a false positive for this slice: the image is hidden until an artwork URL resolves (24.2), so no broken box renders. Keeping the element avoids a placeholder data URI.
+  - `app/templates/index.html`, `.settings-tabs` flagged `cramped-padding`. Rejected: the tab bar's `margin-bottom: -1px` is the design's active-underline seam on the tablist border, and it is intentional.
+- **Impeccable guidance applied:** craft-floor refusal list checked (no gradient text, no added coloured `border-left`, no glass, no hard shadows, no eyebrow labels). Focus rings, tabular data and the Get states kept as they are. The detector's advisory font and radius notes were reviewed and deferred (24.5).
+- **Impeccable guidance rejected:** the card hover lift, a new loop token, and any re-roll of the Chart Rundown direction, which the project's rules forbid.
+- **`anthropic-skills:web-design-guidelines`:** the fetched guidelines came back as a summary, not verbatim, so this check is against that summary only. Applied to the changed files: accessible names on icon and link controls, visible focus and no outline removal, no interactive descendants in a button, no broken image shown, live status left as it was. Not applied, out of scope: text-wrap balance, tabular numerals in new places, and touch-action on the carousel.
+- **`/impeccable document`:** not run. The roadmap runs it at the end of Phase 7.
+
+### 24.7 Next action
+
+Owner: review this PR's diff and the before and after screenshots, then decide the open items in 24.5, mainly the album-modal logos (B2) and the bottom-tab overflow under 620px. Then run the `docs/TEST_PLAN.md` checklist against the exact head SHA on the isolated helper, with a screen-reader pass on the album article and the Get control, before Phase 7's `DESIGN.md` regeneration.
