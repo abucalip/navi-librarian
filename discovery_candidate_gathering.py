@@ -1,7 +1,11 @@
 """Injected provider orchestration for new-music recommendations."""
 from collections import Counter
 from dataclasses import dataclass
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 import json
+import math
+import time
 from typing import Any, Callable
 
 import discovery_candidate_supply as _supply
@@ -34,18 +38,67 @@ _TAG_SEARCH_ATTEMPTS = 2
 GENRE_CIRCUIT_BREAKER_ENABLED = False
 GENRE_CIRCUIT_BREAKER_THRESHOLD = 3
 
+# Retry-After is honored only on these statuses, and any honored wait is capped so
+# a large header value cannot stall a run. Missing or unparseable values fall back
+# to the fixed backoff.
+_RETRY_AFTER_STATUS_CODES = (429, 503)
+_RETRY_AFTER_MAX_SECONDS = 10.0
+
+
+def _retry_after_seconds(response, *, now=None):
+    """Return the Retry-After wait in seconds (seconds or HTTP-date form), or None."""
+    headers = getattr(response, "headers", None)
+    if not headers:
+        return None
+    raw = headers.get("Retry-After")
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            retry_at = parsedate_to_datetime(value)
+        except (TypeError, ValueError, IndexError):
+            return None
+        if retry_at is None:
+            return None
+        if retry_at.tzinfo is None:
+            retry_at = retry_at.replace(tzinfo=timezone.utc)
+        current = now if now is not None else time.time()
+        seconds = retry_at.timestamp() - current
+    if not math.isfinite(seconds):
+        return None
+    return min(max(seconds, 0.0), _RETRY_AFTER_MAX_SECONDS)
+
+
 def _get_with_bounded_retry(
-    client, url, *, params, headers, sleep, attempts=_GENRE_LOOKUP_ATTEMPTS
+    client,
+    url,
+    *,
+    params,
+    headers,
+    sleep,
+    attempts=_GENRE_LOOKUP_ATTEMPTS,
+    honor_retry_after=False,
 ):
-    """Retry transient MusicBrainz statuses a bounded number of times; never cache here."""
+    """Retry transient MusicBrainz statuses a bounded number of times; never cache here.
+
+    With ``honor_retry_after`` set, a 429/503 response's Retry-After value (capped at
+    ``_RETRY_AFTER_MAX_SECONDS``) replaces the fixed backoff for that wait.
+    """
     response = None
     for attempt in range(attempts):
         response = client.get(url, params=params, headers=headers)
         if response.status_code not in _RETRYABLE_STATUS_CODES:
             return response
         if attempt < attempts - 1:
-            sleep(2 * (attempt + 1))
+            wait = None
+            if honor_retry_after and response.status_code in _RETRY_AFTER_STATUS_CODES:
+                wait = _retry_after_seconds(response)
+            sleep(wait if wait is not None else 2 * (attempt + 1))
     return response
+
 
 @dataclass(frozen=True)
 class RecommendationProviders:
@@ -618,6 +671,8 @@ def gather_recommendation_candidates(
                     params={"fmt": "json", "inc": "genres"},
                     headers=headers,
                     sleep=providers.sleep,
+
+                    honor_retry_after=True,
                 )
                 if response.status_code in _RETRYABLE_STATUS_CODES:
                     if index >= len(profile_prefetch_ids):
@@ -807,6 +862,8 @@ def gather_recommendation_candidates(
                     params={"fmt": "json", "inc": "genres"},
                     headers=headers,
                     sleep=providers.sleep,
+
+                    honor_retry_after=True,
                 )
                 if response.status_code in _RETRYABLE_STATUS_CODES:
                     failures.append({
