@@ -1,10 +1,12 @@
 # Project status
 
-Last reviewed: 2026-10-19 (PR #419 merged; candidate-pool genre prefetch draft PR pending)
+Last reviewed: 2026-10-19 (PR #421 merged as `d840150`; cold-cache live pass recorded)
 
 ## Current focus
 
-**Supplementary tag lane: candidate-pool genre prefetch — draft PR pending (2026-10-19).** Adds the top five CF candidate-pool artists (`CANDIDATE_PREFETCH_LIMIT = 5`) to the pre-lane genre prefetch. Offline cold-cache fixtures now plan the same 8 queries and reach the same eligible unowned counts as warm, with no added uncached lookups from the prefetch itself. Worst-case prefetch-only cost is about 13 s per run. Tests: `tests/test_discovery_candidate_genre_prefetch.py`; full unit suite 928 tests OK on the branch. No live run; a live cold-cache run needs the owner's go-ahead. Publishing and deployment remain paused.
+**Supplementary tag lane: candidate-pool genre prefetch — PR #421 merged as `d84015077b5c6443c7c3774523eafce904dbf5da` (2026-10-19), from exact head `6da5994e24b77f80dfad50c9f97e9f918c2f3ae6`; all four required workflows passed on that head.** Live cold-cache pass (owner-authorized, one pass, fresh empty data directory, shortlist target 10, aggregate only): 8 supplementary queries planned and issued (7 with yield, 1 HTTP-status failure); eligible unowned albums 45 before and 45 after, so the replenishment gate did not trigger and added nothing; 65 uncached artist-genre lookups (cache rows written, so failed lookups may be undercounted); 100 uncached recording resolutions, with the budget reached and 87 skipped; about 190 s added at the 1.1 s spacing (estimate, not timed). The cold cache no longer blocks tag-lane planning on this profile, but this pass does not measure replenishment under a real shortfall. Publishing and deployment remain paused.
+
+**Supplementary tag lane: candidate-pool genre prefetch — offline measurement (2026-10-19), superseded by #421 above.** Adds the top five CF candidate-pool artists (`CANDIDATE_PREFETCH_LIMIT = 5`) to the pre-lane genre prefetch. Offline cold-cache fixtures now plan the same 8 queries and reach the same eligible unowned counts as warm, with no added uncached lookups from the prefetch itself. Worst-case prefetch-only cost is about 13 s per run. Tests: `tests/test_discovery_candidate_genre_prefetch.py`; full unit suite 928 tests OK on the branch. No live run; a live cold-cache run needs the owner's go-ahead. Publishing and deployment remain paused.
 
 **Supplementary tag lane: profile genre prefetch — PR #419 merged as `51f6e9877575a11dd5e0314cd23b2b197baca491` (2026-10-19), from exact head `9f045e33e85334247b55fc230e4152a3d3b3b620`; all four workflows passed on that head.** Prefetches genres for the top 15 profile artists before the tag lane, so a cold cache plans profile queries (offline fixture: 0 to 6; warm cache: 8). No extra provider calls per run. Exploration queries still need warm candidate-artist genres. Live run needs owner go-ahead.
 

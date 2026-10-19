@@ -1,3 +1,13 @@
+## 2026-10-19 — Candidate-pool genre prefetch: PR #421 merged; cold-cache live pass
+
+- Task: merge PR #421 (candidate-pool genre prefetch) and record the owner-authorized live cold-cache measurement against the offline fixture numbers.
+- Merge: PR #421 was already merged at `d84015077b5c6443c7c3774523eafce904dbf5da` (2026-10-19T14:04:26Z) from exact head `6da5994e24b77f80dfad50c9f97e9f918c2f3ae6`. Container-smoke, Python syntax check, Docker validation, and Docker packaging/test-and-build all passed on that head.
+- Live pass: one gathering pass at `d840150` on a fresh empty data directory, with no metadata cache and no prior listening or recommendation state. Shortlist target 10. Aggregate only; no identities, tags, listening data, or provider URLs were recorded.
+- Results: eligible unowned albums 45 before and 45 after. The replenishment gate did not trigger. Supplementary queries planned 8, issued 8 (7 with yield, 1 HTTP-status failure). Uncached artist-genre lookups 65 (cache rows written). Uncached recording resolutions 100, budget reached, 87 skipped. Estimated time added at the 1.1 s spacing about 190 s.
+- Interpretation: the cold cache no longer blocks tag-lane planning on this profile. The fixture predicted a cold/warm gap, and this run did not show one at the supplementary-query level. Replenishment under a real shortfall is still unmeasured, since eligible supply was 45 against a target of 10.
+- Limits: one pass, one profile. The genre-lookup count reads cache rows, so it can undercount failed lookups. The time figure is an estimate.
+- Next action: measure replenishment under a real shortfall, or decide whether the 100-resolution budget is limiting supply on this profile.
+
 ## 2026-10-19 — Supplementary tag lane: profile genre prefetch (draft PR)
 
 - Task: decide whether tag selection for the supplementary lane should read artist genres after the genre-lookup stage, since the lane ran before that stage wrote the cache (the cause of the cold-cache zero in the PR #411 live run).
