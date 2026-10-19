@@ -1,3 +1,16 @@
+## 2026-10-19 — PR #411 replenishment warm-cache aggregate measurement (no code change)
+
+- Task: repeat the live replenishment measurement on a warm metadata cache, after the cold-cache run recorded above, to test whether the empty tag lane was caused by cold start.
+- Run: one live pass at `963f8f5` (main with PR #411 and PR #414), on the owner's isolated test copy. The fresh data directory held only a copy of the metadata cache, copied with owner approval. No listening data or ownership state was copied. Config loaded through the app's own loader. The data directory was deleted afterward.
+- Aggregate results: shortlist target 10. Eligible unowned albums 62 before and 62 after. Replenishment gate not triggered (62 ≥ 10). Extra queries planned 0, attempted 0. Extra candidates added 0. Supplementary lane planned 8, attempted 8.
+- Tag lane (`candidate_supply.tag_lane`): 100 listens, 89 with an artist MBID, 19 profile artist MBIDs. Top 15 profile artists: 15 cache hits, 92 tags. 23 candidate artists considered: 7 cache hits, 106 tags in the candidate pool.
+- Interpretation: the cold-cache zero in the earlier run was caused by an empty tag lane (no cached genre entries). With a warm cache the lane populates. This run does not exercise replenishment, because the gate stayed closed at 62 eligible albums against a target of 10.
+- Limits: one run, one profile, one warm-cache snapshot. Identities, listening data, tags, and provider URLs were not recorded.
+- No weights, windows, eligibility, ownership checks, or per-run budget changed. Publishing and deployment remain paused.
+- Next action: a run that exercises replenishment needs an eligible-supply shortfall (fewer than 10 eligible unowned albums). Separately, decide whether tag selection should read the genre cache after the genre-lookup stage, which would be a code change.
+
+---
+
 ## 2026-10-19 — PR #411 replenishment live aggregate measurement (no code change)
 
 - Task: measure whether the gated supplementary replenishment in PR #411 (merged at `76e3ac2`) adds eligible unowned candidates on a live run, using aggregate output only.
