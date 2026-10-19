@@ -4,4 +4,4 @@ Source: the `simple-icons` npm package, version 16.35.0, files `icons/applemusic
 
 Licence: the icon drawings are released under CC0 1.0 Universal (`LICENSE.md` in this folder, copied from the package). Simple Icons states that this does not necessarily cover every icon, and that the marks are trademarks of their owners (Apple, Spotify, Bandcamp). The licence file does not grant any trademark right. Use here is only to identify each service's search link, with the service name shown in text beside it.
 
-Not vendored: ListenBrainz and Qobuz. Simple Icons has no mark for either, and no licence was checked for their logos, so those two links keep a text label only.
+Not vendored: ListenBrainz and Qobuz. Simple Icons has no mark for either (checked in `simple-icons` 16.35.0; it has `musicbrainz`, which is a different service and is not used for ListenBrainz). No clear licence was found for a ListenBrainz or Qobuz logo: the search turned up only third-party icon sites, and no official brand kit for Qobuz. Those two links keep a text label only, and no logo is fetched from a third-party host.

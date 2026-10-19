@@ -3254,3 +3254,69 @@ Not run: the helper and the live library, the exact-head manual checklist, and k
 - The manual checklist against the exact PR head SHA is for Hamdi.
 - No screen-reader pass.
 - Not merged, not published, not deployed.
+
+## 38. ListenBrainz and Qobuz platform marks: licence search (Phase 7 follow-up item 16b)
+
+Status: **docs and NOTICE only; no product code changed; branch `ui/platform-marks-listenbrainz-qobuz-qzt6va` from main `99d0df4` (PR #437); not merged, not published, not deployed.** Follows section 37 and `docs/DESIGN_SYSTEM.md` 16.2 row 12.
+
+### 38.1 Question
+
+Section 37 left ListenBrainz and Qobuz as text-only, because Simple Icons has no mark for either and no licence had been checked. The owner's instruction for this item: vendor each mark only if a licence is clear, from an official brand kit or a permissively licensed set; otherwise keep the text label and say so. Never fetch a logo from a third-party host at runtime.
+
+### 38.2 Findings
+
+- **Simple Icons 16.35.0** (`npm pack simple-icons@16.35.0`): no file for Qobuz or ListenBrainz. It has `musicbrainz.svg`, the MusicBrainz logo. MusicBrainz is a sister project of ListenBrainz under MetaBrainz, but it is a different service, so it is not used as a ListenBrainz mark.
+- **ListenBrainz**: a web search found only third-party icon sites (dashboard icon listings that state CC BY 4.0 or CC BY-SA 4.0 for their own copies, traced to other icon collections). No MetaBrainz logo page or brand-usage rule was found. A CC licence on an aggregator's copy does not show that the rights holder of the MetaBrainz mark licensed it, so the licence is **not clear**.
+- **Qobuz**: a web search found no official brand kit, press page or SVG. Only a third-party logo-history article, which describes colours and gives no usage terms. The licence is **not clear**.
+
+### 38.3 Decision and what changed
+
+- ListenBrainz and Qobuz stay **text-only** (the fallback the owner's instruction allows). Each link keeps its visible name, `aria-label`, `title`, search URL, `target` and `rel`.
+- `static/vendor/simple-icons/NOTICE.md`: the "not vendored" paragraph records this search.
+- `docs/DESIGN_SYSTEM.md` 16.2 row 12 and `docs/REDESIGN_ROADMAP.md` (follow-up item 16b): updated.
+- No change to `static/app.js`, `static/app.css` or tests.
+
+### 38.4 Acceptance criteria
+
+1. No third-party host requested when the album modal opens, at 1440, 1200, 900, 620 and 390px.
+2. Every link keeps its visible text name, search URL and accessible name.
+3. Links at least 44px tall.
+4. Unit suite passes on the head.
+5. A licence-clear mark would be vendored with its licence file and NOTICE; none was found, so this criterion is met by the text fallback.
+
+### 38.5 Browser checks
+
+Method: `render-modal.js` (the render script from section 37) against a local uvicorn sandbox on current main `99d0df4` (port 8765, fresh `NAVIDROME_LIBRARIAN_DATA_DIR`, sandbox music and downloads paths, `SLSKD_URL` empty). The album details are mocked with RECONSTRUCTED fixture data. The code is identical to PR #437's head, so this is the "after" for this PR; section 37 holds the earlier before/after.
+
+| Width | Third-party hosts | Failed responses (4xx/5xx) | Console errors | Trap, Escape, focus return | Links (width x height) |
+|---|---|---|---|---|---|
+| 1440 | none | none | 0 | pass | 97x44, 123x44, 93x44, 64x44, 114x44 |
+| 1200 | none | none | 0 | pass | same |
+| 900 | none | none | 0 | pass | same |
+| 620 | none | none | 0 | pass | same |
+| 390 | none | none | 0 | pass | same |
+
+Screenshots: `/mnt/project-files/phase-7-modal-links/screenshots/head-99d0df4-modal-<width>-RECONSTRUCTED.png` and `head-99d0df4-render-modal.json`. Fixture DOM, not the live library. The same run recorded the reduced-motion animation as `none` and rendered the tracklist error message ("Could not load tracklist") in the error state; both are observations, not separate pass marks.
+
+No before/after pair is recorded here because the code did not change; the before state is section 37.5.
+
+### 38.6 Skills and tools
+
+- `impeccable detect` (via `npx impeccable@latest detect static/app.css static/app.js`): ran. Two anti-pattern findings (`side-tab` stripes at `static/app.css` lines 394 and 537) and three advisory notes (the rgba scrim colours at lines 357 and 456, and a 999px radius at line 585). None is on the platform link rules (lines 326 to 329), and none is in the changed files' link code, which this PR does not change.
+- `web-design-guidelines`: not run as a separate pass in this thread. Section 37.6 records that its source returns a paraphrase, not verbatim rules.
+- `design:accessibility-review`: not run.
+
+### 38.7 Checks actually run
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass.
+- `python3 -m unittest discover -s tests`: 974 tests, OK.
+- Browser: five widths, sandbox server, as in 38.5.
+
+### 38.8 Limitations
+
+- ListenBrainz and Qobuz remain text-only. A licensed mark needs an owner decision or a source with clear terms; a CC icon copy from an aggregator was not treated as enough.
+- Browser checks are sandbox-only, on reconstructed fixtures, not the helper and not the live library. The exact-head manual checklist is for Hamdi.
+- No screen-reader pass.
+- Not merged, not published, not deployed.
