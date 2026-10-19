@@ -30,6 +30,8 @@ Source: the owner's private schema-v2 capture (`baseline-20261018-v2`, captured 
 
 Acceptance: more eligible unique unowned albums and a higher fill rate on the frozen pool, with ownership, identity, eligibility, and provider-call counts unchanged or bounded. Report the offline result before any live change.
 
+**P3 status (2026-10-19, draft PR, offline only).** Implemented bounded paging: at most two CF pages (offsets 0 and 100), a cap of 200 uncached MusicBrainz resolutions per run, and a pre-resolution artist cap of 10 that applies only to cache-known recordings, because the CF response carries no artist. Cold-cache cost can rise by about 110 s, above the "few extra seconds" approved in the roadmap; the owner must confirm this budget. The frozen capture holds only page 1, so the effect of page 2 on supply is not yet measured. Acceptance is open until a page-2 tape is authorized and measured.
+
 **P4. Resilience of the genre-lookup path.** Give the artist-genre lookup the same bounded 503 retry used by recording lookups, and do not cache failures. Acceptance: fewer `unclassified` candidates in replay; provider calls stay within the existing budget; no change to ownership or eligibility.
 
 **P5. Reactivate the supplementary lane only with a measured yield.** The profile-derived tag lane (PR #312) produced no candidates in the capture because its two searches returned 503. Add a yield metric per query before tuning it. If the lane still yields nothing under normal provider conditions, consider Phase 4 item 2 (similar-artist seeds) as a comparison, after checking the provider's current documentation.

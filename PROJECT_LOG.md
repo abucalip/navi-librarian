@@ -1,3 +1,17 @@
+## 2026-10-19 — P3 bounded CF paging (offline; no live capture)
+
+- Task: roadmap P3. The CF recording endpoint accepts `offset`; the gathering path requested only `count=100`.
+- Behavior: up to `CF_MAX_PAGES = 2` ListenBrainz pages (offsets 0 and 100), deduplicated by MBID. Paging stops on a short page. A failed first page keeps the legacy error contract. A failed second page stops paging, keeps page 1, and reports only the bounded error class.
+- Budget: uncached MusicBrainz resolutions are capped at `CF_MAX_UNCACHED_RESOLUTIONS = 200` per run. Cache-known recordings cost no call. Cold-cache cost rises by up to about 110 s (one extra 100-recording page at the 1.1 s spacing). This exceeds the "few extra seconds" approved in the roadmap and needs owner confirmation.
+- Artist cap: `CF_ARTIST_RESOLUTION_CAP = 10` skips cache-known recordings of an artist already resolved 10 times, before any provider call. Limit: the CF endpoint returns no artist, so uncached recordings must still be resolved to learn their artist. The cap cannot skip them.
+- Diagnostics: `candidate_supply.cf_paging` reports pages requested and fetched, page-failure class, artist-cap skips, uncached resolution calls and budget, and budget skips. All are counts or bounded labels.
+- Tests: `tests/test_discovery_candidate_gathering.py`, 7 new synthetic cases: offset paging and two-page budget; short page stops; cross-page MBID dedupe; second-page failure; first-page failure keeps legacy contract; artist cap before any call; uncached budget bounds MB calls.
+- Offline replay on the frozen capture still reproduces the P1 aggregates (19 albums, 12 owned, 5 selected, 2 artist-cap rejections, 0 identity duplicates). The capture holds only page 1 and its MusicBrainz tape, so the after-supply effect of page 2 cannot be measured offline. Do not claim a supply gain from this PR.
+- Full unit suite: 809 tests OK. Syntax compile, `scripts/check_server_size.py`, and `scripts/check_app_legacy_imports.py` pass. CI and merge state: pending; draft PR, no merge.
+- Next: owner decision on the cold-cache budget. A supply measurement needs a page-2 tape, which requires an owner-authorized capture.
+
+---
+
 ## 2026-10-18 — P1 candidate-supply diagnostics (aggregate only, no behavior change)
 
 - Task: roadmap P1 from the 2026-10-18 revision (PR #380, merged as `63e5e2a`). Added aggregate-only supply diagnostics at the CF gathering boundary: CF recording outcomes (returned, resolved, failed by bounded error class), distinct recording artists and top-two share, resolved albums per artist (top-N shares), supplementary query yield (attempted, zero-yield, failed, not attempted), and stage counts for owned, unowned unique before/after dedupe, and before/after artist cap.
