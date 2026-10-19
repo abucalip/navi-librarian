@@ -1,3 +1,11 @@
+## 2026-10-19 — Flag timing and variance check (test-only, docs)
+
+- Task: record the Mac test-and-report runs on main `76ec40e` in the roadmap; no code or defaults changed.
+- Evidence (aggregate only, fresh data directory per run): flags off 359.1 s and 237.0 s; batch only 211.5 s; title filter only 197.0 s; breaker only 206.1 s; all three on 46.3 s, 55.1 s, 51.4 s (count=10) and 148.7 s (count=20). Full table in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Findings: breaker never tripped, so its effect is unmeasured; title filter had 0 drops; combined speed-up is unexplained; count=10 all-flags runs underfilled (6 or 10) with 7 to 12 eligible albums, count=20 filled to 20.
+- Limits: single samples per variant; some eligible counts missing; ListenBrainz artist-tag endpoint unverified.
+- Open: no default changes; next steps are a repeated all-flags run with per-stage breakdown, a breaker-trip run, and an endpoint shape check.
+
 ## 2026-10-19 — Batch lookup: title filter, flagged resolution, timing, genre-stage breaker (docs only)
 
 - Task: record the batch-lookup work (PRs #429, #430, #431) and the timing and throttling results in the status docs and roadmap, correcting anything they contradicted.
