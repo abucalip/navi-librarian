@@ -1581,3 +1581,13 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Interpretation limits: one before-and-after pair. Shows CF output moves after a listening change; does not show quality improvement and does not settle whether CF reflects all-time history. P2 decision unchanged (unconfirmed).
 - Publishing and deployment remain paused. No ranking, weight, window, or eligibility change.
 - Next action: decide whether CF freshness needs a second bracketing pair before any supply change, or whether P1–P3 are sufficient to re-evaluate the supply gap.
+
+## PR #405 merge record and candidate-supply eligibility counts — 2026-10-19
+
+- PR #405 (false capture-failed warning for overlapping runs) merged to `main` as `bb25be0`. Recorded here as requested.
+- Task: aggregate, identity-free eligible/unique/unowned counts at the release-type, ownership, and duplicate boundaries, with per-source counts, emitted by the offline replay. Rationale: the roadmap's candidate-supply next action asks for these counts before any replenishment change.
+- Changes: `discovery_candidate_supply.py` adds `cf_release_group_rejection` (shared predicate), `summarize_cf_release_eligibility`, and `unowned_unique_by_source` plus `unowned_unique_by_source_count`. `discovery_candidate_gathering.py` calls the shared predicate in place of the inline checks, with the same ordering and outcomes. Tests in `tests/test_discovery_candidate_supply.py` (`EligibilityBoundaryTests`).
+- Verification: 4 new tests failed before the change. Full unit suite: 907 passed. Compile check passed. Offline replay of the frozen capture, staged in a private directory, made zero provider calls. Its decision counts and stage values equal those from `main`. Only the two new keys differ. `reproduced: false` appears on untouched `main` too, so it is not caused by this change and is unresolved.
+- Limits: release counts cover every CF payload on the tape, including recordings the artist cap or budget would skip, and count release entries rather than albums. The capture has no supplementary-source candidates. No replenishment was implemented.
+- Publishing and deployment remain paused. No identities, listening data, or provider URLs were added to GitHub.
+- Next action: decide, from these counts, whether the page-2 and supplementary supply gap needs a bounded replenishment change.
