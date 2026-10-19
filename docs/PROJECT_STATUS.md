@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-19 (supplementary tag-lane profile genre prefetch: draft PR, CI pending)
+Last reviewed: 2026-10-19 (PR #419 supplementary profile genre prefetch merged)
 
 ## Current focus
 
-**Supplementary tag lane: profile genre prefetch — draft PR on `feat/profile-genre-prefetch`, CI pending, not merged (2026-10-19).** Prefetches genres for the top 15 profile artists before the tag lane, so a cold cache plans profile queries (offline fixture: 0 to 6; warm cache: 8). No extra provider calls per run. Exploration queries still need warm candidate-artist genres. Live run needs owner go-ahead.
+**Supplementary tag lane: profile genre prefetch — PR #419 merged as `51f6e9877575a11dd5e0314cd23b2b197baca491` (2026-10-19), from exact head `9f045e33e85334247b55fc230e4152a3d3b3b620`; all four workflows passed on that head.** Prefetches genres for the top 15 profile artists before the tag lane, so a cold cache plans profile queries (offline fixture: 0 to 6; warm cache: 8). No extra provider calls per run. Exploration queries still need warm candidate-artist genres. Live run needs owner go-ahead.
 
 **P1 candidate-supply diagnostics — implemented on a feature branch (2026-10-18), CI pending, not merged.** Adds aggregate-only CF recording, album, supplementary-yield, and stage diagnostics. No ranking, selection, ownership, eligibility, or provider-call change. Reproduces from the owner's frozen capture: 92/100 CF recordings from two artists, 19 albums from 8 artists, 12 owned, 5 selected. The two `duplicate_candidate` decisions are artist-cap rejections relabelled by the allocator, not duplicate supply identities. The capture's replay still reports `reproduced: false` on `main` too (stored expected output predates allocator fields). **Next action:** after the draft PR's required checks pass and the owner reviews, implement P3 bounded CF paging and measure eligible unique unowned supply offline.
 
