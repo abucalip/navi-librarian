@@ -250,3 +250,66 @@ Recorded by the owner on 2026-10-18 during Redesign Phase 0 (PR #352). Evidence 
 | D4 | Right rail for live acquisitions on 1440px and wider | **Not included**; revisit after Phase 5 |
 | D5 | Global search scope | **Library-wide.** This replaces the earlier page-scoped default. It needs a backend search endpoint and result schema, so it is a contract proposal under `docs/REDESIGN_ROADMAP.md` section 6; no proposal is written yet and no backend work is authorized. Consequence, not stated by the owner: the Phase 2 top-bar search can only be library-wide once a contract is approved; until then the page-scoped client filter is the only search that needs no backend change |
 | D6 | Replace the cassette mark (`assets/cassette.png`) | **Keep until a replacement is supplied** |
+
+## 16. Drift record at the end of Phase 7 (2026-10-19)
+
+Recorded by Redesign Phase 7 item 3 (`ui/phase-7-document-ryetdc`) after the Phase 7 audit (PR #394, merge `7b26d10`). Method: read the built `static/app.css`, `app/templates/index.html` and `static/icons.svg` against sections 4 to 12; ran the Impeccable detector once on `static/app.css`; measured transfer and layout shift in Chromium. The code was not changed. Each row gets one status: **match** (built as specified), **accepted** (built differs and the difference is kept, with the reason), **open** (needs a code or doc change in a later PR, or an owner decision).
+
+### 16.1 What matches
+
+- Every token value in section 4.1 matches `:root` in `static/app.css` (all 18 colour tokens, the shadow, space, radius, motion and type-scale tokens).
+- Google Fonts is removed. The three families are self-hosted under `static/fonts/` with OFL licence files and `font-display: swap`. No request left the origin during the dashboard or Discover loads (section 16.4).
+- The icon sprite holds the 14 names in section 10 (`layout-dashboard`, `compass`, `calendar-plus`, `user-round`, `library`, `mic-vocal`, `download`, `settings`, `log-out`, `search`, `chevron-left`, `chevron-right`, `x`, `trash-2`).
+- Focus rings are 2px `accent` at 2px offset on buttons, inputs, selects and rail items (section 9.1).
+- Reduced motion ends the modal, header menu, Get arc and tick, skeletons and indicator at their end state (section 11). The Notyf toast animation is shortened, not removed, as section 11 allows.
+
+### 16.2 Drift and decisions
+
+| # | Area | Section says | Built | Status | Next step |
+|---|---|---|---|---|---|
+| 1 | Icon rail width, 621–900px | 64px (section 6) | 72px (`--rail-w` in the 621–900px media query) | **open**, owner decision | 72px fits a 44px target with padding; recommend updating section 6 to 72px. Code unchanged. |
+| 2 | Bottom tab bar under 620px | Five most used destinations, the rest in a sheet (section 6) | Seven destinations in a horizontal scroll; four visible at 390px (PR #394, section 24.5) | **open**, Hamdi's call | A "More" sheet or shorter labels would change the shell. Not redesigned in Phase 7. |
+| 3 | Rail label for the Discover page | "Discover music" (sections 6 and 8) | "Recommendations" in the rail; the page heading is "Discover music" | **open**, terminology | AGENTS.md says keep terms users rely on. Recommend keeping "Recommendations" and changing section 6 and 8. |
+| 4 | Type ramp | Ramp steps 12px to 30px; no text below 12px; display 30px as the maximum page head (sections 5 and 13) | About 24 literal sizes off the ramp (9px to 16px). The header title is 29px; the desktop `.panel h2` is 34px (30px under 620px). Two labels at 9px and 11px sit below the floor: the category label on cards and the 11px Get labels and rail counts | **open** | A typography pass (`/impeccable typeset`) in a follow-up PR, mapping each literal to a step. |
+| 5 | Gradients | No gradients (sections 4.2 and 13) | Two `linear-gradient(135deg …)` diagonal stripes on the placeholder artwork surfaces (`.card-art` and the ranked-row artwork) | **open** | Replace with a flat `surface-raised` fill in a follow-up PR. |
+| 6 | Shadows | One shadow, `--shadow-menu` (sections 4.2 and 7) | Also a Get control shadow over artwork (`0 3px 12px rgba(0,0,0,.55)`) and the Notyf toast (`0 10px 30px rgba(0,0,0,.5)`). The inset bars on active navigation items are indicators, not shadows | **accepted** for the toast (vendored component); **open** for the Get shadow | Remove the Get shadow, or record it as an overlay rule, in a follow-up. |
+| 7 | One-off colours | Add no value that is not a token (AGENTS.md design rules) | `#353124` (category label fill), `#2a2c29` (card action button fill), `rgba(233,198,74,.12)` (stripe in row 5), `rgba(0,0,0,.5)` and `rgba(0,0,0,.55)` (shadows in row 6). The modal scrim `rgb(20 18 17 / .8)` is `ink` at 80%, as specified | **open** | Map to `surface-raised`, `surface-hover` and `accent-dim` in the typography and gradient PRs. |
+| 8 | Radii | 2px, 4px, 6px scale; pill and circle for Get (sections 7 and 9.2) | A 3px literal on rail items and two labels (off-scale). The 999px pill on ranked-row Get and the 50% circles on artwork Get match section 9.2 | 999px and 50%: **match**. 3px: **open** | Move the 3px literals to `--radius-chip` (2px). |
+| 9 | Side stripes | 3px yellow left bar on ranked rows, hover only (section 9.4) | Matches on ranked rows. A 3px bottom stripe on artwork hover (`.card-art::after`) is not in section 9 | Ranked-row bar: **match**. Artwork hover stripe: **accepted** as a hover cue, reviewed at the owner's pass. | Review with the owner. |
+| 10 | Primary button | Yellow fill, `on-accent` text, 40px (section 9.1) | No primary class. The base button is a `surface` control with an `edge-strong` border. The accent fill appears only on the Get requested state and on selection | **open**, decision | Either add a primary variant for one action per region, or record that the system has no primary button. |
+| 11 | Motion literals | Motion tokens for all durations (section 11) | Get arc 1.15s and skeleton pulse 1.4s are literal (decided in PR #392; section 23.5) | **accepted** | Add two tokens in a later pass if the owner wants them named. |
+| 12 | Modal | `dialog`, focus trap, Escape, focus return, 6px radius, 80% solid scrim (section 9.8) | Matches on the reconstructed pages (section 22 and 24). Platform logos load from third-party hosts (section 24.5, B2) | Structure and scrim: **match**. Logos: **open** (third-party runtime requests). | Vendor the logos or replace them with text labels; a brand and licence decision. |
+| 13 | Contrast on the rendered build | Measured on the rendered build (section 4.1, roadmap section 7) | Re-measured on Phase 1 empty states only. Red text, caution and acquisition states not re-measured | **open** | Re-measure the status pairs with the next visual PR. |
+| 14 | Content gutters | 32px gutters, 16px under 620px (section 6) | 34px sides above 620px (`main` margin); 14px under 620px | **open** | Set section 6 to the built values or move the CSS to 32px; the value is small, so the doc change is the cheaper fix. |
+
+### 16.3 Detector result (advisory)
+
+`impeccable detect --json static/app.css` returned 34 findings: 24 `design-system-font-size`, 4 `design-system-radius`, 4 `design-system-color` and 2 `side-tab`. The two `side-tab` findings are the stripes in rows 9 and 5 above. The detector output is advisory, as the Impeccable direction says; each item is classed in table 16.2 and the remaining findings are the font sizes in row 4.
+
+### 16.4 Performance against the Phase 0 baseline
+
+Same method as `docs/UI_BACKLOG_EXECUTION.md` section 9.5 (Chromium through Playwright, a new context per run, cache disabled, 150 ms latency, 1.6 Mbit/s down, 750 Kbit/s up, 4x CPU, 1440x900, three runs). Built at `origin/main` `8849e7e`, live empty sandbox with no reconstructed data. Figures are byte totals from the network log with the cassette counted once.
+
+| Metric | Phase 0 dashboard | Phase 7 dashboard | Phase 0 Discover | Phase 7 Discover |
+|---|---|---|---|---|
+| Transfer, same origin (bytes) | 206,610 | 339,582 | 206,845 | 365,229 |
+| Requests to same origin | 8 | 16 | 9 | 18 |
+| Requests to third-party hosts | 1 (Google Fonts, blocked) | 0 | 1 (blocked) | 0 |
+| Font bytes | not loaded (blocked) | 108,148 (5 WOFF2) | not loaded | 133,560 (6 WOFF2) |
+| Stylesheet bytes | 46,103 | 57,534 (app.css 50,390 and fonts.css 1,741) | | |
+| Script bytes | 110,661 | 118,004 (app.js 110,107) | | |
+| First contentful paint (ms, run 1 / 2 / 3) | 1108 / 1172 / 1160 | 1352 / 1056 / 1060 | 1192 / 1204 / 1160 | 1044 / 1080 / 1060 |
+| Cumulative layout shift | 0 / 0 / 0 | 0.000086 in all runs | 0 / 0 / 0 | 0.000086 in all runs |
+| Load event end (ms, run 1 / 2 / 3) | 1344 / 1417 / 1393 | 2219 / 1957 / 1959 | 1417 / 1425 / 1401 | 1939 / 1998 / 1952 |
+
+Reading the table:
+- **Transfer went up by about 133 KB on the dashboard and about 158 KB on Discover.** Nearly all of it is the self-hosted font files (108 to 134 KB), which the Phase 0 baseline could not include: its Google Fonts request was blocked, so no font file was ever downloaded. The section 5 budget is 150 KB of first-load font weight. Discover's 133,560 bytes are under it.
+- The icon sprite adds 4,611 bytes, and `fonts.css` adds 1,741.
+- **Layout shift is unchanged in effect.** CLS is about 0.00009, down from zero, which is below any perceptible threshold. The shift is measured with fallback-to-web-font swap in place.
+- **FCP and load time are not regressed in this run, but this does not show the real-network cost.** The fonts come from the same local server and the throttle applies only to that link, so the font bytes are slower on a real network than they look here. Phase 0 notes that the blocked Google request made its own timings optimistic, so the two sets of numbers are not like for like.
+- The Phase 7 run shows one `/assets/cassette.png` network entry as an image and a second as an "Other" entry. The duplicate was not investigated; the totals here count it once.
+- Not measured: the LCP element (Phase 0 recorded `#dashboardHeading`; the observer here did not record the element), and the populated states (artwork weight).
+
+### 16.5 Open decisions from this record
+
+Owner decisions needed, in the order they block later work: rows 1, 3 and 14 (small value changes to section 6, and the rail name), row 2 (the bottom bar on phones), and row 10 (whether the system has a primary button). All other open rows are code or typography work for a follow-up PR, not new decisions.
