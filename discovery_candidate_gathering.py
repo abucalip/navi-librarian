@@ -308,6 +308,7 @@ def gather_recommendation_candidates(
     recent_artists = Counter()
     recent_artist_play_counts = Counter()
     recent_artist_mbid_counts = Counter()
+    listens_with_artist_mbid = 0
     listen_weights = decayed_listen_weights(listens, half_life_days=14.0)
     for listen, weight in zip(listens, listen_weights):
         metadata = listen.get("track_metadata", {})
@@ -323,6 +324,7 @@ def gather_recommendation_candidates(
             artist_mbid = artist_mbids[0]
         if artist_mbid:
             recent_artist_mbid_counts[artist_mbid] += weight
+            listens_with_artist_mbid += 1
 
     try:
         recommendations, cf_paging = _fetch_cf_recommendations(providers)
@@ -503,7 +505,10 @@ def gather_recommendation_candidates(
     )
 
     profile_tags_by_artist = {}
-    for artist_id, _weight in recent_artist_mbid_counts.most_common(15):
+    profile_top_artists = recent_artist_mbid_counts.most_common(15)
+    profile_cache_hits = 0
+    profile_tags_total = 0
+    for artist_id, _weight in profile_top_artists:
         try:
             tags = providers.metadata_cache_get(
                 f"mb:artist-genres:{artist_id}",
@@ -511,12 +516,16 @@ def gather_recommendation_candidates(
             )
             if isinstance(tags, (list, tuple)):
                 profile_tags_by_artist[artist_id] = tags
+                profile_cache_hits += 1
+                profile_tags_total += len(tags)
         except Exception:
             # Supplementary discovery must not fail because one cache read failed.
             continue
 
     candidate_pool_tags = []
     seen_candidate_artist_ids = set()
+    candidate_cache_hits = 0
+    candidate_tags_total = 0
     for candidate in sorted(
         albums.values(), key=lambda album: album["score"], reverse=True
     ):
@@ -533,6 +542,8 @@ def gather_recommendation_candidates(
             continue
         if isinstance(tags, (list, tuple)):
             candidate_pool_tags.extend(tags)
+            candidate_cache_hits += 1
+            candidate_tags_total += len(tags)
         if len(seen_candidate_artist_ids) >= 60:
             break
 
@@ -759,6 +770,17 @@ def gather_recommendation_candidates(
         "extra_queries_attempted": replenish_attempted,
         "extra_candidates_added": regional_state["added"] - replenish_added_before,
         "extra_query_cap": REPLENISH_EXTRA_QUERIES,
+    }
+    # Aggregate-only inputs to tag selection. Zero counts localize an empty lane to
+    # missing MBIDs, a cold genre cache, or an empty candidate pool. No identities.
+    candidate_supply["tag_lanes"] = {
+        "listens_with_artist_mbid": listens_with_artist_mbid,
+        "profile_top_artists": len(profile_top_artists),
+        "profile_artists_with_cached_tags": profile_cache_hits,
+        "profile_cached_tags_total": profile_tags_total,
+        "candidate_artists_checked": len(seen_candidate_artist_ids),
+        "candidate_artists_with_cached_tags": candidate_cache_hits,
+        "candidate_cached_tags_total": candidate_tags_total,
     }
     regional_candidates_added = regional_state["added"]
     regional_results_seen = regional_state["seen"]

@@ -120,6 +120,26 @@ class ReplenishmentTests(unittest.TestCase):
     def _replenishment(self, result):
         return result["candidate_supply"]["replenishment"]
 
+    def test_tag_lane_counters_are_aggregate_integers_without_identities(self):
+        # No listens carry artist MBIDs in this fixture, so the profile lane is empty
+        # by construction. The counters must report that as integers, not identities.
+        artists = [("Alpha", "A1"), ("Beta", "B1")]
+        responses = {q: [] for q, _f, _s in BASE_QUERIES + EXTRA_QUERIES}
+
+        result, _mb_client = self._run(cf_artists=artists, responses=responses, shortlist_target=10)
+
+        lanes = result["candidate_supply"]["tag_lanes"]
+        self.assertEqual(set(lanes), {
+            "listens_with_artist_mbid", "profile_top_artists",
+            "profile_artists_with_cached_tags", "profile_cached_tags_total",
+            "candidate_artists_checked", "candidate_artists_with_cached_tags",
+            "candidate_cached_tags_total",
+        })
+        self.assertTrue(all(type(value) is int for value in lanes.values()))
+        self.assertEqual(lanes["listens_with_artist_mbid"], 0)
+        self.assertEqual(lanes["profile_top_artists"], 0)
+        self.assertGreaterEqual(lanes["candidate_artists_checked"], 1)
+
     def test_meeting_the_target_issues_no_extra_queries(self):
         # Three clear albums meet a target of three: the gate stays closed.
         artists = [("Alpha", "A1"), ("Beta", "B1"), ("Gamma", "G1")]
