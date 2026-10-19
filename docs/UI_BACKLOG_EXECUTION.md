@@ -2230,7 +2230,7 @@ Console: the only errors are `net::ERR_FAILED` from the harness aborting third-p
 
 ### 24.5 Limits, deviations and open items
 
-- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness.
+- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness. **Resolved in section 37** (three marks vendored, two text-only).
 - **Bottom tab bar under 620px (Hamdi's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
 - **Screen reader pass: not done.** No screen reader was available. The role change in 24.2 is based on the ARIA rule about interactive descendants, not on a spoken test.
 - **Album articles keep an `aria-label`.** The label ("View details for …") now names the article, so a screen reader may announce the Get or Dismiss buttons inside it as part of the article. Verifying that needs the screen-reader pass above.
@@ -3174,3 +3174,83 @@ Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acq
 - No real library. No Get, acquisition or album content was exercised. Those states are not affected by this change.
 - No screen-reader pass and no iOS or Android device pass.
 - Not merged, published, or deployed.
+
+## 37. Album modal platform links without third-party requests (Phase 7 follow-up item 16)
+
+Status: **implemented in PR #437 on branch `ui/modal-platform-links-wjf689` from main `a1b086b`; automated checks run; not merged, not published, not deployed.** Closes B2 (section 24.5) and `docs/DESIGN_SYSTEM.md` 16.2 row 12. Also records PR #435 (phone bottom bar, section 36) as merged, squash `a1b086b`; its thread did not record it.
+
+Note on the source: the 24.5 limits table in this file, not `docs/DESIGN_SYSTEM.md`, holds the B2 entry this PR closes. The design system's row 12 points to it.
+
+### 37.1 Question
+
+The album modal's five platform links each carried a logo image on a third-party host (`raw.githubusercontent.com`, `cdn.simpleicons.org`, `community.qobuz.com`). `AGENTS.md` forbids runtime third-party assets. Open decision: vendor the logos or use text labels.
+
+### 37.2 Decision and what was built
+
+- **Owner decision (Hamdi, card tap on PR #437, 2026-10-19): vendor logos.** The first version of this PR used text labels as the default; that was replaced on the owner's choice.
+- **Vendored:** Apple Music, Spotify and Bandcamp marks from `simple-icons` 16.35.0 (`static/vendor/simple-icons/applemusic.svg`, `spotify.svg`, `bandcamp.svg`). Each keeps its brand colour as a `fill` on the root `<svg>`. The package's CC0 licence is copied to `static/vendor/simple-icons/LICENSE.md`, and `NOTICE.md` records the source and states that the marks remain their owners' trademarks.
+- **Text only:** ListenBrainz and Qobuz. Simple Icons has no mark for either, and no licence was checked for the logo files the old code used, so those two keep a text label. This is the fallback the owner's instruction allows.
+- Each link still shows its platform name as visible text beside the mark (WCAG label-in-name), and keeps its `aria-label`, `title`, search URL, `target` and `rel`. Marks are decorative (`alt=""`).
+
+### 37.3 What changed
+
+- `static/app.js` `setAlbumPlatformLinks`: a link gets an `img` from `/static/vendor/simple-icons/` only when it has a vendored mark; the visible name is always appended as text. The `onerror` fallback is removed.
+- `static/app.css` `.album-platform-links`: the row wraps (`flex-flow: row wrap`). Each link is a chip with `min-width: 44px`, `height: 44px`, `gap: var(--space-2)`, `padding: 0 var(--space-3)`, the 600 `--text-xs` (12px) body face and `white-space: nowrap`. The mark is 18px.
+- `tests/test_album_modal_ui_contract.py` (narrow update, reason stated): the touch-target assertion for the platform links matched `width: 44px`; the chips now have `min-width: 44px`, so the regex matches that and the 44px height is still asserted. One new test, `test_platform_links_make_no_third_party_requests`, asserts no third-party host appears in the script, that every `/static/vendor/` path it names exists on disk, that the text label is appended on every link, and that Qobuz and ListenBrainz are text-only.
+
+No backend, API, auth, Get, Dismiss or settings behaviour changed.
+
+### 37.4 Acceptance criteria
+
+1. The modal opens with no request leaving the origin, at 1440, 1200, 900, 620 and 390px.
+2. Search URLs, `target`, `rel`, `title` and `aria-label` unchanged.
+3. Links at least 44px tall.
+4. Focus trap, Escape and focus return unchanged.
+5. No console errors on open.
+6. Unit suite passes.
+
+### 37.5 Browser checks
+
+Method: `render-modal.js` against a local uvicorn sandbox on this branch (port 8765, fresh data dir set with `NAVIDROME_LIBRARIAN_DATA_DIR`, sandbox downloads path, slskd unset). Album details are mocked with reconstructed fixture data. Before (main `a1b086b`) was rendered on a worktree on port 8766.
+
+Vendored-mark head (`f27ca1e` and this doc commit):
+
+| Width | Third-party hosts | Failed responses (4xx/5xx) | Console errors | Trap, Escape, focus return | Links (width x height) |
+|---|---|---|---|---|---|
+| 1440 | none | none | 0 | pass | 97x44, 123x44, 93x44, 64x44, 114x44 |
+| 1200 | none | none | 0 | pass | same |
+| 900 | none | none | 0 | pass | same |
+| 620 | none | none | 0 | pass | same |
+| 390 | none | none | 0 | pass | same |
+
+Before (main `a1b086b`): three third-party hosts and four console errors per open, at every width. The text-label head (`5b987ac`) had the same zero third-party and zero console error result.
+
+- Document scroll width equals the viewport at every width. Mouse open, reduced motion and the error state behave as on main.
+- Screenshots: `/mnt/project-files/phase-7-modal-links/screenshots/` (`before-modal-<width>-RECONSTRUCTED.png`, `after3-modal-<width>-RECONSTRUCTED.png`, `after3-render-modal.json`). Fixture DOM, not the live library.
+- Marks load from `/static/vendor/simple-icons/` with no 4xx or 5xx responses.
+
+Not run: the helper and the live library, the exact-head manual checklist, and keyboard activation of a link (it opens an external site).
+
+### 37.6 Skills and tools
+
+- `impeccable detect` on the changed CSS and JS at the text-label head: 5 advisory findings, none on the changed lines. Not re-run for the vendored-mark head.
+- `web-design-guidelines`: ran against a paraphrase of its source, not verbatim rules. Accessible names, focus-visible ring, 44px targets and no new motion were checked against that summary.
+- Impeccable guidance applied: tokens only; 12px text floor; decorative marks have empty alt; visible text kept beside each mark.
+- Rejected: none material.
+
+### 37.7 Checks actually run (vendored-mark head)
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `python3 -m unittest tests.test_album_modal_ui_contract`: 15 tests, OK.
+- `python3 -m unittest discover -s tests`: 974 tests, OK.
+- Browser: five widths, sandbox server, as in 37.5.
+
+### 37.8 Limitations
+
+- Browser checks are sandbox-only (see 37.5), not the helper.
+- ListenBrainz and Qobuz have no vendored mark; text-only links.
+- Trademarks: the marks stay their owners'. The CC0 licence covers the drawings in the package, not the marks.
+- The manual checklist against the exact PR head SHA is for Hamdi.
+- No screen-reader pass.
+- Not merged, not published, not deployed.

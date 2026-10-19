@@ -728,34 +728,34 @@ function applyAlbumYear(card, value) {
 function setAlbumPlatformLinks(artist, album) {
   const query = [artist, album].filter(Boolean).join(' ').trim();
   const encoded = encodeURIComponent(query);
+  // Every image is a local file under /static/vendor (AGENTS.md: no runtime third-party assets).
+  // The visible text is kept beside each mark, so the name never depends on the picture. Only
+  // the services with a vendored mark have an icon (see static/vendor/simple-icons/NOTICE.md).
   const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, 'https://raw.githubusercontent.com/metabrainz/metabrainz-logos/master/logos/ListenBrainz/SVG/ListenBrainz_logo_icon.svg'],
-    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, 'https://cdn.simpleicons.org/applemusic/FA243C'],
-    ['Spotify', 'https://open.spotify.com/search/' + encoded, 'https://cdn.simpleicons.org/spotify/1DB954'],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, 'https://community.qobuz.com/s/Qobuz_logo_black-l2kk.jpg'],
-    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, 'https://cdn.simpleicons.org/bandcamp/1DA0C3']
+    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, null],
+    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, '/static/vendor/simple-icons/applemusic.svg'],
+    ['Spotify', 'https://open.spotify.com/search/' + encoded, '/static/vendor/simple-icons/spotify.svg'],
+    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, null],
+    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, '/static/vendor/simple-icons/bandcamp.svg']
   ];
   const nav = $('albumModalPlatformLinks');
   nav.replaceChildren();
-  for (const [label, href, iconUrl] of links) {
+  for (const [label, href, iconSrc] of links) {
     const link = document.createElement('a');
     link.href = href;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
     link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
-    const icon = document.createElement('img');
-    icon.src = iconUrl;
-    icon.alt = '';
-    icon.loading = 'lazy';
-    icon.width = 18;
-    icon.height = 18;
-    icon.onerror = () => {
-      icon.remove();
-      link.textContent = label.slice(0, 2);
-      link.classList.add('platform-icon-fallback');
-    };
-    link.append(icon);
+    if (iconSrc) {
+      const icon = document.createElement('img');
+      icon.src = iconSrc;
+      icon.alt = '';
+      icon.width = 18;
+      icon.height = 18;
+      link.append(icon);
+    }
+    link.append(label);
     nav.append(link);
   }
 }

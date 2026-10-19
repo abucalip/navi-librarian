@@ -131,6 +131,8 @@ Follow-up item 14 (manual UI checklist against the current main head, `docs/LOCA
 
 Follow-up item 15 (phone bottom bar overflow, `docs/UI_BACKLOG_EXECUTION.md` section 36): under 620px the bar scrolled sideways with seven destinations (717px against 390px). Decided by Hamdi (2026-10-19): four destinations in the bar with Recommendations, Add to your collection and Artist Deep Dives behind a labelled More disclosure, because five destinations break labels inside words at 390px (`docs/DESIGN_SYSTEM.md` 16.5 row 2). **Implemented**: branch `ui/phase-7-bottom-nav-q4094i`, PR not merged. **Automated-tested**: 973 tests OK, `node --check` and `compileall` OK. **Browser-tested**: sandbox server only, five widths, keyboard and pointer, console and network; no library content, no device test. **Merged, deployed**: no.
 
+Follow-up item 16 (album modal platform links, `docs/UI_BACKLOG_EXECUTION.md` section 37; `docs/DESIGN_SYSTEM.md` section 16.2 row 12): the five platform links in the album modal no longer load logos from third-party hosts. Apple Music, Spotify and Bandcamp use marks vendored under `static/vendor/simple-icons/` (owner's choice on PR #437); ListenBrainz and Qobuz are text-only. Every link keeps its text name. PR #437 (branch `ui/modal-platform-links-wjf689`, the designated name, from main `a1b086b`); not merged, not published, not deployed. Phase 7 item 15 (phone bottom bar, PR #435) merged as squash `a1b086b`; it was recorded here by this item, not by its own thread.
+
 ## 5. Per-PR checklist
 
 1. State the problem, the design-system sections applied, and acceptance criteria.
