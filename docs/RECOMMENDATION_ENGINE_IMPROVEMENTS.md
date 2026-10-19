@@ -585,3 +585,19 @@ Limits: one 100-recording sample; timings from one device session; the batch pat
 **Decision still open.** These runs do not justify turning any flag on by default. Next useful steps: a repeated all-flags run with a per-stage breakdown, a run that trips the breaker, and a test-only shape check of the ListenBrainz artist-tag endpoint against a few artists.
 
 **Candidate next steps (listed, not started).** Repeat the timing pair for a second sample. Honor `Retry-After` in the retry helper. Negative-cache exhausted artist lookups.
+
+## Supplementary tag lane early stop and genre-check findings (2026-10-19)
+
+Owner's test copy, aggregate results only. Single samples and one profile unless stated. Test runs were test-only; no Mac-side commits, branches or PRs.
+
+**Code change (this PR, default off).** The supplementary MusicBrainz tag lane (`_run_tag_queries` in `discovery_candidate_gathering.py`) stopped every remaining query at the first query that exhausted its bounded retries. That was intentional rate-limit behavior, but it cut supply: 4 to 7 of 8 queries attempted and 15 to 29 supplementary candidates, against 38 to 39 when all 8 ran. `TAG_LANE_EARLY_STOP_ENABLED` (default `False`) changes this: with the flag on, the lane continues past an exhausted query and stops only after `TAG_LANE_EXHAUSTION_THRESHOLD` (2) consecutive exhausted queries. A successful response resets the run. Flag off is unchanged. Regression tests: `tests/test_discovery_tag_lane_early_stop.py` (7 synthetic tests).
+
+**Artist-tag endpoint check (Test 1, read-only).** `GET /1/metadata/artist/` with `inc=tag` for 8 cached artists: 8 of 8 returned at least one tag (7 to 38 tags each, median about 18). Of 151 distinct tag names, 109 exactly match our MusicBrainz genre names for the same artists (about 0.72, exact match after case folding, so near-synonyms are not counted). Response shape: a top-level list; each item has area, artist_mbid, begin_year, end_year (missing on some), mbid, name, rels, tag, type; the tag field is a dict with one `artist` bucket holding the tag list. Not tested: the batch form of the endpoint. The sample was the first qualifying cache rows, not random.
+
+**Breaker trip test (Test 2).** Flags on (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, `GENRE_CIRCUIT_BREAKER_ENABLED`), artist-genre requests forced to 429. The breaker opened after 9 genre attempts (3 artists, 3 tries each), made 0 genre requests after opening, and skipped 20 artists. The run completed with 6 of 10 recommendations; a rerun matched. About 181 s. **Gap:** the profile prefetch stage made 48 artist-genre requests, all 429. The breaker does not gate that stage, so its retries and sleeps are a large share of the runtime. This is an open follow-up and is not changed here.
+
+**All-flags repeats (Test 3).** Three runs with flags on took about 62 to 133 s; one flags-off run took 299 s. The batch metadata stage was 0.7 s in one comparison against 179.6 s, as summarized by the test thread. A/B pair, 10 recommendations each: flags off 299 s, flags on 80 s.
+
+**Limits.** Single samples per variant; one profile; the 6-of-10 underfill seen in an earlier flags-on run is still unexplained, and the early stop does not by itself explain it. Eligible-supply effect of the early stop is not yet measured on a live run. Not a quality result.
+
+**Open decisions and follow-ups.** (1) Whether to enable `TAG_LANE_EARLY_STOP_ENABLED`, the breaker, and the batch flags by default; each changes output and stays the owner's call. (2) Gate the profile genre prefetch with the breaker (not implemented). (3) A live run with the early-stop flag on, to measure eligible supply and time.

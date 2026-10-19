@@ -1,3 +1,12 @@
+## 2026-10-19 — Supplementary tag lane early stop (flagged) and genre-check findings
+
+- Task: add a default-off early stop to the supplementary MusicBrainz tag lane, and record the test-copy genre-check findings in the roadmap, status and log.
+- Change: `TAG_LANE_EARLY_STOP_ENABLED` (default `False`) and `TAG_LANE_EXHAUSTION_THRESHOLD` (2) in `discovery_candidate_gathering.py`. Flag off keeps stop-at-first-exhaustion. Tests: `tests/test_discovery_tag_lane_early_stop.py` (7).
+- Evidence (aggregate only, owner test copy): artist-tag endpoint 8 of 8 tagged, 109 of 151 tag names exact-match (0.72); breaker trip after 9 attempts with 0 genre requests after opening, but profile prefetch not gated (48 requests, all 429); all-flags repeats 62 to 133 s on, 299 s off in one run; A/B pair 80 s on, 299 s off, 10 recommendations each.
+- Limits: single samples; one profile; the earlier 6-of-10 underfill is unexplained; no live run with the early-stop flag on.
+- Open: flag defaults (owner decision); gate the profile genre prefetch with the breaker (not implemented); live early-stop measurement.
+- Publishing and deployment remain paused.
+
 ## 2026-10-19 — Flag timing and variance check (test-only, docs)
 
 - Task: record the Mac test-and-report runs on main `76ec40e` in the roadmap; no code or defaults changed.
