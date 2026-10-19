@@ -585,3 +585,24 @@ Limits: one 100-recording sample; timings from one device session; the batch pat
 **Decision still open.** These runs do not justify turning any flag on by default. Next useful steps: a repeated all-flags run with a per-stage breakdown, a run that trips the breaker, and a test-only shape check of the ListenBrainz artist-tag endpoint against a few artists.
 
 **Candidate next steps (listed, not started).** Repeat the timing pair for a second sample. Honor `Retry-After` in the retry helper. Negative-cache exhausted artist lookups.
+
+## Batch artist-genre checks and supplementary-lane stop (2026-10-19)
+
+Test-only evidence from the owner's isolated copy (one profile, one machine, count=10). No code, flag, or response was changed in any run. Aggregate numbers only.
+
+- **ListenBrainz artist-tag endpoint** (`GET /1/metadata/artist/`, `inc=tag`): 8 of 8 sampled artists returned at least one tag (7 to 38 per artist). 109 of 151 distinct tag names matched our MusicBrainz genre names for the same artist (0.72, exact match after case folding). The sample was the first qualifying rows, not random. The batch form was not tested.
+- **Breaker trip** (flags on, every MusicBrainz artist-genre request forced to 429; run twice): the breaker opened after 9 attempts (3 artists, 3 tries each), with 0 genre requests after it opened and 20 artists skipped. Each run returned 6 of 10 recommendations in about 181 to 183 s. The profile prefetch stage made 48 artist-genre requests, all 429, because the breaker does not gate that stage.
+- **All-flags runs, real provider** (three sequential runs, then a three-run repeat): total time 101 to 128 s in the first set, 89 to 98 s in the repeat set, median about 106 s. Breaker never tripped. Title filter made 100 calls per run with 0 rejections. Candidate genre stage was the largest stage (about 28 to 54 s) and had most of the throttled responses.
+- **A/B pair** (one run each, count=10, all flags on except the arm change): flags off 299 s, flags on 80 s. Metadata resolution fell from about 180 s with 116 requests and 18 server errors to 0.7 s with 2 batch requests. Both returned 10 recommendations. Single samples, so directional only.
+- **Short result (run 2 of the first all-flags set, 6 of 10):** not reproduced in later runs. It had 6 candidate-genre requests against about 27 in the others, with no throttling. It is unexplained and may be a rare candidate-supply shortfall. Supply counts were not captured for that run.
+
+### Supplementary-lane stop on an exhausted retryable error
+
+- **Code:** `discovery_candidate_gathering.py`, `_run_tag_queries`. When a MusicBrainz tag search returns a retryable status (429 or 5xx) after bounded retries, `state["unavailable"]` is set and the loop breaks before the next query. The docstring names this as the stop-on-exhausted-retry rule.
+- **Observed:** in some runs one query failed this way, leaving 4 to 7 of 8 queries attempted. Those runs added 15 to 29 supplementary candidates, against 38 to 39 in runs where all 8 queries ran. Eligible unowned supply was 22 in the lowest run and 35 to 45 in the others. Replenishment never triggered.
+- **Assessment:** by design, not a crash. The stop protects the rate limit at the cost of supply. It is a candidate explanation for lower supply, but it does not explain the short list on its own.
+- **Open decision:** keep the stop, retry later in the run, or cap the failure count. This is a product trade-off, and no code change was made. Any change needs its own PR with the replay and provider-call metrics from `docs/TEST_PLAN.md`.
+
+### Next useful action
+
+Decide the stop-vs-supply trade-off. Before any behavior change, capture candidate-supply counts from a short run to link the stop to the short list.

@@ -1707,3 +1707,8 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Combinations: running both at today's settings is about 165 s. CF at budget 50 plus a Last.fm top-20 pass is about 110 s. Gated versions are about 55 to 80 s (sketches).
 - Decision: no code change; the Last.fm source is not implemented and no budget, weight, window, eligibility, ownership, or duplicate rule changed.
 - Next action: a prospective quality protocol and an offline gated-combination harness, with ownership and duplicate filters applied to both paths.
+
+## 2026-10-19 — batch artist-genre checks and supplementary-lane stop (docs only)
+
+- Recorded the endpoint check, breaker-trip runs, all-flags timing, A/B pair, and the supplementary-lane stop in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`. Aggregate numbers only; no code, flag, or response changed.
+- Open: the stop-vs-supply trade-off (product decision); the profile prefetch stage ignores the genre breaker; the short run 2 result is unexplained.
