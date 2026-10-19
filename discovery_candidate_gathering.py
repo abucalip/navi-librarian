@@ -136,6 +136,12 @@ CF_ARTIST_RESOLUTION_CAP = 10
 # query costs at most one 1.1 s spacing sleep plus one 2 s retry backoff.
 SUPPLEMENTARY_CANDIDATE_CAP = 60
 REPLENISH_EXTRA_QUERIES = 2
+# Tag-lane early stop (flagged, off by default). When off, the lane stops at the first
+# query that exhausts its retries, as before. When on, the lane keeps going after an
+# exhausted query and stops only after this many consecutive exhausted queries, so one
+# throttled search does not end the lane while the total request count stays bounded.
+TAG_LANE_EARLY_STOP_ENABLED = False
+TAG_LANE_EXHAUSTION_THRESHOLD = 2
 # Top CF candidate-pool artists whose genres are prefetched before the tag lane.
 CANDIDATE_PREFETCH_LIMIT = 5
 SHORTLIST_TARGET_DEFAULT = 10
@@ -277,7 +283,14 @@ def _run_tag_queries(
                 )
                 state["request_index"] += 1
                 if response.status_code in _RETRYABLE_STATUS_CODES:
-                    state["unavailable"] = True
+                    state["exhausted_run"] += 1
+                    if (
+                        not TAG_LANE_EARLY_STOP_ENABLED
+                        or state["exhausted_run"] >= TAG_LANE_EXHAUSTION_THRESHOLD
+                    ):
+                        state["unavailable"] = True
+                else:
+                    state["exhausted_run"] = 0
                 response.raise_for_status()
                 search_data = response.json()
                 providers.metadata_cache_set(cache_key, search_data)
@@ -743,7 +756,7 @@ def gather_recommendation_candidates(
     )
     regional_state = {
         "added": 0, "seen": 0, "hits": 0, "misses": 0,
-        "request_index": 0, "unavailable": False,
+        "request_index": 0, "unavailable": False, "exhausted_run": 0,
     }
     supplementary_query_outcomes = []
     with providers.http_client(timeout=20, follow_redirects=True) as client:
