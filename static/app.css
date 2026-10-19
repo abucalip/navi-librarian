@@ -386,7 +386,7 @@ p { line-height: 1.55; }
 .card:hover { border-color: var(--edge-strong); }
 .card-art {
   position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; width: 100%; overflow: hidden;
-  background: linear-gradient(135deg, transparent 49.5%, rgba(233,198,74,.12) 50%, transparent 50.5%), var(--surface-raised);
+  background: var(--surface-raised);
   border-bottom: 1px solid var(--edge);
 }
 .card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform var(--dur) var(--ease-out); }
@@ -397,7 +397,7 @@ p { line-height: 1.55; }
 .card-art-placeholder { padding: 12px; color: var(--text-muted); text-align: center; font: 500 var(--text-xs)/1.5 var(--mono); letter-spacing: .12em; }
 .card-art-placeholder::before { content: "NL / 01"; display: block; margin-bottom: 8px; color: var(--accent); font: 600 var(--text-2xl)/1 var(--display); letter-spacing: -.02em; }
 .card > :not(.card-art) { margin-left: 13px; margin-right: 13px; }
-.card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent); background: #353124; border-left: 2px solid var(--accent); border-radius: 0; font: 500 var(--text-xs)/1.4 var(--mono); letter-spacing: .055em; text-transform: uppercase; }
+.card-category { display: inline-block; max-width: calc(100% - 26px); margin-top: 13px; margin-bottom: 9px; padding: 3px 6px; color: var(--accent); background: var(--surface-hover); border-left: 2px solid var(--accent); border-radius: 0; font: 500 var(--text-xs)/1.4 var(--mono); letter-spacing: .055em; text-transform: uppercase; }
 .card h3 { margin-top: 0; margin-bottom: 4px; font: 600 var(--text-lg)/1.1 var(--display); letter-spacing: .005em; overflow-wrap: anywhere; }
 .card-artist { margin-top: 0; margin-bottom: 13px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
@@ -405,7 +405,7 @@ p { line-height: 1.55; }
 .card-meta, .card-source { margin-top: 7px; margin-bottom: 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .card-source { padding-top: 8px; border-top: 1px solid var(--edge); }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
-.card-actions button { padding: 7px 8px; background: #2a2c29; }
+.card-actions button { padding: 7px 8px; background: var(--surface-raised); }
 .card-actions button:first-child { border-color: var(--accent-dim); }
 .hidden { display: none !important; }
 details { margin-top: 18px; border-top: 1px solid var(--edge); padding-top: 12px; }
