@@ -130,15 +130,15 @@ def _record_refresh_outcome(
         pass
 
 
-def _provider_failure_count(payload: Any) -> int:
-    """Return the aggregate provider-failure count a build reports (0 if absent).
+def _build_count(payload: Any, key: str) -> int | None:
+    """Return a non-negative integer count a build reports, or None if absent.
 
-    The count is an integer produced by the build from its failure list. Any
-    other value is treated as absent rather than trusted.
+    Counts are aggregate integers produced by the build. Any other value is
+    treated as absent rather than trusted.
     """
-    count = payload.get("provider_failure_count", 0) if isinstance(payload, dict) else 0
+    count = payload.get(key) if isinstance(payload, dict) else None
     if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-        return 0
+        return None
     return count
 
 
@@ -195,7 +195,8 @@ def refresh_personal(
                 replace, reason = discovery_snapshot.replacement_decision(
                     stored.get("payload") if isinstance(stored, Mapping) else None,
                     payload,
-                    provider_failures=_provider_failure_count(payload),
+                    provider_failures=_build_count(payload, "provider_failure_count") or 0,
+                    provider_lookups=_build_count(payload, "provider_lookup_count"),
                     is_excluded=is_excluded,
                 )
             if not replace:

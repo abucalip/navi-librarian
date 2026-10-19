@@ -148,6 +148,42 @@ class RefreshPersonalSnapshotGuardTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(len(writes), 1)
 
+    def test_failures_within_threshold_share_do_not_block_refresh(self):
+        writes, outcomes = [], []
+        build = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
+        build["provider_failure_count"] = 2
+        build["provider_lookup_count"] = 20  # 10% is within the 20% threshold
+        result = self._refresh(GOOD, build, writes, outcomes)
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(writes), 1)
+
+    def test_failures_above_threshold_share_keep_previous_snapshot(self):
+        writes, outcomes = [], []
+        build = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
+        build["provider_failure_count"] = 5
+        build["provider_lookup_count"] = 20  # 25% exceeds the 20% threshold
+        result = self._refresh(GOOD, build, writes, outcomes)
+        self.assertEqual(writes, [])
+        self.assertEqual(result["reason"], "provider_failures")
+
+    def test_failures_without_usable_lookup_count_fail_safe(self):
+        for lookups in (None, 0):
+            self.assertEqual(
+                replacement_decision(GOOD, _payload(_rec("A", "One", 1)),
+                                     provider_failures=1, provider_lookups=lookups),
+                (False, "provider_failures"),
+            )
+
+    def test_threshold_boundary_is_inclusive(self):
+        from discovery_snapshot import PROVIDER_FAILURE_SHARE_THRESHOLD
+        lookups = 10
+        failures = int(PROVIDER_FAILURE_SHARE_THRESHOLD * lookups)
+        self.assertEqual(
+            replacement_decision(GOOD, GOOD,
+                                 provider_failures=failures, provider_lookups=lookups),
+            (True, "accepted"),
+        )
+
     def test_build_reporting_provider_failures_keeps_previous_snapshot(self):
         writes, outcomes = [], []
         bigger = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
