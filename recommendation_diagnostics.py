@@ -118,6 +118,8 @@ def summarize_candidate_diagnostics(
             "unclassified": unclassified,
             "selection_decisions": dict(sorted(decisions.items())),
         },
+        # Gathering-stage aggregates (CF recording/album shares, supplementary yield).
+        "candidate_supply": dict(gathered.get("candidate_supply") or {}),
         "cache": {
             "supplementary_hits": max(0, int(gathered.get("supplementary_cache_hits", 0))),
             "supplementary_misses": max(0, int(gathered.get("supplementary_cache_misses", 0))),

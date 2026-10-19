@@ -521,6 +521,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         actual = json.loads(actual_text)
         lastfm.assert_consumed()
+        from discovery_candidate_supply import candidate_supply_report
         expected = payload["expected_output"]
         matches = _comparable_output(actual) == _comparable_output(expected)
         report = {
@@ -535,6 +536,7 @@ def main(argv: list[str] | None = None) -> int:
             "lastfm_events_replayed": len(payload["lastfm_calls"]),
             "provider_event_policy": "provenance only; frozen gathered inputs are authoritative",
             "comparison": "all stable output fields except volatile pool diagnostics and Last.fm error state",
+            "candidate_supply": candidate_supply_report(payload, actual.get("debug_all_candidates", [])),
         }
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0 if matches else 1

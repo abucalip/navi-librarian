@@ -4,6 +4,12 @@ from dataclasses import dataclass
 import json
 from typing import Any, Callable
 
+from discovery_candidate_supply import (
+    classify_error,
+    summarize_cf_albums,
+    summarize_cf_recordings,
+    summarize_supplementary_yield,
+)
 from discovery_recommendations import decayed_listen_weights, merge_discovery_source
 
 @dataclass(frozen=True)
@@ -83,6 +89,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     # Group tracks by album before checking Navidrome.
     albums = {}
     cf_recordings_resolved = 0
+    cf_recording_records = []
     failures = []
     headers = {
         "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"
@@ -94,6 +101,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             if not mbid:
                 continue
 
+            record = {"resolved": False, "artist_key": None, "error_class": None}
+            cf_recording_records.append(record)
             try:
                 recording = providers.metadata_cache_get(
                     f"mb:recording:{mbid}",
@@ -126,6 +135,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     providers.metadata_cache_set(f"mb:recording:{mbid}", recording)
 
                 cf_recordings_resolved += 1
+                record["resolved"] = True
                 credit = recording.get("artist-credit", [])
                 artist = "".join(
                     part.get("name", "") + part.get("joinphrase", "")
@@ -142,6 +152,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                 )
                 if not artist:
                     artist = primary_artist
+                record["artist_key"] = providers.music_key(primary_artist) if primary_artist else None
 
                 primary_artist_mbid = next(
                     (
@@ -232,6 +243,7 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     candidate["tracks"].append(track)
 
             except Exception as exc:
+                record["error_class"] = classify_error(exc)
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
     # Select supplementary queries from cached listening-profile genres and
@@ -283,12 +295,14 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     supplementary_cache_hits = 0
     supplementary_cache_misses = 0
     regional_request_index = 0
+    supplementary_query_outcomes = []
 
     with providers.http_client(timeout=20, follow_redirects=True) as client:
         for query, regional_family, regional_style in regional_queries:
             if regional_candidates_added >= 60:
                 break
             regional_query_added = 0
+            query_error_class = None
             cache_key = f"mb:release-group-search:{query}"
             try:
                 search_data = providers.metadata_cache_get(
@@ -421,11 +435,15 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     break
 
             except Exception as exc:
+                query_error_class = classify_error(exc)
                 failures.append({
                     "source": "musicbrainz_tag_search",
                     "query": query,
                     "error": str(exc),
                 })
+            finally:
+                # Runs on the cap break inside the try, so the final query is recorded too.
+                supplementary_query_outcomes.append((regional_query_added, query_error_class))
 
     # Build a complete, paginated Navidrome album inventory.
 
@@ -562,7 +580,18 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
     profile_families = core_families | exploration_families
 
 
+    candidate_supply = {
+        "cf_recordings": summarize_cf_recordings(
+            cf_recording_records, returned=cf_recordings_returned,
+        ),
+        "cf_albums": summarize_cf_albums(albums.values(), providers.music_key),
+        "supplementary": summarize_supplementary_yield(
+            supplementary_query_outcomes, planned=len(regional_queries),
+        ),
+    }
+
     return {
+        "candidate_supply": candidate_supply,
         "listens": listens, "recent_artists": recent_artists,
         "recent_artist_play_counts": recent_artist_play_counts,
         "recent_artist_mbid_counts": recent_artist_mbid_counts,
