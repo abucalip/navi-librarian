@@ -327,7 +327,7 @@ def _recording(artist, album_index):
 
 
 class RecommendationCfPagingTests(unittest.TestCase):
-    def _providers(self, *, pages, recordings=None, cache=None, fail_page=None):
+    def _providers(self, *, pages, recordings=None, cache=None, fail_page=None, persist=False):
         calls = []
         pages_by_offset = pages
         recordings = recordings or {}
@@ -346,7 +346,10 @@ class RecommendationCfPagingTests(unittest.TestCase):
             listenbrainz_username=lambda: "fixture-user",
             music_key=lambda value: "".join(str(value).casefold().split()),
             metadata_cache_get=lambda key, **kwargs: cache.get(key),
-            metadata_cache_set=lambda *args, **kwargs: None,
+            metadata_cache_set=(
+                (lambda key, value: cache.__setitem__(key, value)) if persist
+                else (lambda *args, **kwargs: None)
+            ),
             is_album_candidate=lambda candidate: True,
             api_call=lambda *args, **kwargs: {},
             items=lambda response: [],
@@ -491,6 +494,50 @@ class RecommendationCfPagingTests(unittest.TestCase):
         self.assertEqual(paging["resolution_budget_skipped"], 2)
         self.assertEqual(paging["artist_cap_skipped"], 0)
         self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 6)
+
+
+    def test_second_run_with_overlapping_cf_output_resolves_only_new_recordings(self):
+        # Run 1 resolves rec-0..4 and persists them under mb:recording:*.
+        # Run 2 receives overlapping CF output (rec-3..7). The shared rec-3, rec-4 must
+        # come from the stored resolution, so only rec-5..7 cost MusicBrainz calls.
+        cache = {}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(8)}
+        first_pages = {0: [_cf_item(i) for i in range(5)]}
+        providers, _, first_mb = self._providers(
+            pages=first_pages, recordings=recordings, cache=cache, persist=True,
+        )
+        gather_recommendation_candidates(providers)
+        self.assertEqual(first_mb.requested, ["rec-0", "rec-1", "rec-2", "rec-3", "rec-4"])
+        self.assertEqual(
+            sorted(key for key in cache if key.startswith("mb:recording:")),
+            [f"mb:recording:rec-{i}" for i in range(5)],
+        )
+
+        second_pages = {0: [_cf_item(i) for i in range(3, 8)]}
+        providers, _, second_mb = self._providers(
+            pages=second_pages, recordings=recordings, cache=cache, persist=True,
+        )
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(second_mb.requested, ["rec-5", "rec-6", "rec-7"])
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["cache_known_recordings"], 2)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 5)
+
+    def test_warm_store_run_with_identical_cf_output_makes_no_mb_calls(self):
+        cache = {}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(4)}
+        pages = {0: [_cf_item(i) for i in range(4)]}
+        providers, _, _ = self._providers(pages=pages, recordings=recordings, cache=cache, persist=True)
+        gather_recommendation_candidates(providers)
+
+        providers, _, warm_mb = self._providers(pages=pages, recordings=recordings, cache=cache, persist=True)
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(warm_mb.requested, [])
+        self.assertEqual(result["candidate_supply"]["cf_paging"]["uncached_resolution_calls"], 0)
+        self.assertEqual(result["candidate_supply"]["cf_paging"]["cache_known_recordings"], 4)
 
 
 class _RecordingClient:

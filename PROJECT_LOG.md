@@ -1,3 +1,10 @@
+## 2026-10-19 — Persisted candidate resolution: cross-run tests (2.3, test and docs only)
+
+- Finding: roadmap 2.3's default-path store already exists (`mb:recording:{mbid}`, 180-day TTL, written on every successful lookup). Ownership and eligibility run after the cache. No new store was built.
+- Change: two offline tests in `tests/test_discovery_candidate_gathering.py` covering consecutive runs with overlapping CF output and an identical warm run (zero MusicBrainz calls). Test helper gained a `persist` option, off by default, so existing tests are unchanged.
+- Deferred: batch-path persistence (needs its own namespace and an owner decision); measurement of cross-run CF repeat rate (not measured).
+- Checks: gathering module 32 tests OK; full suite (`PYTHONPATH=tests:. python3 -m unittest <tests/test_*.py>`) 1023 tests OK; py_compile OK. Docker and CI workflows: see PR.
+
 ## 2026-10-19 — Last-known-good snapshot guard and read-time filter (3.4, branch)
 
 - Task: roadmap 3.4, the next unfinished item after PR #444 on main. Confirmed by roadmap section 3.4 (3.1–3.3 not marked complete and 3.4 is the Phase 3 item the owner ranked next).
