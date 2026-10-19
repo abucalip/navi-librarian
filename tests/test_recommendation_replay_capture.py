@@ -159,6 +159,31 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
             finally:
                 os.environ.pop("LIBRARIAN_RECOMMENDATION_CAPTURE_PATH", None)
 
+    def test_second_run_sharing_capture_path_does_not_warn_or_overwrite(self):
+        # Two recommendation runs can both read LIBRARIAN_RECOMMENDATION_CAPTURE_PATH
+        # before either finishes (e.g. /api/recommendations during a refresh). The
+        # first run owns the one-shot capture; the second must neither overwrite it
+        # nor log a "capture failed" warning for the file it correctly left alone.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            root.chmod(0o700)
+            path = root / "shared-path.json"
+            ranking_context = {"ranking_now": 1234.5, "history": [], "diversity_setting": 0}
+            first_output = json.dumps({"recommendations": [{"artist": "First"}], "lastfm_api_configured": False})
+            second_output = json.dumps({"recommendations": [{"artist": "Second"}], "lastfm_api_configured": False})
+            write_capture_safely(
+                str(path), _gathered(), [], ProviderTape("record"), first_output, 1,
+                ranking_context=ranking_context,
+            )
+            with self.assertNoLogs("navidrome_server", level="WARNING"):
+                write_capture_safely(
+                    str(path), _gathered(), [], ProviderTape("record"), second_output, 1,
+                    ranking_context=ranking_context,
+                )
+            envelope = load_capture(path)
+            self.assertEqual(envelope["payload"]["expected_output"]["recommendations"], [{"artist": "First"}])
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
     def test_capture_checksum_detects_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

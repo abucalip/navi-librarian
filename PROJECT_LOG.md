@@ -1,3 +1,15 @@
+## 2026-10-19 — P2 capture "FileExistsError" warning fix (offline; no live capture)
+
+- Task: the owner's snapshot A and B runs logged `capture failed (FileExistsError)` although both captures were written intact on the first attempt. Established from code before changing anything.
+- Cause: `recommend_new_music` reads the process-wide `LIBRARIAN_RECOMMENDATION_CAPTURE_PATH`. `/api/recommendations` calls it directly, outside the personal-refresh lock, so two overlapping runs can carry the same one-shot path. The first run wrote the capture. The second hit the refuse-to-overwrite check (`_check_private_path`, `O_EXCL`) and `write_capture_safely` logged the warning. No retry or third writer exists.
+- Fix: `write_capture_safely` claims each capture path once per process under a lock. Later overlapping runs skip the write without a warning. Capture permissions (dir 700, file 600), the outside-repository check, and `write_capture`'s immutability refusal are unchanged.
+- Tests: `tests/test_recommendation_replay_capture.py::test_second_run_sharing_capture_path_does_not_warn_or_overwrite`, synthetic and deterministic. It failed before the fix (warning logged) and passes after. Capture-module tests: 11 OK. Full unit suite: 899 OK. Syntax compile, `scripts/check_server_size.py`, and `scripts/check_app_legacy_imports.py` pass.
+- Environment note: running the capture tests needed `httpx` installed from `requirements.txt`; without it three tests in that module error at import time, unrelated to this change.
+- Not verified: the owner's logs were not inspected, so the concurrency explanation is inferred from code, not confirmed against a run. The four required CI workflows are pending on the PR head. No merge and no publication.
+- Next: owner confirms whether the warning coincided with an overlapping `/api/recommendations` request or a manual/scheduled refresh.
+
+---
+
 ## 2026-10-19 — P5 supplementary tag-search bounded 503 retry (offline; no live capture)
 
 - Task: roadmap P5 in docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. Decision from code inspection: P1 already records per-query supplementary yield (attempted, zero-yield, failed, not attempted), so the gap was not measurement. The gap was that the MusicBrainz release-group tag search made a single request and called `raise_for_status()`, so one 503 dropped that query. The P4 retry covered artist-genre lookups only. The frozen capture's two tag searches returned 503 and produced no candidates.
