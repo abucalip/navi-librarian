@@ -3000,7 +3000,7 @@ AGENTS.md sets 44x44 as the touch-target floor. `docs/DESIGN_SYSTEM.md` section 
 ### 34.4 Decision
 
 - No target fails the 44px floor, so no touch-target fix is needed at these widths.
-- The 44px vs 40px question is recorded as an owner decision in `docs/DESIGN_SYSTEM.md` section 16.5. The section 9.1 and 9.7 values and the built 44px disagree, and the choice is not made here.
+- Decided by Hamdi (2026-10-19): login and first-run inputs stay 44px. Section 9.7 is updated for the login page in the same PR. Section 9.1 (primary button) and other form inputs are not covered.
 - No CSS, template, script or test change. The `tests/*_ui_contract.py` assertions are unchanged.
 
 ### 34.5 Skills and tools
