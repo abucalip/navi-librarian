@@ -559,4 +559,29 @@ Limits: one 100-recording sample; timings from one device session; the batch pat
 
 **Open decisions for the owner.** Whether to turn on the genre-stage breaker and the batch flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`) by default. Both change output and both remain off.
 
+**Flag timing and variance check (2026-10-19, main `76ec40e`, test-only).** Aggregates from the owner's test copy, one fresh data directory per run, count=10 unless noted. No code or defaults changed.
+
+| Run | Flags | Seconds | Uncached requests | Throttled 429/5xx | Recommendations | Eligible unowned |
+|---|---|---|---|---|---|---|
+| 1 | off | 359.1 | 277 | 76 | 10 | not captured |
+| 3 | off (repeat) | 237.0 | 207 | 38 | 10 | 17 |
+| a | batch only | 211.5 | 180 | 34 | 5 | 6 |
+| b | title filter only | 197.0 | 179 | 28 | 6 | 7 |
+| c | breaker only | 206.1 | 180 | 30 | 6 | 7 |
+| 2 | all three | 46.3 | 63 | 9 | 6 | not captured |
+| 4 | all three | 55.1 | 71 | 6 | 10 | 12 |
+| d | all three (repeat) | 51.4 | 69 | 15 | 6 | 7 |
+| 5 | all three, count=20 | 148.7 | 121 | 16 | 20 | 35 |
+
+- Title filter: 100 calls and 0 drops in the all-flags runs, so no release title in those samples carried a marker. In the title-only run it made 0 calls because it runs only inside the batch path.
+- Breaker: 0 trips and 0 skipped artists in every run, so its effect is not measured. A trip needs three consecutive exhausted artist lookups, and no run produced that streak.
+- Batch resolution alone cut the MusicBrainz genre traffic only slightly (152 requests in run a, against 150 in run b with no batch) and did not cut time to the flags-on range.
+- The all-flags runs (46 to 55 s) are much faster than any single-flag run (197 to 211 s), and the data does not explain why. Treat the combined speed-up as unexplained until a repeated run and a per-stage breakdown exist.
+- Underfill: all-flags runs at count=10 returned 6 or 10 recommendations, with 7 to 12 eligible albums. The count=20 run had 35 eligible and filled to 20. The pool size, not the flags alone, appears to set the fill.
+- Variance: the two flags-off runs differed by 122 s, and the two all-flags runs at count=10 had different eligible pools (7 and 12) under the same commit and flags. One run per mode is not enough for a timing decision.
+- Limits: single samples per variant, one profile, one copy, and Mac-side wrappers that were runtime-confirmed only for the title filter. Eligible counts are missing for runs 1 and 2.
+- ListenBrainz artist tags: the public docs list `GET /1/metadata/artist/` with a comma-separated `artist_mbids` and `inc=tag`, which may allow a batch artist-genre lookup. The docs do not say it returns genre names, and our code matches MusicBrainz genre names. Not verified. MusicBrainz has no batch artist-genre endpoint, so the current stage makes one request per artist.
+
+**Decision still open.** These runs do not justify turning any flag on by default. Next useful steps: a repeated all-flags run with a per-stage breakdown, a run that trips the breaker, and a test-only shape check of the ListenBrainz artist-tag endpoint against a few artists.
+
 **Candidate next steps (listed, not started).** Repeat the timing pair for a second sample. Honor `Retry-After` in the retry helper. Negative-cache exhausted artist lookups.
