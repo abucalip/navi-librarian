@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "static/app.css"
+        ],
+        "createdAt": "2026-10-19T00:22:17.531Z",
+        "reason": "Claude (agent) triage, not user confirmed: .settings-tab sets border-radius: 0; the 3px accent bottom border is the square selected-tab underline from DESIGN_SYSTEM 4.2 and 9.7, not a rounded card"
+      }
+    ]
+  }
+}
