@@ -2175,7 +2175,7 @@ Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1
 
 Owner: review the diff, the before and after screenshots and the motion audit JSON, and decide the two loop-duration questions in 23.5. Then run the live browser checklist from `docs/TEST_PLAN.md` against the exact PR head SHA on the owner's helper, including sort on Discover music and a Get request, before the remaining Phase 7 items (critique, audit, polish, harden, `DESIGN.md`, and the screen-reader pass).
 
-## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`, PR #394)
+## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`, PR #394, merged, merge `7b26d10`)
 
 Roadmap item: Phase 7, second bullet (audit and critique on every page, polish and harden what they find, fixes that fit the system). Design system sections applied: 4 (colour and contrast), 9.1 and 9.7 (button and form sizing), 9.4 and 9.5 (ranked row and acquisition row roles), 9.8 (modal artwork), 12 (44×44 floor, visible focus, status by text). Base: `origin/main` at `46aa68e`. Section 23 (PR #392) is marked merged here.
 
@@ -2250,3 +2250,68 @@ Console: the only errors are `net::ERR_FAILED` from the harness aborting third-p
 ### 24.7 Next action
 
 Owner: review this PR's diff and the before and after screenshots, then decide the open items in 24.5, mainly the album-modal logos (B2) and the bottom-tab overflow under 620px. Then run the `docs/TEST_PLAN.md` checklist against the exact head SHA on the isolated helper, with a screen-reader pass on the album article and the Get control, before Phase 7's `DESIGN.md` regeneration.
+
+## 25. Redesign Phase 7 — DESIGN.md and performance record, item 3 (`ui/phase-7-document-ryetdc`)
+
+Roadmap item: Phase 7, the `DESIGN.md` regeneration and the Phase 0 performance comparison (roadmap section 4, Phase 7 bullets 3 and 4). Design system sections applied: 4 to 12 (read against the built CSS), and 15 (decisions, unchanged). Base: `origin/main` at `8849e7e`, which includes PR #394 (merge `7b26d10`). Designated branch: the session brief named the stem `ui/phase-7-document`; the session's designated branch was `ui/phase-7-document-ryetdc`, and the PR uses that name.
+
+Status, kept separate: **implemented**: docs only (`DESIGN.md`, `docs/DESIGN_SYSTEM.md` section 16, roadmap and this section). **Automated-tested**: yes, listed in 25.4. **Browser-tested**: performance capture only, in headless Chromium against a live empty sandbox; no manual checklist and no screenshots (25.5). **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+
+### 25.1 Acceptance criteria (stated before the work)
+
+- `DESIGN.md` is regenerated from the built CSS, keeps the eight canonical sections in order, and its frontmatter tokens match `static/app.css`. No code, API or test change.
+- `docs/DESIGN_SYSTEM.md` section 16 records each drift between section 4 to 12 and the built front end, with a status (match, accepted, open) and a next step. No value in sections 4 to 12 is silently changed.
+- Transfer size, request count, third-party requests, FCP, LCP where recorded, and CLS are measured against the Phase 0 baseline (section 9.5), using the same profile, and the result is stated including its limits.
+- Roadmap item 2 shows PR #394 merged; this section and section 24 agree.
+- Checks run and recorded: `node --check static/app.js`, `node --check static/login.js`, `python3 -m compileall -q app static`, `python3 -m unittest discover -s tests -v`.
+
+### 25.2 What changed
+
+- `DESIGN.md`: regenerated. The frontmatter is unchanged (the tokens already matched the built `:root`). The body was rewritten to describe the built system: the Phase 7 state of the layout breakpoints, the self-hosted fonts, the Get control's shapes, the modal, motion, and the known exceptions, which are listed as exceptions and not as system rules. The Impeccable "Overview" voice and the North Star were kept from the owner-approved Phase 1 text.
+- `docs/DESIGN_SYSTEM.md`: new section 16 (drift record, 14 rows, detector result, performance table, owner decisions). No other section edited.
+- `docs/REDESIGN_ROADMAP.md`: Phase 7 status paragraph only. PR #394 marked merged; item 3 added.
+- `docs/UI_BACKLOG_EXECUTION.md`: section 24 heading marked merged; this section 25 added.
+- No front-end, template, test, API, auth or backend file changed.
+
+### 25.3 Impeccable guidance applied and rejected
+
+- **Applied:** `/impeccable document` (the Impeccable skill, loaded this session). Its context loader ran and read `PRODUCT.md` and the existing `DESIGN.md`. The document reference's scan mode was followed: tokens taken from `static/app.css`, components and states from its rules, and the drift check. The canonical section order and the Named-Rule style were kept where the built system supports them.
+- **Applied:** `impeccable detect --json static/app.css` run once (34 advisory findings, classed in `docs/DESIGN_SYSTEM.md` section 16.2).
+- **Rejected:** the sidecar `.impeccable/design.json`. The reference calls for it in scan mode, but `.impeccable/design.json` is not in the `AGENTS.md` file list (only `.impeccable/surfaces/**` is), so it is proposed here rather than written. The same goes for the components in the sidecar.
+- **Rejected:** the scan mode's qualitative questions (North Star options, colour names, elevation philosophy). This run is autonomous and could not ask. The existing owner-approved text was kept, and the sections it does not cover are the open items.
+- **Rejected:** the "refresh, overwrite or merge" prompt. The roadmap requires regeneration at this point, and the old file is in the PR diff.
+- **Rejected:** fixing the drift in code. The roadmap asks for drift to be recorded, not fixed, in this item, and the drift rows are follow-up work.
+
+### 25.4 Checks actually run
+
+| Command | Result |
+|---|---|
+| `pip install --break-system-packages -r requirements.txt` | exit 0 |
+| `node --check static/app.js` | clean |
+| `node --check static/login.js` | clean |
+| `python3 -m compileall -q app static` | clean |
+| `python3 -m unittest discover -s tests` | **891 tests, OK** (`Ran 891 tests in 3.252s`). Phase 0 recorded 709 tests on `main` `dc3e5a3`; the count rose with the Phase 1 to 7 tests. |
+| `impeccable detect --json static/app.css` | 34 advisory findings (exit 2 means findings present). Not a gate. |
+
+### 25.5 Browser capture (performance only)
+
+- Chromium `/opt/pw-browsers/chromium` through Playwright (Node), headless, 1440x900, cache disabled, a new context per run, three runs, 150 ms latency, 1.6 Mbit/s down, 750 Kbit/s up, 4x CPU. Same profile as section 9.5.
+- Server: `uvicorn app.main:app` on `127.0.0.1:8189` from the checkout at `8849e7e`, with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` pointing at a scratch directory outside the repository, `SLSKD_URL=http://127.0.0.1:9` and an empty API key. The helper `~/navi-librarian-test/test-pr.sh` is not in this sandbox, so the isolation was reproduced by hand, as in section 9.2. An owner account was created through `POST /api/auth/setup` with a sandbox password. `git status` stayed clean.
+- Live state only (empty sandbox, no library, no reconstructed responses). Discover was reached by clicking the rail item with `data-page="recommendations"`; its label reads "Recommendations" (drift row 3).
+- **Not run:** keyboard walk, five-width screenshots, console and network review beyond the request list, the manual checklist in `docs/TEST_PLAN.md`, and anything on the exact head SHA of a PR (none existed when the capture ran).
+
+### 25.6 Results
+
+The numbers are in `docs/DESIGN_SYSTEM.md` section 16.4. In short: the dashboard transfer rose from 206,610 to 339,582 bytes and Discover from 206,845 to 365,229 bytes, almost all of it the self-hosted fonts that the Phase 0 baseline could not download (Google Fonts was blocked there). Font bytes are 108 to 134 KB, inside the 150 KB budget. Requests to third-party hosts fell from one (blocked) to zero. FCP stayed between 1.04 and 1.35 s. CLS is about 0.00009, against 0 in the baseline, which is not perceptible.
+
+### 25.7 Limitations
+
+- The sandbox is Chromium only, has no screen reader, and has no real library. Populated states were not captured.
+- The performance run is loopback with emulated throttling. The font bytes cost more on a real link than this run shows; the Phase 0 numbers were optimistic for the same reason. The two sets are not comparable beyond bytes.
+- LCP element was not recorded in this run (Phase 0 recorded `#dashboardHeading`).
+- The drift rows are reported, not fixed. Rows 1 to 3 and row 10 need owner decisions (`docs/DESIGN_SYSTEM.md` section 16.5).
+- The duplicate `/assets/cassette.png` network entry (one as Image, one as Other) was not investigated.
+
+### 25.8 Next action
+
+Hamdi reviews this PR's diff (docs only) and decides the owner items in `docs/DESIGN_SYSTEM.md` section 16.5, starting with the rail width and the "Recommendations" label. After that, a follow-up typography PR (drift row 4) and a gradient and colour removal PR (rows 5 to 7), each with before and after screenshots at the five widths. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA of this PR is still to be run by the owner.
