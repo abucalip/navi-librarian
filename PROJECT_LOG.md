@@ -1662,3 +1662,13 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - The ~190 s estimate covers all 173 uncached requests in the run, including the 100 recording resolutions this change did not add.
 - Limits: one pass, one profile, one cold state, no pre-change live comparison. The throwaway data directory and worktree were removed on the device.
 - Publishing and deployment remain paused.
+
+## 2026-10-19 — Uncached-budget sweep for CF candidate supply
+
+- Task: check whether the 100 uncached-resolution budget limits candidate supply, using the real gathering path on synthetic fixtures with budgets from 25 to 300. No live call, no code change, no budget, weight, window, eligibility, ownership, or duplicate rule changed.
+- Result (aggregates): on a concentrated cold pool, distinct artists are 3, 6, 10, 15, and 18 at budgets 25, 50, 100, 150, and 200. Shortlist ceiling reaches the 10-slot target only at 100, with no margin. Warm runs skip most dominant-artist recordings through the 10-per-artist cap, so their supply does not depend on the budget.
+- Finding: the personal allocator takes at most one album per artist, and the replenishment gate counts albums. The gate can stay closed while artist supply is short (budget 50: 39 albums, 6 artists).
+- Cost: about 55 s of extra recording spacing per 50 budget units at 1.1 s per call.
+- Verification: offline sweep only; no unit tests run because no code changed. Documentation PR is a draft; CI on its exact head is pending at the time of this entry.
+- Limits: synthetic album structure, no ownership, no non-CF sources, stubbed genres, computed spacing. Not calibrated to the owner's capture.
+- Next action: add a distinct unowned eligible artist count to the aggregate diagnostics and test an artist-based replenishment gate offline. A live aggregate run needs Hamdi's go-ahead in words first.

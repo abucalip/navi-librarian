@@ -96,3 +96,10 @@ No ranking weights, ownership gates, or allocation policy have been changed. Re-
 - Publishing and deployment remain paused. No weights, windows, ownership, duplicate, or eligibility behavior changed.
 
 **Replenishment shortfall fixture (2026-10-19, branch `test/replenishment-shortfall-fixture`, draft PR pending).** A synthetic offline fixture now shows the #411 gate firing under a real shortfall (eligible unowned 2 of target 10): 2 extra queries planned and attempted, 2 candidates added, 4 eligible after. The tag-lane test that never ran (placed after the `__main__` guard) now runs. Full unit suite: 920 tests OK. Not measured: real tag yield, and the cold-cache ordering issue. Publishing and deployment remain paused. **Next action:** decide whether tag selection should read the genre cache after the genre-lookup stage; that is a behavior change and needs its own measurement.
+
+## Uncached-budget sweep (2026-10-19) — draft
+
+- Offline sweep of `CF_MAX_UNCACHED_RESOLUTIONS` on synthetic fixtures, no live calls, no code change. Results and limits are in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`, under the same date.
+- Key result: on a concentrated cold pool, the budget limits distinct artists (3 at 25, 6 at 50, 10 at 100). The allocator permits one album per artist, and the replenishment gate counts albums, so it can stay closed while artists are short.
+- Budget stays at 100. Draft PR pending CI on its exact head; merge needs Hamdi's explicit go-ahead in words.
+- Publishing and deployment remain paused.
