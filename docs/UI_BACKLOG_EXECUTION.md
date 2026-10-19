@@ -2251,11 +2251,11 @@ Console: the only errors are `net::ERR_FAILED` from the harness aborting third-p
 
 Owner: review this PR's diff and the before and after screenshots, then decide the open items in 24.5, mainly the album-modal logos (B2) and the bottom-tab overflow under 620px. Then run the `docs/TEST_PLAN.md` checklist against the exact head SHA on the isolated helper, with a screen-reader pass on the album article and the Get control, before Phase 7's `DESIGN.md` regeneration.
 
-## 25. Redesign Phase 7 — DESIGN.md and performance record, item 3 (`ui/phase-7-document-ryetdc`)
+## 25. Redesign Phase 7 — DESIGN.md and performance record, item 3 (`ui/phase-7-document-ryetdc`, PR #396, merged, squash `173a8fa`)
 
 Roadmap item: Phase 7, the `DESIGN.md` regeneration and the Phase 0 performance comparison (roadmap section 4, Phase 7 bullets 3 and 4). Design system sections applied: 4 to 12 (read against the built CSS), and 15 (decisions, unchanged). Base: `origin/main` at `8849e7e`, which includes PR #394 (merge `7b26d10`). Designated branch: the session brief named the stem `ui/phase-7-document`; the session's designated branch was `ui/phase-7-document-ryetdc`, and the PR uses that name.
 
-Status, kept separate: **implemented**: docs only (`DESIGN.md`, `docs/DESIGN_SYSTEM.md` section 16, roadmap and this section). **Automated-tested**: yes, listed in 25.4. **Browser-tested**: performance capture only, in headless Chromium against a live empty sandbox; no manual checklist and no screenshots (25.5). **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: docs only (`DESIGN.md`, `docs/DESIGN_SYSTEM.md` section 16, roadmap and this section). **Automated-tested**: yes, listed in 25.4. **Browser-tested**: performance capture only, in headless Chromium against a live empty sandbox; no manual checklist and no screenshots (25.5). **Merged**: yes, PR #396, squash `173a8fa`, on Hamdi's instruction after a clean check on head `e5974ef`. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 25.1 Acceptance criteria (stated before the work)
 
