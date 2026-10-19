@@ -15,6 +15,10 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
+from discovery_candidate_supply import (
+    candidate_supply_report,
+    summarize_candidate_stages,
+)
 from discovery_recommendations import decayed_listen_weights, recent_style_families, music_key
 from recommendation_replay import load_capture, thaw_gathered_inputs, _validate_ranking_context
 
@@ -358,6 +362,11 @@ def evaluate(capture_path: str, history_path: str) -> dict[str, Any]:
     first_repeat, _ = run(first_gathered)
     last_repeat, _ = run(last_gathered)
     comparison = compare_outputs(first_output, last_output, int(payload["count"]))
+    frozen_albums = [entry["value"] for entry in payload["gathered_inputs"]["albums"]]
+    supply = candidate_supply_report(payload, first_output.get("debug_all_candidates", []))
+    supply["stages_last_profile"] = summarize_candidate_stages(
+        frozen_albums, last_output.get("debug_all_candidates", []),
+    )
     comparison["first_profile_repeatable"] = (
         _recommendation_identities(first_output) == _recommendation_identities(first_repeat)
         and _ranked_identities(first_output) == _ranked_identities(first_repeat)
@@ -388,6 +397,7 @@ def evaluate(capture_path: str, history_path: str) -> dict[str, Any]:
             "last_profile": last_tape.unique_entries_used,
         },
         "comparison": comparison,
+        "candidate_supply": supply,
         "interpretation_limit": (
             "This measures responsiveness on one frozen post-gathering candidate/library snapshot. "
             "The capture postdates both listening windows, so this is not a chronological "

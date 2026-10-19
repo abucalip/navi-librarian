@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-18 (owner-side full-engine profile responsiveness comparison completed)
+Last reviewed: 2026-10-18 (P1 candidate-supply diagnostics implemented on a branch; CI pending)
 
 ## Current focus
+
+**P1 candidate-supply diagnostics — implemented on a feature branch (2026-10-18), CI pending, not merged.** Adds aggregate-only CF recording, album, supplementary-yield, and stage diagnostics. No ranking, selection, ownership, eligibility, or provider-call change. Reproduces from the owner's frozen capture: 92/100 CF recordings from two artists, 19 albums from 8 artists, 12 owned, 5 selected. The two `duplicate_candidate` decisions are artist-cap rejections relabelled by the allocator, not duplicate supply identities. The capture's replay still reports `reproduced: false` on `main` too (stored expected output predates allocator fields). **Next action:** after the draft PR's required checks pass and the owner reviews, implement P3 bounded CF paging and measure eligible unique unowned supply offline.
 
 **Recommendation score attribution / shortlist diagnostics — PR #366 merged.** Merge commit `0588ec0cc8b0ed5ad32c596c5d2c5e314f107639`, exact tested PR head `deabda7d04f66909a6da5b2fec7dc889ed27a200`. All four required workflows passed on that exact head: Python syntax/full suite run `39160186431`, Docker packaging/full suite/build run `39160186619` (739 tests passed), container runtime smoke run `39160186497`, and validation-only multi-architecture image validation run `39160186550`. The evaluator now reports aggregate score components, allocation decisions, selected rank distribution, and score-ranked top-k overlap without candidate identities or per-candidate scores. No local tests or private capture replay were run by the assistant; publishing remains paused.
 

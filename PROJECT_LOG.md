@@ -1,3 +1,17 @@
+## 2026-10-18 — P1 candidate-supply diagnostics (aggregate only, no behavior change)
+
+- Task: roadmap P1 from the 2026-10-18 revision (PR #380, merged as `63e5e2a`). Added aggregate-only supply diagnostics at the CF gathering boundary: CF recording outcomes (returned, resolved, failed by bounded error class), distinct recording artists and top-two share, resolved albums per artist (top-N shares), supplementary query yield (attempted, zero-yield, failed, not attempted), and stage counts for owned, unowned unique before/after dedupe, and before/after artist cap.
+- Implementation: new `discovery_candidate_supply.py` (pure summarizers; exception types outside an allowlist collapse to `other`). `discovery_candidate_gathering.py` records per-recording and per-query outcomes in memory and returns a `candidate_supply` aggregate. Persisted pool diagnostics gain a `candidate_supply` block; public API responses are unchanged. The offline replay and profile comparison report the same aggregates from the capture without provider calls.
+- Behavior: no change to candidate selection, ranking, allocation, ownership, eligibility, provider calls, or cache behavior. Gathering makes the same calls in the same order.
+- Reproduction from the owner's frozen schema-v2 capture (aggregate output only): 100 of 100 CF recordings resolved; 92 of 100 from the top two artists; 19 CF albums from 8 artists; all 19 candidates from ListenBrainz CF; 12 already owned; 5 selected. Current replay also shows 2 `duplicate_candidate` decisions.
+- Correction to the handoff: the 2 `duplicate_candidate` rows are not duplicate supply identities (zero duplicate identities among the 19 candidates under the allocator's identity key). They are unowned albums by an artist already selected, which the allocator relabels as `duplicate_candidate` when a later phase re-visits them. The stage summary counts them as artist-cap rejections (2) and reports duplicate identity rows as 0.
+- Replay caveat (pre-existing, also on `main` at `63e5e2a`): `recommendation_replay.py` reports `reproduced: false` for this capture. Recommendations match (5/5, same scores); the stored expected output predates the allocator fields (`allocator_*`) and its stored decisions differ from current code (10 `recent_genre_cap_reached` vs current 2 `duplicate_candidate`). Not changed here.
+- Tests: `tests/test_discovery_candidate_supply.py` (13 synthetic cases: empty pool, single-artist pool, provider-failure pool with bounded classes, album shares, stage counts, artist cap relabelled as duplicate, supplementary yield, tape reconstruction, no identities in offline report, gathering integration). Full unit suite: 809 tests passed locally. CI and merge state: pending; no merge.
+- Limits: v2 captures do not store per-query supplementary yield, so the offline report states that field is unavailable. The figures come from one frozen fixture and do not show whether a change would improve future-listen outcomes.
+- Next: P3 bounded CF paging, using this aggregate to judge whether replenishment adds eligible unique unowned albums.
+
+---
+
 ## 2026-10-18 — PR #370 merged: recommendation shortlist underfill diagnostics
 
 - PR #370 squash-merged as `6256fd375db0d9c93870f78b632b60390c9ee31f` from exact tested head `e8fac4e737ce75e11210c964af5a50e4ca9bdede`.

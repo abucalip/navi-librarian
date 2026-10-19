@@ -321,10 +321,15 @@ def record_recommendation_diagnostics(
 ) -> dict[str, Any]:
     """Persist the bounded pool snapshot using the completed gathering result."""
     from collections import Counter
+    from discovery_candidate_supply import summarize_candidate_stages
     from recommendation_diagnostics import summarize_candidate_diagnostics
 
     albums = list(albums)
     aggregate = summarize_candidate_diagnostics(gathered, candidate_diagnostics or [])
+    aggregate["candidate_supply"] = {
+        **aggregate["candidate_supply"],
+        "stages": summarize_candidate_stages(albums, candidate_diagnostics or []),
+    }
     return record_recommendation_pool_diagnostic(
         database_path,
         gathered.get("cf_recording_mbids", []),
