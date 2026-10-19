@@ -4,8 +4,10 @@ from unittest import mock
 
 from discovery_candidate_gathering import (
     RecommendationProviders,
+    _RETRY_AFTER_MAX_SECONDS,
     _TAG_SEARCH_ATTEMPTS,
     _get_with_bounded_retry,
+    _retry_after_seconds,
     gather_recommendation_candidates,
 )
 
@@ -159,6 +161,94 @@ class _StatusRaisingResponse:
 
     def raise_for_status(self):
         raise HTTPStatusError(f"{self.status_code} synthetic")
+
+
+class RetryAfterHonoringTests(unittest.TestCase):
+    def _run(self, responses, *, honor=True):
+        client = _HeaderedClient(responses)
+        sleeps = []
+        response = _get_with_bounded_retry(
+            client,
+            "https://musicbrainz.org/ws/2/artist/synthetic",
+            params={"fmt": "json", "inc": "genres"},
+            headers={},
+            sleep=sleeps.append,
+            honor_retry_after=honor,
+        )
+        return response, client.calls, sleeps
+
+    def test_seconds_form_is_used_as_the_wait(self):
+        response, calls, sleeps = self._run([(503, {"Retry-After": "3"}), (200, {})])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(calls, 2)
+        self.assertEqual(sleeps, [3.0])
+
+    def test_missing_header_falls_back_to_fixed_backoff(self):
+        response, calls, sleeps = self._run([(429, {}), (429, {}), (200, {})])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sleeps, [2, 4])
+
+    def test_unparseable_header_falls_back_to_fixed_backoff(self):
+        response, _, sleeps = self._run([(503, {"Retry-After": "soon"}), (200, {})])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sleeps, [2])
+
+    def test_oversized_value_is_capped(self):
+        response, _, sleeps = self._run([(429, {"Retry-After": "3600"}), (200, {})])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sleeps, [_RETRY_AFTER_MAX_SECONDS])
+
+    def test_http_date_form_is_parsed_and_capped(self):
+        far_future = "Wed, 21 Oct 2099 07:28:00 GMT"
+        response, _, sleeps = self._run([(503, {"Retry-After": far_future}), (200, {})])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sleeps, [_RETRY_AFTER_MAX_SECONDS])
+
+    def test_http_date_in_the_past_waits_zero(self):
+        response, _, sleeps = self._run(
+            [(503, {"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}), (200, {})]
+        )
+        self.assertEqual(sleeps, [0.0])
+
+    def test_retry_after_is_ignored_when_not_requested(self):
+        response, _, sleeps = self._run(
+            [(503, {"Retry-After": "7"}), (200, {})], honor=False
+        )
+        self.assertEqual(sleeps, [2])
+
+    def test_retry_after_is_ignored_on_other_retryable_statuses(self):
+        response, _, sleeps = self._run([(500, {"Retry-After": "7"}), (200, {})])
+        self.assertEqual(sleeps, [2])
+
+    def test_attempts_stay_at_three_and_retryable_failures_are_returned_uncached(self):
+        response, calls, sleeps = self._run(
+            [(429, {"Retry-After": "1"})] * 4 + [(200, {})]
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(calls, 3)
+        self.assertEqual(sleeps, [1.0, 1.0])
+
+    def test_retry_after_parser_handles_missing_and_bad_values(self):
+        self.assertIsNone(_retry_after_seconds(_HeaderedResponse(200, {})))
+        self.assertIsNone(_retry_after_seconds(_HeaderedResponse(200, {"Retry-After": "nan"})))
+        self.assertEqual(_retry_after_seconds(_HeaderedResponse(200, {"Retry-After": "2.5"})), 2.5)
+
+
+class _HeaderedResponse:
+    def __init__(self, status_code, headers):
+        self.status_code = status_code
+        self.headers = headers
+
+
+class _HeaderedClient:
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = 0
+
+    def get(self, url, *, params=None, headers=None):
+        self.calls += 1
+        status, response_headers = self._responses.pop(0)
+        return _HeaderedResponse(status, response_headers)
 
 
 class _ScriptedClient:
