@@ -171,6 +171,80 @@ function formatDownloadBytes(value) {
   return amount.toFixed(amount >= 100 ? 0 : 1) + ' ' + units[unit];
 }
 
+/* --------------------------------------------------------------- acquisition status rows
+
+   Acquisitions are status records, so each one is a row, not an artwork card (DESIGN_SYSTEM.md 9.5).
+   The server's job statuses are the vocabulary and are not renamed. This table gives each one a
+   glyph and a human label. The glyph and label carry the state; the tone only adds emphasis, so
+   no state is carried by colour alone. A status missing from the table still renders with a bullet
+   and its own name, never a blank cell. */
+const ACQUISITION_STATUS_TABLE = {
+  searching: {glyph: '…', label: 'Searching sources', tone: 'active'},
+  requested: {glyph: '›', label: 'Requested', tone: 'active'},
+  queued: {glyph: '›', label: 'Queued', tone: 'active'},
+  queued_unconfirmed: {glyph: '?', label: 'Queued, not yet confirmed', tone: 'caution'},
+  downloading: {glyph: '↓', label: 'Downloading', tone: 'active'},
+  download_complete_waiting_for_folder: {glyph: '↓', label: 'Download complete, waiting for folder', tone: 'active'},
+  importing: {glyph: '›', label: 'Importing', tone: 'active'},
+  imported: {glyph: '✓', label: 'Imported', tone: 'ok'},
+  monitoring: {glyph: '…', label: 'Monitoring download', tone: 'active'},
+  recovery_started: {glyph: '…', label: 'Recovery started', tone: 'active'},
+  queue_uncertain: {glyph: '?', label: 'Queue status uncertain', tone: 'caution'},
+  review_required: {glyph: '?', label: 'Needs review', tone: 'caution'},
+  source_switching: {glyph: '…', label: 'Switching source', tone: 'active'},
+  skip_requested: {glyph: '›', label: 'Skip requested', tone: 'active'},
+  retry_requested: {glyph: '›', label: 'Retry requested', tone: 'active'},
+  dismissed: {glyph: '—', label: 'Dismissed', tone: 'muted'},
+  no_matches: {glyph: '!', label: 'No matches found', tone: 'error'},
+  queue_failed: {glyph: '!', label: 'Could not queue', tone: 'error'},
+  settings_required: {glyph: '!', label: 'Settings required', tone: 'error'},
+  slskd_error: {glyph: '!', label: 'Soulseek connection error', tone: 'error'},
+  download_failed: {glyph: '!', label: 'Download failed', tone: 'error'},
+  download_complete_move_failed: {glyph: '!', label: 'Could not move download', tone: 'error'},
+  source_switch_failed: {glyph: '!', label: 'Source switch failed', tone: 'error'},
+  monitor_error: {glyph: '!', label: 'Monitor error', tone: 'error'},
+  monitor_timeout: {glyph: '!', label: 'Monitor timed out', tone: 'error'},
+  monitor_recovery_failed: {glyph: '!', label: 'Recovery failed', tone: 'error'},
+  recovery_unavailable: {glyph: '!', label: 'Recovery unavailable', tone: 'error'},
+  error: {glyph: '!', label: 'Error', tone: 'error'},
+  failed: {glyph: '!', label: 'Failed', tone: 'error'},
+};
+
+function acquisitionStatusInfo(status) {
+  const key = String(status || '').toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(ACQUISITION_STATUS_TABLE, key)) return ACQUISITION_STATUS_TABLE[key];
+  const name = key ? key.replaceAll('_', ' ') : 'unknown status';
+  return {glyph: '•', label: name.charAt(0).toUpperCase() + name.slice(1), tone: 'muted'};
+}
+
+// Skeleton rows are shown only while the list is empty, so a refresh never blanks known rows.
+function showAcquisitionSkeleton() {
+  const target = $('acquisitionCards');
+  if (target.children.length) return;
+  const rows = [0, 1, 2].map(() => {
+    const row = document.createElement('div');
+    row.className = 'acq-row is-skeleton';
+    row.setAttribute('aria-hidden', 'true');
+    const art = document.createElement('span');
+    art.className = 'skeleton-art';
+    const main = document.createElement('div');
+    main.className = 'acq-main';
+    const title = document.createElement('span');
+    title.className = 'skeleton-main';
+    const meta = document.createElement('span');
+    meta.className = 'skeleton-meta';
+    main.append(title, meta);
+    const state = document.createElement('div');
+    state.className = 'acq-state';
+    const stateLine = document.createElement('span');
+    stateLine.className = 'skeleton-meta';
+    state.append(stateLine);
+    row.append(art, main, state);
+    return row;
+  });
+  target.replaceChildren(...rows);
+}
+
 function renderAcquisitions(data, targetOverride = null, statusOverride = null, onlyIdentity = null) {
   const target = targetOverride || $('acquisitionCards');
   const status = statusOverride || $('acquisitionsStatus');
@@ -194,42 +268,100 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       if (onlyIdentity && [job.artist || '', job.album || ''].join('::').toLocaleLowerCase() !== onlyIdentity) continue;
       const dismissalKey = [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
-      const card = document.createElement('article');
-      card.className = 'card';
-      makeAlbumCardInteractive(card, job.artist || 'Unknown artist', job.album || 'Unknown album', job.details || {}, true);
-      addTextElement(card, 'p', 'card-category', String(job.status || 'unknown').replaceAll('_', ' '));
-      addTextElement(card, 'h3', '', job.album || 'Unknown album');
       const details = job.details || {};
       const metadata = details.metadata || {};
-      applyAlbumYear(card, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
-      addTextElement(card, 'p', 'card-artist', job.artist || 'Unknown artist');
+      const info = acquisitionStatusInfo(job.status);
+      const artist = job.artist || 'Unknown artist';
+      const album = job.album || 'Unknown album';
+      const row = document.createElement('article');
+      row.className = 'acq-row';
+      row.dataset.status = String(job.status || 'unknown');
+      makeAlbumCardInteractive(row, artist, album, details, true);
+      applyAlbumYear(row, metadata.year || metadata.release_year || metadata.first_release_year || details.year || job.year);
+      attachArtwork(row, artist, album);
+
+      const main = document.createElement('div');
+      main.className = 'acq-main';
+      row.append(main);
+      addTextElement(main, 'h3', '', album);
+      ensureAlbumYearBadge(row);
+      addTextElement(main, 'p', 'acq-artist', artist);
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
         flac_16_44: 'FLAC 16-bit / 44.1 kHz',
       };
       const quality = Array.isArray(details.quality_summary) ? details.quality_summary : [];
-      addTextElement(card, 'p', 'card-meta',
+      addTextElement(main, 'p', 'acq-profile',
         'Quality profile: ' + (quality.length
           ? quality.map(value => qualityLabels[value] || String(value).replaceAll('_', ' ')).join(' · ')
           : 'Not reported'));
+      const lines = [
+        details.message,
+        details.error,
+        details.source_folder ? 'Source: ' + details.source_folder : '',
+        details.destination ? 'Destination: ' + details.destination : '',
+        details.downloads_path ? 'Downloads: ' + details.downloads_path : '',
+        details.source_username ? 'Peer: ' + details.source_username : '',
+        details.file_count ? 'Expected files: ' + details.file_count : '',
+        details.states ? 'Transfer states: ' + details.states.join(', ') : '',
+        details.transfer_states ? 'Transfer states: ' + details.transfer_states.join(', ') : '',
+        details.expected_folder ? 'Expected folder: ' + details.expected_folder : '',
+        details.matched_transfer_records !== undefined ? 'Matched transfer records: ' + details.matched_transfer_records + ' / ' + (details.expected_files ?? details.file_count ?? '?') : '',
+        details.downloads_path_available === false ? 'Completed-download directory is not accessible to the backend.' : '',
+        details.completion_evidence ? 'Completion evidence: ' + details.completion_evidence : '',
+        job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
+      ].filter(Boolean);
+      if (lines.length) {
+        const transport = document.createElement('div');
+        transport.className = 'acq-transport';
+        for (const line of lines) addTextElement(transport, 'p', 'acq-line', line);
+        main.append(transport);
+      }
+      if (details.status && details.status !== job.status) {
+        addTextElement(main, 'pre', 'debug', pretty(details));
+      }
+
+      // State: the glyph and label are the status; the bar and figures only add detail.
+      const state = document.createElement('div');
+      state.className = 'acq-state';
+      row.append(state);
+      const statusLine = document.createElement('p');
+      statusLine.className = 'acq-status is-' + info.tone;
+      const glyph = document.createElement('span');
+      glyph.className = 'acq-glyph';
+      glyph.setAttribute('aria-hidden', 'true');
+      glyph.textContent = info.glyph;
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = info.label;
+      statusLine.append(glyph, statusLabel);
+      state.append(statusLine);
+
       const progress = details.live_progress;
       if (['downloading', 'download_complete_waiting_for_folder'].includes(job.status) && progress) {
-        const progressRow = document.createElement('div');
-        progressRow.className = 'download-progress';
-        const ring = document.createElement('div');
-        ring.className = 'progress-ring';
         const percent = Number.isFinite(Number(progress.percent)) && progress.percent !== null
           ? Math.max(0, Math.min(100, Number(progress.percent))) : null;
-        ring.style.setProperty('--progress', percent === null ? '0%' : percent + '%');
-        ring.setAttribute('role', 'img');
-        ring.setAttribute('aria-label', percent === null ? 'Download progress unavailable' : 'Download ' + Math.round(percent) + ' percent complete');
-        const percentText = document.createElement('span');
-        percentText.textContent = percent === null ? '—' : Math.round(percent) + '%';
-        ring.append(percentText);
-        const copy = document.createElement('div');
-        copy.className = 'download-progress-copy';
-        addTextElement(copy, 'p', 'download-progress-label', 'Download progress');
+        // The bar is scaled with transform only (DESIGN_SYSTEM.md 11). Its value is also written as
+        // text, so the percentage never depends on the bar being seen.
+        const meter = document.createElement('div');
+        meter.className = 'acq-progress';
+        meter.setAttribute('role', 'progressbar');
+        meter.setAttribute('aria-label', 'Download progress');
+        meter.setAttribute('aria-valuemin', '0');
+        meter.setAttribute('aria-valuemax', '100');
+        const fill = document.createElement('span');
+        fill.className = 'acq-progress-fill';
+        if (percent === null) {
+          meter.setAttribute('aria-valuetext', 'Progress unavailable');
+          fill.style.setProperty('--progress', '0');
+        } else {
+          meter.setAttribute('aria-valuenow', String(Math.round(percent)));
+          fill.style.setProperty('--progress', String(percent / 100));
+        }
+        meter.append(fill);
+        const percentText = document.createElement('p');
+        percentText.className = 'acq-percent';
+        percentText.textContent = percent === null ? 'Progress unavailable' : Math.round(percent) + '% complete';
         const speed = progress.speed_bytes_per_second;
         let speedText = 'Speed unavailable';
         if (Number.isFinite(Number(speed)) && speed !== null) {
@@ -238,24 +370,22 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             ? (value / (1024 * 1024)).toFixed(1) + ' MB/s'
             : value >= 1024 ? (value / 1024).toFixed(0) + ' KB/s' : Math.round(value) + ' B/s';
         }
-        const speedAndSize = document.createElement('div');
-        speedAndSize.className = 'download-progress-speed-row';
-        addTextElement(speedAndSize, 'p', 'download-progress-stat', speedText);
-        const totalSize = formatDownloadBytes(progress.total_size_bytes);
-        const remainingSize = formatDownloadBytes(progress.remaining_size_bytes);
-        if (totalSize !== null && remainingSize !== null) {
-          addTextElement(speedAndSize, 'p', 'download-progress-stat',
-            'Total ' + totalSize + ' · ' + remainingSize + ' remaining');
-        }
-        copy.append(speedAndSize);
         const remaining = Number.isFinite(Number(progress.remaining_tracks)) ? Math.max(0, Number(progress.remaining_tracks)) : null;
         const totalTracks = Number.isFinite(Number(progress.total_tracks)) ? Math.max(0, Number(progress.total_tracks)) : null;
-        addTextElement(copy, 'p', 'download-progress-stat',
+        const totalSize = formatDownloadBytes(progress.total_size_bytes);
+        const remainingSize = formatDownloadBytes(progress.remaining_size_bytes);
+        state.append(meter, percentText);
+        addTextElement(state, 'p', 'acq-stat', speedText);
+        if (totalSize !== null && remainingSize !== null) {
+          addTextElement(state, 'p', 'acq-stat', 'Total ' + totalSize + ' · ' + remainingSize + ' remaining');
+        }
+        addTextElement(state, 'p', 'acq-stat',
           remaining === null ? 'Tracks remaining unavailable' :
           String(remaining) + ' of ' + (totalTracks === null ? '?' : totalTracks) + ' tracks remaining');
-        progressRow.append(ring, copy);
-        card.append(progressRow);
       }
+
+      const actions = document.createElement('div');
+      actions.className = 'acq-actions';
       if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
         const stallButton = document.createElement('button');
         stallButton.type = 'button';
@@ -278,28 +408,9 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             stallButton.disabled = false;
           }
         });
-        card.append(stallButton);
+        actions.append(stallButton);
       }
-      const lines = [
-        details.message,
-        details.error,
-        details.source_folder ? 'Source: ' + details.source_folder : '',
-        details.destination ? 'Destination: ' + details.destination : '',
-        details.downloads_path ? 'Downloads: ' + details.downloads_path : '',
-        details.source_username ? 'Peer: ' + details.source_username : '',
-        details.file_count ? 'Expected files: ' + details.file_count : '',
-        details.states ? 'Transfer states: ' + details.states.join(', ') : '',
-        details.transfer_states ? 'Transfer states: ' + details.transfer_states.join(', ') : '',
-        details.expected_folder ? 'Expected folder: ' + details.expected_folder : '',
-        details.matched_transfer_records !== undefined ? 'Matched transfer records: ' + details.matched_transfer_records + ' / ' + (details.expected_files ?? details.file_count ?? '?') : '',
-        details.downloads_path_available === false ? 'Completed-download directory is not accessible to the backend.' : '',
-        details.completion_evidence ? 'Completion evidence: ' + details.completion_evidence : '',
-        job.updated_at ? 'Updated: ' + new Date(job.updated_at * 1000).toLocaleString() : ''
-      ].filter(Boolean);
-      for (const line of lines) addTextElement(card, 'p', 'card-meta', line);
       if (job.status !== 'dismissed') {
-        const actions = document.createElement('div');
-        actions.className = 'card-actions';
         const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
         if (retryableStatuses.has(job.status)) {
           const retry = document.createElement('button');
@@ -322,8 +433,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
           });
           actions.append(retry);
         }
-        {
-          const dismiss = document.createElement('button');
+        const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
         dismiss.addEventListener('click', async () => {
@@ -335,13 +445,13 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
             stored.add(dismissalKey);
             localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
-            card.remove();
-            const visibleCards = target.querySelectorAll('.card').length;
-            status.textContent = visibleCards
-              ? pluralize(visibleCards, 'acquisition record', 'acquisition records') + '.'
+            row.remove();
+            const visibleRows = target.querySelectorAll('.acq-row').length;
+            status.textContent = visibleRows
+              ? pluralize(visibleRows, 'acquisition record', 'acquisition records') + '.'
               : 'No acquisition records to show.';
             if (status === $('acquisitionsStatus')) {
-              setStatusState(status, visibleCards ? 'progress' : 'empty');
+              setStatusState(status, visibleRows ? 'progress' : 'empty');
             }
           } catch (error) {
             status.textContent = error.message;
@@ -349,14 +459,10 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             dismiss.disabled = false;
           }
         });
-          actions.append(dismiss);
-        }
-        if (actions.childElementCount) card.append(actions);
+        actions.append(dismiss);
       }
-      if (details.status && details.status !== job.status) {
-        addTextElement(card, 'pre', 'debug', pretty(details));
-      }
-      target.append(card);
+      if (actions.childElementCount) row.append(actions);
+      target.append(row);
     }
   } catch (error) {
     status.textContent = error.message;
@@ -390,9 +496,12 @@ async function refreshActiveDownloadBadge() {
 async function loadAcquisitions() {
   $('acquisitionsStatus').textContent = 'Connecting to acquisition status…';
   setStatusState($('acquisitionsStatus'), 'loading');
+  showAcquisitionSkeleton();
   try {
     renderAcquisitions(await requestJSON('/api/acquisitions'));
   } catch (error) {
+    // Placeholder rows must not outlive a failed load; known rows are kept as they were.
+    if ($('acquisitionCards').querySelector('.is-skeleton')) $('acquisitionCards').replaceChildren();
     $('acquisitionsStatus').textContent = error.message;
     setStatusState($('acquisitionsStatus'), 'error');
   }
@@ -719,7 +828,7 @@ async function openAlbumModal(card, returnFocus = card) {
 }
 
 document.addEventListener('click', event => {
-  const card = event.target.closest && event.target.closest('.card[data-album-title], .ranked-row[data-album-title]');
+  const card = event.target.closest && event.target.closest('.card[data-album-title], .ranked-row[data-album-title], .acq-row[data-album-title]');
   if (!card || event.target.closest('button, a, input, select, textarea')) return;
   openAlbumModal(card);
 });
@@ -728,7 +837,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && albumModalOpen) closeAlbumModal();
   else if (event.key === 'Escape' && !appMenu.hidden) setAppMenuOpen(false, {focusToggle: true});
   if (event.key === 'Tab' && albumModalOpen) trapAlbumModalFocus(event);
-  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title], .ranked-row[data-album-title]')) {
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card[data-album-title], .ranked-row[data-album-title], .acq-row[data-album-title]')) {
     event.preventDefault(); openAlbumModal(event.target);
   }
 });

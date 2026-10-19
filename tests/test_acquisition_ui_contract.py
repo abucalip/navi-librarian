@@ -77,10 +77,12 @@ class AcquisitionUIRegressionTests(unittest.TestCase):
         self.assertIn("if (job.status !== 'dismissed')", render)
         self.assertIn("dismiss.textContent = 'Dismiss';", render)
         self.assertIn("await sendJSON('/api/acquisitions/dismiss', 'POST'", render)
-        self.assertIn("card.remove();", render)
+        # Phase 5 (status rows): the record is a row, so the removal targets `row`. Only the element name
+        # changed; the success-only removal and its ordering are asserted exactly as before.
+        self.assertIn("row.remove();", render)
         self.assertIn("dismiss.disabled = false;", render)
         self.assertIn("status.textContent = error.message;", render)
-        self.assertLess(render.index("await sendJSON('/api/acquisitions/dismiss'"), render.index("card.remove();"))
+        self.assertLess(render.index("await sendJSON('/api/acquisitions/dismiss'"), render.index("row.remove();"))
         self.assertLess(render.index("catch (error)", render.index("await sendJSON('/api/acquisitions/dismiss'")), render.index("dismiss.disabled = false;", render.index("await sendJSON('/api/acquisitions/dismiss'")))
 
     def test_dismiss_is_not_limited_to_a_single_acquisition_status(self):
@@ -93,6 +95,80 @@ class AcquisitionUIRegressionTests(unittest.TestCase):
 
         self.assertNotRegex(dismiss_block, r"job\.status\s*(?:===|!==|==|!=)")
         self.assertIn("if (job.status !== 'dismissed')", render)
+
+
+class AcquisitionStatusRowTests(unittest.TestCase):
+    """Phase 5: acquisition jobs render as status rows (DESIGN_SYSTEM.md 9.5, 9.6, 11)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.js = APP_JS.read_text(encoding="utf-8")
+        cls.css = (APP_JS.parent / "app.css").read_text(encoding="utf-8")
+        cls.html = (APP_JS.parent.parent / "app" / "templates" / "index.html").read_text(encoding="utf-8")
+
+    def test_every_status_in_the_server_vocabulary_has_a_glyph_and_a_label(self):
+        table = function_source(self.js, "const ACQUISITION_STATUS_TABLE = {", "function acquisitionStatusInfo(")
+        for status in ("searching", "requested", "queued", "downloading", "download_complete_waiting_for_folder",
+                       "importing", "imported", "dismissed", "queue_uncertain", "recovery_started", "monitoring",
+                       "no_matches", "queue_failed", "settings_required", "slskd_error"):
+            self.assertRegex(table, rf"\n\s+{status}: \{{glyph: '[^']+', label: '[^']+', tone: '[a-z]+'\}}")
+
+    def test_an_unknown_status_still_renders_a_glyph_and_a_label(self):
+        info = function_source(self.js, "function acquisitionStatusInfo(", "// Skeleton rows are shown only")
+        self.assertIn("hasOwnProperty.call(ACQUISITION_STATUS_TABLE, key)", info)
+        self.assertIn("glyph: '•'", info)
+        self.assertIn("'unknown status'", info)
+
+    def test_status_is_never_carried_by_colour_alone(self):
+        render = function_source(self.js, "function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
+        self.assertIn("glyph.setAttribute('aria-hidden', 'true');", render)
+        self.assertIn("statusLabel.textContent = info.label;", render)
+        self.assertIn("statusLine.append(glyph, statusLabel);", render)
+
+    def test_progress_is_a_progressbar_scaled_with_transform_only(self):
+        render = function_source(self.js, "function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
+        self.assertIn("meter.setAttribute('role', 'progressbar');", render)
+        self.assertIn("meter.setAttribute('aria-valuenow', String(Math.round(percent)));", render)
+        self.assertIn("fill.style.setProperty('--progress', String(percent / 100));", render)
+        self.assertNotIn("progress-ring", self.js)
+        self.assertNotIn("conic-gradient", self.css.split("/* Acquisition status rows")[1].split("/* Ranked rows")[0])
+        self.assertIn("transform: scaleX(var(--progress, 0));", self.css)
+        fill = self.css[self.css.index(".acq-progress-fill {"):self.css.index("}", self.css.index(".acq-progress-fill {"))]
+        self.assertIn("transition: transform", fill)
+        self.assertNotRegex(fill, r"\b(?:width|height|left)\s*:")
+
+    def test_progress_without_a_percentage_says_so(self):
+        render = function_source(self.js, "function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
+        self.assertIn("meter.setAttribute('aria-valuetext', 'Progress unavailable');", render)
+
+    def test_the_list_is_not_a_card_grid_and_numerals_are_not_used(self):
+        self.assertIn('id="acquisitionCards" class="acq-list"', self.html)
+        render = function_source(self.js, "function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
+        self.assertNotIn("rank-numeral", render)
+        self.assertIn("row.dataset.status = String(job.status || 'unknown');", render)
+
+    def test_status_rows_open_the_album_dialog_and_still_use_the_shared_click_handler(self):
+        self.assertIn(".acq-row[data-album-title]", self.js)
+        render = function_source(self.js, "function renderAcquisitions(", "const ACTIVE_DOWNLOAD_STATUSES")
+        self.assertIn("makeAlbumCardInteractive(row, artist, album, details, true);", render)
+
+    def test_loading_shows_placeholder_rows_only_while_the_list_is_empty(self):
+        skeleton = function_source(self.js, "function showAcquisitionSkeleton()", "function renderAcquisitions(")
+        self.assertIn("if (target.children.length) return;", skeleton)
+        self.assertIn("row.setAttribute('aria-hidden', 'true');", skeleton)
+        load = function_source(self.js, "async function loadAcquisitions()", "refreshActiveDownloadBadge();")
+        self.assertIn("showAcquisitionSkeleton();", load)
+        self.assertIn("querySelector('.is-skeleton')) $('acquisitionCards').replaceChildren();", load)
+
+    def test_placeholder_rows_pulse_only_and_reduced_motion_stops_them(self):
+        self.assertIn(".acq-row.is-skeleton { cursor: default; animation: skeleton-pulse 1.4s ease-in-out infinite; }", self.css)
+        reduced = self.css[self.css.index("@media (prefers-reduced-motion: reduce) {\n  .acq-progress-fill"):]
+        self.assertIn(".acq-row.is-skeleton { animation: none; }", reduced)
+
+    def test_the_live_stream_and_reconnect_path_are_unchanged(self):
+        stream = function_source(self.js, "let acquisitionStream = null;", "function stopAcquisitionStream()")
+        self.assertIn("new EventSource('/api/acquisitions/stream')", stream)
+        self.assertIn("Reconnecting to live download updates…", stream)
 
 
 class AsyncGetButtonTests(unittest.TestCase):

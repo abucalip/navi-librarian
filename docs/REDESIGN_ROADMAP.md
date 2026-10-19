@@ -87,6 +87,8 @@ Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral 
 
 ### Phase 5 — Acquisitions (M)
 
+Status: **implemented on `ui/phase-5-acquisition-rows`, PR open, not merged or deployed.** Acquisition cards and the conic ring are replaced by status rows, a linear progress bar scaled with `transform`, and one client-side status table (glyph and label for every status). Get, retry, skip, dismiss and the `/api/acquisitions/stream` path are unchanged. Evidence, checks and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 19.
+
 - Replace acquisition cards and the conic ring with status rows and a linear progress bar (design system 9.5); one table maps server statuses to glyph and label.
 - Keep Get, retry, skip and dismiss semantics and the `/api/acquisitions/stream` updates. Verify live updates and the reconnect path.
 - Exit: every status in the vocabulary renders with glyph and label; progress bar uses `transform`; contract tests updated; manual check of pending, failed and confirmed Get.

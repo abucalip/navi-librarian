@@ -1871,3 +1871,61 @@ Design system sections applied: 8 (Dashboard row: artwork tile strip, unranked, 
 
 **Next action.** Phase 5 (Acquisitions) is the next roadmap phase. Phase 4 is complete with this PR merged; deployment is the owner's call.
 
+
+## 19. Redesign Phase 5 — Acquisitions as status rows (`ui/phase-5-acquisition-rows`)
+
+Roadmap item: Phase 5, first bullet (status rows and a linear progress bar; one status table). Design-system sections applied: 9.5 (acquisition status row), 9.6 (skeleton loading, status line), 11 (motion, `transform` only), 12. Acceptance criteria were those in the Phase 5 brief: every status renders with a glyph and a label; the bar animates only `transform`; no horizontal overflow at 1440, 1200, 900, 620 and 390px; 44px targets; reduced motion respected; pending, failed and confirmed Get checked; contract tests changed only where a structure changed intentionally.
+
+### 19.1 What changed
+- `renderAcquisitions` builds one `article.acq-row` per job: artwork thumb (the existing `attachArtwork` loader, so the image comes from the existing `/api/artwork` endpoint), title with year, artist, quality profile (mono), transport lines, and a state block. The state block holds the glyph and label, and for downloads a `role="progressbar"` with the percentage as text, plus speed, size and track figures.
+- `ACQUISITION_STATUS_TABLE` maps each server job status to a glyph, a label and a tone. Unknown statuses render with `•` and their own name, never blank.
+- The conic `progress-ring` and the `.download-progress` card block are removed. The bar fills with `transform: scaleX(var(--progress))`.
+- Loading shows three skeleton rows only while the list is empty, and clears them on failure. Known rows stay visible during a refresh.
+- Rows keep the album-dialog click and Enter behaviour (`.acq-row[data-album-title]` is added to the shared delegation).
+- `index.html`: `#acquisitionCards` changes class from `cards acquisition-grid` to `acq-list`.
+- Unchanged: `/api/acquire` (Try again), `/api/acquisitions/skip`, `/api/acquisitions/dismiss` (success-only removal), `/api/acquisitions/stream` and its reconnect message, the Get state machine.
+
+### 19.2 Decisions taken without the owner (state these in review)
+- The title is not clamped. The ranked rows clamp to two lines; a status record shows the whole album name, so no state is hidden. The stylesheet keeps its single `-webkit-line-clamp`, which the classics contract test pins.
+- Status copy is new wording for the glyph labels (for example "Download complete, waiting for folder"). The raw status names are not shown any more, except as the fallback for an unknown status. The server vocabulary itself is not renamed.
+- The table covers the statuses found in the backend and in the design system. A status that is not listed falls back as described above. Nothing was invented in the API.
+- Artwork is now requested for acquisition rows. Each row adds one cached `/api/artwork` request, as ranked rows already do.
+- Rows keep `role="button"` from the shared album-dialog pattern, with Try again and Dismiss inside it. That nesting is pre-existing, and is recorded as a limitation (19.6), not changed here.
+
+### 19.3 Contract tests
+`tests/test_acquisition_ui_contract.py`: one narrow update, `card.remove();` becomes `row.remove();` (the dismiss handler now removes a row). The success-only removal and its ordering are asserted exactly as before. Ten tests were added in `AcquisitionStatusRowTests` for the status table, the unknown-status fallback, glyph plus label, progressbar with `transform`, the unavailable-progress text, the skeleton, reduced motion, the shared click path and the stream path. No existing assertion was deleted or weakened. One intermediate failure, the `-webkit-line-clamp` count, and one, the first `620px` media block the shell test matches, were caused by my CSS placement and fixed by moving the rules, not by changing the tests.
+
+### 19.4 Checks actually run
+Run on the branch before the PR head was pushed (the head SHA is in the PR):
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass.
+- `python3 -m unittest discover -s tests -v`: 798 tests, OK. Baseline on `main` `b6acd7a` before the change: 788 tests, OK.
+- Focused: `tests.test_acquisition_ui_contract` 23 tests, OK.
+
+### 19.5 Browser checks (sandbox, not the owner's helper)
+The helper `~/navi-librarian-test/test-pr.sh` is not available in this environment. The check used two local servers: `main` `b6acd7a` on 8401 and the branch on 8402, each with `NAVIDROME_LIBRARIAN_DATA_DIR` set to a per-run directory and `SLSKD_URL=http://127.0.0.1:9`. No Navidrome library and no slskd were connected. Acquisition jobs, dashboard picks, artwork and album details were answered by Playwright with **RECONSTRUCTED** fixtures (11 jobs covering every status in the table, a long album title, an unknown status, a failing dismiss and a stall). Live-library checks are **skipped**. Screenshots are in `/mnt/project-files/phase-5-acquisitions/screenshots/` (`main-*` before, `branch-*` after, at 1440, 1200, 900, 620 and 390, element and viewport; plus skeleton, error, empty and after-dismiss at 1440). Raw results: `render-results.json` in the same folder.
+- Width matrix (both targets, five widths): horizontal overflow 0 everywhere; no row overflowing its box; no skeleton left after load.
+- Every status row shows a glyph and label (branch). Progress at 42% renders `matrix(0.42, 0, 0, 1, 0, 0)` with `transition-property: transform`; the progress-less download shows "Progress unavailable".
+- Keyboard: a row takes focus; Enter opens the album dialog; Escape closes it.
+- Try again posts once to `/api/acquire` with the row's artist and reloads the list.
+- Dismiss success removes only that row (10 remain). Dismiss failure keeps the row, re-enables the button and shows the server message in an error status line.
+- Skeleton: three placeholder rows with `aria-hidden` during a delayed load, status "Connecting…"; cleared on load. Error state: the list error is shown and no placeholder remains. Empty state: the empty copy.
+- Reduced motion: fill transition effectively 0s; row animation none.
+- Live stream: the sandbox stream closes after one event, so the reconnect message appears after the first event and the rows are kept (10). This exercises the reconnect path; a long-lived stream was not tested.
+- Get (dashboard, branch): pending (`is-pending`, `aria-busy`, disabled) → confirmed (`requested`, label "Acquisition requested") only after the server answered; failure → `is-failed` and enabled. Get code was not changed.
+- Console: no errors on the acquisitions width matrix. In the dialog check, the album dialog loads third-party platform icons and a cover from external hosts, which the sandbox cannot reach. That is the known limit B2 and is not from this change. The one 500 is the deliberate failing dismiss.
+- Network: no failed requests at any width except the deliberate dismiss 500 and the B2 external loads.
+
+### 19.6 Impeccable and web-design-guidelines
+- `/impeccable` context loaded (PRODUCT.md, DESIGN.md, the surface brief). `impeccable detect` run on `static/app.css` and `app/templates/index.html`. Applied: the two new 12px mono rules use the existing `--text-xs` step. Rejected: the other detector findings are in rules outside this change (ranked-row `999px` radius, the `11px`/`13px` legacy sizes, the 20px row title that matches the ranked row, the `rgba` overlays, the empty `<img>` and the `11px` text, which predate this PR).
+- web-design-guidelines: the guidelines source was fetched as a summary, not verbatim, so this is a review against that summary only. Reviewed for labels, focus, reduced motion, transform-only animation, tabular numerals, ellipsis, truncation and empty states. Applied: `transform`-only animation, `aria-hidden` on glyphs and skeletons, the existing `aria-live` status line, `tabular-nums` on percentages and figures. Rejected: none of the rules found a violation beyond the nested-button pattern below.
+
+### 19.7 Limitations
+- Chromium only, no screen-reader pass. The shared album-dialog pattern nests Try again and Dismiss inside a `role="button"` row. That is pre-existing; a fix (a row that is not a button, with a separate open control) is a separate PR because it changes the click behaviour.
+- The "Refresh status" button sits flush at the left edge of the section, as on `main`. Not changed here.
+- Artwork is from the sandbox mock (blank thumbs). Real artwork and real progress are for the owner's live-library check.
+- Stall and skip were tested only as the button's presence and label, not against a live source switch.
+
+### 19.8 Next action
+Owner: run the Phase 5 manual checklist on the exact PR head against a live library (pending, failed and confirmed Get; a real progress row; skip on a stalled job). Merge is the owner's call.

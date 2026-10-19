@@ -197,15 +197,71 @@ p { line-height: 1.55; }
 #recommendationCount { margin: 0 0 12px; color: var(--text-muted); font: 400 13px/1.5 var(--body); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .cards.deep-dive-rows { display: flex; flex-direction: column; gap: 27px; }
-/* Acquisition cards are status records, not artwork tiles: they carry a progress
-   ring, transport lines and a quality profile, and no artwork at all. Forcing them
-   into the four-column artwork grid squeezed that content into a 278px column.
-   They get a wider, deliberately less dense layout suited to reading status. */
-.cards.acquisition-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-.cards.acquisition-grid > .card { display: flex; flex-direction: column; }
-.cards.acquisition-grid > .card h3 { font-size: 22px; }
-.cards.acquisition-grid .card-meta { font: 400 12px/1.55 var(--body); }
-.cards.acquisition-grid .download-progress { margin: 13px 13px 0; }
+/* Acquisition status rows (DESIGN_SYSTEM.md 9.5, 9.6, 11). Each job is a row, not a card: artwork,
+   title, artist, quality profile and transport lines on the left; the state (a glyph and label, a
+   linear bar scaled with transform, and the figures) and the actions on the right. The list keeps the
+   server's order and shows no numeral, because it is not a ranking. */
+.acq-list { display: flex; flex-direction: column; border-top: 1px solid var(--edge); }
+.acq-row {
+  position: relative; min-width: 0; cursor: pointer;
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(200px, 260px) auto;
+  align-items: start; gap: 0 18px; padding: 16px 18px;
+  background: var(--surface); border-bottom: 1px solid var(--edge);
+}
+.acq-row:hover { background: var(--surface-hover); }
+.acq-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.acq-row .card-art {
+  width: 64px; height: 64px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+.acq-row .card-art::after { display: none; }
+.acq-row .card-art-placeholder { padding: 0; font-size: 0; }
+.acq-row .card-art-placeholder::before { content: none; }
+.acq-main { min-width: 0; }
+/* A status record shows the whole album name: it wraps rather than clamps, so no title is hidden. */
+.acq-row h3 { margin: 0; font: 600 20px/1.15 var(--display); letter-spacing: .005em; color: var(--text); overflow-wrap: anywhere; }
+.acq-row h3 .album-year { margin-left: 6px; color: var(--text-muted); font: 500 12px/1 var(--mono); white-space: nowrap; }
+.acq-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Technical metadata is the one place the mono face appears in a row (DESIGN_SYSTEM.md 5). */
+.acq-profile { margin: 6px 0 0; color: var(--text-subtle); font: 500 var(--text-xs)/1.4 var(--mono); overflow-wrap: anywhere; }
+.acq-transport { margin-top: 8px; color: var(--text-muted); font-size: var(--text-xs); }
+.acq-line { margin: 0; overflow-wrap: anywhere; }
+.acq-line + .acq-line { margin-top: 2px; }
+.acq-state { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.acq-status { margin: 0; display: flex; align-items: baseline; gap: 8px; color: var(--text); font: 600 var(--text-sm)/1.35 var(--body); }
+.acq-glyph { flex: 0 0 1.1em; text-align: center; color: var(--accent); font: 600 14px/1 var(--mono); }
+.acq-status.is-error, .acq-status.is-error .acq-glyph { color: var(--chart-red-text); }
+.acq-status.is-caution, .acq-status.is-caution .acq-glyph { color: var(--caution); }
+.acq-status.is-ok, .acq-status.is-ok .acq-glyph { color: var(--ok); }
+.acq-status.is-muted, .acq-status.is-muted .acq-glyph { color: var(--text-muted); }
+/* The track is a neutral step; the fill is the accent. Only transform animates. */
+.acq-progress { position: relative; height: 6px; overflow: hidden; background: var(--surface-hover); border-radius: var(--radius-chip); }
+.acq-progress-fill {
+  position: absolute; inset: 0; background: var(--accent);
+  transform: scaleX(var(--progress, 0)); transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.acq-percent { margin: 0; color: var(--text); font: 500 var(--text-xs)/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+.acq-stat { margin: 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.acq-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.acq-actions button { min-height: 44px; min-width: 44px; padding: 0 14px; font-size: 12px; font-weight: 600; }
+.acq-row.is-skeleton { cursor: default; animation: skeleton-pulse 1.4s ease-in-out infinite; }
+.acq-row.is-skeleton:hover { background: var(--surface); }
+.acq-row .skeleton-art { display: block; width: 64px; height: 64px; background: var(--surface-raised); border-radius: var(--radius-control); }
+.acq-row .skeleton-main { display: block; height: 22px; width: min(100%, 300px); background: var(--surface-raised); border-radius: var(--radius-chip); }
+.acq-row .skeleton-meta { display: block; height: 14px; width: 100%; margin-top: 10px; background: var(--surface-raised); border-radius: var(--radius-chip); }
+.acq-row.is-skeleton .acq-state .skeleton-meta { width: 60%; margin-top: 0; height: 16px; }
+@media (max-width: 1200px) { .acq-row { grid-template-columns: 56px minmax(0, 1fr) minmax(180px, 240px) auto; } .acq-row .card-art, .acq-row .skeleton-art { width: 56px; height: 56px; } }
+@media (max-width: 899px) {
+  .acq-row { grid-template-columns: 56px minmax(0, 1fr); gap: 12px 14px; }
+  .acq-row > .acq-state { grid-column: 2; grid-row: 2; }
+  .acq-row > .acq-actions { grid-column: 2; grid-row: 3; justify-content: flex-start; }
+}
+@media (max-width: 620px) { .acq-row { grid-template-columns: 48px minmax(0, 1fr); gap: 10px 12px; padding: 14px 12px 14px 14px; } .acq-row .card-art, .acq-row .skeleton-art { width: 48px; height: 48px; } .acq-row h3 { font-size: 18px; } }
+@media (prefers-reduced-motion: reduce) {
+  .acq-progress-fill { transition: none; }
+  .acq-row.is-skeleton { animation: none; }
+}
 .dashboard-carousel { display: flex; gap: 15px; overflow-x: auto; padding: 3px 2px 15px; scroll-snap-type: x proximity; scrollbar-color: var(--edge-strong) var(--surface); scrollbar-width: thin; scroll-behavior: smooth; }
 .dashboard-carousel > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 /* Dashboard picks: a static, unranked strip of artwork tiles (DESIGN_SYSTEM.md 8, D1). The strip
@@ -236,7 +292,7 @@ p { line-height: 1.55; }
 .genre-row-track { display: flex; gap: 13px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: var(--edge-strong) var(--surface); scrollbar-width: thin; scroll-behavior: smooth; }
 .genre-row-track > .card { flex: 0 0 218px; width: 218px; scroll-snap-align: start; }
 .card { position: relative; }
-.card.editorial-card, #acquisitionCards > .card { cursor: pointer; }
+.card.editorial-card { cursor: pointer; }
 .album-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.78); backdrop-filter: blur(5px); }
 .album-modal-backdrop[hidden] { display: none; }
 .album-modal { position: relative; width: min(100%, 1040px); max-height: min(90vh, 900px); overflow: auto; padding: 24px; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,.65); }
@@ -305,8 +361,8 @@ p { line-height: 1.55; }
 .get-album.is-failed { background: var(--surface-raised); border-color: var(--chart-red); color: var(--chart-red); }
 .get-album.is-failed .get-album-arrow, .get-album.is-failed .get-album-arrow-head { opacity: 1; }
 .get-album:disabled { cursor: progress; }
-@media (max-width: 1100px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .cards:not(.deep-dive-rows):not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
+@media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
 .card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-panel); transition: border-color .15s ease, transform .15s ease; }
 .card:hover { border-color: var(--edge-strong); transform: translateY(-2px); }
 .card-art {
@@ -328,17 +384,6 @@ p { line-height: 1.55; }
 .genre-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
 .genre-tag { padding: 3px 6px; color: var(--text-muted); background: var(--surface-raised); border: 1px solid var(--edge); border-radius: 2px; font: 10px/1.35 var(--mono); }
 .card-meta, .card-source { margin-top: 7px; margin-bottom: 0; color: var(--text-muted); font-size: 11px; overflow-wrap: anywhere; }
-.download-progress { display: flex; align-items: center; gap: 14px; margin: 13px; padding: 12px; background: var(--ink); border: 1px solid var(--edge); }
-.progress-ring { position: relative; display: grid; place-items: center; flex: 0 0 72px; width: 72px; height: 72px; border-radius: 50%; background: conic-gradient(var(--accent) var(--progress, 0%), var(--edge) 0); }
-.progress-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--ink); }
-.progress-ring span { position: relative; z-index: 1; color: var(--text); font: 500 14px/1 var(--mono); }
-.download-progress-copy { min-width: 0; }
-.download-progress-speed-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 12px; }
-.download-progress-speed-row .download-progress-stat + .download-progress-stat { margin-top: 0; color: var(--text-muted); }
-.download-progress-copy > .download-progress-stat { margin-top: 3px; }
-.download-progress-label { margin: 0 0 4px; color: var(--accent); font: 500 10px/1.4 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
-.download-progress-stat { margin: 0; color: var(--text); font-size: 12px; overflow-wrap: anywhere; }
-.download-progress-stat + .download-progress-stat { margin-top: 3px; color: var(--text-muted); }
 .card-source { padding-top: 8px; border-top: 1px solid var(--edge); }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
 .card-actions button { padding: 7px 8px; background: #2a2c29; }
@@ -391,7 +436,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .notyf__icon--success { background: var(--ok); }
 .notyf__icon--error { background: var(--chart-red); }
 
-@media (max-width: 1200px) { .cards:not(.acquisition-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } footer { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } }
+@media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } footer { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } }
 /* Icon-only rail between 621 and 900px. Item names, group names and the count stay in the
    accessibility tree (visually hidden), and each button keeps a title for hover. */
 @media (max-width: 900px) and (min-width: 621px) {
@@ -401,7 +446,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   nav button > span:not(.nav-count), .nav-group-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .nav-group + .nav-group { margin-top: 16px; }
   main { margin-right: 20px; } footer { margin-right: 20px; }
-  .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .discovery-controls { grid-template-columns: 1fr 1fr; } .discovery-controls input { grid-column: 1 / -1; }
 }
 /* The active-download count sits on the icon's corner when the label is hidden. */
 @media (max-width: 900px) { nav button .nav-count { position: absolute; top: 5px; right: 5px; margin-left: 0; font-size: 11px; } }
@@ -418,9 +463,9 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   nav button { flex: 0 0 auto; width: auto; min-width: 92px; min-height: 56px; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 4px; font-size: 11px; line-height: 1.2; text-align: center; }
   nav button > span:not(.nav-count) { max-width: 92px; }
   nav button.active { box-shadow: inset 0 3px var(--accent); }
-  main { margin: 94px 14px 0; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: 30px; } .cards:not(.acquisition-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .cards.acquisition-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
+  main { margin: 94px 14px 0; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: 30px; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: 18px; } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
-@media (max-width: 360px) { .cards:not(.acquisition-grid) { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 @media (prefers-reduced-motion: reduce) { .nav-indicator { transition: none; } }
 /* Durations are shortened rather than switched off. Notyf removes a toast on its
