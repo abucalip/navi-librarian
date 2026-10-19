@@ -19,6 +19,11 @@ REASON_PROVIDER_FAILURES = "provider_failures"
 REASON_EMPTY_BUILD = "empty_build"
 REASON_FEWER_THAN_SNAPSHOT = "fewer_items_than_snapshot"
 
+# A build is treated as degraded when more than this share of its provider lookups
+# failed. Conservative on purpose: a few transient failures do not block a refresh,
+# but a build that lost a large part of its evidence keeps the stored list.
+PROVIDER_FAILURE_SHARE_THRESHOLD = 0.2
+
 
 def _recommendations(payload: Any) -> list[Any] | None:
     """Return the recommendation list of a well-formed payload, else None."""
@@ -37,25 +42,36 @@ def _eligible_count(
     return len(filter_snapshot(recommendations, is_excluded)[0])
 
 
+def _failure_share_ok(failures: int, lookups: int | None) -> bool:
+    """Return True when the failure share is at or below the threshold."""
+    if lookups is None or lookups <= 0:
+        return False
+    return failures / lookups <= PROVIDER_FAILURE_SHARE_THRESHOLD
+
+
 def replacement_decision(
     previous: Any,
     candidate: Any,
     *,
     provider_failures: int = 0,
+    provider_lookups: int | None = None,
     is_excluded: Callable[[Mapping[str, Any]], bool] | None = None,
 ) -> tuple[bool, str]:
     """Return ``(replace, reason)`` for a candidate build against the stored list.
 
     A degraded build never replaces a usable stored list: a malformed or errored
-    build, a build with provider failures, or an empty build is rejected. A build
-    with fewer currently eligible items than the stored snapshot is also rejected.
+    build, an empty build, or a build whose provider failures exceed
+    ``PROVIDER_FAILURE_SHARE_THRESHOLD`` of its ``provider_lookups`` is rejected.
+    Without a usable lookup count, any provider failure rejects the build (fail
+    safe). A build with fewer currently eligible items than the stored snapshot is
+    also rejected.
     ``is_excluded`` should report owned or duplicate identities, so that the
     comparison counts only items the user could still be shown.
     """
     candidate_items = _recommendations(candidate)
     if candidate_items is None:
         return False, REASON_BUILD_ERROR
-    if provider_failures > 0:
+    if provider_failures > 0 and not _failure_share_ok(provider_failures, provider_lookups):
         return False, REASON_PROVIDER_FAILURES
     if not candidate_items:
         return False, REASON_EMPTY_BUILD

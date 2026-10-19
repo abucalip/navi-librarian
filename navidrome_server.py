@@ -690,7 +690,7 @@ def recommend_new_music(
         "candidate_albums_resolved": len(albums),
         "artists_genre_checked": len(genre_cache),
         "library_albums_indexed": len(library_albums),
-        "metadata_lookup_errors": failures[:10],
+        "metadata_lookup_errors": failures[:10], "provider_failure_count": len(failures), "provider_lookup_count": len(gathered["cf_recording_mbids"]),
         "limitations": [
             "Up to the first 100 ListenBrainz recording recommendations are resolved.",
             "Genre tags are community-supplied and may be missing or incomplete.",
