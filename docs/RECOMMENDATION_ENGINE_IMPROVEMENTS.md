@@ -526,3 +526,14 @@ Measured so far (aggregates only; no identities recorded):
 - Uncapped path (169 browses): 273 to 313 s, not faster than CF.
 
 Next action for the roadmap: prospective quality test once more listens accrue; a source-setting design only if the owner asks for it.
+
+**Batch metadata lookup study (2026-10-19, aggregate only, no code path changed).** Question: can per-recording MusicBrainz lookups (about 110 s per run at budget 100) be replaced by ListenBrainz batch endpoints without weakening eligibility? Live checks on the owner's test Mac, one sample of 100 recordings:
+- `POST /1/metadata/recording/` returned HTTP 200 in about 1 s for 100 IDs. Each key had an artist name and artist MBIDs (under `artist.artists[]`), a release-group MBID, and a release name. It has no secondary release types.
+- `GET /1/metadata/release_group/` returned HTTP 200 in about 0.4 s for the 35 distinct release groups. Each has a primary `type`. None has a secondary-types field, so live, compilation and similar exclusions cannot be applied from it. (A POST to this endpoint returned HTTP 405.)
+- Those 100 recordings map to 35 release groups by 26 artists.
+
+Decision: the batch path cannot preserve secondary-type exclusions. It is acceptable only with a backend title-marker filter (`batch_title_marker_rejection`, behind `BATCH_TITLE_FILTER_ENABLED`, off by default). The filter is a partial safeguard: unmarked live albums and compilations still pass. On this sample it flags 1 of 35 release groups.
+
+Discogs was checked as an alternative: no release-type field or batch endpoint is documented. Not pursued.
+
+Limits: one 100-recording sample; timings from one device session; the batch path is not wired into gathering yet.
