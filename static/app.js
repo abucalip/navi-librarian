@@ -16,6 +16,8 @@ function isAlbumRecommendation(item) {
 }
 
 let activePage = 'dashboard';
+// Destinations behind the phone bottom bar's More control (under 620px); see index.html.
+const NAV_MORE_PAGES = ['recommendations', 'classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
@@ -25,6 +27,8 @@ function showPage(name) {
     el.classList.toggle('active', el.dataset.page === name));
   // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
   $('appMenuButton').classList.toggle('is-current', name === 'settings');
+  // The phone bar's More control carries the cue when one of its two destinations is current.
+  $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
   syncNavAria();
 }
@@ -75,6 +79,9 @@ function navigateTo(name) {
 document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>
   button.addEventListener('click', () => {
     setAppMenuOpen(false, {focusToggle: true});
+    // A choice from the phone More panel closes it and returns focus to More, since the
+    // panel is hidden once the choice is made.
+    setNavMoreOpen(false, {focusToggle: navMorePanel.contains(button)});
     navigateTo(button.dataset.page);
   }));
 
@@ -116,8 +123,49 @@ appMenuContainer.addEventListener('focusout', event => {
   const next = event.relatedTarget;
   if (next && !appMenuContainer.contains(next)) setAppMenuOpen(false);
 });
+// Phone bottom bar More control: a disclosure over two destinations, the same pattern as the
+// header menu, with Escape added because it is the only way out of the panel from the keyboard.
+const navMoreButton = $('navMoreButton');
+const navMorePanel = $('navMorePanel');
+const navMoreContainer = navMoreButton.parentElement;
+const navMoreItems = () => Array.from(navMorePanel.querySelectorAll('button'));
+
+function setNavMoreOpen(open, {focusToggle = false, focusFirst = false} = {}) {
+  navMorePanel.hidden = !open;
+  navMoreButton.setAttribute('aria-expanded', String(open));
+  if (open && focusFirst) navMoreItems()[0].focus();
+  if (!open && focusToggle) navMoreButton.focus();
+}
+
+navMoreButton.addEventListener('click', () => setNavMoreOpen(navMorePanel.hidden));
+navMoreButton.addEventListener('keydown', event => {
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    setNavMoreOpen(true, {focusFirst: true});
+  } else if (event.key === 'Escape' && !navMorePanel.hidden) {
+    event.preventDefault();
+    setNavMoreOpen(false);
+  }
+});
+navMorePanel.addEventListener('keydown', event => {
+  const items = navMoreItems();
+  const index = items.indexOf(document.activeElement);
+  let target = null;
+  if (event.key === 'ArrowDown') target = items[(index + 1) % items.length];
+  else if (event.key === 'ArrowUp') target = items[(index - 1 + items.length) % items.length];
+  else if (event.key === 'Home') target = items[0];
+  else if (event.key === 'End') target = items[items.length - 1];
+  else if (event.key === 'Escape') { event.preventDefault(); setNavMoreOpen(false, {focusToggle: true}); return; }
+  if (target) { event.preventDefault(); target.focus(); }
+});
+navMoreContainer.addEventListener('focusout', event => {
+  const next = event.relatedTarget;
+  if (!navMorePanel.hidden && next && !navMoreContainer.contains(next)) setNavMoreOpen(false);
+});
+
 document.addEventListener('click', event => {
   if (!appMenu.hidden && !(event.target.closest && event.target.closest('.header-menu'))) setAppMenuOpen(false);
+  if (!navMorePanel.hidden && !(event.target.closest && event.target.closest('nav'))) setNavMoreOpen(false);
 });
 
 document.querySelectorAll('button[data-go]').forEach(button =>
