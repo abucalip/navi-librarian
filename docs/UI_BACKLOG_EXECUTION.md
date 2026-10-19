@@ -2486,3 +2486,75 @@ Two passes: the first "after" pass (56px for all numerals) and the final "after"
 ### 27.7 Next action
 
 Next Phase 7 item: the gradient and one-off colour pass (`docs/DESIGN_SYSTEM.md` section 16.2 rows 5 and 7), with before and after screenshots at the five widths.
+
+## 28. Redesign Phase 7 — Gradients and one-off colours, follow-up item 7 (`ui/phase-7-gradients-9djfjj`, PR pending)
+
+Roadmap item: Phase 7, follow-up item 7 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes rows 5 and 7 of `docs/DESIGN_SYSTEM.md` section 16.2. Row 6 (shadows) and row 9 (artwork hover stripe) are not changed. Design system sections applied: 4 (tokens, usage rules), 13 (no gradients), 9.4 (artwork placeholder on ranked rows). Base: `origin/main` at `5cff896` (PR #400). The branch the brief named was `ui/phase-7-gradients`; the server suffixed it to `ui/phase-7-gradients-9djfjj`.
+
+Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 28.4. **Browser-tested**: sandbox render at five widths on the pages that show artwork placeholders, 28.5. **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+
+### 28.1 Acceptance criteria (stated before the work)
+
+- No `gradient` in `static/app.css`. The artwork placeholder (`.card-art`, and the ranked-row artwork that inherits it) is a flat `var(--surface-raised)` fill.
+- Every colour on the changed selectors is a token. No new colour value is added.
+- Artwork placeholders still read as placeholders, with a visible edge (the existing 1px `--edge` border on the artwork).
+- No horizontal overflow at 1440, 1200, 900, 620 and 390px.
+- Focus rings, reduced motion, landmarks and the skip link are unchanged (no rule in those areas is touched).
+- Out of scope, unchanged: radius (row 8), primary button (row 10), rail width and gutter (rows 1 and 14), the "Recommendations" label (row 3), the tab bar (row 2), numeral sizes (section 27), and every behaviour, API, auth and Get/Dismiss path. The Get shadow (row 6, overlay rule), the Notyf toast shadow (row 6, accepted) and the artwork hover stripe (row 9, accepted) are not touched. The stripe is still a yellow bar on hover; removing the gradient does not make it inconsistent with a flat fill, so it stays as recorded.
+
+### 28.2 What changed
+
+| Old value | Where | Now | Why |
+|---|---|---|---|
+| `linear-gradient(135deg, transparent 49.5%, rgba(233,198,74,.12) 50%, transparent 50.5%), var(--surface-raised)` | `.card-art` (dashboard tiles, deep dives, and the ranked-row artwork that inherits it) | `var(--surface-raised)` | Row 5. Section 13 bans gradients. The stripe colour `rgba(233,198,74,.12)` goes with it. |
+| `#353124` | `.card-category` fill (the genre or discovery label on tiles and cards) | `var(--surface-hover)` (`#2d2926`) | Row 7. Nearest token in luminance to the old fill. Measured: the old fill is 1.34:1 against `--surface`, `--surface-hover` is 1.20:1, `--surface-raised` 1.10:1. Accent text on the fill is 8.83:1 before and 9.80:1 after. |
+| `#2a2c29` | `.card-actions button` fill | `var(--surface-raised)` (`#252220`) | Row 7. Measured: the old fill is 1.23:1 against `--surface`, `--surface-raised` is 1.10:1. Chosen over `--surface-hover` so the resting control is darker than its hover state (`--surface-hover`), which keeps the hover change visible. |
+| `rgba(0,0,0,.5)` | `.notyf__toast` shadow | unchanged | Row 6. The toast is a vendored component; its shadow was accepted. No token added. |
+| `rgba(0,0,0,.55)` | `.get-album` shadow over artwork | unchanged | Row 6. Decided as an overlay rule (Hamdi, 2026-10-19). No token added. |
+| `rgb(20 18 17 / .8)` | `.album-modal-backdrop` scrim | unchanged | `--ink` at 80%, as specified in section 9.8. Not a one-off. |
+
+The `.card-actions` fill change lands on a path the current UI does not reach from the sandbox (see 28.6). It is made for token consistency, not because a visible state changed.
+
+Files changed: `static/app.css` (three declarations, plus the removed gradient); `tests/test_flat_surfaces_ui_contract.py` (new, four assertions on the stylesheet); `docs/REDESIGN_ROADMAP.md`, `docs/DESIGN_SYSTEM.md` section 16.2 rows 5 and 7, and this section. No JavaScript, template, API or test assertion was changed.
+
+### 28.3 Impeccable and design guidance
+
+- `impeccable detect --json static/app.css` (`npx --yes impeccable@latest`): **10 findings before, 8 after**. The two removed findings were `design-system-color` for `#353124` and `rgba(233,198,74,.12)`. `#2a2c29` was not a finding. Remaining colour findings: `rgba(0,0,0,.55)` and `rgba(0,0,0,.5)`, both shadows accepted in row 6. Remaining radius findings (three 3px, one 999px) and the two `side-tab` stripes (`.card-art::after`, `.ranked-row::before`) are not in scope and are unchanged. The detector output is advisory; the side-tab stripes are row 9 and the ranked-row bar, which section 9.4 specifies.
+- `/impeccable critique` and `/impeccable audit`: not run as the Impeccable skill in this session. The critique was made against sections 4, 9.4 and 13 and against the screenshots in 28.5. This is stated here so the review does not read as an Impeccable pass.
+- `web-design-guidelines` compliance pass: not run as a separate skill pass in this session. The change is three declarations and a removed gradient; the contract test covers the points it would check here.
+- Guidance applied: flat surfaces with a border for placeholders (section 13); token-only colour (section 4.2). Rejected: adding a new surface token for the artwork placeholder (section 4 says add no value that is not a token), and changing the artwork hover stripe (row 9, accepted).
+
+### 28.4 Checks actually run
+
+- `node --check static/app.js`: passed.
+- `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `python3 -m unittest tests.test_flat_surfaces_ui_contract -v`: 4 tests, OK.
+- `python3 -m unittest discover -s tests -v`: **Ran 898 tests, OK** (894 on `main` plus the 4 new tests). A baseline run on `5cff896` before the change gave 894 tests, OK.
+- Not run: `pip install` was run on the Python 3.13 sandbox before the suite, as the project instructions require.
+
+### 28.5 Browser (sandbox, RECONSTRUCTED fixture, not the owner's helper)
+
+Setup: two local uvicorn servers with their own data directories under the session scratch folder, music path under the sandbox, `SLSKD_URL=http://127.0.0.1:9` (slskd disabled), a sandbox account. "Before" is `origin/main` at `5cff896` (port 8101). "After" is the working tree of this branch (port 8102). Playwright (Chromium) at 1440, 1200, 900, 620 and 390px, one fresh context per run. `/api/dashboard-picks`, `/api/discovery/classics`, `/api/discovery/artist_deep_dive`, `/api/discovery/personal`, `/api/discovery/new_releases` and `/api/recommendations` were answered with **RECONSTRUCTED** fixture rows (six albums, one long title, no artwork), so every card shows the artwork placeholder. Artwork and bio routes were answered with `artwork_url: null`.
+
+- Pages rendered: Dashboard tiles, Add to your collection (ranked rows), Artist Deep Dives, Discover music. Screenshots in `/mnt/project-files/phase-7-gradients/screenshots/` as `before-<page>-<width>-RECONSTRUCTED.png` and `after-<page>-<width>-RECONSTRUCTED.png`, with the script `render-gradients.mjs` and the numbers in `render-results.json`.
+- Gradient: computed `background-image` on the artwork placeholder is a `linear-gradient` before and `none` after, at every width.
+- Overflow: `scrollWidth − innerWidth` was 0 on every page at every width, before and after.
+- Placeholder read: the dashboard tiles keep the "NL / 01" and "Cover not found" text, which carries the placeholder reading. On ranked rows the placeholder is a flat square with the 1px edge, which reads as an empty artwork slot. The edge is `--edge` (1.33:1 against `--surface`, decorative per section 4.1), so it is faint; this is recorded as a limitation, not a change.
+- Category label: computed fill is `rgb(45, 41, 38)` (`--surface-hover`) after, `rgb(53, 49, 36)` (`#353124`) before.
+- Console and network: no console error, warning or page error, and no request outside the local origin, on every run.
+- Keyboard walk: not run. No focus, role or name rule was changed; the focus ring rule (`button:focus-visible`) is untouched. Skipped, not passed.
+- Screen-reader pass: not run. Skipped.
+- Album modal and Acquisitions: not rendered in this pass. The modal fixture and the acquisition state were not set up here. Skipped, not passed. The modal artwork uses `.album-modal-art` (a surface fill, not `.card-art`), so this change does not reach it.
+- Manual checklist against the exact PR-head SHA with the owner's helper: skipped. The helper is not installed in this sandbox, so the sandbox servers above were used.
+
+### 28.6 Limitations
+
+- Reconstructed fixture data, no real library and no artwork. Real artwork covers the placeholder and the fills are not visible on populated cards.
+- `.card-actions button` (the "Dismiss artist" fill): in the current UI, that row builder is reached only by a non-ranked, non-deep-dive list, and the sandbox renders none. Its computed fill was not measured on screen. The token change is made for consistency; no visible state was observed.
+- The ranked-row placeholder edge is faint (`--edge` against `--surface`). It reads as a slot in the screenshot, but a stronger boundary would be a token decision (`--edge-strong` is the control-boundary token), not made here.
+- The artwork hover stripe (row 9) remains a yellow bar on hover. Not changed.
+
+### 28.7 Next action
+
+Owner review of the PR, then Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
