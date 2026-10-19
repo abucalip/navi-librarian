@@ -2164,7 +2164,10 @@ Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1
 ### 23.6 Impeccable and skill guidance
 
 - `impeccable` CLI: not installed in this sandbox, so `impeccable detect` did not run. No detector output is claimed.
-- `anthropic-skills:web-design-guidelines`: not run in this pass. Recorded as not run.
+- `anthropic-skills:web-design-guidelines`: run on the changed files (`static/app.css`, `static/login.css`, and `reorderRecommendations` and `recommendationKey` in `static/app.js`). Limit: the skill fetched its rules with WebFetch, which returned a paraphrase rather than the verbatim source, so this is a check against that paraphrase, not the exact published list.
+  - Applied: the sort reorder now reads every row's new position before writing any animation (`static/app.js`, the `moves` pass), following the rule to batch DOM reads and writes.
+  - Checked, no finding: no `transition: all`; only transform and opacity animate; reduced motion ends each animation at rest; transform origins are set on the Get arc and tick; hover feedback remains on buttons and cards.
+  - Not in this diff and not changed: focus-visible styles, image dimensions on card artwork, and touch behaviour. Pre-existing items the rules would flag, left for later Phase 7 items.
 - Applied from the motion table and section 12 rather than from a skill: transform and opacity only, reduced-motion end states, tokens for durations, no bounce or spring, FLIP limited to the one real reorder.
 - Rejected: loop tokens invented outside section 11; a card hover lift; artwork fade-in; hover colour timing that would require a colour transition.
 

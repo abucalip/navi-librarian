@@ -1091,11 +1091,15 @@ function reorderRecommendations(render) {
   const rootStyle = getComputedStyle(document.documentElement);
   const duration = parseFloat(rootStyle.getPropertyValue('--dur-slow')) || 260;
   const easing = rootStyle.getPropertyValue('--ease-out').trim() || 'ease-out';
+  // Read every new position first, then write the animations, so layout is not forced per row.
+  const moves = [];
   cards.querySelectorAll('[data-key]').forEach(row => {
     const previous = before.get(row.dataset.key);
     if (previous === undefined) return;
     const distance = previous - row.getBoundingClientRect().top;
-    if (Math.abs(distance) < 1) return;
+    if (Math.abs(distance) >= 1) moves.push({row, distance});
+  });
+  moves.forEach(({row, distance}) => {
     row.animate(
       [{transform: `translateY(${distance}px)`}, {transform: 'translateY(0)'}],
       {duration, easing}
