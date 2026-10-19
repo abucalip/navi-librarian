@@ -148,6 +148,32 @@ class RefreshPersonalSnapshotGuardTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(len(writes), 1)
 
+    def test_build_reporting_provider_failures_keeps_previous_snapshot(self):
+        writes, outcomes = [], []
+        bigger = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
+        bigger["provider_failure_count"] = 2
+        result = self._refresh(GOOD, bigger, writes, outcomes)
+        self.assertEqual(writes, [])
+        self.assertEqual(result["reason"], "provider_failures")
+        self.assertEqual(outcomes[0]["status"], "rejected")
+
+    def test_zero_or_missing_provider_failure_count_does_not_block_refresh(self):
+        for value in (0, None):
+            writes, outcomes = [], []
+            build = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
+            if value is not None:
+                build["provider_failure_count"] = value
+            result = self._refresh(GOOD, build, writes, outcomes)
+            self.assertTrue(result["ok"], value)
+
+    def test_malformed_provider_failure_count_is_ignored(self):
+        for value in (True, -1, "3", 1.5):
+            writes, outcomes = [], []
+            build = dict(_payload(*[_rec(f"Artist {i}", f"Album {i}", i) for i in range(4)]))
+            build["provider_failure_count"] = value
+            result = self._refresh(GOOD, build, writes, outcomes)
+            self.assertTrue(result["ok"], repr(value))
+
     def test_failing_snapshot_read_fails_closed(self):
         writes = []
 
