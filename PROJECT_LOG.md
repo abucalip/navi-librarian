@@ -1,3 +1,15 @@
+## 2026-10-19 — PR #411 replenishment live aggregate measurement (no code change)
+
+- Task: measure whether the gated supplementary replenishment in PR #411 (merged at `76e3ac2`) adds eligible unowned candidates on a live run, using aggregate output only.
+- Run: one live pass at `76e3ac2`, on the owner's isolated test copy, with a fresh empty data directory that was deleted afterward. Config loaded through the app's own loader. Earlier attempts failed before candidate gathering because of a malformed line in the test copy's env file; the owner fixed it, and only the successful run's counts are recorded here.
+- Aggregate results: shortlist target 10. Eligible unowned albums 7 before and 7 after. Replenishment gate triggered (7 < 10). Extra queries planned 0, attempted 0. Extra candidates added 0. Base supplementary lane also issued 0 queries. CF supplied 21 albums from 10 artists; top artist album shares 0.333, 0.190, 0.143, 0.048, 0.048. No failure classes reported.
+- Interpretation: the gate fired, but there were no tag queries to extend, so #411 added no supply in this run. Code trace (read-only): `select_supplementary_tag_queries` takes its tags only from the cached `mb:artist-genres:*` entries. Those entries are written later in the same run, by the genre-lookup stage after tag selection. A fresh, empty data directory has no cache, so both the base lane and the replenishment pass select nothing by construction. This run therefore does not measure replenishment on a warm cache, which is the state the feature targets. The zero result is a consequence of the cold-start setup, and it also means a cold first run never fills the tag lane.
+- Limits: one run, one profile, one fresh data directory. The fresh directory has no prior ownership state beyond what Navidrome reports at run time. No identities, listening data, raw tags, provider URLs, or exception messages were recorded.
+- No weights, windows, eligibility, ownership checks, or per-run budget changed. Publishing and deployment remain paused.
+- Next action: rerun on a warm metadata cache, which requires the owner to approve the data directory for that run. Separately, decide whether tag selection should read the genre cache after the genre-lookup stage, which would be a code change.
+
+---
+
 ## 2026-10-19 — P2 capture "FileExistsError" warning fix (offline; no live capture)
 
 - Task: the owner's snapshot A and B runs logged `capture failed (FileExistsError)` although both captures were written intact on the first attempt. Established from code before changing anything.
