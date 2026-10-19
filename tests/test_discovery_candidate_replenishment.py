@@ -213,22 +213,43 @@ class ReplenishmentTests(unittest.TestCase):
         self.assertEqual(summary["extra_queries_attempted"], 0)
         self.assertNotIn("q-extra-1", mb_client.queries)
 
+    def test_shortfall_replenishment_adds_eligible_supply_within_caps(self):
+        # Synthetic shortfall: three CF albums, one owned, against a target of 10.
+        # Eligible supply before is 2 (A1, G1). The two issued extra queries add
+        # D1 and Z1; the duplicate, the single, and the third query's album do not.
+        artists = [("Alpha", "A1"), ("Beta", "B1"), ("Gamma", "G1")]
+        library = [{"id": "lib-1", "name": "B1", "artist": "Beta"}]
+        responses = {q: [] for q, _f, _s in BASE_QUERIES + EXTRA_QUERIES}
+        responses["q-extra-1"] = [
+            _group("Delta", "D1"),
+            _group("Alpha", "A1"),
+            _group("Epsilon", "E1", primary="Single"),
+        ]
+        responses["q-extra-2"] = [_group("Zeta", "Z1"), _group("Delta", "D1")]
+        responses["q-extra-3"] = [_group("Eta", "H1")]
 
-class EligibleUnownedCountTests(unittest.TestCase):
-    def test_count_is_unique_per_artist_and_title_and_excludes_owned(self):
-        from discovery_candidate_gathering import count_eligible_unowned_albums
+        result, mb_client = self._run(
+            cf_artists=artists, responses=responses, library=library, shortlist_target=10,
+        )
 
-        albums = {
-            ("alpha", "a1"): {"album": "A1", "primary_artist": "Alpha"},
-            ("beta", "b1"): {"album": "B1", "primary_artist": "Beta"},
-        }
-        library_by_title = {"b1": [{"artist": "Beta"}]}
+        summary = self._replenishment(result)
+        self.assertTrue(summary["triggered"])
+        self.assertEqual(summary["eligible_unowned_before"], 2)
+        self.assertEqual(summary["extra_queries_planned"], REPLENISH_EXTRA_QUERIES)
+        self.assertEqual(summary["extra_queries_attempted"], REPLENISH_EXTRA_QUERIES)
+        self.assertEqual(summary["extra_candidates_added"], 2)
+        self.assertEqual(summary["eligible_unowned_after"], 4)
+        self.assertEqual(
+            mb_client.queries,
+            [q for q, _f, _s in BASE_QUERIES] + [q for q, _f, _s in EXTRA_QUERIES[:REPLENISH_EXTRA_QUERIES]],
+        )
+        self.assertNotIn("q-extra-3", mb_client.queries)
 
-        self.assertEqual(count_eligible_unowned_albums(albums, library_by_title, _music_key), 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        # Same synthetic inputs must give the same replenishment accounting.
+        rerun, _ = self._run(
+            cf_artists=artists, responses=responses, library=library, shortlist_target=10,
+        )
+        self.assertEqual(self._replenishment(rerun), summary)
 
     def test_tag_lane_counters_separate_empty_cache_from_no_listens(self):
         # No listens and no cached artist genres: every tag-lane counter is zero,
@@ -246,3 +267,20 @@ if __name__ == "__main__":
         self.assertEqual(lane["candidate_artist_cache_hits"], 0)
         self.assertEqual(lane["candidate_pool_tag_count"], 0)
         self.assertGreaterEqual(lane["candidate_artists_considered"], 1)
+
+
+class EligibleUnownedCountTests(unittest.TestCase):
+    def test_count_is_unique_per_artist_and_title_and_excludes_owned(self):
+        from discovery_candidate_gathering import count_eligible_unowned_albums
+
+        albums = {
+            ("alpha", "a1"): {"album": "A1", "primary_artist": "Alpha"},
+            ("beta", "b1"): {"album": "B1", "primary_artist": "Beta"},
+        }
+        library_by_title = {"b1": [{"artist": "Beta"}]}
+
+        self.assertEqual(count_eligible_unowned_albums(albums, library_by_title, _music_key), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

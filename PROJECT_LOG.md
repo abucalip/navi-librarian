@@ -1624,3 +1624,14 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Limits: release counts are an upper bound over every CF payload on the tape, not over what the live artist cap or budget would process. The capture shows no supplementary-source candidates. No replenishment was implemented in #408.
 - Publishing and deployment remain paused. No identities, listening data, or provider URLs were added to GitHub.
 - Next action: bounded supplementary replenishment in candidate gathering, gated on eligible unowned shortfall (separate PR).
+
+---
+
+## 2026-10-19 — PR #411 replenishment offline shortfall measurement (synthetic fixture)
+
+- Task: measure whether gated supplementary replenishment (PR #411) adds eligible unowned albums when the shortlist is short. The live runs never reached a shortfall with tag inputs, so this uses an offline fixture.
+- Fixture: three synthetic CF albums, one owned; shortlist target 10. Eligible unowned before 2, after 4. Extra queries planned 2 and attempted 2, the fixed cap; extra candidates added 2. A release-type-filtered single, a duplicate, and a third un-issued query's album were not added. A rerun with the same inputs gave identical accounting.
+- Test changes: added `test_shortfall_replenishment_adds_eligible_supply_within_caps`. Moved `test_tag_lane_counters_separate_empty_cache_from_no_listens` from after the `__main__` guard into the test class, where it now runs and passes. The module previously ran 8 tests; it now runs 10.
+- Verification: `python3 -m unittest discover -s tests -p 'test_*.py'` ran 920 tests, all OK, on this branch. Compile check of the changed modules passed. CI on the exact PR head is still pending at the time of this entry.
+- Limits: the tag selector is stubbed, so real tag yield, real MusicBrainz response variety, and the cold-cache ordering issue are not measured. No weights, windows, eligibility, ownership checks, or provider budgets changed. No live run, no owner data directory accessed. Publishing and deployment remain paused.
+- Next action: decide whether tag selection should read the genre cache after the genre-lookup stage. That is a behavior change and needs its own measurement.
