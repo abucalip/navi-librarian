@@ -138,10 +138,19 @@ def summarize_candidate_stages(
             "artist_key": music_key(album.get("primary_artist", "")),
             "owned": bool(row.get("exact_owned")),
             "decision": str(row.get("selection_decision") or "unknown"),
+            "sources": tuple(str(source) for source in (album.get("discovery_sources") or [])),
         })
 
     unowned = [row for row in rows if not row["owned"]]
     unique_unowned = {row["identity"] for row in unowned}
+    # Sources are unioned per identity, so a duplicate row contributes its sources too.
+    identity_sources: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for row in unowned:
+        identity_sources[row["identity"]].update(row["sources"])
+    source_counts = Counter(
+        source for sources in identity_sources.values() for source in sources
+    )
+    sources_per_identity = Counter(len(sources) for sources in identity_sources.values())
     # The allocator overwrites an artist-cap rejection with "duplicate_candidate"
     # when a later phase revisits the candidate, so the cap is derived from the
     # selected set rather than from the final decision label.
@@ -162,9 +171,62 @@ def summarize_candidate_stages(
         "artist_cap_rejections": len(cap_rows),
         "unowned_unique_after_artist_cap": len(unique_unowned - cap_identities),
         "distinct_artists_unowned": len({row["artist_key"] for row in unowned}),
+        # Each unique unowned identity counts once for every source that carries it.
+        "unowned_unique_by_source": dict(sorted(source_counts.items())),
+        "unowned_unique_by_source_count": {
+            str(count): sources_per_identity[count] for count in sorted(sources_per_identity)
+        },
         "selected": decision_counts.get("selected", 0),
         "decision_counts": dict(sorted(decision_counts.items())),
     }
+
+
+CF_EXCLUDED_SECONDARY_TYPES = frozenset({"compilation", "soundtrack", "live", "remix", "dj-mix"})
+CF_UNDESIRABLE_TITLE_PHRASES = (
+    "album sampler",
+    " sampler",
+    "greatest hits",
+    "best of",
+    "anthology",
+    "essential collection",
+    "essential",
+    "complete collection",
+)
+CF_RELEASE_REJECTIONS = (
+    "not_album_primary_type",
+    "not_album_candidate",
+    "undesirable_title",
+    "excluded_secondary_type",
+)
+
+
+def cf_release_group_rejection(
+    group: Mapping[str, Any],
+    *,
+    is_album_candidate: Callable[[Mapping[str, Any]], bool],
+    music_key: Callable[[Any], str],
+) -> str | None:
+    """Return the bounded reason a CF release group is not an album candidate.
+
+    Shared by candidate gathering and the offline replay counts, so both apply
+    the same release-type and title rules. Returns None for an eligible group.
+    """
+    if group.get("primary-type") != "Album":
+        return "not_album_primary_type"
+    title = group.get("title", "").strip()
+    if not title or not is_album_candidate({
+        "album": title,
+        "primary_type": group.get("primary-type"),
+        "secondary_types": group.get("secondary-types", []),
+    }):
+        return "not_album_candidate"
+    normalized_title = music_key(title)
+    if any(phrase.strip() in normalized_title for phrase in CF_UNDESIRABLE_TITLE_PHRASES):
+        return "undesirable_title"
+    secondary = {str(value).casefold() for value in group.get("secondary-types", [])}
+    if secondary & CF_EXCLUDED_SECONDARY_TYPES:
+        return "excluded_secondary_type"
+    return None
 
 
 def recording_artist_key(recording: Mapping[str, Any], music_key: Callable[[Any], str]) -> str | None:
@@ -178,16 +240,14 @@ def recording_artist_key(recording: Mapping[str, Any], music_key: Callable[[Any]
     return music_key(name) if name else None
 
 
-def cf_records_from_tape(
+def _tape_recording_payloads(
     provider_events: Iterable[Mapping[str, Any]],
     recording_mbids: Sequence[str],
-    music_key: Callable[[Any], str],
-) -> list[dict[str, Any]]:
-    """Rebuild per-recording CF outcomes from a captured provider tape, offline.
+) -> list[tuple[str, dict[str, Any] | None, dict[str, int]]]:
+    """Return ``(mbid, recording_payload_or_None, last_status_by_mbid)`` per MBID.
 
-    A recording is resolved when its cache read returned a payload, or when the
-    cache write that followed a provider fetch stored one. Unresolved recordings
-    are classified from the last captured HTTP status for that recording.
+    A payload is taken from the cache read that returned it, or from the cache
+    write that followed a provider fetch. ``None`` means the tape holds none.
     """
     cache_reads: dict[str, Any] = {}
     cache_writes: dict[str, Any] = {}
@@ -207,23 +267,81 @@ def cf_records_from_tape(
         elif operation == "metadata_cache_set" and len(args) >= 2:
             cache_writes[args[0]] = args[1]
 
-    records = []
+    pairs = []
     for mbid in recording_mbids:
         key = f"mb:recording:{mbid}"
         recording = cache_reads.get(key)
         if not isinstance(recording, dict):
             recording = cache_writes.get(key)
-        if isinstance(recording, dict):
+        pairs.append((str(mbid), recording if isinstance(recording, dict) else None, last_status))
+    return pairs
+
+
+def cf_records_from_tape(
+    provider_events: Iterable[Mapping[str, Any]],
+    recording_mbids: Sequence[str],
+    music_key: Callable[[Any], str],
+) -> list[dict[str, Any]]:
+    """Rebuild per-recording CF outcomes from a captured provider tape, offline.
+
+    A recording is resolved when its cache read returned a payload, or when the
+    cache write that followed a provider fetch stored one. Unresolved recordings
+    are classified from the last captured HTTP status for that recording.
+    """
+    records = []
+    for mbid, recording, last_status in _tape_recording_payloads(provider_events, recording_mbids):
+        if recording is not None:
             records.append({
                 "resolved": True,
                 "artist_key": recording_artist_key(recording, music_key),
                 "error_class": None,
             })
             continue
-        status = last_status.get(str(mbid))
+        status = last_status.get(mbid)
         error = "HTTPStatusError" if isinstance(status, int) and status >= 400 else "other"
         records.append({"resolved": False, "artist_key": None, "error_class": error})
     return records
+
+
+def summarize_cf_release_eligibility(
+    provider_events: Iterable[Mapping[str, Any]],
+    recording_mbids: Sequence[str],
+    *,
+    is_album_candidate: Callable[[Mapping[str, Any]], bool],
+    music_key: Callable[[Any], str],
+) -> dict[str, Any]:
+    """Count release-group eligibility over the resolved CF recordings on a tape.
+
+    Counts cover every tape recording that carries a payload. Recordings that
+    the live artist cap or uncached budget would skip are not separated out, so
+    the totals are an upper bound on what gathering actually inspected.
+    """
+    with_payload = 0
+    seen = 0
+    eligible = 0
+    rejections: Counter[str] = Counter()
+    for _, recording, _ in _tape_recording_payloads(provider_events, recording_mbids):
+        if recording is None:
+            continue
+        with_payload += 1
+        for release in recording.get("releases", []):
+            group = release.get("release-group") or {}
+            seen += 1
+            reason = cf_release_group_rejection(
+                group, is_album_candidate=is_album_candidate, music_key=music_key,
+            )
+            if reason is None:
+                eligible += 1
+            else:
+                rejections[reason] += 1
+    return {
+        "cf_recordings_with_payload": with_payload,
+        "cf_release_groups_seen": seen,
+        "cf_release_groups_eligible": eligible,
+        "cf_release_group_rejections": {
+            label: rejections.get(label, 0) for label in CF_RELEASE_REJECTIONS
+        },
+    }
 
 
 def summarize_supplementary_tape(provider_events: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
@@ -276,15 +394,19 @@ def candidate_supply_report(
     MusicBrainz tape, album shares and stage counts from the frozen candidates.
     Identities stay in memory and are not returned.
     """
-    from discovery_recommendations import music_key
+    from discovery_recommendations import is_album_candidate, music_key
 
     gathered_inputs = payload["gathered_inputs"]
     events = payload.get("provider_events", [])
+    mbids = gathered_inputs.get("cf_recording_mbids", [])
     albums = [entry["value"] for entry in gathered_inputs["albums"]]
     return {
         "cf_recordings": summarize_cf_recordings(
-            cf_records_from_tape(events, gathered_inputs.get("cf_recording_mbids", []), music_key),
+            cf_records_from_tape(events, mbids, music_key),
             returned=gathered_inputs.get("cf_recordings_returned", 0),
+        ),
+        "release_eligibility": summarize_cf_release_eligibility(
+            events, mbids, is_album_candidate=is_album_candidate, music_key=music_key,
         ),
         "cf_albums": summarize_cf_albums(albums, music_key),
         "supplementary": summarize_supplementary_tape(events),
