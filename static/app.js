@@ -2141,7 +2141,7 @@ function announceQualityPriority(item, index) {
   $('qualityPriorityAnnouncement').textContent = `${label} moved to priority ${index + 1} of ${$('qualityPriorityList').children.length}.`;
 }
 
-function moveQualityPriority(item, destination) {
+function moveQualityPriority(item, destination, direction) {
   const list = $('qualityPriorityList');
   const items = [...list.querySelectorAll('.quality-priority-item')];
   const current = items.indexOf(item);
@@ -2151,6 +2151,16 @@ function moveQualityPriority(item, destination) {
   else list.insertBefore(item, reference.nextSibling);
   updateQualityPriorityPositions();
   announceQualityPriority(item, destination);
+  // Moving a node drops focus, and the pressed button can become disabled at either end of the list.
+  // Return focus to the same row so keyboard users can keep moving it.
+  if (direction) focusQualityMove(item, direction);
+}
+
+function focusQualityMove(item, direction) {
+  const opposite = direction === 'up' ? 'down' : 'up';
+  const pressed = item.querySelector(`[data-quality-move="${direction}"]`);
+  const other = item.querySelector(`[data-quality-move="${opposite}"]`);
+  (pressed.disabled ? other : pressed).focus();
 }
 
 function renderQualityPriority(savedValues) {
@@ -2186,7 +2196,7 @@ function renderQualityPriority(savedValues) {
       button.textContent = text;
       button.addEventListener('click', () => {
         const current = [...list.children].indexOf(item);
-        moveQualityPriority(item, current + (direction === 'up' ? -1 : 1));
+        moveQualityPriority(item, current + (direction === 'up' ? -1 : 1), direction);
       });
       moves.append(button);
     }

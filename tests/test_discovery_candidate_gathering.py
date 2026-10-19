@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest import mock
 
 from discovery_candidate_gathering import (
     RecommendationProviders,
@@ -104,9 +105,164 @@ class RecommendationCandidateGatheringTests(unittest.TestCase):
         )
 
 
+def _cf_item(index):
+    return {"recording_mbid": f"rec-{index}", "score": 1000 - index}
+
+
+def _recording(artist, album_index):
+    return {
+        "title": f"Track {album_index}",
+        "artist-credit": [{"name": artist, "artist": {"id": f"artist-{artist}"}}],
+        "releases": [{"release-group": {
+            "id": f"rg-{artist}-{album_index}",
+            "title": f"{artist} Album {album_index}",
+            "primary-type": "Album",
+            "secondary-types": [],
+        }}],
+    }
+
+
+class RecommendationCfPagingTests(unittest.TestCase):
+    def _providers(self, *, pages, recordings=None, cache=None, fail_page=None):
+        calls = []
+        pages_by_offset = pages
+        recordings = recordings or {}
+        cache = cache if cache is not None else {}
+
+        def http_get(url, params=None, **kwargs):
+            calls.append(dict(params or {}))
+            offset = params["offset"]
+            if fail_page is not None and offset == fail_page:
+                raise RuntimeError("provider detail must not leak")
+            return _Response({"payload": {"mbids": pages_by_offset.get(offset, [])}})
+
+        mb_client = _RecordingClient(recordings)
+        providers = RecommendationProviders(
+            listenbrainz_recent=lambda days: [],
+            listenbrainz_username=lambda: "fixture-user",
+            music_key=lambda value: "".join(str(value).casefold().split()),
+            metadata_cache_get=lambda key, **kwargs: cache.get(key),
+            metadata_cache_set=lambda *args, **kwargs: None,
+            is_album_candidate=lambda candidate: True,
+            api_call=lambda *args, **kwargs: {},
+            items=lambda response: [],
+            http_get=http_get,
+            http_client=lambda *args, **kwargs: mb_client,
+            sleep=lambda _seconds: None,
+        )
+        return providers, calls, mb_client
+
+    def test_second_page_is_requested_with_offset_and_budget_stops_at_two_pages(self):
+        pages = {
+            0: [_cf_item(i) for i in range(100)],
+            100: [_cf_item(i) for i in range(100, 200)],
+            200: [_cf_item(i) for i in range(200, 300)],
+        }
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(200)}
+        providers, calls, _ = self._providers(pages=pages, recordings=recordings)
+
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual([c["offset"] for c in calls], [0, 100])
+        self.assertTrue(all(c["count"] == 100 for c in calls))
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_returned"], 200)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["pages_requested"], 2)
+        self.assertEqual(paging["pages_fetched"], 2)
+        self.assertIsNone(paging["page_failure_class"])
+
+    def test_short_page_stops_paging(self):
+        pages = {0: [_cf_item(i) for i in range(100)], 100: [_cf_item(i) for i in range(100, 130)]}
+        providers, calls, _ = self._providers(pages=pages)
+
+        gather_recommendation_candidates(providers)
+
+        self.assertEqual([c["offset"] for c in calls], [0, 100])
+
+    def test_overlapping_mbids_across_pages_are_deduplicated(self):
+        pages = {0: [_cf_item(i) for i in range(100)], 100: [_cf_item(i) for i in range(50, 150)]}
+        providers, _, mb_client = self._providers(pages=pages)
+
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_returned"], 150)
+        self.assertEqual(len(set(mb_client.requested)), len(mb_client.requested))
+
+    def test_second_page_failure_keeps_first_page_and_reports_class_only(self):
+        pages = {0: [_cf_item(i) for i in range(100)]}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(100)}
+        providers, calls, _ = self._providers(pages=pages, recordings=recordings, fail_page=100)
+
+        result = gather_recommendation_candidates(providers)
+
+        self.assertNotIn("error", result)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["pages_requested"], 2)
+        self.assertEqual(paging["pages_fetched"], 1)
+        self.assertEqual(paging["page_failure_class"], "RuntimeError")
+        self.assertNotIn("must not leak", repr(result))
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 100)
+
+    def test_first_page_failure_keeps_legacy_error_contract(self):
+        providers, _, _ = self._providers(pages={}, fail_page=0)
+
+        result = json.loads(gather_recommendation_candidates(providers))
+
+        self.assertEqual(
+            result["error"],
+            "Could not retrieve ListenBrainz recommendations: provider detail must not leak",
+        )
+
+    def test_artist_cap_skips_cache_known_recordings_before_any_resolution_call(self):
+        pages = {0: [_cf_item(i) for i in range(25)]}
+        recordings = {f"rec-{i}": _recording("Dominant", i) for i in range(25)}
+        cache = {f"mb:recording:rec-{i}": recordings[f"rec-{i}"] for i in range(25)}
+        providers, _, mb_client = self._providers(pages=pages, recordings=recordings, cache=cache)
+
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(mb_client.requested, [])
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["artist_cap_skipped"], 15)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 10)
+
+    def test_uncached_resolution_budget_bounds_mb_calls(self):
+        pages = {0: [_cf_item(i) for i in range(20)]}
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(20)}
+        providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
+
+        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+            result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(len(mb_client.requested), 3)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["resolution_budget_skipped"], 17)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 3)
+
+
+class _RecordingClient:
+    def __init__(self, recordings):
+        self.recordings = recordings
+        self.requested = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def get(self, url, params=None, headers=None):
+        mbid = url.rsplit("/", 1)[-1]
+        if mbid.startswith("rec-"):
+            self.requested.append(mbid)
+        return _Response(self.recordings.get(mbid, {}), status_code=200)
+
+
 class _Response:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self.payload = payload
+        self.status_code = status_code
 
     def raise_for_status(self):
         return None

@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from discovery_candidate_supply import (
     classify_error,
+    recording_artist_key,
     summarize_cf_albums,
     summarize_cf_recordings,
     summarize_supplementary_yield,
@@ -40,6 +41,59 @@ class RecommendationProviders:
     http_client: Callable[..., Any]
     sleep: Callable[[float], Any]
 
+# Bounded CF replenishment. One ListenBrainz call per page; the first page is
+# required, later pages may fail without discarding earlier pages.
+CF_PAGE_SIZE = 100
+CF_MAX_PAGES = 2
+# Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
+CF_MAX_UNCACHED_RESOLUTIONS = 100
+# Recordings per artist resolved before further cached recordings are skipped.
+# The CF endpoint returns no artist, so uncached recordings must still be
+# resolved to learn their artist; the cap can only skip cache-known artists.
+CF_ARTIST_RESOLUTION_CAP = 10
+CF_RECOMMENDATION_URL = (
+    "https://api.listenbrainz.org/1/cf/recommendation/user/{username}/recording"
+)
+
+
+def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[Any], dict[str, Any]]:
+    """Fetch up to CF_MAX_PAGES pages of CF recordings, deduplicated by MBID.
+
+    Raises when the first page fails. A later page failure stops paging and is
+    reported by class only.
+    """
+    url = CF_RECOMMENDATION_URL.format(username=providers.listenbrainz_username())
+    recordings: list[Any] = []
+    seen_mbids: set[str] = set()
+    paging = {"pages_requested": 0, "pages_fetched": 0, "page_failure_class": None}
+    for page in range(CF_MAX_PAGES):
+        paging["pages_requested"] += 1
+        try:
+            response = providers.http_get(
+                url,
+                params={"count": CF_PAGE_SIZE, "offset": page * CF_PAGE_SIZE},
+                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            items = response.json().get("payload", {}).get("mbids", [])
+        except Exception as exc:
+            if page == 0:
+                raise
+            paging["page_failure_class"] = classify_error(exc)
+            break
+        paging["pages_fetched"] += 1
+        for item in items[:CF_PAGE_SIZE]:
+            mbid = item.get("recording_mbid") if isinstance(item, dict) else None
+            if not mbid or str(mbid) in seen_mbids:
+                continue
+            seen_mbids.add(str(mbid))
+            recordings.append(item)
+        if len(items) < CF_PAGE_SIZE:
+            break
+    return recordings, paging
+
+
 def gather_recommendation_candidates(providers: RecommendationProviders) -> dict[str, Any] | str:
     """Gather providers in legacy order; early errors retain their JSON contract."""
     import time
@@ -71,22 +125,10 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             recent_artist_mbid_counts[artist_mbid] += weight
 
     try:
-        response = providers.http_get(
-            "https://api.listenbrainz.org/1/"
-            f"cf/recommendation/user/{providers.listenbrainz_username()}/recording",
-            params={"count": 100},
-            headers={"User-Agent": "NavidromeLibrarian/1.0"},
-            timeout=30,
-        )
-        response.raise_for_status()
-        recommendations = (
-            response.json().get("payload", {}).get("mbids", [])
-        )
-        cf_recordings_returned = len(recommendations[:100])
+        recommendations, cf_paging = _fetch_cf_recommendations(providers)
+        cf_recordings_returned = len(recommendations)
         cf_recording_mbids = [
-            str(item["recording_mbid"])
-            for item in recommendations[:100]
-            if isinstance(item, dict) and item.get("recording_mbid")
+            str(item["recording_mbid"]) for item in recommendations
         ]
     except Exception as exc:
         return json.dumps({
@@ -109,23 +151,39 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
         "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"
     }
 
+    artist_resolved_counts = Counter()
+    resolution_calls = 0
+    cf_skips = Counter()
     with providers.http_client(timeout=20, follow_redirects=True) as client:
-        for index, item in enumerate(recommendations[:100]):
+        for item in recommendations:
             mbid = item.get("recording_mbid")
             if not mbid:
                 continue
 
             record = {"resolved": False, "artist_key": None, "error_class": None}
-            cf_recording_records.append(record)
+            recorded = False
             try:
                 recording = providers.metadata_cache_get(
                     f"mb:recording:{mbid}",
                     ttl_seconds=180 * 24 * 60 * 60,
                 )
+                if recording is not None:
+                    # Artist cap before any call: only cache-known artists can be
+                    # skipped, because the CF response carries no artist.
+                    cached_artist = recording_artist_key(recording, providers.music_key)
+                    if cached_artist and artist_resolved_counts[cached_artist] >= CF_ARTIST_RESOLUTION_CAP:
+                        cf_skips["artist_cap"] += 1
+                        continue
+                elif resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS:
+                    cf_skips["resolution_budget"] += 1
+                    continue
+                cf_recording_records.append(record)
+                recorded = True
 
                 if recording is None:
-                    if index:
+                    if resolution_calls:
                         providers.sleep(1.1)
+                    resolution_calls += 1
 
                     response = None
                     for attempt in range(3):
@@ -167,6 +225,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                 if not artist:
                     artist = primary_artist
                 record["artist_key"] = providers.music_key(primary_artist) if primary_artist else None
+                if record["artist_key"]:
+                    artist_resolved_counts[record["artist_key"]] += 1
 
                 primary_artist_mbid = next(
                     (
@@ -257,6 +317,8 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                     candidate["tracks"].append(track)
 
             except Exception as exc:
+                if not recorded:
+                    cf_recording_records.append(record)
                 record["error_class"] = classify_error(exc)
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
@@ -601,6 +663,16 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
             cf_recording_records, returned=cf_recordings_returned,
         ),
         "cf_albums": summarize_cf_albums(albums.values(), providers.music_key),
+        "cf_paging": {
+            **cf_paging,
+            "page_size": CF_PAGE_SIZE,
+            "max_pages": CF_MAX_PAGES,
+            "artist_cap": CF_ARTIST_RESOLUTION_CAP,
+            "artist_cap_skipped": cf_skips["artist_cap"],
+            "uncached_resolution_budget": CF_MAX_UNCACHED_RESOLUTIONS,
+            "uncached_resolution_calls": resolution_calls,
+            "resolution_budget_skipped": cf_skips["resolution_budget"],
+        },
         "supplementary": summarize_supplementary_yield(
             supplementary_query_outcomes, planned=len(regional_queries),
         ),

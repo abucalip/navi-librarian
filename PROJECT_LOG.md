@@ -1,3 +1,17 @@
+## 2026-10-19 — P3 bounded CF paging (offline; no live capture)
+
+- Task: roadmap P3. The CF recording endpoint accepts `offset`; the gathering path requested only `count=100`.
+- Behavior: up to `CF_MAX_PAGES = 2` ListenBrainz pages (offsets 0 and 100), deduplicated by MBID. Paging stops on a short page. A failed first page keeps the legacy error contract. A failed second page stops paging, keeps page 1, and reports only the bounded error class.
+- Budget: uncached MusicBrainz resolutions are capped at `CF_MAX_UNCACHED_RESOLUTIONS = 100` per run, the same worst case as the old single page. Cache-known recordings cost no call. Owner lowered the cap from 200 because about 110 s extra per cold run was too long. With a cold cache, page 2 therefore gets no uncached resolutions; it adds recordings only when they are cache-known.
+- Artist cap: `CF_ARTIST_RESOLUTION_CAP = 10` skips cache-known recordings of an artist already resolved 10 times, before any provider call. Limit: the CF endpoint returns no artist, so uncached recordings must still be resolved to learn their artist. The cap cannot skip them.
+- Diagnostics: `candidate_supply.cf_paging` reports pages requested and fetched, page-failure class, artist-cap skips, uncached resolution calls and budget, and budget skips. All are counts or bounded labels.
+- Tests: `tests/test_discovery_candidate_gathering.py`, 7 new synthetic cases: offset paging and two-page budget; short page stops; cross-page MBID dedupe; second-page failure; first-page failure keeps legacy contract; artist cap before any call; uncached budget bounds MB calls.
+- Offline replay on the frozen capture still reproduces the P1 aggregates (19 albums, 12 owned, 5 selected, 2 artist-cap rejections, 0 identity duplicates). The capture holds only page 1 and its MusicBrainz tape, so the after-supply effect of page 2 cannot be measured offline. Do not claim a supply gain from this PR.
+- Full unit suite: 809 tests OK. Syntax compile, `scripts/check_server_size.py`, and `scripts/check_app_legacy_imports.py` pass. CI and merge state: pending; draft PR, no merge.
+- Next: owner decision on the cold-cache budget. A supply measurement needs a page-2 tape, which requires an owner-authorized capture.
+
+---
+
 ## 2026-10-19 — P4 genre-lookup bounded 503 retry (branch fix/genre-lookup-retry)
 
 - Task: roadmap P4 in docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. The artist-genre lookup (`mb:artist-genres`) made one MusicBrainz request per artist and recorded any 429/5xx as a failure. It now uses the same bounded retry shape as recording lookups: up to 3 attempts, sleeps of 2 s and 4 s, retry only on 429/500/502/503/504.
@@ -5,6 +19,8 @@
 - Tests: `tests/test_discovery_candidate_gathering.py` adds synthetic cases for first-attempt success, 503 then success, retry exhaustion (bounded attempts, last status returned), and non-retryable 404 without retry. Full unit suite: 816 tests OK locally. `py_compile` on all tracked Python files and the legacy server-size guard passed.
 - Limits: the frozen replay does not emit genre or unclassified metrics, so the acceptance criterion "fewer unclassified candidates in offline replay" is not measured here. The change only affects live runs. Worst-case provider calls for one artist rise from 1 to 3, bounded by the existing 75-artist cap; retry sleeps add up to 6 s per persistently failing artist.
 - Not run: CI on the PR head, live provider checks, and any publication or deployment. No merge.
+
+---
 
 ---
 
