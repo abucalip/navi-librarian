@@ -69,6 +69,9 @@ Answered by the owner (2026-10-18):
 2. The ListenBrainz history available to the owner goes back only about two weeks, and the 30-day profile window was not a deliberate choice. Replace the 30-day window in the profile design (P2) with an explicit decision, and keep the CF-history hypothesis open because two weeks of history is shorter than the provider's full record.
 3. Yes. An extra MusicBrainz budget of a few seconds per run is acceptable, bounded to one or two extra CF pages (P3).
 
+Answered by the owner (2026-10-19):
+4. Background refill is on by default and runs automatically, without any user action, because the app will run as a self-hosted service. It is specified in section 3.4. The batch flags' default (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`) remains an owner decision because it changes output.
+
 ### Recommendations after the owner's answers and the PR #377 merge
 
 PR #377 is merged (merge commit `ee83330d7736b8b47d8e09883ce2b1ec24018212`). Its head was merged with `main` first (`ef87832`, a merge commit rather than a rebase, so no history was rewritten); all four required checks passed on `ef87832`.
@@ -265,6 +268,18 @@ Keep candidate caps, rate limits, diagnostics, and graceful provider-failure beh
 Recommendation candidates now carry a bounded `discovery_sources` list. The active personal-recommendation pipeline distinguishes ListenBrainz CF, profile-derived tag searches, and candidate-pool exploration tag searches; duplicate candidates merge/deduplicate source labels before eligibility and ranking through a directly tested helper. The legacy singular `discovery_source` field is retained for compatibility. Aggregate diagnostics count each recognized source independently while keeping old records readable and rejecting arbitrary source labels, so tag names and candidate identities are not persisted in source counts. Provenance is passed only to the private aggregate summarizer; the existing public debug payload shape is unchanged. Other source types (similar-artist lookup, library gap, new release, optional popularity fallback) are reserved in the aggregate allowlist but are not claimed as active sources in this pipeline.
 
 **Acceptance gate:** contrasting profiles generate different supplementary queries where metadata supports it; provider tags override name heuristics when present; missing metadata still has a tested fallback; duplicate candidates retain every actual source without duplicate labels; aggregate source counts stay bounded and identity-free; exploration remains available without fixed slots; provider calls remain bounded.
+#### 2.3 Persisted candidate resolution for per-run time (proposed, 2026-10-19)
+
+Evidence: owner priority (2026-10-19) is to reduce the time to build a batch without adding lookup time. The Mac timing runs on main `76ec40e` show that uncached MusicBrainz resolution dominates: one flags-off run made 277 uncached requests with 76 throttled, taking 359 s; a flags-on run made 63 uncached requests and took 46 s. Timings are single-sample and noisy (flags-off runs ranged 237-359 s), so treat the gain as directional until repeated.
+
+Proposal: store resolved candidate metadata (recording to release group, artist identity, and source) in a TTL store keyed by MBID, reusing the existing 180-day recording cache horizon as the upper bound. Every read re-checks ownership against the current library; the store never supplies ownership. Hard release eligibility and the per-run uncached budget (100) are unchanged.
+
+Cold-start mode: the batch-resolution flags stay off for steady-state output. They may serve as a clearly labelled cold-start path, used only when no stored resolution exists for the profile. Flag-on output must not silently replace flag-off output, because the batch path has no secondary release types and the title filter is heuristic.
+
+Alternatives considered: caching whole ranked lists (section 3.4) fixes freshness and serving latency but not lookup time, so it does not replace this item.
+
+Acceptance: with identical inputs, a warm store and a cold store produce the same final list; zero owned or duplicate items are served from the store; uncached request count falls on a warm run; the store holds no listening rows, only MBIDs, dates, and eligibility outcomes. Metrics are aggregate: uncached request count, throttled count, and wall-clock time, measured over at least three runs per mode.
+
 ### Phase 3 — Improve list diversity and recommendation freshness
 
 #### 3.1 Greedy MMR-style re-ranking
@@ -297,6 +312,24 @@ Define separate time windows/decay rules and expiry for positive/negative signal
 
 **Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
+#### 3.4 Persisted last-known-good snapshots and automatic background refill (proposed, 2026-10-19)
+
+Owner decision (2026-10-19): background refill is on by default and runs automatically, because the app will run as a self-hosted service.
+
+Evidence and reason: a failed or degraded refresh can replace a good persisted list, which is the refresh-failure and persisted-versus-ranked-output risk already in Phase 0 and the priority list. DroppedNeedle (commit `cf7278a`, checked 2026-10-19) keeps a last-known-good snapshot in SQLite (`backend/infrastructure/persistence/discovery_snapshot_store.py`), serves it stale-while-revalidate with a 5-minute rebuild threshold (`backend/services/discover/homepage_service.py`, lines 97-103 and 289-356), and does not overwrite it with an empty or degraded build. We adopt the pattern only. No code is copied until its license is checked.
+
+Design:
+- Persist the final ranked list per user as a snapshot (rank, provenance, build time, listening-window identifier, configuration hash). Store hashed identities and ranks, as in 3.2, not raw labels.
+- Serve the latest good snapshot on request. When it is older than the existing 24-hour stale threshold, start a background rebuild and never block the request on it.
+- Automatic refill: the existing hourly discovery-refresh cycle triggers the default (flags-off, full-quality) build for each stale profile. It runs under the 100-request uncached budget and the 1 request/second MusicBrainz limit, under one lock shared with foreground builds so they never overlap. The setting defaults to on and can be turned off.
+- Degraded-build guard: a build with provider failures, or with fewer eligible items than the stored snapshot, does not replace it. The previous snapshot stays, and the failure is logged in aggregate only.
+- Read-time safety: owned and duplicate identities are re-filtered against the current library on every read, so a snapshot cannot re-surface an album the user has since acquired.
+- Refill uses the default path only. The batch flags are not used for refill, so the stored list stays consistent with steady-state output.
+
+Acceptance (deterministic tests): a failed build keeps the previous snapshot; a stale snapshot is served while a rebuild is triggered; a snapshot served after a library change excludes newly owned albums; a refill run makes no more than 100 uncached requests; with the setting off, no background work runs. Metrics: foreground latency, age of served snapshot, and refill outcome counts, all aggregate.
+
+Out of scope here: a per-item scored history store (deferred to Phase 4 item 5).
+
 ### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 
 These are candidates for experiments, not committed additions. Check existing modules and source overlap before implementation.
@@ -305,6 +338,7 @@ These are candidates for experiments, not committed additions. Check existing mo
 2. **Similar artists seeded by recent listening:** evaluate Last.fm `artist.getSimilar` or a ListenBrainz similarity endpoint only if current official documentation confirms the endpoint and its behavior. Seed from a small weighted set of recent artists, prefer MBIDs, aggregate evidence from multiple seeds, and downweight weak/stale matches. Cache provider results while recalculating profile-dependent weights on each refresh.
 3. **Wider ListenBrainz CF pool:** check current official documentation for pagination or artist-type/filter parameters. The current code requests `count=100`; do not assume additional parameters exist until confirmed.
 4. **Popularity/trending fallback:** only consider it as a capped cold-start or optional lane, never as a dominant personal signal.
+5. **Scored recommendation store (deferred):** keep every recommendation with its score against the current profile and build pages from the store plus fresh fetches. This adds long memory, so it needs read-time ownership and duplicate checks and window-tagged scores to avoid temporal leakage. Defer until 2.3 and 3.4 show value.
 
 For each lane, compare against the Phase 0 baseline and simpler profile-driven sources. Retain only sources that improve measured outcomes enough to justify operational complexity, cache/rate-limit cost, and failure modes. ListenBrainz's recording-level CF endpoint is already in use; do not describe it as a new prototype or replacement.
 
@@ -319,6 +353,14 @@ The public [DroppedNeedle repository](https://github.com/DroppedNeedle/DroppedNe
 - **New Releases:** recency plus reliable artist identity and release eligibility.
 
 Do not add new UI modes in the initial backend work. The public docs establish product features, not DroppedNeedle's exact internal algorithm or measured quality; do not attribute unverified ranking internals to it.
+
+**Caching and freshness (checked at commit `cf7278a`, 2026-10-19; cite paths, not inferred behavior):**
+- Stale-while-revalidate with a last-known-good SQLite snapshot (`backend/infrastructure/persistence/discovery_snapshot_store.py`); adopted as section 3.4.
+- Degraded or empty builds do not replace good cached content (`backend/services/discover/homepage_service.py`, around lines 664-690); adopted as the degraded-build guard in 3.4.
+- Per-stage budgets kept below the overall task timeout (`homepage_service.py`, lines 97-125); consistent with our bounded uncached budget.
+- Background retry schedule: short on failure, long on success (`backend/services/discover/demand_service.py`); informs the refill backoff in 3.4.
+- Not adopted: a multi-user warmer with per-user leases. This is a single-user deployment, so a single lock is enough. Inference, not verified against our load.
+- DroppedNeedle has no item-level scoring store and no ownership-aware allocator we could compare against, so it informs freshness and persistence only, not ranking.
 
 ### Recommendation-system research
 
