@@ -3211,7 +3211,25 @@ No backend, API, auth, Get, Dismiss or settings behaviour changed.
 
 ### 37.5 Browser checks
 
-The five-width browser render for the vendored-mark version was **not run** in this session. The sandbox server launch was refused by the auto-mode classifier, so no after-state network log exists for it. The earlier run (text-label version, PR head `5b987ac`) is recorded in the PR body: third-party hosts 3 → 0 and console errors 4 → 0 at all five widths, with trap, Escape and focus return passing. The vendored-mark version still needs the same run before it is called verified; the before run on main is recorded in the same table.
+Method: `render-modal.js` against a local uvicorn sandbox on this branch (port 8765, fresh data dir set with `NAVIDROME_LIBRARIAN_DATA_DIR`, sandbox downloads path, slskd unset). Album details are mocked with reconstructed fixture data. Before (main `a1b086b`) was rendered on a worktree on port 8766.
+
+Vendored-mark head (`f27ca1e` and this doc commit):
+
+| Width | Third-party hosts | Failed responses (4xx/5xx) | Console errors | Trap, Escape, focus return | Links (width x height) |
+|---|---|---|---|---|---|
+| 1440 | none | none | 0 | pass | 97x44, 123x44, 93x44, 64x44, 114x44 |
+| 1200 | none | none | 0 | pass | same |
+| 900 | none | none | 0 | pass | same |
+| 620 | none | none | 0 | pass | same |
+| 390 | none | none | 0 | pass | same |
+
+Before (main `a1b086b`): three third-party hosts and four console errors per open, at every width. The text-label head (`5b987ac`) had the same zero third-party and zero console error result.
+
+- Document scroll width equals the viewport at every width. Mouse open, reduced motion and the error state behave as on main.
+- Screenshots: `/mnt/project-files/phase-7-modal-links/screenshots/` (`before-modal-<width>-RECONSTRUCTED.png`, `after3-modal-<width>-RECONSTRUCTED.png`, `after3-render-modal.json`). Fixture DOM, not the live library.
+- Marks load from `/static/vendor/simple-icons/` with no 4xx or 5xx responses.
+
+Not run: the helper and the live library, the exact-head manual checklist, and keyboard activation of a link (it opens an external site).
 
 ### 37.6 Skills and tools
 
@@ -3226,10 +3244,11 @@ The five-width browser render for the vendored-mark version was **not run** in t
 - `python3 -m compileall -q app static`: pass.
 - `python3 -m unittest tests.test_album_modal_ui_contract`: 15 tests, OK.
 - `python3 -m unittest discover -s tests`: 974 tests, OK.
+- Browser: five widths, sandbox server, as in 37.5.
 
 ### 37.8 Limitations
 
-- The five-width browser render of the vendored-mark version is not run (see 37.5).
+- Browser checks are sandbox-only (see 37.5), not the helper.
 - ListenBrainz and Qobuz have no vendored mark; text-only links.
 - Trademarks: the marks stay their owners'. The CC0 licence covers the drawings in the package, not the marks.
 - The manual checklist against the exact PR head SHA is for Hamdi.
