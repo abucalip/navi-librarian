@@ -664,6 +664,9 @@ def gather_recommendation_candidates(
     ]
     prefetch_ids = profile_prefetch_ids + candidate_prefetch_ids
     candidate_prefetch_stopped = False
+    # Shares the genre-stage breaker flag. Once the streak opens, the remaining
+    # prefetch lookups are skipped and counted, not sent.
+    prefetch_exhausted_streak = 0
     with providers.http_client(timeout=15, follow_redirects=True) as client:
         for index, artist_id in enumerate(prefetch_ids):
             if candidate_prefetch_stopped and index >= len(profile_prefetch_ids):
@@ -690,7 +693,18 @@ def gather_recommendation_candidates(
                 if response.status_code in _RETRYABLE_STATUS_CODES:
                     if index >= len(profile_prefetch_ids):
                         candidate_prefetch_stopped = True
+                    prefetch_exhausted_streak += 1
+                    if (
+                        GENRE_CIRCUIT_BREAKER_ENABLED
+                        and prefetch_exhausted_streak >= GENRE_CIRCUIT_BREAKER_THRESHOLD
+                    ):
+                        failures.append({
+                            "source": "profile_genre_circuit_breaker",
+                            "skipped_artists": len(prefetch_ids) - index - 1,
+                        })
+                        break
                     continue
+                prefetch_exhausted_streak = 0
                 response.raise_for_status()
                 prefetched_genres = sorted({
                     item.get("name", "").strip().casefold()
