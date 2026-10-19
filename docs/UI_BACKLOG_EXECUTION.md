@@ -2315,3 +2315,92 @@ The numbers are in `docs/DESIGN_SYSTEM.md` section 16.4. In short: the dashboard
 ### 25.8 Next action
 
 Hamdi reviews this PR's diff (docs only) and decides the owner items in `docs/DESIGN_SYSTEM.md` section 16.5, starting with the rail width and the "Recommendations" label. After that, a follow-up typography PR (drift row 4) and a gradient and colour removal PR (rows 5 to 7), each with before and after screenshots at the five widths. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA of this PR is still to be run by the owner.
+
+## 26. Redesign Phase 7 — Typography to the type ramp, item 4 (`ui/phase-7-typography-zfk4p0`)
+
+Roadmap item: Phase 7, item 4, added by this PR (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes `docs/DESIGN_SYSTEM.md` section 16.2 row 4. Design system sections applied: 5 (type ramp and rules), 9.7 (forms and tabs, unchanged), 12 (floor and performance), 13 (page-head cap). Base: `origin/main` at `173a8fa`, which includes PR #396. PR: this PR (number recorded in the PR body and in the roadmap once opened).
+
+Status, kept separate: **implemented**: yes, in `static/app.css` and one narrow test assertion. **Automated-tested**: yes, 26.4. **Browser-tested**: sandbox render at five widths on four pages plus a clipping check on the populated dashboard, 26.5. A keyboard walk, the screen-reader pass and the manual checklist were not run on this change (26.7). **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+
+### 26.1 Acceptance criteria (stated before the work)
+
+- No text below 12px (`--text-xs`) anywhere in `static/app.css`.
+- Every literal `font-size` or `font` size that is off the section 5 ramp (9, 10, 11, 14, 16, 18, 23, 28, 29, 34, 36px) moves to the nearest step, and the mapping is written down (26.2).
+- The 29px header title and the 34px desktop `.panel h2` go to 30px (`--text-2xl`), as decided by Hamdi in the Design doc thread. Section 13 caps the page head at 30px.
+- The on-ramp literals (12, 13, 15, 20, 24, 30px) are written as ramp tokens. Their values do not change.
+- No horizontal overflow at 1440, 1200, 900, 620 and 390px. No truncated or clipped labels on the pages whose text changed.
+- Out of scope and unchanged: the display face in controls and data, the "Recommendations" rail label, radius (row 8), gradients and colours (rows 5 to 7), the primary button (row 10), the rail width and gutter (rows 1 and 14), and every behaviour, API, auth and Get/Dismiss path.
+
+### 26.2 What changed
+
+The mapping, per declaration. "Display" means the display face is kept; only the size moved.
+
+| Was | Count | Where | Now |
+|---|---|---|---|
+| 9px | 1 | `.card-category` (card category label) | 12px `--text-xs` |
+| 10px | 3 | `.card-art-placeholder` (mono), `.genre-tag`, footer | 12px `--text-xs` |
+| 11px | 8 | `.get-album` base, `.card .card-art .get-album`, `.card .card-actions .get-album`, `.card-meta, .card-source`, `pre, #result`, `.quality-priority-position`, `nav .nav-count` (≤900px), `nav button` (≤620px) | 12px `--text-xs` |
+| 14px | 1 | `.acq-glyph` (status mark, mono) | 15px `--text-base` (a tie with 13px; the larger step keeps the glyph legible) |
+| 16px | 2 | `h3` (base), `.row-date-day` (display) | 17px `--text-md` |
+| 18px | 4 | `.quality-priority-grip` (glyph), `.card h3`, `.acq-row h3`, `.ranked-row h3` (≤620px) | 17px `--text-md` |
+| 23px | 1 | `.genre-row-heading h3` (display) | 24px `--text-xl` |
+| 28px | 2 | `.card-art-placeholder::before` "NL / 01" (display), `.rank-numeral` (≤620px) | 30px `--text-2xl` |
+| 29px | 1 | `header h1` (display) | 30px `--text-2xl` (Hamdi) |
+| 34px | 1 | `.panel h2` (desktop) | 30px `--text-2xl` (Hamdi; section 13 cap) |
+| 36px | 1 | `.rank-numeral` (desktop) | 30px `--text-2xl` (nearest text step, see 26.7) |
+
+Total: 25 off-ramp declarations on `origin/main`, 0 on this branch. The regex count on `origin/main` found 57 literal sizes in all, of which 25 were off the ramp; the other 32 were on the ramp and are now tokens with unchanged values.
+
+Other changes in this PR:
+
+- **Bottom tab bar under 620px:** the horizontal padding of each tab went from 4px to 8px. At 12px the labels "Recommendations" and "New releases" sat against each other with 4px padding. The bar still scrolls sideways, the owner item in `docs/DESIGN_SYSTEM.md` section 16.5 (row 2).
+- **`tests/test_new_releases_ui_contract.py`:** one assertion pinned the literal `.row-date-day { font: 600 16px/1.2 …`. It now expects `var(--text-md)`. The assertion's purpose, that the release date is plain text and not the red numeral, is unchanged. This is the only test change.
+- **`docs/DESIGN_SYSTEM.md` section 16.2 row 4:** marked fixed, with the remaining note on the rank numeral.
+- **`docs/REDESIGN_ROADMAP.md`:** Phase 7 status gains item 4. Item 3's status is not edited in this PR.
+
+`font-size: 0` on the two hidden placeholder labels (`.acq-row .card-art-placeholder`, `.ranked-row .card-art-placeholder`) is kept. It hides text that the layout does not show, and no size is applied to visible text.
+
+### 26.3 Impeccable guidance applied and rejected
+
+- **Impeccable CLI:** not available in this sandbox (`npx --no-install impeccable` fails). `impeccable detect` was **not run** on `static/app.css`, before or after. The advisory font-size count from section 16.3 (24 findings) is the last recorded detector result, and this PR removes all of the literal font sizes it counted.
+- **Impeccable skill:** not loaded in this run. The typography rules were applied from `docs/DESIGN_SYSTEM.md` section 5 and `DESIGN.md`, not from the skill's guidance.
+- **Applied:** the ramp rules in section 5 (floor 12px, no off-ramp sizes, display face kept to the page head and data-free labels).
+- **Rejected:** moving the rank numeral to the 56px `--num-row` token. Section 5 names that token, but it is a layout change to the ranked row, not a typography step, so it is left for a separate decision.
+- **Rejected:** changing the display face on controls or data cells. Hamdi named that as out of scope.
+
+### 26.4 Checks actually run
+
+| Command | Result |
+|---|---|
+| `pip install --break-system-packages -r requirements.txt` | exit 0 |
+| `node --check static/app.js` | clean |
+| `node --check static/login.js` | clean |
+| `python3 -m compileall -q app static` | clean |
+| `python3 -m unittest discover -s tests -v` (this branch) | **894 tests, OK**. The first run had one failure, `test_release_date_column_is_plain_text_not_the_red_numeral`, which pinned the 16px literal. After the narrow update it passes. |
+| `python3 -m unittest discover -s tests` (`origin/main`, same sandbox, before the edits) | **894 tests, OK** |
+
+### 26.5 Browser (sandbox, RECONSTRUCTED fixture, not the owner's helper)
+
+- `~/navi-librarian-test/test-pr.sh` is not in this sandbox. Two isolated uvicorn servers were run by hand: `origin/main` `173a8fa` (extracted with `git archive`) on `127.0.0.1:8301`, and this branch on `127.0.0.1:8302`. Each had its own `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` under a scratch directory outside the repository, `SLSKD_URL=http://127.0.0.1:9`, an empty key, and Navidrome unconfigured.
+- Owner account created with `POST /api/auth/setup` and signed in with `POST /api/auth/login`. Chromium 1194 through Playwright, reduced motion, 1440, 1200, 900, 620 and 390px.
+- Pages captured: sign-in entry (`/`, with the login stylesheet), Dashboard, Acquisitions and Settings. The Dashboard shows a **RECONSTRUCTED** fixture of six albums on `/api/dashboard-picks` (labelled in the file names). There is no artwork (`/api/artwork` answered 404), so the placeholders read "COVER NOT FOUND".
+- **Not captured:** Recommendations, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives, and the album modal. These have text that changed (ranked rows, the date column, the artist-deep-dive heading) but their populated states need fixtures I did not build here. They are skipped, not passed.
+- **Overflow:** `scrollWidth − clientWidth` was 0 at every width on the four pages, before and after.
+- **Sizes:** before, the four pages carried 9px, 10px and 11px text (up to 13 elements at 11px on the narrow widths). After, no text is below 12px on any of them.
+- **Clipping:** a script checked every text element in `#dashboard`, the rail and the header on the populated dashboard for `scrollWidth > clientWidth` under a hidden overflow. It found none, before or after, at the five widths.
+- **Visual check:** the after screenshots were read at 1440 and 390px. The category labels, the Get circles and the placeholder "NL / 01" fit. The 390px tab labels were tight before the padding change and have about 8px between them after it.
+- **Console and network:** the only console messages were two 404s on `/api/artwork` in both the before and after runs, from the fixture's no-artwork answer. No `pageerror` was logged.
+- **Keyboard walk and screen-reader pass:** not run for this change. It changes no focus order, role or name. Skipped, not passed.
+- Screenshots and results are in `/mnt/project-files/phase-7-typography/screenshots/` (names `before-*` and `after-*`, with `-dashboard-RECONSTRUCTED` on the fixture pages). Results JSON: `before-results.json` and `after-results.json`.
+
+### 26.6 Limitations
+
+- No real library and no artwork. Populated Recommendations, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives and the album modal were not captured (26.5).
+- The Impeccable detector and skill did not run (26.3). The detector's font-size count is therefore not re-measured; the literal count was re-measured by regex.
+- The rank numeral is now 30px on desktop (was 36px), a visible shrink on the ranked rows. The 56px `--num-row` token is the section 5 target and remains undecided.
+- The 390px bottom bar is still a horizontal scroller with seven destinations (owner item, section 16.5 row 2).
+- No keyboard, screen-reader or manual checklist run on the exact PR head.
+
+### 26.7 Next action
+
+Hamdi reviews the before and after screenshots and this table. If the 30px rank numeral is too small on the ranked rows, decide between 30px and the `--num-row` token before the rank numeral is touched again. Next roadmap item after this one: the gradient and colour removal (section 16.2 rows 5 to 7), with before and after screenshots at the five widths.

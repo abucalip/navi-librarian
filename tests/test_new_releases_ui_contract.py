@@ -103,7 +103,7 @@ class NewReleasesRowContractTests(unittest.TestCase):
         start = self.css.index(".row-date {")
         block = self.css[start:self.css.index(".row-dismiss-artist", start)]
         self.assertNotIn("chart-red", block)
-        self.assertIn(".row-date-day { font: 600 16px/1.2 var(--display); color: var(--text);", block)
+        self.assertIn(".row-date-day { font: 600 var(--text-md)/1.2 var(--display); color: var(--text);", block)
 
     def test_phone_layout_gives_the_date_column_room(self):
         self.assertIn(".ranked-row.is-dated { grid-template-columns: 56px 52px minmax(0, 1fr); }", self.css)
