@@ -2404,3 +2404,79 @@ Other changes in this PR:
 ### 26.7 Next action
 
 Hamdi reviews the before and after screenshots and this table. If the 30px rank numeral is too small on the ranked rows, decide between 30px and the `--num-row` token before the rank numeral is touched again. Next roadmap item after this one: the gradient and colour removal (section 16.2 rows 5 to 7), with before and after screenshots at the five widths.
+
+## 27. Redesign Phase 7 — Rank numerals to the 56px row token, item 6 (`ui/phase-7-rank-numeral-nk9ue4`, PR open, not merged)
+
+Roadmap item: Phase 7, follow-up item 6 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes the rank numeral row of `docs/DESIGN_SYSTEM.md` section 16.2 row 4 and records the decision in section 16.2 row 6 (Get shadow as an overlay rule). Design system sections applied: 5 (`--num-row`), 8 (rank numeral truthfulness rules), 9.4 (ranked row). Base: `origin/main` at `daf424d`, which includes PR #398 (squash `bce6017`) and PR #399 (`daf424d`). The branch name the brief gave was `ui/phase-7-rank-numeral`; the branch Claude was assigned for this session is `ui/phase-7-rank-numeral-nk9ue4`, and that is the one used.
+
+Status, kept separate: **implemented**: yes, in `static/app.css` only (no JavaScript, template or test change). **Automated-tested**: yes, 27.4. **Browser-tested**: sandbox render at five widths on the three lists that show numerals, plus the Discover sort check, 27.5. Keyboard walk, screen-reader pass and the helper checklist were not run (27.5, 27.6). **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+
+### 27.1 Acceptance criteria (stated before the work)
+
+- `.rank-numeral` uses `--num-row` (3.5rem, 56px) at every width, replacing 30px on desktop and the 30px phone override.
+- The token is defined on `:root`. Section 5 and `DESIGN.md` already named it, but `static/app.css` did not define it.
+- Rank 1 is not enlarged: `--num-lead` is not defined or applied in this PR.
+- Numerals appear only where the list has a sort basis the API returns, and the basis is named in the status line. Lists sorted by name, or with missing values, show no visible numeral.
+- No horizontal overflow at 1440, 1200, 900, 620 and 390px; no numeral overlaps the artwork; no title or Get control is pushed out of its row; no row height changes on the deterministic lists.
+- Focus, reduced motion, landmarks, the skip link and 44px targets are unchanged (the diff touches no focus, motion or markup rule).
+
+### 27.2 What changed
+
+- `static/app.css`, `:root`: `--num-row: 3.5rem;` added, with a comment that `--num-lead` is not yet defined.
+- `static/app.css`, `.rank-numeral`: font size `var(--text-2xl)` becomes `var(--num-row)`. The display face, weight 600, tabular figures and the `--chart-red-text` colour are kept.
+- `static/app.css`, `@media (max-width: 620px)`: the `.rank-numeral { font-size: var(--text-2xl); }` override is removed, so the phone numeral is the same 56px token.
+- `static/app.css`, phone ranked-row grid: the numeral column goes from 36px to 44px. At 56px a two-digit numeral measured 37px wide, so 36px overflowed its track by 1px. Titles and Get controls are unchanged in width at 390px (measured below).
+- Desktop column widths (72px at 1440, 64px at 1200 and below) are kept. A 37px numeral fits them.
+- Not changed: the skeleton numeral (`.is-skeleton .rank-numeral`, which still uses its own 40x32 and 28x24 placeholder blocks), the date column on New releases, the `is-index` muted colour, the Get control shadow, and every JavaScript path.
+
+### 27.3 Which lists show numerals and on what basis
+
+Read from `static/app.js` (`rankingBasis`, `buildRecommendationRow` and the three builders). No numbering was added.
+
+| List | Numerals | Basis (status line) |
+|---|---|---|
+| Discover music (`#recommendationCards`) | Red numeral when the sort has a complete API value | "Ranked by discovery score" (`score`), "Ranked by Last.fm artist listeners" (`popularity`), "Recommended order" (`original`, the server order). When a value is missing for any album, the numeral is hidden and the line says so. |
+| Discover music, "Artist A–Z" | None (the numeral element stays as an empty grid slot so artwork keeps its column) | "Sorted A–Z by artist" |
+| Personal Discoveries (`#personalCards`) | Muted index (`is-index`), not red | "Engine order, not ranked by discovery score" |
+| Add to your collection (`#classicsCards`) | Muted index (`is-index`), not red | "Picked for exploration, not ranked by score" |
+| New releases | None; the release date replaces the numeral | Release-date order |
+
+Judgement made here: the muted index numerals on Personal Discoveries and Add to your collection also move to 56px, because they share `.rank-numeral` and the roadmap says "every ranked list that shows them". Section 8 asks for a muted tone, not a smaller size. If Hamdi wants the index smaller than the red rank, that is a separate rule to add to section 5.
+
+### 27.4 Checks actually run
+
+- `node --check static/app.js`: passed (run before the 44px phone change; no JavaScript changed since).
+- `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install --break-system-packages -r requirements.txt`: installed on the Python 3.13 sandbox.
+- `python3 -m unittest discover -s tests -v`: **Ran 894 tests, OK**. The count matches the 894 recorded for `main` at `bce6017`. No `tests/*_ui_contract.py` file was edited, because no contract assertion names the numeral size.
+- Impeccable detector, run through `npx --yes impeccable@latest detect --json` on the same file before and after: **10 findings before and 10 after**, with the same types (2 `side-tab`, 4 `design-system-radius`, 4 `design-system-color`). None is a numeral finding. The count differs from the 34 findings in section 16.3, which came from an earlier CLI version; the same CLI was run on both files here, so the comparison is fair. The Impeccable skill guidance was not loaded in this session, so the design pass was made against section 8 and 9.4 directly.
+- `web-design-guidelines`: not run as a separate skill pass; the checks were made by hand against section 8 and 9.4.
+
+### 27.5 Browser (sandbox, RECONSTRUCTED fixture, not the owner's helper)
+
+Setup: two local uvicorn servers from the same sandbox code path, each with its own data directory under the session scratch folder, `SLSKD_URL=http://127.0.0.1:9`, a new account `sandbox.tester`. "Before" was a worktree at `bce6017`; "after" was the working tree at `daf424d` plus this change. Playwright (Chromium) at 1440, 1200, 900, 620 and 390px, one fresh context per run. The Discover, Personal Discoveries and Add to your collection responses were replaced with **RECONSTRUCTED** fixture rows (five albums, mixed scores and listener counts, one long title, one row with no score). The sandbox has no library, so this shows the DOM and layout, not real recommendations.
+
+- **Numeral size:** 30px before, 56px after on all three lists at all five widths.
+- **Overflow:** `scrollWidth − clientWidth` was 0 at every width, before and after, on all three lists.
+- **Numeral box versus artwork:** the numeral box is 37px wide at 56px; the artwork begins after it on every row at every width (no overlap).
+- **Get inside its row:** true for all five rows of every list at every width, before and after.
+- **Row height:** Discover music 105px at 1440, 1200 and 900px, 170px at 620px, 211px at 390px, identical before and after. Personal Discoveries 103, 122, 122, 192 and 231px, identical before and after. Add to your collection moves by sort/rotation between runs, so its heights are not compared.
+- **Title clamp:** the two-line clamp behaves the same before and after on the long fixture title; the non-clamped rows are unchanged.
+- **Discover sort check (1440):** "Highest discovery score" 5 numerals, "Most popular artists" 5 numerals, "Recommended order" 5 numerals, "Artist A–Z" 0 visible numerals (the basis line says "Sorted A–Z by artist"). The widest numeral box in the numbered sorts was 48.6px (the first-row box at 1440 is 37px; the wider box was not traced, and the first five rows stay inside their column).
+- **Console and network:** no console error or warning and no HTTP status 400 or above on any run. No `pageerror`.
+- **Screenshots:** `/mnt/project-files/phase-7-rank-numeral/screenshots/` with `before-*-RECONSTRUCTED.png` and `after-*-RECONSTRUCTED.png` for the three lists at five widths (30 images), plus `render-results.json` and `render-numerals.mjs`.
+- **Keyboard walk and screen-reader pass:** not run. The numerals are `aria-hidden` and the change touches no focus, role or name. Skipped, not passed.
+- **Manual checklist against the exact PR head SHA:** skipped. The owner's helper (`~/navi-librarian-test/test-pr.sh`) is not installed in this sandbox, so the sandbox server above was used instead. This is not the exact-head helper run that `docs/LOCAL_UI_TESTING.md` requires.
+
+### 27.6 Limitations
+
+- Reconstructed fixture data, no real library and no artwork. The populated numeral appearance on a real list may differ in text length (for example, four-digit or three-digit numbers, which the list does not produce today beyond 99 rows).
+- The Discover sort check changed the sort in the sandbox page only; the stored preference is not changed.
+- Rank 1 is not enlarged (`--num-lead` is undefined). It is an owner decision recorded in `docs/DESIGN_SYSTEM.md` section 16.5.
+- The skeleton placeholders keep their own sizes (40x32 and 28x24). They do not match the 56px numeral's line box; the skeleton row height is set by artwork, so no shift was seen, but this was not measured on a slow connection.
+- The index numerals on Personal Discoveries and Add to your collection now share the 56px size (27.3).
+
+### 27.7 Next action
+
+Hamdi reviews the before and after screenshots and the table in 27.3, then decides two owner items recorded in `docs/DESIGN_SYSTEM.md` section 16.5: whether rank 1 uses `--num-lead`, and whether the muted index numerals should be smaller than the red rank. After that, the gradient and one-off colour pass (rows 5 and 7), already drafted in the typography thread.
