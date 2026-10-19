@@ -893,6 +893,7 @@ def _discovery_refresh_personal(count=20, origin="manual"):
         record_outcome=lambda outcome: discovery_store.record_discovery_refresh_outcome(
             DISCOVERY_DB, **outcome
         ),
+        read_previous=_discovery_read_list,
     )
 
 

@@ -312,7 +312,7 @@ Define separate time windows/decay rules and expiry for positive/negative signal
 
 **Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
-#### 3.4 Persisted last-known-good snapshots and automatic background refill (proposed, 2026-10-19)
+#### 3.4 Persisted last-known-good snapshots and automatic background refill (partly implemented, 2026-10-19; branch `claude/project-thread-wry6wp`)
 
 Owner decision (2026-10-19): background refill is on by default and runs automatically, because the app will run as a self-hosted service.
 
@@ -329,6 +329,10 @@ Design:
 Acceptance (deterministic tests): a failed build keeps the previous snapshot; a stale snapshot is served while a rebuild is triggered; a snapshot served after a library change excludes newly owned albums; a refill run makes no more than 100 uncached requests; with the setting off, no background work runs. Metrics: foreground latency, age of served snapshot, and refill outcome counts, all aggregate.
 
 Out of scope here: a per-item scored history store (deferred to Phase 4 item 5).
+
+**Implementation status (2026-10-19, branch, not yet merged).** Implemented and tested without live calls: (a) `discovery_snapshot.py`, a pure policy module. `replacement_decision` rejects a build that is malformed or errored, has provider failures, is empty, or has fewer currently eligible items than the stored list (eligibility counted with an injected ownership predicate). `filter_snapshot` and `serve_snapshot` remove owned, duplicate, and unidentifiable items on read, keep stored ranks, and return aggregate counts only. (b) `refresh_personal` takes optional `read_previous`; when given, a rejected build leaves the stored list untouched, returns `status: rejected` with a bounded reason, and records a `rejected` outcome. A failed snapshot read fails closed. The server passes `_discovery_read_list`; without it, behavior is unchanged. Tests: `tests/test_discovery_snapshot.py` (16). Full suite: 1010 tests passed.
+
+Not yet done, and why: (1) the provider-failure input is not yet produced: no bounded provider-failure count is carried in the personal payload today, so `provider_failures` defaults to 0 and the guard currently covers errored, empty, and smaller builds only; (2) the read path does not yet call `serve_snapshot` with a live library predicate, so the read-time ownership re-check is tested but not wired; (3) stale-while-revalidate serving is not changed: the existing hourly scheduler (24-hour threshold) already performs the default refill, and the single lock already serializes foreground and scheduler builds; (4) the default-path-only rule holds because refill calls `recommend_new_music` with its existing flags. Next step: wire the read-time filter with the library predicate, then add a provider-failure count to the build diagnostics, each as a separate PR.
 
 ### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 

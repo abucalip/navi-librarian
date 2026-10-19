@@ -1,3 +1,12 @@
+## 2026-10-19 — Last-known-good snapshot guard and read-time filter (3.4, branch)
+
+- Task: roadmap 3.4, the next unfinished item after PR #444 on main. Confirmed by roadmap section 3.4 (3.1–3.3 not marked complete and 3.4 is the Phase 3 item the owner ranked next).
+- Evidence: `refresh_personal` wrote any non-error build over the stored list, so an empty or smaller build could replace a good list. The hourly scheduler already refills stale lists (24-hour threshold).
+- Change: `discovery_snapshot.py` (pure policy: replacement decision, read-time owned/duplicate filter, aggregate counts); optional `read_previous` guard in `discovery_refresh.refresh_personal`, wired in `navidrome_server.py`; tests in `tests/test_discovery_snapshot.py` (16).
+- Tests: targeted suite 36 passed; full unit suite 1010 passed (after installing `requirements.txt`; earlier import errors were missing dependencies, not code failures).
+- Limits: provider-failure count not yet produced; read-time filter not yet wired to the library predicate; no live measurement; PR not yet opened or merged.
+- Publishing and deployment remain paused.
+
 ## 2026-10-19 — Supplementary tag lane early stop (flagged) and genre-check findings
 
 - Task: add a default-off early stop to the supplementary MusicBrainz tag lane, and record the test-copy genre-check findings in the roadmap, status and log.
