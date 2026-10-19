@@ -87,7 +87,7 @@ Status: **in progress.** Slice A (rail: icons, two named groups, 232px, numeral 
 
 ### Phase 5 — Acquisitions (M)
 
-Status: **implemented on `ui/phase-5-acquisition-rows`, PR open, not merged or deployed.** Acquisition cards and the conic ring are replaced by status rows, a linear progress bar scaled with `transform`, and one client-side status table (glyph and label for every status). Get, retry, skip, dismiss and the `/api/acquisitions/stream` path are unchanged. Evidence, checks and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 19.
+Status: **merged in PR #383 (merge `a65fabf`), not deployed.** Acquisition cards and the conic ring are replaced by status rows, a linear progress bar scaled with `transform`, and one client-side status table (glyph and label for every status). Get, retry, skip, dismiss and the `/api/acquisitions/stream` path are unchanged. Evidence, checks and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 19.
 
 - Replace acquisition cards and the conic ring with status rows and a linear progress bar (design system 9.5); one table maps server statuses to glyph and label.
 - Keep Get, retry, skip and dismiss semantics and the `/api/acquisitions/stream` updates. Verify live updates and the reconnect path.
@@ -99,6 +99,8 @@ Status: **implemented on `ui/phase-5-acquisition-rows`, PR open, not merged or d
 - Login and first-run setup restyled to the new tokens (the first-run variant was a recorded skip in PR #66; test it this time).
 - Album modal: new layout and motion, focus return, Escape, tracklist rhythm.
 - Exit: login, setup and failed sign-in verified; credentials never in markup.
+
+Status: item 1 (Settings) implemented on `ui/phase-6-settings`, PR open, not merged or deployed. Two-column forms, ARIA tabs restyled, 44px move buttons, keyboard focus kept on the moved quality row. Evidence, checks and limitations: `docs/UI_BACKLOG_EXECUTION.md` section 20. Login and first-run setup, and the album modal, are separate PRs and not started.
 
 ### Phase 7 — Motion, polish, hardening (S–M)
 
