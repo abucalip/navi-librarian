@@ -1561,3 +1561,13 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Updated `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P3 status. P2 decision unchanged. No weights, windows, ownership, duplicate, or eligibility behavior changed.
 - Not yet verified: exact-head CI on the four required workflows, merge, and any owner-authorized rerun of the page-2 measurement. No publishing or deployment.
 - Next action: after CI passes on the PR head, the owner decides whether to authorize one aggregate rerun that reports the new fields.
+
+## P2 two-sided CF freshness check — 2026-10-19
+
+- Branch `docs/p2-cf-freshness-result` from GitHub main `96fdc53`. The measurement ran on `ba63de7` (PR #395 merge), which is the revision the captures record.
+- Two frozen CF captures from the owner's isolated test copy, one before and one after a known listening change, each with a 30-day history window. Each returned 200 CF recordings across two pages. The after-change capture shares 144 recordings with the before-change capture: Jaccard similarity 0.5625, 56 new, 56 dropped.
+- Both captures passed their integrity checks. Each logged one replay-capture `FileExistsError` warning that is not yet explained; the captures were intact and the warning did not affect the recorded results.
+- Updated `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P2 and the "New ideas" CF freshness entry. P2 is still undecided: the result shows CF responds to a listening change, but it does not show whether CF reflects all-time history. No weights, windows, ownership, duplicate, or eligibility behavior changed.
+- Captures and identity-bearing data stay outside GitHub. Only aggregates are recorded here.
+- Not yet verified: CI on the PR head, merge, and the all-time question. No publishing or deployment.
+- Next action: an aggregate-only comparison of CF output against the owner's known listen history to settle whether CF reflects all-time history.
