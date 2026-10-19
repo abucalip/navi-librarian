@@ -1,3 +1,10 @@
+## 2026-10-19 — Last.fm source: capped check and holdout result (docs only)
+
+- Task: owner asked to record Last.fm as a future recommendation-source setting option and move on with the roadmap.
+- Evidence (aggregates only): capped path about 40 s, 95 unowned candidates from 15 artists; positive control passed (31 of 31 known-owned albums flagged); holdout of 70 listens after 2026-10-18 15:41 UTC gave 0 artist hits for this path versus 3 of 27 for the frozen CF side. Uncapped path 273 to 313 s.
+- Change: documentation only, in docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. No code, weights, windows, eligibility, ownership, duplicate rules, or budgets changed.
+- Limits: one holdout of 70 listens, one profile, 4 of 20 browses returned 503; quality unmeasured at useful sample sizes. Publishing and deployment remain paused.
+
 ## 2026-10-19 — Supplementary tag lane: profile genre prefetch (draft PR)
 
 - Task: decide whether tag selection for the supplementary lane should read artist genres after the genre-lookup stage, since the lane ran before that stage wrote the cache (the cause of the cold-cache zero in the PR #411 live run).

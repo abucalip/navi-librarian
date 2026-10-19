@@ -110,3 +110,9 @@ No ranking weights, ownership gates, or allocation policy have been changed. Re-
 - Quality is unmeasured. The CF capture postdates the holdout listens, so a fair comparison needs a prospective two-week test.
 - Recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and PROJECT_LOG.md. No code or behavior change. Draft PR #424 carries these docs.
 - Publishing and deployment remain paused.
+
+## Last.fm source option (2026-10-19)
+
+- Recorded as a future recommendation-source setting option (docs only). Not implemented as a default source.
+- Holdout result: 0 artist hits for the capped Last.fm path versus 3 of 27 for the frozen CF side (small samples; see docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md).
+- Next action: prospective quality test once more listens accrue.
