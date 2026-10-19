@@ -76,3 +76,57 @@ class DiscoveryListPayloadTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PersonalReadTimeOwnershipTests(unittest.TestCase):
+    def _read(self, items, library):
+        def snapshot():
+            if isinstance(library, Exception):
+                raise library
+            return {"albums": library}
+        return json.loads(build_cached_discovery_list_response(
+            "personal", 10,
+            lambda _name: {"generated_at": 100, "payload": {
+                "recommendations": items, "source": "listenbrainz",
+            }},
+            [], {}, music_key, is_album_candidate, library_snapshot=snapshot,
+        ))
+
+    def test_owned_album_added_after_build_is_hidden_and_ranks_kept(self):
+        items = [
+            {"rank": 1, "artist": "Artist A", "album": "Now Owned"},
+            {"rank": 2, "artist": "Artist B", "album": "Still New"},
+        ]
+        result = self._read(items, [{"artist": "artist a", "album": "now owned"}])
+        self.assertEqual(result["recommendations"], [items[1]])
+        self.assertEqual(result["recommendations"][0]["rank"], 2)
+        self.assertEqual(result["diagnostics"]["read_filter"], {
+            "ownership_checked": True, "kept": 1, "owned": 1,
+            "duplicate": 0, "unidentified": 0,
+        })
+
+    def test_duplicate_identities_are_removed_on_read(self):
+        items = [
+            {"artist": "Artist A", "album": "Same"},
+            {"artist": " artist a ", "album": "SAME"},
+        ]
+        result = self._read(items, [])
+        self.assertEqual(len(result["recommendations"]), 1)
+        self.assertEqual(result["diagnostics"]["read_filter"]["duplicate"], 1)
+
+    def test_library_read_failure_serves_stored_items_and_says_so(self):
+        items = [{"artist": "Artist A", "album": "Kept"}]
+        result = self._read(items, RuntimeError("navidrome down"))
+        self.assertEqual(result["recommendations"], items)
+        self.assertEqual(result["diagnostics"]["read_filter"], {"ownership_checked": False})
+        self.assertNotIn("navidrome down", json.dumps(result))
+
+    def test_without_library_snapshot_response_is_unchanged(self):
+        items = [{"artist": "Artist A", "album": "Owned Here"}]
+        result = json.loads(build_cached_discovery_list_response(
+            "personal", 10,
+            lambda _name: {"generated_at": 1, "payload": {"recommendations": items}},
+            [], {}, music_key, is_album_candidate,
+        ))
+        self.assertEqual(result["recommendations"], items)
+        self.assertNotIn("read_filter", result["diagnostics"])

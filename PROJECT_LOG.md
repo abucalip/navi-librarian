@@ -1725,3 +1725,6 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Combinations: running both at today's settings is about 165 s. CF at budget 50 plus a Last.fm top-20 pass is about 110 s. Gated versions are about 55 to 80 s (sketches).
 - Decision: no code change; the Last.fm source is not implemented and no budget, weight, window, eligibility, ownership, or duplicate rule changed.
 - Next action: a prospective quality protocol and an offline gated-combination harness, with ownership and duplicate filters applied to both paths.
+
+- PR #445, snapshot guard (roadmap 3.4), merged as `c5e9b17` from exact tested head `4eec946`. Full unit suite on the merge base: 1010 tests OK (local, `python3 -m unittest discover -s tests -p "test_*.py"` after `pip install -r requirements.txt`). Publication and deployment remain paused.
+- Read-time ownership filter for the personal list (roadmap 3.4 item 2): reuses `discovery_snapshot.serve_snapshot` with the cached library snapshot. Four regression tests in `tests/test_discovery_list_payload.py`. Full local unit suite: 1014 tests OK. No live provider calls; no lookups added to the build path.

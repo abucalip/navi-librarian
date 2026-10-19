@@ -2535,7 +2535,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         feedback,
         saved,
         _music_key,
-        _discovery_is_album_candidate,
+        _discovery_is_album_candidate, _discovery_library_snapshot,
     )
 
 
