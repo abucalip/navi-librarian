@@ -3023,4 +3023,4 @@ AGENTS.md sets 44x44 as the touch-target floor. `docs/DESIGN_SYSTEM.md` section 
 - Reconstructed data is not used. The pages are the real app pages, but the sandbox has no Navidrome library, and the sign-in error and the first-run mismatch states were not re-measured in this item.
 - Heights are CSS pixels at device scale 1. Touch-target size on a phone is measured from the layout box, not from the physical tap area.
 - No real screen reader, no keyboard-only run, and no contrast check on the login page in this item.
-- The 40px vs 44px decision is open (section 16.5 of the design system).
+- The 40px vs 44px decision is closed for login inputs (section 16.5 of the design system). Other form inputs and the primary button are not measured in this item.
