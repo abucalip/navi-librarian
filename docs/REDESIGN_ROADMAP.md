@@ -100,7 +100,7 @@ Status: **merged in PR #383 (merge `a65fabf`), not deployed.** Acquisition cards
 - Album modal: new layout and motion, focus return, Escape, tracklist rhythm.
 - Exit: login, setup and failed sign-in verified; credentials never in markup.
 
-Status: item 1 (Settings) merged as PR #386 (`ef93112`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 20. Item 2 (Login and first-run setup) implemented on `ui/phase-6-login`, PR open, not merged or deployed. Tokens, 44px targets, glyph-plus-text errors, first-run variant tested on a fresh data directory. Evidence and limits: `docs/UI_BACKLOG_EXECUTION.md` section 21. Item 3 (album modal) implemented on `claude/project-thread-yydleb`, PR open, not merged or deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 22.
+Status: item 1 (Settings) merged as PR #386 (`ef93112`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 20. Item 2 (Login and first-run setup) merged as PR #388 (`a005b1c`), not deployed. Tokens, 44px targets, glyph-plus-text errors, first-run variant tested on a fresh data directory. Evidence and limits: `docs/UI_BACKLOG_EXECUTION.md` section 21. Item 3 (album modal) merged as PR #391 (squash `759510e`), not deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 22.
 
 ### Phase 7 — Motion, polish, hardening (S–M)
 
@@ -109,6 +109,8 @@ Status: item 1 (Settings) merged as PR #386 (`ef93112`), not deployed. Evidence:
 - Performance comparison against the Phase 0 baseline; accessibility checks including a real screen-reader pass (not done before).
 - Regenerate `DESIGN.md` from the finished build; update `docs/DESIGN_SYSTEM.md` where decisions changed.
 - Exit: redesign acceptance (section 7) met.
+
+Status: item 1 (motion table, one pass) implemented on `ui/phase-7-motion-e3ntxn`, PR open, not merged or deployed. Evidence: `docs/UI_BACKLOG_EXECUTION.md` section 23. Impeccable critique, audit, polish, harden, the `DESIGN.md` regeneration and the screen-reader pass are not done by this item.
 
 ## 5. Per-PR checklist
 

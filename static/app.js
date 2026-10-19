@@ -1026,9 +1026,7 @@ function applyRecommendationFilters() {
     const itemCategory = item.discovery_category || 'unclassified';
 
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
-    const key = [item.artist || item.album_artist || '', item.album || item.title || item.name || '']
-      .map(value => String(value).trim().toLocaleLowerCase()).join('::');
-    return !dismissed.has(key) && (!query || searchable.includes(query)) &&
+    return !dismissed.has(recommendationKey(item)) && (!query || searchable.includes(query)) &&
       (category === 'all' || itemCategory === category);
   });
 
@@ -1056,7 +1054,9 @@ function applyRecommendationFilters() {
     `Showing ${filtered.length} of ${allRecommendations.length} recommendations · ${basis.label}`;
 
   filtered.forEach((item, index) => {
-    cards.append(buildRecommendationRow(item, basis.numbered ? index + 1 : null));
+    const row = buildRecommendationRow(item, basis.numbered ? index + 1 : null);
+    row.dataset.key = recommendationKey(item);
+    cards.append(row);
   });
 
   if (!filtered.length) {
@@ -1067,6 +1067,44 @@ function applyRecommendationFilters() {
         : 'No recommendations returned. Generate recommendations to try again.'
     );
   }
+}
+
+// Stable identity for a recommendation: the same key the dismiss list uses, so a row keeps its
+// identity across re-sorts and the reorder animation can follow it.
+function recommendationKey(item) {
+  return [item.artist || item.album_artist || '', item.album || item.title || item.name || '']
+    .map(value => String(value).trim().toLocaleLowerCase()).join('::');
+}
+
+// Re-renders the recommendation list and, for a sort change only, slides each row from its old
+// position to its new one (FLIP, DESIGN_SYSTEM.md 11). Only transform animates. Reduced motion
+// shows the new order at once, and no animation is created.
+function reorderRecommendations(render) {
+  const cards = $('recommendationCards');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const before = new Map();
+  if (!reduced) {
+    cards.querySelectorAll('[data-key]').forEach(row => before.set(row.dataset.key, row.getBoundingClientRect().top));
+  }
+  render();
+  if (reduced || !before.size) return;
+  const rootStyle = getComputedStyle(document.documentElement);
+  const duration = parseFloat(rootStyle.getPropertyValue('--dur-slow')) || 260;
+  const easing = rootStyle.getPropertyValue('--ease-out').trim() || 'ease-out';
+  // Read every new position first, then write the animations, so layout is not forced per row.
+  const moves = [];
+  cards.querySelectorAll('[data-key]').forEach(row => {
+    const previous = before.get(row.dataset.key);
+    if (previous === undefined) return;
+    const distance = previous - row.getBoundingClientRect().top;
+    if (Math.abs(distance) >= 1) moves.push({row, distance});
+  });
+  moves.forEach(({row, distance}) => {
+    row.animate(
+      [{transform: `translateY(${distance}px)`}, {transform: 'translateY(0)'}],
+      {duration, easing}
+    );
+  });
 }
 
 // Describes the order the rows are shown in. A numeral is only honest when the order is a real
@@ -1316,7 +1354,7 @@ function addRecommendationMeta(meta, item) {
 
 $('recommendationSearch').addEventListener('input', applyRecommendationFilters);
 $('categoryFilter').addEventListener('change', applyRecommendationFilters);
-$('recommendationSort').addEventListener('change', applyRecommendationFilters);
+$('recommendationSort').addEventListener('change', () => reorderRecommendations(applyRecommendationFilters));
 
 $('checkConnection').addEventListener('click', async () => {
   $('connection').textContent = 'Testing Navidrome…';
@@ -1825,8 +1863,8 @@ async function pollDiscoveryUntilReady(name) {
 // dialog — so its state lives in an icon slot rather than in a word: "requested" is nine
 // characters at 11px mono, wider than the 44px button it has to fit. Static markup with no
 // interpolation, so no user-controlled string reaches innerHTML. The arc carries no pathLength,
-// because its dash pattern is written in real user units; the tick does, so its draw is a
-// 1 -> 0 dashoffset as the reference component specifies.
+// because its dash pattern is written in real user units. The tick carries pathLength, and its
+// entrance is a transform and opacity transition (static/app.css), not a dash offset.
 const GET_BUTTON_ICON =
   '<svg class="get-album-glyph" viewBox="0 0 44 44" aria-hidden="true" focusable="false"' +
   ' fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">' +

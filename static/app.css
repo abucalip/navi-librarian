@@ -36,7 +36,7 @@ html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--ink); color: var(--text); font: 15px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; }
 button, select, input { color: var(--text); background: var(--surface); border: 1px solid var(--edge-strong); border-radius: 4px; padding: 10px 12px; }
-button { cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+button { cursor: pointer; }
 button:hover { border-color: var(--accent); background: var(--surface-hover); }
 button:disabled { opacity: .55; cursor: wait; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -68,8 +68,9 @@ header p { margin: 0; color: var(--text-muted); font-size: 12px; letter-spacing:
   box-shadow: var(--shadow-menu);
 }
 .header-menu-panel[hidden] { display: none; }
-.header-menu-panel:not([hidden]) { animation: header-menu-in 150ms ease-out; }
-@keyframes header-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+/* Menu fade only (DESIGN_SYSTEM.md 11): opacity, no translate, on the --dur token. */
+.header-menu-panel:not([hidden]) { animation: header-menu-in var(--dur) var(--ease-out); }
+@keyframes header-menu-in { from { opacity: 0; } to { opacity: 1; } }
 .header-menu-panel button {
   display: block; width: 100%; min-height: 44px; padding: 10px 14px;
   color: var(--text); background: transparent; border: 0; border-radius: 3px;
@@ -318,7 +319,7 @@ p { line-height: 1.55; }
 .album-modal-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Platform links are 44x44 chips, so the visible target is the touch target. Five chips and four gaps fit the 340px column. */
 .album-modal-art-column .album-platform-links { position: static; display: flex; flex-flow: row nowrap; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; max-width: 100%; min-width: 0; margin: var(--space-2) 0 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 44px; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; overflow: hidden; border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); text-decoration: none; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+.album-modal-art-column .album-platform-links a { box-sizing: border-box; display: inline-flex; flex: 0 0 44px; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; overflow: hidden; border: 1px solid var(--edge-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); text-decoration: none; }
 .album-modal-art-column .album-platform-links a img { display: block; width: 18px; height: 18px; object-fit: contain; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -352,7 +353,7 @@ p { line-height: 1.55; }
   border-radius: 50%; background: var(--accent); border: 2px solid var(--accent-hover);
   color: var(--on-accent); box-shadow: 0 3px 12px rgba(0,0,0,.55);
   font: 700 11px/1 var(--mono); text-transform: uppercase;
-  cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  cursor: pointer;
 }
 .get-album:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 .get-album:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -362,31 +363,33 @@ p { line-height: 1.55; }
 /* Pending: the request is in flight. Applied before the server answers, so it must not
    read as success — a short accent arc travels the ring instead. */
 .get-album.is-pending { background: var(--surface-raised); border-color: var(--accent-dim); color: var(--text-muted); cursor: progress; }
-.get-album.is-pending .get-album-arc { opacity: 1; stroke: var(--accent); stroke-dasharray: 15.8 56.46; animation: get-arc-travel 1.15s linear infinite; }
-@keyframes get-arc-travel { to { stroke-dashoffset: -72.26; } }
+/* The arc travels by rotating the circle about the glyph centre (transform only, no dash offset). */
+.get-album.is-pending .get-album-arc { opacity: 1; stroke: var(--accent); stroke-dasharray: 15.8 56.46; transform-box: view-box; transform-origin: 22px 22px; animation: get-arc-travel 1.15s linear infinite; }
+@keyframes get-arc-travel { to { transform: rotate(360deg); } }
 /* Requested: only ever applied after the server confirms. Accent fill and a tick that draws
    itself. Held rather than returning to idle, so the control cannot be clicked into a second
    acquisition; the accessible name still reads "Acquisition requested". */
 .get-album.requested { background: var(--accent); border-color: var(--accent-hover); color: var(--on-accent); cursor: default; }
 .get-album.requested:hover { background: var(--accent); border-color: var(--accent-hover); transform: none; }
-.get-album.requested .get-album-tick { opacity: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: get-tick-draw .36s cubic-bezier(.16,1,.3,1) forwards; }
-@keyframes get-tick-draw { to { stroke-dashoffset: 0; } }
+/* The tick settles in with opacity and a short scale (transform and opacity only). */
+.get-album.requested .get-album-tick { opacity: 1; transform-box: fill-box; transform-origin: center; animation: get-tick-in var(--dur) var(--ease-out) both; }
+@keyframes get-tick-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
 /* Failed: the request did not land and the control is usable again. */
 .get-album.is-failed { background: var(--surface-raised); border-color: var(--chart-red); color: var(--chart-red); }
 .get-album.is-failed .get-album-arrow, .get-album.is-failed .get-album-arrow-head { opacity: 1; }
 .get-album:disabled { cursor: progress; }
 @media (max-width: 1100px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cards:not(.deep-dive-rows) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .genre-row-track > .card { flex-basis: 185px; width: 185px; } }
-.card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-panel); transition: border-color .15s ease, transform .15s ease; }
-.card:hover { border-color: var(--edge-strong); transform: translateY(-2px); }
+.card { min-width: 0; overflow: hidden; padding: 0 0 1px; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius-panel); }
+.card:hover { border-color: var(--edge-strong); }
 .card-art {
   position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; width: 100%; overflow: hidden;
   background: linear-gradient(135deg, transparent 49.5%, rgba(233,198,74,.12) 50%, transparent 50.5%), var(--surface-raised);
   border-bottom: 1px solid var(--edge);
 }
-.card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+.card-art::after { content: ""; position: absolute; inset: auto 0 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform var(--dur) var(--ease-out); }
 .card:hover .card-art::after { transform: scaleX(1); }
-.card-art img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .18s ease; }
+.card-art img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
 .card-art.has-image img { opacity: 1; }
 .card-art.has-image .card-art-placeholder { display: none; }
 .card-art-placeholder { padding: 12px; color: var(--text-muted); text-align: center; font: 500 10px/1.5 var(--mono); letter-spacing: .12em; }
@@ -493,7 +496,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    state still reads without motion. */
 @media (prefers-reduced-motion: reduce) {
   .get-album.is-pending .get-album-arc { animation: none; }
-  .get-album.requested .get-album-tick { animation: none; stroke-dashoffset: 0; }
+  .get-album.requested .get-album-tick { animation: none; opacity: 1; transform: none; }
 }
 
 /* Ranked rows (DESIGN_SYSTEM.md 9.4, 9.6). Discover music renders an ordered list, not a card grid.

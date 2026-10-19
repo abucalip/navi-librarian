@@ -205,15 +205,18 @@ class AsyncGetButtonTests(unittest.TestCase):
         tick = build[build.index("get-album-tick"):build.index("get-album-arrow")]
         self.assertIn('pathLength="1"', tick)
         self.assertIn("stroke-dasharray: 15.8 56.46;", self.css)
-        self.assertIn("stroke-dashoffset: 1;", self.css)
+        # Phase 7 motion pass (DESIGN_SYSTEM.md 11): the tick enters with transform and opacity, not a
+        # dash offset, so the dash-draw keyframes are gone.
+        self.assertNotIn("stroke-dashoffset", self.css)
+        self.assertIn("animation: get-tick-in var(--dur) var(--ease-out) both;", self.css)
 
     def test_working_state_travels_an_accent_arc(self):
         self.assertIn(
-            "stroke: var(--accent); stroke-dasharray: 15.8 56.46; "
-            "animation: get-arc-travel 1.15s linear infinite;",
+            "stroke: var(--accent); stroke-dasharray: 15.8 56.46; transform-box: view-box; "
+            "transform-origin: 22px 22px; animation: get-arc-travel 1.15s linear infinite;",
             self.css,
         )
-        self.assertIn("@keyframes get-arc-travel", self.css)
+        self.assertIn("@keyframes get-arc-travel { to { transform: rotate(360deg); } }", self.css)
 
     def test_requested_state_is_an_accent_fill_with_a_drawn_tick(self):
         requested = function_source(self.css, ".get-album.requested {", "/* Failed:")
@@ -266,7 +269,7 @@ class AsyncGetButtonTests(unittest.TestCase):
     def test_reduced_motion_keeps_the_state_without_the_motion(self):
         self.assertIn(".get-album.is-pending .get-album-arc { animation: none; }", self.css)
         self.assertIn(
-            ".get-album.requested .get-album-tick { animation: none; stroke-dashoffset: 0; }",
+            ".get-album.requested .get-album-tick { animation: none; opacity: 1; transform: none; }",
             self.css,
         )
 

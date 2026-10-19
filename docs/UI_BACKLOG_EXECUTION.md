@@ -2050,7 +2050,7 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 ### 21.8 Next action
 Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run the sign-in and first-run checklist against the exact PR head on the owner's helper (first-run on a deliberately fresh per-run data directory, never by deleting an existing one), and merge if satisfied. Next roadmap item in this phase: album modal, as a separate PR.
 
-## 22. Redesign Phase 6 — Album modal (`claude/project-thread-yydleb`)
+## 22. Redesign Phase 6 — Album modal (PR #391, merged, squash `759510e`)
 
 Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape, tracklist rhythm). Design system sections applied: 8 (album modal composition: artwork left, tracklist right, platform links beneath the artwork), 9.8 (modal: dialog semantics, focus trap, Escape, focus return, solid scrim, 6px radius), 9.4 (row behaviour is unchanged), 6 (tracklist rows at 48px, page-head maximum of 30px), 7 (no shadow on the dialog, depth from the ground ladder), 10 (sprite close icon), 11 (modal motion is opacity and an 8px translate; reduced motion removes it), 12 (44px targets, reduced motion, landmarks and names). Branched from `origin/main` at `a005b1c` (PR #388). The branch name follows the designated development branch for this session, not the `ui/phase-6-album-modal` name in the project brief.
 
@@ -2103,3 +2103,74 @@ Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape
 
 ### 22.7 Next action
 Owner: review the diff and the screenshots in `phase-6-album-modal/screenshots/`, run the album-modal checklist from `docs/TEST_PLAN.md` against the exact PR head on the owner's helper with a live library, and merge if satisfied. Next roadmap item: Phase 7 (motion, polish, hardening).
+
+## 23. Redesign Phase 7 — Motion pass, item 1 (`ui/phase-7-motion-e3ntxn`)
+
+Roadmap item: Phase 7, first bullet (apply the motion table once across the app; verify reduced-motion end states). Design system sections applied: 4.2 (yellow only for state), 9.2 (Get state machine kept), 9.3 (rail indicator), 9.5 and 9.6 (progress bar and skeleton), 9.8 (modal), 11 (motion table and tokens), 12 (reduced motion, accessibility floor). Base: `origin/main` at `759510e`.
+
+Branch note: the session's designated branch is `ui/phase-7-motion-e3ntxn`, not the `ui/phase-7-motion` stem in the brief. The PR uses the designated name.
+
+### 23.1 Acceptance criteria
+
+- Every listed motion animates only `transform` or `opacity`; no `transition: all`; no `stroke-dashoffset`, `width`, `height`, or colour transitions.
+- Durations use the section 11 tokens, except the two looping periods that section 11 does not name (see 23.5).
+- `prefers-reduced-motion: reduce` leaves each animated element at its end state: no stranded toasts, the Get arc holds still, the tick is drawn, the modal and menu are visible at rest.
+- Sort changes on Discover music reorder with a FLIP slide (transform only). Reduced motion shows the new order at once.
+- No layout shift and no horizontal overflow at 1440, 1200, 900, 620 and 390px. 44px targets unchanged.
+
+### 23.2 What changed
+
+- `static/app.css`: removed `transition: all`-style colour transitions on buttons, Get control, album platform links, cards and card artwork; removed the card hover lift (`translateY(-2px)`, not in the table) and the artwork opacity fade; header menu fade is opacity-only on `--dur`; Get arc is a rotation (`transform`) about the glyph centre instead of a dash-offset animation; Get tick enters with opacity and `scale(.6)` on `--dur` instead of drawing its dash; card hover bar and the rail, row and progress motions use the tokens; reduced-motion rule for the tick now ends at `opacity: 1; transform: none`.
+- `static/login.css`: removed the colour transition on the sign-in button (the reduced-motion rule stays).
+- `static/app.js`: `recommendationKey(item)` extracted from the dismiss key (same value); rows carry `data-key`; `reorderRecommendations(render)` runs FLIP only from the sort control's `change` listener. Search and filter re-renders do not animate. The Get-button comment no longer describes a dash-offset draw.
+- Tests: `tests/test_acquisition_ui_contract.py` assertions on the Get arc and tick were updated narrowly because the mechanism changed (dash-draw keyframes replaced by rotate and scale). No behavioural assertion was removed. New `tests/test_motion_ui_contract.py` (9 tests) enforces the table: no `transition: all`, transitions and keyframes limited to transform and opacity, no dash-offset or size animation, literal durations limited to the two loops, menu fade opacity-only, no card lift, reduced-motion end states, and FLIP limited to the sort control.
+
+### 23.3 Measured results (Chromium, reconstructed fixtures)
+
+Harness: `phase-7-motion/screenshots/motion_audit.py` serves `app/templates/index.html` and `static/` from each checkout and answers `/api` with synthetic recommendations (labelled RECONSTRUCTED). No backend, Navidrome or credentials were involved.
+
+| Check | Before (`759510e`) | After (this branch) |
+|---|---|---|
+| Computed transition properties, normal motion | background, border-color, color, opacity, transform | transform only |
+| Elements animating a non-transform/opacity property | 23 (colour and border transitions) | 0 |
+| Get arc during pending | `get-arc-travel` (stroke-dashoffset) | `get-arc-travel` (rotate) |
+| Get tick when requested | `get-tick-draw` (dashoffset 1 to 0) | `get-tick-in` (opacity and scale) |
+| Running animations after a sort change, normal motion | 0 (no reorder motion) | 7 row FLIP animations |
+| Running animations after a sort change, reduced motion | 0 | 0 |
+| Animations at rest, reduced motion | none listed | none listed; tick opacity 1, transform none; arc static |
+| Horizontal overflow at 1440/1200/900/620/390 | 0 at each | 0 at each |
+| Pixels changed in recommendation renders | n/a | 3 pixels at 1440 (hover residue), 0 at 1200, 900 (≤1 level), 620, 390 |
+
+Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1200,900,620,390}-RECONSTRUCTED.png` and the matching `after-` files; Get states at `get-is-pending-*` and `get-requested-*`. The before and after renders are pixel-identical in layout; the only visible change is the Get arc rotating and the tick entering, both of which are motion.
+
+### 23.4 Checks actually run
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass (also installed `playwright` for the harness).
+- `python3 -m unittest discover -s tests -v`: 884 tests, OK (baseline on `759510e`: 875, OK; +9 from the new motion contract file). Log: `phase-7-motion/screenshots/unittest-after.log`.
+- Reduced-motion emulation in Chromium through Playwright (`reduced_motion="reduce"`): run and recorded above.
+- Console: two `net::ERR_FAILED` errors appear on both before and after runs; they come from the harness aborting unmocked requests, not from app code.
+
+### 23.5 Deviations and limits
+
+- **Looping periods have no token.** The Get arc rotates over 1.15s and the skeleton pulses over 1.4s. Section 11 names no duration for loops, and `--dur-slow` (260ms) would spin the arc too fast. Both keep their periods and linear or ease-in-out timing. Hamdi to decide: add a loop token, or accept these two.
+- **Hover colour is instant.** Section 11 lists `--dur-fast` for hover, but also says to animate only transform and opacity. I took the second rule, so hover fills and borders change without a transition.
+- **Removed, not in the table:** the card hover lift, the artwork fade-in, and the colour transitions. If Hamdi wants the card lift kept, it is a one-line change, but it would be outside the table.
+- **Not changed:** vendored Notyf toast animations (restyle-only, per section 9.6; reduced motion still shortens them and never removes them). The global `html { scroll-behavior: smooth }` and the JS scroll behaviour are existing tested behaviour, so I left them.
+- **Reduced motion verified by emulation only in Chromium.** No real OS setting or screen reader was used. Toast reduced-motion timing was not exercised with a live toast.
+- **Live library checks: skipped.** The sandbox has no Navidrome library, and the helper described in `docs/LOCAL_UI_TESTING.md` is not available here. Discover music was rendered from synthetic fixtures only.
+
+### 23.6 Impeccable and skill guidance
+
+- `impeccable` CLI: not installed in this sandbox, so `impeccable detect` did not run. No detector output is claimed.
+- `anthropic-skills:web-design-guidelines`: run on the changed files (`static/app.css`, `static/login.css`, and `reorderRecommendations` and `recommendationKey` in `static/app.js`). Limit: the skill fetched its rules with WebFetch, which returned a paraphrase rather than the verbatim source, so this is a check against that paraphrase, not the exact published list.
+  - Applied: the sort reorder now reads every row's new position before writing any animation (`static/app.js`, the `moves` pass), following the rule to batch DOM reads and writes.
+  - Checked, no finding: no `transition: all`; only transform and opacity animate; reduced motion ends each animation at rest; transform origins are set on the Get arc and tick; hover feedback remains on buttons and cards.
+  - Not in this diff and not changed: focus-visible styles, image dimensions on card artwork, and touch behaviour. Pre-existing items the rules would flag, left for later Phase 7 items.
+- Applied from the motion table and section 12 rather than from a skill: transform and opacity only, reduced-motion end states, tokens for durations, no bounce or spring, FLIP limited to the one real reorder.
+- Rejected: loop tokens invented outside section 11; a card hover lift; artwork fade-in; hover colour timing that would require a colour transition.
+
+### 23.7 Next action
+
+Owner: review the diff, the before and after screenshots and the motion audit JSON, and decide the two loop-duration questions in 23.5. Then run the live browser checklist from `docs/TEST_PLAN.md` against the exact PR head SHA on the owner's helper, including sort on Discover music and a Get request, before the remaining Phase 7 items (critique, audit, polish, harden, `DESIGN.md`, and the screen-reader pass).
