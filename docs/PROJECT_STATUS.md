@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-19 (PR #419 supplementary profile genre prefetch merged)
+Last reviewed: 2026-10-19 (PR #419 merged; candidate-pool genre prefetch draft PR pending)
 
 ## Current focus
+
+**Supplementary tag lane: candidate-pool genre prefetch — draft PR pending (2026-10-19).** Adds the top five CF candidate-pool artists (`CANDIDATE_PREFETCH_LIMIT = 5`) to the pre-lane genre prefetch. Offline cold-cache fixtures now plan the same 8 queries and reach the same eligible unowned counts as warm, with no added uncached lookups from the prefetch itself. Worst-case prefetch-only cost is about 13 s per run. Tests: `tests/test_discovery_candidate_genre_prefetch.py`; full unit suite 928 tests OK on the branch. No live run; a live cold-cache run needs the owner's go-ahead. Publishing and deployment remain paused.
 
 **Supplementary tag lane: profile genre prefetch — PR #419 merged as `51f6e9877575a11dd5e0314cd23b2b197baca491` (2026-10-19), from exact head `9f045e33e85334247b55fc230e4152a3d3b3b620`; all four workflows passed on that head.** Prefetches genres for the top 15 profile artists before the tag lane, so a cold cache plans profile queries (offline fixture: 0 to 6; warm cache: 8). No extra provider calls per run. Exploration queries still need warm candidate-artist genres. Live run needs owner go-ahead.
 

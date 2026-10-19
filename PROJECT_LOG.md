@@ -1644,3 +1644,13 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Verification: `python3 -m unittest discover -s tests -p 'test_*.py'` ran 920 tests, all OK, on this branch. Compile check of the changed modules passed. CI on the exact PR head is still pending at the time of this entry.
 - Limits: the tag selector is stubbed, so real tag yield, real MusicBrainz response variety, and the cold-cache ordering issue are not measured. No weights, windows, eligibility, ownership checks, or provider budgets changed. No live run, no owner data directory accessed. Publishing and deployment remain paused.
 - Next action: decide whether tag selection should read the genre cache after the genre-lookup stage. That is a behavior change and needs its own measurement.
+
+## 2026-10-19 — Candidate-pool genre prefetch for the supplementary tag lane
+
+- Task: decide whether the tag lane should also prefetch genres for the top candidate-pool artists, so a cold cache matches warm exploration planning. #419 covered only the top 15 profile artists.
+- Measurement: offline synthetic fixtures (20, 40, 60 CF albums; shortlist target 10), no live calls. Cold without the change planned 6 queries; cold with a prefetch limit of 5 planned 8, the same as warm. Eligible unowned matched warm (34, 50, 54). The prefetch itself added no uncached genre lookups at any limit from 1 to 60. The remaining cold-run cost comes from the two exploration queries now planned, and warm makes the same lookups.
+- Change: `CANDIDATE_PREFETCH_LIMIT = 5` in `discovery_candidate_gathering.py`. An exhausted retry on a candidate stops only the candidate prefetch.
+- Tests: `tests/test_discovery_candidate_genre_prefetch.py`, five tests. The full unit suite (`python3 -m unittest discover -s tests`) ran 928 tests, all OK, on this branch. Compile check passed.
+- Added time: at most about 13 s per run in the worst case from the prefetch alone (non-retryable failures and one exhausted retry); a successful prefetch adds no spacing. The two exploration queries add about 3 to 10 s in the fixtures.
+- Limits: synthetic fixtures; real tag yield not measured; no live run. No weights, windows, eligibility, ownership, duplicate identity, or provider budgets changed. Publishing and deployment remain paused.
+- Next action: a live cold-cache run, with the owner's go-ahead, to compare against the fixture numbers.
