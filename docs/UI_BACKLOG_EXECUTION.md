@@ -1990,7 +1990,7 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 ### 20.8 Next action
 Owner: review the diff and the keyboard evidence in 20.5, run the Settings checklist on the exact PR head against the live library (including one real secret save with a blank field preserving the saved value), and merge if satisfied. Next roadmap item in this phase: Login and first-run setup, as a separate PR.
 
-## 21. Redesign Phase 6 — Login and first-run setup (`ui/phase-6-login`, merged as #388)
+## 21. Redesign Phase 6 — Login and first-run setup (`ui/phase-6-login`)
 
 Roadmap item: Phase 6, second bullet (login and first-run setup restyled to the new tokens; the first-run variant was a recorded skip in PR #66 and is tested here). Design system sections applied: 9.7 (forms), 9.1 (buttons), 6 (page head with the 3px chart-red rule), 7 (borders, no shadow), 4.2 (state never by colour alone), 5 (type faces), 11 (reduced motion), 12 (accessibility floor), 13 (anti-patterns). Branched from `origin/main` at `c0856d8`, which includes Settings (PR #386, `ef93112`).
 
@@ -2052,3 +2052,204 @@ Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run 
 
 ### 21.9 Merge record
 Owner-approved merge of PR #388 on 2026-10-19 at head `9d5eb72` (squash commit `a005b1c`). CI green on that head. Deployment not verified.
+
+## 22. Redesign Phase 6 — Album modal (PR #391, merged, squash `759510e`)
+
+Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape, tracklist rhythm). Design system sections applied: 8 (album modal composition: artwork left, tracklist right, platform links beneath the artwork), 9.8 (modal: dialog semantics, focus trap, Escape, focus return, solid scrim, 6px radius), 9.4 (row behaviour is unchanged), 6 (tracklist rows at 48px, page-head maximum of 30px), 7 (no shadow on the dialog, depth from the ground ladder), 10 (sprite close icon), 11 (modal motion is opacity and an 8px translate; reduced motion removes it), 12 (44px targets, reduced motion, landmarks and names). Branched from `origin/main` at `a005b1c` (PR #388). The branch name follows the designated development branch for this session, not the `ui/phase-6-album-modal` name in the project brief.
+
+### 22.1 Acceptance criteria (stated before implementation)
+- Artwork left and tracklist right at 900px and wider; stacked below 650px. No horizontal overflow at 1440, 1200, 900, 620 and 390px.
+- Modal motion is opacity and an 8px translate only, and `prefers-reduced-motion: reduce` removes it.
+- Focus returns to the opener on close; Escape closes; Tab stays inside the dialog.
+- Every control in the dialog is at least 44×44px.
+- Existing album-detail and artwork calls, the Get state machine and the dialog's ARIA semantics are unchanged.
+- No console or network errors except known limit B2 (third-party platform images in the album modal).
+
+### 22.2 What changed
+- `static/app.css`: the album modal block is rewritten with tokens only. The scrim is `--ink` at 80% and solid (blur removed). The panel is `--surface-raised`, `--edge` border, `--radius-panel`, and no box shadow. The title uses the 30px `--text-2xl` display step. The year is metadata colour, not the accent. Tracklist rows are 48px minimum with tabular numbers. Platform links are 44px visible chips (previously 30px visible with a 44px pseudo-element hit area). The open animation is `album-modal-fade` and `album-modal-rise`, which use only opacity and an 8px translate at `--dur-slow` and `--ease-out`. Reduced motion sets `animation: none`. `overscroll-behavior: contain` is set on the dialog, and `text-wrap: balance` on the title.
+- `app/templates/index.html`: the close control's `×` text is replaced by the sprite `x` icon, `aria-hidden`. The button keeps its accessible name, `aria-label="Close album details"`. Ids, dialog semantics, and the platform link and Get markup are unchanged.
+- `static/app.js`: not changed. The focus trap, Escape, focus return and data calls already met the acceptance criteria and are protected by existing tests.
+- `tests/test_album_modal_ui_contract.py` (new): 14 source-contract tests covering the dialog name and semantics, the sprite close icon, artwork-before-copy order, no blur or shadow, no literal colours, year not in the accent, motion keyframes, the reduced-motion removal, 44px targets, tracklist rhythm, title size, `overscroll-behavior`, `text-wrap`, and the unchanged data calls and close-to-opener logic. The existing focus, trap and Escape tests in `tests/test_ui_keyboard_and_feedback_contract.py` are not edited.
+
+### 22.3 Decisions taken without the owner (state these in review)
+- The 30px visible platform chips became 44px visible chips, not 30px chips with a larger hit area. The 44px floor in AGENTS.md applies to the visible control, and five chips plus gaps fit the 340px column.
+- The dialog no longer has a drop shadow or a backdrop blur, following DESIGN_SYSTEM.md 7 and 9.8. The scrim is now opaque, so the dialog reads through its raised surface rather than a shadow.
+- The title is 30px (`--text-2xl`), the maximum for headings in section 13, down from 34px. The 28px mobile override was removed.
+- Motion runs on open only. Close is still instant (`hidden`), because animating the close would need a delayed hide and the design system lists only the open motion for the modal.
+- The artwork `<img>` has no `width` and `height` attributes. Its box is fixed by `aspect-ratio: 1` and the artwork's intrinsic size varies, so the box does not shift.
+
+### 22.4 Checks actually run
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest tests.test_album_modal_ui_contract -v`: 14 tests, OK.
+- `python3 -m unittest discover -s tests -v`: 875 tests, OK.
+- Impeccable: `npx -y impeccable@4.6.0 detect` on `static/app.css`, `app/templates/index.html` and `static/app.js`. The advisory count went from 44 on `origin/main` to 34 on this branch. The remaining findings are outside the album modal block (for example, card and Dashboard values). None lie inside the modal block lines.
+- `anthropic-skills:web-design-guidelines`: fetched the live rule list. Applied: `overscroll-behavior: contain` on the dialog; `text-wrap: balance` on the dialog title. Checked and already satisfied: icon-only buttons have `aria-label`, decorative icons and the platform icons have `aria-hidden` or empty `alt`, `Loading…` style copy, no `outline: none`, `:focus-visible` rings, no `transition: all`, reduced motion. Rejected: explicit `width` and `height` on the artwork image (the box is fixed by `aspect-ratio`; the artwork's intrinsic size varies). The Impeccable critique and audit skills were not run as full sessions; the detector result is recorded above, not a critique.
+
+### 22.5 Browser checks (sandbox, RECONSTRUCTED data)
+- The owner's helper `~/navi-librarian-test/test-pr.sh` is not in this environment, so it was not used. Two servers ran from copies of the trees, `origin/main` at `a005b1c` ("main") and the branch working tree ("branch"), each with its own scratch data directory (`NAVIDROME_LIBRARIAN_DATA_DIR`), `SLSKD_URL=http://127.0.0.1:9`, and a sandbox owner account created through the first-run endpoint. There is no live library. Album details and artwork responses were mocked in the browser with RECONSTRUCTED values (12 tracks, one long title, a generated SVG). The opener card was a RECONSTRUCTED fixture built with the app's own `makeAlbumCardInteractive`.
+- Script: `phase-6-album-modal/screenshots/render-modal.js` (Playwright, Chromium 1194). Results: `render-modal-main.json` and `render-modal-branch.json`.
+- Width matrix, branch vs main: document scroll width equals the viewport at 1440, 1200, 900, 620 and 390 on both builds. Layout: side by side at 900 and wider, stacked at 620 and 390 on both builds. Smallest interactive target: 44px on the branch, 30px on main.
+- Keyboard: opened with Enter on the card. Tab presses stayed inside the dialog (25 presses at each width). Escape closed the dialog and focus returned to the card at each width.
+- Mouse: a click on the card opened the dialog at 1440.
+- Motion: the branch modal animation is `album-modal-rise` with motion allowed and `none` with `prefers-reduced-motion: reduce`. Main has no modal animation.
+- Error state (tracklist request returns 500): the status reads "Could not load tracklist: RECONSTRUCTED failure" with the error state. Screenshot `branch-modal-error-1440-RECONSTRUCTED.png`.
+- Console and network: four console errors on both builds, each `net::ERR_TUNNEL_CONNECTION_FAILED` for the third-party platform icons (`raw.githubusercontent.com`, `cdn.simpleicons.org`, `community.qobuz.com`). These are known limit B2. No other console error and no HTTP error response on either build.
+- Screenshots: `phase-6-album-modal/screenshots/main-modal-<width>-RECONSTRUCTED.png` and `branch-modal-<width>-RECONSTRUCTED.png`, for 1440, 1200, 900, 620 and 390. Every image is labelled RECONSTRUCTED.
+- Not run: the live Navidrome library and real artwork; the owner's helper checklist; the Get request path (the search endpoint was not exercised, so Get behaviour is unchanged by code but not browser-tested here); keyboard traversal of the platform links; a screen-reader pass; Chromium only.
+
+### 22.6 Limitations
+- Chromium only; no screen-reader pass; no physical-device check.
+- The platform icons are third-party images (B2). In the sandbox they fail to load and show text fallbacks; the fallback path is what the screenshots show.
+- Close has no motion. Reduced motion and the open animation are verified only in the rendered browser runs above.
+
+### 22.7 Next action
+Owner: review the diff and the screenshots in `phase-6-album-modal/screenshots/`, run the album-modal checklist from `docs/TEST_PLAN.md` against the exact PR head on the owner's helper with a live library, and merge if satisfied. Next roadmap item: Phase 7 (motion, polish, hardening).
+
+## 23. Redesign Phase 7 — Motion pass, item 1 (`ui/phase-7-motion-e3ntxn`, PR #392, merged, squash `46aa68e`)
+
+Roadmap item: Phase 7, first bullet (apply the motion table once across the app; verify reduced-motion end states). Design system sections applied: 4.2 (yellow only for state), 9.2 (Get state machine kept), 9.3 (rail indicator), 9.5 and 9.6 (progress bar and skeleton), 9.8 (modal), 11 (motion table and tokens), 12 (reduced motion, accessibility floor). Base: `origin/main` at `759510e`.
+
+Branch note: the session's designated branch is `ui/phase-7-motion-e3ntxn`, not the `ui/phase-7-motion` stem in the brief. The PR uses the designated name.
+
+### 23.1 Acceptance criteria
+
+- Every listed motion animates only `transform` or `opacity`; no `transition: all`; no `stroke-dashoffset`, `width`, `height`, or colour transitions.
+- Durations use the section 11 tokens, except the two looping periods that section 11 does not name (see 23.5).
+- `prefers-reduced-motion: reduce` leaves each animated element at its end state: no stranded toasts, the Get arc holds still, the tick is drawn, the modal and menu are visible at rest.
+- Sort changes on Discover music reorder with a FLIP slide (transform only). Reduced motion shows the new order at once.
+- No layout shift and no horizontal overflow at 1440, 1200, 900, 620 and 390px. 44px targets unchanged.
+
+### 23.2 What changed
+
+- `static/app.css`: removed `transition: all`-style colour transitions on buttons, Get control, album platform links, cards and card artwork; removed the card hover lift (`translateY(-2px)`, not in the table) and the artwork opacity fade; header menu fade is opacity-only on `--dur`; Get arc is a rotation (`transform`) about the glyph centre instead of a dash-offset animation; Get tick enters with opacity and `scale(.6)` on `--dur` instead of drawing its dash; card hover bar and the rail, row and progress motions use the tokens; reduced-motion rule for the tick now ends at `opacity: 1; transform: none`.
+- `static/login.css`: removed the colour transition on the sign-in button (the reduced-motion rule stays).
+- `static/app.js`: `recommendationKey(item)` extracted from the dismiss key (same value); rows carry `data-key`; `reorderRecommendations(render)` runs FLIP only from the sort control's `change` listener. Search and filter re-renders do not animate. The Get-button comment no longer describes a dash-offset draw.
+- Tests: `tests/test_acquisition_ui_contract.py` assertions on the Get arc and tick were updated narrowly because the mechanism changed (dash-draw keyframes replaced by rotate and scale). No behavioural assertion was removed. New `tests/test_motion_ui_contract.py` (9 tests) enforces the table: no `transition: all`, transitions and keyframes limited to transform and opacity, no dash-offset or size animation, literal durations limited to the two loops, menu fade opacity-only, no card lift, reduced-motion end states, and FLIP limited to the sort control.
+
+### 23.3 Measured results (Chromium, reconstructed fixtures)
+
+Harness: `phase-7-motion/screenshots/motion_audit.py` serves `app/templates/index.html` and `static/` from each checkout and answers `/api` with synthetic recommendations (labelled RECONSTRUCTED). No backend, Navidrome or credentials were involved.
+
+| Check | Before (`759510e`) | After (this branch) |
+|---|---|---|
+| Computed transition properties, normal motion | background, border-color, color, opacity, transform | transform only |
+| Elements animating a non-transform/opacity property | 23 (colour and border transitions) | 0 |
+| Get arc during pending | `get-arc-travel` (stroke-dashoffset) | `get-arc-travel` (rotate) |
+| Get tick when requested | `get-tick-draw` (dashoffset 1 to 0) | `get-tick-in` (opacity and scale) |
+| Running animations after a sort change, normal motion | 0 (no reorder motion) | 7 row FLIP animations |
+| Running animations after a sort change, reduced motion | 0 | 0 |
+| Animations at rest, reduced motion | none listed | none listed; tick opacity 1, transform none; arc static |
+| Horizontal overflow at 1440/1200/900/620/390 | 0 at each | 0 at each |
+| Pixels changed in recommendation renders | n/a | 3 pixels at 1440 (hover residue), 0 at 1200, 900 (≤1 level), 620, 390 |
+
+Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1200,900,620,390}-RECONSTRUCTED.png` and the matching `after-` files; Get states at `get-is-pending-*` and `get-requested-*`. The before and after renders are pixel-identical in layout; the only visible change is the Get arc rotating and the tick entering, both of which are motion.
+
+### 23.4 Checks actually run
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass (also installed `playwright` for the harness).
+- `python3 -m unittest discover -s tests -v`: 884 tests, OK (baseline on `759510e`: 875, OK; +9 from the new motion contract file). Log: `phase-7-motion/screenshots/unittest-after.log`.
+- Reduced-motion emulation in Chromium through Playwright (`reduced_motion="reduce"`): run and recorded above.
+- Console: two `net::ERR_FAILED` errors appear on both before and after runs; they come from the harness aborting unmocked requests, not from app code.
+
+### 23.5 Deviations and limits
+
+- **Looping periods have no token.** The Get arc rotates over 1.15s and the skeleton pulses over 1.4s. Section 11 names no duration for loops, and `--dur-slow` (260ms) would spin the arc too fast. Both keep their periods and linear or ease-in-out timing. Hamdi to decide: add a loop token, or accept these two.
+- **Hover colour is instant.** Section 11 lists `--dur-fast` for hover, but also says to animate only transform and opacity. I took the second rule, so hover fills and borders change without a transition.
+- **Removed, not in the table:** the card hover lift, the artwork fade-in, and the colour transitions. If Hamdi wants the card lift kept, it is a one-line change, but it would be outside the table.
+- **Not changed:** vendored Notyf toast animations (restyle-only, per section 9.6; reduced motion still shortens them and never removes them). The global `html { scroll-behavior: smooth }` and the JS scroll behaviour are existing tested behaviour, so I left them.
+- **Reduced motion verified by emulation only in Chromium.** No real OS setting or screen reader was used. Toast reduced-motion timing was not exercised with a live toast.
+- **Live library checks: skipped.** The sandbox has no Navidrome library, and the helper described in `docs/LOCAL_UI_TESTING.md` is not available here. Discover music was rendered from synthetic fixtures only.
+
+### 23.6 Impeccable and skill guidance
+
+- `impeccable` CLI: not installed in this sandbox, so `impeccable detect` did not run. No detector output is claimed.
+- `anthropic-skills:web-design-guidelines`: run on the changed files (`static/app.css`, `static/login.css`, and `reorderRecommendations` and `recommendationKey` in `static/app.js`). Limit: the skill fetched its rules with WebFetch, which returned a paraphrase rather than the verbatim source, so this is a check against that paraphrase, not the exact published list.
+  - Applied: the sort reorder now reads every row's new position before writing any animation (`static/app.js`, the `moves` pass), following the rule to batch DOM reads and writes.
+  - Checked, no finding: no `transition: all`; only transform and opacity animate; reduced motion ends each animation at rest; transform origins are set on the Get arc and tick; hover feedback remains on buttons and cards.
+  - Not in this diff and not changed: focus-visible styles, image dimensions on card artwork, and touch behaviour. Pre-existing items the rules would flag, left for later Phase 7 items.
+- Applied from the motion table and section 12 rather than from a skill: transform and opacity only, reduced-motion end states, tokens for durations, no bounce or spring, FLIP limited to the one real reorder.
+- Rejected: loop tokens invented outside section 11; a card hover lift; artwork fade-in; hover colour timing that would require a colour transition.
+
+### 23.7 Next action
+
+Owner: review the diff, the before and after screenshots and the motion audit JSON, and decide the two loop-duration questions in 23.5. Then run the live browser checklist from `docs/TEST_PLAN.md` against the exact PR head SHA on the owner's helper, including sort on Discover music and a Get request, before the remaining Phase 7 items (critique, audit, polish, harden, `DESIGN.md`, and the screen-reader pass).
+
+## 24. Redesign Phase 7 — Audit, polish and harden, item 2 (`ui/phase-7-audit-harden-xnw111`, PR #394)
+
+Roadmap item: Phase 7, second bullet (audit and critique on every page, polish and harden what they find, fixes that fit the system). Design system sections applied: 4 (colour and contrast), 9.1 and 9.7 (button and form sizing), 9.4 and 9.5 (ranked row and acquisition row roles), 9.8 (modal artwork), 12 (44×44 floor, visible focus, status by text). Base: `origin/main` at `46aa68e`. Section 23 (PR #392) is marked merged here.
+
+Branch note: the session's designated branch is `ui/phase-7-audit-harden-xnw111`, not the `ui/phase-7-audit-harden` stem in the brief. The PR uses the designated name.
+
+### 24.1 Acceptance criteria
+
+- Every audited page (dashboard, Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives, Acquisitions, the four Settings tabs, login) has no control under 44×44 at 1440, 1200, 900, 620 or 390px, except where stated in 24.5.
+- No horizontal overflow at the five widths. Text contrast meets 4.5:1 (3:1 large) on every rendered text element.
+- Every focusable control shows a visible focus ring when reached by Tab.
+- No album article is a button around its own Get, Dismiss or Try again controls.
+- The album modal shows no broken-image glyph when artwork is absent or fails to load.
+- No behaviour, endpoint, auth, acquisition or Get change. The Get state machine, Dismiss and settings-secret handling are untouched.
+
+### 24.2 What changed
+
+- `static/app.css`: settings text inputs 40px → 44px (`.settings-tab-panel input`); `.controls button`, `.controls select`, `.discovery-controls input` and `select` at `min-height: 44px`; `summary` (the diagnostics disclosure) at 44px; `.skip-link` at 44px; `.dashboard-picks-status` from 11px to `--text-xs` (12px).
+- `static/app.js`: album articles (ranked rows, cards, acquisition rows) no longer carry `role="button"`. They keep `tabindex="0"`, their `aria-label`, and the existing Enter and Space handler that opens the modal. The modal artwork `<img>` is `hidden` until an artwork URL resolves, and hidden again if the URL fails to load (`error` listener).
+- `tests/test_phase7_audit_ui_contract.py` (new, 7 tests): pins each fix above. No existing assertion was edited or removed.
+- `docs/REDESIGN_ROADMAP.md`: PR #392 marked merged in item 1; item 2 status updated.
+
+### 24.3 Measured results (Chromium, reconstructed fixtures)
+
+Harness: `phase-7-audit-harden/screenshots/audit.py` (copied to the shared folder) serves `app/templates/index.html`, `login.html` and `static/` from a checkout and answers `/api` with synthetic data labelled RECONSTRUCTED. The before run used a detached worktree at `46aa68e`, with the same harness.
+
+| Check | Before (`46aa68e`) | After (this branch) |
+|---|---|---|
+| Control or link under 44×44 (instances, 12 page states × 5 widths) | 131 | 0 |
+| Horizontal overflow, max px across renders | 0 | 0 |
+| Text under its contrast threshold | 0 | 0 |
+| Lowest sampled text contrast (1440, dark ground) | 6.3:1 | 6.3:1 |
+| Tab stops without a visible focus ring (dashboard 14, Discover 22) | 0 | 0 |
+| Album articles with `role="button"` containing buttons | every card, ranked row and acquisition row | 0 |
+| Modal opens from a focused article (Enter), closes on Escape | yes | yes |
+| Broken-image glyph in album modal with no artwork | yes (screenshot) | none (screenshot) |
+
+Rendered screenshots: `phase-7-audit-harden/screenshots/{before,after}-{dashboard,recommendations,acquisitions,settings-navidrome,login}-{1440,390}-RECONSTRUCTED.png` and the modal pair. Full JSON: `before-audit.json` and `after-audit.json`.
+
+Console: the only errors are `net::ERR_FAILED` from the harness aborting third-party logo requests (24.5). The before run also showed a 404 for `/assets/cassette.png`, which was a harness path mapping error and is fixed in the harness, not the app.
+
+### 24.4 Checks actually run
+
+- `node --check static/app.js`, `node --check static/login.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `pip install -r requirements.txt --break-system-packages`: pass.
+- `python3 -m unittest discover -s tests -v`: 891 tests, OK (baseline on `46aa68e`: 884, OK; +7 from the new audit contract file). Log is in the session workspace.
+- `impeccable detect` (CLI via the Impeccable skill launcher, now available; it was missing in the last session): ran on `static/app.css`, `static/app.js`, `app/templates/index.html`. See 24.6.
+- Automated audit at five widths: run on `46aa68e` and on this branch as in the table above.
+
+### 24.5 Limits, deviations and open items
+
+- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness.
+- **Bottom tab bar under 620px (Hamdi's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
+- **Screen reader pass: not done.** No screen reader was available. The role change in 24.2 is based on the ARIA rule about interactive descendants, not on a spoken test.
+- **Album articles keep an `aria-label`.** The label ("View details for …") now names the article, so a screen reader may announce the Get or Dismiss buttons inside it as part of the article. Verifying that needs the screen-reader pass above.
+- **Live library and the isolated helper: skipped.** `~/navi-librarian-test/test-pr.sh` is not present in this sandbox, and the cloud sandbox has no Navidrome library. Every check above used reconstructed fixtures. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA is not run here and is for Hamdi.
+- **Reduced motion.** This PR changes no animation. The motion checks from section 23 still hold (`tests/test_motion_ui_contract.py` passes).
+- **Remaining font and radius drift.** The detector's advisory notes (about 33) flag literal sizes such as 11px, 13px and 18px, radii of 3px and 999px, and undocumented colours against `DESIGN.md`. They are advisory and not fixed in this PR; they belong to the `DESIGN.md` regeneration and a typography decision at the end of Phase 7.
+
+### 24.6 Impeccable and skill guidance
+
+- **Impeccable CLI and skill:** the `impeccable` CLI ran (`detect`, `context`). The Impeccable skill was loaded for `audit`. Its launcher supplied PRODUCT.md and DESIGN.md, and its craft-floor reference was read before editing.
+- **`impeccable detect` on the changed files (4 findings, all rejected with reason):**
+  - `static/app.css:390` `.card-art::after` and `static/app.css:518` `.ranked-row::before`, flagged as `side-tab` (3px coloured stripe). Rejected: DESIGN_SYSTEM 9.4 specifies the 3px yellow row bar as the ranked-row hover state, and the card-art stripe is the existing accent. Both are kept.
+  - `app/templates/index.html`, `<img id="albumModalArtwork">` with no `src`, flagged `broken-image`. Rejected as a false positive for this slice: the image is hidden until an artwork URL resolves (24.2), so no broken box renders. Keeping the element avoids a placeholder data URI.
+  - `app/templates/index.html`, `.settings-tabs` flagged `cramped-padding`. Rejected: the tab bar's `margin-bottom: -1px` is the design's active-underline seam on the tablist border, and it is intentional.
+- **Impeccable guidance applied:** craft-floor refusal list checked (no gradient text, no added coloured `border-left`, no glass, no hard shadows, no eyebrow labels). Focus rings, tabular data and the Get states kept as they are. The detector's advisory font and radius notes were reviewed and deferred (24.5).
+- **Impeccable guidance rejected:** the card hover lift, a new loop token, and any re-roll of the Chart Rundown direction, which the project's rules forbid.
+- **`anthropic-skills:web-design-guidelines`:** the fetched guidelines came back as a summary, not verbatim, so this check is against that summary only. Applied to the changed files: accessible names on icon and link controls, visible focus and no outline removal, no interactive descendants in a button, no broken image shown, live status left as it was. Not applied, out of scope: text-wrap balance, tabular numerals in new places, and touch-action on the carousel.
+- **`/impeccable document`:** not run. The roadmap runs it at the end of Phase 7.
+
+### 24.7 Next action
+
+Owner: review this PR's diff and the before and after screenshots, then decide the open items in 24.5, mainly the album-modal logos (B2) and the bottom-tab overflow under 620px. Then run the `docs/TEST_PLAN.md` checklist against the exact head SHA on the isolated helper, with a screen-reader pass on the album article and the Get control, before Phase 7's `DESIGN.md` regeneration.
