@@ -1654,3 +1654,11 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Added time: at most about 13 s per run in the worst case from the prefetch alone (non-retryable failures and one exhausted retry); a successful prefetch adds no spacing. The two exploration queries add about 3 to 10 s in the fixtures.
 - Limits: synthetic fixtures; real tag yield not measured; no live run. No weights, windows, eligibility, ownership, duplicate identity, or provider budgets changed. Publishing and deployment remain paused.
 - Next action: a live cold-cache run, with the owner's go-ahead, to compare against the fixture numbers.
+
+## 2026-10-19 — PR #421 merged and live cold-cache pass recorded
+
+- PR #421 (candidate-pool genre prefetch, `CANDIDATE_PREFETCH_LIMIT = 5`) merged as `d840150` after the four required checks passed on head `6da5994`. The merge needed the draft flipped to ready first.
+- Live pass on the owner's test copy at `d840150`, fresh empty data directory, aggregates only: eligible unowned 45 before and after (replenishment not triggered); 8 tag queries planned and issued, 7 with yield and 1 HTTP error; 14 of 15 profile and 6 of 13 candidate genre-cache hits; 65 uncached artist-genre lookups; 2 CF pages, 200 recordings, 100-resolution budget fully used.
+- The ~190 s estimate covers all 173 uncached requests in the run, including the 100 recording resolutions this change did not add.
+- Limits: one pass, one profile, one cold state, no pre-change live comparison. The throwaway data directory and worktree were removed on the device.
+- Publishing and deployment remain paused.
