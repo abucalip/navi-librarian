@@ -1,3 +1,12 @@
+## 2026-10-19 — Supplementary tag lane: profile genre prefetch (draft PR)
+
+- Task: decide whether tag selection for the supplementary lane should read artist genres after the genre-lookup stage, since the lane ran before that stage wrote the cache (the cause of the cold-cache zero in the PR #411 live run).
+- Measurement: offline, through the real gathering path on a synthetic fixture with providers stubbed. Cold cache with the existing order planned 0 queries; warm cache planned 8. A full reorder would match warm exactly but adds up to about 60 uncached MusicBrainz lookups per first run, so it was not chosen.
+- Change: prefetch genres for the top 15 profile artists before the lane. These artists are already in the genre stage's lookup set, so total calls per run are unchanged. Cold cache on the fixture now plans 6 queries (all profile), eligible unowned 22 (warm: 8 queries, 28 eligible). Exploration parity is not restored.
+- Tests: `tests/test_discovery_genre_prefetch.py`, three synthetic cases; the two cold-cache cases fail without the change. Full unit suite run locally: 923 tests OK. CI on the exact head is pending at the time of this entry.
+- Limits: synthetic fixture only; no live run; tag yield not measured. Weights, windows, eligibility, ownership, and budgets are unchanged. Publishing and deployment remain paused.
+- Next action: owner go-ahead for a live cold-cache run; decide separately whether candidate-artist prefetch is worth its extra lookups.
+
 ## 2026-10-19 — PR #411 warm-cache aggregate run (no code change)
 
 - Task: rerun the #411 live measurement with a warm metadata cache, after PR #414 added aggregate tag-lane counters.

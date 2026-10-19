@@ -495,6 +495,47 @@ def gather_recommendation_candidates(
                 record["error_class"] = classify_error(exc)
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
+    # Warm the genre cache for the top listening-profile artists before the tag
+    # lane reads it. Without this, a cold cache plans zero profile queries because
+    # the genre stage below runs after the lane. These artists are always in the
+    # genre stage's own lookup set, so this reorders calls rather than adding them.
+    # Best-effort: failures here are left for the genre stage to retry and record.
+    with providers.http_client(timeout=15, follow_redirects=True) as client:
+        for index, (artist_id, _listen_count) in enumerate(
+            recent_artist_mbid_counts.most_common(15)
+        ):
+            try:
+                if providers.metadata_cache_get(
+                    f"mb:artist-genres:{artist_id}",
+                    ttl_seconds=90 * 24 * 60 * 60,
+                ) is not None:
+                    continue
+
+                if index:
+                    providers.sleep(1.1)
+
+                response = _get_with_bounded_retry(
+                    client,
+                    f"https://musicbrainz.org/ws/2/artist/{artist_id}",
+                    params={"fmt": "json", "inc": "genres"},
+                    headers=headers,
+                    sleep=providers.sleep,
+                )
+                if response.status_code in _RETRYABLE_STATUS_CODES:
+                    continue
+                response.raise_for_status()
+                prefetched_genres = sorted({
+                    item.get("name", "").strip().casefold()
+                    for item in response.json().get("genres", [])
+                    if item.get("name", "").strip()
+                })
+                providers.metadata_cache_set(
+                    f"mb:artist-genres:{artist_id}",
+                    prefetched_genres,
+                )
+            except Exception:
+                continue
+
     # Select supplementary queries from cached listening-profile genres and
     # reserve a small exploration quota for tags found in the CF candidate pool.
     # Cache reads are bounded and do not add provider calls or bypass TTL policy.
