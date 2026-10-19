@@ -627,8 +627,10 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   card.dataset.albumTitle = String(album || '');
   albumCardMetadata.set(card, metadata && typeof metadata === 'object' ? metadata : {});
   if (interactive) {
+    // No button role: these articles contain their own Get, Dismiss and Try again buttons, and a
+    // button role would hide them from assistive technology (nested interactive controls, found
+    // by the Phase 7 audit). Focus and Enter/Space still open the modal through the keydown handler.
     card.setAttribute('tabindex', '0');
-    card.setAttribute('role', 'button');
     card.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);
   }
   const nested = metadata && typeof metadata.metadata === 'object' ? metadata.metadata : {};
@@ -767,6 +769,7 @@ async function openAlbumModal(card, returnFocus = card) {
   setStatusState($('albumModalStatus'), 'loading');
   tracklist.replaceChildren();
   artwork.removeAttribute('src');
+  artwork.hidden = true; // no broken-image glyph while artwork is pending or absent (Phase 7 audit)
   // Name the artwork with the album it actually shows. The card artwork uses empty alt
   // because each card is already labelled by its own heading; the modal image is a
   // distinct, larger depiction and is the element a user lands on when the dialog opens,
@@ -786,6 +789,7 @@ async function openAlbumModal(card, returnFocus = card) {
     if (!activeAlbumModal || activeAlbumModal.card !== card) return;
     const artworkUrl = details.artwork_url || (art && art.artwork_url);
     if (artworkUrl) {
+      artwork.hidden = false;
       artwork.src = artworkUrl;
     } else {
       // No artwork resolved. An <img> with an alt but no source is announced as a
@@ -842,6 +846,8 @@ document.addEventListener('keydown', event => {
   }
 });
 $('albumModalClose').addEventListener('click', closeAlbumModal);
+// An artwork URL that fails to load hides the image instead of showing a broken-image glyph.
+$('albumModalArtwork').addEventListener('error', () => { $('albumModalArtwork').hidden = true; });
 $('albumModalBackdrop').addEventListener('click', event => {
   if (event.target === $('albumModalBackdrop')) closeAlbumModal();
 });
