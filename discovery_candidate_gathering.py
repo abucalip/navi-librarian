@@ -5,6 +5,7 @@ import json
 from typing import Any, Callable
 
 from discovery_candidate_supply import (
+    cf_release_group_rejection,
     classify_error,
     recording_artist_key,
     summarize_cf_albums,
@@ -250,49 +251,19 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                 album_groups = {}
 
                 # Prefer album release-groups that are not compilations,
-                # soundtracks, live albums, remixes, or DJ mixes.
-                excluded_types = {
-                    "compilation", "soundtrack", "live", "remix", "dj-mix"
-                }
-
+                # soundtracks, live albums, remixes, or DJ mixes, and skip
+                # sampler albums and retrospective collections. The same rules
+                # feed the offline eligibility counts in discovery_candidate_supply.
                 for release in releases:
                     group = release.get("release-group") or {}
-                    if group.get("primary-type") != "Album":
-                        continue
-
-                    title = group.get("title", "").strip()
-                    if not title or not providers.is_album_candidate({
-                        "album": title,
-                        "primary_type": group.get("primary-type"),
-                        "secondary_types": group.get("secondary-types", []),
-                    }):
-                        continue
-
-                    # Avoid sampler albums and retrospective collections.
-                    normalized_title = providers.music_key(title)
-                    undesirable_phrases = (
-                        "album sampler",
-                        " sampler",
-                        "greatest hits",
-                        "best of",
-                        "anthology",
-                        "essential collection",
-                        "essential",
-                        "complete collection",
-                    )
-                    if any(
-                        phrase.strip() in normalized_title
-                        for phrase in undesirable_phrases
+                    if cf_release_group_rejection(
+                        group,
+                        is_album_candidate=providers.is_album_candidate,
+                        music_key=providers.music_key,
                     ):
                         continue
 
-                    secondary = {
-                        str(value).casefold()
-                        for value in group.get("secondary-types", [])
-                    }
-                    if secondary & excluded_types:
-                        continue
-
+                    title = group.get("title", "").strip()
                     group_id = group.get("id") or providers.music_key(title)
                     album_groups[group_id] = title
 

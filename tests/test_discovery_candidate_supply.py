@@ -279,3 +279,107 @@ class _Client:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EligibilityBoundaryTests(unittest.TestCase):
+    """Synthetic boundary checks: release-type filtering, ownership, duplicates, sources."""
+
+    def _groups(self):
+        from discovery_recommendations import is_album_candidate
+        return is_album_candidate, _key
+
+    def test_release_group_predicate_labels_each_rejection(self):
+        from discovery_candidate_supply import cf_release_group_rejection
+        is_album, music_key = self._groups()
+
+        def reason(group):
+            return cf_release_group_rejection(group, is_album_candidate=is_album, music_key=music_key)
+
+        self.assertIsNone(reason({"primary-type": "Album", "title": "Fixture Record One", "secondary-types": []}))
+        self.assertEqual(reason({"primary-type": "Single", "title": "Fixture Single", "secondary-types": []}),
+                         "not_album_primary_type")
+        self.assertEqual(reason({"primary-type": "Album", "title": "Fixture Mixtape Thing", "secondary-types": ["Mixtape/Street"]}),
+                         "not_album_candidate")
+        self.assertEqual(reason({"primary-type": "Album", "title": "Fixture Essential Collection", "secondary-types": []}),
+                         "undesirable_title")
+        # The shared album check already rejects these secondaries; the explicit
+        # secondary rule is then reached only when the album check accepts them.
+        self.assertEqual(reason({"primary-type": "Album", "title": "Fixture Record Two", "secondary-types": ["Compilation"]}),
+                         "not_album_candidate")
+        self.assertEqual(
+            cf_release_group_rejection(
+                {"primary-type": "Album", "title": "Fixture Record Two", "secondary-types": ["DJ-mix"]},
+                is_album_candidate=lambda item: True, music_key=music_key,
+            ),
+            "excluded_secondary_type",
+        )
+
+    def test_eligibility_counts_come_from_tape_recordings_only(self):
+        from discovery_candidate_supply import summarize_cf_release_eligibility
+        is_album, music_key = self._groups()
+        ok = {"release-group": {"primary-type": "Album", "title": "Fixture Record One", "secondary-types": []}}
+        comp = {"release-group": {"primary-type": "Album", "title": "Fixture Record Two", "secondary-types": ["Compilation"]}}
+        tape = [
+            {"operation": "metadata_cache_get", "args": ["mb:recording:r1"],
+             "result": {"artist-credit": [{"name": ARTIST_A}], "releases": [ok, comp]}},
+            {"operation": "metadata_cache_get", "args": ["mb:recording:r2"], "result": None},
+        ]
+        result = summarize_cf_release_eligibility(
+            tape, ["r1", "r2"], is_album_candidate=is_album, music_key=music_key,
+        )
+        self.assertEqual(result["cf_recordings_with_payload"], 1)
+        self.assertEqual(result["cf_release_groups_seen"], 2)
+        self.assertEqual(result["cf_release_groups_eligible"], 1)
+        self.assertEqual(result["cf_release_group_rejections"]["not_album_candidate"], 1)
+        self.assertEqual(result["cf_release_group_rejections"]["not_album_primary_type"], 0)
+        self.assertNotIn(ARTIST_A, json.dumps(result))
+
+    def test_unowned_unique_counts_per_discovery_source(self):
+        from discovery_candidate_supply import summarize_candidate_stages
+        albums = [
+            {"artist": ARTIST_A, "primary_artist": ARTIST_A, "album": "One", "artist_mbid": "m1",
+             "discovery_sources": ["listenbrainz_cf", "profile_tag_search"]},
+            {"artist": ARTIST_A, "primary_artist": ARTIST_A, "album": "Owned", "artist_mbid": "m1",
+             "discovery_sources": ["listenbrainz_cf"]},
+            {"artist": ARTIST_B, "primary_artist": ARTIST_B, "album": "Two", "artist_mbid": "m2",
+             "discovery_sources": ["profile_tag_search"]},
+            {"artist": "Alias", "primary_artist": "Alias", "album": "Two", "artist_mbid": "m2",
+             "discovery_sources": ["listenbrainz_cf"]},
+        ]
+        debug_rows = [
+            {"artist": ARTIST_A, "album": "One", "exact_owned": False, "selection_decision": "selected"},
+            {"artist": ARTIST_A, "album": "Owned", "exact_owned": True, "selection_decision": "already_owned"},
+            {"artist": ARTIST_B, "album": "Two", "exact_owned": False, "selection_decision": "selected"},
+            {"artist": "Alias", "album": "Two", "exact_owned": False, "selection_decision": "duplicate_candidate"},
+        ]
+        stages = summarize_candidate_stages(albums, debug_rows)
+        # Owned rows are excluded; the duplicate identity is counted once per source it carries.
+        self.assertEqual(stages["unowned_unique_after_dedupe"], 2)
+        self.assertEqual(stages["unowned_unique_by_source"], {
+            "listenbrainz_cf": 2, "profile_tag_search": 2,
+        })
+        self.assertEqual(stages["unowned_unique_by_source_count"], {"2": 2})
+
+    def test_replay_report_emits_release_and_source_boundaries_without_identities(self):
+        payload = {
+            "gathered_inputs": {
+                "cf_recording_mbids": ["r1"],
+                "cf_recordings_returned": 1,
+                "albums": [{"key": ["a", "b"], "value": {
+                    "artist": ARTIST_A, "primary_artist": ARTIST_A, "album": "Album X",
+                    "artist_mbid": "m1", "discovery_sources": ["listenbrainz_cf"]}}],
+            },
+            "provider_events": [
+                {"operation": "metadata_cache_get", "args": ["mb:recording:r1"], "result": {
+                    "artist-credit": [{"name": ARTIST_A}],
+                    "releases": [{"release-group": {"primary-type": "Album", "title": "Album X", "secondary-types": []}}],
+                }},
+            ],
+            "expected_output": {"debug_all_candidates": []},
+        }
+        report = candidate_supply_report(payload, [])
+        self.assertEqual(report["release_eligibility"]["cf_release_groups_eligible"], 1)
+        self.assertEqual(report["stages"]["unowned_unique_by_source"], {"listenbrainz_cf": 1})
+        rendered = json.dumps(report)
+        self.assertNotIn(ARTIST_A, rendered)
+        self.assertNotIn("Album X", rendered)

@@ -2559,13 +2559,13 @@ Setup: two local uvicorn servers with their own data directories under the sessi
 
 Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
 
-## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR #406)
+## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR #406, merged as squash `94824aa`)
 
 Roadmap item: Phase 7, follow-up item 8 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 8 of `docs/DESIGN_SYSTEM.md` section 16.2 and the radius decision in section 16.5. Base: `origin/main` at `96fdc53` (PR #401). Design system sections applied: 7 (shape: 2px chips and artwork, 4px controls, 6px panels and modal) and 9.2 (pill and circle for Get, kept). Hamdi approved radius as the next item on 2026-10-19.
 
 The branch name is the one the server designated (`ui/phase-7-radius-cux3ev`). The requested name `ui/phase-7-radius` was not used.
 
-Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 29.4. **Browser-tested**: sandbox render at five widths, dashboard and header menu, computed radius before and after, 29.5. **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 29.4. **Browser-tested**: sandbox render at five widths, dashboard and header menu, computed radius before and after, 29.5. **Merged**: yes, PR #406, squash `94824aa`. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 29.1 Acceptance criteria (stated before the work)
 
