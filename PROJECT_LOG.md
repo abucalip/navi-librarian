@@ -1,3 +1,16 @@
+## 2026-10-19 — PR #411 warm-cache aggregate run (no code change)
+
+- Task: rerun the #411 live measurement with a warm metadata cache, after PR #414 added aggregate tag-lane counters.
+- Run: one pass at `963f8f5` (main with #411 and #414), in a fresh directory holding only a copy of the metadata cache. No listening data or ownership state was copied; the directory was deleted afterward. The owner approved the single cache-file copy from the prior data directory.
+- Replenishment: shortlist target 10; eligible unowned albums 62 before and after. The gate stayed closed (not triggered), so 0 extra queries were planned, attempted, or added. The replenishment step is therefore not exercised by this run.
+- Tag lane: 100 listens, 89 with an artist MBID. Profile: 19 artist MBIDs; 15 of the top 15 were cache hits, yielding 92 tags. Candidate pool: 23 artists considered, 7 cache hits, 106 tags. Supplementary: 8 queries planned and attempted.
+- Interpretation: the earlier cold-cache zero (PR #411 live run at `76e3ac2`) came from an empty metadata cache, because the genre cache is written after tag selection. It is not a selection bug. With a warm cache, the tag lane has inputs.
+- Limits: one run and one profile. Replenishment's effect on shortlist fill remains unmeasured, because this profile had no shortfall to replenish.
+- No code, weights, windows, eligibility, ownership checks, or provider budget changed. Publishing and deployment remain paused.
+- Next action: measure replenishment on a warm cache under a real shortfall, with a profile or fixture that leaves fewer than 10 eligible unowned albums. Use an offline replay where possible.
+
+---
+
 ## 2026-10-19 — PR #411 replenishment live aggregate measurement (no code change)
 
 - Task: measure whether the gated supplementary replenishment in PR #411 (merged at `76e3ac2`) adds eligible unowned candidates on a live run, using aggregate output only.
