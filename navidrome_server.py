@@ -324,8 +324,7 @@ def recommend_new_music(
             listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
             music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
             is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
-            http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep,
-            http_post=httpx.post,
+            http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep, http_post=httpx.post,
         )
         from recommendation_replay import prepare_provider_tape
         provider_tape = prepare_provider_tape(provider_tape, _capture_path)
