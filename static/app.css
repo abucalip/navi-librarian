@@ -407,7 +407,6 @@ p { line-height: 1.55; }
 .card-source { padding-top: 8px; border-top: 1px solid var(--edge); }
 .card-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 13px; padding-bottom: 13px; }
 .card-actions button { padding: 7px 8px; background: var(--surface-raised); }
-.card-actions button:first-child { border-color: var(--accent-dim); }
 .hidden { display: none !important; }
 details { margin-top: 18px; border-top: 1px solid var(--edge); padding-top: 12px; }
 summary { color: var(--text-muted); cursor: pointer; font-size: var(--text-xs); }

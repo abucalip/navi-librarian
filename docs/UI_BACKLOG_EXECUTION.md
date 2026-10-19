@@ -2737,3 +2737,76 @@ Setup: two local uvicorn servers (`app.main:app`), each with its own data direct
 ### 30.9 Next action
 
 Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+
+
+## 31. Card action boundary (Phase 7 follow-up item 10)
+
+Scope: the `.card-actions` border that section 30.3 recorded and did not change. Roadmap follow-up item 10 and `docs/DESIGN_SYSTEM.md` section 16.2 row 13. Branch `ui/phase-7-card-actions-ldo6fm` (the server suffix; the requested name was `ui/phase-7-card-actions`). Base: `origin/main` at `ddfd30a` (PR #409 merged).
+
+### 31.1 The failure
+
+`static/app.css` set `.card-actions button:first-child { border-color: var(--accent-dim); }`. On a deep-dive card the first action is "Dismiss artist". Its edge identifies a control, so it falls under the 3:1 non-text boundary rule. Ratios computed from the token values (WCAG 2.1 relative luminance, the section 4.1 formula):
+
+| Border | on `--surface` (card ground) | on `--surface-raised` (button fill) | on `--surface-hover` |
+|---|---|---|---|
+| `--accent-dim` (before) | 2.00:1 | 1.82:1 | 1.66:1 |
+| `--edge-strong` (after) | 3.60:1 | 3.28:1 | 2.99:1 |
+| `--accent` (rejected) | 11.79:1 | 10.74:1 | 9.80:1 |
+
+On the rendered build the first action's computed border was `rgb(85, 75, 38)` (`#554b26`) at all five widths, the same token value.
+
+### 31.2 What changed
+
+| Selector | Old | Now | Why |
+|---|---|---|---|
+| `.card-actions button:first-child` | `border-color: var(--accent-dim)` | rule removed | The base `button` rule already sets `1px solid var(--edge-strong)`, the control boundary in section 7 and the secondary shape in section 9.1. The first action now matches its sibling. |
+
+Why not `--accent`: it clears 3:1 everywhere, but it would give each card a second yellow control, against section 4.2 (yellow marks the one action or a selection). A card action is a secondary control.
+
+Hover is unchanged: `button:hover` still sets the accent border and `--surface-hover` fill. `.card:hover` changes only the card's own border, not the buttons' ground.
+
+Files changed: `static/app.css` (one rule removed); `tests/test_status_contrast_ui_contract.py` (one new test, `test_card_action_boundary_does_not_use_the_dim_accent`); `docs/REDESIGN_ROADMAP.md` (item 9 corrected to merged, item 10 added); `docs/DESIGN_SYSTEM.md` section 16.2 row 13; this section.
+
+### 31.3 Impeccable and design guidance
+
+- `impeccable detect`: the PostToolUse design hook scanned `static/app.css` after the edit and reported no deterministic design-quality issues. No separate `npx impeccable@latest detect --json` run was made, so the hook is the only detector record.
+- `/impeccable critique` and `/impeccable audit`: **not run** as the Impeccable skill in this session. The judgement is made against sections 4.2 and 7, and against the screenshots in 31.5.
+- `web-design-guidelines` compliance pass: **not run** as a separate skill pass. The change removes one declaration, and the contract test covers it.
+- Applied: the control-boundary rule (a boundary that identifies a control meets 3:1), the base control token (`--edge-strong`), and the one-yellow-action rule (section 4.2).
+- Rejected: `--accent` (a second yellow control per card); keeping the rule with `--edge-strong` (a no-op, since the base rule already sets it); any new colour value.
+
+### 31.4 Checks actually run
+
+- `pip install --break-system-packages -r requirements.txt`: run first.
+- `node --check static/app.js` and `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `python3 -m unittest discover -s tests -v`: **Ran 909 tests, OK** with the CSS change (before the new test, which is the same count as `origin/main` after #409). **Ran 910 tests, OK** with the new test. The second run is the one recorded for the PR head.
+- The new test fails on the old stylesheet (`FAIL: test_card_action_boundary_does_not_use_the_dim_accent`, confirmed by stashing only `static/app.css`) and passes on the change.
+
+### 31.5 Browser (sandbox, RECONSTRUCTED fixture cards)
+
+Setup: two local uvicorn servers (`app.main:app`), each with its own data directory under the session scratch folder, `SLSKD_URL=http://127.0.0.1:9` (slskd disabled), sandbox music and download paths, Navidrome unconfigured. "Before" is a worktree of `origin/main` (`ddfd30a`, port 8101); "after" is this branch (port 8102). Chromium through Playwright, `reducedMotion: 'reduce'`, one owner account per server created through the first-run route. No library exists in the sandbox, so each width shows two injected cards: a `.card-art` Get control and the actions "Dismiss artist" and "Not this album", using the app's classes so the shipped stylesheet renders them. Labelled RECONSTRUCTED in file names and in the DOM (`data-reconstructed`).
+
+Screenshots in `/mnt/project-files/phase-7-card-actions/screenshots/`: `before-RECONSTRUCTED-{1440,1200,900,620,390}.png` and `after-RECONSTRUCTED-{1440,1200,900,620,390}.png`. Raw results: `before-results.json` and `after-results.json` in the same folder.
+
+- First action border, computed: before `rgb(85, 75, 38)` at every width; after `rgb(120, 113, 104)` (`#787168`, `--edge-strong`) at every width. The second action was `--edge-strong` in both builds.
+- Card ground `rgb(28, 26, 24)` and action fill `rgb(37, 34, 32)` in both builds, so the ratios in 31.1 apply.
+- Horizontal overflow (`scrollWidth - clientWidth`): 0 at every width, both builds.
+- Keyboard: the first card action took keyboard focus (Shift+Tab then Tab, so `:focus-visible` applies) at every width, both builds. Focus rules are unchanged.
+- Console: no error or warning from the card UI at any width. One `409 (Conflict)` console message appears at 1440 in both builds. It comes from the fixture's own account bootstrap request, not the card, and was not investigated further.
+- Network: no request left the local origin in either build.
+- Real albums, real Get state, and real acquisition: **skipped** (no library in the sandbox).
+- Screen-reader pass: **skipped**.
+- The documented `test-pr.sh` helper: **not run** (not installed in this sandbox; it downloads an open PR head).
+- Manual checklist against the exact PR-head SHA: **skipped** here, and it is the next action before merge.
+
+### 31.6 Limitations
+
+- The fixture is reconstructed DOM on the real stylesheet. A live album card may sit on a ground not measured here.
+- The artwork "Not for me" button (`.card .card-art .deep-dive-dismiss`) is not a `.card-actions` control and is not measured. Its rules are unchanged.
+- `--edge-strong` passes at 3.28:1 on the button's own raised fill, a small margin. Any token change to `--surface-raised` or `--surface` needs re-measuring.
+- The Impeccable skill passes were not run as skills (see 31.3).
+
+### 31.7 Next action
+
+Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
