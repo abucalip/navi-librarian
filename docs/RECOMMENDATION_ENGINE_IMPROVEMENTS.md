@@ -490,3 +490,28 @@ Findings:
 Decision: no change to the budget, weights, windows, eligibility, ownership, or duplicate rules. The budget is not shown to cause underfill on the owner's live cold run (45 eligible albums), but the number of distinct unowned artists there is unmeasured, so the margin at 100 is unknown. Next steps: (a) add a distinct unowned eligible artist count to the aggregate diagnostics and test it offline; (b) evaluate an artist-based replenishment gate offline, since the album-based gate cannot see finding 3; (c) a live aggregate run for distinct unowned artists per budget needs Hamdi's go-ahead in words first.
 
 Limits: synthetic pools with an assumed album structure; no ownership applied; no non-CF sources (the tag lane returned empty release groups); genre lookups stubbed empty; spacing computed as 1.1 s per recording call, not measured; the ceiling ignores categories, quotas, MMR, and ownership, and is not a prediction of live supply. The sweep script stays in the agent's scratch directory and is not committed.
+
+**Last.fm similar-artist source and combination study (2026-10-19, aggregates only).** Question (owner): can a Last.fm candidate source cut batch time without a recommendation-quality drop, and does combining it with CF help? Requests scale with artists, not recordings, so a Last.fm path could avoid the per-recording MusicBrainz spacing.
+
+Measured on the owner's device (key never left the device): 15 `artist.getSimilar` calls, one per seed from the first 75% of the 407-listen history, limit 30. Results: 0 failures; 23.8 s total (about 1.6 s per call including device-session spacing). 30 similar artists per seed, 394 distinct in total, 298 with a MusicBrainz ID; 5 of the similar artists are also seeds. Then one MusicBrainz release-group browse per artist for the top 20 similar artists by match score, at 1.1 s spacing: 20 calls, 2 failed with HTTP 503, 31.5 s. These returned 672 albums; 236 pass the release-type eligibility rules; 17 distinct artists among them. These counts are before ownership and duplicate-identity filtering.
+
+Frozen CF capture for comparison (aggregates, no identities): 100 recordings returned and resolved at budget 100, about 110 s of recording spacing; 19 albums from 8 artists; 7 eligible unowned albums from 5 artists, after ownership.
+
+| Path | Time (approx.) | Supply (before ownership unless noted) |
+|---|---|---|
+| CF, budget 100 (capture) | about 110 s | 7 eligible unowned albums, 5 artists (after ownership) |
+| Last.fm top-20 plus browses | about 55 s (23.8 s + 31.5 s) | 236 eligible albums, 17 artists (before ownership) |
+| Last.fm, all 298 browses (not run) | about 330 s, estimated | worse than CF on time |
+
+The two supply rows are not directly comparable: the ownership filter has not been applied to the Last.fm side.
+
+Combinations (time sketches, not measured):
+- Running both at today's settings costs about 165 s, which is slower, so it is excluded.
+- CF at budget 50 (about 55 s) plus a Last.fm top-20 pass (about 55 s) is about 110 s, equal to today's total.
+- Gated: run the Last.fm pass only when CF's distinct eligible artists fall below the 10-slot target; CF at budget 50 plus Last.fm top-10 is about 80 s when triggered, and about 55 s otherwise.
+
+Quality: not measured. The frozen CF capture was taken after the listens that would serve as holdout, so a CF hit rate against them would be inflated, and no historical CF tape exists. Fair options: (a) an offline Last.fm holdout on the device, seeds from the first 75% of listens only, holdout = last 25%; (b) a prospective test, snapshot CF and Last.fm candidates now and score both against the listens of the following two weeks. Only (b) compares CF fairly.
+
+Decision: no change to the budget, weights, windows, eligibility, ownership, or duplicate rules. The Last.fm source is not implemented. Next action: a prospective quality protocol plus an offline harness for the gated combination, with the ownership and duplicate filters applied to both paths before any time or supply comparison.
+
+Limits: one seed set, one profile, one day of measurement; 2 of 20 browses failed; the ownership filter is not applied to the Last.fm side; spacing is partly device-session added; combination times are sketches. Not a satisfaction or quality result.

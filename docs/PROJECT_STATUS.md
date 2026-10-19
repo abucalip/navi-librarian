@@ -103,3 +103,10 @@ No ranking weights, ownership gates, or allocation policy have been changed. Re-
 - Key result: on a concentrated cold pool, the budget limits distinct artists (3 at 25, 6 at 50, 10 at 100). The allocator permits one album per artist, and the replenishment gate counts albums, so it can stay closed while artists are short.
 - Budget stays at 100. Draft PR pending CI on its exact head; merge needs Hamdi's explicit go-ahead in words.
 - Publishing and deployment remain paused.
+
+## Last.fm source and combination study (2026-10-19)
+
+- Capped Last.fm path (top 20 similar artists, album browses) takes about 55 s against about 110 s for CF at budget 100. Supply is not yet comparable: the Last.fm side has no ownership filter applied.
+- Quality is unmeasured. The CF capture postdates the holdout listens, so a fair comparison needs a prospective two-week test.
+- Recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and PROJECT_LOG.md. No code or behavior change. Draft PR #424 carries these docs.
+- Publishing and deployment remain paused.
