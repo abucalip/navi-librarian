@@ -3320,3 +3320,87 @@ No before/after pair is recorded here because the code did not change; the befor
 - Browser checks are sandbox-only, on reconstructed fixtures, not the helper and not the live library. The exact-head manual checklist is for Hamdi.
 - No screen-reader pass.
 - Not merged, not published, not deployed.
+
+## 40. Primary button (Phase 7 follow-up item 17, build)
+
+Status: **built on `ui/primary-button-yk2c1d` from main `66a8db6`; not merged, not published, not deployed.** Builds the owner decision in section 39 (`docs/DESIGN_SYSTEM.md` 16.5 row 10): one primary variant, one per view region.
+
+### 40.1 Correction to the drift record
+
+Section 16.2 row 10 said the accent fill "appears only on the Get requested state and on selection", and that there was no primary class. On `main` that was not right: `static/app.css` already filled Generate recommendations and the four Save settings buttons yellow, through element id selectors (`#loadRecommendations`, `#saveNavidrome`, `#saveSlskd`, `#saveLastfm`, `#saveListenbrainz`), and `static/login.css` already gives the sign-in button a yellow fill. So the system had a primary look, held by ids, not a reusable variant. This PR turns that look into one class.
+
+### 40.2 Which actions carry the variant
+
+| Region | Action | Why |
+|---|---|---|
+| Recommendations | Generate recommendations (`#loadRecommendations`) | The page's one action that starts its work. Already yellow on main. |
+| Settings, Navidrome tab | Save settings (`#saveNavidrome`) | Already yellow on main. Only the visible tab's Save is on screen, so one primary per view. |
+| Settings, slskd tab | Save settings (`#saveSlskd`) | Same. |
+| Settings, Last.fm tab | Save settings (`#saveLastfm`) | Same. |
+| Settings, ListenBrainz tab | Save settings (`#saveListenbrainz`) | Same. |
+
+Not given the variant, so the region keeps one clear primary: the Load and Refresh buttons on the discovery pages (Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives), Shuffle picks on the dashboard, Refresh status on acquisitions, and Test connection (secondary by design). The sign-in and first-run button in `static/login.css` already is the page's one primary and is unchanged. Hamdi can change this list; each addition is a class on one button.
+
+### 40.3 What changed
+
+- `static/app.css`: a `.btn-primary` rule (`--accent` fill, `--on-accent` text, `--accent` border) and `.btn-primary:hover` (`--accent-hover`). The id-based yellow rules for the five buttons are removed.
+- `app/templates/index.html`: `class="btn-primary"` on the five buttons. No id, text, or handler changes.
+- `tests/test_primary_button_ui_contract.py` (new, four assertions): each of the five ids carries the class; the class appears exactly five times; `.btn-primary` uses the accent tokens; the id-based yellow rules are gone.
+- No change to `static/app.js`, the API, auth, settings-secret handling, or any protected path.
+
+### 40.4 Acceptance criteria
+
+1. The five actions carry `.btn-primary`, and no other element does.
+2. At rest, each action's computed background, text colour, border and height match `main` at 1440, 1200, 900, 620 and 390px.
+3. Hover on the five actions shows `--accent-hover`; other buttons' hover is unchanged.
+4. The keyboard focus ring is unchanged (2px accent, 2px offset).
+5. No console error, external request, or new failed response beyond the known ListenBrainz 502 (section 35, backend limit B1).
+6. Unit suite passes, and the new contract test fails on the old stylesheet.
+
+### 40.5 Measurements
+
+Contrast (WCAG 2.1, computed from the token values):
+
+| Pair | Ratio | Rule |
+|---|---|---|
+| `--on-accent` text on `--accent` fill | 12.69:1 | text 4.5:1: pass |
+| `--on-accent` text on `--accent-hover` fill | 14.25:1 | text 4.5:1: pass |
+| `--accent` border on `--surface` | 11.79:1 | boundary 3:1: pass |
+
+Rendered (sandbox, `main` at `66a8db6` in a worktree on port 8091 versus this branch on port 8090, fresh data directories, RECONSTRUCTED fixtures: none, because the settings and recommendations pages render from the sandbox without library data; script `render-primary.mjs`):
+
+| Width | Recommendations button (before / after) | Visible Save settings (before / after) | Console and network |
+|---|---|---|---|
+| 1440 | 191x44, yellow, identical | 44px, yellow, identical | 502 on `/api/settings/listenbrainz` on both; no external request |
+| 1200 | identical | identical | same |
+| 900 | identical | identical | same |
+| 620 | identical | identical | same |
+| 390 | identical | identical | same |
+
+Keyboard focus on `#saveNavidrome` (Shift+Tab then Tab): `focus-visible` matches, outline `solid 2px`, offset `2px`, on both builds. An early read returned `0px` because it was taken during the outline transition; the re-read after 700 ms is the value recorded. Hover on `#saveNavidrome`: before `rgb(245,211,63)`, after `rgb(248,224,138)` (`--accent-hover`), as intended.
+
+Screenshots: `/mnt/project-files/phase-7-primary-button/screenshots/` (`before-*` and `after-*` for recommendations and settings at five widths, `before-render.json` and `after-render.json`, the focus and hover crops, and the two scripts).
+
+### 40.6 Impeccable and other passes
+
+- `npx -y impeccable@latest detect static/app.css`: ran. Three advisory notes, all pre-existing and none on the new rules: the rgba scrims (lines 357 and 456) and the 999px pill radius (line 585). No new finding.
+- `/impeccable critique`, `audit`, `typeset`, `polish`: not run in this thread (skip).
+- `web-design-guidelines` and `design:accessibility-review`: not run (skip). Section 37.6 records the paraphrase problem with the first; the second returned an empty template in PR #425.
+- Guidance applied: the class uses existing tokens only, with no new colour; one primary per region. Guidance rejected: none.
+
+### 40.7 Checks actually run
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `python3 -m unittest discover -s tests`: 978 tests, OK (974 on main, plus four new).
+- Browser renders as in 40.5, sandbox server, five widths, keyboard, console and network.
+
+### 40.8 Limitations
+
+- Sandbox only, with no library, no artwork, and no discovery content. The helper (`~/navi-librarian-test/test-pr.sh`) is not in this container, so the exact-head manual checklist is for Hamdi to run.
+- The ListenBrainz settings call returns 502 with no username saved (backend limit B1). It is recorded, not fixed here.
+- No screen-reader pass.
+- Hover on Save settings changes from accent to `--accent-hover`; this is intended (one primary rule) and small.
+- The docs record for section 16.2 row 10 is updated in the docs PR (#440), not here, to avoid a merge conflict on the same cell.
+- Not merged, not published, not deployed.
+
