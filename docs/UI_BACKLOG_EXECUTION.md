@@ -3095,3 +3095,82 @@ Also checked: no horizontal page overflow at 1440, 1200, 900, 620 or 390 on any 
 - No restart persistence, no settings save, no timings, no screen-reader or keyboard-only pass.
 - Single run, single device scale. Five widths as listed in 35.2.
 - The Impeccable detector ran on regex patterns over the CSS and the HTML; the undercount it reports applies.
+
+
+## 36. Phone bottom bar overflow at 390px (Phase 7 follow-up item 15)
+
+Status: **implemented on branch `ui/phase-7-bottom-nav-q4094i` from main `76ec40e`; not merged, not published, not deployed.** Fixes the defect in section 35.5 item 1. The owner decision on the destination set is still open (`docs/DESIGN_SYSTEM.md` 16.5 row 2); this PR implements the working default the owner was asked to choose between.
+
+### 36.1 Question
+
+The bottom bar under 620px held seven destinations and scrolled sideways (`scrollWidth` 717px against 390px). Section 6 of the design system says five destinations in the bar with the rest in a sheet. Which destinations stay in the bar, and how the rest are reached, without a sideways scroll and without changing any navigation behaviour?
+
+### 36.2 Measurement that set the default
+
+Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acquisitions 70px, Recommendations 105px, Discoveries 66px, More 29px. Slot widths when the bar is shared equally: about 62px at 390px and about 100px at 620px for six slots (five destinations and More), and about 76px at 390px for five slots (four destinations and More).
+
+- **Five destinations plus More** (the first working default): six slots at 390px cannot hold the labels whole. Rendered, the labels broke inside words ("Dashboar/d", "Acquisi/tions", "Recomme/ndations"), and the bar grew to three-line labels.
+- **Four destinations plus More** (current working default, requested by the coordinator): every label fits whole at 390px in one or two lines. Recommendations, Add to your collection and Artist Deep Dives sit behind More.
+
+### 36.3 What changed
+
+- Markup (`app/templates/index.html`): Recommendations, Add to your collection and Artist Deep Dives carry `nav-overflow` in the rail, so they stay in the rail from 621px up and are hidden in the bar under 620px. A `More` disclosure (`#navMoreButton`, `aria-expanded`, `aria-controls="navMorePanel"`) and a panel with the three destinations sit inside the same `nav aria-label="Main"`. The More icon is an inline decorative SVG, not a new sprite symbol.
+- CSS (`static/app.css`): the phone block gives the bar five slots (`.nav-list` 4 parts, More 1 part), labels wrap at word breaks and, as a last resort, inside a word (`overflow-wrap: anywhere`), the bar has a `min-height` of 80px, and `main` reserves the same height. The More panel is `position: fixed` above the bar so the bar's own horizontal overflow clip does not cut it. Desktop and icon-rail widths are unchanged.
+- Script (`static/app.js`): one `NAV_MORE_PAGES` list drives the More cue. More opens on click or ArrowDown (focus moves to the first item), closes on Escape, on focus leaving, on an outside click, and after a choice. A choice goes through the same `navigateTo` path as the rail. Escape is new for this control; the header menu is unchanged.
+- Tests: `tests/test_shell_rail_ui_contract.py`. One narrow edit with a stated reason: the decorative-icon count in the rail goes from 7 to 8, because the More icon is one more decorative inline SVG. The sprite-reference count stays 7. Three contract tests added for the four-plus-More structure, the phone-only rules, and the wiring.
+
+### 36.4 Acceptance criteria
+
+- No page or bar horizontal overflow at 1440, 1200, 900, 620 and 390px. Pass (see 36.6).
+- Every destination reachable at every width: rail at 621px and up, bar plus More under 620px. Pass for the rail at 1440, 1200, 900 and the bar plus More at 620 and 390; Recommendations opened from More and the panel closed after the choice in the browser check.
+- Keyboard: More reachable by Tab, ArrowDown opens and focuses the first item, arrows cycle, Escape closes and returns focus to More, Enter on an item navigates. Pass in the browser check.
+- Touch targets 44px or more: bar buttons 56px tall; panel items 44px. Pass.
+- Console and page errors: none on any width or in the More flows. Pass.
+
+### 36.5 Trade-offs and open items for the owner
+
+1. **Destination set is still the owner's call.** Four plus More is the working default for this PR. Five plus More breaks four labels inside words at 390px (36.2). Keeping seven needs wrapped or stacked labels. `docs/DESIGN_SYSTEM.md` 16.5 row 2 stays open; section 6 still says five until the owner decides.
+2. **Bar height is 80px**, not the 64px the earlier bar used, because labels take up to two lines. The bottom padding of `main` follows it.
+3. **Safe-area inset** is applied as bottom padding inside the 80px minimum height. Not verified on a notched device; the sandbox is desktop Chromium, where the inset is zero.
+4. **Hyphenation** is set (`hyphens: auto`) but did not take effect in the sandbox Chromium. Labels break inside words only where needed. Not verified on phone browsers.
+5. **Discover order** in the More panel is Recommendations, Add to your collection, Artist Deep Dives. That order is a judgement, not usage data; no usage data was available.
+
+### 36.6 Browser checks (sandbox, not the helper)
+
+- Server: `uvicorn app.main:app` from this checkout on `127.0.0.1:8091`, with `NAVIDROME_LIBRARIAN_DATA_DIR`, `NAVIDROME_MUSIC_DIR` and `SLSKD_DOWNLOADS_DIR` set to scratch paths outside the repository, `SLSKD_URL=http://127.0.0.1:9` and an empty `SLSKD_API_KEY`. First-run owner created through the form. No Navidrome instance, so no library content.
+- Baseline: `origin/main` `76ec40e` served from a separate worktree on `127.0.0.1:8092`, same steps.
+- Script: `/mnt/project-files/phase-7-bottom-nav/screenshots/bnav-check.mjs`. Results JSON per run: `before-results.json` and `after-results.json`.
+- Results, document and bar overflow (CSS px):
+
+| Width | Before (`main`) bar `scrollWidth` / `clientWidth` | After bar `scrollWidth` / `clientWidth` | After document overflow | After visible bar items | Labels overflowing their box (after) |
+|---|---|---|---|---|---|
+| 1440 | 231 / 231 (rail) | 231 / 231 (rail) | 0 | 7 (rail) | none |
+| 1200 | 231 / 231 (rail) | 231 / 231 (rail) | 0 | 7 (rail) | none |
+| 900 | 71 / 71 (icon rail) | 71 / 71 (icon rail) | 0 | 7 (rail) | none (rail labels are visually hidden by design) |
+| 620 | 717 / 620 | 620 / 620 | 0 | 5 (four plus More) | none |
+| 390 | 717 / 390 | 390 / 390 | 0 | 5 (four plus More) | none |
+
+- Keyboard and pointer at 390px: pointer open, outside-click close, ArrowDown open with focus on Recommendations, second ArrowDown to Add to your collection, Escape closed with focus on More, Enter on Add to your collection navigated to the collection page and closed the panel, More marked current. Recommendations opened from More with the panel closed and Recommendations page shown (separate run).
+- Console: zero console errors or warnings and zero page errors in every run; zero 4xx or 5xx responses.
+- Screenshots (`/mnt/project-files/phase-7-bottom-nav/screenshots/`): `before-<w>.png` and `after-<w>.png` at 1440, 1200, 900, 620, 390; `before-nav-390.png` and `after-nav-390.png` (bar); `after-nav-390-more-open.png`; `after-nav-390-after-choice.png`.
+
+### 36.7 Skills and tools
+
+- **Impeccable detector** (`npx --yes impeccable@latest detect` on `static/app.css`, `static/app.js`, `app/templates/index.html`): run on the branch and on `origin/main`. The findings are the same set (side-tab stripes, lazy-src `broken-image`, `settings-tabs` padding, and three advisory colour and radius notes), so the change adds no new finding. The detector does not run the element rules on CSS or JS, so this is an undercount.
+- **Impeccable critique or audit** of the rendered page: not run as a separate pass in this item.
+- **web-design-guidelines**: run as a review of the changed nav code. The fetched guideline source returned a condensed summary, not the verbatim rule list, so the review is against that summary. One finding was applied: the bar's `height: 80px` squashed the 56px buttons when the safe-area padding was added on notched devices; it is now a `min-height`. Other points checked (focus rings, 44px targets, keyboard, no transform-based motion) pass in the code.
+- Design direction for the bar is unchanged (Chart Rundown, icon above label, rules in DESIGN_SYSTEM 9.3 and 12).
+
+### 36.8 Checks actually run
+
+- `node --check static/app.js`: pass.
+- `python3 -m compileall -q app static`: pass.
+- `python3 -m unittest discover -s tests`: **973 tests, OK** (956 baseline, plus three added in this PR).
+- Browser checks listed in 36.6: run against the final CSS and JS.
+
+### 36.9 Limitations
+
+- Not the helper; the sandbox server only (same reason as section 35).
+- No real library. No Get, acquisition or album content was exercised. Those states are not affected by this change.
+- No screen-reader pass and no iOS or Android device pass.
+- Not merged, published, or deployed.

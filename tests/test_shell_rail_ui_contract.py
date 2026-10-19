@@ -63,7 +63,9 @@ class RailStructureTests(unittest.TestCase):
 
     def test_rail_icons_are_decorative(self):
         icons = re.findall(r'<svg class="icon"[^>]*>', self.rail)
-        self.assertEqual(len(icons), 7)
+        # Seven sprite icons plus the inline More disclosure icon on the phone bottom bar
+        # (UI_BACKLOG_EXECUTION section 36). The count of sprite references above is unchanged.
+        self.assertEqual(len(icons), 8)
         for tag in icons:
             self.assertIn('aria-hidden="true"', tag)
             self.assertIn('focusable="false"', tag)
@@ -129,6 +131,37 @@ class RailStructureTests(unittest.TestCase):
 
     def test_rail_items_meet_the_44px_target_floor(self):
         self.assertRegex(self.css, r"nav button \{[^}]*min-height: 44px;")
+
+    def test_phone_bar_keeps_four_destinations_and_a_more_disclosure(self):
+        # UI_BACKLOG_EXECUTION section 36: four destinations stay in the phone bar, and the other
+        # three open from More. Each overflow destination is in the rail too, for 621px and up.
+        bar_pages = ["dashboard", "acquisitions", "newReleases", "personalDiscoveries"]
+        more_pages = ["recommendations", "classics", "artistDeepDive"]
+        for page in bar_pages:
+            button = re.search(rf'<button[^>]*data-page="{page}"[^>]*>', self.rail).group(0)
+            self.assertNotIn("nav-overflow", button, msg=page)
+        for page in more_pages:
+            rail_button = re.search(rf'<button[^>]*data-page="{page}"[^>]*>', self.rail).group(0)
+            self.assertIn("nav-overflow", rail_button, msg=page)
+            self.assertIn(f'data-page="{page}"', self.rail[self.rail.index('id="navMorePanel"'):])
+        toggle = re.search(r'<button id="navMoreButton"[^>]*>', self.rail).group(0)
+        self.assertIn('aria-expanded="false"', toggle)
+        self.assertIn('aria-controls="navMorePanel"', toggle)
+        self.assertIn('<span>More</span>', self.rail)
+
+    def test_phone_more_panel_and_overflow_rules_only_apply_under_620px(self):
+        block = re.search(r"@media \(max-width: 620px\) \{\n(.*?)\n\}", self.css, re.S)
+        self.assertIsNotNone(block)
+        self.assertIn("nav .nav-overflow { display: none; }", block.group(1))
+        self.assertIn("nav .nav-more-toggle { display: flex; }", block.group(1))
+        self.assertIn(".nav-more-toggle, .nav-more-panel { display: none; }", self.css)
+
+    def test_more_disclosure_is_wired_to_the_shared_navigation_path(self):
+        self.assertIn("const navMoreButton = $('navMoreButton');", self.js)
+        self.assertIn("navMoreButton.setAttribute('aria-expanded', String(open));", self.js)
+        self.assertIn("navigateTo(button.dataset.page);", self.js)
+        self.assertIn("nav button[data-page], .header-menu button[data-page]", self.js)
+        self.assertIn("if (event.key === 'Escape' && !navMorePanel.hidden)", self.js)
 
 
 if __name__ == "__main__":
