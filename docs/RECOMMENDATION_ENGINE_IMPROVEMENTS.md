@@ -536,4 +536,9 @@ Decision: the batch path cannot preserve secondary-type exclusions. It is accept
 
 Discogs was checked as an alternative: no release-type field or batch endpoint is documented. Not pursued.
 
-Limits: one 100-recording sample; timings from one device session; the batch path is not wired into gathering yet.
+Limits: one 100-recording sample; timings from one device session; the batch path was not wired into gathering when this study was written.
+
+**Flagged batch resolution (2026-10-19, offline, default off).** `CF_BATCH_RESOLUTION_ENABLED` in `discovery_candidate_gathering.py` routes uncached CF recordings through `discovery_batch_metadata.py`: one `POST /1/metadata/recording/` per 100 recordings, then one `GET /1/metadata/release_group/` per 100 release groups, with no MusicBrainz recording calls, no 1.1 s spacing and no recording cache writes. Results are shaped like the MusicBrainz resolver output, so eligibility, ownership, duplicate and budget rules run unchanged. The path runs only when `BATCH_TITLE_FILTER_ENABLED` is also on, and any batch failure falls back to per-recording lookups. Both flags stay off; the path is inert in production until they are changed deliberately.
+- Estimated saving: about 105 to 110 s per run at budget 100 (estimate from the 1.1 s spacing and the sample timings, not a measured run).
+- Remaining gaps: secondary release types are still unavailable (the title filter is partial); the wire format (body key, query parameter, response field names) is taken from the study and has not been checked against a saved live response; the release-group step still needs a call per 100 IDs; the batch size of 100 is the only size tested.
+- Verified offline by 15 stubbed tests (`tests/test_discovery_batch_lookup.py`): flag gating, budget, chunking, fallbacks, title-marker rejection, and MusicBrainz-shaped output.
