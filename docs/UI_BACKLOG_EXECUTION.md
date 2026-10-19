@@ -2487,7 +2487,7 @@ Two passes: the first "after" pass (56px for all numerals) and the final "after"
 
 Next Phase 7 item: the gradient and one-off colour pass (`docs/DESIGN_SYSTEM.md` section 16.2 rows 5 and 7), with before and after screenshots at the five widths.
 
-## 28. Redesign Phase 7 — Gradients and one-off colours, follow-up item 7 (`ui/phase-7-gradients-9djfjj`, PR pending)
+## 28. Redesign Phase 7 — Gradients and one-off colours, follow-up item 7 (`ui/phase-7-gradients-9djfjj`, PR #401)
 
 Roadmap item: Phase 7, follow-up item 7 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes rows 5 and 7 of `docs/DESIGN_SYSTEM.md` section 16.2. Row 6 (shadows) and row 9 (artwork hover stripe) are not changed. Design system sections applied: 4 (tokens, usage rules), 13 (no gradients), 9.4 (artwork placeholder on ranked rows). Base: `origin/main` at `5cff896` (PR #400). The branch the brief named was `ui/phase-7-gradients`; the server suffixed it to `ui/phase-7-gradients-9djfjj`.
 
