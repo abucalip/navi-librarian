@@ -1591,3 +1591,11 @@ Next action: verify all four workflows on the final PR head, then have the owner
 - Limits: release counts cover every CF payload on the tape, including recordings the artist cap or budget would skip, and count release entries rather than albums. The capture has no supplementary-source candidates. No replenishment was implemented.
 - Publishing and deployment remain paused. No identities, listening data, or provider URLs were added to GitHub.
 - Next action: decide, from these counts, whether the page-2 and supplementary supply gap needs a bounded replenishment change.
+
+## PR #408 merge record — 2026-10-19
+
+- PR #408 (aggregate eligibility and per-source counts in the candidate-supply replay) merged to `main` as `e29487d`. Recorded here as requested.
+- Verification as recorded in the PR: frozen-capture replay made zero provider calls; decision counts and stage values matched `main`; only the two new keys differ. `reproduced: false` also appears on untouched `main` and remains unresolved.
+- Limits: release counts are an upper bound over every CF payload on the tape, not over what the live artist cap or budget would process. The capture shows no supplementary-source candidates. No replenishment was implemented in #408.
+- Publishing and deployment remain paused. No identities, listening data, or provider URLs were added to GitHub.
+- Next action: bounded supplementary replenishment in candidate gathering, gated on eligible unowned shortfall (separate PR).
