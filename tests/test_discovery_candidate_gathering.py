@@ -3,8 +3,62 @@ import unittest
 
 from discovery_candidate_gathering import (
     RecommendationProviders,
+    _get_with_bounded_retry,
     gather_recommendation_candidates,
 )
+
+
+class GenreLookupRetryTests(unittest.TestCase):
+    def _run(self, statuses):
+        client = _ScriptedClient(statuses)
+        sleeps = []
+        response = _get_with_bounded_retry(
+            client,
+            "https://musicbrainz.org/ws/2/artist/synthetic",
+            params={"fmt": "json", "inc": "genres"},
+            headers={},
+            sleep=sleeps.append,
+        )
+        return response, client.calls, sleeps
+
+    def test_success_on_first_attempt_does_not_retry_or_sleep(self):
+        response, calls, sleeps = self._run([200])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(calls, 1)
+        self.assertEqual(sleeps, [])
+
+    def test_transient_503_then_success_returns_success(self):
+        response, calls, sleeps = self._run([503, 503, 200])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(calls, 3)
+        self.assertEqual(sleeps, [2, 4])
+
+    def test_retry_exhaustion_returns_last_retryable_status_after_bounded_attempts(self):
+        response, calls, sleeps = self._run([503, 429, 502, 200])
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(calls, 3)
+        self.assertEqual(sleeps, [2, 4])
+
+    def test_non_retryable_status_is_returned_without_retry(self):
+        response, calls, sleeps = self._run([404, 200])
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(calls, 1)
+        self.assertEqual(sleeps, [])
+
+
+class _ScriptedClient:
+    def __init__(self, statuses):
+        self._statuses = list(statuses)
+        self.calls = 0
+
+    def get(self, url, *, params=None, headers=None):
+        self.calls += 1
+        return _StatusResponse(self._statuses.pop(0))
+
+
+class _StatusResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
 
 
 class RecommendationCandidateGatheringTests(unittest.TestCase):
