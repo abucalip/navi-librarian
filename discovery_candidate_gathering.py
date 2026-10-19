@@ -13,6 +13,20 @@ from discovery_candidate_supply import (
 )
 from discovery_recommendations import decayed_listen_weights, merge_discovery_source
 
+_RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
+_GENRE_LOOKUP_ATTEMPTS = 3
+
+def _get_with_bounded_retry(client, url, *, params, headers, sleep):
+    """Retry transient MusicBrainz statuses a bounded number of times; never cache here."""
+    response = None
+    for attempt in range(_GENRE_LOOKUP_ATTEMPTS):
+        response = client.get(url, params=params, headers=headers)
+        if response.status_code not in _RETRYABLE_STATUS_CODES:
+            return response
+        if attempt < _GENRE_LOOKUP_ATTEMPTS - 1:
+            sleep(2 * (attempt + 1))
+    return response
+
 @dataclass(frozen=True)
 class RecommendationProviders:
     listenbrainz_recent: Callable[..., Any]
@@ -573,12 +587,14 @@ def gather_recommendation_candidates(providers: RecommendationProviders) -> dict
                 if index:
                     providers.sleep(1.1)
 
-                response = client.get(
+                response = _get_with_bounded_retry(
+                    client,
                     f"https://musicbrainz.org/ws/2/artist/{artist_id}",
                     params={"fmt": "json", "inc": "genres"},
                     headers=headers,
+                    sleep=providers.sleep,
                 )
-                if response.status_code in (429, 500, 502, 503, 504):
+                if response.status_code in _RETRYABLE_STATUS_CODES:
                     failures.append({
                         "artist_mbid": artist_id,
                         "error": f"MusicBrainz returned HTTP {response.status_code}",

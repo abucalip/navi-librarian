@@ -12,6 +12,18 @@
 
 ---
 
+## 2026-10-19 — P4 genre-lookup bounded 503 retry (branch fix/genre-lookup-retry)
+
+- Task: roadmap P4 in docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md. The artist-genre lookup (`mb:artist-genres`) made one MusicBrainz request per artist and recorded any 429/5xx as a failure. It now uses the same bounded retry shape as recording lookups: up to 3 attempts, sleeps of 2 s and 4 s, retry only on 429/500/502/503/504.
+- Caching is unchanged: failures are recorded and not written to the metadata cache, so a later run retries the artist.
+- Tests: `tests/test_discovery_candidate_gathering.py` adds synthetic cases for first-attempt success, 503 then success, retry exhaustion (bounded attempts, last status returned), and non-retryable 404 without retry. Full unit suite: 816 tests OK locally. `py_compile` on all tracked Python files and the legacy server-size guard passed.
+- Limits: the frozen replay does not emit genre or unclassified metrics, so the acceptance criterion "fewer unclassified candidates in offline replay" is not measured here. The change only affects live runs. Worst-case provider calls for one artist rise from 1 to 3, bounded by the existing 75-artist cap; retry sleeps add up to 6 s per persistently failing artist.
+- Not run: CI on the PR head, live provider checks, and any publication or deployment. No merge.
+
+---
+
+---
+
 ## 2026-10-18 — P1 candidate-supply diagnostics (aggregate only, no behavior change)
 
 - Task: roadmap P1 from the 2026-10-18 revision (PR #380, merged as `63e5e2a`). Added aggregate-only supply diagnostics at the CF gathering boundary: CF recording outcomes (returned, resolved, failed by bounded error class), distinct recording artists and top-two share, resolved albums per artist (top-N shares), supplementary query yield (attempted, zero-yield, failed, not attempted), and stage counts for owned, unowned unique before/after dedupe, and before/after artist cap.
