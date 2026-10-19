@@ -2487,11 +2487,11 @@ Two passes: the first "after" pass (56px for all numerals) and the final "after"
 
 Next Phase 7 item: the gradient and one-off colour pass (`docs/DESIGN_SYSTEM.md` section 16.2 rows 5 and 7), with before and after screenshots at the five widths.
 
-## 28. Redesign Phase 7 — Gradients and one-off colours, follow-up item 7 (`ui/phase-7-gradients-9djfjj`, PR #401)
+## 28. Redesign Phase 7 — Gradients and one-off colours, follow-up item 7 (`ui/phase-7-gradients-9djfjj`, PR #401, merged as squash `96fdc53`)
 
 Roadmap item: Phase 7, follow-up item 7 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes rows 5 and 7 of `docs/DESIGN_SYSTEM.md` section 16.2. Row 6 (shadows) and row 9 (artwork hover stripe) are not changed. Design system sections applied: 4 (tokens, usage rules), 13 (no gradients), 9.4 (artwork placeholder on ranked rows). Base: `origin/main` at `5cff896` (PR #400). The branch the brief named was `ui/phase-7-gradients`; the server suffixed it to `ui/phase-7-gradients-9djfjj`.
 
-Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 28.4. **Browser-tested**: sandbox render at five widths on the pages that show artwork placeholders, 28.5. **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 28.4. **Browser-tested**: sandbox render at five widths on the pages that show artwork placeholders, 28.5. **Merged**: yes, PR #401, squash `96fdc53`, after Hamdi's instruction on 2026-10-19. CI on the head `ec58f37` was green (`test-and-build`, `container-smoke`, `validate-container`, `compile`). **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 28.1 Acceptance criteria (stated before the work)
 
@@ -2557,4 +2557,4 @@ Setup: two local uvicorn servers with their own data directories under the sessi
 
 ### 28.7 Next action
 
-Owner review of the PR, then Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
+Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
