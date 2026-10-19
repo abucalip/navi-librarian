@@ -26,8 +26,8 @@
   --dur-fast: 120ms; --dur: 180ms; --dur-slow: 260ms; --ease-out: cubic-bezier(.2,.8,.2,1);
   --text-xs: .75rem; --text-sm: .8125rem; --text-base: .9375rem; --text-md: 1.0625rem;
   --text-lg: 1.25rem; --text-xl: 1.5rem; --text-2xl: 1.875rem;
-  /* Rank numeral in a ranked row (DESIGN_SYSTEM.md section 5). --num-lead is not defined yet: rank 1 stays this size. */
-  --num-row: 3.5rem;
+  /* Rank numerals in a ranked row (DESIGN_SYSTEM.md section 5): --num-row for each row, --num-lead for rank 1 on wide screens. */
+  --num-row: 3.5rem; --num-lead: 5rem;
   /* Families are self-hosted from static/fonts/fonts.css. Display face is for headings and rank numerals only. */
   --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --body: "Schibsted Grotesk", sans-serif;
@@ -530,7 +530,11 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 }
 /* Personal Discoveries: a muted position, not a rank. The server order is not a score order, so
    the red numeral is not used (DESIGN_SYSTEM.md section 8, rule 2). */
-.rank-numeral.is-index { color: var(--text-muted); }
+.rank-numeral.is-index { color: var(--text-muted); font-size: var(--text-2xl); }
+/* Rank 1 only, on wide screens where the 72px numeral column has room (DESIGN_SYSTEM.md section 8). */
+@media (min-width: 1201px) {
+  .ranked-list > .ranked-row:first-child > .rank-numeral:not(.is-index) { font-size: var(--num-lead); }
+}
 .ranked-row .artist-bio { margin: 4px 0 0; color: var(--text-muted); font: 400 var(--text-xs)/1.45 var(--body); }
 /* New releases: the release date replaces the numeral (DESIGN_SYSTEM.md section 8). Plain text,
    not red: the red numeral is reserved for real rank order. */
