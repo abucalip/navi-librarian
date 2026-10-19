@@ -2559,7 +2559,7 @@ Setup: two local uvicorn servers with their own data directories under the sessi
 
 Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
 
-## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR pending)
+## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR #406)
 
 Roadmap item: Phase 7, follow-up item 8 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 8 of `docs/DESIGN_SYSTEM.md` section 16.2 and the radius decision in section 16.5. Base: `origin/main` at `96fdc53` (PR #401). Design system sections applied: 7 (shape: 2px chips and artwork, 4px controls, 6px panels and modal) and 9.2 (pill and circle for Get, kept). Hamdi approved radius as the next item on 2026-10-19.
 
