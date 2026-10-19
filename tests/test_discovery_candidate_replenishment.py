@@ -229,3 +229,20 @@ class EligibleUnownedCountTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_tag_lane_counters_separate_empty_cache_from_no_listens(self):
+        # No listens and no cached artist genres: every tag-lane counter is zero,
+        # which is the cold-cache signature the aggregate diagnostics must show.
+        artists = [("Alpha", "A1"), ("Beta", "B1")]
+        responses = {q: [] for q, _f, _s in BASE_QUERIES + EXTRA_QUERIES}
+
+        result, _mb_client = self._run(cf_artists=artists, responses=responses, shortlist_target=3)
+
+        lane = result["candidate_supply"]["tag_lane"]
+        self.assertEqual(lane["listens_total"], 0)
+        self.assertEqual(lane["listens_with_artist_mbid"], 0)
+        self.assertEqual(lane["profile_top_artist_cache_hits"], 0)
+        self.assertEqual(lane["profile_tag_count"], 0)
+        self.assertEqual(lane["candidate_artist_cache_hits"], 0)
+        self.assertEqual(lane["candidate_pool_tag_count"], 0)
+        self.assertGreaterEqual(lane["candidate_artists_considered"], 1)
