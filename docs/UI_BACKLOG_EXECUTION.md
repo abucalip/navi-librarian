@@ -2558,3 +2558,75 @@ Setup: two local uvicorn servers with their own data directories under the sessi
 ### 28.7 Next action
 
 Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
+
+## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR #406)
+
+Roadmap item: Phase 7, follow-up item 8 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 8 of `docs/DESIGN_SYSTEM.md` section 16.2 and the radius decision in section 16.5. Base: `origin/main` at `96fdc53` (PR #401). Design system sections applied: 7 (shape: 2px chips and artwork, 4px controls, 6px panels and modal) and 9.2 (pill and circle for Get, kept). Hamdi approved radius as the next item on 2026-10-19.
+
+The branch name is the one the server designated (`ui/phase-7-radius-cux3ev`). The requested name `ui/phase-7-radius` was not used.
+
+Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 29.4. **Browser-tested**: sandbox render at five widths, dashboard and header menu, computed radius before and after, 29.5. **Merged**: no. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+
+### 29.1 Acceptance criteria (stated before the work)
+
+- No `border-radius` in `static/app.css` is 3px. Every radius on the changed selectors is a token (`--radius-chip`, 2px).
+- The 999px pill (ranked-row Get) and the 50% circles (artwork Get) are unchanged, as section 9.2 requires.
+- No change to layout beyond a 1px corner. No horizontal overflow at 1440, 1200, 900, 620 and 390px.
+- Focus rings, landmarks, skip link, reduced motion, the rail indicator's motion and every behaviour, API, auth and Get/Dismiss path are unchanged.
+- Out of scope, unchanged: primary button (row 10), rail width and gutter (rows 1 and 14), the "Recommendations" label (row 3), the tab bar (row 2), shadows (row 6) and the artwork hover stripe (row 9).
+
+### 29.2 What changed
+
+Row 8 said "a 3px literal on rail items and two labels". The stylesheet has three 3px declarations, not two labels. They are recorded here as found:
+
+| Selector | Old | Now | Why |
+|---|---|---|---|
+| `nav button` (rail items, 621px and wider) | `border-radius: 3px` | `var(--radius-chip)` | Rail item, row 8. |
+| `.nav-indicator` (the 3px yellow bar on the active item) | `border-radius: 0 3px 3px 0` | `0 var(--radius-chip) var(--radius-chip) 0` | Rail item indicator, row 8. The bar stays 3px wide; only the rounded end moves to the 2px chip. |
+| `.header-menu-panel button` (Settings and user menu items) | `border-radius: 3px` | `var(--radius-chip)` | The menu items are the "labels" in row 8. The menu panel itself stays `--radius-panel` (6px). |
+
+Files changed: `static/app.css` (three declarations); `tests/test_radius_scale_ui_contract.py` (new, four assertions on the stylesheet); `docs/REDESIGN_ROADMAP.md` (Phase 7 status); `docs/DESIGN_SYSTEM.md` section 16.2 row 8 and section 16.5; this section. No JavaScript, template, API or existing test was changed.
+
+Not changed: the `.genre-tag` declaration `border-radius: 2px` (line 404) already equals the token and was left as a literal; the `999px` and `50%` shapes; and the `4px` literals on controls (section 7 keeps 4px for controls, and they are outside row 8's 3px scope).
+
+### 29.3 Impeccable and design guidance
+
+- `impeccable detect --json static/app.css` (`npx --yes impeccable@latest`, run in this session): **8 findings before, 5 after**. Radius findings: **4 before, 1 after**. The one that remains is `border-radius: 999px` at line 568, the ranked-row Get pill, which section 9.2 keeps. The `side-tab` findings (rows 9 and 5) and the colour findings (rows 6 and the shadows) are unchanged and are not part of this slice.
+- `/impeccable critique`, `/impeccable audit`, `/impeccable polish`: **not run** as the Impeccable skill in this session. The skill was not invoked. The visual judgement was made against section 7 and the before and after screenshots, and is recorded as such.
+- `web-design-guidelines` compliance pass: **not run** as a separate skill pass. The change is three declarations; the contract test covers the points it would check here.
+- Guidance applied: section 7's 2px chip radius for small rail and menu items; the indicator keeps its 3px width and only its rounded end is changed (section 9.3 indicator is unchanged in geometry).
+- Rejected: changing the 999px and 50% Get shapes (section 9.2 matches); adding a new radius token; moving the menu panel off 6px; changing the 4px control radius.
+
+### 29.4 Checks actually run
+
+- `node --check static/app.js`: passed.
+- `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `python3 -m unittest tests.test_radius_scale_ui_contract -v`: 4 tests, OK on this branch. The same file run against the `96fdc53` stylesheet: 3 failures (the three old-value checks), as intended.
+- `python3 -m unittest discover -s tests -v`: **Ran 902 tests, OK** (898 on `main` plus the 4 new tests).
+- `pip install --break-system-packages -r requirements.txt` was run before the suite.
+
+### 29.5 Browser (sandbox, RECONSTRUCTED fixture, not the owner's helper)
+
+Setup: two local uvicorn servers (`app.main:app`), each with its own data directory under the session scratch folder, `SLSKD_URL=http://127.0.0.1:9` (slskd disabled), sandbox music and download paths, and one sandbox account. "Before" is a `git archive` of `96fdc53` (port 8101). "After" is the working tree of this branch (port 8102). Chromium through Playwright at 1440, 1200, 900, 620 and 390px. Screenshots are in `/mnt/project-files/phase-7-radius/screenshots/` as `before-dashboard-<width>-RECONSTRUCTED.png`, `after-dashboard-<width>-RECONSTRUCTED.png`, and the same two names with `header-menu`. The render script and results are in the session scratch folder.
+
+- Computed radius, nav item: `3px` before, `2px` after, at every width where the rail shows (621px and wider). Under 620px the bottom bar uses the same `nav button` rule and also moved to `2px`.
+- Computed radius, nav indicator: `0 3px 3px 0` before, `0 2px 2px 0` after, at 1440, 1200 and 900px where the bar shows. It is hidden under 620px (bottom bar), as before.
+- Computed radius, header menu item: `3px` before, `2px` after, at all five widths. The panel stays `6px` before and after.
+- Overflow: `scrollWidth − innerWidth` was 0 at every width, before and after.
+- Console and network: no console error, warning or page error, and no request outside the local origin, on every run, before and after.
+- Dashboard: the fixture has no library, so the page shows the empty state ("No suggestions yet"). The rail and header are real rendered output. No album or Get state was rendered, so the 999px Get pill and the 50% artwork circles were not visually re-checked in this pass. Their values are unchanged in the stylesheet.
+- Keyboard walk: **skipped**. No focus, role or name rule was changed, and the `:focus-visible` rules are untouched. Not run as a walk.
+- Screen-reader pass: **skipped**.
+- Album modal, Acquisitions, Get states: **skipped**, not rendered (no fixture for those states in this sandbox).
+- The owner's `test-pr.sh` helper: **not run** (not installed in this sandbox). The manual checklist against the exact PR-head SHA is **skipped** and is the next action before merge.
+
+### 29.6 Limitations
+
+- Reconstructed empty fixture, no library and no artwork. The change is small (1px corners on small items), so screenshots show it only as a close match; the computed-style comparison in 29.5 is the evidence.
+- Under 620px the nav indicator is hidden and the bottom bar items are not separately measured beyond their computed radius.
+- The 999px Get pill and the 50% artwork circles were not rendered in this pass (see 29.5).
+
+### 29.7 Next action
+
+Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
