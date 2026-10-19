@@ -2049,3 +2049,57 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 
 ### 21.8 Next action
 Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run the sign-in and first-run checklist against the exact PR head on the owner's helper (first-run on a deliberately fresh per-run data directory, never by deleting an existing one), and merge if satisfied. Next roadmap item in this phase: album modal, as a separate PR.
+
+## 22. Redesign Phase 6 — Album modal (`claude/project-thread-yydleb`)
+
+Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape, tracklist rhythm). Design system sections applied: 8 (album modal composition: artwork left, tracklist right, platform links beneath the artwork), 9.8 (modal: dialog semantics, focus trap, Escape, focus return, solid scrim, 6px radius), 9.4 (row behaviour is unchanged), 6 (tracklist rows at 48px, page-head maximum of 30px), 7 (no shadow on the dialog, depth from the ground ladder), 10 (sprite close icon), 11 (modal motion is opacity and an 8px translate; reduced motion removes it), 12 (44px targets, reduced motion, landmarks and names). Branched from `origin/main` at `a005b1c` (PR #388). The branch name follows the designated development branch for this session, not the `ui/phase-6-album-modal` name in the project brief.
+
+### 22.1 Acceptance criteria (stated before implementation)
+- Artwork left and tracklist right at 900px and wider; stacked below 650px. No horizontal overflow at 1440, 1200, 900, 620 and 390px.
+- Modal motion is opacity and an 8px translate only, and `prefers-reduced-motion: reduce` removes it.
+- Focus returns to the opener on close; Escape closes; Tab stays inside the dialog.
+- Every control in the dialog is at least 44×44px.
+- Existing album-detail and artwork calls, the Get state machine and the dialog's ARIA semantics are unchanged.
+- No console or network errors except known limit B2 (third-party platform images in the album modal).
+
+### 22.2 What changed
+- `static/app.css`: the album modal block is rewritten with tokens only. The scrim is `--ink` at 80% and solid (blur removed). The panel is `--surface-raised`, `--edge` border, `--radius-panel`, and no box shadow. The title uses the 30px `--text-2xl` display step. The year is metadata colour, not the accent. Tracklist rows are 48px minimum with tabular numbers. Platform links are 44px visible chips (previously 30px visible with a 44px pseudo-element hit area). The open animation is `album-modal-fade` and `album-modal-rise`, which use only opacity and an 8px translate at `--dur-slow` and `--ease-out`. Reduced motion sets `animation: none`. `overscroll-behavior: contain` is set on the dialog, and `text-wrap: balance` on the title.
+- `app/templates/index.html`: the close control's `×` text is replaced by the sprite `x` icon, `aria-hidden`. The button keeps its accessible name, `aria-label="Close album details"`. Ids, dialog semantics, and the platform link and Get markup are unchanged.
+- `static/app.js`: not changed. The focus trap, Escape, focus return and data calls already met the acceptance criteria and are protected by existing tests.
+- `tests/test_album_modal_ui_contract.py` (new): 14 source-contract tests covering the dialog name and semantics, the sprite close icon, artwork-before-copy order, no blur or shadow, no literal colours, year not in the accent, motion keyframes, the reduced-motion removal, 44px targets, tracklist rhythm, title size, `overscroll-behavior`, `text-wrap`, and the unchanged data calls and close-to-opener logic. The existing focus, trap and Escape tests in `tests/test_ui_keyboard_and_feedback_contract.py` are not edited.
+
+### 22.3 Decisions taken without the owner (state these in review)
+- The 30px visible platform chips became 44px visible chips, not 30px chips with a larger hit area. The 44px floor in AGENTS.md applies to the visible control, and five chips plus gaps fit the 340px column.
+- The dialog no longer has a drop shadow or a backdrop blur, following DESIGN_SYSTEM.md 7 and 9.8. The scrim is now opaque, so the dialog reads through its raised surface rather than a shadow.
+- The title is 30px (`--text-2xl`), the maximum for headings in section 13, down from 34px. The 28px mobile override was removed.
+- Motion runs on open only. Close is still instant (`hidden`), because animating the close would need a delayed hide and the design system lists only the open motion for the modal.
+- The artwork `<img>` has no `width` and `height` attributes. Its box is fixed by `aspect-ratio: 1` and the artwork's intrinsic size varies, so the box does not shift.
+
+### 22.4 Checks actually run
+- `node --check static/app.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install -r requirements.txt --break-system-packages`: installed.
+- `python3 -m unittest tests.test_album_modal_ui_contract -v`: 14 tests, OK.
+- `python3 -m unittest discover -s tests -v`: 875 tests, OK.
+- Impeccable: `npx -y impeccable@4.6.0 detect` on `static/app.css`, `app/templates/index.html` and `static/app.js`. The advisory count went from 44 on `origin/main` to 34 on this branch. The remaining findings are outside the album modal block (for example, card and Dashboard values). None lie inside the modal block lines.
+- `anthropic-skills:web-design-guidelines`: fetched the live rule list. Applied: `overscroll-behavior: contain` on the dialog; `text-wrap: balance` on the dialog title. Checked and already satisfied: icon-only buttons have `aria-label`, decorative icons and the platform icons have `aria-hidden` or empty `alt`, `Loading…` style copy, no `outline: none`, `:focus-visible` rings, no `transition: all`, reduced motion. Rejected: explicit `width` and `height` on the artwork image (the box is fixed by `aspect-ratio`; the artwork's intrinsic size varies). The Impeccable critique and audit skills were not run as full sessions; the detector result is recorded above, not a critique.
+
+### 22.5 Browser checks (sandbox, RECONSTRUCTED data)
+- The owner's helper `~/navi-librarian-test/test-pr.sh` is not in this environment, so it was not used. Two servers ran from copies of the trees, `origin/main` at `a005b1c` ("main") and the branch working tree ("branch"), each with its own scratch data directory (`NAVIDROME_LIBRARIAN_DATA_DIR`), `SLSKD_URL=http://127.0.0.1:9`, and a sandbox owner account created through the first-run endpoint. There is no live library. Album details and artwork responses were mocked in the browser with RECONSTRUCTED values (12 tracks, one long title, a generated SVG). The opener card was a RECONSTRUCTED fixture built with the app's own `makeAlbumCardInteractive`.
+- Script: `phase-6-album-modal/screenshots/render-modal.js` (Playwright, Chromium 1194). Results: `render-modal-main.json` and `render-modal-branch.json`.
+- Width matrix, branch vs main: document scroll width equals the viewport at 1440, 1200, 900, 620 and 390 on both builds. Layout: side by side at 900 and wider, stacked at 620 and 390 on both builds. Smallest interactive target: 44px on the branch, 30px on main.
+- Keyboard: opened with Enter on the card. Tab presses stayed inside the dialog (25 presses at each width). Escape closed the dialog and focus returned to the card at each width.
+- Mouse: a click on the card opened the dialog at 1440.
+- Motion: the branch modal animation is `album-modal-rise` with motion allowed and `none` with `prefers-reduced-motion: reduce`. Main has no modal animation.
+- Error state (tracklist request returns 500): the status reads "Could not load tracklist: RECONSTRUCTED failure" with the error state. Screenshot `branch-modal-error-1440-RECONSTRUCTED.png`.
+- Console and network: four console errors on both builds, each `net::ERR_TUNNEL_CONNECTION_FAILED` for the third-party platform icons (`raw.githubusercontent.com`, `cdn.simpleicons.org`, `community.qobuz.com`). These are known limit B2. No other console error and no HTTP error response on either build.
+- Screenshots: `phase-6-album-modal/screenshots/main-modal-<width>-RECONSTRUCTED.png` and `branch-modal-<width>-RECONSTRUCTED.png`, for 1440, 1200, 900, 620 and 390. Every image is labelled RECONSTRUCTED.
+- Not run: the live Navidrome library and real artwork; the owner's helper checklist; the Get request path (the search endpoint was not exercised, so Get behaviour is unchanged by code but not browser-tested here); keyboard traversal of the platform links; a screen-reader pass; Chromium only.
+
+### 22.6 Limitations
+- Chromium only; no screen-reader pass; no physical-device check.
+- The platform icons are third-party images (B2). In the sandbox they fail to load and show text fallbacks; the fallback path is what the screenshots show.
+- Close has no motion. Reduced motion and the open animation are verified only in the rendered browser runs above.
+
+### 22.7 Next action
+Owner: review the diff and the screenshots in `phase-6-album-modal/screenshots/`, run the album-modal checklist from `docs/TEST_PLAN.md` against the exact PR head on the owner's helper with a live library, and merge if satisfied. Next roadmap item: Phase 7 (motion, polish, hardening).
