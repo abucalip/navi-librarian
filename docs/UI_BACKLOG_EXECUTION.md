@@ -2050,6 +2050,9 @@ The helper `~/navi-librarian-test/test-pr.sh` is on the owner's machine, not in 
 ### 21.8 Next action
 Owner: review the diff and the screenshots in `phase-6-login/screenshots/`, run the sign-in and first-run checklist against the exact PR head on the owner's helper (first-run on a deliberately fresh per-run data directory, never by deleting an existing one), and merge if satisfied. Next roadmap item in this phase: album modal, as a separate PR.
 
+### 21.9 Merge record
+Owner-approved merge of PR #388 on 2026-10-19 at head `9d5eb72` (squash commit `a005b1c`). CI green on that head. Deployment not verified.
+
 ## 22. Redesign Phase 6 — Album modal (PR #391, merged, squash `759510e`)
 
 Roadmap item: Phase 6, third bullet (new layout and motion, focus return, Escape, tracklist rhythm). Design system sections applied: 8 (album modal composition: artwork left, tracklist right, platform links beneath the artwork), 9.8 (modal: dialog semantics, focus trap, Escape, focus return, solid scrim, 6px radius), 9.4 (row behaviour is unchanged), 6 (tracklist rows at 48px, page-head maximum of 30px), 7 (no shadow on the dialog, depth from the ground ladder), 10 (sprite close icon), 11 (modal motion is opacity and an 8px translate; reduced motion removes it), 12 (44px targets, reduced motion, landmarks and names). Branched from `origin/main` at `a005b1c` (PR #388). The branch name follows the designated development branch for this session, not the `ui/phase-6-album-modal` name in the project brief.
