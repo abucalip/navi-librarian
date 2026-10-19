@@ -63,6 +63,8 @@ CF_ARTIST_RESOLUTION_CAP = 10
 # query costs at most one 1.1 s spacing sleep plus one 2 s retry backoff.
 SUPPLEMENTARY_CANDIDATE_CAP = 60
 REPLENISH_EXTRA_QUERIES = 2
+# Top CF candidate-pool artists whose genres are prefetched before the tag lane.
+CANDIDATE_PREFETCH_LIMIT = 5
 SHORTLIST_TARGET_DEFAULT = 10
 CF_RECOMMENDATION_URL = (
     "https://api.listenbrainz.org/1/cf/recommendation/user/{username}/recording"
@@ -495,15 +497,32 @@ def gather_recommendation_candidates(
                 record["error_class"] = classify_error(exc)
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
-    # Warm the genre cache for the top listening-profile artists before the tag
-    # lane reads it. Without this, a cold cache plans zero profile queries because
-    # the genre stage below runs after the lane. These artists are always in the
-    # genre stage's own lookup set, so this reorders calls rather than adding them.
-    # Best-effort: failures here are left for the genre stage to retry and record.
+    # Warm the genre cache before the tag lane reads it. Without this, a cold cache
+    # plans fewer supplementary queries because the genre stage below runs after
+    # the lane. The prefetch covers the top listening-profile artists and the top
+    # CANDIDATE_PREFETCH_LIMIT candidate-pool artists by CF score. The genre stage
+    # looks up these same artists later in the run, so these calls reorder lookups
+    # rather than add them, except when the tag lane displaces a candidate from the
+    # genre stage's top-60 set. Best-effort: failures are left for the genre stage
+    # to retry and record. An exhausted retry stops only the candidate prefetch.
+    profile_prefetch_ids = [
+        artist_id for artist_id, _listen_count in recent_artist_mbid_counts.most_common(15)
+    ]
+    candidate_artist_ids = list(dict.fromkeys(
+        candidate["artist_mbid"]
+        for candidate in sorted(albums.values(), key=lambda album: album["score"], reverse=True)
+        if candidate.get("artist_mbid")
+    ))
+    candidate_prefetch_ids = [
+        artist_id for artist_id in candidate_artist_ids[:CANDIDATE_PREFETCH_LIMIT]
+        if artist_id not in profile_prefetch_ids
+    ]
+    prefetch_ids = profile_prefetch_ids + candidate_prefetch_ids
+    candidate_prefetch_stopped = False
     with providers.http_client(timeout=15, follow_redirects=True) as client:
-        for index, (artist_id, _listen_count) in enumerate(
-            recent_artist_mbid_counts.most_common(15)
-        ):
+        for index, artist_id in enumerate(prefetch_ids):
+            if candidate_prefetch_stopped and index >= len(profile_prefetch_ids):
+                break
             try:
                 if providers.metadata_cache_get(
                     f"mb:artist-genres:{artist_id}",
@@ -522,6 +541,8 @@ def gather_recommendation_candidates(
                     sleep=providers.sleep,
                 )
                 if response.status_code in _RETRYABLE_STATUS_CODES:
+                    if index >= len(profile_prefetch_ids):
+                        candidate_prefetch_stopped = True
                     continue
                 response.raise_for_status()
                 prefetched_genres = sorted({
