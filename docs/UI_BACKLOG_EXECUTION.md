@@ -2810,3 +2810,88 @@ Screenshots in `/mnt/project-files/phase-7-card-actions/screenshots/`: `before-R
 ### 31.7 Next action
 
 Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+
+## 32. Screen-reader pass on card actions, Get states and the album modal (Phase 7 follow-up item 11)
+
+Scope (PR #425): names, roles, state announcement and focus order on the card actions, the Get control, the album modal and acquisition Dismiss. Roadmap follow-up item 11. Branch `ui/phase-7-screen-reader-1deshe` from `origin/main` at `57d68df` (PR #412 is `3905ed9`, already in main). No behaviour, API, auth, Get, Dismiss or settings-secret path changed.
+
+### 32.1 Findings on `main` (before)
+
+Measured with `/mnt/project-files/phase-7-screen-reader/screenshots/render-sr.js` against a local app on `main`, mocked RECONSTRUCTED fixtures (the discovery, acquisition and album-details responses are stubbed; the acquire and dismiss calls are mocked, so no request reached the backend).
+
+| # | Surface | Finding | Criterion | Severity |
+|---|---|---|---|---|
+| 1 | Get control, card, row, dashboard tile | Pressing Get disables the focused button, and focus fell to `<body>`. It stayed there through pending and requested (`focusDuringPending` and `focusAfterRequested` were `body` at 1440, 620 and 390px). | 2.4.3 Focus Order; 2.1.1 Keyboard | Major |
+| 2 | Not for me (icon-only) | Every card and row named "Not for me", with no album. Several in a list gave identical names. | 4.1.2 Name, Role, Value | Major |
+| 3 | Dismiss artist | Every card named "Dismiss artist", with no artist. | 4.1.2 | Major |
+| 4 | Card artwork group | `.card-art` is a `div` with `aria-label`. A generic element may not be named, so the label was never announced. | 4.1.2; ARIA naming rule | Minor |
+| 5 | Acquisition Dismiss | Every row named "Dismiss". Dismissing removed the row and left focus on `<body>`. A disabled button during the request also dropped focus. | 4.1.2; 2.4.3 | Major |
+
+Not a finding, checked on `main`: the album modal opens with focus on Close, the trap keeps Tab inside, and focus returns to the card. The dashboard tile's nested button already carries the album and artist name, and the tile itself is not a second tab stop.
+
+### 32.2 Fixes on the branch
+
+| Surface | Change |
+|---|---|
+| `searchAlbum` | Records whether Get had focus. Before the request disables it, focus moves to `getFocusOwner()`: the dialog's close button inside the modal, otherwise the nearest `tabindex="0"` ancestor or article (a tab-less article gets `tabindex="-1"`, which leaves the tab order unchanged). On `failed`, focus returns to Get. The pending, requested and failed states are unchanged. |
+| Not for me (card, ranked row, recommendation builder) | `aria-label` is `Not for me: <album>`. The visible `×` and the `title` stay. |
+| Dismiss artist (card, ranked row) | `aria-label` is `Dismiss artist <artist>`. The visible text starts the name, so label-in-name holds. |
+| `attachArtwork` | `.card-art` has `role="group"` and keeps its label. |
+| Acquisition Dismiss | `aria-label` is `Dismiss <album>`. The button records focus; on success focus goes to the adjacent row's first control (the next row, else the previous one), or to the status line (`tabindex="-1"`) when no row is left; on failure it returns to Dismiss. |
+
+Files changed: `static/app.js`; `tests/test_screen_reader_names_ui_contract.py` (new, six tests); `tests/test_artist_deep_dive_ui_contract.py` and `tests/test_recommendations_ui_contract.py` (one pinned string each, changed from the old label to the new one, to match the new name; no assertion removed); `docs/REDESIGN_ROADMAP.md` (item 10 recorded as merged; item 11 added); `docs/UI_BACKLOG_EXECUTION.md` (this section). `docs/DESIGN_SYSTEM.md` is not changed: no appearance value changed, so no row in section 16.2 moved.
+
+### 32.3 Rendered result (after)
+
+Same harness, same fixtures, same widths (1440, 1200, 900, 620, 390px). Focus in the table is the element `document.activeElement` names after the step.
+
+| Check | `main` | Branch |
+|---|---|---|
+| Focus during Get pending, 1440 and 390px | `body` | `article` (the card, "View details for …") |
+| Focus after Get requested | `body` | `article` |
+| Get `aria-label` during pending / after | "Requesting …" / "Acquisition requested: …" | unchanged |
+| Keyboard walk after the first card | Get, Not for me, Dismiss artist, article, next Get | Get, Not for me: <album>, Dismiss artist <artist>, article, next Get (named) |
+| Names of Not for me / Dismiss artist on the list | "Not for me" and "Dismiss artist" repeated | "Not for me: RECONSTRUCTED Album", "Dismiss artist RECONSTRUCTED Artist", and per album |
+| Acquisition Dismiss after a mocked dismissal | `body` | "Dismiss RECONSTRUCTED Album", the adjacent row's button |
+| Modal open focus | "Close album details" | unchanged |
+| Console errors | 3 to 4 per width, all `ERR_TUNNEL_CONNECTION_FAILED` for the third-party hosts below | the same; no new errors |
+| Failed HTTP responses | none | none |
+| External requests | `raw.githubusercontent.com`, `cdn.simpleicons.org`, `community.qobuz.com` (modal platform logos, row 12) | the same, unchanged |
+
+Screenshots: `/mnt/project-files/phase-7-screen-reader/screenshots/` (`before-*` and `after-*` at each width, plus the JSON reports `before-report.json` and `after-report.json`). The visible layout is unchanged.
+
+### 32.4 Accessibility audit (WCAG 2.1 AA, these surfaces only)
+
+| # | Finding | Criterion | Status |
+|---|---|---|---|
+| 1 to 5 | Section 32.1 | 2.4.3, 2.1.1, 4.1.2, 1.3.1 | **Fixed** in this branch; measured in 32.3 |
+| 6 | Contrast of Get pending and requested | 1.4.11 | Unchanged here. The `button:disabled` rule still sets 55% opacity on the disabled Get; the colour tokens were measured in section 30. Not re-measured with the opacity, so the rendered ratio is **open**. |
+| 7 | Third-party logos in the album modal | Not a WCAG criterion; AGENTS.md runtime-asset rule; row 12 | **Open**, owner decision (section 16.2 row 12). Not changed. |
+| 8 | Real screen-reader run (VoiceOver or NVDA) | 4.1.2 in practice | **Skipped**: no screen reader in this environment. The names and roles are checked from the DOM only. |
+| 9 | Error paths in a browser (the acquire and dismiss calls failing) | 2.4.3 on the failure restore | **Skipped**: the browser run mocked success only. The restore-on-failure path is covered by the source contract test and not by a rendered check. |
+| 10 | Keyboard focus visibility on the focused card after Get | 2.4.7 | Not separately judged. Not checked in this pass. The focus moves to the card programmatically, and no focus-ring capture was taken. |
+
+### 32.5 Impeccable and skill passes
+
+- `impeccable detect` (`npx -y impeccable@latest detect static/app.js static/app.css app/templates/index.html`): ran. Four findings, all pre-existing and in code this branch does not touch: a `broken-image` `<img>` with no `src` (the album artwork placeholder in `index.html`), and a `cramped-padding` finding on `.settings-tabs`. Three advisory notes in `app.css`, unchanged lines (rgba scrims at 356 and 455, `999px` radius at 568). None is from this change; rejected for this PR.
+- `design:accessibility-review`: invoked. The skill returned its blank template and no audit; the audit in 32.4 is written from the rendered evidence and the source. The skill's output is not counted as a pass.
+- `anthropic-skills:web-design-guidelines`: **not run** as a separate pass in this session. The change is limited to names, roles and focus, and the rules it would check are covered by the contract tests and the 32.3 measurements.
+- `/impeccable audit` and `/impeccable critique`: **not run** in this session. The judgement was made against `docs/FRONTEND_DESIGN_GUIDE.md` section 4 and `docs/DESIGN_SYSTEM.md` sections 9.1, 9.2 and 9.8.
+- Applied: the naming rule (icon-only and repeated controls name their object; the visible words start the name), and the focus rule (a control that is disabled while focused hands focus to a stable owner). Rejected: `aria-disabled` in place of `disabled` on Get (it would change the state machine and the shared `:disabled` style, which section 16.5 keeps open); a new colour or spacing value.
+
+### 32.6 Checks actually run
+
+- `node --check static/app.js` and `node --check static/login.js`: passed.
+- `python3 -m compileall -q app static`: passed.
+- `pip install --break-system-packages -r requirements.txt`: installed.
+- Focused: `python3 -m unittest tests.test_screen_reader_names_ui_contract tests.test_artist_deep_dive_ui_contract tests.test_recommendations_ui_contract tests.test_acquisition_ui_contract tests.test_new_releases_ui_contract tests.test_ui_keyboard_and_feedback_contract`: 95 tests, OK.
+- `python3 -m unittest discover -s tests -v`: 934 tests, OK (928 on `57d68df` before the change; six new).
+- Browser: local `uvicorn app.main:app` on the branch (port 8089) and on `main` in a separate worktree (port 8090), sandbox owner account, mocked fixtures, `reducedMotion: reduce`. Five widths. Keyboard walk, focus after Get and after mocked dismiss, names, console, failed responses, external hosts.
+
+### 32.7 Limitations
+
+- Reconstructed fixtures, not the live Navidrome library. The layout is the fixture layout.
+- The acquire and dismiss calls were mocked. No real acquisition or dismissal was made.
+- No real screen reader. The names are read from the DOM and the accessibility attributes only.
+- The `ERR_TUNNEL_CONNECTION_FAILED` console errors come from the sandbox proxy blocking the third-party logo hosts. They are not caused by this branch and are recorded in 32.3.
+

@@ -436,7 +436,12 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
         const dismiss = document.createElement('button');
         dismiss.type = 'button';
         dismiss.textContent = 'Dismiss';
+        // Repeated on every row, so the name says which acquisition it dismisses.
+        dismiss.setAttribute('aria-label', 'Dismiss ' + (job.album || job.artist || 'acquisition'));
         dismiss.addEventListener('click', async () => {
+          // A disabled control drops focus, so remember it and hand focus to a neighbour on success
+          // (or back to this control on failure) instead of leaving the keyboard user on <body>.
+          const hadFocus = document.activeElement === dismiss;
           dismiss.disabled = true;
           try {
             await sendJSON('/api/acquisitions/dismiss', 'POST', {
@@ -445,7 +450,13 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
             stored.add(dismissalKey);
             localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+            const neighbour = row.nextElementSibling || row.previousElementSibling;
             row.remove();
+            if (hadFocus) {
+              const nextControl = neighbour && neighbour.querySelector('button');
+              if (nextControl) nextControl.focus();
+              else { status.tabIndex = -1; status.focus(); }
+            }
             const visibleRows = target.querySelectorAll('.acq-row').length;
             status.textContent = visibleRows
               ? pluralize(visibleRows, 'acquisition record', 'acquisition records') + '.'
@@ -457,6 +468,7 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             status.textContent = error.message;
             if (status === $('acquisitionsStatus')) setStatusState(status, 'error');
             dismiss.disabled = false;
+            if (hadFocus) dismiss.focus();
           }
         });
         actions.append(dismiss);
@@ -951,6 +963,9 @@ $('shuffleDashboard').addEventListener('click', loadDashboardPicks);
 function attachArtwork(card, artist, album) {
   const art = document.createElement('div');
   art.className = 'card-art';
+  // A div has no role, and ARIA forbids naming a generic element, so the label was never
+  // announced. A group gives the artwork and its Get control a name.
+  art.setAttribute('role', 'group');
   art.setAttribute('aria-label', 'Album artwork and acquisition actions');
 
   const placeholder = document.createElement('div');
@@ -1147,6 +1162,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   const artist = item.artist || item.album_artist || '';
   const album = item.album || item.title || item.name || '';
   makeAlbumCardInteractive(row, artist, album, item);
+  // Icon-only and repeated controls name the album and artist they act on.
 
   if (options.releaseDate) {
     row.append(releaseDateColumn(item, row));
@@ -1194,7 +1210,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   dismissButton.className = 'deep-dive-dismiss';
   dismissButton.textContent = '×';
   dismissButton.title = 'Not for me';
-  dismissButton.setAttribute('aria-label', 'Not for me');
+  dismissButton.setAttribute('aria-label', 'Not for me: ' + album);
   dismissButton.addEventListener('click', () => {
     if (options.onDismiss) {
       options.onDismiss(artist, album, item);
@@ -1212,6 +1228,7 @@ function buildRecommendationRow(item, rank, options = {}) {
     dismissArtist.type = 'button';
     dismissArtist.className = 'row-dismiss-artist';
     dismissArtist.textContent = 'Dismiss artist';
+    dismissArtist.setAttribute('aria-label', 'Dismiss artist ' + artist);
     dismissArtist.addEventListener('click', () => options.onDismissArtist(artist, album, item));
     actions.append(dismissArtist);
   }
@@ -1728,9 +1745,10 @@ async function loadDiscovery(name, options = {}) {
         const actions = document.createElement('div');
       actions.className = 'card-actions';
 
-      const button = (label, callback, className = '') => {
+      const button = (label, callback, className = '', accessibleName = label) => {
         const b = document.createElement('button');
         b.textContent = label;
+        if (accessibleName !== label) b.setAttribute('aria-label', accessibleName);
         if (className) b.className = className;
         b.addEventListener('click', callback);
         actions.append(b);
@@ -1743,13 +1761,13 @@ async function loadDiscovery(name, options = {}) {
       notForMe.className = 'deep-dive-dismiss';
       notForMe.append(spriteIcon('x'));
       notForMe.title = 'Not for me';
-      notForMe.setAttribute('aria-label', notForMe.title);
+      notForMe.setAttribute('aria-label', 'Not for me: ' + album);
       notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name));
       artContainer.append(notForMe);
 
       if (name !== 'artist_deep_dive') {
         button('Dismiss artist',
-          () => sendFeedback('dismiss_artist', artist, album, item, name));
+          () => sendFeedback('dismiss_artist', artist, album, item, name), '', 'Dismiss artist ' + artist);
       }
 
       card.append(actions);
@@ -1970,9 +1988,15 @@ if (acquisitionToasts) {
 
 async function searchAlbum(artist, album, metadata, button = null) {
   if (button && button.disabled && !button.classList.contains('is-failed')) return;
+  // A disabled control cannot keep focus, so disabling the Get that has focus dropped the
+  // keyboard user onto <body>. Focus moves to the nearest stable owner (the card, or the
+  // dialog's close button) while the request is in flight, and returns to Get if it fails.
+  const hadFocus = !!button && document.activeElement === button;
+  const focusOwner = hadFocus ? getFocusOwner(button) : null;
   // Pending, not requested. The former code marked the button as requested before
   // awaiting the response, which claimed success the server had not confirmed.
   setGetButtonState(button, 'pending', artist, album);
+  if (focusOwner) focusOwner.focus();
   try {
     const data = await sendJSON('/api/acquire', 'POST',
       {artist, album, metadata, auto_queue:true});
@@ -1981,6 +2005,7 @@ async function searchAlbum(artist, album, metadata, button = null) {
     // would mark the button "requested" for a request that was never made.
     if (data && data.ok === false) {
       setGetButtonState(button, 'failed', artist, album);
+      if (hadFocus) button.focus();
       reportAcquisitionOutcome(data.message || data.error || 'The request could not be placed.', 'error');
       return;
     }
@@ -1990,8 +2015,20 @@ async function searchAlbum(artist, album, metadata, button = null) {
     await loadAcquisitions();
   } catch (error) {
     setGetButtonState(button, 'failed', artist, album);
+    if (hadFocus) button.focus();
     reportAcquisitionOutcome(error.message, 'error');
   }
+}
+
+// The control to hold focus while a Get request is in flight: the album dialog's close button
+// inside the modal, otherwise the card or row that owns the Get control.
+function getFocusOwner(button) {
+  if (button.closest('.album-modal')) return $('albumModalClose');
+  const owner = button.closest('[tabindex="0"]') || button.closest('article');
+  // Dashboard tiles are articles without a tab stop of their own; -1 makes them focusable by
+  // script only and leaves the tab order unchanged.
+  if (owner && !owner.hasAttribute('tabindex')) owner.setAttribute('tabindex', '-1');
+  return owner;
 }
 
 // Route acquisition feedback to a status region that actually exists. Two former

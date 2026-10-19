@@ -61,7 +61,7 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         self.assertNotIn("arrow.textContent = symbol;", self.js)
         self.assertNotIn("notForMe.textContent = '×';", self.js)
         self.assertIn("arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');", self.js)
-        self.assertIn("notForMe.setAttribute('aria-label', notForMe.title);", self.js)
+        self.assertIn("notForMe.setAttribute('aria-label', 'Not for me: ' + album);", self.js)
         self.assertIn("notForMe.title = 'Not for me';", self.js)
 
     def test_sprite_icon_helper_builds_nodes_without_innerhtml(self):
