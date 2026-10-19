@@ -3099,7 +3099,7 @@ Also checked: no horizontal page overflow at 1440, 1200, 900, 620 or 390 on any 
 
 ## 36. Phone bottom bar overflow at 390px (Phase 7 follow-up item 15)
 
-Status: **implemented on branch `ui/phase-7-bottom-nav-q4094i` from main `76ec40e`; not merged, not published, not deployed.** Fixes the defect in section 35.5 item 1. The owner decision on the destination set is still open (`docs/DESIGN_SYSTEM.md` 16.5 row 2); this PR implements the working default the owner was asked to choose between.
+Status: **implemented on branch `ui/phase-7-bottom-nav-q4094i` from main `76ec40e`; not merged, not published, not deployed.** Fixes the defect in section 35.5 item 1. The owner chose four destinations plus More on the decision card (Hamdi, 2026-10-19; `docs/DESIGN_SYSTEM.md` 16.5 row 2 is now decided).
 
 ### 36.1 Question
 
@@ -3129,7 +3129,7 @@ Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acq
 
 ### 36.5 Trade-offs and open items for the owner
 
-1. **Destination set is still the owner's call.** Four plus More is the working default for this PR. Five plus More breaks four labels inside words at 390px (36.2). Keeping seven needs wrapped or stacked labels. `docs/DESIGN_SYSTEM.md` 16.5 row 2 stays open; section 6 still says five until the owner decides.
+1. **Destination set decided: four plus More** (Hamdi, 2026-10-19, on the decision card; the coordinator relayed it). Five plus More breaks four labels inside words at 390px (36.2); keeping seven needs wrapped or stacked labels. `docs/DESIGN_SYSTEM.md` section 6 and 16.5 row 2 now record four plus More.
 2. **Bar height is 80px**, not the 64px the earlier bar used, because labels take up to two lines. The bottom padding of `main` follows it.
 3. **Safe-area inset** is applied as bottom padding inside the 80px minimum height. Not verified on a notched device; the sandbox is desktop Chromium, where the inset is zero.
 4. **Hyphenation** is set (`hyphens: auto`) but did not take effect in the sandbox Chromium. Labels break inside words only where needed. Not verified on phone browsers.
