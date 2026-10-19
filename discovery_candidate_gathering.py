@@ -4,7 +4,14 @@ from dataclasses import dataclass
 import json
 from typing import Any, Callable
 
+import discovery_candidate_supply as _supply
+from discovery_batch_metadata import (
+    fetch_batch_recordings,
+    fetch_release_group_metadata,
+    synthesize_recording,
+)
 from discovery_candidate_supply import (
+    batch_title_marker_rejection,
     cf_release_group_rejection,
     classify_error,
     recording_artist_key,
@@ -47,6 +54,8 @@ class RecommendationProviders:
     http_get: Callable[..., Any]
     http_client: Callable[..., Any]
     sleep: Callable[[float], Any]
+    # Optional. Only the flagged batch path uses it; None keeps per-recording lookups.
+    http_post: Callable[..., Any] | None = None
 
 # Bounded CF replenishment. One ListenBrainz call per page; the first page is
 # required, later pages may fail without discarding earlier pages.
@@ -54,6 +63,11 @@ CF_PAGE_SIZE = 100
 CF_MAX_PAGES = 2
 # Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
 CF_MAX_UNCACHED_RESOLUTIONS = 100
+# Flagged batch resolution (off by default). Uncached recordings are looked up through
+# ListenBrainz batch endpoints instead of one MusicBrainz call each. It runs only when
+# the batch title-marker filter is also enabled, because the batch endpoints return no
+# secondary release types. Any batch failure falls back to per-recording lookups.
+CF_BATCH_RESOLUTION_ENABLED = False
 # Recordings per artist resolved before further cached recordings are skipped.
 # The CF endpoint returns no artist, so uncached recordings must still be
 # resolved to learn their artist; the cap can only skip cache-known artists.
@@ -107,6 +121,57 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
         if len(items) < CF_PAGE_SIZE:
             break
     return recordings, paging
+
+
+def _batch_resolution_enabled(providers: RecommendationProviders) -> bool:
+    return (
+        CF_BATCH_RESOLUTION_ENABLED
+        and _supply.BATCH_TITLE_FILTER_ENABLED
+        and providers.http_post is not None
+    )
+
+
+def _prefetch_batch_recordings(
+    providers: RecommendationProviders, recommendations: list[Any], *, headers: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    """Return MusicBrainz-shaped recordings for uncached CF recordings, keyed by MBID.
+
+    Covers the first CF_MAX_UNCACHED_RESOLUTIONS uncached recordings, the same set
+    the resolution loop would reach. Returns {} on any batch failure, so the loop
+    uses per-recording lookups for every recording.
+    """
+    uncached: list[str] = []
+    for item in recommendations:
+        mbid = item.get("recording_mbid") if isinstance(item, dict) else None
+        if not mbid or providers.metadata_cache_get(
+            f"mb:recording:{mbid}", ttl_seconds=180 * 24 * 60 * 60,
+        ) is not None:
+            continue
+        uncached.append(str(mbid))
+        if len(uncached) >= CF_MAX_UNCACHED_RESOLUTIONS:
+            break
+    if not uncached:
+        return {}
+    try:
+        entries = fetch_batch_recordings(providers.http_post, uncached, headers=headers)
+        release_group_ids = [
+            str(((entry.get("release") or {}).get("release_group_mbid")))
+            for entry in entries.values()
+            if (entry.get("release") or {}).get("release_group_mbid")
+        ]
+        release_groups = fetch_release_group_metadata(
+            providers.http_get, release_group_ids, headers=headers,
+        ) if release_group_ids else {}
+    except Exception:
+        return {}
+    recordings = {}
+    for mbid, entry in entries.items():
+        recording = synthesize_recording(
+            entry, release_groups, title_rejection=batch_title_marker_rejection,
+        )
+        if recording is not None:
+            recordings[mbid] = recording
+    return recordings
 
 
 def _run_tag_queries(
@@ -358,6 +423,10 @@ def gather_recommendation_candidates(
     artist_resolved_counts = Counter()
     resolution_calls = 0
     cf_skips = Counter()
+    batch_recordings = (
+        _prefetch_batch_recordings(providers, recommendations, headers=headers)
+        if _batch_resolution_enabled(providers) else {}
+    )
     with providers.http_client(timeout=20, follow_redirects=True) as client:
         for item in recommendations:
             mbid = item.get("recording_mbid")
@@ -385,6 +454,10 @@ def gather_recommendation_candidates(
                 cf_recording_records.append(record)
                 recorded = True
 
+                if recording is None and str(mbid) in batch_recordings:
+                    # Batch hit: no MusicBrainz call, no spacing sleep, no cache write.
+                    resolution_calls += 1
+                    recording = batch_recordings[str(mbid)]
                 if recording is None:
                     if resolution_calls:
                         providers.sleep(1.1)
