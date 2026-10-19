@@ -2813,6 +2813,8 @@ Hamdi's review of the PR, then the manual checklist against the exact PR-head SH
 
 ## 32. Screen-reader pass on card actions, Get states and the album modal (Phase 7 follow-up item 11)
 
+**Merged**: yes, PR #425, squash `7982df6`, after Hamdi's instruction on 2026-10-19. **Deployed**: no.
+
 Scope (PR #425): names, roles, state announcement and focus order on the card actions, the Get control, the album modal and acquisition Dismiss. Roadmap follow-up item 11. Branch `ui/phase-7-screen-reader-1deshe` from `origin/main` at `57d68df` (PR #412 is `3905ed9`, already in main). No behaviour, API, auth, Get, Dismiss or settings-secret path changed.
 
 ### 32.1 Findings on `main` (before)
@@ -2894,4 +2896,73 @@ Screenshots: `/mnt/project-files/phase-7-screen-reader/screenshots/` (`before-*`
 - The acquire and dismiss calls were mocked. No real acquisition or dismissal was made.
 - No real screen reader. The names are read from the DOM and the accessibility attributes only.
 - The `ERR_TUNNEL_CONNECTION_FAILED` console errors come from the sandbox proxy blocking the third-party logo hosts. They are not caused by this branch and are recorded in 32.3.
+
+## 33. Rendered contrast of the Get pending and requested states (Phase 7 follow-up item 12)
+
+### 33.1 Question
+
+The global rule `button:disabled { opacity: .55 }` dims the Get control while it is pending or requested. The earlier status contrast pass (section 30) measured computed colours without that opacity. This pass measures the composite the user sees.
+
+### 33.2 Method
+
+- Chromium through Playwright, `reducedMotion: reduce`, the real `static/app.css` from `origin/main` `7982df6`, and a RECONSTRUCTED page (`page.html`) that uses the same Get markup as `decorateGetButton` in `static/app.js` for idle, pending, requested and failed states.
+- Composite model: a `:disabled` button's group opacity multiplies every painted layer and composites over the ground, so each rendered colour is `0.55 * colour + 0.45 * ground`. Ratios use WCAG relative luminance.
+- Corroboration: a pixel sample of the rendered 2px border against the ground just outside the control, from a screenshot. `surface` pending: 4.57:1 pixel, 4.43:1 model. `surface` requested: 5.05:1 pixel, 4.85:1 model. The pixel value includes antialiasing, so the two agree within that tolerance.
+- Five widths (1440, 1200, 900, 620, 390). The colour values do not change with width, because no rule in the Get colour block depends on a media query. Each width gave the same numbers, and no horizontal overflow (0 px at all five widths).
+
+### 33.3 Results on the real Get grounds (ink, surface, surface-raised, surface-hover)
+
+| State | Element | Required | Measured (min to max) | Result |
+|---|---|---|---|---|
+| Pending | Boundary (`--accent`) | 3:1 | 4.04 to 4.54:1 | pass |
+| Pending | Arc (`--accent`, the state glyph) | 3:1 | 4.18 to 4.25:1 | pass |
+| Pending | Label | 4.5:1 | no label is painted (aria-label only) | not applicable |
+| Requested | Boundary (`--accent-hover`) | 3:1 | 4.42 to 4.98:1 | pass |
+| Requested | Tick (`--on-accent`, the state glyph) | 3:1 | 4.54 to 4.78:1 | pass |
+| Requested | Label | 4.5:1 | no label is painted | not applicable |
+| Idle (unchanged, not disabled) | Label `--on-accent` on `--accent` | 4.5:1 | 12.69:1 | pass |
+
+The Get control never sits on `--accent-dim`. That token is only the current-page background in the header menu (`app.css` line 84). The probe included it, and it fails there (boundary 2.96:1), but that ground is not a Get ground.
+
+### 33.4 Results over artwork (RECONSTRUCTED light, mid and dark artwork flats)
+
+| State | Ground | Arc or tick | Boundary |
+|---|---|---|---|
+| Pending | light `#e8e4dc` | 3.10:1 pass | 1.10:1 **fail** |
+| Pending | mid `#8a8478` | 3.80:1 pass | 1.71:1 **fail** |
+| Pending | dark `#1b1915` | 4.21:1 pass | 4.45:1 pass |
+| Requested | light | 3.52:1 pass | 1.02:1 **fail** |
+| Requested | mid | 4.37:1 pass | 1.85:1 **fail** |
+| Requested | dark | 4.61:1 pass | 4.88:1 pass |
+| Idle (not disabled) | light | n/a | 1.03:1 **fail** |
+| Idle (not disabled) | mid | n/a | 2.83:1 **fail** |
+
+The idle control fails the boundary over light and mid artwork too, so the failure is the control's fill against the image, not the disabled opacity. The opacity is not the cause. Removing the `:disabled` opacity would not fix it: the accent arc on a light artwork is still about 1.3:1 against the image. Over artwork a token change cannot meet 3:1, so it is recorded as an owner decision (section 16.5). Real artwork varies, and these three flats are an approximation.
+
+### 33.5 Decision
+
+- Every pending and requested state on the real Get grounds passes its required ratio with the `:disabled` opacity applied. **No CSS change in this PR.** The state machine, the server-confirmation rule, Get, Dismiss and all behaviour are unchanged.
+- Over artwork the boundary fails for idle, pending and requested. It is not fixed here.
+- Owner questions (not decided here): (a) whether the disabled pending and requested states keep the global `.55` dim, since the app grounds pass with it; (b) how the Get control's boundary is kept over artwork, for example a scrim or a ring. Both are listed in `docs/DESIGN_SYSTEM.md` section 16.5.
+
+### 33.6 Skills and tools
+
+- `design:accessibility-review` was loaded. Its output template and WCAG quick reference were applied by hand to the measurements above. The skill does not run a scanner.
+- `anthropic-skills:web-design-guidelines`: the source fetched. Its focus, reduced-motion and busy-state rules apply to this surface; it has no rule for disabled opacity or non-text contrast. No finding applies to these rules.
+- `impeccable:impeccable`: `impeccable context` ran (PRODUCT.md and DESIGN.md loaded). `impeccable detect static/app.css` ran with regex only. It reports two side-tab findings outside the Get rules (`.card-art::after` line 393, `.ranked-row::before` line 520), both pre-existing and not changed here. Its advisories are the Get shadow `rgba(0,0,0,.55)` (line 356, section 16.5 row 6, decided as an overlay rule), `rgba(0,0,0,.5)` (line 455), and the `999px` pill radius (line 568, section 9.2). Rejected: none applied, since this PR changes no CSS. Not run: a full `/impeccable audit` or `critique` pass with a live browser.
+
+### 33.7 Checks actually run
+
+- `node --check static/app.js` and `node --check static/login.js`: OK.
+- `python3 -m compileall -q app static`: OK.
+- `pip install --break-system-packages -r requirements.txt`: exit 0.
+- `python3 -m unittest discover -s tests -v`: 934 tests, OK. Matches the expectation on `7982df6`.
+- Contract tests: no UI test changed, because no product CSS changed.
+
+### 33.8 Limitations
+
+- Reconstructed fixtures, not the live Navidrome library. The Get control sits on the grounds listed above, not on real artwork.
+- The artwork measurements use three flat colours, not real album art.
+- No real screen reader and no real acquisition request. The Get states were rendered from the same markup and CSS, not driven through `searchAlbum`.
+- The sandbox server was not started. The helper and Navidrome were not run, so the manual checklist against the exact head SHA is not done (skip).
 
