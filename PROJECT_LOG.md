@@ -1,3 +1,8 @@
+## 2026-10-20 — Cold-start batch no longer spends the MusicBrainz budget
+
+- Branch `fix/cold-start-batch-budget` (includes the docs of PR #470). Owner-approved: prefetch all uncached CF recordings in batches (+1 ListenBrainz POST, +1 GET per cold run); batch hits do not count against the 100 budget; misses still do. `discovery_candidate_gathering.py`, `tests/test_discovery_batch_lookup.py`.
+- Live: 200/200 resolved, 15 artists, top-2 47.5%, 0 budget-skipped, 117 s. Focused modules run listed in the roadmap section; the full suite was not run (owner rule). Not done: merge, publication, deployment.
+
 ## 2026-10-20 — Cold-start batch path measured (docs only)
 
 - Branch `docs/cold-start-batch-measurement`. Offline: `refresh_personal` passes `_cold_start=True` on a first build, which enables the batch path (`COLD_START_BATCH_ENABLED`); the earlier live pair did not.
