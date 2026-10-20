@@ -449,10 +449,10 @@ def recommend_new_music(
             ),
             ownership=ownership,
         ))
-
     cooled_candidates, ranking_context = prepare_ranking_inputs(
         allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override, now_fn=time.time,
         diversity_setting_fn=lambda: _service_settings.recommendation_diversity_value(_discovery_settings_read),
+        feedback_fn=_discovery_feedback_rows,
     )
     allocation = allocate_personal_recommendations(AllocationRequest(
         candidates=tuple(cooled_candidates),
