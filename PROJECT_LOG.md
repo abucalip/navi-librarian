@@ -1,4 +1,4 @@
-## 2026-10-21 — Steady-state (warm) final list measured (docs only)
+## 2026-10-20 — Steady-state (warm) final list measured (docs only)
 
 - Branch `docs/warm-final-list-measurement`. Offline warm-path trace plus one owner-approved live run (cold, then two warm refreshes, count 10, aggregate only, data dir deleted). Final list 10 distinct artists, top-2 20% in all three; overlap with the previous list 4 and 3 of 10; family cap rejected 24 to 39 per run and never blocked a full list; warm CF unowned supply 4 and 14 vs 17 cold (batch hits are not cached, so warm runs re-spend the 100 budget; inferred from code).
 - Decision: no reopening of 1.2, 3.1, 3.2; no code change. Harness bug: final-list source mix not captured. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
