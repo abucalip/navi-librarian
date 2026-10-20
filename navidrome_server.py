@@ -1179,151 +1179,37 @@ def _build_artist_deep_dive_list():
     ]
     candidates = {}
 
-    # First find missing albums from artists with a substantial owned presence.
-    for index, anchor in enumerate(
-        sorted(anchors, key=lambda item: item["album_count"], reverse=True)
-    ):
-        for album in _lastfm_top_albums(anchor["name"], limit=8):
-            key = (_music_key(album["artist"]), _music_key(album["album"]))
-            if key in owned_albums:
-                continue
-            candidate = {
-                **album,
-                "discovery_type": "artist_deep_dive",
-                "reason": "Missing album from an artist already well represented in your library",
-                "anchor_artist": anchor["name"],
-                "anchor_album_count": anchor["album_count"],
-                "artist_similarity": 1.0,
-            }
-            old = candidates.get(key)
-            if old is None or candidate["anchor_album_count"] > old["anchor_album_count"]:
-                candidates[key] = candidate
-        if index and index % 5 == 0:
-            time.sleep(0.15)
-
-    # Reuse resolved candidates that were not selected for the main list.
-    # Only surface albums by artists already represented by 3+ owned albums,
-    # so this lane is anchored in library depth rather than listening history.
+    from discovery_deep_dive_candidates import (
+        collect_missing_album_candidates,
+        collect_similar_artist_candidates,
+        enrich_candidate_genres,
+        merge_resolved_pool_candidates,
+    )
+    pause = lambda: time.sleep(0.15)
+    collect_missing_album_candidates(
+        anchors, owned_albums, candidates,
+        top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
+    )
+    # Only albums by artists with 3+ owned albums are reused from the resolved
+    # personal pool, so this lane stays anchored in library depth.
     personal_cache = _discovery_read_list("personal")
     personal_payload = personal_cache.get("payload", {}) if personal_cache else {}
-    resolved_candidates = personal_payload.get("debug_all_candidates", [])
-    anchors_by_key = {_music_key(item["name"]): item for item in anchors}
-    for candidate in resolved_candidates if isinstance(resolved_candidates, list) else []:
-        candidate_artist = str(candidate.get("artist") or "").strip()
-        candidate_album = str(candidate.get("album") or "").strip()
-        anchor = anchors_by_key.get(_music_key(candidate_artist))
-        if not anchor or not candidate_album:
-            continue
-        if candidate.get("exact_owned") or candidate.get("selection_decision") == "selected":
-            continue
-        key = (_music_key(candidate_artist), _music_key(candidate_album))
-        if key in owned_albums:
-            continue
-        candidate_score = candidate.get("discovery_score", candidate.get("score", 0))
-        try:
-            candidate_score = max(0.0, float(candidate_score or 0))
-        except (TypeError, ValueError):
-            candidate_score = 0.0
-        enriched = {
-            "artist": candidate_artist,
-            "album": candidate_album,
-            "mbid": candidate.get("mbid"),
-            "year": candidate.get("year") or candidate.get("release_year") or candidate.get("first_release_year"),
-            "lastfm_listeners": int(candidate.get("lastfm_listeners") or 0),
-            "lastfm_playcount": int(candidate.get("lastfm_playcount") or 0),
-            "discovery_type": "artist_deep_dive",
-            "discovery_source": "resolved_candidate_pool_beyond_main_selection",
-            "reason": (
-                "An additional resolved candidate for an artist with at least "
-                "three albums in your library; not selected for the main list."
-            ),
-            "anchor_artist": anchor["name"],
-            "anchor_album_count": anchor["album_count"],
-            "artist_similarity": 1.0,
-            "candidate_pool_score": candidate_score,
-            "candidate_pool_category": candidate.get("assigned_category"),
-            "genres": candidate.get("genre_tags") or candidate.get("genres") or [],
-            "genre_families": candidate.get("genre_families") or [],
-        }
-        old = candidates.get(key)
-        if old is None:
-            candidates[key] = enriched
-        else:
-            old["also_found_in_resolved_candidate_pool"] = True
-            old["candidate_pool_score"] = candidate_score
-            old["candidate_pool_category"] = candidate.get("assigned_category")
-
-    # Then discover similar artists that are not represented in the library.
-    similar_artist_scores = {}
-    for index, anchor in enumerate(
-        sorted(anchors, key=lambda item: item["album_count"], reverse=True)
-    ):
-        for similar in _lastfm_similar_artists(anchor["name"], limit=15):
-            similar_key = _music_key(similar["artist"])
-            if similar_key in owned_artists:
-                continue
-            existing = similar_artist_scores.get(similar_key)
-            score = similar["similarity"] * (1.0 + min(anchor["album_count"], 15) / 30)
-            if existing is None or score > existing["score"]:
-                similar_artist_scores[similar_key] = {
-                    "artist": similar["artist"],
-                    "score": score,
-                    "anchor_artist": anchor["name"],
-                    "anchor_album_count": anchor["album_count"],
-                    "similarity": similar["similarity"],
-                }
-        if index and index % 5 == 0:
-            time.sleep(0.15)
-
-    for similar in similar_artist_scores.values():
-        for album in _lastfm_top_albums(similar["artist"], limit=5):
-            key = (_music_key(album["artist"]), _music_key(album["album"]))
-            if key in owned_albums or _music_key(album["artist"]) in owned_artists:
-                continue
-            candidate = {
-                **album,
-                "discovery_type": "similar_artist",
-                "reason": "A similar artist not currently represented in your library",
-                "anchor_artist": similar["anchor_artist"],
-                "anchor_album_count": similar["anchor_album_count"],
-                "artist_similarity": round(similar["similarity"], 4),
-                "similar_artist_score": round(similar["score"], 4),
-            }
-            old = candidates.get(key)
-            if old is None or candidate.get("similar_artist_score", 0) > old.get("similar_artist_score", 0):
-                candidates[key] = candidate
-
-    # Genre tags are presentation metadata only: they do not change candidate scores.
-    # Last.fm top tags can be sparse for lesser-known artists; when that happens,
-    # inherit tags from the 3+ album library artist that surfaced this candidate.
-    artist_genre_cache = {}
-    for item in candidates.values():
-        artist_name = str(item.get("artist") or "").strip()
-        anchor_name = str(item.get("anchor_artist") or "").strip()
-        cache_key = _music_key(artist_name)
-        if not item.get("genres") and artist_name:
-            if cache_key not in artist_genre_cache:
-                artist_genre_cache[cache_key] = _lastfm_artist_genres(artist_name)
-            item["genres"] = artist_genre_cache[cache_key]
-        if not item.get("genres") and anchor_name:
-            anchor_key = _music_key(anchor_name)
-            if anchor_key not in artist_genre_cache:
-                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
-            item["genres"] = artist_genre_cache[anchor_key]
-            item["genre_inherited_from_anchor"] = bool(item["genres"])
-        if not item.get("genre_families"):
-            item["genre_families"] = _deep_dive_genre_families(item.get("genres") or [])
-        # Generic tags such as "seen live" can exist without identifying a genre.
-        # If those tags don't classify, try the library anchor's genre tags instead.
-        if not item.get("genre_families") and anchor_name:
-            anchor_key = _music_key(anchor_name)
-            if not artist_genre_cache.get(anchor_key):
-                artist_genre_cache[anchor_key] = _lastfm_artist_genres(anchor_name)
-            anchor_families = _deep_dive_genre_families(artist_genre_cache.get(anchor_key) or [])
-            if anchor_families:
-                item["genres"] = artist_genre_cache[anchor_key]
-                item["genre_families"] = anchor_families
-                item["genre_inherited_from_anchor"] = True
+    merge_resolved_pool_candidates(
+        personal_payload.get("debug_all_candidates", []),
+        {_music_key(item["name"]): item for item in anchors},
+        owned_albums, candidates, music_key=_music_key,
+    )
+    collect_similar_artist_candidates(
+        anchors, owned_artists, owned_albums, candidates,
+        similar_artists_lookup=_lastfm_similar_artists,
+        top_albums_lookup=_lastfm_top_albums, music_key=_music_key, pause=pause,
+    )
+    enrich_candidate_genres(
+        candidates.values(),
+        artist_genres=_lastfm_artist_genres,
+        genre_families=_deep_dive_genre_families,
+        music_key=_music_key,
+    )
     from discovery_recommendations import rank_and_diversify_deep_dive_candidates
     ranked, diversified = rank_and_diversify_deep_dive_candidates(
         candidates.values(),
