@@ -23,7 +23,7 @@ Result: the gain is real in provenance, not in spread. CF now supplies 7 of 10 f
 
 Decision: **do not reopen 1.2, 3.1 or 3.2.** The final spread is already at the allocator's ceiling, 3.1 and 3.2 are inert on a first build, and there is no measured defect to tune against. Risk named: the recent-genre family cap rejected 17 to 24 candidates per run; it is soft and relaxed in a later pass, and it filled the list both times, but it is the stage to look at first if warm-run spread ever drops. No code changed.
 
-### Verification of caching + warm batch path (2026-10-21, PR #476 branch; one sample, owner-approved)
+### Verification of caching + warm batch path (2026-10-20, PR #476 branch; one sample, owner-approved)
 
 Same harness as the warm finding (count 10, fresh data dir, slskd off, aggregate only, cold then two warm refreshes, data dir deleted). Final-list source mix is captured this time.
 
@@ -42,7 +42,7 @@ Result: warm CF supply now matches cold (17, was 4 and 14), warm time fell from 
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done (see the finding above). Next: steady-state (warm) final-list measurement, handed off in `CLAUDE_CLI.md`. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done: cold and warm candidate supply and final-list effects are measured (see findings above). Next: obtain longer-interval repeat-rate evidence before deciding whether cooldown needs calibration. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it
