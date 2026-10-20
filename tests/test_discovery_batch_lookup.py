@@ -186,15 +186,32 @@ class BatchResolutionPathTests(unittest.TestCase):
         self.assertEqual([k for k in harness.cache_writes if k.startswith("mb:recording:")], [])
         self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 5)
 
-    def test_batch_respects_uncached_resolution_budget(self):
+    def test_batch_hits_do_not_spend_the_musicbrainz_budget(self):
         harness = _Harness(150)
 
         with mock.patch.object(gathering, "CF_MAX_UNCACHED_RESOLUTIONS", 100):
-            _run(harness, batch_enabled=True)
+            result = _run(harness, batch_enabled=True)
 
         requested = [mbid for _url, batch in harness.posts for mbid in batch]
-        self.assertEqual(len(requested), 100)
-        self.assertEqual(requested, [f"rec-{i}" for i in range(100)])
+        self.assertEqual(requested, [f"rec-{i}" for i in range(150)])
+        self.assertEqual([len(batch) for _url, batch in harness.posts], [100, 50])
+        self.assertEqual(harness.mb_client.requested, [])
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 0)
+        self.assertEqual(paging["resolution_budget_skipped"], 0)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_resolved"], 150)
+
+    def test_batch_misses_still_obey_the_musicbrainz_budget(self):
+        harness = _Harness(6, batch_entries={"rec-0": _entry(0)},
+                           mb_recordings={f"rec-{i}": _mb_recording(i) for i in range(1, 6)})
+
+        with mock.patch.object(gathering, "CF_MAX_UNCACHED_RESOLUTIONS", 3):
+            result = _run(harness, batch_enabled=True)
+
+        self.assertEqual(len(harness.mb_client.requested), 3)
+        paging = result["candidate_supply"]["cf_paging"]
+        self.assertEqual(paging["uncached_resolution_calls"], 3)
+        self.assertEqual(paging["resolution_budget_skipped"], 2)
 
     def test_large_request_is_split_into_bounded_chunks(self):
         harness = _Harness(BATCH_RECORDING_CHUNK + 1)

@@ -233,9 +233,9 @@ def _prefetch_batch_recordings(
 ) -> dict[str, dict[str, Any]]:
     """Return MusicBrainz-shaped recordings for uncached CF recordings, keyed by MBID.
 
-    Covers the first CF_MAX_UNCACHED_RESOLUTIONS uncached recordings, the same set
-    the resolution loop would reach. Returns {} on any batch failure, so the loop
-    uses per-recording lookups for every recording.
+    Covers every uncached recording the CF pages returned (batch requests carry
+    100 each), so batch hits do not spend the per-recording MusicBrainz budget.
+    Returns {} on any batch failure, so the loop uses per-recording lookups.
     """
     uncached: list[str] = []
     for item in recommendations:
@@ -245,8 +245,6 @@ def _prefetch_batch_recordings(
         ) is not None:
             continue
         uncached.append(str(mbid))
-        if len(uncached) >= CF_MAX_UNCACHED_RESOLUTIONS:
-            break
     if not uncached:
         return {}
     try:
@@ -560,15 +558,15 @@ def gather_recommendation_candidates(
                     if cached_artist and artist_resolved_counts[cached_artist] >= CF_ARTIST_RESOLUTION_CAP:
                         cf_skips["artist_cap"] += 1
                         continue
-                elif resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS:
+                elif resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS and str(mbid) not in batch_recordings:
                     cf_skips["resolution_budget"] += 1
                     continue
                 cf_recording_records.append(record)
                 recorded = True
 
                 if recording is None and str(mbid) in batch_recordings:
-                    # Batch hit: no MusicBrainz call, no spacing sleep, no cache write.
-                    resolution_calls += 1
+                    # Batch hit: no MusicBrainz call, no spacing sleep, no cache write,
+                    # so it does not spend the uncached MusicBrainz budget.
                     recording = batch_recordings[str(mbid)]
                 if recording is None:
                     if resolution_calls:
