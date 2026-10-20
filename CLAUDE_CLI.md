@@ -1,31 +1,32 @@
-# Handoff for Claude CLI: steady-state (warm) final-list measurement
+# Handoff for Claude CLI: longer-interval repeat-rate measurement
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
 ## Getting started
 
 1. Clone `abucalip/navi-librarian`, fetch `main`, branch from current `main`.
-2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` ("Current state", then the sections "Live cold/warm pair" and "Cold-start batch path, measured", and Phases 1.2, 3.1, 3.2) and the top of `PROJECT_LOG.md`.
+2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the findings "cold-start supply gain", "steady-state (warm) final list" and "Verification of caching + warm batch path", then Phases 1.2, 3.1, 3.2) and the top of `PROJECT_LOG.md`.
 3. Check open PRs and the four required workflows on the exact head you push.
 
 ## Current state
 
-- Cold-start supply gain **measured and closed**: PR #474 (merge `aedc34e44034a04bb20c177458f9c8b73b12900f`, head `b46f13df69be63d1eb1d25047bac04b4eb2f388e`, all four workflows passed). Cold, count 10, one sample each: final list 10 distinct artists and 20% top-2 share before and after #471 (the allocator takes one album per artist); CF share of the final 10 rose 3 to 7; unowned CF candidates 4 to 17. Decision: do not reopen 1.2, 3.1 or 3.2 on cold-start evidence. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` ("Finding").
-- Cold-run budget closed (PR #471); `LISTENBRAINZ_TOKEN` in Compose/docs (PR #472, not deployed); Phase 4.3 closed (PR #469). Token is in `config.env` in the harness project folder; never print or commit it.
-- Diversity setting: **paused by the owner**. No Settings UI, no mapping tuning. `navidrome_server.py` is 2,448 of 2,650 lines.
+- Cold-start supply gain measured and closed (PR #474). Warm final list measured (PR #475): spread unchanged (10 distinct artists, top-2 20%), family cap never blocked a full list. Decision on both: do not reopen 1.2, 3.1 or 3.2.
+- PR #476 (merge `61520d6a4cd8c64e5714a23f3fb7dacb4c5a7855`): steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. Live, one sample: warm CF unowned 17 (was 4 and 14), warm time 32 s then 3 s (was 202 to 230 s), MusicBrainz calls 78 / 10 / 0.
+- Side effect to watch: overlap with the previous list is now 5 of 10 (was 3 to 4) because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper. Back-to-back runs say nothing about decay.
+- `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: steady-state (warm) final-list behaviour (measure first)
+## Next task: repeat rate at realistic intervals (measure first)
 
-Why: on a first build cooldown has no history and MMR is off at the default, so Phases 3.1 and 3.2 were inert in the cold measurement. They can only matter on a warm refresh, which is also where the soft recent-genre family cap (17 to 24 rejections per cold run) could limit spread. Nothing is measured there yet; the roadmap defers 1.2/3.1/3.2 until a warm measurement shows a need.
+Why: the owner-visible question is whether consecutive lists feel stale. Back-to-back refreshes (cooldown barely decayed, history of at most two lists) gave 5 of 10 repeats. The real scheduler refreshes hourly and the read path rebuilds after 24 hours, so the relevant cases are hours to days apart with several lists in history. Nothing is measured there, and 3.2 (cooldown calibration) is deferred until it is.
 
 Steps:
-1. Offline: trace a warm refresh (`refresh_personal` with a stored previous list, cooldown history present, stale-while-revalidate path). List what differs from cold: cooldown penalties (max 25%), feedback signal, cached CF/genre metadata, batch path off. Name the stage most likely to cap spread or cause repeats between consecutive lists.
-2. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, outside the repo, delete afterwards): cold build then one or two warm refreshes, count 10, using the capture wrapper pattern from the #474 finding (wrap `recommendation_run_metrics.snapshot_and_reset` and `discovery_candidate_supply.summarize_candidate_stages`; the return value of `record_recommendation_diagnostics` does not carry them). Record per run: distinct artists, top-2 share, overlap with the previous list, source mix, family-cap rejections, provider-call counts.
-3. Decide and name the risk before editing: reopen 1.2/3.1/3.2 or not. Any option adding lookups or ListenBrainz requests per run needs owner approval.
+1. Offline: read `recommendation_cooldown.py` and `discovery_store.recent_recommendation_history`. Compute, with synthetic scores, how much a 25% cap moves a candidate relative to the score gaps seen in a real pool (take gap statistics from aggregate diagnostics only). State whether the cap can change the top 10 at all.
+2. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, outside the repo, delete afterwards). Same harness pattern as before (wrap `recommendation_run_metrics.snapshot_and_reset` and `discovery_candidate_supply.summarize_candidate_stages`; source mix comes from the `discovery_source` field of `debug_all_candidates`). Build cold, then simulate elapsed time by shifting `recommendation_history.generated_at` backwards in the disposable database by 1, 3, 7 and 14 days before each warm refresh. Record per run: overlap with the previous list, overlap with the union of all earlier lists, distinct artists, top-2 share, MusicBrainz/Last.fm/ListenBrainz call counts. Limit to state: simulated time does not change ListenBrainz CF or the listening profile, so this isolates the cooldown, not supply drift.
+3. Decide and name the risk before editing: reopen 3.2 (cooldown calibration) or not. Any option adding lookups or ListenBrainz requests per run needs owner approval.
 
 Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with measured numbers and the decision; if code changes, a deterministic synthetic test, `python -m py_compile` on changed files and focused modules only.
 
-Alternative if the owner prefers a decision over a measurement: a one-page brief for the default-on flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, genre breaker, tag-lane early stop). Evidence for it: the cold pair shows the tag lane is the noisiest input (38 vs 10 candidates).
+Alternative if the owner prefers a decision over a measurement: a one-page brief for the default-on flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, genre breaker, tag-lane early stop). Evidence for it: the tag lane is the noisiest input (38 vs 10 candidates across the cold pair). Note the cold and warm paths already batch by default via their own switches.
 
 ### Deferred
 
