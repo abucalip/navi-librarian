@@ -3478,3 +3478,36 @@ The list endpoints hide saved albums (`discovery_list_payload.py`), so `sendFeed
 - Artist deep-dive cards carry the control but were not rendered in the harness.
 - Dashboard tiles and the album modal have no Save control (out of scope).
 - Exact-head manual checklist is for the owner after CI. No screen-reader pass. Not merged, not deployed.
+
+## 42. Undo snackbar for dismissals (`ui/undo-snackbar`)
+
+Owner request (2026-10-20): restyle the notification bar in the lower right, and keep an undo window for reversible actions (Dismiss, Dismiss artist). Front end only; no endpoint, field or server behaviour changed.
+
+### 42.1 What changed
+
+- `static/app.js`: `sendFeedback()` queues `dismiss` and `dismiss_artist` in `queueDismiss()`. The row hides at once, a snackbar shows the message with Undo, and the POST to `/api/discovery/feedback` is sent only when the 4,200 ms window closes. Undo cancels it, so nothing reaches the server. One dismissal waits at a time; a second one commits the first. A failed commit restores the row and shows the error in the list's status line.
+- Save, Get and Dismiss call sites keep their argument order; the row element is added as a last argument, so the server payload is unchanged.
+- `app/templates/index.html`: one persistent `#undoSnackbar` (with `inert` while closed), outside `<main>`.
+- `static/app.css`: the snackbar uses the toast surface, edge, `--radius-panel` and `--shadow-menu`; the Notyf toast shadow moves from a literal to `--shadow-menu`. Motion is opacity and transform only, on `--dur` and `--ease-out`; reduced motion ends the drain at once.
+- Announcements go through `#appStatusAnnouncer`, once per message.
+
+### 42.2 Design and behaviour decisions
+
+- Reversible actions only: album dismiss and artist dismiss. Save, Get and acquisition Dismiss/Skip are not changed.
+- The reference snackbar (forevercomponents undo snackbar) was read from its description only; the page exposes no code. Its countdown ring became a 2px bar, and its colours are the existing tokens.
+- Focus: if the dismissed row held focus, focus moves to the page heading; Undo returns focus to the restored row.
+
+### 42.3 Checks actually run
+
+- `node --check static/app.js`: pass. `python3 -m compileall -q app static`: pass.
+- Focused: all 21 `tests/*ui_contract*.py` modules, 232 tests, OK. Four assertions that pinned the old `sendFeedback(...)` call text were updated to the new argument list (`tests/test_add_to_collection_ui_contract.py`, `tests/test_new_releases_ui_contract.py`, `tests/test_personal_discoveries_ui_contract.py`); none was weakened.
+- The full suite was not run (AGENTS.md rule).
+- Browser: Playwright (Chromium) harness with stubbed API and the real shell at 1440px and 390px. Results: the row hides at once; Undo within the window sends zero POSTs and restores the row; waiting out the window sends exactly one POST and reloads the list; the announcer speaks the message once; no page errors. One console 404 was seen and is probably the harness's answer to `/favicon.ico`; not verified.
+
+### 42.4 Limitations
+
+- Follow-up pass (same branch, same harness): 1200, 900 and 620px show no horizontal overflow; keyboard Enter on Dismiss moves focus to the page heading, keyboard Enter on Undo sends zero POSTs and returns focus to the restored row's first control (Get); reduced motion sets the drain animation to none; a failed commit (HTTP 500) restores the row and shows the server message in the list status line.
+- Not run: the Notyf toast in a rendered state (no Get was triggered), the exact-head manual checklist against the owner's helper, and a screen-reader pass.
+- The snackbar and Notyf toasts both sit at the lower right; when both are visible they can overlap.
+- Dismiss now sends its request after the window, so a page that is closed inside the window does not send it. Owner decision recorded here; reversing it needs a new decision.
+- Not merged, not deployed.

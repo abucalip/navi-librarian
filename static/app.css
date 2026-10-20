@@ -453,7 +453,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    category tell. It was also redundant: the icon disc below already carries the state by shape
    and hue, and the message text carries it again. The element is rewritten rather than softened —
    a thinner tab would be the same mistake, quieter. */
-.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text); font: var(--text-sm)/1.5 var(--body); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.notyf__toast { max-width: min(340px, calc(100vw - 32px)); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text); font: var(--text-sm)/1.5 var(--body); box-shadow: var(--shadow-menu); }
 .notyf__message { font: inherit; }
 /* Notyf draws each icon as a white disc with currentColor bars. Recolouring the disc to
    the state colour and leaving the bars on the dark inline colour keeps the success and
@@ -462,6 +462,21 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .notyf__icon--success { background: var(--ok); }
 .notyf__icon--error { background: var(--chart-red); }
 
+/* Undo snackbar (lower right, the same surface and edge as the toasts above). Shown after a
+   dismissal; the dismissal is sent only when the window closes. Hidden with opacity and
+   pointer-events; app.js sets the inert attribute, so its button is out of the tab order until it is open. */
+.undo-snackbar { position: fixed; right: 24px; bottom: 24px; z-index: 200; display: flex; align-items: center; gap: 12px; max-width: min(420px, calc(100vw - 32px)); min-height: 48px; padding: 6px 6px 6px 16px; overflow: hidden; background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); color: var(--text); font: var(--text-sm)/1.5 var(--body); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); }
+.undo-snackbar.is-open { pointer-events: auto; opacity: 1; transform: none; }
+.undo-snackbar-text { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.undo-snackbar button { flex: none; min-width: 44px; min-height: 44px; padding: 0 12px; background: transparent; border: 0; border-radius: var(--radius-control); color: var(--accent); font: 600 var(--text-sm)/1 var(--body); cursor: pointer; }
+.undo-snackbar button:hover { background: var(--surface-hover); }
+.undo-snackbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.undo-snackbar-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); transform-origin: left center; transform: scaleX(0); }
+.undo-snackbar-timer.is-running { animation: undo-drain linear forwards; }
+@keyframes undo-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* The row hides at once when a dismissal is queued; it returns if the user taps Undo. */
+.is-dismissing { display: none !important; }
+@media (max-width: 620px) { .undo-snackbar { left: 14px; right: 14px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); max-width: none; } }
 @media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } footer { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } }
 /* Icon-only rail between 621 and 900px. Item names, group names and the count stay in the
    accessibility tree (visually hidden), and each button keeps a title for hover. */
@@ -510,6 +525,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 @media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 @media (prefers-reduced-motion: reduce) { .nav-indicator { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .undo-snackbar, .undo-snackbar.is-open { transition: none; transform: none; } .undo-snackbar-timer.is-running { animation: none; } }
 /* Durations are shortened rather than switched off. Notyf removes a toast on its
    animationend event, so animation: none would strand every toast on screen permanently. */
 @media (prefers-reduced-motion: reduce) {
