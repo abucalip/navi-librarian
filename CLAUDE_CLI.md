@@ -10,23 +10,27 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current state
 
+- Repeat rate measured at simulated intervals (PRs #477, #478 open as docs at time of writing): decision not to reopen 3.2. Supply is limited by `CF_MAX_PAGES` (2), not by the lookup budget. PR #479 made batch resolution resilient to a failed release-group chunk.
 - Cold-start supply gain measured and closed (PR #474). Warm final list measured (PR #475): spread unchanged (10 distinct artists, top-2 20%), family cap never blocked a full list. Decision on both: do not reopen 1.2, 3.1 or 3.2.
 - PR #476 (merge `61520d6a4cd8c64e5714a23f3fb7dacb4c5a7855`): steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. Live, one sample: warm CF unowned 17 (was 4 and 14), warm time 32 s then 3 s (was 202 to 230 s), MusicBrainz calls 78 / 10 / 0.
 - Side effect to watch: overlap with the previous list is now 5 of 10 (was 3 to 4) because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper. Back-to-back runs say nothing about decay.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: repeat rate at realistic intervals (measure first)
+## Next task: re-measure CF_MAX_PAGES = 4 after the batch fix
 
-Why: the owner-visible question is whether consecutive lists feel stale. Back-to-back refreshes (cooldown barely decayed, history of at most two lists) gave 5 of 10 repeats. The real scheduler refreshes hourly and the read path rebuilds after 24 hours, so the relevant cases are hours to days apart with several lists in history. Nothing is measured there, and 3.2 (cooldown calibration) is deferred until it is.
+Why: the owner approved reading 4 CF pages (2026-10-20: 400 of the ~1,000 pool, +2 ListenBrainz requests per run). The first trial was slow because one 502 from the release-group endpoint discarded the whole batch; PR #479 (merge `4cf66322866c5377fec612a297db05922d7a8e11`) fixed that. Not yet confirmed live. Evidence so far (docs: `CF_PAGES_PROPOSAL_2026-10-20.md`, `REPEAT_RATE_MEASUREMENT_2026-10-20.md`): at 2 pages 36 CF albums from 15 artists, top-2 artist share 47.5%, identical every run; at 4 pages (old code, after the cache filled) 78 albums from 42 artists, top-2 share 26.4%.
 
 Steps:
-1. Offline: read `recommendation_cooldown.py` and `discovery_store.recent_recommendation_history`. Compute, with synthetic scores, how much a 25% cap moves a candidate relative to the score gaps seen in a real pool (take gap statistics from aggregate diagnostics only). State whether the cap can change the top 10 at all.
-2. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, outside the repo, delete afterwards). Same harness pattern as before (wrap `recommendation_run_metrics.snapshot_and_reset` and `discovery_candidate_supply.summarize_candidate_stages`; source mix comes from the `discovery_source` field of `debug_all_candidates`). Build cold, then simulate elapsed time by shifting `recommendation_history.generated_at` backwards in the disposable database by 1, 3, 7 and 14 days before each warm refresh. Record per run: overlap with the previous list, overlap with the union of all earlier lists, distinct artists, top-2 share, MusicBrainz/Last.fm/ListenBrainz call counts. Limit to state: simulated time does not change ListenBrainz CF or the listening profile, so this isolates the cooldown, not supply drift.
-3. Decide and name the risk before editing: reopen 3.2 (cooldown calibration) or not. Any option adding lookups or ListenBrainz requests per run needs owner approval.
+1. Branch `feat/cf-max-pages-4` off current `main`. Change `CF_MAX_PAGES` from 2 to 4 in `discovery_candidate_gathering.py` (a local stash `stash@{0}` on the old branch holds an identical edit and the matching test rewrite of `test_second_page_is_requested_with_offset_and_budget_stops_at_two_pages` to four pages; recreate it rather than trusting the stash).
+2. Focused tests only: `test_discovery_candidate_gathering` plus the batch modules; `py_compile` on changed files.
+3. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, deleted afterwards). Harness: `reports/repeat-rate/run_cf_budget.py` (cold plus two warm; prints CF recordings, albums, artists, top-2 share, paging, provider calls, final source mix) and `run_batch_diag.py` (adds per-request status of the batch calls, no identifiers). Allow about 5 minutes per cold run; run it in the background.
+4. Record per run: CF recordings returned/resolved/failed, uncached MusicBrainz lookups and skips, CF albums and artists, top-2 share, final-list mix, overlap with the previous list, wall time, requests per run. Success means a cold run near the 2-page time (about 106 to 123 s) with the batch path intact, not 260+ s.
+5. If a 502 or other batch failure recurs, report the chunk status log before changing code; the fallback should now cost only the failed chunk.
+6. Decide keep or revert (a one-constant change) and say so in the PR; record the numbers in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
-Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with measured numbers and the decision; if code changes, a deterministic synthetic test, `python -m py_compile` on changed files and focused modules only.
+Acceptance: PR with the constant change, updated test, measured numbers, and the four workflows green on the final head. Do not run the full suite.
 
-Alternative if the owner prefers a decision over a measurement: a one-page brief for the default-on flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, genre breaker, tag-lane early stop). Evidence for it: the tag lane is the noisiest input (38 vs 10 candidates across the cold pair). Note the cold and warm paths already batch by default via their own switches.
+Alternative if the owner prefers no extra requests: measure rotating the tag lane's sampled tags per run (no added lookups; the lane was the noisiest input, 38 vs 10 candidates).
 
 ### Deferred
 
