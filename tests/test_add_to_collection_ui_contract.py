@@ -68,8 +68,8 @@ class AddToCollectionRowContractTests(unittest.TestCase):
 
     def test_dismiss_and_dismiss_artist_route_to_the_classics_list(self):
         body = self._function_body("function buildClassicsRow(", "// Lazy artist bio for a ranked row.")
-        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'classics')", body)
-        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'classics')", body)
+        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'classics', row)", body)
+        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'classics', row)", body)
 
     def test_status_line_names_the_real_basis_and_never_claims_a_score_order(self):
         self.assertIn("name === 'classics' && items.length", self.js)

@@ -1262,7 +1262,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   dismissButton.setAttribute('aria-label', 'Not for me: ' + album);
   dismissButton.addEventListener('click', () => {
     if (options.onDismiss) {
-      options.onDismiss(artist, album, item);
+      options.onDismiss(artist, album, item, row);
       return;
     }
     const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
@@ -1278,7 +1278,7 @@ function buildRecommendationRow(item, rank, options = {}) {
     dismissArtist.className = 'row-dismiss-artist';
     dismissArtist.textContent = 'Dismiss artist';
     dismissArtist.setAttribute('aria-label', 'Dismiss artist ' + artist);
-    dismissArtist.addEventListener('click', () => options.onDismissArtist(artist, album, item));
+    dismissArtist.addEventListener('click', () => options.onDismissArtist(artist, album, item, row));
     actions.append(dismissArtist);
   }
   row.append(actions);
@@ -1332,8 +1332,8 @@ function buildNewReleaseRow(item) {
       item.discovery_source ? 'Source: ' + item.discovery_source.replaceAll('_', ' ') : ''
     ],
     listName: 'new_releases',
-    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'new_releases'),
-    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases')
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', row),
+    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)
   });
 }
 
@@ -1353,8 +1353,8 @@ function buildPersonalRow(item, index) {
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
     listName: 'personal',
-    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'personal'),
-    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal')
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'personal', row),
+    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal', row)
   });
 }
 
@@ -1376,8 +1376,8 @@ function buildClassicsRow(item, index) {
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
     listName: 'classics',
-    onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'classics'),
-    onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics')
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'classics', row),
+    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics', row)
   });
 }
 
@@ -1814,14 +1814,14 @@ async function loadDiscovery(name, options = {}) {
       notForMe.append(spriteIcon('x'));
       notForMe.title = 'Not for me';
       notForMe.setAttribute('aria-label', 'Not for me: ' + album);
-      notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name));
+      notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name, card));
       artContainer.append(notForMe);
 
       actions.append(createSaveButton(artist, album, item, name));
 
       if (name !== 'artist_deep_dive') {
         button('Dismiss artist',
-          () => sendFeedback('dismiss_artist', artist, album, item, name), '', 'Dismiss artist ' + artist);
+          () => sendFeedback('dismiss_artist', artist, album, item, name, card), '', 'Dismiss artist ' + artist);
       }
 
       card.append(actions);
@@ -1850,7 +1850,13 @@ async function loadDiscovery(name, options = {}) {
   }
 }
 
-async function sendFeedback(action, artist, album, metadata, listName) {
+// Dismiss is reversible for a short window (see queueDismiss). Nothing is sent to the server
+// until the window closes, so Undo never has to reverse a server change.
+async function sendFeedback(action, artist, album, metadata, listName, row = null) {
+  if (action === 'dismiss' || action === 'dismiss_artist') {
+    queueDismiss(action, artist, album, metadata, listName, row);
+    return;
+  }
   try {
     await sendJSON('/api/discovery/feedback', 'POST',
       {action, artist, album, metadata});
@@ -1859,6 +1865,90 @@ async function sendFeedback(action, artist, album, metadata, listName) {
     discoveryStatus(listName, error.message);
   }
 }
+
+// Undo window for dismissals. The row leaves the list at once, a snackbar offers Undo, and the
+// POST to /api/discovery/feedback is sent only when the window closes. Undo cancels it. Only
+// one dismissal waits at a time; a second one commits the first immediately.
+const UNDO_WINDOW_MS = 4200;
+let pendingDismiss = null;
+
+function queueDismiss(action, artist, album, metadata, listName, row) {
+  if (pendingDismiss) commitDismiss();
+  const label = action === 'dismiss_artist'
+    ? 'Dismissed artist ' + artist + '.'
+    : 'Dismissed ' + album + (artist ? ' by ' + artist : '') + '.';
+  const entry = {action, artist, album, metadata, listName, row, timer: null};
+  if (row) {
+    // Keyboard focus would be lost when the row hides, so it moves to the page heading first.
+    if (row.contains(document.activeElement)) {
+      const heading = document.querySelector('section.page:not(.hidden) h2');
+      if (heading) { heading.tabIndex = -1; heading.focus(); }
+    }
+    row.classList.add('is-dismissing');
+  }
+  entry.timer = setTimeout(commitDismiss, UNDO_WINDOW_MS);
+  pendingDismiss = entry;
+  showUndoSnackbar(label);
+}
+
+async function commitDismiss() {
+  const entry = pendingDismiss;
+  if (!entry) return;
+  pendingDismiss = null;
+  clearTimeout(entry.timer);
+  hideUndoSnackbar();
+  try {
+    await sendJSON('/api/discovery/feedback', 'POST',
+      {action: entry.action, artist: entry.artist, album: entry.album, metadata: entry.metadata});
+    await loadDiscovery(entry.listName);
+  } catch (error) {
+    if (entry.row) entry.row.classList.remove('is-dismissing');
+    discoveryStatus(entry.listName, error.message);
+  }
+}
+
+function undoDismiss() {
+  const entry = pendingDismiss;
+  if (!entry) return;
+  pendingDismiss = null;
+  clearTimeout(entry.timer);
+  const undoButton = $('undoSnackbarAction');
+  const hadFocus = !!undoButton && undoButton.contains(document.activeElement);
+  if (entry.row) {
+    entry.row.classList.remove('is-dismissing');
+    // The snackbar hides on this click, so focus moves back to the restored row first.
+    if (hadFocus) { const first = entry.row.querySelector('button'); if (first) first.focus(); }
+  }
+  hideUndoSnackbar();
+  const announcer = $('appStatusAnnouncer');
+  if (announcer) announcer.textContent = 'Restored. The dismissal was not sent.';
+}
+
+function showUndoSnackbar(message) {
+  const bar = $('undoSnackbar');
+  if (!bar) return;
+  $('undoSnackbarText').textContent = message;
+  const timer = $('undoSnackbarTimer');
+  // Restart the drain on every show. Reflow between the two class changes makes the animation run again.
+  timer.style.animationDuration = UNDO_WINDOW_MS + 'ms';
+  timer.classList.remove('is-running');
+  void timer.offsetWidth;
+  timer.classList.add('is-running');
+  bar.inert = false;
+  bar.classList.add('is-open');
+  // The announcer is always present in the DOM, so the message is spoken exactly once here.
+  const announcer = $('appStatusAnnouncer');
+  if (announcer) announcer.textContent = message + ' Undo is available for a few seconds.';
+}
+
+function hideUndoSnackbar() {
+  const bar = $('undoSnackbar');
+  if (!bar) return;
+  bar.classList.remove('is-open');
+  bar.inert = true;
+}
+
+if ($('undoSnackbarAction')) $('undoSnackbarAction').addEventListener('click', undoDismiss);
 
 // Save is a bookmark: the server stores the album and its metadata and starts no search, so
 // nothing here touches /api/acquire. The list is deliberately not reloaded. The list endpoints

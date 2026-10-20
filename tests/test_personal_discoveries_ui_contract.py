@@ -65,8 +65,8 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
 
     def test_dismiss_and_dismiss_artist_route_to_the_personal_list(self):
         body = self._function_body("function buildPersonalRow(", "// Discover music metadata lines.")
-        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'personal')", body)
-        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'personal')", body)
+        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'personal', row)", body)
+        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'personal', row)", body)
 
     def test_status_line_names_the_real_sort_basis(self):
         self.assertIn("name === 'personal' && items.length", self.js)

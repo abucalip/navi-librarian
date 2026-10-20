@@ -75,8 +75,8 @@ class NewReleasesRowContractTests(unittest.TestCase):
     def test_new_releases_dismiss_uses_the_server_feedback_endpoint(self):
         start = self.js.index("function buildNewReleaseRow(")
         body = self.js[start:self.js.index("// Discover music metadata lines", start)]
-        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'new_releases')", body)
-        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases')", body)
+        self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'new_releases', row)", body)
+        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)", body)
 
     def test_get_and_modal_handling_for_release_rows_are_the_shared_ones(self):
         start = self.js.index("function buildRecommendationRow(")

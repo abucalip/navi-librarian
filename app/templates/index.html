@@ -289,6 +289,11 @@
      their own. Toasts are visual only, so each message is announced exactly once: here
      when the active view has no status region, otherwise by that region's own live area. -->
 <p id="appStatusAnnouncer" class="sr-only" role="status" aria-live="polite"></p>
+<div id="undoSnackbar" class="undo-snackbar" inert>
+  <p id="undoSnackbarText" class="undo-snackbar-text"></p>
+  <button id="undoSnackbarAction" type="button">Undo</button>
+  <span id="undoSnackbarTimer" class="undo-snackbar-timer" aria-hidden="true"></span>
+</div>
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
 </body>
