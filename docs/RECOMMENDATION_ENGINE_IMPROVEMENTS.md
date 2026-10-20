@@ -23,7 +23,7 @@ Result: the gain is real in provenance, not in spread. CF now supplies 7 of 10 f
 
 Decision: **do not reopen 1.2, 3.1 or 3.2.** The final spread is already at the allocator's ceiling, 3.1 and 3.2 are inert on a first build, and there is no measured defect to tune against. Risk named: the recent-genre family cap rejected 17 to 24 candidates per run; it is soft and relaxed in a later pass, and it filled the list both times, but it is the stage to look at first if warm-run spread ever drops. No code changed.
 
-## Finding — steady-state (warm) final list (2026-10-20, measured; PR pending)
+## Finding — steady-state (warm) final list (2026-10-20, measured; PR #475 merged)
 
 Offline trace: a warm `refresh_personal` finds a stored list, so `_cold_start` is off and the batch path is not used. Differences from cold: cooldown reads `recommendation_history` (written only when a list is stored; max 25% score penalty, 7-day half-life), the feedback signal applies, and cached metadata is reused. The 100-per-run uncached MusicBrainz budget applies again, and batch hits are not written to the metadata cache, so a cold build's 200 batch-resolved recordings are not cached for the next run.
 
@@ -49,7 +49,7 @@ Limits: one sample; runs were back to back, so cooldown decay was negligible and
 
 Decision: **do not reopen 1.2, 3.1 or 3.2** on this evidence; no code change. Risk named: if repeat rate matters, the lever is CF supply on warm runs (batch hits are not cached, so warm runs re-spend the 100 budget). Caching batch hits or a warm batch path would change call patterns and needs owner approval. A follow-up measurement would need a cache-hit counter.
 
-### Verification of caching + warm batch path (2026-10-20, PR #476 branch; one sample, owner-approved)
+### Verification of caching + warm batch path (2026-10-20, PR #476 merged; one sample, owner-approved)
 
 Same harness as the warm finding (count 10, fresh data dir, slskd off, aggregate only, cold then two warm refreshes, data dir deleted). Final-list source mix is captured this time.
 
