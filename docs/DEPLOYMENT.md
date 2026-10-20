@@ -48,6 +48,8 @@ Illustrative service block (adapt network, paths, and settings to the actual fil
       SLSKD_DOWNLOADS_DIR: /downloads
       NAVIDROME_URL: http://navidrome:4533
       SLSKD_URL: http://slskd:5030
+      # Optional: ListenBrainz user token. Keep the real value in a private .env or secret, never in the file.
+      # LISTENBRAINZ_TOKEN: ${LISTENBRAINZ_TOKEN:-}
     volumes:
       - librarian_data:/data
       - /media/library/music:/music
@@ -56,6 +58,8 @@ Illustrative service block (adapt network, paths, and settings to the actual fil
 volumes:
   librarian_data:
 ```
+
+`LISTENBRAINZ_TOKEN` is optional. When set, ListenBrainz requests also send `Authorization: Token <token>` alongside the app's honest `User-Agent`; when empty or unset, behavior is unchanged. The app never logs or stores it.
 
 Preserve all existing service definitions and secret values. Do not copy redacted placeholders such as `******` into a live Compose file. Confirm whether the app actually needs write access to each bind mount before granting it; follow the current acquisition safety requirements.
 
