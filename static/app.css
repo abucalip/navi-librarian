@@ -581,7 +581,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-meta-line + .row-meta-line { margin-top: 2px; }
 .row-category { color: var(--text); font-weight: 600; }
 .row-source { color: var(--text-subtle); }
-.row-actions { display: flex; align-items: center; gap: 8px; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ranked-row .get-album { width: auto; height: 44px; min-width: 64px; padding: 0 16px; border-radius: 999px; font-size: var(--text-xs); }
 .ranked-row .get-album-glyph { width: 22px; height: 22px; }
 .ranked-row .deep-dive-dismiss {
@@ -622,3 +622,19 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   .ranked-row::before { transition: none; }
   .ranked-row.is-skeleton { animation: none; }
 }
+
+/* Save: a bookmark toggle beside Get. State is the icon (outline vs. check), the word, and
+   aria-pressed; the fill is a reinforcement, never the only signal. */
+.save-album {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 44px; min-height: 44px; padding: 0 12px;
+  background: transparent; border: 1px solid var(--edge-strong); border-radius: 999px;
+  color: var(--text-muted); font: 700 var(--text-xs)/1 var(--mono); text-transform: uppercase;
+  cursor: pointer;
+}
+.save-album:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
+.save-album:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.save-album .icon { width: 18px; height: 18px; flex: none; }
+.save-album.is-saved { color: var(--text); border-color: var(--accent); background: var(--surface-raised); }
+.save-album.is-failed { color: var(--chart-red-text); border-color: var(--chart-red); }
+.save-album[aria-busy="true"] { cursor: progress; opacity: .7; }

@@ -15,6 +15,7 @@ FONT_BUDGET_BYTES = 150 * 1024
 ICON_NAMES = [
     "layout-dashboard", "compass", "calendar-plus", "user-round", "library", "mic-vocal",
     "download", "settings", "log-out", "search", "chevron-left", "chevron-right", "x", "trash-2",
+    "bookmark", "bookmark-check",
 ]
 
 
