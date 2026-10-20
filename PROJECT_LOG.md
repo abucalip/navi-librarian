@@ -1,3 +1,14 @@
+## 2026-10-20 — Cold-start batch no longer spends the MusicBrainz budget
+
+- Branch `fix/cold-start-batch-budget` (includes the docs of PR #470). Owner-approved: prefetch all uncached CF recordings in batches (+1 ListenBrainz POST, +1 GET per cold run); batch hits do not count against the 100 budget; misses still do. `discovery_candidate_gathering.py`, `tests/test_discovery_batch_lookup.py`.
+- Live: 200/200 resolved, 15 artists, top-2 47.5%, 0 budget-skipped, 117 s. Focused modules run listed in the roadmap section; the full suite was not run (owner rule). Not done: merge, publication, deployment.
+
+## 2026-10-20 — Cold-start batch path measured (docs only)
+
+- Branch `docs/cold-start-batch-measurement`. Offline: `refresh_personal` passes `_cold_start=True` on a first build, which enables the batch path (`COLD_START_BATCH_ENABLED`); the earlier live pair did not.
+- Live run (owner-approved, aggregate only, data dir deleted): 117 s, 100 of 200 CF recordings resolved, 100 skipped, 4 artists, top-2 55%. Batch hits count against the 100 budget in `discovery_candidate_gathering.py`, so batch is faster but no wider.
+- Decision pending (owner): stop counting batch hits against the budget (recommended; code change in a domain module). No code changed. Tests: none needed (docs only). Not done: merge, publication, deployment.
+
 ## 2026-10-20 — Phase 4.3 wider CF pool: finding, counter, client identity, live pair (PR #469)
 
 - Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Phase 4.3 closed with no paging change (extra ListenBrainz requests need the owner).
