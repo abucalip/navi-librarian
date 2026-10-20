@@ -216,13 +216,16 @@ _BATCH_TITLE_MARKER_RE = re.compile(
 )
 
 
-def batch_title_marker_rejection(title: str) -> str | None:
+def batch_title_marker_rejection(title: str, *, enabled: bool | None = None) -> str | None:
     """Return "batch_title_marker" when a release title carries a live or compilation marker.
 
     Used only on the batch path, where secondary types are unavailable. Returns
-    None when the flag is off or the title has no whole-word marker.
+    None when the filter is off or the title has no whole-word marker. ``enabled``
+    overrides the module flag for the cold-start batch path, which always filters.
     """
-    if not BATCH_TITLE_FILTER_ENABLED:
+    if enabled is None:
+        enabled = BATCH_TITLE_FILTER_ENABLED
+    if not enabled:
         return None
     normalized = " ".join(str(title or "").casefold().split())
     if _BATCH_TITLE_MARKER_RE.search(normalized):

@@ -127,6 +127,10 @@ CF_MAX_UNCACHED_RESOLUTIONS = 100
 # the batch title-marker filter is also enabled, because the batch endpoints return no
 # secondary release types. Any batch failure falls back to per-recording lookups.
 CF_BATCH_RESOLUTION_ENABLED = False
+# Cold-start batch path: used only when no stored personal list exists yet, so the
+# first build is fast. Steady-state builds are unaffected. Its output has no secondary
+# release-type filter beyond the title markers, so it is a labelled first-run list.
+COLD_START_BATCH_ENABLED = True
 # Recordings per artist resolved before further cached recordings are skipped.
 # The CF endpoint returns no artist, so uncached recordings must still be
 # resolved to learn their artist; the cap can only skip cache-known artists.
@@ -188,7 +192,11 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
     return recordings, paging
 
 
-def _batch_resolution_enabled(providers: RecommendationProviders) -> bool:
+def _batch_resolution_enabled(providers: RecommendationProviders, cold_start: bool = False) -> bool:
+    # Cold-start batches (no stored list yet) use their own switch; steady-state
+    # batches keep the flags, which stay off by default.
+    if cold_start:
+        return COLD_START_BATCH_ENABLED and providers.http_post is not None
     return (
         CF_BATCH_RESOLUTION_ENABLED
         and _supply.BATCH_TITLE_FILTER_ENABLED
@@ -232,7 +240,9 @@ def _prefetch_batch_recordings(
     recordings = {}
     for mbid, entry in entries.items():
         recording = synthesize_recording(
-            entry, release_groups, title_rejection=batch_title_marker_rejection,
+            entry, release_groups,
+            # The batch path always filters titles: its endpoints return no secondary types.
+            title_rejection=lambda title: batch_title_marker_rejection(title, enabled=True),
         )
         if recording is not None:
             recordings[mbid] = recording
@@ -433,6 +443,7 @@ def gather_recommendation_candidates(
     providers: RecommendationProviders,
     *,
     shortlist_target: int = SHORTLIST_TARGET_DEFAULT,
+    cold_start: bool = False,
 ) -> dict[str, Any] | str:
     """Gather providers in legacy order; early errors retain their JSON contract."""
     import time
@@ -497,7 +508,7 @@ def gather_recommendation_candidates(
     cf_skips = Counter()
     batch_recordings = (
         _prefetch_batch_recordings(providers, recommendations, headers=headers)
-        if _batch_resolution_enabled(providers) else {}
+        if _batch_resolution_enabled(providers, cold_start) else {}
     )
     with providers.http_client(timeout=20, follow_redirects=True) as client:
         for item in recommendations:
