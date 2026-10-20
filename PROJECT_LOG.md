@@ -1,3 +1,9 @@
+## 2026-10-20 — Exploration setting audit (docs only)
+
+- Branch `docs/exploration-setting-audit`. Traced `recommendation_diversity` end to end, confirmed setting 0 is a no-op and measured settings 0/25/50/75/100 on a synthetic pool with the production allocator. Decision: the backend contract is sufficient; next is a UI-only control; 75-100 is flat (penalty saturates at 0.75). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Tests: none run, no code changed (measurement script only, kept outside the repo). PR/merge SHA and CI: see the PR.
+- Not done: UI control, repeat-rate measurement, private-capture measurement, publication, deployment.
+
 ## 2026-10-20 — Save-seed diagnostics counters and live measurement (merged as PR #465)
 
 - Branch `seed-diagnostics`: `recommendation_run_metrics.record_count` and `snapshot_and_reset()["counts"]`; seven integer `save_seed.*` counters (six at first, plus `mbid_known_no_cached_genres` added after review) recorded in `discovery_candidate_gathering.py` after the seed block succeeds. No lookup, query-selection, quota, scoring or flag change; `navidrome_server.py` and `app/api/**` untouched. Owner approved the domain-module edit for this task.

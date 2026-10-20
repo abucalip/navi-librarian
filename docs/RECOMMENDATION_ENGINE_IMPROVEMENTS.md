@@ -25,7 +25,7 @@ Open items:
 - **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. Built in PR #458 (`7fb140e`): persisted `automatic_refill_enabled`, default on, gates the hourly scheduler; `GET/PUT /api/settings/automatic-refill`.
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
-- **Exploration slider (later, product):** map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs.
+- **Exploration slider (product):** audited 2026-10-20 (see "Exploration setting audit"): the backend contract is sufficient; the next step is a UI-only control over `recommendation_diversity`. No UI in backend PRs.
 - **Last.fm source:** parked by the owner (2026-10-19). Recorded only as a possible future recommendations-source option. Do not start a quality test or a combined path without a new decision.
 
 Deferred until candidate supply shows a gain: weight retuning (Phase 1.2), MMR re-ranking evaluation (Phase 3.1), cooldown calibration (Phase 3.2).
@@ -575,3 +575,30 @@ Live runs on the owner's machine, count 10, one fresh data directory per configu
 **Limits.** Single samples; the batch cold figure is one successful sample; no variance bound. Provider failure on one batch run was not reproduced on the retry. No code, flag, weight, window, eligibility, ownership, duplicate or budget rule changed.
 
 Merged as PR #454 at `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (squash; all four required workflows passed on the exact head before merge).
+
+## Exploration setting audit (2026-10-20, offline, docs only)
+
+**Decision: (a) the contract is sufficient; the next step is a UI-only task.** No code changed.
+
+**Call path (line numbers on `main` at `9eb43d6`):**
+- Stored value: `service_settings.py` `recommendation_diversity` (validated integer 0-100); default `0` in `navidrome_server.py:1197`; API `GET/PUT /api/settings/recommendation-diversity` in `app/api/settings.py`.
+- `navidrome_server.py:455` passes `diversity_setting_fn` to `recommendation_cooldown.prepare_ranking_inputs` (`recommendation_cooldown.py:148`), which freezes the value into `ranking_context["diversity_setting"]`.
+- `navidrome_server.py:463` maps it with `discovery_mmr.diversity_setting_to_penalty` (`min(v, 75) / 100`) into `AllocationRequest.diversity_penalty`.
+- `discovery_personal_allocator.ranked_candidates` (`discovery_personal_allocator.py:62`) applies the penalty at every selection step: `relevance - penalty * max similarity to already-selected`, among ownership-clear candidates only. Owned and title-conflict candidates keep their legacy position and decisions. Hard filters, duplicate identity and release eligibility run after it, unchanged.
+- `discovery_mmr.mmr_rerank` is **not** on the production path; only `recommendation_mmr_evaluate.py` calls it.
+- **Setting 0 is a true no-op:** `ranked_candidates` returns the input order when `diversity_penalty == 0` (`discovery_personal_allocator.py:65`). Confirmed on a synthetic pool: setting 0 and no penalty select identical ids.
+
+**Offline measurement** (synthetic pool, 60 candidates with two-tag sets over 10 clusters, relevance skewed toward 4 clusters, 30 seeds, count 10, production allocator; identity-free aggregates; the private capture was not used):
+
+| setting | penalty | mean pairwise similarity | mean relevance score | overlap with setting 0 | distinct tags |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0.00 | 0.330 | 1.357 | 1.00 | 5.8 |
+| 25 | 0.25 | 0.277 | 1.340 | 0.88 | 7.1 |
+| 50 | 0.50 | 0.153 | 1.233 | 0.68 | 11.1 |
+| 75 | 0.75 | 0.091 | 1.114 | 0.55 | 13.6 |
+| 100 | 0.75 | 0.091 | 1.114 | 0.55 | 13.6 |
+
+Each step trades some relevance for diversity; **75 and 100 give identical output because the penalty saturates at 0.75** (the single-pool gate failed from 80 upward). Repeat rate was not measured (needs history; the synthetic pool has none). Limits: synthetic pool, so absolute numbers say nothing about real taste; future-listen quality is unmeasured; the allocator's category quotas and style reservations also shape the result.
+
+**Acceptance criteria for the UI-only task** (see `CLAUDE_CLI.md`): a control over the existing endpoint, no backend edit; range 0-75 (or 0-100 labelled so 75-100 is not presented as stronger); default 0 shown as "Relevance"; reads with GET, saves with PUT, shows the API error text on a 4xx; a rendered browser check against the exact tested SHA.
+
