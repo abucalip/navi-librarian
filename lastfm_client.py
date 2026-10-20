@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from recommendation_run_metrics import record_provider_call, timed_stage
+
 from discovery_recommendations import music_key
 
 
@@ -68,6 +70,7 @@ class LastFmClient:
                 if wait > 0:
                     self._sleep(wait)
                 self._last_request_at = self._monotonic()
+            record_provider_call("lastfm", "api")
             response = self._http_get(
                 "https://ws.audioscrobbler.com/2.0/",
                 params={
@@ -170,6 +173,7 @@ class LastFmClient:
         return output
 
 
+    @timed_stage('lastfm_album_popularity')
     def album_popularity(
         self, artist: str, album: str
     ) -> tuple[dict[str, Any] | None, str | None]:
@@ -194,6 +198,7 @@ class LastFmClient:
             return cached, None
 
         try:
+            record_provider_call("lastfm", "api")
             response = self._http_get(
                 "https://ws.audioscrobbler.com/2.0/",
                 params={

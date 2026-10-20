@@ -29,6 +29,8 @@ def critical_rating(
     try:
         # MusicBrainz requests must be spaced to respect its public API limit.
         pause(1.1)
+        from recommendation_run_metrics import record_provider_call
+        record_provider_call("musicbrainz", "release_group_rating")
         response = request(
             f"https://musicbrainz.org/ws/2/release-group/{mbid}",
             params={"fmt": "json", "inc": "ratings"},

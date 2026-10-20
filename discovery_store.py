@@ -324,8 +324,11 @@ def record_recommendation_diagnostics(
     from discovery_candidate_supply import summarize_candidate_stages
     from recommendation_diagnostics import summarize_candidate_diagnostics
 
+    from recommendation_run_metrics import snapshot_and_reset
+
     albums = list(albums)
     aggregate = summarize_candidate_diagnostics(gathered, candidate_diagnostics or [])
+    aggregate["run_metrics"] = snapshot_and_reset()
     aggregate["candidate_supply"] = {
         **aggregate["candidate_supply"],
         "stages": summarize_candidate_stages(albums, candidate_diagnostics or []),
