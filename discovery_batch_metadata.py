@@ -61,26 +61,46 @@ def fetch_release_group_metadata(
     *,
     headers: Mapping[str, str],
     timeout: float = 30,
+    retries: int = 0,
+    sleep: Callable[[float], Any] | None = None,
+    failed: set[str] | None = None,
 ) -> dict[str, Mapping[str, Any]]:
     """Return {release_group_mbid: {"title", "type"}} for the given release groups.
 
     The live response wraps fields in a ``release_group`` object and names the
-    title ``name``. Only primary type is available from this endpoint. Raises on
-    a non-200 response.
+    title ``name``. Only primary type is available from this endpoint. Each chunk
+    is retried up to ``retries`` times (waiting 2 s per attempt through ``sleep``).
+    When ``failed`` is None a chunk that still fails raises, as before. When it is
+    a set, the failed chunk's MBIDs are added to it and the other chunks are kept.
     """
     results: dict[str, Mapping[str, Any]] = {}
     for chunk in _chunks(list(dict.fromkeys(release_group_mbids)), BATCH_RECORDING_CHUNK):
-        response = get(
-            LISTENBRAINZ_RELEASE_GROUP_URL,
-            params={"release_group_mbids": ",".join(chunk)},
-            headers=dict(headers),
-            timeout=timeout,
-        )
-        if response.status_code != 200:
-            raise RuntimeError(f"batch release-group lookup returned {response.status_code}")
-        body = response.json()
-        if not isinstance(body, dict):
-            raise RuntimeError("batch release-group lookup returned a non-object body")
+        for attempt in range(retries + 1):
+            try:
+                response = get(
+                    LISTENBRAINZ_RELEASE_GROUP_URL,
+                    params={"release_group_mbids": ",".join(chunk)},
+                    headers=dict(headers),
+                    timeout=timeout,
+                )
+                if response.status_code != 200:
+                    raise RuntimeError(f"batch release-group lookup returned {response.status_code}")
+                body = response.json()
+                if not isinstance(body, dict):
+                    raise RuntimeError("batch release-group lookup returned a non-object body")
+                break
+            except Exception:
+                if attempt < retries:
+                    if sleep is not None:
+                        sleep(2 * (attempt + 1))
+                    continue
+                if failed is None:
+                    raise
+                failed.update(chunk)
+                body = None
+                break
+        if body is None:
+            continue
         for mbid in chunk:
             entry = body.get(mbid)
             if isinstance(entry, dict):

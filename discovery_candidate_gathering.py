@@ -270,13 +270,20 @@ def _prefetch_batch_recordings(
             for entry in entries.values()
             if (entry.get("release") or {}).get("release_group_mbid")
         ]
+        # A release-group chunk that still fails after one retry is skipped, not fatal:
+        # recordings that depend on it stay out of the batch result (and out of the
+        # cache) and fall back to per-recording lookups; the rest keep their batch hit.
+        failed_groups: set[str] = set()
         release_groups = fetch_release_group_metadata(
             providers.http_get, release_group_ids, headers=headers,
+            retries=1, sleep=providers.sleep, failed=failed_groups,
         ) if release_group_ids else {}
     except Exception:
         return cached_batch
     recordings = dict(cached_batch)
     for mbid, entry in entries.items():
+        if str((entry.get("release") or {}).get("release_group_mbid")) in failed_groups:
+            continue
         recording = synthesize_recording(
             entry, release_groups,
             # The batch path always filters titles: its endpoints return no secondary types.

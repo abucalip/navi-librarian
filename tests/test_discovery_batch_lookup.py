@@ -69,11 +69,13 @@ class _Harness:
     """Builds providers over synthetic CF recordings with a stubbed batch surface."""
 
     def __init__(self, count, *, batch_status=200, batch_entries=None, rg_status=200,
-                 rg_types=None, mb_recordings=None):
+                 rg_types=None, mb_recordings=None, rg_fail_calls=()):
         self.count = count
         self.batch_status = batch_status
         self.batch_entries = batch_entries
         self.rg_status = rg_status
+        self.rg_fail_calls = set(rg_fail_calls)
+        self.rg_call_count = 0
         self.rg_types = rg_types
         self.posts = []
         self.bodies = []
@@ -88,8 +90,9 @@ class _Harness:
     def http_get(self, url, params=None, **kwargs):
         if url == LISTENBRAINZ_RELEASE_GROUP_URL:
             self.rg_gets.append(params["release_group_mbids"].split(","))
-            if self.rg_status != 200:
-                return _Response({}, status_code=self.rg_status)
+            self.rg_call_count += 1
+            if self.rg_status != 200 or self.rg_call_count in self.rg_fail_calls:
+                return _Response({}, status_code=self.rg_status if self.rg_status != 200 else 502)
             ids = params["release_group_mbids"].split(",")
             if self.rg_types is None:
                 return _Response({
@@ -239,6 +242,46 @@ class BatchResolutionPathTests(unittest.TestCase):
         _run(harness, batch_enabled=True)
 
         self.assertEqual(len(harness.mb_client.requested), 2)
+
+    def test_failed_release_group_chunk_keeps_other_chunks_batch_resolved(self):
+        # 150 recordings -> release-group chunks of 100 and 50; calls 2 and 3 are the
+        # second chunk and its single retry, so only that chunk falls back.
+        count = BATCH_RECORDING_CHUNK + 50
+        harness = _Harness(count, rg_fail_calls={2, 3}, mb_recordings={
+            f"rec-{i}": _mb_recording(i) for i in range(BATCH_RECORDING_CHUNK, count)
+        })
+
+        result = _run(harness, batch_enabled=True)
+
+        self.assertEqual(harness.mb_client.requested, [f"rec-{i}" for i in range(BATCH_RECORDING_CHUNK, count)])
+        self.assertEqual(len(result["albums"]), count)
+        self.assertEqual(harness.rg_call_count, 3)
+        batch_keys = [k for k in harness.cache_writes if k.startswith(gathering.BATCH_RECORDING_CACHE_PREFIX)]
+        full_keys = [k for k in harness.cache_writes if k.startswith("mb:recording:")]
+        self.assertEqual(len(batch_keys), BATCH_RECORDING_CHUNK)
+        self.assertEqual(len(full_keys), count - BATCH_RECORDING_CHUNK)
+
+    def test_transient_release_group_failure_is_retried_once_without_fallback(self):
+        harness = _Harness(3, rg_fail_calls={1})
+
+        result = _run(harness, batch_enabled=True)
+
+        self.assertEqual(harness.mb_client.requested, [])
+        self.assertEqual(len(result["albums"]), 3)
+        self.assertEqual(harness.rg_call_count, 2)
+        self.assertIn(2, harness.sleeps)
+
+    def test_release_group_fetch_raises_without_failure_collector(self):
+        from discovery_batch_metadata import fetch_release_group_metadata
+
+        def get(url, params=None, headers=None, timeout=None):
+            return _Response({}, status_code=502)
+
+        with self.assertRaises(RuntimeError):
+            fetch_release_group_metadata(get, ["rg-a"], headers={})
+        failed = set()
+        self.assertEqual(fetch_release_group_metadata(get, ["rg-a"], headers={}, failed=failed), {})
+        self.assertEqual(failed, {"rg-a"})
 
     def test_missing_batch_entry_is_resolved_per_recording(self):
         harness = _Harness(2, batch_entries={"rec-0": _entry(0)},
