@@ -47,7 +47,7 @@ Result: spread is unchanged on warm refreshes (10 distinct artists, 20% top-2 sh
 
 Limits: one sample; runs were back to back, so cooldown decay was negligible and history held at most two prior lists; the harness did not capture the source mix of the final list (its source field was misread), so that row is missing; the budget/caching explanation for warm CF supply is from code reading, not a cache-hit counter.
 
-Decision: **do not reopen 1.2, 3.1 or 3.2** on this evidence; no code change. Risk named: if repeat rate matters, the lever is CF supply on warm runs (batch hits are not cached, so warm runs re-spend the 100 budget). Caching batch hits or a warm batch path would change call patterns and needs owner approval. A follow-up measurement would need a cache-hit counter.
+Decision at the time: **do not reopen 1.2, 3.1 or 3.2** on this evidence. The owner subsequently approved warm batch resolution and separate-key caching in PR #476; see the verification immediately below. Next: obtain longer-interval repeat-rate evidence before considering cooldown calibration.
 
 ### Verification of caching + warm batch path (2026-10-20, PR #476 merged; one sample, owner-approved)
 
