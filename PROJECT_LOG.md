@@ -1,3 +1,9 @@
+## 2026-10-20 — Cold-start supply gain measured in the final list (docs only)
+
+- Branch `docs/final-list-supply-measurement`. Offline trace of CF recording to final list, then an owner-approved live pair (before = `961266d`, the #471 parent; after = `7deaf46`), aggregate only, data dirs deleted. Final list 10 distinct artists, top-2 20% both times (allocator takes one album per artist); CF share of the final 10 rose 3 to 7; CF unowned candidates 4 to 17; 170 s vs 95 s (one sample each, noisy).
+- Decision: no reopening of 1.2, 3.1, 3.2; no code change. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Tests: none run, no code changed. PR/merge SHA and CI: see the PR.
+
 ## 2026-10-20 — Recommendation roadmap uncluttered
 
 - Replaced the 683-line `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with an 81-line active plan focused on the next task, remaining decision-gated phases, current implementation facts, guardrails, and evaluation acceptance.

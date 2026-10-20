@@ -2,24 +2,31 @@
 
 Last reviewed: 2026-10-20. This is the active plan only; historical measurements, completed changes, and superseded task orderings are in [the archive](RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md). GitHub `main` is authoritative. Publishing and deployment remain paused.
 
-## Next task — measure the cold-start supply gain in the final list
+## Finding — cold-start supply gain in the final list (2026-10-20, measured)
 
-**Priority: do this before reopening ranking/diversity work. No code or policy change until the measurement identifies a need.**
+Owner-approved live pair, `_cold_start=True`, count 10, fresh data dir, slskd off, aggregate only, data dirs deleted. "Before" is the parent of PR #471 (`961266d`), "after" is `main` at `7deaf46` (includes #471). One sample each; the tag lane and genre lookup vary run to run (MusicBrainz throttling), so treat differences as indicative.
 
-PR #471 removed the MusicBrainz-resolution budget charge for cold-start ListenBrainz batch hits. One owner-approved sample resolved 200/200 CF recordings across 15 artists (previous sample: 100/200 across 4 artists); runtime stayed at 117 seconds. The effect on the final recommendation list is **not measured**. There is no captured pre-change final-list baseline, so do not invent one.
+| | before (#471 parent) | after (#471) |
+| --- | --- | --- |
+| Final list: albums / distinct artists / top-2 share | 10 / 10 / 20% | 10 / 10 / 20% |
+| Final items by source | CF 3, profile tags 6, exploration tags 1 | CF 7, profile tags 3 |
+| Pool: albums resolved (CF / tag lane) | 52 (14 / 38) | 46 (36 / 10) |
+| Unowned unique candidates by source | CF 4, profile 30, exploration 8 | CF 17, profile 10 |
+| Category counts (adj / cross / adv) | 4 / 3 / 3 | 4 / 3 / 3 |
+| Allocator rejections | owned 7, family cap 24, quota 11 | owned 11, family cap 17, same-artist 6, quota 2 |
+| Wall time | 170 s | 95 s |
+| `run_metrics` provider calls | LB CF 2, MB 68, Last.fm 40 | LB CF 2, MB 57, Last.fm 40 |
 
-1. **Offline trace first:** follow the first-build path from CF recordings through metadata resolution, release eligibility, ownership/deduplication, candidate gathering, artist limits, allocation, and final top 10. Use existing aggregate diagnostics and identify where the wider resolved pool may be reduced.
-2. **Then request owner approval before any live run.** If approved: use a fresh disposable data directory, slskd off, aggregate-only output, and delete the directory afterwards. Capture final-list distinct artists and top-two share, `candidate_supply.stages`, final recommendation count, and `run_metrics` provider-call counts (wrap `record_recommendation_diagnostics` so the counters are actually captured). Do not include identities, listens, credentials, or provider URLs in repository evidence.
-3. **Decide from evidence:** state whether the final-list spread improved and whether Phases 1.2, 3.1, or 3.2 should reopen. If no valid baseline exists, report the limitation; ask before running the pre-#471 revision.
-4. Record only aggregate results, limits, and the resulting decision here and in `PROJECT_LOG.md`.
+Offline trace: the personal allocator takes at most one album per artist, so the final list is 10 distinct artists and a 20% top-2 share whenever at least 10 eligible artists exist. The CF-stage 47.5% top-2 share never carries into the final list. The category quotas (4/3/3) were met in both runs, so nothing unclassified was needed. Cooldown has no history on a first build and MMR is off at the default setting 0, so Phases 3.1 and 3.2 cannot respond to supply on this path.
 
-Handoff details and owner constraints: `CLAUDE_CLI.md`.
+Result: the gain is real in provenance, not in spread. CF now supplies 7 of 10 final albums (before 3) and the CF unowned pool grew 4 to 17, with distinct artists and category balance unchanged. The tag lane filled the gap before. Limits: the earlier pre-change tag-lane yield (38) versus after (10) differs by more than the CF change would explain, so the lane is the noisiest input; no pre-#471 final-list history existed before this run.
+
+Decision: **do not reopen 1.2, 3.1 or 3.2.** The final spread is already at the allocator's ceiling, 3.1 and 3.2 are inert on a first build, and there is no measured defect to tune against. Risk named: the recent-genre family cap rejected 17 to 24 candidates per run; it is soft and relaxed in a later pass, and it filled the list both times, but it is the stage to look at first if warm-run spread ever drops. No code changed.
 
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Complete the task above.
-- Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done (see the finding above). Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it
