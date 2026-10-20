@@ -25,7 +25,9 @@ Open items:
 - **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. Built in PR #458 (`7fb140e`): persisted `automatic_refill_enabled`, default on, gates the hourly scheduler; `GET/PUT /api/settings/automatic-refill`.
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
-- **Exploration slider (later, product):** map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs.
+- **Exploration slider (product):** audited 2026-10-20 (see "Exploration setting audit"): no new backend mapping is needed, but the Settings UI stays **blocked** by `docs/DIVERSITY_SETTING_ROADMAP.md` gates until cross-pool and real-library evidence exists. No UI in backend PRs.
+- **Candidate supply diagnosis (next priority, 2026-10-20):** see `CLAUDE_CLI.md`. The live diversity sample (below) showed a 24-album pool and 103 of 200 CF recordings unresolved; supply, not ranking, limits quality.
+- **Diversity setting:** paused by the owner (2026-10-20). Do not build the UI or tune the mapping; revisit only when supply gives pools large enough to reorder.
 - **Last.fm source:** parked by the owner (2026-10-19). Recorded only as a possible future recommendations-source option. Do not start a quality test or a combined path without a new decision.
 
 Deferred until candidate supply shows a gain: weight retuning (Phase 1.2), MMR re-ranking evaluation (Phase 3.1), cooldown calibration (Phase 3.2).
@@ -575,3 +577,36 @@ Live runs on the owner's machine, count 10, one fresh data directory per configu
 **Limits.** Single samples; the batch cold figure is one successful sample; no variance bound. Provider failure on one batch run was not reproduced on the retry. No code, flag, weight, window, eligibility, ownership, duplicate or budget rule changed.
 
 Merged as PR #454 at `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (squash; all four required workflows passed on the exact head before merge).
+
+## Exploration setting audit (2026-10-20, offline, docs only)
+
+**Decision: the backend contract is sufficient (no new mapping needed), but this does not authorize the UI.** `docs/DIVERSITY_SETTING_ROADMAP.md` still blocks the Settings UI pending cross-pool results, a reviewed setting-to-penalty mapping and broader quality evidence; none of those gates is waived or closed here. The next step is gathering that evidence (an owner-scoped real-library measurement), not building the control. No code changed.
+
+**Call path (line numbers on `main` at `9eb43d6`):**
+- Stored value: `service_settings.py` `recommendation_diversity` (validated integer 0-100); default `0` in `navidrome_server.py:1197`; API `GET/PUT /api/settings/recommendation-diversity` in `app/api/settings.py`.
+- `navidrome_server.py:455` passes `diversity_setting_fn` to `recommendation_cooldown.prepare_ranking_inputs` (`recommendation_cooldown.py:148`), which freezes the value into `ranking_context["diversity_setting"]`.
+- `navidrome_server.py:463` maps it with `discovery_mmr.diversity_setting_to_penalty` (`min(v, 75) / 100`) into `AllocationRequest.diversity_penalty`.
+- `discovery_personal_allocator.ranked_candidates` (`discovery_personal_allocator.py:62`) applies the penalty at every selection step: `relevance - penalty * max similarity to already-selected`, among ownership-clear candidates only. Owned and title-conflict candidates keep their legacy position and decisions. Hard filters, duplicate identity and release eligibility run after it, unchanged.
+- `discovery_mmr.mmr_rerank` is **not** on the production path; only `recommendation_mmr_evaluate.py` calls it.
+- **Setting 0 is a true no-op:** `ranked_candidates` returns the input order when `diversity_penalty == 0` (`discovery_personal_allocator.py:65`). Confirmed on a synthetic pool: setting 0 and no penalty select identical ids.
+
+**Offline measurement** (synthetic pool, 60 candidates with two-tag sets over 10 clusters, relevance skewed toward 4 clusters, 30 seeds, count 10, production allocator; identity-free aggregates; the private capture was not used):
+
+| setting | penalty | mean pairwise similarity | mean relevance score | overlap with setting 0 | distinct tags |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0.00 | 0.330 | 1.357 | 1.00 | 5.8 |
+| 25 | 0.25 | 0.277 | 1.340 | 0.88 | 7.1 |
+| 50 | 0.50 | 0.153 | 1.233 | 0.68 | 11.1 |
+| 75 | 0.75 | 0.091 | 1.114 | 0.55 | 13.6 |
+| 100 | 0.75 | 0.091 | 1.114 | 0.55 | 13.6 |
+
+Each step trades some relevance for diversity; **75 and 100 give identical output because the penalty saturates at 0.75** (the single-pool gate failed from 80 upward). Repeat rate was not measured (needs history; the synthetic pool has none). Limits: synthetic pool, so absolute numbers say nothing about real taste; future-listen quality is unmeasured; the allocator's category quotas and style reservations also shape the result.
+
+**Draft acceptance criteria for the later UI task, valid only after the roadmap gates close** (see `CLAUDE_CLI.md`): a control over the existing endpoint, no backend edit; range 0-75 (or 0-100 labelled so 75-100 is not presented as stronger); default 0 shown as "Relevance"; reads with GET, saves with PUT, shows the API error text on a 4xx; a rendered browser check against the exact tested SHA.
+
+### Live sample: diversity setting had no effect (2026-10-20, owner-approved, one sample, aggregate only)
+
+Fresh data dir, slskd off, count 10, real library (1,733 albums). One live gather was captured, then the production path was re-run offline from that capture at settings 0, 25, 50, 75, 100. **All five returned the same 10 albums** (10 distinct artists, category mix 4/3/3, mean score 0.084). `recommendation_mmr_evaluate.py --identity-free` on the same capture agreed: mean pairwise similarity 0.285 and 7/10 baseline retained at every lambda from 0 to 1. The pool was 24 gathered albums, 10 owned, leaving 14 unowned (4 from CF, 10 from profile tag search) for 10 slots, so the penalty had almost nothing to reorder. This says nothing about future-listen quality and does not close any `DIVERSITY_SETTING_ROADMAP.md` gate; the diversity setting is paused.
+
+Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200 CF recordings returned, 4 distinct artists (top two = 55.7% of recordings), 97 resolved and 103 failed (class "other"); 14 CF albums from 4 artists; 1,998 release groups seen, 1,591 eligible; 3 supplementary queries attempted, 1 failed; decisions: 10 selected, 7 already owned, 7 recent-genre-cap. The 103 failures are close to the 100 uncached resolutions allowed per run (`CF_MAX_UNCACHED_RESOLUTIONS`), so they may be budget skips counted as "other"; this is a hypothesis, not measured. Limits: single sample, v2 capture lacks per-query supplementary yield.
+
