@@ -183,7 +183,7 @@ def record_discovery_refresh_outcome(
         raise ValueError("unsupported discovery list for refresh diagnostics")
     if origin not in {"manual", "scheduler", "read"}:
         raise ValueError("unsupported discovery refresh origin")
-    if status not in {"success", "error", "already_running"}:
+    if status not in {"success", "error", "already_running", "rejected"}:
         raise ValueError("unsupported discovery refresh status")
     if item_count is not None and (type(item_count) is not int or item_count < 0):
         raise ValueError("item_count must be a non-negative integer")

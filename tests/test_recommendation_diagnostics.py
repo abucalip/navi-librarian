@@ -60,6 +60,15 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 ).fetchall()
             self.assertEqual(rows, [("read", "error"), ("scheduler", "success")])
 
+    def test_rejected_build_outcome_is_recorded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            outcome = record_discovery_refresh_outcome(
+                db, list_name="personal", origin="scheduler", status="rejected",
+                generated_at=300,
+            )
+            self.assertEqual(outcome["status"], "rejected")
+
     def test_refresh_outcome_rejects_unbounded_origin_and_status(self):
         with tempfile.TemporaryDirectory() as directory:
             db = Path(directory) / "diagnostics.sqlite3"
