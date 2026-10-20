@@ -135,7 +135,7 @@ class ServedSnapshotTests(unittest.TestCase):
 
 
 class ServerWiringTests(unittest.TestCase):
-    """The real discovery_get_list starts the same default rebuild the scheduler uses."""
+    """The real discovery_get_list starts the default personal rebuild with origin "read"."""
 
     def setUp(self):
         discovery_refresh._revalidate_in_flight.clear()
@@ -150,8 +150,8 @@ class ServerWiringTests(unittest.TestCase):
                 patch.object(server, "_discovery_feedback_rows", lambda: []), \
                 patch.object(server, "_discovery_library_snapshot", lambda: {"albums": []}), \
                 patch.object(server, "_discovery_settings_read", lambda: settings), \
-                patch.object(server, "_discovery_scheduler_refresh_one",
-                             lambda name: started.append(name)), \
+                patch.object(server, "_discovery_refresh_personal",
+                             lambda count, origin: started.append((count, origin))), \
                 patch.object(discovery_refresh.threading.Thread, "start",
                              lambda self: (real_start(self), self.join(5))):
             body = json.loads(server.discovery_get_list("personal", 10))
@@ -160,7 +160,7 @@ class ServerWiringTests(unittest.TestCase):
     def test_stale_read_serves_snapshot_and_rebuilds_personal_in_background(self):
         body, started = self.read_stale({})
         self.assertEqual(len(body["items"]), 1)
-        self.assertEqual(started, ["personal"])
+        self.assertEqual(started, [(20, "read")])
 
     def test_stale_read_with_refill_off_does_no_background_work(self):
         body, started = self.read_stale({"automatic_refill_enabled": False})

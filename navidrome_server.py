@@ -2537,7 +2537,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         _music_key,
         _discovery_is_album_candidate, _discovery_library_snapshot,
         on_stale=lambda cached: discovery_refresh.revalidate_on_read(
-            "personal", cached, _discovery_scheduler_refresh_one, _discovery_settings_read),
+            "personal", cached, lambda _name: _discovery_refresh_personal(20, origin="read"), _discovery_settings_read),
     )
 
 

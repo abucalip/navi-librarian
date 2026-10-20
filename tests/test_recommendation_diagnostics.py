@@ -42,6 +42,24 @@ class RecommendationDiagnosticsTests(unittest.TestCase):
                 ("scheduler", "already_running", 201.0, None, None),
             ])
 
+    def test_read_origin_does_not_overwrite_scheduler_outcome(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "diagnostics.sqlite3"
+            record_discovery_refresh_outcome(
+                db, list_name="personal", origin="scheduler", status="success",
+                generated_at=100, item_count=5,
+            )
+            record_discovery_refresh_outcome(
+                db, list_name="personal", origin="read", status="error",
+                generated_at=200, error_type="RuntimeError",
+            )
+            with sqlite3.connect(db) as connection:
+                rows = connection.execute(
+                    "SELECT origin, status FROM discovery_refresh_outcomes ORDER BY origin"
+                ).fetchall()
+            self.assertEqual(rows, [("read", "error"), ("scheduler", "success")])
+
     def test_refresh_outcome_rejects_unbounded_origin_and_status(self):
         with tempfile.TemporaryDirectory() as directory:
             db = Path(directory) / "diagnostics.sqlite3"
