@@ -2005,3 +2005,13 @@ Status: history parsing and descriptive window comparison completed; familiarity
 - `discovery_set_feedback(action="save")` writes the `for_me` row and returns. No thread and no slskd search; `_discovery_auto_acquire_for_me` and its lock were removed, as were the `auto_acquisition` and `note` response fields. Existing rows' `auto_acquisition` metadata is left alone. The unused `auto_acquire_for_me` setting (key, default, API validation, tests) was retired; stale stored values are ignored. `dismiss`, `dismiss_artist` and `remove_for_me` are unchanged. `navidrome_server.py` is 2,448 of 2,650 lines.
 - All four required workflows passed on the exact PR head. Publishing remains paused; not deployed; no live run.
 - With PR #464 the save loop is complete end to end. The seed's real tag yield is still unmeasured. Next task (handed off in `CLAUDE_CLI.md`): aggregate-only seed counters in `run_metrics`, no behavior change; a live measurement afterwards needs the owner's go-ahead.
+
+
+## 2026-10-20 — PR #467 bounded CF error-class diagnostics merged
+
+- PR: https://github.com/abucalip/navi-librarian/pull/467
+- Exact tested PR head: `857a180ed6e93414122e0d23e9e413222a8606c0`; squash merge commit: `27942379095cf41654fcb6298b3e9b0d9f56d730`.
+- Expanded the bounded exception-class allowlist for common transport/protocol and decoding failures. Unknown names still collapse to `other`; exception messages, URLs, and credentials are not emitted. No candidate selection, provider calls, quota, budget, or filtering behavior changed.
+- All four required workflows passed on the exact PR head. The Docker packaging workflow's `Run unit tests` step completed successfully; container runtime smoke and validation-only image validation also passed. Focused tests were reported by the PR author; no separate local suite run was performed in this session.
+- PR merged after confirming the current head SHA. Publishing/deployment remain paused; no production runtime verification.
+- Next action: continue the recommendation-engine candidate-supply investigation using aggregate-only diagnostics; keep identity-bearing captures private.
