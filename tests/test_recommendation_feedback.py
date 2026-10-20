@@ -137,7 +137,7 @@ class RecommendationFeedbackTests(unittest.TestCase):
         candidates, sources = self.build([("a1", "artist")])
         self.assertEqual(apply_feedback_signal(candidates, sources, [], now=self.now), candidates)
 
-    def test_signal_disabled_by_default_adds_no_context_key(self):
+    def test_disabled_signal_adds_no_context_key(self):
         candidates, sources = self.build([("a1", "artist")])
         with mock.patch.object(feedback_module, "FEEDBACK_SIGNAL_ENABLED", False):
             adjusted, context = prepare_ranking_inputs(

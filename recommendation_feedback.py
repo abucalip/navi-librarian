@@ -15,7 +15,7 @@ from typing import Any
 
 from discovery_allocation_contract import OwnershipStatus
 
-FEEDBACK_SIGNAL_ENABLED = False
+FEEDBACK_SIGNAL_ENABLED = True
 NEGATIVE_HALF_LIFE_SECONDS = 14 * 24 * 60 * 60
 NEGATIVE_EXPIRY_SECONDS = 60 * 24 * 60 * 60
 POSITIVE_HALF_LIFE_SECONDS = 30 * 24 * 60 * 60
@@ -41,6 +41,12 @@ def _timestamp(row: Mapping[str, Any], field: str) -> float | None:
     except (KeyError, TypeError, ValueError):
         return None
     return value if math.isfinite(value) else None
+
+
+def _active_dismissal(row: Mapping[str, Any], *, now: float) -> bool:
+    """Return True while a dismissal is inside its negative window."""
+    stamp = _timestamp(row, "updated_at")
+    return stamp is not None and _decay(float(now) - stamp, NEGATIVE_HALF_LIFE_SECONDS, NEGATIVE_EXPIRY_SECONDS) > 0.0
 
 
 def _artist_name_key(candidate_source: Mapping[str, Any]) -> str:
@@ -128,6 +134,7 @@ def apply_feedback_signal(
     dismissed_keys = {
         row.get("artist_key") for row in rows
         if row.get("scope") == "artist" and row.get("status") == "not_for_me_artist"
+        and _active_dismissal(row, now=now)
     }
     dismissed_tags: set[str] = set()
     for candidate in candidates:
