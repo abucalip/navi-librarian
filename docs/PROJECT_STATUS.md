@@ -1,3 +1,7 @@
+## 2026-10-20 — PR #467 merged
+
+PR #467 merged as `27942379095cf41654fcb6298b3e9b0d9f56d730` from exact head `857a180ed6e93414122e0d23e9e413222a8606c0`. Expanded the bounded CF diagnostic error-class allowlist; no selection/provider behavior change. All four required workflows passed on that exact head, including the Docker packaging workflow's successful full unit-test step. Publishing/deployment remain paused. Next: continue aggregate-only candidate-supply investigation; keep private captures and identities out of GitHub.
+
 # Project status
 
 Last reviewed: 2026-10-20 (PR #465 merged at `6e1054b56c531eb4fbad912f8ffe1d300c358339`; save-seed diagnostics)
