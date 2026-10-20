@@ -640,3 +640,19 @@ Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200
 **Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. Effect on the browser-verification timeout is unmeasured until a live run.
 
 Tests (focused): `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` plus `py_compile` on the changed files. CI: see the PR.
+
+### Live cold/warm pair (2026-10-20, owner-approved, aggregate only, slskd off, fresh data dir, count 10)
+
+With the honest identifier and token (above) the recent-listens call no longer timed out; which of the two changes fixed it was not isolated. Capture was a throwaway wrapper outside the repo; the data dir was deleted afterwards.
+
+| | cold (323 s) | warm (63 s) |
+| --- | --- | --- |
+| CF recordings returned / considered / resolved / failed | 200 / 107 / 107 / 0 | 200 / 87 / 87 / 0 |
+| distinct CF artists among resolved; top-2 share | 6; 54.2% | 15; 31.0% |
+| cache-known / artist-cap skipped | 14 / 7 | 172 / 113 |
+| uncached MusicBrainz calls; budget skipped | 100; 86 | 28; 0 |
+| `total_mbid_count` | 1000 | 1000 |
+
+Findings. (1) The earlier 103 failures did not recur (0 failed in both runs), so they were most likely client-side timeouts or throttling, not a property of the recordings; the exception class remains unnamed. (2) The pool is 1,000 recordings and the app reads 200 (20%). (3) On a cold run the 100-call MusicBrainz budget, not paging, limits the resolved set: 86 recordings were skipped unread, and the cap cannot act on uncached artists. The resolved top of the list is clustered (three artists at 27.1% each). (4) On a warm run the cap does work (113 skipped) and the resolved set reaches 15 artists, so concentration is a cold-run effect that the cache dissolves. Caveat: a first launch of the wrapper appeared to exit at once with no output and may have run detached against the same data dir, so the warm numbers could include a third pass; one stray output fragment suggests it did. Single sample.
+
+Implication: widening CF paging would not help a cold run (budget-bound) and the warm run already spreads over 15 artists. Decision stands: no paging change. Reading deeper into the 1,000-pool would add ListenBrainz requests and needs owner approval.
