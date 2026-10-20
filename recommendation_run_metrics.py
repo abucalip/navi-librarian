@@ -35,6 +35,12 @@ def stage_timer(stage: str) -> Iterator[None]:
             _stage_seconds[stage] += elapsed
 
 
+def add_stage_seconds(stage: str, seconds: float) -> None:
+    """Add already-measured seconds to a named stage (for blocks that cannot use a with-block)."""
+    with _lock:
+        _stage_seconds[stage] += seconds
+
+
 def snapshot_and_reset() -> dict[str, dict[str, object]]:
     """Return aggregate counters for one run and clear them."""
     with _lock:

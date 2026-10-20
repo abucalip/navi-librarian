@@ -1,3 +1,12 @@
+## 2026-10-20 — Per-stage run timers for candidate gathering (offline, no behavior change)
+
+- Why: PR #451 timed gathering as one stage, so the flag-timing questions could not be attributed. The owner's priority is per-run time without added lookups.
+- Change: `recommendation_run_metrics.add_stage_seconds` plus timers for `metadata_resolution`, `genre_prefetch`, `supplementary_tag_lane`, `replenishment`, and `genre_lookup` in `discovery_candidate_gathering.py`. Clock reads only.
+- Tests: 2 added (stage keys reported per run; seconds accumulate). Focused tests: 11 OK. Full unit suite: 1039 tests OK (sandbox deps httpx, fastapi, mutagen installed).
+- Merges recorded: PR #449 `c90e43b`, PR #450 `27bdcc2`, PR #451 `42b6d81` (exact head `a1d061b`, four checks green per the thread).
+- Not done: no live or Mac run; four CI workflows on the new head not yet observed at time of writing.
+- Next: a repeated all-flags timing run that reads these stage keys, when the owner approves a live run.
+
 ## 2026-10-19 — Persisted candidate resolution: cross-run tests (2.3, test and docs only)
 
 - Finding: roadmap 2.3's default-path store already exists (`mb:recording:{mbid}`, 180-day TTL, written on every successful lookup). Ownership and eligibility run after the cache. No new store was built.

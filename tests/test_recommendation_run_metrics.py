@@ -30,6 +30,12 @@ class RunMetricsTests(unittest.TestCase):
         self.assertGreaterEqual(snap["stage_seconds"]["gather"], 0.0)
 
 
+    def test_add_stage_seconds_accumulates_measured_time(self):
+        metrics.add_stage_seconds("resolution", 1.25)
+        metrics.add_stage_seconds("resolution", 0.5)
+        self.assertEqual(metrics.snapshot_and_reset()["stage_seconds"], {"resolution": 1.75})
+
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -127,6 +127,24 @@ class CandidateGenrePrefetchTests(unittest.TestCase):
         self.assertEqual(sorted(log["artist"]), sorted(set(log["artist"])))
         self.assertEqual(set(log["artist"]), {PROFILE_MBID, *CANDIDATE_GENRES})
 
+    def test_run_reports_aggregate_seconds_for_each_stage(self):
+        import recommendation_run_metrics as metrics
+
+        metrics.snapshot_and_reset()
+        _run(warm=False)
+        stages = metrics.snapshot_and_reset()["stage_seconds"]
+
+        for name in (
+            "candidate_gathering",
+            "metadata_resolution",
+            "genre_prefetch",
+            "supplementary_tag_lane",
+            "replenishment",
+            "genre_lookup",
+        ):
+            self.assertIn(name, stages)
+            self.assertGreaterEqual(stages[name], 0.0)
+
     def test_prefetch_limit_zero_keeps_the_previous_cold_plan(self):
         _result, log = _run(warm=False, prefetch_limit=0)
 

@@ -3,7 +3,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
-from recommendation_run_metrics import timed_stage
+from recommendation_run_metrics import add_stage_seconds, timed_stage
 import json
 import math
 import time
@@ -523,6 +523,7 @@ def gather_recommendation_candidates(
     artist_resolved_counts = Counter()
     resolution_calls = 0
     cf_skips = Counter()
+    metadata_started = time.monotonic()
     batch_recordings = (
         _prefetch_batch_recordings(providers, recommendations, headers=headers)
         if _batch_resolution_enabled(providers, cold_start) else {}
@@ -673,6 +674,8 @@ def gather_recommendation_candidates(
                 record["error_class"] = classify_error(exc)
                 failures.append({"recording_mbid": mbid, "error": str(exc)})
 
+    add_stage_seconds("metadata_resolution", time.monotonic() - metadata_started)
+
     # Warm the genre cache before the tag lane reads it. Without this, a cold cache
     # plans fewer supplementary queries because the genre stage below runs after
     # the lane. The prefetch covers the top listening-profile artists and the top
@@ -681,6 +684,7 @@ def gather_recommendation_candidates(
     # rather than add them, except when the tag lane displaces a candidate from the
     # genre stage's top-60 set. Best-effort: failures are left for the genre stage
     # to retry and record. An exhausted retry stops only the candidate prefetch.
+    genre_prefetch_started = time.monotonic()
     profile_prefetch_ids = [
         artist_id for artist_id, _listen_count in recent_artist_mbid_counts.most_common(15)
     ]
@@ -749,6 +753,8 @@ def gather_recommendation_candidates(
             except Exception:
                 continue
 
+    add_stage_seconds("genre_prefetch", time.monotonic() - genre_prefetch_started)
+
     # Select supplementary queries from cached listening-profile genres and
     # reserve a small exploration quota for tags found in the CF candidate pool.
     # Cache reads are bounded and do not add provider calls or bypass TTL policy.
@@ -803,6 +809,7 @@ def gather_recommendation_candidates(
         "added": 0, "seen": 0, "hits": 0, "misses": 0,
         "request_index": 0, "unavailable": False, "exhausted_run": 0,
     }
+    tag_lane_started = time.monotonic()
     supplementary_query_outcomes = []
     with providers.http_client(timeout=20, follow_redirects=True) as client:
         supplementary_query_outcomes.extend(_run_tag_queries(
@@ -810,6 +817,8 @@ def gather_recommendation_candidates(
             headers=headers, albums=albums, failures=failures,
             state=regional_state,
         ))
+
+    add_stage_seconds("supplementary_tag_lane", time.monotonic() - tag_lane_started)
 
     # Build a complete, paginated Navidrome album inventory.
 
@@ -849,6 +858,7 @@ def gather_recommendation_candidates(
         and not regional_state["unavailable"]
         and regional_state["added"] < SUPPLEMENTARY_CANDIDATE_CAP
     )
+    replenish_started = time.monotonic()
     replenish_queries = []
     replenish_attempted = 0
     replenish_added_before = regional_state["added"]
@@ -873,6 +883,7 @@ def gather_recommendation_candidates(
                 )
             supplementary_query_outcomes.extend(replenish_outcomes)
             replenish_attempted = len(replenish_outcomes)
+    add_stage_seconds("replenishment", time.monotonic() - replenish_started)
     eligible_after = count_eligible_unowned_albums(albums, library_by_title, providers.music_key)
 
     # Retrieve MusicBrainz genre tags for a bounded number of artists.
@@ -899,6 +910,7 @@ def gather_recommendation_candidates(
             seen_artist_ids.add(artist_id)
             artist_ids.append(artist_id)
 
+    genre_lookup_started = time.monotonic()
     genre_exhausted_streak = 0
     with providers.http_client(timeout=15, follow_redirects=True) as client:
         for index, artist_id in enumerate(artist_ids):
@@ -956,6 +968,8 @@ def gather_recommendation_candidates(
                     "artist_mbid": artist_id,
                     "error": str(exc),
                 })
+
+    add_stage_seconds("genre_lookup", time.monotonic() - genre_lookup_started)
 
     # Broad musical families suggested by the recent listening profile.
     # These are ranking heuristics, not definitive genre classifications.
