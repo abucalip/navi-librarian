@@ -1,4 +1,4 @@
-# Handoff for Claude CLI: seed diagnostics (backend, one small PR)
+# Handoff for Claude CLI: exploration setting audit (backend, offline first)
 
 Read this first. It is written so you can pick up the next recommendation task from GitHub alone. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope" below).
 
@@ -10,27 +10,32 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Current state
 
-- `main` includes PR #464 (`de52808`, Save bookmark UI), PR #463 (`a12fb2f`, side-effect-free `save`; it also retired the unused `auto_acquire_for_me` setting), PR #461 (`ace28d3`, saved albums seed supplementary tag-query selection) and PR #460 (`4201ed9`; `navidrome_server.py` is 2,448 of 2,650 lines). Verify the `main` head before you rely on it; it may have moved.
-- Save is a bookmark (owner, 2026-10-20): it stores the album and metadata for the engine and a future "Saved" page, and never starts an slskd search. The UI Save control updates in place; the list endpoints hide saved albums, so a saved album leaves its list on the next load.
-- Roadmap 3.3 and 3.4 are done, and the save loop is now complete end to end (UI save, stored row, tag-query seed). Nothing yet reports whether the seed changes any query.
-- Live timing is done (single samples, roadmap section "Live stage-timing runs"). Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
+- `main` includes PR #465 (`6e1054b`, save-seed diagnostics counters), PR #464 (`de52808`, Save bookmark UI), PR #463 (`a12fb2f`, side-effect-free `save`) and PR #461 (`ace28d3`, saved albums seed tag-query selection). Verify the `main` head before you rely on it; it may have moved. `navidrome_server.py` is 2,448 of 2,650 lines.
+- Save is a bookmark (owner, 2026-10-20): it stores the album and metadata for the engine and a future "Saved" page, and never starts an slskd search.
+- The save loop is complete and measured once: `run_metrics.counts` carries seven `save_seed.*` counters. One owner-approved live sample (4 saves) changed 1 initial query and 0 replenishment queries; at most 3 of 4 saves reached the planner. Single sample; candidate quality of the changed query is unmeasured. No further seed work is planned unless real saves over time suggest it.
+- Live timing is done (roadmap "Live stage-timing runs"). Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
 
-## Next task: aggregate seed diagnostics (backend, one small PR, no behavior change)
+## Next task: exploration setting audit (backend, offline first, likely a small PR or a docs-only finding)
 
-Why: the seed (PR #461) was verified only on a synthetic fixture. Before asking the owner for a live run to measure its real yield, the run must report what the seed did. This follows the PR #451/#452 pattern: counters only, so the next live run answers the question.
+Roadmap open item: "Exploration slider (later, product): map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs." Before building anything, establish what is actually missing. Facts verified at hand-off (re-check them on current `main`):
 
-- Required: add aggregate-only counters to the existing `run_metrics` for the seed path in `discovery_candidate_gathering.py` (around the `saved_artist_seed_weights` block). Candidates: saved artists in the seed window; seeded from cached genres (MBID known); seeded from metadata `genres` (MBID unknown); skipped because the save had no `genres` and the MBID is unknown; planned supplementary queries that differ from the unseeded plan (initial and replenishment). Choose the final names yourself, keep them integers, and add them to the existing metrics map and its summarizer. Inspect `recommendation_run_metrics.py` first.
-- Not allowed: any identity-bearing value (artist, album, tag names, MBIDs) in the counters, a new lookup, a change to query selection, quotas, caps, scoring or the flag defaults, and any change to `navidrome_server.py` or `app/api/**` (stop and ask if either seems needed).
-- Acceptance (deterministic, synthetic): with no feedback provider, with feedback rows that seed no one, and with one MBID-known and one MBID-unknown save, the counters have the expected values; the planned queries and lookup count are identical to the run without the counters (assert it); a feedback-provider failure leaves the counters at zero and the run unseeded. Existing `tests/test_discovery_candidate_gathering*.py` modules for the changed file still pass.
-- Run `python -m py_compile` on each changed file and the focused modules only. If you add a Python module, add it to the Dockerfile `COPY` list.
-- Approval: `discovery_candidate_gathering.py` is a domain module. The owner's approval for this task is needed before you edit it (earlier approvals do not carry over).
-- Record the merge SHA in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (roadmap 3.3 status) and `PROJECT_LOG.md`.
-- After the merge, the live measurement itself (run the engine with a few real saves, read the counters) needs the owner's explicit go-ahead. Do not start it, and do not describe it as done.
+- The setting already exists: `service_settings.py` (`recommendation_diversity`, validated integer 0-100, default 0 in `navidrome_server.py`), `GET/PUT /api/settings/recommendation-diversity` in `app/api/settings.py`, and `discovery_mmr.diversity_setting_to_penalty` (linear 0-75 to a 0.00-0.75 penalty, saturating above 75, a provisional guardrail). `navidrome_server.py` passes `diversity_setting_fn` into the recommendation path. There is no UI control.
+- So the open question is whether a new backend mapping is needed at all, or only a UI control over the existing contract.
+
+Steps:
+
+1. Trace the setting end to end: stored value, `diversity_setting_fn`, where `mmr_rerank` runs, and whether `0` is a true no-op (identical output to MMR off). Report the exact call path with line numbers.
+2. Measure offline with the existing harnesses (`recommendation_mmr_evaluate.py`, `recommendation_replay.py`, synthetic fixtures where the private capture would be needed): output at settings 0, 25, 50, 75, 100 for diversity, relevance retention and repeat rate. Identity-free aggregates only. Known: the single-pool gate failed from setting 80 upward, which is why the penalty saturates at 75; confirm the user-facing 75-100 range is therefore flat and say so.
+3. Decide and write down one of: (a) the contract is sufficient and the next step is a UI-only task (draft its acceptance criteria in this file); (b) a small backend change is needed (for example a distinct "exploration" label or a non-flat 75-100 range); name it and its risk before editing.
+
+- Not allowed without the owner's approval: any edit to `app/api/**`, `app/security/**`, `navidrome_server.py` or a domain module (earlier approvals do not carry over), a change to the default value, new lookups, or any weakening of ownership, duplicate-identity or release-eligibility filtering.
+- Acceptance: a recorded trace and offline measurements in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`, with the decision above. If you change code, add a deterministic synthetic test and run `python -m py_compile` on each changed file and the focused modules only.
+- Record the PR/merge SHA in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`. A docs-only finding still goes through a PR with the four checks unless the owner says otherwise.
 
 ### Deferred (not this task)
 
 - A "Saved" page that lists `for_me` rows, and a way to undo a save after the list has reloaded.
-- Storing the artist MBID in save metadata (only worth it if the new counters show many skipped saves).
+- Storing the artist MBID in save metadata: the live sample suggests it would recover at most one of four saves.
 - Rendered check of the artist deep-dive Save control (not covered by PR #464's harness).
 - Whether to enable the default-off flags (see "Open items").
 
@@ -67,11 +72,5 @@ Why: the seed (PR #461) was verified only on a synthetic fixture. Before asking 
 - Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
 - ListenBrainz client. The app's HTTP client intermittently receives a browser-verification page instead of JSON. A fix that sends an honest client identifier and token would need the owner's go-ahead first. Do not change the client's user agent or fingerprint to get around the check.
 - Last.fm as a source is parked by the owner. Do not start a quality test or a combined path without a new decision.
-- Exploration slider (later). Map one user-facing value onto the existing `recommendation_diversity` setting (0–100). Backend first; no UI in backend PRs.
-- Feedback positive seed. Merged as PR #461; its UI (PR #464) and side-effect-free save (PR #463) are merged. Its real tag yield is unmeasured: seed diagnostics first (the task above), then a live run only with the owner's go-ahead.
-
-## Working style
-
-- Measure offline first, using the existing replay and profile-comparison harnesses. Use synthetic fixtures where the private captures would be needed.
-- Report results as separate states: implemented, automated-tested, merged, published, deployed, runtime-verified. A merge is not deployment evidence.
-- Keep changes small and reviewable, one roadmap item per PR.
+- Exploration slider. The 0-100 `recommendation_diversity` setting, its API and the MMR penalty mapping already exist; the audit above decides whether anything backend is missing. No UI in backend PRs.
+- Feedback positive seed. Merged (PRs #461, #463, #464, #465). One live sample is recorded in the roadmap; any further live run needs the owner's go-ahead.

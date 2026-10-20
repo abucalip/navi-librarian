@@ -1,6 +1,8 @@
 # Project status
 
-Last reviewed: 2026-10-20 (PR #464 merged at `de528089ecc2861c85a82c61a14abba87eb6bac6`; recommendation Save bookmark UI)
+Last reviewed: 2026-10-20 (PR #465 merged at `6e1054b56c531eb4fbad912f8ffe1d300c358339`; save-seed diagnostics)
+
+**Save-seed diagnostics — PR #465 merged as `6e1054b` (2026-10-20).** Seven aggregate `save_seed.*` counters in `run_metrics.counts`; no behavior change, no new lookup. Exact head `d962dd1` passed all four required workflows. One owner-approved live sample (4 saves): 1 initial query changed, 0 in replenishment; at most 3 of 4 saves reached the planner. Single sample, candidate quality unmeasured. Publishing and deployment remain paused. **Next action:** exploration-setting investigation, handed off in `CLAUDE_CLI.md`.
 
 **Recommendation Save bookmark control — PR #464 merged.** Front-end toggle adds Save/Undo controls to Personal, New releases, Classics, and artist deep-dive cards; it sends `save`/`remove_for_me` feedback with item metadata and does not trigger acquisition. Exact PR head `6e3a815d9b98e73350e044c944187e62d716daca` passed all four required workflows: Python syntax, Docker packaging, container runtime smoke, and validation-only image validation (publishing paused). Owner reports manual testing was performed, but no report was submitted, so detailed manual checklist results are not recorded here. No screen-reader pass is claimed. Merge commit `de528089ecc2861c85a82c61a14abba87eb6bac6`. It followed PR #463 (`a12fb2f`), which made `save` a side-effect-free bookmark and retired the unused `auto_acquire_for_me` setting. The control updates in place because the list endpoints hide saved albums, so Undo works only until the list reloads. **Next action:** aggregate-only seed counters in `run_metrics` (backend, no behavior change), handed off in `CLAUDE_CLI.md`; a live seed-yield run needs the owner's go-ahead. Publishing and deployment remain paused; no production runtime verification.
 
