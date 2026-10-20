@@ -65,6 +65,16 @@ Same harness as the warm finding (count 10, fresh data dir, slskd off, aggregate
 
 Result: warm CF supply now matches cold (17, was 4 and 14), warm time fell from 202 to 230 s down to 32 s and then 3 s, and warm 2 made no MusicBrainz or Last.fm calls (ListenBrainz CF requests unchanged at 2). Spread is unchanged. Overlap with the previous list rose to 5 of 10 because supply is now stable run to run, so the cooldown (max 25%, soft) is the only repeat damper; this is the number to watch. Limits: one sample, back-to-back runs, so the near-zero warm 2 reflects a fully warm cache and the profile-tag lane also hit cache. Whether 5 of 10 repeats is acceptable is a product call; do not tune cooldown (3.2) without a longer-interval measurement.
 
+## Finding — repeat rate at simulated intervals (2026-10-20, measured; one sample)
+
+Cold build plus five warm refreshes with history shifted back 0, 1, 3, 7 and 14 days (disposable database, slskd off, aggregate only, deleted). Full tables and the score-gap statistics are in `docs/REPEAT_RATE_MEASUREMENT_2026-10-20.md`.
+
+Result: overlap with the previous list was 4, 5, 5, 6, 6 of 10 and with all earlier lists 4, 5, 8, 9, 9; spread unchanged (10 distinct artists, 20% top-2 share). The cooldown penalised 10 to 24 of 55 candidates (max penalty 0.188) and swapped at most 1 of the top 10. Score gaps: 2.76% at the rank 10/11 cut-off, 25.29% across ranks 1 to 10, 2.57% median adjacent gap. Warm refreshes after the cache fills take 2.6 to 3.3 s with 2 ListenBrainz requests and no other provider calls.
+
+Limits: one sample; simulated time does not change ListenBrainz CF or the listening profile, so this isolates the cooldown, not supply drift.
+
+Decision: **do not reopen 3.2.** Repeats come from a small, stable pool; the cap moves at most one slot and a stronger cooldown would trade relevance for freshness. More supply breadth would need owner approval.
+
 ## Finding — CF supply is limited by pages read, not the lookup budget (2026-10-20, measured; one sample)
 
 One live run (cold plus two warm). All 200 fetched CF recordings resolved every time; uncached per-recording MusicBrainz lookups were 0, so the 100-per-run budget never bound. The limit is `CF_MAX_PAGES = 2` × 100 of a 1,000-recording pool: 36 CF albums from 15 artists (top-2 share 47.5%), identical across runs. Details and an approval request for 3 or 4 pages: `docs/CF_PAGES_PROPOSAL_2026-10-20.md`. This corrects the earlier idea of spending spare budget on the already-fetched pool: there is no unresolved remainder. No code change; deeper reading needs owner approval.
@@ -93,6 +103,7 @@ One live run (cold plus two warm). All 200 fetched CF recordings resolved every 
 - ListenBrainz CF is the primary candidate source; MusicBrainz resolves recording metadata. A cold-start batch path is enabled for first builds and covers all uncached CF recordings in batches. Batch hits do not spend the 100-call MusicBrainz budget; batch misses remain bounded by it. Since 2026-10-21 (owner-approved) steady-state builds also use the batch path (`WARM_BATCH_ENABLED`), and batch results are cached under `mb:recording_batch:<mbid>` (never the full-lookup key, because batch data lacks secondary release types). Live effect: see the verification note under the warm finding.
 - Fixed MusicBrainz tag searches are supplementary candidates. The batch metadata response lacks secondary release types, so its title-marker filter is only a partial safeguard and stays behind its default-off flag.
 - Recommendation output is persisted. Candidate generation, scoring/allocation, eligibility, and snapshot freshness are separate layers; diagnose them separately.
+- Batch release-group lookups are resilient (PR #479, merge `4cf66322866c5377fec612a297db05922d7a8e11`): a failed chunk is retried once; if it still fails only its recordings fall back to per-recording lookups and the other chunks stay batch-resolved and cached. Found live at 400 CF recordings (a 502 HTML response discarded all four successful recording batches). Not yet confirmed live at 4 pages; `CF_MAX_PAGES` is still 2.
 - Feedback-seed work and automatic refill/stale-while-revalidate are implemented. Roadmap 3.3 and 3.4 are complete.
 - `LISTENBRAINZ_TOKEN` is supported through `compose.yaml`, `.env.example`, and deployment documentation, but the change is **not deployed**.
 - Historical evidence is limited: live measurements are small samples; the final-list effect of the cold-start gain is unknown; available ListenBrainz history covers roughly two weeks.

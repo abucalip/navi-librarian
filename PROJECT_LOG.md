@@ -1,3 +1,10 @@
+## 2026-10-20 — Batch release-group resilience (PR #479 merged)
+
+- Branch `fix/batch-release-group-resilience`; exact final PR head `681feef0948f21e81c08a9611bd32132b448e50e`; squash merge `4cf66322866c5377fec612a297db05922d7a8e11`.
+- Cause found by a read-only live diagnostic (cold, `CF_MAX_PAGES` 4, local only): all four recording batches returned 200, then the first release-group request returned 502 with an HTML body; the function raised and `_prefetch_batch_recordings` discarded everything, so 400 recordings fell back to per-recording MusicBrainz lookups (264 to 437 s). Fix: one retry per release-group chunk, then fall back only for recordings in the failed chunk. No added requests when nothing fails.
+- Measurements that led here (owner-approved, aggregate only): at 2 pages the 100-per-run MusicBrainz budget never binds (0 uncached lookups, 200 of 200 CF recordings resolved, 36 CF albums from 15 artists); at 4 pages with the old code cold/warm 1 were 264 s / 297 s and warm 2 reached 78 CF albums from 42 artists (92 s). Repeat-rate run: overlap with the previous list 4, 5, 5, 6, 6 of 10 at +0/1/3/7/14 days; decision not to reopen 3.2. Reports in PRs #477 and #478 (open when this was written).
+- Focused tests reported in the PR; all four required workflows passed on the exact final head: `39508209371` (packaging), `39508209369` (smoke), `39508209423` (syntax), `39508209395` (non-publishing image). Full suite not run by the agent (standing rule). `CF_MAX_PAGES` is unchanged at 2.
+
 ## 2026-10-20 — Steady-state (warm) final list measured (PR #475 merged)
 
 - Branch `docs/warm-final-list-measurement`; exact final PR head `78f6515ab5af09337b79cd576d83fa9d69b5d23a`; squash merge `79cd5757b7a537434e95740dbef4e1ddf0da027e`.
