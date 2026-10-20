@@ -49,10 +49,26 @@ Limits: one sample; runs were back to back, so cooldown decay was negligible and
 
 Decision: **do not reopen 1.2, 3.1 or 3.2** on this evidence; no code change. Risk named: if repeat rate matters, the lever is CF supply on warm runs (batch hits are not cached, so warm runs re-spend the 100 budget). Caching batch hits or a warm batch path would change call patterns and needs owner approval. A follow-up measurement would need a cache-hit counter.
 
+### Verification of caching + warm batch path (2026-10-20, PR #476 branch; one sample, owner-approved)
+
+Same harness as the warm finding (count 10, fresh data dir, slskd off, aggregate only, cold then two warm refreshes, data dir deleted). Final-list source mix is captured this time.
+
+| | cold | warm 1 | warm 2 |
+| --- | --- | --- | --- |
+| Albums / distinct artists / top-2 share | 10 / 10 / 20% | 10 / 10 / 20% | 10 / 10 / 20% |
+| Overlap with previous list | n/a | 5 of 10 | 5 of 10 |
+| Final items: CF / tag search | 4 / 6 | 4 / 6 | 4 / 6 |
+| Unowned CF candidates | 17 | 17 | 17 |
+| Wall time | 123 s | 32 s | 3 s |
+| MusicBrainz calls | 78 | 10 | 0 |
+| Family cap rejections | 38 | 38 | 37 |
+
+Result: warm CF supply now matches cold (17, was 4 and 14), warm time fell from 202 to 230 s down to 32 s and then 3 s, and warm 2 made no MusicBrainz or Last.fm calls (ListenBrainz CF requests unchanged at 2). Spread is unchanged. Overlap with the previous list rose to 5 of 10 because supply is now stable run to run, so the cooldown (max 25%, soft) is the only repeat damper; this is the number to watch. Limits: one sample, back-to-back runs, so the near-zero warm 2 reflects a fully warm cache and the profile-tag lane also hit cache. Whether 5 of 10 repeats is acceptable is a product call; do not tune cooldown (3.2) without a longer-interval measurement.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done (see the finding above). Warm measurement done (see the warm finding above); next: owner decision on caching batch hits or the default-on flags brief. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done: cold and warm candidate supply and final-list effects are measured (see findings above). Next: obtain longer-interval repeat-rate evidence before deciding whether cooldown needs calibration. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it
@@ -70,7 +86,7 @@ Decision: **do not reopen 1.2, 3.1 or 3.2** on this evidence; no code change. Ri
 
 ## Current implementation facts
 
-- ListenBrainz CF is the primary candidate source; MusicBrainz resolves recording metadata. A cold-start batch path is enabled for first builds and covers all uncached CF recordings in batches. Batch hits do not spend the 100-call MusicBrainz budget; batch misses remain bounded by it.
+- ListenBrainz CF is the primary candidate source; MusicBrainz resolves recording metadata. A cold-start batch path is enabled for first builds and covers all uncached CF recordings in batches. Batch hits do not spend the 100-call MusicBrainz budget; batch misses remain bounded by it. Since 2026-10-21 (owner-approved) steady-state builds also use the batch path (`WARM_BATCH_ENABLED`), and batch results are cached under `mb:recording_batch:<mbid>` (never the full-lookup key, because batch data lacks secondary release types). Live effect: see the verification note under the warm finding.
 - Fixed MusicBrainz tag searches are supplementary candidates. The batch metadata response lacks secondary release types, so its title-marker filter is only a partial safeguard and stays behind its default-off flag.
 - Recommendation output is persisted. Candidate generation, scoring/allocation, eligibility, and snapshot freshness are separate layers; diagnose them separately.
 - Feedback-seed work and automatic refill/stale-while-revalidate are implemented. Roadmap 3.3 and 3.4 are complete.

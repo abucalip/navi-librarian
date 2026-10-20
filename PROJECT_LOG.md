@@ -4,11 +4,18 @@
 - Decision: no reopening of 1.2, 3.1, 3.2; no code change. Harness bug: final-list source mix not captured. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - Tests: none run, no code changed. PR/merge SHA and CI: see the PR. Not done: publication, deployment.
 
+## 2026-10-20 — Cache batch hits and warm batch path (code)
+
+- Branch `feat/cache-batch-hits-warm-batch`. Owner-approved after the warm measurement: `WARM_BATCH_ENABLED` (default on) sends steady-state builds through the batch path; batch results are cached under `mb:recording_batch:<mbid>` (180 days), read before any batch request, and never written to `mb:recording:`. Cache write failures are swallowed. Fewer lookups per run, no new request types; budget unchanged. `discovery_candidate_gathering.py`, `tests/test_discovery_cold_start_batch.py`, `tests/test_discovery_batch_lookup.py`.
+- Tests (focused only, no full suite): `test_discovery_cold_start_batch` (15), `test_discovery_batch_lookup` (18), `test_discovery_candidate_gathering` (34), `test_discovery_candidate_supply`, `test_discovery_candidate_replenishment`, `test_discovery_candidate_genre_prefetch`, `test_discovery_save_tag_seed`, `test_recommendation_replay_capture` and the genre/tag-lane breaker modules, all OK; `py_compile` on the changed module. CI: see the PR.
+- Live check (owner-approved, aggregate only, data dir deleted): warm CF unowned 17 (was 4/14), warm time 32 s then 3 s (was 202-230 s), MusicBrainz calls 78 / 10 / 0, spread unchanged, overlap with previous list 5 of 10. Details in the roadmap. Not done: merge, publication, deployment.
+
 ## 2026-10-20 — Cold-start supply gain measured in the final list (docs only)
 
 - Branch `docs/final-list-supply-measurement`. Offline trace of CF recording to final list, then an owner-approved live pair (before = `961266d`, the #471 parent; after = `7deaf46`), aggregate only, data dirs deleted. Final list 10 distinct artists, top-2 20% both times (allocator takes one album per artist); CF share of the final 10 rose 3 to 7; CF unowned candidates 4 to 17; 170 s vs 95 s (one sample each, noisy).
 - Decision: no reopening of 1.2, 3.1, 3.2; no code change. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - Tests: none run, no code changed. Merged to `main` as `aedc34e44034a04bb20c177458f9c8b73b12900f` (squash, PR #474) from exact head `b46f13df69be63d1eb1d25047bac04b4eb2f388e`; compile, test-and-build, container-smoke and validate-container all passed. Next task (steady-state warm measurement) handed off in `CLAUDE_CLI.md`. Not done: publication, deployment.
+
 
 ## 2026-10-20 — Recommendation roadmap uncluttered
 

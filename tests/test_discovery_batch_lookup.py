@@ -135,6 +135,7 @@ class _Harness:
 
 def _run(harness, *, batch_enabled, title_filter_enabled=True):
     with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", batch_enabled), \
+            mock.patch.object(gathering, "WARM_BATCH_ENABLED", False), \
             mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", title_filter_enabled):
         return gather_recommendation_candidates(harness.providers())
 

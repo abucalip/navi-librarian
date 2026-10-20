@@ -146,6 +146,12 @@ CF_BATCH_RESOLUTION_ENABLED = False
 # first build is fast. Steady-state builds are unaffected. Its output has no secondary
 # release-type filter beyond the title markers, so it is a labelled first-run list.
 COLD_START_BATCH_ENABLED = True
+# Steady-state (warm) batch path, owner-approved 2026-10-21: uncached recordings go
+# through the batch endpoints, and batch results are cached under their own key so a
+# later run does not re-resolve them. Same title-marker limitation as the cold path.
+WARM_BATCH_ENABLED = True
+BATCH_RECORDING_CACHE_PREFIX = "mb:recording_batch:"
+BATCH_RECORDING_TTL_SECONDS = 180 * 24 * 60 * 60
 # Recordings per artist resolved before further cached recordings are skipped.
 # The CF endpoint returns no artist, so uncached recordings must still be
 # resolved to learn their artist; the cap can only skip cache-known artists.
@@ -217,14 +223,15 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
 
 
 def _batch_resolution_enabled(providers: RecommendationProviders, cold_start: bool = False) -> bool:
-    # Cold-start batches (no stored list yet) use their own switch; steady-state
-    # batches keep the flags, which stay off by default.
-    if cold_start:
-        return COLD_START_BATCH_ENABLED and providers.http_post is not None
+    # Cold-start and warm batch paths have separate switches. The legacy opt-in
+    # path requires both CF_BATCH_RESOLUTION_ENABLED and the title-filter flag.
+    if providers.http_post is None:
+        return False
+    if (COLD_START_BATCH_ENABLED if cold_start else WARM_BATCH_ENABLED):
+        return True
     return (
         CF_BATCH_RESOLUTION_ENABLED
         and _supply.BATCH_TITLE_FILTER_ENABLED
-        and providers.http_post is not None
     )
 
 
@@ -238,15 +245,24 @@ def _prefetch_batch_recordings(
     Returns {} on any batch failure, so the loop uses per-recording lookups.
     """
     uncached: list[str] = []
+    cached_batch: dict[str, dict[str, Any]] = {}
     for item in recommendations:
         mbid = item.get("recording_mbid") if isinstance(item, dict) else None
         if not mbid or providers.metadata_cache_get(
             f"mb:recording:{mbid}", ttl_seconds=180 * 24 * 60 * 60,
         ) is not None:
             continue
+        # Batch results live under their own key: they lack secondary release types,
+        # so they must never satisfy the full per-recording lookup.
+        known = providers.metadata_cache_get(
+            f"{BATCH_RECORDING_CACHE_PREFIX}{mbid}", ttl_seconds=BATCH_RECORDING_TTL_SECONDS,
+        )
+        if known is not None:
+            cached_batch[str(mbid)] = known
+            continue
         uncached.append(str(mbid))
     if not uncached:
-        return {}
+        return cached_batch
     try:
         entries = fetch_batch_recordings(providers.http_post, uncached, headers=headers)
         release_group_ids = [
@@ -258,8 +274,8 @@ def _prefetch_batch_recordings(
             providers.http_get, release_group_ids, headers=headers,
         ) if release_group_ids else {}
     except Exception:
-        return {}
-    recordings = {}
+        return cached_batch
+    recordings = dict(cached_batch)
     for mbid, entry in entries.items():
         recording = synthesize_recording(
             entry, release_groups,
@@ -268,6 +284,10 @@ def _prefetch_batch_recordings(
         )
         if recording is not None:
             recordings[mbid] = recording
+            try:
+                providers.metadata_cache_set(f"{BATCH_RECORDING_CACHE_PREFIX}{mbid}", recording)
+            except Exception:
+                pass  # caching is an optimisation; never fail the run for it
     return recordings
 
 
