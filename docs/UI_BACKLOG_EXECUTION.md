@@ -3506,7 +3506,8 @@ Owner request (2026-10-20): restyle the notification bar in the lower right, and
 
 ### 42.4 Limitations
 
-- Not run: 1200, 900 and 620px renders, keyboard-only pass, reduced-motion pass, failed-commit path, the Notyf toast in a rendered state (no Get was triggered), and the exact-head manual checklist against the owner's helper.
+- Follow-up pass (same branch, same harness): 1200, 900 and 620px show no horizontal overflow; keyboard Enter on Dismiss moves focus to the page heading, keyboard Enter on Undo sends zero POSTs and returns focus to the restored row's first control (Get); reduced motion sets the drain animation to none; a failed commit (HTTP 500) restores the row and shows the server message in the list status line.
+- Not run: the Notyf toast in a rendered state (no Get was triggered), the exact-head manual checklist against the owner's helper, and a screen-reader pass.
 - The snackbar and Notyf toasts both sit at the lower right; when both are visible they can overlap.
 - Dismiss now sends its request after the window, so a page that is closed inside the window does not send it. Owner decision recorded here; reversing it needs a new decision.
 - Not merged, not deployed.
