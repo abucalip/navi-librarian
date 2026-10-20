@@ -45,6 +45,15 @@ _RETRY_AFTER_STATUS_CODES = (429, 503)
 _RETRY_AFTER_MAX_SECONDS = 10.0
 
 
+def _provider_for_url(url):
+    """Return a coarse provider label for a request URL (no URL is recorded)."""
+    if "musicbrainz.org" in url:
+        return "musicbrainz"
+    if "listenbrainz.org" in url:
+        return "listenbrainz"
+    return "other"
+
+
 def _retry_after_seconds(response, *, now=None):
     """Return the Retry-After wait in seconds (seconds or HTTP-date form), or None."""
     headers = getattr(response, "headers", None)
@@ -88,7 +97,10 @@ def _get_with_bounded_retry(
     ``_RETRY_AFTER_MAX_SECONDS``) replaces the fixed backoff for that wait.
     """
     response = None
+    from recommendation_run_metrics import record_provider_call
+
     for attempt in range(attempts):
+        record_provider_call(_provider_for_url(url), "bounded_get")
         response = client.get(url, params=params, headers=headers)
         if response.status_code not in _RETRYABLE_STATUS_CODES:
             return response
@@ -167,6 +179,9 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
     for page in range(CF_MAX_PAGES):
         paging["pages_requested"] += 1
         try:
+            from recommendation_run_metrics import record_provider_call
+
+            record_provider_call("listenbrainz", "cf_recommendations")
             response = providers.http_get(
                 url,
                 params={"count": CF_PAGE_SIZE, "offset": page * CF_PAGE_SIZE},
@@ -548,6 +563,9 @@ def gather_recommendation_candidates(
 
                     response = None
                     for attempt in range(3):
+                        from recommendation_run_metrics import record_provider_call
+
+                        record_provider_call("musicbrainz", "recording_lookup")
                         response = client.get(
                             f"https://musicbrainz.org/ws/2/recording/{mbid}",
                             params={
