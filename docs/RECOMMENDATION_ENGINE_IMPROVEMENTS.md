@@ -232,6 +232,8 @@ Use feedback in ranking/query selection, not only stored-list filtering:
 
 Define separate time windows/decay rules and expiry for positive/negative signals. Do not create permanent exclusion. Add regression tests using injected feedback rows, including expiry and ensuring album-level dismissal does not penalize sibling albums.
 
+**Status (2026-10-20, branch `rec/feedback-signal`, not pushed):** implemented offline in `recommendation_feedback.py` behind `FEEDBACK_SIGNAL_ENABLED = False`. Dismissals apply a decaying penalty (album 0.50, artist 0.30, shared-tag 0.10, cap 0.60; 14-day half-life, 60-day expiry, from `updated_at`). Saves apply a boost to the same artist (0.10 max; 30-day half-life, 90-day expiry, from `created_at`). `dismiss_artist` takes the larger penalty, not the sum. Ownership-clear candidates only. The read-time hard filter is unchanged. Not done: the positive seed is a score boost, not a tag-query seed; no end-to-end controlled-fixture run; default-on needs an owner decision.
+
 **Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
 #### 3.4 Persisted last-known-good snapshots and automatic background refill (partly implemented, 2026-10-19; snapshot guard PR #445 `c5e9b17`; read-time ownership filter PR #446 `80d796b`; provider-failure threshold PR #447 `e932c51`)

@@ -241,7 +241,13 @@ def _validate_ranking_context(value: Any) -> dict[str, Any]:
     diversity = value["diversity_setting"]
     if type(diversity) is not int or not 0 <= diversity <= 100:
         raise ValueError("Ranking context diversity_setting must be an integer from 0 to 100.")
-    return {"ranking_now": float(timestamp), "history": history, "diversity_setting": diversity}
+    frozen = {"ranking_now": float(timestamp), "history": history, "diversity_setting": diversity}
+    if "feedback" in value:
+        feedback = value["feedback"]
+        if not isinstance(feedback, list) or any(not isinstance(row, dict) for row in feedback):
+            raise ValueError("Ranking context feedback must be a list of objects.")
+        frozen["feedback"] = feedback
+    return frozen
 
 
 def load_capture(path: str | Path) -> dict[str, Any]:

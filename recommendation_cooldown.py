@@ -133,16 +133,25 @@ def prepare_ranking_inputs(
     *,
     now_fn: Callable[[], float],
     diversity_setting_fn: Callable[[], int],
+    feedback_fn: Callable[[], list[dict[str, Any]]] | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
-    """Resolve frozen or live ranking inputs and return cooldown-adjusted candidates."""
+    """Resolve frozen or live ranking inputs and return cooldown-adjusted candidates.
+
+    Feedback is frozen into the context only when the signal is enabled or the
+    override already carries it, so captures without feedback keep their shape.
+    """
+    from recommendation_feedback import FEEDBACK_SIGNAL_ENABLED, apply_feedback_signal
+
     if ranking_context_override is None:
         ranking_now = now_fn()
         ranking_history = read_history_for_cooldown(database_path, now=ranking_now)
         diversity_setting = diversity_setting_fn()
+        feedback = feedback_fn() if FEEDBACK_SIGNAL_ENABLED and feedback_fn is not None else None
     else:
         ranking_now = float(ranking_context_override["ranking_now"])
         ranking_history = list(ranking_context_override["history"])
         diversity_setting = ranking_context_override["diversity_setting"]
+        feedback = ranking_context_override.get("feedback")
     context = {
         "ranking_now": ranking_now,
         "history": ranking_history,
@@ -152,4 +161,7 @@ def prepare_ranking_inputs(
         allocation_candidates, candidate_by_id, database_path,
         now=ranking_now, history_override=ranking_history,
     )
+    if feedback is not None:
+        context["feedback"] = list(feedback)
+        adjusted = apply_feedback_signal(adjusted, candidate_by_id, feedback, now=ranking_now)
     return adjusted, context

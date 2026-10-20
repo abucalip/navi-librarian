@@ -1,3 +1,10 @@
+## 2026-10-20 — Roadmap 3.3 feedback signal (offline, branch `rec/feedback-signal`)
+
+- Task: roadmap 3.3, feedback as a bounded signal. Implemented in `recommendation_feedback.py`, wired through `prepare_ranking_inputs` (`recommendation_cooldown.py`) and the replay context validator (`recommendation_replay.py`); one server call-site line, with one blank line removed to stay at the 2650-line cap.
+- Gate: `FEEDBACK_SIGNAL_ENABLED = False`. No default-on change.
+- Tests: `tests/test_recommendation_feedback.py` (14 tests). Full suite: 1053 run, 1 failure, the known macOS `test_acquisition_import` case, confirmed to fail on clean `main` via stash.
+- Not done: no tag-query seed; no end-to-end controlled-fixture evaluation; not pushed; no PR.
+
 ## 2026-10-20 — Live stage-timing runs with per-stage keys (docs only)
 
 - Merged: PR #454 squash-merged to `main` as `a5bba875dbec57fc5c98aba119b374f268bf1ef6` after the owner named it. All four required workflows passed on the exact head before merge.
