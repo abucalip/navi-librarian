@@ -536,3 +536,24 @@ PR #451 timed candidate gathering as a whole, so the timing runs could not say w
 The timers only read the clock. No lookup, budget, cache, eligibility, or ownership rule changed. Tests: `tests/test_discovery_candidate_genre_prefetch.py` (each stage key is reported for one run) and `tests/test_recommendation_run_metrics.py` (accumulation). Full unit suite on the working head: 1039 tests, all passing, with the sandbox dependencies installed.
 
 Limits: this is a stage breakdown for the owner's next timing run, not a timing result. No live or Mac run was made. The owner's open question (why the all-flags runs were much faster than single-flag runs) can be answered only by a repeated run that reports these keys. Live runs need the owner's go-ahead, and the Mac measurement is paused. Merged as PR #452 at `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9` from exact head `856df1f6ed50353ee671c6b129d51e86a49b4ad7`; the four required workflows (compile, test-and-build, container-smoke, validate-container) succeeded on that head.
+
+## Live stage-timing runs (2026-10-20, owner-approved, aggregate only)
+
+Live runs on the owner's machine, count 10, one fresh data directory per configuration (warm runs reuse it). Single samples. Raw stage seconds come from `run_metrics.stage_seconds`; `candidate_gathering` overlaps the other stages and is not additive. Flags: "all" = batch resolution, title filter, genre breaker, tag-lane early stop; "batch" = batch resolution and title filter only; "single" = genre breaker only, because the handoff named no single flag.
+
+| Run | Wall s | Recs | metadata_resolution s | genre_lookup s | MusicBrainz recording lookups | Outcome |
+|---|---|---|---|---|---|---|
+| all, cold | 111.6 | 10 | 1.1 | 51.9 | 0 | ok |
+| all, warm | 3.1 | 10 | 0.7 | 0.0 | 0 | ok |
+| batch, cold (run 1) | 107.8 | 10 | 0.7 | 48.6 | 0 | ok |
+| batch, warm (run 1) | 0.2 | 0 | - | - | - | listening-history call returned a non-JSON response |
+| batch, warm (retry) | 8.6 | 10 | 0.8 | 0.0 | 0 | ok |
+| batch, cold (run 2) | 0.3 | 0 | - | - | - | same non-JSON failure |
+| single, cold | 228.9 | 10 | 131.8 | 48.1 | 101 | ok |
+| single, warm | 162.9 | 10 | 132.1 | 17.9 | 100 | ok |
+
+**Reading.** The speed-up the owner asked about is the batch path. Batch-only and all-flags both resolve recordings without per-recording MusicBrainz calls, and their metadata stage takes about 1 s. The breaker-only configuration spends about 130 s in that stage. The two batch-only failures are upstream (the listening-history response), not timing data, and are excluded.
+
+**Warm breaker-only run, cache miss (hypothesis, consistent with the evidence).** The warm run made 100 recording lookups. The recording cache held 200 entries afterwards: 100 written in the cold window and 100 in the warm window, with no overwrites. So the warm run resolved 100 recordings the cold run never cached. Code path: `discovery_candidate_gathering.py` allows 100 uncached resolutions per run (`CF_MAX_UNCACHED_RESOLUTIONS`), cache hits are free, and the cold run used its full budget. Each run therefore resolves its own next 100. The skip counter (`cache_known`) is not in `run_metrics`, so this is not directly measured.
+
+**Limits.** Single samples; the batch cold figure is one successful sample; no variance bound. Provider failure on one batch run was not reproduced on the retry. No code, flag, weight, window, eligibility, ownership, duplicate or budget rule changed.

@@ -1,3 +1,12 @@
+## 2026-10-20 — Live stage-timing runs with per-stage keys (docs only)
+
+- Task: owner-approved repeated live runs that report the PR #452 stage keys, as stated in `CLAUDE_CLI.md`. Results are in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`, section "Live stage-timing runs".
+- Runs: all-flags cold and warm, batch-only cold and warm (one retry), breaker-only cold and warm. Fresh data directory per configuration; slskd disabled; aggregate counters only; no identities or credentials recorded.
+- Findings: the all-flags speed-up is the batch path. Batch-only metadata resolution took about 1 s, against about 132 s for breaker-only. The breaker-only warm run's 100 recording lookups are consistent with the 100-per-run uncached budget (hypothesis; not directly measured).
+- Failures: two batch runs got a non-JSON response on the listening-history call (one retried successfully). Not reproduced on the retry; cause not established. The ListenBrainz client was not changed.
+- Not done: no code, flag, weight or budget change; no variance bound beyond single samples; the batch cold figure is one successful sample.
+- Next: decide whether to repeat the batch cold run once the listening-history call is reliable, then a counter for `cache_known` in run metrics (needs its own PR).
+
 ## 2026-10-20 — Record PR #452 merge and Claude CLI handoff (docs only)
 
 - Merge recorded: PR #452 squash-merged to `main` as `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9`, from exact head `856df1f6ed50353ee671c6b129d51e86a49b4ad7` (base `42b6d81`). All four required workflows succeeded on that head: `compile`, `test-and-build`, `container-smoke`, `validate-container` (validation-only; publishing paused).
