@@ -557,3 +557,5 @@ Live runs on the owner's machine, count 10, one fresh data directory per configu
 **Warm breaker-only run, cache miss (hypothesis, consistent with the evidence).** The warm run made 100 recording lookups. The recording cache held 200 entries afterwards: 100 written in the cold window and 100 in the warm window, with no overwrites. So the warm run resolved 100 recordings the cold run never cached. Code path: `discovery_candidate_gathering.py` allows 100 uncached resolutions per run (`CF_MAX_UNCACHED_RESOLUTIONS`), cache hits are free, and the cold run used its full budget. Each run therefore resolves its own next 100. The skip counter (`cache_known`) is not in `run_metrics`, so this is not directly measured.
 
 **Limits.** Single samples; the batch cold figure is one successful sample; no variance bound. Provider failure on one batch run was not reproduced on the retry. No code, flag, weight, window, eligibility, ownership, duplicate or budget rule changed.
+
+Merged as PR #454 at `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (squash; all four required workflows passed on the exact head before merge).

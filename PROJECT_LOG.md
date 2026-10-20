@@ -1,5 +1,8 @@
 ## 2026-10-20 — Live stage-timing runs with per-stage keys (docs only)
 
+- Merged: PR #454 squash-merged to `main` as `a5bba875dbec57fc5c98aba119b374f268bf1ef6` after the owner named it. All four required workflows passed on the exact head before merge.
+- Handoff: `CLAUDE_CLI.md` now points the next session at roadmap 3.3 (feedback as a bounded signal).
+
 - Task: owner-approved repeated live runs that report the PR #452 stage keys, as stated in `CLAUDE_CLI.md`. Results are in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`, section "Live stage-timing runs".
 - Runs: all-flags cold and warm, batch-only cold and warm (one retry), breaker-only cold and warm. Fresh data directory per configuration; slskd disabled; aggregate counters only; no identities or credentials recorded.
 - Findings: the all-flags speed-up is the batch path. Batch-only metadata resolution took about 1 s, against about 132 s for breaker-only. The breaker-only warm run's 100 recording lookups are consistent with the 100-per-run uncached budget (hypothesis; not directly measured).
