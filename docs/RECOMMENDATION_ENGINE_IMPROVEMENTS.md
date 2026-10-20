@@ -635,6 +635,6 @@ Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200
 
 **Risk named.** Acting on the "4 artists" figure now would tune against a number that is partly an artifact of the 103 unresolved recordings. The failure class is unknown until PR #467's allowlist names it on a live run.
 
-**Open, needs the owner:** (1) the live cold/warm pair (blocked by the client timeout), which would show the artists of the failed recordings only once they resolve; (2) approval for any extra ListenBrainz page; (3) optionally, a one-request check of `total_mbid_count` from an already-made page (no extra request: the field is in the existing response) to learn the real CF pool size before deciding whether paging could help at all. Item 3 would be a diagnostics-only counter and was not built.
+**Open, needs the owner:** (1) the live cold/warm pair (blocked by the client timeout), which would show the artists of the failed recordings only once they resolve; (2) approval for any extra ListenBrainz page; (3) optionally, a one-request check of `total_mbid_count` from an already-made page (no extra request: the field is in the existing response) to learn the real CF pool size before deciding whether paging could help at all. Item 3 was approved by the owner and built: `cf_paging.total_mbid_count` (integer from the first page's response, else `None`); no extra request, no selection change.
 
-Tests: none run (documentation only). CI: see the PR.
+Tests (focused): `test_discovery_candidate_gathering` and `test_discovery_candidate_supply` (53, OK) plus `py_compile` on the changed files. CI: see the PR.

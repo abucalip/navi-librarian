@@ -2,7 +2,7 @@
 
 - Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Traced the 4-artist concentration: it is measured over the 97 resolved recordings only, so it is partly an artifact of the 103 unresolved ones, and `CF_ARTIST_RESOLUTION_CAP` is inert on a cold run (cache-known recordings only).
 - Decision: no code change; widening paging would add ListenBrainz requests (not allowed without the owner). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
-- Tests: none run, docs only. PR/CI: see the PR. Next: live cold/warm pair once the client reaches ListenBrainz; optional `total_mbid_count` counter (needs owner go-ahead).
+- Owner approved the `total_mbid_count` counter: added to `cf_paging` in `discovery_candidate_gathering.py` with two tests. Focused run: `test_discovery_candidate_gathering` + `test_discovery_candidate_supply` (53, OK), `py_compile`. PR/CI: see the PR. Next: live cold/warm pair once the client reaches ListenBrainz; optional `total_mbid_count` counter (needs owner go-ahead).
 
 ## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
 

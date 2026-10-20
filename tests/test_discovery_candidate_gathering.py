@@ -327,7 +327,8 @@ def _recording(artist, album_index):
 
 
 class RecommendationCfPagingTests(unittest.TestCase):
-    def _providers(self, *, pages, recordings=None, cache=None, fail_page=None, persist=False):
+    def _providers(self, *, pages, recordings=None, cache=None, fail_page=None, persist=False,
+                   total_count=None):
         calls = []
         pages_by_offset = pages
         recordings = recordings or {}
@@ -338,7 +339,10 @@ class RecommendationCfPagingTests(unittest.TestCase):
             offset = params["offset"]
             if fail_page is not None and offset == fail_page:
                 raise RuntimeError("provider detail must not leak")
-            return _Response({"payload": {"mbids": pages_by_offset.get(offset, [])}})
+            payload = {"mbids": pages_by_offset.get(offset, [])}
+            if total_count is not None:
+                payload["total_mbid_count"] = total_count
+            return _Response({"payload": payload})
 
         mb_client = _RecordingClient(recordings)
         providers = RecommendationProviders(
@@ -377,6 +381,22 @@ class RecommendationCfPagingTests(unittest.TestCase):
         self.assertEqual(paging["pages_requested"], 2)
         self.assertEqual(paging["pages_fetched"], 2)
         self.assertIsNone(paging["page_failure_class"])
+
+    def test_total_mbid_count_is_recorded_from_first_page_without_extra_request(self):
+        pages = {0: [_cf_item(i) for i in range(100)], 100: [_cf_item(i) for i in range(100, 130)]}
+        providers, calls, _ = self._providers(pages=pages, total_count=1234)
+
+        result = gather_recommendation_candidates(providers)
+
+        self.assertEqual(result["candidate_supply"]["cf_paging"]["total_mbid_count"], 1234)
+        self.assertEqual([c["offset"] for c in calls], [0, 100])
+
+    def test_total_mbid_count_is_none_when_absent_or_not_an_integer(self):
+        for bad in (None, "1234", True, -1):
+            pages = {0: [_cf_item(i) for i in range(10)]}
+            providers, _, _ = self._providers(pages=pages, total_count=bad)
+            result = gather_recommendation_candidates(providers)
+            self.assertIsNone(result["candidate_supply"]["cf_paging"]["total_mbid_count"], bad)
 
     def test_short_page_stops_paging(self):
         pages = {0: [_cf_item(i) for i in range(100)], 100: [_cf_item(i) for i in range(100, 130)]}
