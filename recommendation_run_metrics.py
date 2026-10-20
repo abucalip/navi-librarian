@@ -15,12 +15,19 @@ from typing import Iterator
 _lock = threading.Lock()
 _calls: Counter[str] = Counter()
 _stage_seconds: Counter[str] = Counter()
+_counts: Counter[str] = Counter()
 
 
 def record_provider_call(provider: str, call_type: str) -> None:
     """Count one outbound provider request by provider and call type."""
     with _lock:
         _calls[f"{provider}.{call_type}"] += 1
+
+
+def record_count(name: str, amount: int = 1) -> None:
+    """Add an integer to a named aggregate counter (never an identity-bearing value)."""
+    with _lock:
+        _counts[name] += int(amount)
 
 
 @contextmanager
@@ -49,9 +56,11 @@ def snapshot_and_reset() -> dict[str, dict[str, object]]:
             "stage_seconds": {
                 key: round(value, 3) for key, value in sorted(_stage_seconds.items())
             },
+            "counts": {key: int(value) for key, value in sorted(_counts.items())},
         }
         _calls.clear()
         _stage_seconds.clear()
+        _counts.clear()
     return result
 
 

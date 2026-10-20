@@ -2,6 +2,7 @@
 import time
 import unittest
 
+import recommendation_run_metrics as run_metrics
 from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 from recommendation_feedback import POSITIVE_EXPIRY_SECONDS, saved_artist_seed_weights
 
@@ -102,6 +103,63 @@ def _run(feedback, *, many_artists=False):
     result = gather_recommendation_candidates(providers, shortlist_target=10)
     assert not isinstance(result, str), result
     return log
+
+
+def _counted(feedback, **kw):
+    run_metrics.snapshot_and_reset()
+    log = _run(feedback, **kw)
+    return log, run_metrics.snapshot_and_reset()["counts"]
+
+
+class SaveSeedCounterTests(unittest.TestCase):
+    def test_no_provider_and_non_seeding_rows_leave_counters_empty_or_zero(self):
+        _log, counts = _counted(None)
+        self.assertEqual(counts, {})
+        rows = [_save_row("Cand 2", age_days=1, status="not_for_me"),
+                _save_row("Cand 2", age_days=1, scope="artist", status="not_for_me_artist")]
+        _log, counts = _counted(rows)
+        self.assertEqual(counts["save_seed.saved_artists"], 0)
+        self.assertEqual(counts["save_seed.from_cached_genres"], 0)
+        self.assertEqual(counts["save_seed.initial_queries_changed"], 0)
+
+    def test_known_and_unknown_mbid_saves_are_counted_without_changing_plan(self):
+        rows = [
+            _save_row("Cand 2", age_days=1),
+            _save_row("Never Heard", age_days=1, metadata={"genres": ["shoegaze"]}),
+            _save_row("No Genres", age_days=1),
+        ]
+        log, counts = _counted(rows)
+        self.assertEqual(counts["save_seed.saved_artists"], 3)
+        self.assertEqual(counts["save_seed.from_cached_genres"], 1)
+        self.assertEqual(counts["save_seed.from_metadata_genres"], 1)
+        self.assertEqual(counts["save_seed.skipped_no_genres"], 1)
+        self.assertGreaterEqual(counts["save_seed.initial_queries_changed"], 1)  # guard: ambient/shoegaze enter
+        self.assertTrue(all(isinstance(v, int) for v in counts.values()))
+        # Counters observe only: same plan and lookups as the one-row run's bounds.
+        base = _run([])
+        self.assertLessEqual(len(log["queries"]), len(base["queries"]))
+        self.assertEqual(len(log["artist"]), len(base["artist"]))
+
+    def test_counting_does_not_change_queries_or_lookups(self):
+        rows = [_save_row("Cand 2", age_days=1)]
+        run_metrics.snapshot_and_reset()
+        first = _run(rows)
+        run_metrics.snapshot_and_reset()
+        self.assertEqual(_run(rows), first)
+
+    def test_counters_hold_no_identities(self):
+        _log, counts = _counted([_save_row("Cand 2", age_days=1)])
+        for key in counts:
+            self.assertTrue(key.startswith("save_seed."))
+            self.assertNotIn("cand", key.lower())
+
+    def test_failing_feedback_provider_leaves_counters_at_zero(self):
+        def boom():
+            raise RuntimeError("store down")
+
+        log, counts = _counted(boom)
+        self.assertEqual(counts, {})
+        self.assertEqual(log["queries"], _run([])["queries"])
 
 
 class SaveTagSeedTests(unittest.TestCase):
