@@ -10,21 +10,20 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Current state
 
-- `main` head: `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9` (PR #452: per-stage gathering timers, offline, no behavior change). Verify before you rely on it; it may have moved.
-- Merged and recorded: PR #451 (`42b6d81`), PR #450 (`27bdcc2`), PR #449 (`c90e43b`), and earlier PRs listed in the roadmap.
-- No draft recommendation PR is open at the time of writing. Check `list_project_prs` or GitHub.
+- `main` head: `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (PR #454, squash-merged: aggregate live stage-timing results, docs only). Verify before you rely on it; it may have moved.
+- Merged and recorded: PR #452 (`76030c0`), PR #451 (`42b6d81`), PR #450 (`27bdcc2`), PR #449 (`c90e43b`), and earlier PRs listed in the roadmap.
+- Live timing is done (single samples, see the roadmap section "Live stage-timing runs"). Batch resolution explains the all-flags speed-up. The breaker-only warm run's 100 recording lookups fit the 100-per-run uncached budget (hypothesis; the `cache_known` counter is not in run metrics).
+- Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
 
 ## Next task
 
-**Repeat the timing runs with the stage keys, and report aggregate stage seconds.**
+**Roadmap 3.3: feedback as a bounded signal.** Offline first, one PR.
 
-- Why next: the owner's priority is to reduce the time it takes to build a recommendations batch, without adding lookups per run. Earlier single samples showed the batch flags cut the metadata stage from about 180 s to under 1 s, and all-flags runs were much faster than single-flag runs. Nobody has yet explained that difference. PR #452 added per-stage keys (`metadata_resolution`, `genre_prefetch`, `supplementary_tag_lane`, `replenishment`, `genre_lookup`) so a repeated run can answer it.
-- Acceptance criteria:
-  - Cold and warm runs for the all-flags and single-flag configurations, each reporting the stage keys in aggregate.
-  - No candidate identities, raw listens, raw tags, provider URLs or credentials in the output or in GitHub.
-  - No change to any flag default, weight, window, eligibility, ownership, duplicate or budget rule.
-  - Any code change needed to get the numbers is separate, tested offline, and reviewed on its own PR.
-- **Gate:** a live run needs the owner's explicit go-ahead in words. Do not start one without it. The Mac measurement is paused, so the run may need a different route. Offline checks may proceed without approval.
+- Current state: `dismiss_artist` and `remove_for_me` are stored and used only to filter the stored list (`navidrome_server.py`, `app/api/discovery.py`). Ranking and query selection do not use feedback yet.
+- Required behavior (roadmap 3.3): decaying soft penalty for `dismiss_artist` (and a weaker one for its dominant tags); `save` as a positive similarity seed; `dismiss` penalizes that album only; `remove_for_me` keeps its semantics. Separate windows and expiry for positive and negative signals. No permanent exclusion.
+- Acceptance: regression tests with injected feedback rows, covering expiry and album-level dismissal not penalizing sibling albums. Controlled fixtures show fewer repeated artists or styles without collapsing relevance or breaking eligibility.
+- No owner decision is needed to start. Any default-on change needs one. No live run is needed for the offline work.
+- Check the status notes for 1.1 and 1.2 in the roadmap before assuming they are done.
 
 ## Standing rules
 
