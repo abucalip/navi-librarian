@@ -4,9 +4,9 @@ PR #467 merged as `27942379095cf41654fcb6298b3e9b0d9f56d730` from exact head `85
 
 # Project status
 
-Last reviewed: 2026-10-20 (PR #465 merged at `6e1054b56c531eb4fbad912f8ffe1d300c358339`; save-seed diagnostics)
+Last reviewed: 2026-10-20 (PR #469 merged at `eca44e52dedfb5aec188faf287a8c0696d7566c7`; Phase 4.3 closed)
 
-**Next action (2026-10-20):** roadmap Phase 4.3, wider ListenBrainz CF pool (see `CLAUDE_CLI.md`). Candidate supply diagnosis: offline trace done (budget-skip hypothesis refuted, PR #467 merged); live cold/warm pair deferred because the app's ListenBrainz client times out; PR #468 (page cap 3 to 5) closed unmerged to save ListenBrainz requests. A live sample showed the diversity setting has no effect on a 24-album pool, so the diversity setting is paused by the owner; PR #466 (merged as `af801d6`, exact head `0da5d60`, all four required workflows passed) records the audit and keeps the Settings UI blocked.
+**Next action (2026-10-20):** cold-run CF resolution budget, measure first (see `CLAUDE_CLI.md`). PR #469 merged as `eca44e52dedfb5aec188faf287a8c0696d7566c7` from exact head `439c54be6c9c687aee9f7857cf2015850753a237` (all four required workflows passed): Phase 4.3 closed with no paging change, `cf_paging.total_mbid_count` added, ListenBrainz client now sends an honest identifier and optional `LISTENBRAINZ_TOKEN`. Live cold/warm pair: the cold run is bound by the 100-call MusicBrainz budget (86 recordings skipped, 6 artists); the warm run reaches 15 artists; 0 CF failures; one sample. Not done: publication, deployment, `LISTENBRAINZ_TOKEN` in `compose.yaml`/deployment docs.
 
 **Save-seed diagnostics — PR #465 merged as `6e1054b` (2026-10-20).** Seven aggregate `save_seed.*` counters in `run_metrics.counts`; no behavior change, no new lookup. Exact head `d962dd1` passed all four required workflows. One owner-approved live sample (4 saves): 1 initial query changed, 0 in replenishment; at most 3 of 4 saves reached the planner. Single sample, candidate quality unmeasured. Publishing and deployment remain paused. **Next action:** exploration-setting investigation, handed off in `CLAUDE_CLI.md`.
 

@@ -1,39 +1,41 @@
-# Handoff for Claude CLI: Phase 4.3 wider ListenBrainz CF pool
+# Handoff for Claude CLI: cold-run CF resolution budget
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
 ## Getting started
 
 1. Clone `abucalip/navi-librarian`, fetch `main`, branch from current `main`.
-2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (Phase 4 item 3, and "Candidate supply diagnosis" at the end) and the top of `PROJECT_LOG.md`.
+2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (open item "Cold-run resolution budget", then "Live cold/warm pair" and the batch-resolution sections near lines 200 and 488) and the top of `PROJECT_LOG.md`.
 3. Check open PRs and the four required workflows on the exact head you push.
 
 ## Current state
 
-- Diversity setting: **paused by the owner (2026-10-20).** Do not build the Settings UI or tune the mapping.
-- Save loop and feedback signal are complete (PRs #456, #461, #463-#465). Roadmap 3.4 refill is complete. `navidrome_server.py` is 2,448 of 2,650 lines.
-- Candidate supply diagnosis: the offline trace is done. The "103 failures are budget skips" hypothesis is **refuted** (skips never reach `cf_failure_classes`). PR #467 merged and names the real exception classes on the next run. The live cold/warm pair is **deferred**: the app's ListenBrainz client times out on recent listens (curl to the same endpoint works). PR #468 (listens page cap 3 to 5) was **closed unmerged**: the owner cannot afford more ListenBrainz requests per run.
+- Phase 4.3 is **closed, no change** (PR #469, merge `eca44e52dedfb5aec188faf287a8c0696d7566c7`, head `439c54be6c9c687aee9f7857cf2015850753a237`, all four workflows passed). Only `count` and `offset` exist on the CF endpoint; the pool is 1,000 recordings and the app reads 200.
+- PR #469 also added `cf_paging.total_mbid_count` and an honest ListenBrainz identifier plus optional `LISTENBRAINZ_TOKEN`. The recent-listens timeout did not recur in the live pair; which change fixed it was not isolated. The token sits in `config.env` in the harness project folder; never print it or commit it.
+- Live cold/warm pair (2026-10-20): cold 323 s, budget-bound (100 uncached MusicBrainz calls, 86 recordings skipped unread, 6 artists, top-2 54%); warm 63 s, 15 artists, top-2 31%; 0 CF failures in both. One sample.
+- Diversity setting: **paused by the owner**. Do not build the Settings UI or tune the mapping. Save loop, feedback signal and roadmap 3.4 are complete. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: Phase 4.3, wider ListenBrainz CF pool
+## Next task: cold-run resolution budget (measure first)
 
-Why: the live sample's CF recordings came from only 4 artists (top two 55.7%), giving 14 CF albums. Supply limits quality more than ranking does, and the CF pool is the narrow part. Roadmap Phase 4 item 3 says to check current official documentation before assuming any parameter exists.
+Why: on a cold run the 100-call MusicBrainz budget, not paging, limits the resolved CF set, and the artist cap cannot act on uncached recordings. Candidate fixes are batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, off, changes the call pattern, needs an owner decision) or ordering unresolved recordings so one artist cannot take the budget (the CF response carries no artist).
 
 Steps:
-1. Offline, docs only: read the current official ListenBrainz documentation for the recording-recommendation endpoint the app calls (`_fetch_cf_recommendations` in `discovery_candidate_gathering.py`: count, offset, `CF_PAGE_SIZE`, `CF_MAX_PAGES`, `CF_ARTIST_RESOLUTION_CAP`). Record, with the doc URL and date, which parameters exist (artist type, offset, filters, other recommendation endpoints) and which do not. Do not assume any.
-2. Offline, from code and tests: report how the 4-artist concentration arises (does the response itself cluster by artist, or does the 200-recording window?). Check `CF_ARTIST_RESOLUTION_CAP` behaviour with a deterministic synthetic test if the answer needs one.
-3. Decide and name the risk before editing: widen paging, change the artist cap, or leave CF alone and widen another lane. Any option that adds ListenBrainz requests per run is **not allowed without the owner's approval** (see Standing rules).
-4. If a live run is needed to measure it, ask first. The deferred cold/warm pair can ride along once the client reaches ListenBrainz. Keep the client's identity unchanged; a fix with an honest identifier and token needs the owner's go-ahead.
+1. Offline, from code: confirm how `cold_start` reaches `gather_recommendation_candidates` (`refresh_personal` passes `_cold_start`; `recommend_new_music` defaults it to `False`). The live pair called `recommend_new_music(10)` directly, so the **cold-start batch path (`COLD_START_BATCH_ENABLED`, on) was not exercised**. State what a real first build does.
+2. Measure that path: ask the owner for a live run with `_cold_start=True` (fresh data dir, slskd off, aggregate only, capture outside the repo and delete it). Compare to the recorded cold run: seconds, uncached MusicBrainz calls, resolved recordings, distinct CF artists, top-2 share, `resolution_budget_skipped`. Keep the client identity as merged.
+3. Decide and name the risk before editing: leave as is, recommend the batch flag default (owner decision, with the measured numbers), or an artist-aware ordering. Any option that adds lookups or ListenBrainz requests per run is **not allowed without the owner's approval**.
+4. Optional, diagnostics only: record whether the skipped tail differs in artist mix only if it can be known without resolving more; do not resolve more.
 
-Not allowed without owner approval: edits to `app/api/**`, `app/security/**`, `navidrome_server.py` or domain modules, changing defaults or flags, new lookups, **more ListenBrainz requests per run (including the recent-listens page cap)**, raising the 100-per-run MusicBrainz budget, or weakening ownership, duplicate-identity or release-eligibility filtering.
+Not allowed without owner approval: edits to `app/api/**`, `app/security/**`, `navidrome_server.py` or domain modules (name the module in the request), changing defaults or flags, new lookups, more ListenBrainz requests per run, raising the 100-per-run MusicBrainz budget, or weakening ownership, duplicate-identity or release-eligibility filtering.
 
-Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with doc URLs and the decision; if code changes, a deterministic synthetic test, `python -m py_compile` on changed files and focused modules only.
+Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with measured numbers and the decision; if code changes, a deterministic synthetic test, `python -m py_compile` on changed files and focused modules only.
 
 ### Deferred
 
-- Live cold/warm candidate-supply pair (funnel for both runs; aggregate only; captures outside the repo, deleted afterwards). Blocked by the ListenBrainz client timeout.
-- Diversity setting UI and mapping (paused).
+- Add `LISTENBRAINZ_TOKEN` to `compose.yaml` and `docs/DEPLOYMENT.md` (touches deployment config; ask first).
+- Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
+- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
+- CF freshness capture (needs an authorized two-sided capture); default-on decisions for the four flags; Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
-- Default-on decisions for the four flags; CF freshness capture; ListenBrainz client non-JSON responses (do not change the client's identity to get around it); Last.fm (parked).
 
 ## Testing scope (standing owner rule, 2026-10-20)
 

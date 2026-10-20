@@ -4,6 +4,7 @@
 - Code, owner-approved: `cf_paging.total_mbid_count` in `discovery_candidate_gathering.py` (no extra request); `listenbrainz_client.request_headers()` sends an honest User-Agent and an optional `LISTENBRAINZ_TOKEN`. Focused tests: `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` (7, OK), `py_compile`. No full suite. CI: see the PR.
 - Live cold/warm pair (owner-approved, aggregate only, data dir deleted): recent-listens timeout did not recur, 0 CF failures in both runs, pool 1,000 and 200 read; cold run budget-bound (86 skipped, 6 artists), warm run 15 artists. One sample; a first wrapper launch may have run a stray extra pass. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - Earlier trace claim corrected: the 4-artist share is over resolved recordings only.
+- Merged to `main` as `eca44e52dedfb5aec188faf287a8c0696d7566c7` (squash, PR #469) from exact head `439c54be6c9c687aee9f7857cf2015850753a237`; compile, test-and-build, container-smoke and validate-container all succeeded on that head.
 - Remaining: the cold-run budget decision (batch resolution or ordering), `LISTENBRAINZ_TOKEN` in `compose.yaml` and `docs/DEPLOYMENT.md`, confirming the client fix. Not done: merge, publication, deployment.
 
 ## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
