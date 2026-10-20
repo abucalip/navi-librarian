@@ -128,6 +128,8 @@ class RecommendationProviders:
     sleep: Callable[[float], Any]
     # Optional. Only the flagged batch path uses it; None keeps per-recording lookups.
     http_post: Callable[..., Any] | None = None
+    # Optional. Returns stored feedback rows; None keeps tag-query selection unseeded.
+    feedback_rows: Callable[[], Any] | None = None
 
 # Bounded CF replenishment. One ListenBrainz call per page; the first page is
 # required, later pages may fail without discarding earlier pages.
@@ -475,6 +477,7 @@ def gather_recommendation_candidates(
     recent_artists = Counter()
     recent_artist_play_counts = Counter()
     recent_artist_mbid_counts = Counter()
+    mbid_by_artist_key = {}
     listens_with_artist_mbid = 0
     listen_weights = decayed_listen_weights(listens, half_life_days=14.0)
     for listen, weight in zip(listens, listen_weights):
@@ -492,6 +495,8 @@ def gather_recommendation_candidates(
         if artist_mbid:
             recent_artist_mbid_counts[artist_mbid] += weight
             listens_with_artist_mbid += 1
+            if artist:
+                mbid_by_artist_key.setdefault(providers.music_key(artist), artist_mbid)
 
     try:
         recommendations, cf_paging = _fetch_cf_recommendations(providers)
@@ -777,6 +782,49 @@ def gather_recommendation_candidates(
             # Supplementary discovery must not fail because one cache read failed.
             continue
 
+    # Saved albums seed tag-query selection for artists whose MBID this run already
+    # knows (listens, CF candidates). Cache reads only: no lookups are added, and
+    # the query quotas are unchanged, so a seed can reorder or replace a query.
+    tag_query_weights = recent_artist_mbid_counts
+    # Snapshot before seeding adds cache entries: the budget cap compares against
+    # the plan the run would have made without any save.
+    baseline_profile_tags = dict(profile_tags_by_artist)
+    if providers.feedback_rows is not None:
+        from recommendation_feedback import (
+            FEEDBACK_SIGNAL_ENABLED, saved_artist_seed_genres, saved_artist_seed_weights,
+        )
+        if FEEDBACK_SIGNAL_ENABLED:
+            try:
+                rows = list(providers.feedback_rows())
+                seeds = saved_artist_seed_weights(rows, now=time.time())
+                stored_genres = saved_artist_seed_genres(rows, now=time.time())
+                for candidate in albums.values():
+                    if candidate.get("artist_mbid"):
+                        mbid_by_artist_key.setdefault(
+                            providers.music_key(candidate["primary_artist"]), candidate["artist_mbid"],
+                        )
+                tag_query_weights = Counter(recent_artist_mbid_counts)
+                for artist_key, seed_weight in seeds.items():
+                    seed_mbid = mbid_by_artist_key.get(artist_key)
+                    if not seed_mbid:
+                        # MBID unknown this run: use the genres stored with the save.
+                        if stored_genres.get(artist_key):
+                            seed_mbid = f"saved:{artist_key}"
+                            profile_tags_by_artist[seed_mbid] = stored_genres[artist_key]
+                            tag_query_weights[seed_mbid] += seed_weight
+                        continue
+                    tag_query_weights[seed_mbid] += seed_weight
+                    if seed_mbid not in profile_tags_by_artist:
+                        tags = providers.metadata_cache_get(
+                            f"mb:artist-genres:{seed_mbid}",
+                            ttl_seconds=90 * 24 * 60 * 60,
+                        )
+                        if isinstance(tags, (list, tuple)):
+                            profile_tags_by_artist[seed_mbid] = tags
+            except Exception:
+                # Feedback must not fail supplementary discovery; fall back to unseeded.
+                tag_query_weights = recent_artist_mbid_counts
+
     candidate_pool_tags = []
     candidate_artist_cache_hits = 0
     seen_candidate_artist_ids = set()
@@ -801,10 +849,15 @@ def gather_recommendation_candidates(
             break
 
     regional_queries = select_supplementary_tag_queries(
-        recent_artist_mbid_counts,
+        tag_query_weights,
         profile_tags_by_artist,
         candidate_pool_tags,
     )
+    if tag_query_weights is not recent_artist_mbid_counts:
+        # A seed may replace a planned query but never add one (query budget).
+        regional_queries = regional_queries[:len(select_supplementary_tag_queries(
+            recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
+        ))]
     regional_state = {
         "added": 0, "seen": 0, "hits": 0, "misses": 0,
         "request_index": 0, "unavailable": False, "exhausted_run": 0,
@@ -865,7 +918,7 @@ def gather_recommendation_candidates(
     if replenish_triggered:
         issued_queries = {query for query, _family, _style in regional_queries}
         wider_queries = select_supplementary_tag_queries(
-            recent_artist_mbid_counts,
+            tag_query_weights,
             profile_tags_by_artist,
             candidate_pool_tags,
             profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
@@ -874,6 +927,18 @@ def gather_recommendation_candidates(
         replenish_queries = [
             item for item in wider_queries if item[0] not in issued_queries
         ][:REPLENISH_EXTRA_QUERIES]
+        if tag_query_weights is not recent_artist_mbid_counts:
+            unseeded_wider = select_supplementary_tag_queries(
+                recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
+                profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
+                exploration_limit=MAX_EXPLORATION_QUERIES + REPLENISH_EXTRA_QUERIES,
+            )
+            unseeded_issued = {item[0] for item in select_supplementary_tag_queries(
+                recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
+            )}
+            replenish_queries = replenish_queries[:len(
+                [item for item in unseeded_wider if item[0] not in unseeded_issued]
+            [:REPLENISH_EXTRA_QUERIES])]
         if replenish_queries:
             with providers.http_client(timeout=20, follow_redirects=True) as client:
                 replenish_outcomes = _run_tag_queries(
