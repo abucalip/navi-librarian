@@ -32,3 +32,15 @@ class RunMetricsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TimedStageTests(unittest.TestCase):
+    def test_decorator_records_stage_and_returns_value(self):
+        metrics.snapshot_and_reset()
+
+        @metrics.timed_stage("unit_stage")
+        def add(a, b):
+            return a + b
+
+        self.assertEqual(add(2, 3), 5)
+        self.assertIn("unit_stage", metrics.snapshot_and_reset()["stage_seconds"])

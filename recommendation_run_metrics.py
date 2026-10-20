@@ -47,3 +47,19 @@ def snapshot_and_reset() -> dict[str, dict[str, object]]:
         _calls.clear()
         _stage_seconds.clear()
     return result
+
+
+def timed_stage(stage: str):
+    """Decorator that accumulates a function's wall time under a stage name."""
+
+    def decorate(function):
+        import functools
+
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            with stage_timer(stage):
+                return function(*args, **kwargs)
+
+        return wrapper
+
+    return decorate

@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from recommendation_run_metrics import record_provider_call
+from recommendation_run_metrics import record_provider_call, timed_stage
 
 from discovery_recommendations import music_key
 
@@ -173,6 +173,7 @@ class LastFmClient:
         return output
 
 
+    @timed_stage('lastfm_album_popularity')
     def album_popularity(
         self, artist: str, album: str
     ) -> tuple[dict[str, Any] | None, str | None]:

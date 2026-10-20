@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Iterable
 
+from recommendation_run_metrics import timed_stage
+
 from discovery_mmr import candidate_similarity
 
 from discovery_allocation_contract import (
@@ -20,6 +22,7 @@ from discovery_allocation_contract import (
 )
 
 
+@timed_stage('allocation')
 def allocate_personal_recommendations(request: AllocationRequest) -> AllocationResult:
     """Allocate a shortlist using the established multi-pass recommendation policy (parity verification pending)."""
     candidates = request.candidates

@@ -3,6 +3,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
+from recommendation_run_metrics import timed_stage
 import json
 import math
 import time
@@ -454,6 +455,7 @@ def count_eligible_unowned_albums(albums, library_by_title, music_key) -> int:
     return len(identities)
 
 
+@timed_stage('candidate_gathering')
 def gather_recommendation_candidates(
     providers: RecommendationProviders,
     *,
