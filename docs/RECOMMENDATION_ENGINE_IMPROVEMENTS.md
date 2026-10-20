@@ -25,7 +25,7 @@ Open items:
 - **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. Built in PR #458 (`7fb140e`): persisted `automatic_refill_enabled`, default on, gates the hourly scheduler; `GET/PUT /api/settings/automatic-refill`.
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
-- **Exploration slider (product):** audited 2026-10-20 (see "Exploration setting audit"): the backend contract is sufficient; the next step is a UI-only control over `recommendation_diversity`. No UI in backend PRs.
+- **Exploration slider (product):** audited 2026-10-20 (see "Exploration setting audit"): no new backend mapping is needed, but the Settings UI stays **blocked** by `docs/DIVERSITY_SETTING_ROADMAP.md` gates until cross-pool and real-library evidence exists. No UI in backend PRs.
 - **Last.fm source:** parked by the owner (2026-10-19). Recorded only as a possible future recommendations-source option. Do not start a quality test or a combined path without a new decision.
 
 Deferred until candidate supply shows a gain: weight retuning (Phase 1.2), MMR re-ranking evaluation (Phase 3.1), cooldown calibration (Phase 3.2).
@@ -578,7 +578,7 @@ Merged as PR #454 at `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (squash; all fou
 
 ## Exploration setting audit (2026-10-20, offline, docs only)
 
-**Decision: (a) the contract is sufficient; the next step is a UI-only task.** No code changed.
+**Decision: the backend contract is sufficient (no new mapping needed), but this does not authorize the UI.** `docs/DIVERSITY_SETTING_ROADMAP.md` still blocks the Settings UI pending cross-pool results, a reviewed setting-to-penalty mapping and broader quality evidence; none of those gates is waived or closed here. The next step is gathering that evidence (an owner-scoped real-library measurement), not building the control. No code changed.
 
 **Call path (line numbers on `main` at `9eb43d6`):**
 - Stored value: `service_settings.py` `recommendation_diversity` (validated integer 0-100); default `0` in `navidrome_server.py:1197`; API `GET/PUT /api/settings/recommendation-diversity` in `app/api/settings.py`.
@@ -600,5 +600,5 @@ Merged as PR #454 at `a5bba875dbec57fc5c98aba119b374f268bf1ef6` (squash; all fou
 
 Each step trades some relevance for diversity; **75 and 100 give identical output because the penalty saturates at 0.75** (the single-pool gate failed from 80 upward). Repeat rate was not measured (needs history; the synthetic pool has none). Limits: synthetic pool, so absolute numbers say nothing about real taste; future-listen quality is unmeasured; the allocator's category quotas and style reservations also shape the result.
 
-**Acceptance criteria for the UI-only task** (see `CLAUDE_CLI.md`): a control over the existing endpoint, no backend edit; range 0-75 (or 0-100 labelled so 75-100 is not presented as stronger); default 0 shown as "Relevance"; reads with GET, saves with PUT, shows the API error text on a 4xx; a rendered browser check against the exact tested SHA.
+**Draft acceptance criteria for the later UI task, valid only after the roadmap gates close** (see `CLAUDE_CLI.md`): a control over the existing endpoint, no backend edit; range 0-75 (or 0-100 labelled so 75-100 is not presented as stronger); default 0 shown as "Relevance"; reads with GET, saves with PUT, shows the API error text on a 4xx; a rendered browser check against the exact tested SHA.
 

@@ -15,9 +15,9 @@ Read this first. It is written so you can pick up the next recommendation task f
 - The save loop is complete and measured once: `run_metrics.counts` carries seven `save_seed.*` counters. One owner-approved live sample (4 saves) changed 1 initial query and 0 replenishment queries; at most 3 of 4 saves reached the planner. Single sample; candidate quality of the changed query is unmeasured. No further seed work is planned unless real saves over time suggest it.
 - Live timing is done (roadmap "Live stage-timing runs"). Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
 
-## Exploration setting audit: DONE (2026-10-20, docs-only PR; decision (a))
+## Exploration setting audit: DONE (2026-10-20, docs-only PR; contract sufficient, UI still blocked)
 
-Result in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` "Exploration setting audit". Next task: a UI-only exploration control over the existing endpoint (acceptance criteria are in that section). Original brief kept below.
+Result in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` "Exploration setting audit". The Settings UI stays blocked by `docs/DIVERSITY_SETTING_ROADMAP.md`; the next step is gathering the missing cross-pool/real-library evidence, owner-scoped. Do not build the control yet. Original brief kept below.
 
 Roadmap open item: "Exploration slider (later, product): map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs." Before building anything, establish what is actually missing. Facts verified at hand-off (re-check them on current `main`):
 
