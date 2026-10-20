@@ -10,11 +10,37 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from service_settings import (
+    get_automatic_refill_settings as _get_automatic_refill_settings,
     get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
+    set_automatic_refill_settings as _set_automatic_refill_settings,
     set_recommendation_diversity_settings as _set_recommendation_diversity_settings,
 )
 
 router = APIRouter()
+
+
+@router.get("/api/settings/automatic-refill")
+def get_automatic_refill_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_automatic_refill_settings(librarian._discovery_settings_read))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read automatic refill settings.")
+
+
+@router.put("/api/settings/automatic-refill")
+def set_automatic_refill_settings(payload: dict, librarian=Depends(get_librarian)):
+    value = payload.get("automatic_refill_enabled")
+    if type(value) is not bool:
+        raise HTTPException(status_code=400, detail="automatic_refill_enabled must be a boolean.")
+    try:
+        result = parse_result(_set_automatic_refill_settings(librarian._discovery_settings_write, value))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid automatic refill setting."))
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save automatic refill settings.")
 
 
 @router.get("/api/settings/recommendation-diversity")

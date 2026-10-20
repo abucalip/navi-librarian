@@ -35,6 +35,8 @@ class SettingsRoutesTests(unittest.TestCase):
             ("/api/settings/slskd/test", "POST"),
             ("/api/settings/recommendation-diversity", "GET"),
             ("/api/settings/recommendation-diversity", "PUT"),
+            ("/api/settings/automatic-refill", "GET"),
+            ("/api/settings/automatic-refill", "PUT"),
         }
         self.assertEqual(actual, expected)
 

@@ -51,6 +51,33 @@ def set_recommendation_diversity_settings(settings_write, value):
     })
 
 
+AUTOMATIC_REFILL_KEY = "automatic_refill_enabled"
+DEFAULT_AUTOMATIC_REFILL_ENABLED = True
+
+
+def automatic_refill_enabled_value(settings_read):
+    """Read the background refill switch; absent or non-boolean values mean on."""
+    value = settings_read().get(AUTOMATIC_REFILL_KEY, DEFAULT_AUTOMATIC_REFILL_ENABLED)
+    return value if type(value) is bool else DEFAULT_AUTOMATIC_REFILL_ENABLED
+
+
+def get_automatic_refill_settings(settings_read):
+    """Return the stable public refill payload."""
+    return json.dumps({AUTOMATIC_REFILL_KEY: automatic_refill_enabled_value(settings_read)})
+
+
+def set_automatic_refill_settings(settings_write, value):
+    """Persist the refill switch, refusing non-boolean input without writing."""
+    if type(value) is not bool:
+        return json.dumps({"ok": False, "error": "automatic_refill_enabled must be a boolean."})
+    settings_write({AUTOMATIC_REFILL_KEY: value})
+    return json.dumps({
+        "ok": True,
+        AUTOMATIC_REFILL_KEY: value,
+        "message": "Automatic refill preference saved.",
+    })
+
+
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
     settings = settings_read()
