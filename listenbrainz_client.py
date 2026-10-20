@@ -27,6 +27,8 @@ def recent_listens(
     page_size = 100
     headers = {"User-Agent": "NavidromeLibrarian/1.0"}
 
+    from recommendation_run_metrics import record_provider_call
+
     with make_client(timeout=30, follow_redirects=True) as client:
         for _ in range(page_limit):
             params = {"min_ts": min_ts, "count": page_size}
