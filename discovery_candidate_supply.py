@@ -17,7 +17,10 @@ TOP_N = 5
 _BOUNDED_ERROR_CLASSES = frozenset({
     "HTTPStatusError", "TimeoutException", "ReadTimeout", "ConnectError",
     "ValueError", "KeyError", "TypeError", "AttributeError", "JSONDecodeError",
-    "RuntimeError",
+    "RuntimeError", "ConnectTimeout", "WriteTimeout", "PoolTimeout", "ReadError",
+    "WriteError", "RemoteProtocolError", "LocalProtocolError", "NetworkError",
+    "TransportError", "ProtocolError", "DecodingError", "TooManyRedirects",
+    "IndexError", "StopIteration", "UnicodeDecodeError",
 })
 
 
