@@ -130,7 +130,8 @@ class SaveSeedCounterTests(unittest.TestCase):
         ]
         log, counts = _counted(rows)
         self.assertEqual(counts["save_seed.saved_artists"], 3)
-        self.assertEqual(counts["save_seed.from_cached_genres"], 1)
+        self.assertEqual(
+            counts["save_seed.from_cached_genres"] + counts["save_seed.mbid_known_no_cached_genres"], 1)
         self.assertEqual(counts["save_seed.from_metadata_genres"], 1)
         self.assertEqual(counts["save_seed.skipped_no_genres"], 1)
         self.assertGreaterEqual(counts["save_seed.initial_queries_changed"], 1)  # guard: ambient/shoegaze enter
@@ -146,6 +147,24 @@ class SaveSeedCounterTests(unittest.TestCase):
         first = _run(rows)
         run_metrics.snapshot_and_reset()
         self.assertEqual(_run(rows), first)
+
+    def test_counters_match_whether_genres_were_cached(self):
+        # "Cand 2" has cached genres; a known-MBID artist without a cache entry must
+        # not count as seeded from cached genres.
+        _log, counts = _counted([_save_row("Cand 2", age_days=1)])
+        self.assertEqual(counts["save_seed.from_cached_genres"], 1)
+        self.assertEqual(counts["save_seed.mbid_known_no_cached_genres"], 0)
+
+    def test_run_with_counters_disabled_plans_the_same(self):
+        from unittest import mock
+        rows = [_save_row("Cand 2", age_days=1),
+                _save_row("Never Heard", age_days=1, metadata={"genres": ["shoegaze"]})]
+        _log, counts = _counted(rows)
+        self.assertTrue(counts)  # guard: counters were really recorded
+        with mock.patch("recommendation_run_metrics.record_count", lambda *a, **k: None):
+            disabled = _run(rows)
+        run_metrics.snapshot_and_reset()
+        self.assertEqual(disabled, _run(rows))
 
     def test_counters_hold_no_identities(self):
         _log, counts = _counted([_save_row("Cand 2", age_days=1)])

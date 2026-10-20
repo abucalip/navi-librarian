@@ -806,7 +806,8 @@ def gather_recommendation_candidates(
                         )
                 tag_query_weights = Counter(recent_artist_mbid_counts)
                 counts = {"saved_artists": len(seeds), "from_cached_genres": 0,
-                          "from_metadata_genres": 0, "skipped_no_genres": 0}
+                          "from_metadata_genres": 0, "skipped_no_genres": 0,
+                          "mbid_known_no_cached_genres": 0}
                 for artist_key, seed_weight in seeds.items():
                     seed_mbid = mbid_by_artist_key.get(artist_key)
                     if not seed_mbid:
@@ -819,7 +820,6 @@ def gather_recommendation_candidates(
                             profile_tags_by_artist[seed_mbid] = stored_genres[artist_key]
                             tag_query_weights[seed_mbid] += seed_weight
                         continue
-                    counts["from_cached_genres"] += 1
                     tag_query_weights[seed_mbid] += seed_weight
                     if seed_mbid not in profile_tags_by_artist:
                         tags = providers.metadata_cache_get(
@@ -828,6 +828,9 @@ def gather_recommendation_candidates(
                         )
                         if isinstance(tags, (list, tuple)):
                             profile_tags_by_artist[seed_mbid] = tags
+                    # Counted by outcome: genres actually available, not just a known MBID.
+                    counts["from_cached_genres" if seed_mbid in profile_tags_by_artist
+                           else "mbid_known_no_cached_genres"] += 1
                 seed_counts = counts
             except Exception:
                 # Feedback must not fail supplementary discovery; fall back to unseeded.
