@@ -1,4 +1,4 @@
-# Handoff for Claude CLI: longer-interval repeat-rate measurement
+# Handoff for Claude CLI: tag-lane rotation measurement
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
@@ -10,32 +10,30 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current state
 
-- Repeat rate measured at simulated intervals (PRs #477, #478 open as docs at time of writing): decision not to reopen 3.2. Supply is limited by `CF_MAX_PAGES` (2), not by the lookup budget. PR #479 made batch resolution resilient to a failed release-group chunk.
-- Cold-start supply gain measured and closed (PR #474). Warm final list measured (PR #475): spread unchanged (10 distinct artists, top-2 20%), family cap never blocked a full list. Decision on both: do not reopen 1.2, 3.1 or 3.2.
-- PR #476 (merge `61520d6a4cd8c64e5714a23f3fb7dacb4c5a7855`): steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. Live, one sample: warm CF unowned 17 (was 4 and 14), warm time 32 s then 3 s (was 202 to 230 s), MusicBrainz calls 78 / 10 / 0.
-- Side effect to watch: overlap with the previous list is now 5 of 10 (was 3 to 4) because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper. Back-to-back runs say nothing about decay.
+- Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
+- PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
+- `CF_MAX_PAGES = 4` re-measured (PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`): **kept at 2**. Cold 4-page runs took 255 s and 316 s against 141 s at 2 pages, because release-group requests still returned 502 after the retry, so recordings fell back to per-recording lookups and spent the 100 budget. Warm 2 at 4 pages reached 77 CF albums from 42 artists (top-2 26.4%) once cached. Unexplained: 111 to 113 `recording_lookup` calls (budget is 100) and `lastfm.api` calls (13 to 40) in some runs.
+- Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: re-measure CF_MAX_PAGES = 4 after the batch fix
+## Next task: measure rotating the tag lane's sampled tags per run
 
-Why: the owner approved reading 4 CF pages (2026-10-20: 400 of the ~1,000 pool, +2 ListenBrainz requests per run). The first trial was slow because one 502 from the release-group endpoint discarded the whole batch; PR #479 (merge `4cf66322866c5377fec612a297db05922d7a8e11`) fixed that. Not yet confirmed live. Evidence so far (docs: `CF_PAGES_PROPOSAL_2026-10-20.md`, `REPEAT_RATE_MEASUREMENT_2026-10-20.md`): at 2 pages 36 CF albums from 15 artists, top-2 artist share 47.5%, identical every run; at 4 pages (old code, after the cache filled) 78 albums from 42 artists, top-2 share 26.4%.
+Why: with CF supply capped at 2 pages, the tag lane supplies 6 of the final 10 and was the noisiest input (38 vs 10 candidates across a cold pair). Rotating which profile and exploration tags it samples per run could widen run-to-run variety with no added lookups or requests, which the standing rules allow without extra approval. Background: `docs/CF_PAGES_PROPOSAL_2026-10-20.md` ("Alternative that needs no approval").
 
 Steps:
-1. Branch `feat/cf-max-pages-4` off current `main`. Change `CF_MAX_PAGES` from 2 to 4 in `discovery_candidate_gathering.py` (a local stash `stash@{0}` on the old branch holds an identical edit and the matching test rewrite of `test_second_page_is_requested_with_offset_and_budget_stops_at_two_pages` to four pages; recreate it rather than trusting the stash).
-2. Focused tests only: `test_discovery_candidate_gathering` plus the batch modules; `py_compile` on changed files.
-3. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, deleted afterwards). Harness: `reports/repeat-rate/run_cf_budget.py` (cold plus two warm; prints CF recordings, albums, artists, top-2 share, paging, provider calls, final source mix) and `run_batch_diag.py` (adds per-request status of the batch calls, no identifiers). Allow about 5 minutes per cold run; run it in the background.
-4. Record per run: CF recordings returned/resolved/failed, uncached MusicBrainz lookups and skips, CF albums and artists, top-2 share, final-list mix, overlap with the previous list, wall time, requests per run. Success means a cold run near the 2-page time (about 106 to 123 s) with the batch path intact, not 260+ s.
-5. If a 502 or other batch failure recurs, report the chunk status log before changing code; the fallback should now cost only the failed chunk.
-6. Decide keep or revert (a one-constant change) and say so in the PR; record the numbers in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+1. Read `_run_tag_queries` and tag selection in `discovery_candidate_gathering.py` (`TAG_LANE_EARLY_STOP_ENABLED` stays off). Offline first: trace how tags are chosen today and whether selection is deterministic per profile.
+2. Define the baseline, metrics and a rollback flag before coding: distinct tag-lane candidates and artists per run, overlap with the previous list across 3+ consecutive runs, MusicBrainz and other provider calls per run (must not rise), wall time.
+3. Implement behind a flag, default off. Selection must be deterministic given an explicit seed or run counter so tests are stable. Focused tests only (`test_discovery_candidate_gathering` plus any tag modules); `py_compile` on changed files.
+4. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, deleted afterwards) using `reports/repeat-rate/run_cf_budget.py`. It runs cold plus two warm. Set it up so the flag-off baseline and flag-on runs come from the same harness. Allow about 5 minutes per cold run and run it in the background.
+5. Record numbers in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`; say keep, keep-off or revert in the PR.
 
-Acceptance: PR with the constant change, updated test, measured numbers, and the four workflows green on the final head. Do not run the full suite.
-
-Alternative if the owner prefers no extra requests: measure rotating the tag lane's sampled tags per run (no added lookups; the lane was the noisiest input, 38 vs 10 candidates).
+Acceptance: PR with the flagged change, focused tests, measured numbers, and the four workflows green on the final head. Do not run the full suite. Ownership checks, duplicate suppression and release-eligibility filtering stay unchanged.
 
 ### Deferred
 
+- Read-only look at why release-group requests 502 at larger sizes, and the unexplained lookup and Last.fm call counts. Any request-pattern change needs owner approval.
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
-- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
+- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval); revisit 4 pages only after the 502s are understood.
 - CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
 

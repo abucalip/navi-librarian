@@ -100,7 +100,8 @@ Decision: **keep `CF_MAX_PAGES = 2`; no code change.** Revisit when the release-
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done: cold and warm candidate supply and final-list effects are measured (see findings above). Next: obtain longer-interval repeat-rate evidence before deciding whether cooldown needs calibration. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Next: measure rotating the tag lane's sampled tags per run (no added lookups or requests), because the tag lane is the noisiest input. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Open question from the 4-page run: why release-group requests still return 502 after #479's retry at larger request sizes. Investigate only read-only first; any change to request pattern needs owner approval.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it
