@@ -10,29 +10,27 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Current state
 
-- `main` includes PR #458 (squash merge `7fb140e6d915ada98974d1b56002c03d4e5cfef0`, roadmap 3.4 automatic refill on/off setting, default on). It was merged after all four required workflows passed on head `d72d650`. Verify the `main` head before you rely on it; it may have moved.
-- `main` also includes PR #456 (merge `4680a187734dc05516ebdca639b8a003366aaeb2`, roadmap 3.3, feedback as a bounded signal, on by default).
+- `main` includes PR #459 (squash merge `b09c9544cd96828a732fea04818729fc381cee0e`, roadmap 3.4 stale-while-revalidate read path). It was merged after all four required workflows passed on head `44148af`. Roadmap 3.4 is complete. Verify the `main` head before you rely on it; it may have moved.
+- Reading the personal list serves the stored snapshot and starts at most one background rebuild when it is 24 hours or older (`discovery_refresh.revalidate_on_read`, `STALE_MAX_AGE_SECONDS`). It honors `automatic_refill_enabled`, skips while a rebuild is in flight or within the one-hour cooldown, and does nothing without a snapshot. Refresh outcomes use origin `read`; the store now accepts status `rejected`.
+- `main` also includes PR #458 (`7fb140e`, refill on/off setting, default on) and PR #456 (`4680a18`, roadmap 3.3, feedback as a bounded signal, on by default).
 - Merged and recorded: PR #454 (`a5bba87`), PR #452 (`76030c0`), PR #451 (`42b6d81`), PR #450 (`27bdcc2`), PR #449 (`c90e43b`), and earlier PRs listed in the roadmap.
-- The refill setting is `automatic_refill_enabled` in `service_settings.py`, exposed at `GET/PUT /api/settings/automatic-refill`. The hourly `_discovery_scheduler` in `navidrome_server.py` passes no lists to `refresh_stale_lists` when it is off.
-- Live timing is done (single samples, see the roadmap section "Live stage-timing runs"). Batch resolution explains the all-flags speed-up. The breaker-only warm run's 100 recording lookups fit the 100-per-run uncached budget (hypothesis; the `cache_known` counter is not in run metrics).
-- Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
+- Live timing is done (single samples, roadmap section "Live stage-timing runs"). Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
 
 ## Next task
 
-**Roadmap 3.4, remaining part: stale-while-revalidate read path for the stored snapshot.** One PR, offline first.
+**Roadmap 3.3, remaining part: `save` as a positive seed for supplementary tag-query selection.** One PR, offline first.
 
-- Current state: the stored discovery list is persisted, and the hourly scheduler refreshes stale lists. The read path does not yet serve a stored snapshot while a rebuild runs. Nothing in the read path triggers a background rebuild when the snapshot is older than the 24-hour threshold.
-- Required behavior (roadmap 3.4): serve the latest good stored snapshot on request. When it is older than the existing 24-hour stale threshold, start a background rebuild and never block the request on it. A rebuild that is already running is not started again. Foreground builds and the one-lock rule are unchanged.
-- Owned and duplicate identities are re-filtered against the current library on every read (already merged in PR #446). Keep that filter on the new path.
-- Acceptance (deterministic tests, from roadmap 3.4): a stale snapshot is served while a rebuild is triggered; a snapshot served after a library change excludes newly owned albums; a refill run makes no more than 100 uncached requests.
-- Scope: this likely touches `app/api/**` and `navidrome_server.py`. Those paths need explicit owner approval for this task before you edit them. The approval for PR #458 does not carry over.
-- Do not change the refill schedule or the 24-hour staleness threshold in this PR.
-- Check the status notes for 3.4 in the roadmap before assuming it is done.
+- Current state: PR #456 applies a saved album's artist as a score boost only (0.10 max; 30-day half-life, 90-day expiry from `created_at`). The supplementary tag lane (`discovery_tag_queries.py`, `discovery_candidate_gathering.py`) does not use saves when it picks tag queries.
+- Required behavior (roadmap 3.3): use saved albums/artists as a positive similarity seed when selecting supplementary tag queries, with the same expiry rules as the boost. Never create a permanent effect. `dismiss`, `dismiss_artist` and `remove_for_me` semantics do not change.
+- Budget: this touches the 100-uncached-lookup path. Measure first: show on a synthetic fixture how many queries and uncached lookups a run plans with and without the seed, and keep it within the existing budget. A seed that replaces a planned query is fine; one that adds lookups is not. Weights, windows, eligibility, ownership and duplicate identity are unchanged.
+- Acceptance (deterministic tests): with a fresh save, the planned tag queries include a tag from the saved artist's genres; with an expired save, the plan is identical to no save; the uncached lookup count is no higher than without the seed; ownership and duplicate filtering still apply to candidates the seed surfaces; flag off or no feedback leaves output unchanged.
+- Scope: most likely `discovery_tag_queries.py`, `recommendation_feedback.py` and the call site in `navidrome_server.py`. `navidrome_server.py` is at 2649 of 2650 lines, so offset any added line. Editing `navidrome_server.py` or `app/api/**` needs explicit owner approval for this task; the approval for PR #459 does not carry over. Prefer not to touch them.
+- Check the 3.3 status note in the roadmap before assuming anything is done.
 
-## Testing scope (owner instruction, 2026-10-20)
+## Testing scope (owner instruction, 2026-10-20; repeated for the next session)
 
-- **Do not run the full test suite** (`python -m unittest discover -s tests`) in this session. The owner runs the full suite independently. Run only the focused test modules for the files you change, plus `python -m py_compile` on each changed Python file.
-- This overrides the full-suite step in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md` for this session only. The four required CI workflows still run on the PR head; CI is not affected.
+- **Do not run the full test suite** (`python -m unittest discover -s tests`) in this session. The owner runs the full suite independently. Run only the focused test modules for the files you change, plus `python -m py_compile` on each changed Python file. A few modules (for example `test_discovery_cold_start_batch`) import siblings and need `python -m unittest discover -s tests -p <file>`.
+- This overrides the full-suite step in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md` for the next session too (owner, 2026-10-20: same as the last one). Re-check with the owner after that. The four required CI workflows still run on the PR head; CI is not affected.
 - In the PR description, say which focused modules you ran. Do not report a full-suite result you did not observe.
 
 ## Standing rules
@@ -58,12 +56,12 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 - Default-on flags. `CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, the genre circuit breaker and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - Feedback signal (3.3). Merged as PR #456; default on, owner-approved 2026-10-20.
-- Refill toggle (3.4). Merged as PR #458; default on. The stale-while-revalidate read path is the next task above.
+- Refill toggle and read path (3.4). Merged as PR #458 (default on) and PR #459 (stale-while-revalidate). Roadmap 3.4 is complete.
 - Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
 - ListenBrainz client. The app's HTTP client intermittently receives a browser-verification page instead of JSON. A fix that sends an honest client identifier and token would need the owner's go-ahead first. Do not change the client's user agent or fingerprint to get around the check.
 - Last.fm as a source is parked by the owner. Do not start a quality test or a combined path without a new decision.
 - Exploration slider (later). Map one user-facing value onto the existing `recommendation_diversity` setting (0–100). Backend first; no UI in backend PRs.
-- Feedback positive seed. Roadmap 3.3 asks for `save` as a seed for supplementary tag-query selection. PR #456 implements it as a score boost only. The tag-query version is a follow-up, and it touches the 100-lookup budget path, so it needs its own PR and a check of the budget.
+- Feedback positive seed. This is the next task above.
 
 ## Working style
 

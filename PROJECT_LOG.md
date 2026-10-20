@@ -1,3 +1,13 @@
+## 2026-10-20 — Roadmap 3.4 stale-while-revalidate read path (merged as PR #459)
+
+- Squash-merged to `main` as `b09c9544cd96828a732fea04818729fc381cee0e` after the owner named PR #459. All four required workflows passed on exact head `44148af78a93a0a3be27a1f17ec6cc196e678bf6` (compile, test-and-build, container-smoke, validate-container).
+- Behavior: `build_cached_discovery_list_response` takes an `on_stale` hook (personal list only); `discovery_refresh.revalidate_on_read` starts one daemon-thread rebuild when the stored snapshot is stale (`STALE_MAX_AGE_SECONDS`, 24 h) or has an invalid timestamp. Skips: missing snapshot, refill setting off, rebuild in flight, one-hour cooldown. The stored snapshot is served regardless; hook errors never reach the read. The rebuild is `_discovery_refresh_personal(20, origin="read")`, so the build lock, snapshot guard and 100-request budget apply unchanged.
+- Also changed: `discovery_store` accepts refresh origin `read` (outcome table and pool diagnostic) and status `rejected` (`refresh_personal` already recorded it; the store refused it and the error was swallowed). A review finding was fixed: a failed thread start no longer leaves the cooldown timestamp set.
+- `navidrome_server.py` stayed at 2649/2650 lines (collapsed `_discovery_refresh_all` to offset the hook).
+- Tests: `tests/test_discovery_revalidate.py` (new) and two cases in `tests/test_recommendation_diagnostics.py`. Run for this PR, focused only (owner instruction: no full suite this session): revalidate, refresh, list payload, snapshot, scheduler refill gate, server size guard, dashboard/discovery routes, API injection, cold-start batch (via `discover -s tests -p`), diagnostics. All passed. The owner runs the full suite.
+- Not done: no browser or live run; "refill run makes no more than 100 uncached requests" has no new test (no lookups added; existing budget tests apply); served-snapshot age and foreground-latency metrics are not exposed. Publishing and deployment remain paused.
+- Next: roadmap 3.3 positive tag-query seed, handed off in `CLAUDE_CLI.md`.
+
 ## 2026-10-20 — Roadmap 3.4 refill on/off setting (merged as PR #458)
 
 - Squash-merged to `main` as `7fb140e6d915ada98974d1b56002c03d4e5cfef0` after the owner named PR #458. All four required workflows passed on exact head `d72d650`.

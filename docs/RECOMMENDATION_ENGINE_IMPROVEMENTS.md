@@ -10,7 +10,9 @@ Per-stage run timers: the counters from PR #451 now include aggregate seconds fo
 
 Merged 2026-10-20: PR #456, roadmap 3.3 feedback as a bounded signal, on by default (merge `4680a187734dc05516ebdca639b8a003366aaeb2`; all four required workflows passed on head `7b0a3a0`).
 
-Merged 2026-10-20: PR #458, roadmap 3.4 automatic refill on/off setting, default on (squash merge `7fb140e6d915ada98974d1b56002c03d4e5cfef0`; all four required workflows passed on head `d72d650`; owner approved the `app/api/**` and `navidrome_server.py` changes). Next task: roadmap 3.4 stale-while-revalidate read path; see `CLAUDE_CLI.md`.
+Merged 2026-10-20: PR #458, roadmap 3.4 automatic refill on/off setting, default on (squash merge `7fb140e6d915ada98974d1b56002c03d4e5cfef0`; all four required workflows passed on head `d72d650`; owner approved the `app/api/**` and `navidrome_server.py` changes). 
+
+Merged 2026-10-20: PR #459, roadmap 3.4 stale-while-revalidate read path (squash merge `b09c9544cd96828a732fea04818729fc381cee0e`; all four required workflows passed on exact head `44148af78a93a0a3be27a1f17ec6cc196e678bf6`; owner approved the `navidrome_server.py` and `app/api/**` scope). Roadmap 3.4 is now fully implemented. Next task: the 3.3 positive tag-query seed; see `CLAUDE_CLI.md`.
 
 Open items:
 - **CF freshness (P2):** undecided. No measurement has shown whether CF reflects all-time history. Needs an authorized two-sided capture; do not start without owner approval.
@@ -240,7 +242,7 @@ Define separate time windows/decay rules and expiry for positive/negative signal
 
 **Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
-#### 3.4 Persisted last-known-good snapshots and automatic background refill (partly implemented, 2026-10-19; snapshot guard PR #445 `c5e9b17`; read-time ownership filter PR #446 `80d796b`; provider-failure threshold PR #447 `e932c51`)
+#### 3.4 Persisted last-known-good snapshots and automatic background refill (implemented 2026-10-20; read path PR #459 `b09c954`; snapshot guard PR #445 `c5e9b17`; read-time ownership filter PR #446 `80d796b`; provider-failure threshold PR #447 `e932c51`)
 
 Owner decision (2026-10-19): background refill is on by default and runs automatically, because the app will run as a self-hosted service.
 
@@ -258,7 +260,7 @@ Acceptance (deterministic tests): a failed build keeps the previous snapshot; a 
 
 Out of scope here: a per-item scored history store (deferred to Phase 4 item 5).
 
-**Current status (2026-10-20).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. The refill on/off setting is merged as PR #458 (`7fb140e`, default on). The stale-while-revalidate read path is implemented on branch `discovery/stale-while-revalidate-read` (PR pending, not merged): reading the personal list serves the stored snapshot, still re-filtered against the current library, and when it is 24 hours or older starts one background rebuild through the same default refresh path and build lock as the scheduler. No rebuild starts when automatic refill is off, one is already running, or one started within the last hour (so a failed or rejected rebuild retries at the scheduler's cadence, not per request). Missing snapshots are not rebuilt by a read. No lookups are added; the 100-request budget and the 24-hour threshold are unchanged. Tests: `tests/test_discovery_revalidate.py`. The refill-run budget itself is covered by the existing budget tests, not by a new one. Detailed history is archived in `PROJECT_LOG.md`.
+**Current status (2026-10-20).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. The refill on/off setting is merged as PR #458 (`7fb140e`, default on). Roadmap 3.4 is complete. The stale-while-revalidate read path merged as PR #459 (`b09c954`, exact head `44148af`): reading the personal list serves the stored snapshot, still re-filtered against the current library, and when it is 24 hours or older starts one background rebuild through `_discovery_refresh_personal(20, origin="read")`, which keeps the shared build lock and the snapshot guard. No rebuild starts when automatic refill is off, one is already in flight, one started within the last hour (`REVALIDATE_COOLDOWN_SECONDS`, so a failed or rejected rebuild retries at the scheduler's cadence, not per request; a failed thread start releases the cooldown), or no snapshot exists (the scheduler handles cold start). Personal list only. The 24-hour threshold is one shared constant, `STALE_MAX_AGE_SECONDS`; the refill schedule is unchanged. Refresh diagnostics gained the `read` origin and the `rejected` status (the latter was previously refused by the store and silently dropped). No lookups were added; the 100-request refill budget is covered by the existing budget tests, not a new one. Tests: `tests/test_discovery_revalidate.py`, plus a `read`-origin and a `rejected`-status case in `tests/test_recommendation_diagnostics.py`. Known limits: the rebuild trigger and cooldown are per process and in memory; the metrics named in the design (served-snapshot age, foreground latency, refill outcome counts) are not exposed beyond the stored refresh outcomes; no live or browser run.
 
 ### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 
