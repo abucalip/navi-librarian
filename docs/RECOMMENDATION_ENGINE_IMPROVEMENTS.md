@@ -2,15 +2,17 @@
 
 Status (2026-10-20): active. This file keeps only what is still needed for the next work: current state, open decisions, guardrails, the phase plan, and evaluation rules. Dated evidence, merge logs and superseded orderings are archived in `PROJECT_LOG.md` under "Recommendation roadmap archive". The owner's sustained real-world evidence prioritized ranking responsiveness; no technical root cause is claimed as proven. Publishing and deployment remain paused.
 
-## Current state (2026-10-19)
+## Current state (2026-10-20)
 
 Merged on `main`: candidate-supply diagnostics (PR #382); bounded CF paging with a 100-call uncached budget (PR #384, budget counter #395); retries for artist-genre and tag lookups (PR #385, PR #387); gated supplementary tag searches (PR #411); batch resolution behind flags, both off by default (PR #430); title-marker batch filter, off by default (PR #429); genre circuit breaker, default off (PR #431); tag-lane early stop, default off (PR #442); genre-breaker gate on profile prefetch (PR #444); snapshot guard (PR #445); read-time ownership filter on the personal list (PR #446, merge `80d796b`); provider-failure threshold in the snapshot guard (PR #447, merge `e932c51`); cold-start batch path for first builds only (PR #450, merge `27bdcc2`, cold-start-only, tests `tests/test_discovery_cold_start_batch.py`); run timing and provider-call counters (PR #451, merge `42b6d81`, exact head `a1d061b`); cache and cross-run candidate-resolution tests with roadmap 2.3 marked implemented (PR #449, merge `c90e43b`).
 
 Per-stage run timers: the counters from PR #451 now include aggregate seconds for metadata resolution, genre prefetch, the supplementary tag lane, replenishment, and the genre lookup stage. Merged as PR #452 at `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9` from exact head `856df1f6ed50353ee671c6b129d51e86a49b4ad7`; all four required workflows succeeded on that head. See "Per-stage run timers" at the end of this file.
 
+Merged 2026-10-20: PR #456, roadmap 3.3 feedback as a bounded signal, on by default (merge `4680a187734dc05516ebdca639b8a003366aaeb2`; all four required workflows passed on head `7b0a3a0`). Next task: roadmap 3.4 refill on/off setting; see `CLAUDE_CLI.md`.
+
 Open items:
 - **CF freshness (P2):** undecided. No measurement has shown whether CF reflects all-time history. Needs an authorized two-sided capture; do not start without owner approval.
-- **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The roadmap says it can be turned off, but no setting exists. Owner decision needed.
+- **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. The setting is not built yet; it is the next task.
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
 - **Exploration slider (later, product):** map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs.
@@ -232,7 +234,7 @@ Use feedback in ranking/query selection, not only stored-list filtering:
 
 Define separate time windows/decay rules and expiry for positive/negative signals. Do not create permanent exclusion. Add regression tests using injected feedback rows, including expiry and ensuring album-level dismissal does not penalize sibling albums.
 
-**Status (2026-10-20, branch `rec/feedback-signal`, not pushed):** implemented offline in `recommendation_feedback.py`, on by default (`FEEDBACK_SIGNAL_ENABLED = True`, owner-approved 2026-10-20). Dismissals apply a decaying penalty (album 0.50, artist 0.30, shared-tag 0.10, cap 0.60; 14-day half-life, 60-day expiry, from `updated_at`). Saves apply a boost to the same artist (0.10 max; 30-day half-life, 90-day expiry, from `created_at`). `dismiss_artist` takes the larger penalty, not the sum. Ownership-clear candidates only. The read-time hard filter is unchanged. Controlled synthetic fixture (`tests/test_recommendation_feedback_fixture.py`) runs the real ranking and allocator: a dismissed artist drops from one slot to zero and a non-dominant artist takes it; a save leaves the slate size and eligibility unchanged. Not done: the positive seed is a score boost, not a tag-query seed; no live or private-capture evaluation.
+**Status (2026-10-20, merged as PR #456 at `4680a18`):** implemented offline in `recommendation_feedback.py`, on by default (`FEEDBACK_SIGNAL_ENABLED = True`, owner-approved 2026-10-20). Dismissals apply a decaying penalty (album 0.50, artist 0.30, shared-tag 0.10, cap 0.60; 14-day half-life, 60-day expiry, from `updated_at`). Saves apply a boost to the same artist (0.10 max; 30-day half-life, 90-day expiry, from `created_at`). `dismiss_artist` takes the larger penalty, not the sum. Ownership-clear candidates only. The read-time hard filter is unchanged. Controlled synthetic fixture (`tests/test_recommendation_feedback_fixture.py`) runs the real ranking and allocator: a dismissed artist drops from one slot to zero and a non-dominant artist takes it; a save leaves the slate size and eligibility unchanged. Not done: the positive seed is a score boost, not a tag-query seed; no live or private-capture evaluation.
 
 **Acceptance gate:** controlled fixtures show reduced repeated artists/styles and improved handling of feedback without collapsing relevance, creating permanent exclusions, or violating eligibility rules.
 
@@ -254,7 +256,7 @@ Acceptance (deterministic tests): a failed build keeps the previous snapshot; a 
 
 Out of scope here: a per-item scored history store (deferred to Phase 4 item 5).
 
-**Current status (2026-10-19).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. Remaining: a refill on/off setting (owner decision), and the persisted list served stale-while-revalidate is unchanged. Detailed history is archived in `PROJECT_LOG.md`.
+**Current status (2026-10-20).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. Remaining: the refill on/off setting (default on, decided 2026-10-19; next task), and the persisted list served stale-while-revalidate is unchanged. Detailed history is archived in `PROJECT_LOG.md`.
 
 ### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 
