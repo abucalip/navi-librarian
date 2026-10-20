@@ -243,6 +243,21 @@ class BatchEligibilityTests(unittest.TestCase):
         titles = {value["album"] for value in result["albums"].values()}
         self.assertEqual(titles, {"Quiet Studio"})
 
+    def test_marked_title_makes_no_individual_lookup_and_no_album(self):
+        harness = _Harness(2, rg_types={
+            "rg-0": {"title": "Greatest Hits Live", "type": "Album"},
+            "rg-1": {"title": "Quiet Studio", "type": "Album"},
+        })
+
+        result = _run(harness, batch_enabled=True)
+
+        # The marked recording is rejected from the batch data alone: no per-recording
+        # MusicBrainz fallback, and no album from it.
+        self.assertNotIn("rec-0", harness.mb_client.requested)
+        self.assertEqual(harness.mb_client.requested, [])
+        titles = {value["album"] for value in result["albums"].values()}
+        self.assertEqual(titles, {"Quiet Studio"})
+
     def test_non_album_primary_type_is_rejected_on_batch_path(self):
         harness = _Harness(1, rg_types={"rg-0": {"title": "Quiet Single", "type": "Single"}})
 
