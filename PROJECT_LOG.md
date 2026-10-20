@@ -1,6 +1,7 @@
 ## 2026-10-20 — Exploration setting audit (docs only)
 
 - Branch `docs/exploration-setting-audit`. Traced `recommendation_diversity` end to end, confirmed setting 0 is a no-op and measured settings 0/25/50/75/100 on a synthetic pool with the production allocator. Decision: no new backend mapping needed; the Settings UI stays blocked by `docs/DIVERSITY_SETTING_ROADMAP.md` until its gates close (review of PR #466 caught an earlier draft that implied otherwise); 75-100 is flat (penalty saturates at 0.75). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Live sample (owner-approved, one run): settings 0/25/50/75/100 gave identical output on a 24-album pool; diversity setting paused by the owner. Next priority handed off in `CLAUDE_CLI.md`: candidate supply diagnosis (103 of 200 CF recordings unresolved, 4 CF artists).
 - Tests: none run, no code changed (measurement script only, kept outside the repo). PR/merge SHA and CI: see the PR.
 - Not done: UI control, repeat-rate measurement, private-capture measurement, publication, deployment.
 
