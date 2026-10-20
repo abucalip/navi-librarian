@@ -155,6 +155,25 @@ class SaveSeedCounterTests(unittest.TestCase):
         self.assertEqual(counts["save_seed.from_cached_genres"], 1)
         self.assertEqual(counts["save_seed.mbid_known_no_cached_genres"], 0)
 
+    def test_metadata_seeded_artist_increments_only_the_metadata_counter(self):
+        rows = [_save_row("Never Heard", age_days=1, metadata={"genres": ["shoegaze"]}),
+                _save_row("No Genres", age_days=1)]
+        _log, counts = _counted(rows)
+        self.assertEqual(counts["save_seed.from_metadata_genres"], 1)
+        self.assertEqual(counts["save_seed.skipped_no_genres"], 1)
+        self.assertEqual(counts["save_seed.from_cached_genres"], 0)
+        self.assertEqual(counts["save_seed.mbid_known_no_cached_genres"], 0)
+
+    def test_each_saved_artist_lands_in_exactly_one_outcome(self):
+        rows = [_save_row("Cand 2", age_days=1),
+                _save_row("Never Heard", age_days=1, metadata={"genres": ["shoegaze"]}),
+                _save_row("No Genres", age_days=1)]
+        _log, counts = _counted(rows)
+        outcomes = sum(counts[f"save_seed.{k}"] for k in (
+            "from_cached_genres", "mbid_known_no_cached_genres",
+            "from_metadata_genres", "skipped_no_genres"))
+        self.assertEqual(outcomes, counts["save_seed.saved_artists"])
+
     def test_run_with_counters_disabled_plans_the_same(self):
         from unittest import mock
         rows = [_save_row("Cand 2", age_days=1),
