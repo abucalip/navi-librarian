@@ -1,3 +1,11 @@
+## 2026-10-20 — Roadmap 3.3 saved-album tag-query seed (merged as PR #461)
+
+- Merged to `main` as `ace28d3f2ad76ca33f6ff7b103586d50e355b066` from exact tested PR head `8c2c418f912fc8656717c5f4c851bdfb952554aa`.
+- Review follow-up: fixed the query-budget comparison to use a snapshot of the original profile genre cache, not the cache after seed-specific entries were added. Added a regression fixture for a saved artist outside the original top-15 profile-cache reads; initial and replenishment query counts are capped against the unseeded plan.
+- Behavior: active saved album feedback (`for_me`) contributes a decaying artist seed (30-day half-life, 90-day expiry from `created_at`) to supplementary tag-query selection. Existing 6-profile/2-exploration quotas remain unchanged; only cached/stored genres are used, no new provider lookups are added, and feedback-provider failures fall back to unseeded selection. No live recommendation run.
+- Full unit suite ran in CI: **1,096 tests, OK**. All four required workflows passed on the exact PR head: Python syntax/acquisition-safety run `39440622871`, Docker packaging/full suite/build run `39440622839`, container runtime smoke run `39440622897`, validation-only multi-architecture image validation run `39440623011` (publishing paused).
+- Publishing, deployment, and production-runtime verification remain unperformed; publishing remains paused.
+
 ## 2026-10-20 — Deep-dive candidate collection extraction (merged as PR #460)
 
 - Merged to `main` as `4201ed91333ec823b2c00684ab71c82ccd0a7085` from exact head `74e5b35da5dd041cb2fa0143310c1d35c576843d`. Compile, test-and-build, container-smoke and validate-container all passed on that head (run ids 39437774460, 39437774269, 39437774401, 39437774629).
