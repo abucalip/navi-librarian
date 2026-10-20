@@ -34,7 +34,7 @@ Owner-approved live run (the owner said the agent may do it), one fresh data dir
 | Albums / distinct artists / top-2 share | 10 / 10 / 20% | 10 / 10 / 20% | 10 / 10 / 20% |
 | Overlap with previous list | n/a | 4 of 10 | 3 of 10 |
 | Category counts (adj / cross / adv) | 4 / 3 / 3 | 4 / 3 / 3 | 4 / 3 / 3 |
-| Pool (candidates / unowned unique) | 74 / 55 | 52 / 42 | 70 / 56 |
+| Pool (candidates / unowned unique) | 74 / 55 | 52 / 42 | 70 / not recorded |
 | Unowned unique by source (CF / profile / exploration) | 17 / 30 / 8 | 4 / 30 / 8 | 14 / 30 / 8 |
 | Recent-genre family cap rejections | 39 | 24 | 37 |
 | Family cap relaxation attempts | 10 | 4 | 8 |
