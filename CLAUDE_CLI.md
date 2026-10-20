@@ -10,8 +10,7 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Current state
 
-- `main` head: `084d804` (PR #455, docs only: records the PR #454 merge and this handoff's previous version). Verify before you rely on it; it may have moved.
-- Open, not merged: **PR #456** (`rec/feedback-signal`, head `7b0a3a0cf9e7e19db059f189189d7a75a1500d21`). Roadmap 3.3, feedback as a bounded signal, on by default (owner-approved 2026-10-20). All four required workflows passed on that head. Merge only when the owner names PR #456 in words.
+- `main` includes PR #456 (merge `4680a187734dc05516ebdca639b8a003366aaeb2`, roadmap 3.3, feedback as a bounded signal, on by default, owner-approved 2026-10-20). Verify the `main` head before you rely on it; it may have moved.
 - Merged and recorded: PR #454 (`a5bba87`), PR #452 (`76030c0`), PR #451 (`42b6d81`), PR #450 (`27bdcc2`), PR #449 (`c90e43b`), and earlier PRs listed in the roadmap.
 - Live timing is done (single samples, see the roadmap section "Live stage-timing runs"). Batch resolution explains the all-flags speed-up. The breaker-only warm run's 100 recording lookups fit the 100-per-run uncached budget (hypothesis; the `cache_known` counter is not in run metrics).
 - Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
@@ -25,7 +24,7 @@ Read this first. It is written so you can pick up the next recommendation task f
 - Confirm the file scope with the owner before editing `app/api/**` or `app/main.py`. The setting needs an API route and a settings entry, and those paths were not yet approved for this change.
 - Acceptance (deterministic tests, from roadmap 3.4): with the setting off, no background work runs; with it on, the refill keeps the 100-request uncached budget and the one-lock rule shared with foreground builds. Add a test that the default is on, and one that a corrupt stored value falls back to on.
 - No live run is needed. Do not change the refill schedule or its staleness threshold in this PR.
-- Check the status notes for 3.4 and 3.3 in the roadmap before assuming they are done. 3.3 is in review on PR #456 and is not merged.
+- Check the status notes for 3.4 and 3.3 in the roadmap before assuming they are done. 3.3 is merged as PR #456.
 
 ## Standing rules
 
@@ -49,7 +48,7 @@ Read this first. It is written so you can pick up the next recommendation task f
 ## Open items and owner decisions
 
 - Default-on flags. `CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, the genre circuit breaker and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
-- Feedback signal (3.3). Default-on approved 2026-10-20. Its merge is pending the owner naming PR #456.
+- Feedback signal (3.3). Merged as PR #456; default on, owner-approved 2026-10-20.
 - Refill toggle (3.4). Default-on is decided; the on/off setting is the next task above.
 - Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
 - ListenBrainz client. The app's HTTP client intermittently receives a browser-verification page instead of JSON. A fix that sends an honest client identifier and token would need the owner's go-ahead first. Do not change the client's user agent or fingerprint to get around the check.

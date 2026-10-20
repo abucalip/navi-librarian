@@ -1,18 +1,16 @@
-## 2026-10-20 — Roadmap 3.3 feedback signal: PR #456 opened, handoff for 3.4
+## 2026-10-20 — Handoff: roadmap 3.4 refill on/off setting (docs only)
 
-- PR #456 (`rec/feedback-signal`, head `7b0a3a0cf9e7e19db059f189189d7a75a1500d21`) is open against `main` and not merged. Implements roadmap 3.3: decaying penalty for dismissals (album 0.50, artist 0.30, shared-tag 0.10, cap 0.60; 14-day half-life, 60-day expiry) and a bounded save boost (0.10 max; 30-day half-life, 90-day expiry). On by default, owner-approved 2026-10-20.
-- Checks: `compile`, `test-and-build`, `container-smoke`, and `validate-container` all passed on the exact head.
-- Tests: 14 unit tests and 3 controlled end-to-end fixture tests, all passing. Full suite: 1056 run, one failure, the known macOS `test_acquisition_import` case, which also fails on clean `main`.
-- Bug fixed during the fixture work: an expired artist dismissal still applied the shared-tag penalty. Covered by the fixture.
-- Not done: the positive seed is a score boost, not a tag-query seed; no live or private-capture evaluation.
-- Handoff: `CLAUDE_CLI.md` and the roadmap now name roadmap 3.4 (refill on/off setting, default on) as the next task. Its `app/api/**` and `app/main.py` scope needs owner confirmation before editing.
+- PR #456 merged as `4680a187734dc05516ebdca639b8a003366aaeb2`. Its checks passed on head `7b0a3a0` before merge.
+- Handoff: roadmap "Current state", the 3.3 status, and the 3.4 status are updated. `CLAUDE_CLI.md` names roadmap 3.4 (refill on/off setting, default on) as the next task. Its `app/api/**` and `app/main.py` scope needs owner confirmation before editing.
+- Docs PR #457 was merged after `main` was merged into it. The two docs conflicts were resolved in favor of main's trimmed roadmap, with this handoff applied on top.
 
-## 2026-10-20 — Roadmap 3.3 feedback signal (offline, branch `rec/feedback-signal`)
+## 2026-10-20 — Roadmap 3.3 feedback signal (merged as PR #456)
 
 - Task: roadmap 3.3, feedback as a bounded signal. Implemented in `recommendation_feedback.py`, wired through `prepare_ranking_inputs` (`recommendation_cooldown.py`) and the replay context validator (`recommendation_replay.py`); one server call-site line, with one blank line removed to stay at the 2650-line cap.
 - Gate: `FEEDBACK_SIGNAL_ENABLED = True`, default-on, owner-approved 2026-10-20.
 - Tests: `tests/test_recommendation_feedback.py` (14 unit tests) and `tests/test_recommendation_feedback_fixture.py` (3 controlled end-to-end tests through the real ranking and allocator). The fixture caught a bug where an expired artist dismissal still applied the shared-tag penalty; fixed by gating the dismissed-artist set on the negative window. Full suite: 1053 run, 1 failure, the known macOS `test_acquisition_import` case, confirmed to fail on clean `main` via stash.
-- Not done: no tag-query seed; no live or private-capture evaluation; not pushed; no PR.
+- Merged: PR #456 squash-merged to `main` as `4680a187734dc05516ebdca639b8a003366aaeb2` after the owner named it.
+- Not done: no tag-query seed; no live or private-capture evaluation.
 
 ## 2026-10-20 — Live stage-timing runs with per-stage keys (docs only)
 
