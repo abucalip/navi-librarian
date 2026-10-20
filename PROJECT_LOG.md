@@ -1,3 +1,10 @@
+## 2026-10-20 — Save-seed diagnostics counters and live measurement (PR open, not merged)
+
+- Branch `seed-diagnostics`: `recommendation_run_metrics.record_count` and `snapshot_and_reset()["counts"]`; seven integer `save_seed.*` counters (six at first, plus `mbid_known_no_cached_genres` added after review) recorded in `discovery_candidate_gathering.py` after the seed block succeeds. No lookup, query-selection, quota, scoring or flag change; `navidrome_server.py` and `app/api/**` untouched. Owner approved the domain-module edit for this task.
+- Tests run (focused only, no full suite): `test_discovery_save_tag_seed` (14), `test_recommendation_run_metrics` (6), `test_discovery_candidate_gathering` (32), `test_discovery_candidate_genre_prefetch` (6), plus `py_compile` on changed files. CI on the PR head: see the PR.
+- Live run (owner-approved, aggregate only): one sample, 4 saves. `saved_artists` 4, `from_cached_genres` 1 (pre-review semantics: MBID known; since split into `from_cached_genres` and `mbid_known_no_cached_genres`, run not repeated), `from_metadata_genres` 2, `skipped_no_genres` 1, `initial_queries_changed` 1, `replenish_queries_changed` 0. Baseline 217 s, seeded 249 s, 10 recommendations each; not a timing result. Limits in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (roadmap 3.3).
+- Not done: merge SHA (pending owner naming the PR), publication, deployment.
+
 ## 2026-10-20 — Roadmap 3.3 saved-album tag-query seed (merged as PR #461)
 
 - Merged to `main` as `ace28d3f2ad76ca33f6ff7b103586d50e355b066` from exact tested PR head `8c2c418f912fc8656717c5f4c851bdfb952554aa`.

@@ -35,6 +35,12 @@ class RunMetricsTests(unittest.TestCase):
         metrics.add_stage_seconds("resolution", 0.5)
         self.assertEqual(metrics.snapshot_and_reset()["stage_seconds"], {"resolution": 1.75})
 
+    def test_record_count_accumulates_integers_and_resets(self):
+        metrics.record_count("save_seed.saved_artists", 2)
+        metrics.record_count("save_seed.saved_artists")
+        self.assertEqual(metrics.snapshot_and_reset()["counts"], {"save_seed.saved_artists": 3})
+        self.assertEqual(metrics.snapshot_and_reset()["counts"], {})
+
 
 if __name__ == "__main__":
     unittest.main()
