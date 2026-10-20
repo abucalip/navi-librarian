@@ -65,6 +65,22 @@ class ListenBrainzClientTests(unittest.TestCase):
         self.assertEqual(pauses, [0.2])
         self.assertTrue(all(response.raised for response in client.responses))
 
+    def test_default_cap_is_five_full_pages(self):
+        now = 2_000_000_000
+        pages = [
+            [{"listened_at": now - 1000 * page - index} for index in range(100)]
+            for page in range(7)
+        ]
+        client = FakeClient(pages)
+        result = recent_listens(
+            "test-user",
+            client_factory=lambda **kwargs: client,
+            clock=lambda: now,
+            sleep=lambda _seconds: None,
+        )
+        self.assertEqual(len(client.requests), 5)
+        self.assertEqual(len(result), 500)
+
     def test_stops_on_empty_page(self):
         client = FakeClient([[]])
         result = recent_listens(

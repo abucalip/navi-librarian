@@ -8,10 +8,14 @@ from typing import Any
 import httpx
 
 
+# Default cap: 5 pages of 100 = 500 listens within the window.
+RECENT_LISTENS_PAGE_LIMIT = 5
+
+
 def recent_listens(
     username: str,
     days: int = 30,
-    page_limit: int = 3,
+    page_limit: int = RECENT_LISTENS_PAGE_LIMIT,
     *,
     client_factory: Callable[..., Any] | None = None,
     clock: Callable[[], float] | None = None,

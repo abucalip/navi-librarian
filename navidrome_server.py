@@ -225,7 +225,7 @@ def find_missing_mbids(max_files: int = 1000, offset: int = 0) -> str:
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
-def _listenbrainz_recent(days=30, page_limit=3):
+def _listenbrainz_recent(days=30, page_limit=_listenbrainz_client.RECENT_LISTENS_PAGE_LIMIT):
     """Compatibility adapter for bounded ListenBrainz listen retrieval."""
     return _listenbrainz_client.recent_listens(
         _listenbrainz_username(),
