@@ -63,6 +63,13 @@ class CandidateSupplySummaryTests(unittest.TestCase):
         self.assertNotIn("token", rendered)
         self.assertNotIn("https://", rendered)
 
+    def test_common_transport_errors_keep_their_class_not_other(self):
+        names = ["ConnectTimeout", "PoolTimeout", "ReadError", "RemoteProtocolError", "TransportError"]
+        for name in names:
+            exc = type(name, (Exception,), {})("https://host/x token=abc")
+            self.assertEqual(classify_error(exc), name)
+        self.assertEqual(classify_error(SecretUrlError("x")), "other")
+
     def test_error_in_record_after_resolution_counts_as_failed(self):
         records = [{"resolved": True, "artist_key": "alpha", "error_class": "ValueError"}]
         cf = summarize_cf_recordings(records, returned=1)
