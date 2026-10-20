@@ -1,10 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-20 (PR #459 merged at `b09c954`; stale-while-revalidate read path)
+Last reviewed: 2026-10-20 (PR #461 merged at `ace28d3`; saved-album tag-query seed)
 
 ## Current focus
 
-**Deep-dive candidate collection extracted — PR #460 merged as `4201ed9` (2026-10-20).** `_build_artist_deep_dive_list()` now delegates its four collection phases (missing albums, resolved-pool reuse, similar artists, genre enrichment) to `discovery_deep_dive_candidates.py`, with injected lookups and pacing. `navidrome_server.py` is **2,535 of 2,650 lines** (was 2,649), measured by `check_server_size.py` on the branch head. Exact head `74e5b35` passed all four required workflows. Behavior unchanged; modularization stays closed. Next: the 3.3 positive tag-query seed (`CLAUDE_CLI.md`). Publishing and deployment remain paused.
+**Roadmap 3.3 saved-album tag-query seed — PR #461 merged as `ace28d3` (2026-10-20).** Saved `for_me` album feedback contributes a decaying artist weight to supplementary tag-query selection. Cached genres only; unchanged 6-profile/2-exploration quotas and no additional provider lookups. The P2 review finding was fixed by snapshotting the pre-seed genre cache and capping both initial and replenishment plans against the unseeded baseline; regression coverage includes a saved artist outside the original top-15 cache reads. Exact PR head `8c2c418f912fc8656717c5f4c851bdfb952554aa` passed all four required workflows; the full suite reported 1,096 tests `OK`. Merge commit `ace28d3f2ad76ca33f6ff7b103586d50e355b066`. No live recommendation run. Next: select the next backend priority from `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`. Publishing and deployment remain paused.
 
 **Stale-while-revalidate read path — PR #459 merged as `b09c954` (2026-10-20); roadmap 3.4 is complete.** Reading the personal list serves the stored snapshot (re-filtered against the current library) and starts one background rebuild when it is 24 hours or older; never blocks, honors the automatic refill setting, one rebuild at a time, one-hour cooldown. Exact head `44148af` passed all four required workflows; focused tests only (the owner runs the full suite). Next: the 3.3 positive tag-query seed (`CLAUDE_CLI.md`). Publishing and deployment remain paused.
 
