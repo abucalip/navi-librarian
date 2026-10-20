@@ -26,13 +26,15 @@ Open items:
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
 - **Exploration slider (product):** audited 2026-10-20 (see "Exploration setting audit"): no new backend mapping is needed, but the Settings UI stays **blocked** by `docs/DIVERSITY_SETTING_ROADMAP.md` gates until cross-pool and real-library evidence exists. No UI in backend PRs.
-- **Candidate supply diagnosis (2026-10-20):** offline trace done (see "Candidate supply diagnosis" at the end); the budget-skip hypothesis is **refuted**. PR #467 (`2794237`) names the failing exception classes. The live cold/warm pair is **not run**: the app's ListenBrainz client times out. Retry later. Next roadmap item: Phase 4.3, wider CF pool (see `CLAUDE_CLI.md`).
+- **Cold-run resolution budget (P1, owner decision needed):** live pair 2026-10-20 (section "Live cold/warm pair"): on a cold run the 100-call MusicBrainz budget leaves 86 of 200 CF recordings unread and the artist cap cannot act on uncached recordings, so the resolved set clusters (6 artists, top-2 54%); warm runs reach 15 artists (top-2 31%). Candidates, none built: batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, off by default, changes call pattern, needs an owner decision), or ordering unresolved recordings so one artist cannot take the budget (hard: the CF response carries no artist). Open question: the measured run did not set `cold_start`, so the cold-start batch path (`COLD_START_BATCH_ENABLED`) was not exercised; measure that path before choosing.
+- **Candidate supply diagnosis (closed 2026-10-20):** the 103 failures did not recur (0 failed in both live runs), so they were most likely client timeouts or throttling; the class stays unnamed. PR #467 (`2794237`) keeps the wider allowlist as a safety net; reopen only if failures return.
+- **ListenBrainz client (resolved pending confirmation):** PR #469 sends an honest User-Agent and an optional `LISTENBRAINZ_TOKEN`; the recent-listens timeout did not recur, but which change fixed it was not isolated. Follow-up: add `LISTENBRAINZ_TOKEN` to `compose.yaml` and `docs/DEPLOYMENT.md` (not done in #469).
 - **Diversity setting:** paused by the owner (2026-10-20). Do not build the UI or tune the mapping; revisit only when supply gives pools large enough to reorder.
 - **Last.fm source:** parked by the owner (2026-10-19). Recorded only as a possible future recommendations-source option. Do not start a quality test or a combined path without a new decision.
 
 Deferred until candidate supply shows a gain: weight retuning (Phase 1.2), MMR re-ranking evaluation (Phase 3.1), cooldown calibration (Phase 3.2).
 
-Known limits: candidate supply is still narrow in the owner's capture; the batch path has no secondary release-type filter (only the title-marker filter); the ListenBrainz history available is about two weeks. Each new change is measured offline first.
+Known limits: the live supply numbers are one sample, and the warm figures may include a stray extra pass; candidate supply is still narrow in the owner's capture; the batch path has no secondary release-type filter (only the title-marker filter); the ListenBrainz history available is about two weeks. Each new change is measured offline first.
 
 ## Goal and guardrails
 
@@ -278,7 +280,7 @@ These are candidates for experiments, not committed additions. Check existing mo
 
 1. **Library gaps / deep dives:** for artists with several owned albums, find missing studio albums via MusicBrainz release groups. Inspect `discovery_new_releases.py`, classics modules, and existing library snapshot logic first to avoid duplicate inventory/catalog work.
 2. **Similar artists seeded by recent listening:** evaluate Last.fm `artist.getSimilar` or a ListenBrainz similarity endpoint only if current official documentation confirms the endpoint and its behavior. Seed from a small weighted set of recent artists, prefer MBIDs, aggregate evidence from multiple seeds, and downweight weak/stale matches. Cache provider results while recalculating profile-dependent weights on each refresh.
-3. **Wider ListenBrainz CF pool:** check current official documentation for pagination or artist-type/filter parameters. The current code requests `count=100`; do not assume additional parameters exist until confirmed.
+3. **Wider ListenBrainz CF pool: closed, no change (2026-10-20).** Documentation confirms only `count` and `offset`; no artist-type or other filter. The pool is 1,000 recordings and the app reads 200, but cold runs are bound by the MusicBrainz budget and warm runs already reach 15 artists, so paging would not help. Reading deeper needs more ListenBrainz requests and owner approval. The 4-artist concentration is a cold-run effect; do not tune `CF_ARTIST_RESOLUTION_CAP` on it. See "Phase 4.3 ... finding" and "Live cold/warm pair".
 4. **Popularity/trending fallback:** only consider it as a capped cold-start or optional lane, never as a dominant personal signal.
 5. **Scored recommendation store (deferred):** keep every recommendation with its score against the current profile and build pages from the store plus fresh fetches. This adds long memory, so it needs read-time ownership and duplicate checks and window-tagged scores to avoid temporal leakage. Defer until 2.3 and 3.4 show value.
 
@@ -621,3 +623,40 @@ Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200
 **Live pair: not recorded.** Two cold-then-warm attempts (count 10, fresh data dir, slskd off) failed at the first step with `Could not retrieve recent listening history: The read operation timed out` after 30 s each, before any MusicBrainz lookup. A plain HTTP request to the same ListenBrainz endpoint returned 200 in about 2 s. The app's client was not changed (see the ListenBrainz client open item). No funnel numbers exist.
 
 **Decisions.** (1) Page cap for recent listens (3 to 5 pages) was drafted as PR #468 and **closed unmerged**: the owner cannot afford more ListenBrainz requests per run. Branch `feat/listens-page-cap` is kept. The owner's history is under 30 days, so the cap, not the window, limits recent listens (300 listens max today). (2) The live pair is deferred; retry when the client reaches ListenBrainz. (3) Step 4 of the handoff (budget per run, batch default, or CF concentration) stays open until the funnel exists; the unmeasured 4-artist concentration (top two = 55.7%) points at Phase 4.3.
+
+## Phase 4.3 wider ListenBrainz CF pool: finding (2026-10-20, offline, docs and code only)
+
+**Official documentation** (checked 2026-10-20): <https://listenbrainz.readthedocs.io/en/latest/users/api/recommendation.html>. Endpoint `GET /1/cf/recommendation/user/(mb_username)/recording`, marked experimental ("probably will change"). Parameters that exist: `count` (optional, default `DEFAULT_ITEMS_PER_GET`, max `MAX_ITEMS_PER_GET`) and `offset` (optional, pagination). Response `payload`: `mbids` (list of `recording_mbid` + `score`), `last_updated`, `type`, `entity`, `user_name`, `count`, `offset`, `total_mbid_count`; "sorted on rating and ratings". Parameters that do **not** exist: any artist type, artist filter, genre, date or score-threshold filter (the sample response shows a `type` field, but the page documents no matching request parameter). No other recording-recommendation endpoint exists; the other `/1/recommendation/*` endpoints only submit, delete or read user feedback. The numeric values of the default and maximum page size are not stated on the page, so the app's `CF_PAGE_SIZE = 100` is unconfirmed against the documentation.
+
+**How the 4-artist concentration arises (code trace).** The response carries only recording MBIDs and scores, no artist, so the app cannot see or filter by artist before resolving each recording. `cf_distinct_recording_artists` and `cf_top2_artist_recording_share` are computed by `summarize_cf_recordings` over **resolved** records only (97 of 200 in the live sample); the 103 failed recordings have no artist and are excluded, so the 4 artists and the 55.7% share describe the 97 survivors, not the 200-recording window. Whether the response itself clusters by artist is therefore **not established**: the 103 unresolved recordings may belong to other artists. `CF_ARTIST_RESOLUTION_CAP` (10) cannot explain the figure either: it skips only recordings already in the metadata cache whose artist reached 10 (`artist_cap_skipped`, covered by `RecommendationCfPagingTests`), and a fresh data dir has no cache, so on a cold run it is inert. Four artists at the cap would account for at most 40 recordings, not 97.
+
+**Decision: leave CF paging and the cap alone; no code change.** Options considered:
+- *Widen paging* (`CF_MAX_PAGES` above 2): adds ListenBrainz requests per run. Not allowed without owner approval (standing rule 2026-10-20), and it would also feed more recordings into the 100-per-run MusicBrainz budget, which the 103 failures suggest is not the binding constraint yet.
+- *Change the artist cap*: inert on cold runs and only skips cache-known recordings, so it cannot widen a cold pool; lowering it risks dropping valid warm-run recordings with no measurement behind the change.
+- *Widen another lane*: out of scope for this item and needs its own measurement.
+
+**Risk named.** Acting on the "4 artists" figure now would tune against a number that is partly an artifact of the 103 unresolved recordings. The failure class is unknown until PR #467's allowlist names it on a live run.
+
+**Completed after the owner's approval (same day):** (a) `cf_paging.total_mbid_count`, an integer from the first page's response (else `None`), no extra request and no selection change; (b) the live cold/warm pair, recorded in the section below.
+
+**Still open, needs the owner:** approval for any extra ListenBrainz page, and the cold-run budget decision (see the roadmap open items).
+
+**Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. The recent-listens timeout did not recur in the live pair below; which change fixed it was not isolated.
+
+Tests (focused): `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` plus `py_compile` on the changed files. CI: see the PR.
+
+### Live cold/warm pair (2026-10-20, owner-approved, aggregate only, slskd off, fresh data dir, count 10)
+
+With the honest identifier and token (above) the recent-listens call no longer timed out; which of the two changes fixed it was not isolated. Capture was a throwaway wrapper outside the repo; the data dir was deleted afterwards.
+
+| | cold (323 s) | warm (63 s) |
+| --- | --- | --- |
+| CF recordings returned / considered / resolved / failed | 200 / 107 / 107 / 0 | 200 / 87 / 87 / 0 |
+| distinct CF artists among resolved; top-2 share | 6; 54.2% | 15; 31.0% |
+| cache-known / artist-cap skipped | 14 / 7 | 172 / 113 |
+| uncached MusicBrainz calls; budget skipped | 100; 86 | 28; 0 |
+| `total_mbid_count` | 1000 | 1000 |
+
+Findings. (1) The earlier 103 failures did not recur (0 failed in both runs), so they were most likely client-side timeouts or throttling, not a property of the recordings; the exception class remains unnamed. (2) The pool is 1,000 recordings and the app reads 200 (20%). (3) On a cold run the 100-call MusicBrainz budget, not paging, limits the resolved set: 86 recordings were skipped unread, and the cap cannot act on uncached artists. The resolved top of the list is clustered (three artists at 27.1% each). (4) On a warm run the cap does work (113 skipped) and the resolved set reaches 15 artists, so concentration is a cold-run effect that the cache dissolves. Caveat: a first launch of the wrapper appeared to exit at once with no output and may have run detached against the same data dir, so the warm numbers could include a third pass; one stray output fragment suggests it did. Single sample.
+
+Implication: widening CF paging would not help a cold run (budget-bound) and the warm run already spreads over 15 artists. Decision stands: no paging change. Reading deeper into the 1,000-pool would add ListenBrainz requests and needs owner approval.

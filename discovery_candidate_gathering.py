@@ -178,7 +178,8 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
     url = CF_RECOMMENDATION_URL.format(username=providers.listenbrainz_username())
     recordings: list[Any] = []
     seen_mbids: set[str] = set()
-    paging = {"pages_requested": 0, "pages_fetched": 0, "page_failure_class": None}
+    paging = {"pages_requested": 0, "pages_fetched": 0, "page_failure_class": None,
+              "total_mbid_count": None}
     for page in range(CF_MAX_PAGES):
         paging["pages_requested"] += 1
         try:
@@ -192,13 +193,18 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
                 timeout=30,
             )
             response.raise_for_status()
-            items = response.json().get("payload", {}).get("mbids", [])
+            payload = response.json().get("payload", {})
+            items = payload.get("mbids", [])
         except Exception as exc:
             if page == 0:
                 raise
             paging["page_failure_class"] = classify_error(exc)
             break
         paging["pages_fetched"] += 1
+        # Aggregate pool size from the response already fetched; no extra request.
+        total = payload.get("total_mbid_count")
+        if page == 0 and isinstance(total, int) and not isinstance(total, bool) and total >= 0:
+            paging["total_mbid_count"] = total
         for item in items[:CF_PAGE_SIZE]:
             mbid = item.get("recording_mbid") if isinstance(item, dict) else None
             if not mbid or str(mbid) in seen_mbids:

@@ -1,3 +1,11 @@
+## 2026-10-20 — Phase 4.3 wider CF pool: finding, counter, client identity, live pair (PR #469)
+
+- Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Phase 4.3 closed with no paging change (extra ListenBrainz requests need the owner).
+- Code, owner-approved: `cf_paging.total_mbid_count` in `discovery_candidate_gathering.py` (no extra request); `listenbrainz_client.request_headers()` sends an honest User-Agent and an optional `LISTENBRAINZ_TOKEN`. Focused tests: `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` (7, OK), `py_compile`. No full suite. CI: see the PR.
+- Live cold/warm pair (owner-approved, aggregate only, data dir deleted): recent-listens timeout did not recur, 0 CF failures in both runs, pool 1,000 and 200 read; cold run budget-bound (86 skipped, 6 artists), warm run 15 artists. One sample; a first wrapper launch may have run a stray extra pass. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Earlier trace claim corrected: the 4-artist share is over resolved recordings only.
+- Remaining: the cold-run budget decision (batch resolution or ordering), `LISTENBRAINZ_TOKEN` in `compose.yaml` and `docs/DEPLOYMENT.md`, confirming the client fix. Not done: merge, publication, deployment.
+
 ## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
 
 - Offline trace: budget and artist-cap skips `continue` before the CF record is appended, so they never reach `cf_failure_classes`; the 103 "other" failures (97 + 103 = 200) are exceptions outside the old allowlist. PR #467 (`2794237`) widened it; see the roadmap section "Candidate supply diagnosis".

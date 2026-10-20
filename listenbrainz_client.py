@@ -1,11 +1,25 @@
 """ListenBrainz HTTP client for bounded recent-listen retrieval."""
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Callable
 from typing import Any
 
 import httpx
+
+
+USER_AGENT = "NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)"
+
+
+def request_headers(environ: dict[str, str] | None = None) -> dict[str, str]:
+    """Identify the app honestly; add the owner's token only when one is configured."""
+    env = os.environ if environ is None else environ
+    headers = {"User-Agent": USER_AGENT}
+    token = str(env.get("LISTENBRAINZ_TOKEN") or "").strip()
+    if token:
+        headers["Authorization"] = f"Token {token}"
+    return headers
 
 
 def recent_listens(
@@ -25,7 +39,7 @@ def recent_listens(
     max_ts = None
     listens: list[dict[str, Any]] = []
     page_size = 100
-    headers = {"User-Agent": "NavidromeLibrarian/1.0"}
+    headers = request_headers()
 
     from recommendation_run_metrics import record_provider_call
 
