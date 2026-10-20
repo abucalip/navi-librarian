@@ -10,7 +10,7 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Current state
 
-- `main` includes PR #459 (squash merge `b09c9544cd96828a732fea04818729fc381cee0e`, roadmap 3.4 stale-while-revalidate read path). It was merged after all four required workflows passed on head `44148af`. Roadmap 3.4 is complete. Verify the `main` head before you rely on it; it may have moved.
+- `main` includes PR #460 (`4201ed9`, deep-dive candidate collection extracted to `discovery_deep_dive_candidates.py`; `navidrome_server.py` is now 2,535 of 2,650 lines) and PR #459 (squash merge `b09c9544cd96828a732fea04818729fc381cee0e`, roadmap 3.4 stale-while-revalidate read path). It was merged after all four required workflows passed on head `44148af`. Roadmap 3.4 is complete. Verify the `main` head before you rely on it; it may have moved.
 - Reading the personal list serves the stored snapshot and starts at most one background rebuild when it is 24 hours or older (`discovery_refresh.revalidate_on_read`, `STALE_MAX_AGE_SECONDS`). It honors `automatic_refill_enabled`, skips while a rebuild is in flight or within the one-hour cooldown, and does nothing without a snapshot. Refresh outcomes use origin `read`; the store now accepts status `rejected`.
 - `main` also includes PR #458 (`7fb140e`, refill on/off setting, default on) and PR #456 (`4680a18`, roadmap 3.3, feedback as a bounded signal, on by default).
 - Merged and recorded: PR #454 (`a5bba87`), PR #452 (`76030c0`), PR #451 (`42b6d81`), PR #450 (`27bdcc2`), PR #449 (`c90e43b`), and earlier PRs listed in the roadmap.
@@ -24,13 +24,13 @@ Read this first. It is written so you can pick up the next recommendation task f
 - Required behavior (roadmap 3.3): use saved albums/artists as a positive similarity seed when selecting supplementary tag queries, with the same expiry rules as the boost. Never create a permanent effect. `dismiss`, `dismiss_artist` and `remove_for_me` semantics do not change.
 - Budget: this touches the 100-uncached-lookup path. Measure first: show on a synthetic fixture how many queries and uncached lookups a run plans with and without the seed, and keep it within the existing budget. A seed that replaces a planned query is fine; one that adds lookups is not. Weights, windows, eligibility, ownership and duplicate identity are unchanged.
 - Acceptance (deterministic tests): with a fresh save, the planned tag queries include a tag from the saved artist's genres; with an expired save, the plan is identical to no save; the uncached lookup count is no higher than without the seed; ownership and duplicate filtering still apply to candidates the seed surfaces; flag off or no feedback leaves output unchanged.
-- Scope: most likely `discovery_tag_queries.py`, `recommendation_feedback.py` and the call site in `navidrome_server.py`. `navidrome_server.py` is at 2649 of 2650 lines, so offset any added line. Editing `navidrome_server.py` or `app/api/**` needs explicit owner approval for this task; the approval for PR #459 does not carry over. Prefer not to touch them.
+- Scope: most likely `discovery_tag_queries.py`, `recommendation_feedback.py` and the call site in `navidrome_server.py`. `navidrome_server.py` has about 115 lines of headroom (2,535 of 2,650) after PR #460; still keep additions small and run `scripts/check_server_size.py`. Editing `navidrome_server.py` or `app/api/**` needs explicit owner approval for this task; the approvals for PRs #459 and #460 do not carry over. Prefer not to touch them.
 - Check the 3.3 status note in the roadmap before assuming anything is done.
 
-## Testing scope (owner instruction, 2026-10-20; repeated for the next session)
+## Testing scope (standing owner rule, 2026-10-20)
 
-- **Do not run the full test suite** (`python -m unittest discover -s tests`) in this session. The owner runs the full suite independently. Run only the focused test modules for the files you change, plus `python -m py_compile` on each changed Python file. A few modules (for example `test_discovery_cold_start_batch`) import siblings and need `python -m unittest discover -s tests -p <file>`.
-- This overrides the full-suite step in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md` for the next session too (owner, 2026-10-20: same as the last one). Re-check with the owner after that. The four required CI workflows still run on the PR head; CI is not affected.
+- **Agents working on PRs must never run the full test suite** (`python -m unittest discover -s tests`). This is permanent, not per-session. The owner runs the full suite independently and CI runs it on the PR head. Run only the focused test modules for the files you change, plus `python -m py_compile` on each changed Python file. A few modules (for example `test_discovery_cold_start_batch`) import siblings and need `python -m unittest discover -s tests -p <file>`.
+- This overrides any full-suite step in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`; those now carry the same rule. The four required CI workflows still run on the PR head.
 - In the PR description, say which focused modules you ran. Do not report a full-suite result you did not observe.
 
 ## Standing rules
@@ -47,10 +47,10 @@ Read this first. It is written so you can pick up the next recommendation task f
 
 ## Repository traps
 
-- `navidrome_server.py` is capped at 2650 lines by the CI compile job. It is at the cap now, so any added line must be offset by a removal or moved into a module. Run `scripts/check_server_size.py` after editing it.
+- `navidrome_server.py` is capped at 2650 lines by the CI compile job (currently 2,535). Prefer new modules over server growth. Run `scripts/check_server_size.py` after editing it.
 - A new Python module must be added to the `COPY` list in the Dockerfile, or `container-smoke` fails.
 - The docs-only change rule still applies: a docs PR needs the same four checks on its head.
-- The full suite has one known macOS-only failure: `test_acquisition_import.py::test_success_persists_importing_before_import_and_then_imported` (`/var` → `/private/var`). It fails on clean `main` too. CI on Linux passes it. The owner's independent full-suite run covers it.
+- The full suite has one known macOS-only failure: `test_acquisition_import.py::test_success_persists_importing_before_import_and_then_imported` (`/var` → `/private/var`). It fails on clean `main` too. CI on Linux passes it. The owner's independent full-suite run covers it; do not run the suite to check it.
 
 ## Open items and owner decisions
 

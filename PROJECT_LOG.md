@@ -1,3 +1,12 @@
+## 2026-10-20 — Deep-dive candidate collection extraction (merged as PR #460)
+
+- Merged to `main` as `4201ed91333ec823b2c00684ab71c82ccd0a7085` from exact head `74e5b35da5dd041cb2fa0143310c1d35c576843d`. Compile, test-and-build, container-smoke and validate-container all passed on that head (run ids 39437774460, 39437774269, 39437774401, 39437774629).
+- Purpose: free headroom under the 2,650-line server ceiling for recommendation work. Seam: `_build_artist_deep_dive_list()` collection policy, which had no direct tests. New `discovery_deep_dive_candidates.py` (`collect_missing_album_candidates`, `merge_resolved_pool_candidates`, `collect_similar_artist_candidates`, `enrich_candidate_genres`); lookups and the 0.15 s pacing are injected. The adapter keeps the snapshot read, the personal-list cache read, provider callables, year resolution and the response dict. Dockerfile COPY list updated.
+- Size: `navidrome_server.py` 2,649 → 2,535 lines; `_build_artist_deep_dive_list` 191 lines shrank accordingly. `recommend_new_music()` (432/450) and `_discovery_acquire_album_impl()` (278/280) unchanged. Ceilings unchanged.
+- Verification observed: 9 new direct tests in `tests/test_discovery_deep_dive_candidates.py`; a one-off run of the old `main` builder vs the new one with identical stubbed providers gave identical output (28 items; script not committed). Before the owner's no-full-suite rule was stated, one full-suite run (1,087 tests) showed only the known macOS `/var` failure. `check_server_size.py` and `check_app_legacy_imports.py` OK.
+- Not done: no browser or live run. Merged is not published or deployed.
+- Owner rule recorded this session: agents never run the full suite on PRs (AGENTS.md, DEVELOPMENT_WORKFLOW.md, TEST_PLAN.md, CLAUDE_CLI.md).
+
 ## 2026-10-20 — Roadmap 3.4 stale-while-revalidate read path (merged as PR #459)
 
 - Squash-merged to `main` as `b09c9544cd96828a732fea04818729fc381cee0e` after the owner named PR #459. All four required workflows passed on exact head `44148af78a93a0a3be27a1f17ec6cc196e678bf6` (compile, test-and-build, container-smoke, validate-container).

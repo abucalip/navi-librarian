@@ -79,7 +79,7 @@ Use Impeccable as a design critique and implementation aid when available in you
 2. Create a focused feature branch, for example `ui/<short-task-name>`. Never commit directly to `main`.
 3. Keep the diff front-end-only. If backend/API changes are necessary, stop and propose the contract rather than editing protected files.
 4. Add/update focused UI tests where behavior changes. Understand what existing tests protect; never delete or weaken regression assertions merely to make a change pass.
-5. Run relevant available checks. Follow `docs/TEST_PLAN.md`; run focused tests, the full unit suite when feasible, and any relevant syntax checks. Report the exact commands and actual results.
+5. Run relevant available checks. Follow `docs/TEST_PLAN.md`; run focused tests and any relevant syntax checks. **Never run the full unit suite** (owner rule, 2026-10-20): the owner runs it independently and CI runs it on the PR head. Report the exact commands and actual results, and never report a full-suite result you did not observe.
 6. Review the complete diff and changed-file list. Verify no protected files, API contracts, security rules, or domain behavior changed.
 7. Open a PR against `main`. Include purpose, changed files, acceptance criteria, tests actually run, limitations, and screenshots or before/after notes for visual changes.
 8. Do not merge, publish images, deploy, alter branch protection, disable CI, or bypass required checks. The assistant owns cross-layer review, release controls, merge coordination, and project-level verification.

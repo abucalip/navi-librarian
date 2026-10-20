@@ -14,6 +14,8 @@ Merged 2026-10-20: PR #458, roadmap 3.4 automatic refill on/off setting, default
 
 Merged 2026-10-20: PR #459, roadmap 3.4 stale-while-revalidate read path (squash merge `b09c9544cd96828a732fea04818729fc381cee0e`; all four required workflows passed on exact head `44148af78a93a0a3be27a1f17ec6cc196e678bf6`; owner approved the `navidrome_server.py` and `app/api/**` scope). Roadmap 3.4 is now fully implemented. Next task: the 3.3 positive tag-query seed; see `CLAUDE_CLI.md`.
 
+Server headroom: PR #460 (`4201ed9`) extracted the deep-dive candidate collection, so `navidrome_server.py` is 2,535 of 2,650 lines. Agents never run the full unit suite on PRs (owner rule, 2026-10-20); see `CLAUDE_CLI.md`.
+
 Open items:
 - **CF freshness (P2):** undecided. No measurement has shown whether CF reflects all-time history. Needs an authorized two-sided capture; do not start without owner approval.
 - **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. Built in PR #458 (`7fb140e`): persisted `automatic_refill_enabled`, default on, gates the hourly scheduler; `GET/PUT /api/settings/automatic-refill`.

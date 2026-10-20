@@ -4,6 +4,8 @@ Last reviewed: 2026-10-20 (PR #459 merged at `b09c954`; stale-while-revalidate r
 
 ## Current focus
 
+**Deep-dive candidate collection extracted — PR #460 merged as `4201ed9` (2026-10-20).** `_build_artist_deep_dive_list()` now delegates its four collection phases (missing albums, resolved-pool reuse, similar artists, genre enrichment) to `discovery_deep_dive_candidates.py`, with injected lookups and pacing. `navidrome_server.py` is **2,535 of 2,650 lines** (was 2,649), measured by `check_server_size.py` on the branch head. Exact head `74e5b35` passed all four required workflows. Behavior unchanged; modularization stays closed. Next: the 3.3 positive tag-query seed (`CLAUDE_CLI.md`). Publishing and deployment remain paused.
+
 **Stale-while-revalidate read path — PR #459 merged as `b09c954` (2026-10-20); roadmap 3.4 is complete.** Reading the personal list serves the stored snapshot (re-filtered against the current library) and starts one background rebuild when it is 24 hours or older; never blocks, honors the automatic refill setting, one rebuild at a time, one-hour cooldown. Exact head `44148af` passed all four required workflows; focused tests only (the owner runs the full suite). Next: the 3.3 positive tag-query seed (`CLAUDE_CLI.md`). Publishing and deployment remain paused.
 
 **Automatic refill on/off setting — PR #458 merged as `7fb140e` (2026-10-20), default on.** Persisted `automatic_refill_enabled` gates the hourly discovery scheduler. Exact head `d72d650` passed all four required workflows. Next: the stale-while-revalidate read path for the stored snapshot (roadmap 3.4).

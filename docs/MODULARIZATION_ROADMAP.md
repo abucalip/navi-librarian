@@ -111,7 +111,7 @@ The number of extractions is not a goal or quota. A documented decision to retai
 
 ## Verification and release constraints
 
-For each code PR, follow `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`: focused regressions, full unit suite, syntax/package/API checks where applicable, complete diff review, and all four required workflows on the exact final PR-head SHA. UI changes also require the documented manual browser checks.
+For each code PR, follow `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`: focused regressions (agents never run the full unit suite; the owner and CI do), syntax/package/API checks where applicable, complete diff review, and all four required workflows on the exact final PR-head SHA. UI changes also require the documented manual browser checks.
 
 Publishing remains paused until the roadmap is complete and publishing is explicitly authorized. CI/build success is not publication, deployment, or production runtime verification. Acquisition-dismissal HTTP 409 remains deferred unless it becomes reproducible or is explicitly re-prioritized.
 
@@ -130,5 +130,7 @@ Publishing remains paused until the roadmap is complete and publishing is explic
 Publishing remains paused pending separate explicit authorization. This completion decision does not imply publication, deployment, or production-runtime verification.
 
 ## History
+
+Post-closure, owner-requested headroom work: PR #460 (`4201ed9`) moved the deep-dive candidate collection into `discovery_deep_dive_candidates.py`; the server is now 2,535 lines. Details in `PROJECT_LOG.md`.
 
 Use the root `PROJECT_LOG.md` to retrieve completed extraction records by PR, module, or responsibility. Do not append completed work or CI run IDs here.

@@ -33,7 +33,7 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 2. Define a narrow objective, acceptance criteria, and risk/dependency notes.
 3. Branch from current GitHub `main`, unless another GitHub base is explicitly justified.
 4. Implement the smallest reviewable change and add regression tests. Preserve existing behavior, response shapes, side effects, persistence, and compatibility interfaces unless an approved requirement says otherwise.
-5. Run focused tests, the full unit suite, syntax checks, and applicable API/Docker checks where execution is available. Report unavailable/skipped tests honestly.
+5. Run focused tests, syntax checks, and applicable API/Docker checks where execution is available. **Agents must never run the full unit suite** (owner rule, 2026-10-20); the owner runs it independently and CI runs it on the PR head. Report unavailable/skipped tests honestly and name the focused modules run.
 6. Review the complete diff, changed-file list, call sites, package inclusion, unsafe failure cases, secrets, and unintended changes.
 7. Open or update a focused PR. Verify required CI against the exact final PR-head SHA after the last code or documentation commit.
 8. Merge only when acceptance criteria, diff review, and required gates pass. After merge, refresh `main`, PRs, and CI before beginning dependent work.
@@ -58,7 +58,7 @@ If a document is stale or contradicts current code or GitHub evidence, verify th
 The Python syntax workflow also runs `scripts/check_server_size.py`; its thresholds and named temporary exception are reviewed architecture controls. The server ceiling is 2,650 lines; new domain logic belongs in a module with direct-import tests, not in `navidrome_server.py`. Size-only changes are not an extraction goal, and the exception must be reduced as the recommendation adapter is decomposed.
 
 For each code PR, follow `docs/TEST_PLAN.md`. At minimum:
-- focused regression tests and `python -m unittest discover -s tests -v`;
+- focused regression tests for the changed files (agents never run `python -m unittest discover -s tests`; the owner and the `test-and-build` workflow run the full suite);
 - Python syntax checks and applicable API/Docker/package checks;
 - direct-import tests for extracted logic and adapter/compatibility tests for the old interface;
 - full diff and changed-file review;
