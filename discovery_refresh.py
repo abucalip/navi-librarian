@@ -353,6 +353,11 @@ def revalidate_on_read(
         except Exception:
             with _revalidate_lock:
                 _revalidate_in_flight.discard(list_name)
+                # No rebuild ran, so the failed attempt must not hold off a retry.
+                if last is None:
+                    _revalidate_last_start.pop(list_name, None)
+                else:
+                    _revalidate_last_start[list_name] = last
             return "start_failed"
         return "started"
     except Exception:

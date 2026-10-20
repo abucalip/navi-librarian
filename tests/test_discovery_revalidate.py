@@ -89,6 +89,9 @@ class RevalidateOnReadTests(unittest.TestCase):
         )
         self.assertEqual(status, "start_failed")
         self.assertEqual(discovery_refresh._revalidate_in_flight, set())
+        self.assertNotIn("personal", discovery_refresh._revalidate_last_start)
+        # The next stale read retries immediately instead of reporting a cooldown.
+        self.assertEqual(self.call(row(DAY + 1), clock=lambda: 1.0), "started")
 
 
 class ServedSnapshotTests(unittest.TestCase):
