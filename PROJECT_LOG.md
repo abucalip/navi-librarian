@@ -1971,3 +1971,14 @@ A preliminary diagnostic applied the existing familiarity multiplier to captured
 5. Do not tune ranking weights or claim quality gains from the current one-capture comparison. The replay mismatch documented above must be resolved before treating a capture as a deterministic evaluator fixture.
 
 Status: history parsing and descriptive window comparison completed; familiarity-component arithmetic is diagnostic only. Counterfactual snapshot sanitation merged in PR #356 and all four required workflows passed on its exact head. Full-engine first/last-profile replay and a valid chronological outcome evaluation have not been run. The private capture was not accessed and no live provider calls were made.
+
+
+## 2026-10-20 — PR #464 Save bookmark UI merged
+
+- PR: https://github.com/abucalip/navi-librarian/pull/464
+- Exact tested PR head: `6e3a815d9b98e73350e044c944187e62d716daca`.
+- Merge commit: `de528089ecc2861c85a82c61a14abba87eb6bac6` (squash merge).
+- Added Save/Undo bookmark controls to Personal, New releases, Classics, and artist deep-dive recommendation cards. Uses `save` and `remove_for_me` feedback with item metadata; no acquisition request is initiated. UI contract tests and Playwright stub harness results are described in the PR.
+- All four required workflows passed on the exact PR head: Python syntax check, Docker packaging, container runtime smoke, and validation-only multi-architecture image validation. Publishing remains paused.
+- Owner reports manual testing was performed, but the report was not submitted. The detailed manual checklist and deep-dive-card behavior therefore remain undocumented; no screen-reader pass is claimed.
+- Not published or deployed; production runtime not verified.
