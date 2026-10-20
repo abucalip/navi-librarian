@@ -1,4 +1,4 @@
-## 2026-10-21 — Cache batch hits and warm batch path (code)
+## 2026-10-20 — Cache batch hits and warm batch path (code)
 
 - Branch `feat/cache-batch-hits-warm-batch`. Owner-approved after the warm measurement: `WARM_BATCH_ENABLED` (default on) sends steady-state builds through the batch path; batch results are cached under `mb:recording_batch:<mbid>` (180 days), read before any batch request, and never written to `mb:recording:`. Cache write failures are swallowed. Fewer lookups per run, no new request types; budget unchanged. `discovery_candidate_gathering.py`, `tests/test_discovery_cold_start_batch.py`, `tests/test_discovery_batch_lookup.py`.
 - Tests (focused only, no full suite): `test_discovery_cold_start_batch` (15), `test_discovery_batch_lookup` (18), `test_discovery_candidate_gathering` (34), `test_discovery_candidate_supply`, `test_discovery_candidate_replenishment`, `test_discovery_candidate_genre_prefetch`, `test_discovery_save_tag_seed`, `test_recommendation_replay_capture` and the genre/tag-lane breaker modules, all OK; `py_compile` on the changed module. CI: see the PR.
