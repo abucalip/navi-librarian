@@ -1,3 +1,9 @@
+## 2026-10-20 — Recommendation roadmap uncluttered
+
+- Replaced the 683-line `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with an 81-line active plan focused on the next task, remaining decision-gated phases, current implementation facts, guardrails, and evaluation acceptance.
+- Preserved the former document verbatim in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md` so historical measurements, completed work, and prior task orderings remain available.
+- Immediate next action is unchanged: offline-trace the cold-start supply path, then obtain owner approval before a disposable aggregate-only live run to measure the effect on the final list. No code changed; no tests were run. Publishing/deployment remain paused.
+
 ## 2026-10-20 — LISTENBRAINZ_TOKEN in deployment config
 
 - Branch `deploy/listenbrainz-token`. Owner-approved deployment-config change: `LISTENBRAINZ_TOKEN: ${LISTENBRAINZ_TOKEN:-}` in `compose.yaml`, a blank entry in `.env.example`, and a note plus commented example in `docs/DEPLOYMENT.md`. Empty default keeps behavior unchanged; no secret value committed. Checks: Docker is not installed on this machine, so `docker compose config` was not run (CI `container-smoke` and `validate-container` cover packaging); no local validation was possible (the one-line addition copies the neighbouring variables' syntax). Merged to `main` as `d7e5746b82b597e82c5747f0fdcfdf21ee17800a` (squash, PR #472) from exact head `4c0904657db983195d84abb79db6269edc1aa423`; compile, test-and-build, container-smoke and validate-container all passed. Not done: publication, deployment (the running container gets the token only if the real `.env` or Compose file sets it).
