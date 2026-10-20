@@ -1253,6 +1253,7 @@ function buildRecommendationRow(item, rank, options = {}) {
   const actions = document.createElement('div');
   actions.className = 'row-actions';
   actions.append(createGetButton(artist, album, item));
+  if (options.listName) actions.append(createSaveButton(artist, album, item, options.listName));
   const dismissButton = document.createElement('button');
   dismissButton.type = 'button';
   dismissButton.className = 'deep-dive-dismiss';
@@ -1330,6 +1331,7 @@ function buildNewReleaseRow(item) {
       item.reason,
       item.discovery_source ? 'Source: ' + item.discovery_source.replaceAll('_', ' ') : ''
     ],
+    listName: 'new_releases',
     onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'new_releases'),
     onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases')
   });
@@ -1350,6 +1352,7 @@ function buildPersonalRow(item, index) {
       item.reason,
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
+    listName: 'personal',
     onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'personal'),
     onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal')
   });
@@ -1372,6 +1375,7 @@ function buildClassicsRow(item, index) {
       hasBio ? '' : item.reason,
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
+    listName: 'classics',
     onDismiss: (artist, album, metadata) => sendFeedback('dismiss', artist, album, metadata, 'classics'),
     onDismissArtist: (artist, album, metadata) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics')
   });
@@ -1813,6 +1817,8 @@ async function loadDiscovery(name, options = {}) {
       notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name));
       artContainer.append(notForMe);
 
+      actions.append(createSaveButton(artist, album, item, name));
+
       if (name !== 'artist_deep_dive') {
         button('Dismiss artist',
           () => sendFeedback('dismiss_artist', artist, album, item, name), '', 'Dismiss artist ' + artist);
@@ -1852,6 +1858,49 @@ async function sendFeedback(action, artist, album, metadata, listName) {
   } catch (error) {
     discoveryStatus(listName, error.message);
   }
+}
+
+// Save is a bookmark: the server stores the album and its metadata and starts no search, so
+// nothing here touches /api/acquire. The list is deliberately not reloaded. The list endpoints
+// hide saved albums, so a reload would remove the card the user just saved and take Undo with
+// it. The control updates in place instead and the album leaves the list on the next load.
+function setSaveButtonState(button, saved, album, busy = false, failed = false) {
+  button.classList.toggle('is-saved', saved);
+  button.classList.toggle('is-failed', failed);
+  button.setAttribute('aria-pressed', saved ? 'true' : 'false');
+  button.toggleAttribute('aria-busy', busy);
+  button.replaceChildren(spriteIcon(saved ? 'bookmark-check' : 'bookmark'));
+  addTextElement(button, 'span', 'save-album-label', failed ? 'Retry' : saved ? 'Saved' : 'Save');
+  button.title = failed
+    ? 'Could not ' + (saved ? 'undo the save' : 'save') + '. Try again: ' + album
+    : saved ? 'Saved as a bookmark. Select to undo: ' + album : 'Save as a bookmark: ' + album;
+}
+
+function createSaveButton(artist, album, metadata, listName) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'save-album';
+  // The name stays constant and aria-pressed carries the state, so a screen reader hears
+  // "Save <album>, toggle button, pressed" rather than a name that changes under it.
+  button.setAttribute('aria-label', 'Save ' + album);
+  setSaveButtonState(button, false, album);
+  button.addEventListener('click', async () => {
+    if (button.getAttribute('aria-busy') === 'true') return;
+    // The state the server last confirmed. It is what the button shows while the request is in
+    // flight and what it returns to if the request fails.
+    const wasSaved = button.getAttribute('aria-pressed') === 'true';
+    setSaveButtonState(button, wasSaved, album, true);
+    try {
+      const data = await sendJSON('/api/discovery/feedback', 'POST',
+        {action: wasSaved ? 'remove_for_me' : 'save', artist, album, metadata});
+      if (data && data.ok === false) throw new Error(data.error || 'The server did not save this album.');
+      setSaveButtonState(button, !wasSaved, album);
+    } catch (error) {
+      setSaveButtonState(button, wasSaved, album, false, true);
+      discoveryStatus(listName, error.message || 'Could not update the bookmark.');
+    }
+  });
+  return button;
 }
 
 async function refreshDiscovery(name) {

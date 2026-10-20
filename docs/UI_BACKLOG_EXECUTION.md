@@ -3451,3 +3451,30 @@ Screenshots: `/mnt/project-files/phase-7-primary-button/screenshots/` (`before-*
 - The docs record for section 16.2 row 10 is updated in the docs PR (#440), not here, to avoid a merge conflict on the same cell.
 - Not merged, not published, not deployed.
 
+
+## 41. Save bookmark control (`ui/save-bookmark`)
+
+Task 2 of `CLAUDE_CLI.md`, after PR #463 made `save` side-effect-free. Front end only.
+
+### 41.1 What changed
+
+- `createSaveButton()` in `static/app.js`: a toggle on Personal Discoveries, New releases and Add to your collection rows, and on the artist deep-dive cards. It posts `save` with the whole item as metadata, and `remove_for_me` to undo. It never calls `/api/acquire`.
+- State is carried by the icon (`bookmark` / `bookmark-check`), the word (Save / Saved / Retry) and `aria-pressed`, never by colour alone. The accessible name stays `Save <album>`; `aria-busy` marks the request in flight.
+- `static/icons.svg` gains the Lucide `bookmark` and `bookmark-check` symbols (ISC, same licence file).
+- `.row-actions` wraps so the extra control does not overflow at 375px.
+
+### 41.2 Decision: no list reload
+
+The list endpoints hide saved albums (`discovery_list_payload.py`), so `sendFeedback()`'s reload would remove the card and its Undo. Save updates the control in place instead. The album leaves the list on the next load. Undo is therefore available only until the list reloads; a later "Saved" page is where a saved album is managed.
+
+### 41.3 Checks actually run
+
+- Focused: `tests.test_save_bookmark_ui_contract` (8), `tests.test_fonts_and_icons_ui_contract`, and every `*ui_contract*` module (232 tests, OK). `node --check static/app.js`. The full suite was not run (owner rule).
+- Playwright harness (`reports/pr-save-bookmark/harness.js`, stubbed API, sandbox server): keyboard save and undo, one request each, item metadata sent, no list reload, no acquire request, focus kept, failure leaves the confirmed state and names the error, no horizontal scroll at 375px.
+- Impeccable detector on `static/app.css` and `static/app.js`: no finding on the new control (existing findings unchanged).
+
+### 41.4 Limitations
+
+- Artist deep-dive cards carry the control but were not rendered in the harness.
+- Dashboard tiles and the album modal have no Save control (out of scope).
+- Exact-head manual checklist is for the owner after CI. No screen-reader pass. Not merged, not deployed.
