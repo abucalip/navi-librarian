@@ -786,6 +786,9 @@ def gather_recommendation_candidates(
     # knows (listens, CF candidates). Cache reads only: no lookups are added, and
     # the query quotas are unchanged, so a seed can reorder or replace a query.
     tag_query_weights = recent_artist_mbid_counts
+    # Snapshot before seeding adds cache entries: the budget cap compares against
+    # the plan the run would have made without any save.
+    baseline_profile_tags = dict(profile_tags_by_artist)
     if providers.feedback_rows is not None:
         from recommendation_feedback import (
             FEEDBACK_SIGNAL_ENABLED, saved_artist_seed_genres, saved_artist_seed_weights,
@@ -853,7 +856,7 @@ def gather_recommendation_candidates(
     if tag_query_weights is not recent_artist_mbid_counts:
         # A seed may replace a planned query but never add one (query budget).
         regional_queries = regional_queries[:len(select_supplementary_tag_queries(
-            recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+            recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
         ))]
     regional_state = {
         "added": 0, "seen": 0, "hits": 0, "misses": 0,
@@ -926,12 +929,12 @@ def gather_recommendation_candidates(
         ][:REPLENISH_EXTRA_QUERIES]
         if tag_query_weights is not recent_artist_mbid_counts:
             unseeded_wider = select_supplementary_tag_queries(
-                recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+                recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
                 profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
                 exploration_limit=MAX_EXPLORATION_QUERIES + REPLENISH_EXTRA_QUERIES,
             )
             unseeded_issued = {item[0] for item in select_supplementary_tag_queries(
-                recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+                recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
             )}
             replenish_queries = replenish_queries[:len(
                 [item for item in unseeded_wider if item[0] not in unseeded_issued]

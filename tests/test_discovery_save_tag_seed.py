@@ -54,13 +54,23 @@ def _save_row(artist, *, age_days, scope="album", status="for_me", metadata=None
     }
 
 
-def _run(feedback):
+def _run(feedback, *, many_artists=False):
     now = int(time.time())
     listens = [{
         "listened_at": now - i * 3600,
         "track_metadata": {"artist_name": "Profile Jazz", "additional_info": {"artist_mbid": PROFILE_MBID}},
     } for i in range(12)]
     cache = {f"mb:artist-genres:{PROFILE_MBID}": list(PROFILE_GENRES)}
+    if many_artists:
+        # 16 profile artists with fewer listens each, so the lowest-weighted one falls
+        # outside the 15 whose genres the profile pass reads. Only that one has cached
+        # genres, so the unseeded plan has no profile queries and a free quota.
+        cache = {}
+        listens = [{
+            "listened_at": now - j * 60,
+            "track_metadata": {"artist_name": f"Art {n}", "additional_info": {"artist_mbid": f"a-{n}"}},
+        } for n in range(16) for j in range(1 + (16 - n))]
+        cache["mb:artist-genres:a-15"] = ["shoegaze"]
     for index, (artist_id, genres) in enumerate(CANDIDATE_GENRES.items(), start=1):
         cache[f"mb:artist-genres:{artist_id}"] = list(genres)
         cache[f"mb:recording:rec-{index}"] = {
@@ -114,6 +124,16 @@ class SaveTagSeedTests(unittest.TestCase):
         self.assertIn(tag, seeded["queries"][:6])
         self.assertEqual(len(seeded["artist"]), len(unseeded["artist"]))
         self.assertLessEqual(len(seeded["queries"]), len(unseeded["queries"]))
+
+    def test_seed_for_artist_outside_top_15_profile_reads_adds_no_queries(self):
+        # Review P2: the cap must compare against the plan made before seed cache
+        # entries were added, not one rebuilt from the seeded profile-tag map.
+        base = _run([], many_artists=True)
+        seeded = _run([_save_row("Art 15", age_days=1)], many_artists=True)
+
+        self.assertNotIn("primarytype:album AND tag:shoegaze", base["queries"])  # guard
+        self.assertLessEqual(len(seeded["queries"]), len(base["queries"]))
+        self.assertEqual(len(seeded["artist"]), len(base["artist"]))
 
     def test_expired_save_with_stored_genres_plans_nothing_extra(self):
         old = _save_row("Never Heard", age_days=POSITIVE_EXPIRY_SECONDS / 86400 + 1,
