@@ -181,9 +181,9 @@ def record_discovery_refresh_outcome(
 
     if list_name != "personal":
         raise ValueError("unsupported discovery list for refresh diagnostics")
-    if origin not in {"manual", "scheduler"}:
+    if origin not in {"manual", "scheduler", "read"}:
         raise ValueError("unsupported discovery refresh origin")
-    if status not in {"success", "error", "already_running"}:
+    if status not in {"success", "error", "already_running", "rejected"}:
         raise ValueError("unsupported discovery refresh status")
     if item_count is not None and (type(item_count) is not int or item_count < 0):
         raise ValueError("item_count must be a non-negative integer")
@@ -278,7 +278,7 @@ def record_recommendation_pool_diagnostic(
             "generated_at": timestamp,
             "refresh_origin": (
                 metrics.get("refresh_origin")
-                if metrics.get("refresh_origin") in {"direct_api", "manual", "scheduler"}
+                if metrics.get("refresh_origin") in {"direct_api", "manual", "scheduler", "read"}
                 else "unspecified"
             ),
             "cf_pool_fingerprint": pool_fingerprint,

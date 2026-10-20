@@ -7,12 +7,19 @@ from __future__ import annotations
 
 import json
 import math
+import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from threading import Lock
 from typing import Any
 
 import discovery_snapshot
+import service_settings
+
+STALE_MAX_AGE_SECONDS = 24 * 60 * 60
+# After a read starts a rebuild, further stale reads leave it alone for this long, so a
+# failed or rejected rebuild is retried at the scheduler's hourly cadence, not per request.
+REVALIDATE_COOLDOWN_SECONDS = 60 * 60
 
 
 def cache_staleness_reason(
@@ -281,3 +288,77 @@ def refresh_all(
         refresh_other_callback("artist_deep_dive"),
         refresh_other_callback("new_releases"),
     ]
+
+
+_revalidate_lock = threading.Lock()
+_revalidate_in_flight: set[str] = set()
+_revalidate_last_start: dict[str, float] = {}
+
+
+def revalidate_on_read(
+    list_name: str,
+    cached: Mapping[str, Any] | None,
+    refresh_one: Callable[[str], Any],
+    settings_read: Callable[[], Mapping[str, Any]],
+    *,
+    now: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    start: Callable[[Callable[[], None]], None] | None = None,
+) -> str:
+    """Start a background rebuild when a served snapshot is stale (roadmap 3.4).
+
+    The caller keeps serving the stored snapshot; this never waits for the rebuild
+    and never raises. A missing snapshot is not rebuilt here. Nothing starts when
+    automatic refill is off, when a rebuild for the list is already in flight, or
+    within ``REVALIDATE_COOLDOWN_SECONDS`` of the previous start. ``refresh_one``
+    keeps the foreground build lock, so a rebuild never overlaps another build.
+    Returns a bounded status string for diagnostics.
+    """
+    try:
+        reason = cache_staleness_reason(
+            cached,
+            now=time.time() if now is None else now,
+            max_age_seconds=STALE_MAX_AGE_SECONDS,
+        )
+        if reason is None or reason == "missing":
+            return "fresh" if reason is None else "missing"
+        if not service_settings.automatic_refill_enabled_value(settings_read):
+            return "disabled"
+        with _revalidate_lock:
+            if list_name in _revalidate_in_flight:
+                return "already_running"
+            started = clock()
+            last = _revalidate_last_start.get(list_name)
+            if last is not None and 0 <= started - last < REVALIDATE_COOLDOWN_SECONDS:
+                return "cooldown"
+            _revalidate_in_flight.add(list_name)
+            _revalidate_last_start[list_name] = started
+
+        def run() -> None:
+            try:
+                refresh_one(list_name)
+            except Exception:
+                pass  # The stored snapshot stays; the scheduler retries on its cycle.
+            finally:
+                with _revalidate_lock:
+                    _revalidate_in_flight.discard(list_name)
+
+        try:
+            if start is not None:
+                start(run)
+            else:
+                threading.Thread(
+                    target=run, name="navidrome-revalidate-" + list_name, daemon=True,
+                ).start()
+        except Exception:
+            with _revalidate_lock:
+                _revalidate_in_flight.discard(list_name)
+                # No rebuild ran, so the failed attempt must not hold off a retry.
+                if last is None:
+                    _revalidate_last_start.pop(list_name, None)
+                else:
+                    _revalidate_last_start[list_name] = last
+            return "start_failed"
+        return "started"
+    except Exception:
+        return "error"
