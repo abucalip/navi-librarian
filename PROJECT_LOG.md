@@ -1,3 +1,9 @@
+## 2026-10-20 — Phase 4.3 wider CF pool: finding (docs only)
+
+- Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Traced the 4-artist concentration: it is measured over the 97 resolved recordings only, so it is partly an artifact of the 103 unresolved ones, and `CF_ARTIST_RESOLUTION_CAP` is inert on a cold run (cache-known recordings only).
+- Decision: no code change; widening paging would add ListenBrainz requests (not allowed without the owner). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Tests: none run, docs only. PR/CI: see the PR. Next: live cold/warm pair once the client reaches ListenBrainz; optional `total_mbid_count` counter (needs owner go-ahead).
+
 ## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
 
 - Offline trace: budget and artist-cap skips `continue` before the CF record is appended, so they never reach `cf_failure_classes`; the 103 "other" failures (97 + 103 = 200) are exceptions outside the old allowlist. PR #467 (`2794237`) widened it; see the roadmap section "Candidate supply diagnosis".
