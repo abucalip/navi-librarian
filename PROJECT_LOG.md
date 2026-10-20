@@ -2,7 +2,7 @@
 
 - Branch `docs/final-list-supply-measurement`. Offline trace of CF recording to final list, then an owner-approved live pair (before = `961266d`, the #471 parent; after = `7deaf46`), aggregate only, data dirs deleted. Final list 10 distinct artists, top-2 20% both times (allocator takes one album per artist); CF share of the final 10 rose 3 to 7; CF unowned candidates 4 to 17; 170 s vs 95 s (one sample each, noisy).
 - Decision: no reopening of 1.2, 3.1, 3.2; no code change. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
-- Tests: none run, no code changed. PR/merge SHA and CI: see the PR.
+- Tests: none run, no code changed. Merged to `main` as `aedc34e44034a04bb20c177458f9c8b73b12900f` (squash, PR #474) from exact head `b46f13df69be63d1eb1d25047bac04b4eb2f388e`; compile, test-and-build, container-smoke and validate-container all passed. Next task (steady-state warm measurement) handed off in `CLAUDE_CLI.md`. Not done: publication, deployment.
 
 ## 2026-10-20 — Recommendation roadmap uncluttered
 

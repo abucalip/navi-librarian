@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-10-20. This is the active plan only; historical measurements, completed changes, and superseded task orderings are in [the archive](RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md). GitHub `main` is authoritative. Publishing and deployment remain paused.
 
-## Finding — cold-start supply gain in the final list (2026-10-20, measured)
+## Finding — cold-start supply gain in the final list (2026-10-20, measured; merged as `aedc34e44034a04bb20c177458f9c8b73b12900f`, PR #474)
 
 Owner-approved live pair, `_cold_start=True`, count 10, fresh data dir, slskd off, aggregate only, data dirs deleted. "Before" is the parent of PR #471 (`961266d`), "after" is `main` at `7deaf46` (includes #471). One sample each; the tag lane and genre lookup vary run to run (MusicBrainz throttling), so treat differences as indicative.
 
@@ -26,7 +26,7 @@ Decision: **do not reopen 1.2, 3.1 or 3.2.** The final spread is already at the 
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done (see the finding above). Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done (see the finding above). Next: steady-state (warm) final-list measurement, handed off in `CLAUDE_CLI.md`. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it

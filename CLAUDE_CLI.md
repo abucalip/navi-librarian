@@ -1,4 +1,4 @@
-# Handoff for Claude CLI: effect of the cold-start supply gain on the final list
+# Handoff for Claude CLI: steady-state (warm) final-list measurement
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
@@ -10,24 +10,22 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current state
 
-- Cold-run budget **closed**: PR #471 (merge `93225291c03214f377689875df12454f6eb97375`, head `230cf97b44807fb07c60fd5a76de8f5dce483b97`, all four workflows passed). The cold-start batch path prefetches all uncached CF recordings (+1 ListenBrainz POST and +1 GET per cold run, owner-approved); batch hits do not spend the 100 MusicBrainz budget; batch misses still do. PR #470 closed as superseded.
-- Live, one sample, `_cold_start=True`, count 10: 117 s; 200/200 CF recordings resolved; 15 distinct CF artists; top-2 share 47.5%; 0 budget-skipped (before: 100/200, 4 artists, 55%). Time did not fall; it is spent in other stages. Provider-call counts were not captured (`run_metrics` was null in the wrapper's capture).
-- Earlier: Phase 4.3 closed, no change (PR #469): only `count`/`offset` on the CF endpoint; pool 1,000, app reads 200. Honest ListenBrainz identifier plus optional `LISTENBRAINZ_TOKEN` (in `config.env` in the harness project folder; never print or commit it).
-- `LISTENBRAINZ_TOKEN` is in `compose.yaml`, `.env.example` and `docs/DEPLOYMENT.md` (PR #472, merge `d7e5746b82b597e82c5747f0fdcfdf21ee17800a`). Not deployed; the live run uses the token from `config.env`.
+- Cold-start supply gain **measured and closed**: PR #474 (merge `aedc34e44034a04bb20c177458f9c8b73b12900f`, head `b46f13df69be63d1eb1d25047bac04b4eb2f388e`, all four workflows passed). Cold, count 10, one sample each: final list 10 distinct artists and 20% top-2 share before and after #471 (the allocator takes one album per artist); CF share of the final 10 rose 3 to 7; unowned CF candidates 4 to 17. Decision: do not reopen 1.2, 3.1 or 3.2 on cold-start evidence. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` ("Finding").
+- Cold-run budget closed (PR #471); `LISTENBRAINZ_TOKEN` in Compose/docs (PR #472, not deployed); Phase 4.3 closed (PR #469). Token is in `config.env` in the harness project folder; never print or commit it.
 - Diversity setting: **paused by the owner**. No Settings UI, no mapping tuning. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: does the wider cold-start supply change the final list? (measure first)
+## Next task: steady-state (warm) final-list behaviour (measure first)
 
-Why: the roadmap defers weight retuning (1.2), MMR evaluation (3.1) and cooldown calibration (3.2) "until candidate supply shows a gain". The gain is now measured at the CF stage only (4 to 15 artists among resolved recordings). Whether the final top 10 changed is unmeasured, and that decides whether those phases reopen.
+Why: on a first build cooldown has no history and MMR is off at the default, so Phases 3.1 and 3.2 were inert in the cold measurement. They can only matter on a warm refresh, which is also where the soft recent-genre family cap (17 to 24 rejections per cold run) could limit spread. Nothing is measured there yet; the roadmap defers 1.2/3.1/3.2 until a warm measurement shows a need.
 
 Steps:
-1. Offline: from code and `docs/`, list what turns CF albums into the final list on a first build (filters, allocation, per-artist limits, dedup) and where the extra 100 resolved recordings can be dropped. Name the stage most likely to cap the final artist spread.
-2. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, outside the repo, delete afterwards): cold-start `count=10`, capturing final-list distinct artists, top-2 share, candidate counts per stage (`candidate_supply.stages`), and provider-call counts from `run_metrics` (capture them this time; wrap `record_recommendation_diagnostics`, which returns them). Compare to the pre-#471 cold numbers in the roadmap; the pre-change final-list figures were not captured, so say so rather than inventing a baseline. If a baseline is needed, ask the owner before checking out the pre-#471 commit for a second run.
-3. Decide and name the risk before editing: reopen 1.2/3.1/3.2 or not, or leave as is. Any option that adds lookups or ListenBrainz requests per run needs the owner's approval.
-
-Not allowed without owner approval: edits to `app/api/**`, `app/security/**`, `navidrome_server.py` or domain modules (name the module in the request), changing defaults or flags, new lookups, more ListenBrainz requests per run, raising the 100-per-run MusicBrainz budget, or weakening ownership, duplicate-identity or release-eligibility filtering.
+1. Offline: trace a warm refresh (`refresh_personal` with a stored previous list, cooldown history present, stale-while-revalidate path). List what differs from cold: cooldown penalties (max 25%), feedback signal, cached CF/genre metadata, batch path off. Name the stage most likely to cap spread or cause repeats between consecutive lists.
+2. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, outside the repo, delete afterwards): cold build then one or two warm refreshes, count 10, using the capture wrapper pattern from the #474 finding (wrap `recommendation_run_metrics.snapshot_and_reset` and `discovery_candidate_supply.summarize_candidate_stages`; the return value of `record_recommendation_diagnostics` does not carry them). Record per run: distinct artists, top-2 share, overlap with the previous list, source mix, family-cap rejections, provider-call counts.
+3. Decide and name the risk before editing: reopen 1.2/3.1/3.2 or not. Any option adding lookups or ListenBrainz requests per run needs owner approval.
 
 Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` with measured numbers and the decision; if code changes, a deterministic synthetic test, `python -m py_compile` on changed files and focused modules only.
+
+Alternative if the owner prefers a decision over a measurement: a one-page brief for the default-on flags (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, genre breaker, tag-lane early stop). Evidence for it: the cold pair shows the tag lane is the noisiest input (38 vs 10 candidates).
 
 ### Deferred
 
