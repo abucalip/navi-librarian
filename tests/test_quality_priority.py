@@ -23,7 +23,6 @@ def load_quality_helpers(db_path, music_dir):
         "quality_priority": [
             "mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"
         ],
-        "auto_acquire_for_me": True,
         "slskd_downloads_path": str(Path(music_dir) / "downloads" / "slskd" / "complete"),
     }
     music_dir_state = {"path": Path(music_dir)}

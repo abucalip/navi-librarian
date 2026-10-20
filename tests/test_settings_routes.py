@@ -148,35 +148,5 @@ class SettingsRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.detail, "bad input")
 
 
-    def test_slskd_auto_acquire_requires_json_boolean_and_preserves_explicit_false(self):
-        self.librarian.discovery_set_slskd_settings.return_value = '{"ok": true}'
-        for invalid in ("false", "true", 0, 1, None, [], {}):
-            with self.subTest(invalid=invalid):
-                self.librarian.discovery_set_slskd_settings.reset_mock()
-                with self.assertRaises(HTTPException) as raised:
-                    settings.set_slskd_settings(
-                        {"auto_acquire_for_me": invalid}, librarian=self.librarian
-                    )
-                self.assertEqual(raised.exception.status_code, 400)
-                self.assertEqual(
-                    raised.exception.detail, "auto_acquire_for_me must be a boolean."
-                )
-                self.librarian.discovery_set_slskd_settings.assert_not_called()
-
-        for value in (False, True):
-            with self.subTest(value=value):
-                self.librarian.discovery_set_slskd_settings.reset_mock()
-                result = settings.set_slskd_settings(
-                    {"auto_acquire_for_me": value}, librarian=self.librarian
-                )
-                self.assertEqual(result, {"ok": True})
-                self.assertIs(
-                    self.librarian.discovery_set_slskd_settings.call_args.kwargs[
-                        "auto_acquire_for_me"
-                    ],
-                    value,
-                )
-
-
 if __name__ == "__main__":
     unittest.main()

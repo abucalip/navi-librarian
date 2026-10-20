@@ -203,7 +203,6 @@ def get_slskd_settings(settings_read, music_dir, defaults):
         "music_library_path": settings.get("music_library_path", str(music_dir)),
         "slskd_url": settings.get("slskd_url", defaults["slskd_url"]),
         "api_key_configured": bool(settings.get("slskd_api_key")),
-        "auto_acquire_for_me": bool(settings.get("auto_acquire_for_me", True)),
         "slskd_downloads_path": settings.get(
             "slskd_downloads_path", defaults["slskd_downloads_path"]
         ),
@@ -223,7 +222,7 @@ def set_slskd_settings(
     settings_read, settings_write, get_music_dir, set_music_dir, defaults,
     slskd_url="http://192.168.1.12:5030", api_key="",
     quality_priority_json='["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-    auto_acquire_for_me=None, slskd_downloads_path=None, music_library_path=None,
+    slskd_downloads_path=None, music_library_path=None,
 ):
     """Validate and persist slskd settings; blank API keys preserve saved secrets."""
     url = (slskd_url or "").strip().rstrip("/")
@@ -258,8 +257,6 @@ def set_slskd_settings(
                 "error": "The music library path must exist and be a directory visible to this app.",
             })
         values["music_library_path"] = music_path
-    if auto_acquire_for_me is not None:
-        values["auto_acquire_for_me"] = bool(auto_acquire_for_me)
     if slskd_downloads_path is not None:
         download_path = str(Path(slskd_downloads_path).expanduser())
         if not Path(download_path).is_absolute():

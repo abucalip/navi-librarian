@@ -40,7 +40,6 @@ Product decision (owner, 2026-10-20): **Save is a bookmark.** It stores the albu
 
 - A "Saved" page that lists `for_me` rows.
 - Storing the artist MBID in save metadata (only worth it if saves of unknown-MBID artists without `genres` turn out to matter).
-- Retiring the `auto_acquire_for_me` setting.
 - Measuring the seed's real tag yield on a live run (needs owner go-ahead).
 
 ## Testing scope (standing owner rule, 2026-10-20)

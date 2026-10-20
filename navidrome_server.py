@@ -1194,7 +1194,6 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_16_44",
         "flac_hires",
     ],
-    "auto_acquire_for_me": True,
     "recommendation_diversity": 0,
     "slskd_downloads_path": str(Path(
         os.environ.get("SLSKD_DOWNLOADS_DIR")
@@ -1327,7 +1326,6 @@ def discovery_set_slskd_settings(
     slskd_url: str = "",
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-    auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
     music_library_path: str | None = None,
 ) -> str:
@@ -1345,7 +1343,6 @@ def discovery_set_slskd_settings(
         slskd_url,
         api_key,
         quality_priority_json,
-        auto_acquire_for_me,
         slskd_downloads_path,
         music_library_path,
     )

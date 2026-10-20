@@ -183,14 +183,6 @@ def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
     url = str(payload.get("slskd_url") or "http://192.168.1.12:5030")
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
-    auto_acquire_for_me = None
-    if "auto_acquire_for_me" in payload:
-        auto_acquire_for_me = payload["auto_acquire_for_me"]
-        if not isinstance(auto_acquire_for_me, bool):
-            raise HTTPException(
-                status_code=400,
-                detail="auto_acquire_for_me must be a boolean.",
-            )
     if quality is None:
         quality = ["mp3_320", "mp3_193_319", "mp3_192", "flac_cd", "flac_16_44", "flac_hires"]
     try:
@@ -198,7 +190,6 @@ def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
             slskd_url=url,
             api_key=api_key,
             quality_priority_json=json.dumps(quality),
-            auto_acquire_for_me=auto_acquire_for_me,
             slskd_downloads_path=(
                 str(payload["slskd_downloads_path"]).strip()
                 if "slskd_downloads_path" in payload
