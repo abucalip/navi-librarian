@@ -787,10 +787,14 @@ def gather_recommendation_candidates(
     # the query quotas are unchanged, so a seed can reorder or replace a query.
     tag_query_weights = recent_artist_mbid_counts
     if providers.feedback_rows is not None:
-        from recommendation_feedback import FEEDBACK_SIGNAL_ENABLED, saved_artist_seed_weights
+        from recommendation_feedback import (
+            FEEDBACK_SIGNAL_ENABLED, saved_artist_seed_genres, saved_artist_seed_weights,
+        )
         if FEEDBACK_SIGNAL_ENABLED:
             try:
-                seeds = saved_artist_seed_weights(providers.feedback_rows(), now=time.time())
+                rows = list(providers.feedback_rows())
+                seeds = saved_artist_seed_weights(rows, now=time.time())
+                stored_genres = saved_artist_seed_genres(rows, now=time.time())
                 for candidate in albums.values():
                     if candidate.get("artist_mbid"):
                         mbid_by_artist_key.setdefault(
@@ -800,6 +804,11 @@ def gather_recommendation_candidates(
                 for artist_key, seed_weight in seeds.items():
                     seed_mbid = mbid_by_artist_key.get(artist_key)
                     if not seed_mbid:
+                        # MBID unknown this run: use the genres stored with the save.
+                        if stored_genres.get(artist_key):
+                            seed_mbid = f"saved:{artist_key}"
+                            profile_tags_by_artist[seed_mbid] = stored_genres[artist_key]
+                            tag_query_weights[seed_mbid] += seed_weight
                         continue
                     tag_query_weights[seed_mbid] += seed_weight
                     if seed_mbid not in profile_tags_by_artist:
@@ -841,6 +850,11 @@ def gather_recommendation_candidates(
         profile_tags_by_artist,
         candidate_pool_tags,
     )
+    if tag_query_weights is not recent_artist_mbid_counts:
+        # A seed may replace a planned query but never add one (query budget).
+        regional_queries = regional_queries[:len(select_supplementary_tag_queries(
+            recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+        ))]
     regional_state = {
         "added": 0, "seen": 0, "hits": 0, "misses": 0,
         "request_index": 0, "unavailable": False, "exhausted_run": 0,
@@ -910,6 +924,18 @@ def gather_recommendation_candidates(
         replenish_queries = [
             item for item in wider_queries if item[0] not in issued_queries
         ][:REPLENISH_EXTRA_QUERIES]
+        if tag_query_weights is not recent_artist_mbid_counts:
+            unseeded_wider = select_supplementary_tag_queries(
+                recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+                profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
+                exploration_limit=MAX_EXPLORATION_QUERIES + REPLENISH_EXTRA_QUERIES,
+            )
+            unseeded_issued = {item[0] for item in select_supplementary_tag_queries(
+                recent_artist_mbid_counts, profile_tags_by_artist, candidate_pool_tags,
+            )}
+            replenish_queries = replenish_queries[:len(
+                [item for item in unseeded_wider if item[0] not in unseeded_issued]
+            [:REPLENISH_EXTRA_QUERIES])]
         if replenish_queries:
             with providers.http_client(timeout=20, follow_redirects=True) as client:
                 replenish_outcomes = _run_tag_queries(

@@ -145,6 +145,36 @@ def saved_artist_seed_weights(feedback: Iterable[Mapping[str, Any]], *, now: flo
     return seeds
 
 
+def saved_artist_seed_genres(feedback: Iterable[Mapping[str, Any]], *, now: float) -> dict[str, list[str]]:
+    """Return artist_key -> genre names stored in active saved rows' metadata.
+
+    Lets a saved artist seed tag selection when its MBID is unknown this run.
+    Only rows inside the seed window count; metadata is untrusted and filtered
+    to short strings.
+    """
+    genres: dict[str, list[str]] = {}
+    for row in feedback:
+        if not isinstance(row, Mapping):
+            continue
+        artist_key = row.get("artist_key")
+        stamp = _timestamp(row, "created_at")
+        if (
+            row.get("scope") != "album" or row.get("status") != "for_me"
+            or not artist_key or stamp is None
+            or _decay(float(now) - stamp, POSITIVE_HALF_LIFE_SECONDS, POSITIVE_EXPIRY_SECONDS) <= 0.0
+        ):
+            continue
+        metadata = row.get("metadata")
+        raw = metadata.get("genres") if isinstance(metadata, Mapping) else None
+        if not isinstance(raw, (list, tuple)):
+            continue
+        bucket = genres.setdefault(artist_key, [])
+        for tag in raw[:10]:
+            if isinstance(tag, str) and tag.strip() and tag not in bucket:
+                bucket.append(tag)
+    return genres
+
+
 def apply_feedback_signal(
     allocation_candidates: Iterable[Any],
     candidate_by_id: Mapping[str, Mapping[str, Any]],

@@ -45,8 +45,9 @@ class _Client:
         return _Response({}, status_code=404)
 
 
-def _save_row(artist, *, age_days, scope="album", status="for_me"):
+def _save_row(artist, *, age_days, scope="album", status="for_me", metadata=None):
     return {
+        "metadata": metadata or {},
         "scope": scope, "artist_key": _music_key(artist), "album_key": "x",
         "status": status, "created_at": time.time() - age_days * 86400,
         "updated_at": time.time(),
@@ -103,6 +104,21 @@ class SaveTagSeedTests(unittest.TestCase):
         log = _run([_save_row("Cand 2", age_days=1)])
 
         self.assertIn(ambient, log["queries"][:6])
+
+    def test_save_of_unknown_artist_seeds_from_stored_genres(self):
+        tag = "primarytype:album AND tag:shoegaze"
+        unseeded = _run([_save_row("Never Heard", age_days=1)])
+        self.assertNotIn(tag, unseeded["queries"])  # guard: no metadata, no seed
+
+        seeded = _run([_save_row("Never Heard", age_days=1, metadata={"genres": ["shoegaze"]})])
+        self.assertIn(tag, seeded["queries"][:6])
+        self.assertEqual(len(seeded["artist"]), len(unseeded["artist"]))
+        self.assertLessEqual(len(seeded["queries"]), len(unseeded["queries"]))
+
+    def test_expired_save_with_stored_genres_plans_nothing_extra(self):
+        old = _save_row("Never Heard", age_days=POSITIVE_EXPIRY_SECONDS / 86400 + 1,
+                        metadata={"genres": ["shoegaze"]})
+        self.assertEqual(_run([old])["queries"], _run([])["queries"])
 
     def test_expired_save_plan_matches_no_save(self):
         expired = _run([_save_row("Cand 2", age_days=POSITIVE_EXPIRY_SECONDS / 86400 + 1)])
