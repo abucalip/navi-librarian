@@ -1,16 +1,17 @@
-## 2026-10-20 — Recommendation roadmap cleanup
-
-The active recommendation roadmap was reduced from 683 lines to a concise 81-line working plan. Historical measurements, dated implementation notes, completed changes, and superseded task orderings were preserved in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md`. The immediate next action remains measuring whether PR #471's wider cold-start CF supply changes the final recommendation list; see the active roadmap and `CLAUDE_CLI.md`. No code behavior, test status, publication, or deployment state changed.
-
-## 2026-10-20 — PR #467 merged
-
-PR #467 merged as `27942379095cf41654fcb6298b3e9b0d9f56d730` from exact head `857a180ed6e93414122e0d23e9e413222a8606c0`. Expanded the bounded CF diagnostic error-class allowlist; no selection/provider behavior change. All four required workflows passed on that exact head, including the Docker packaging workflow's successful full unit-test step. Publishing/deployment remain paused. Next: continue aggregate-only candidate-supply investigation; keep private captures and identities out of GitHub.
-
 # Project status
 
-Last reviewed: 2026-10-20 (PR #471 merged at `93225291c03214f377689875df12454f6eb97375`; cold-run budget closed)
+Last reviewed: 2026-10-20 (PRs #475 and #476 merged; publishing remains paused)
 
-**Next action (2026-10-20):** measure the cold-start supply gain's effect on the final list (see `CLAUDE_CLI.md`). PR #471 merged as `93225291c03214f377689875df12454f6eb97375` from exact head `230cf97b44807fb07c60fd5a76de8f5dce483b97` (all four required workflows passed): cold-start batch hits no longer spend the MusicBrainz budget; one live sample resolved 200/200 recordings over 15 artists (was 100/200, 4 artists); no change in time (117 s). PR #472 merged as `d7e5746b82b597e82c5747f0fdcfdf21ee17800a` (exact head `4c0904657db983195d84abb79db6269edc1aa423`, all four workflows passed): `LISTENBRAINZ_TOKEN` is now passed through `compose.yaml`, `.env.example` and `docs/DEPLOYMENT.md`; not deployed. Earlier: PR #469 merged as `eca44e52dedfb5aec188faf287a8c0696d7566c7` from exact head `439c54be6c9c687aee9f7857cf2015850753a237` (all four required workflows passed): Phase 4.3 closed with no paging change, `cf_paging.total_mbid_count` added, ListenBrainz client now sends an honest identifier and optional `LISTENBRAINZ_TOKEN`. Live cold/warm pair: the cold run is bound by the 100-call MusicBrainz budget (86 recordings skipped, 6 artists); the warm run reaches 15 artists; 0 CF failures; one sample. Not done: publication, deployment, `LISTENBRAINZ_TOKEN` in `compose.yaml`/deployment docs.
+## Current recommendation-engine state
+
+- **PR #475** merged as `79cd5757b7a537434e95740dbef4e1ddf0da027e` from exact final head `78f6515ab5af09337b79cd576d83fa9d69b5d23a`. The warm measurement showed 10 distinct artists and 20% top-2 share across cold and two warm builds, but the sample is too small to establish long-term quality.
+- **PR #476** merged as `61520d6a4cd8c64e5714a23f3fb7dacb4c5a7855` from exact final head `7f765ac5f5340b015af90df657002b0d9d11ea33`. Warm batch resolution is enabled by default and batch results are cached separately from full recording metadata. The 100-per-run MusicBrainz budget is unchanged.
+- All four required workflows passed on PR #476's exact final head. The Docker packaging workflow's full unit suite passed; no independent local full-suite run was performed. PR #475's four workflows also passed on its exact final head.
+- The live warm-path measurement was one cold build plus two back-to-back refreshes: 123 s / 32 s / 3 s and MusicBrainz calls 78 / 10 / 0. Lists contained 10 albums from 10 artists, top-2 share 20%, with 5/10 overlap between adjacent lists. This is a single sample, not evidence of recommendation quality or acceptable long-term repeat rate.
+- The active roadmap and root `PROJECT_LOG.md` record the measurement, code change, exact SHAs, test/CI evidence, and limitations. Historical notes remain in the recommendation archive.
+- Publishing, deployment, and production-runtime verification remain unperformed.
+
+**Next action:** collect a longer-interval, aggregate-only repeat-rate measurement before considering any cooldown calibration. Do not change ranking weights or increase provider-call budgets without a measured defect and explicit approval.
 
 **Save-seed diagnostics — PR #465 merged as `6e1054b` (2026-10-20).** Seven aggregate `save_seed.*` counters in `run_metrics.counts`; no behavior change, no new lookup. Exact head `d962dd1` passed all four required workflows. One owner-approved live sample (4 saves): 1 initial query changed, 0 in replenishment; at most 3 of 4 saves reached the planner. Single sample, candidate quality unmeasured. Publishing and deployment remain paused. **Next action:** exploration-setting investigation, handed off in `CLAUDE_CLI.md`.
 
