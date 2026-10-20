@@ -2536,14 +2536,13 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         saved,
         _music_key,
         _discovery_is_album_candidate, _discovery_library_snapshot,
+        on_stale=lambda cached: discovery_refresh.revalidate_on_read(
+            "personal", cached, _discovery_scheduler_refresh_one, _discovery_settings_read),
     )
 
 
 def _discovery_refresh_all():
-    return discovery_refresh.refresh_all(
-        _discovery_refresh_personal,
-        _discovery_refresh_other,
-    )
+    return discovery_refresh.refresh_all(_discovery_refresh_personal, _discovery_refresh_other)
 
 
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:
@@ -2614,7 +2613,7 @@ def _discovery_scheduler():
                 _discovery_read_list,
                 _discovery_scheduler_refresh_one,
                 now=time.time(),
-                max_age_seconds=24 * 60 * 60,
+                max_age_seconds=discovery_refresh.STALE_MAX_AGE_SECONDS,
             )
             for outcome in outcomes:
                 if outcome["status"] in {"read_failed", "refresh_failed"}:

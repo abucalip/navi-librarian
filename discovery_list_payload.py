@@ -30,12 +30,15 @@ def build_cached_discovery_list_response(
     music_key: Callable[[Any], str],
     is_album_candidate: Callable[[Any], bool],
     library_snapshot: Callable[[], Mapping[str, Any]] | None = None,
+    on_stale: Callable[[Mapping[str, Any]], Any] | None = None,
 ) -> str:
     """Build the legacy JSON response for a cached discovery list.
 
     For the personal list, ``library_snapshot`` (when given) re-checks stored items
     against the current library on every read (roadmap 3.4). If the library cannot
     be read, the stored items are served unfiltered and the diagnostics say so.
+    ``on_stale`` (personal list only) is called with the stored row so a stale snapshot
+    can start a background rebuild; the stored list is served regardless of its outcome.
     """
     cached = read_list(list_name)
     if not cached:
@@ -46,6 +49,11 @@ def build_cached_discovery_list_response(
             "message": "No saved list yet. Use discovery_refresh_list or wait for the daily background refresh.",
         }, ensure_ascii=False, indent=2)
 
+    if on_stale is not None and list_name == "personal":
+        try:
+            on_stale(cached)
+        except Exception:
+            pass
     payload = cached["payload"]
     source_items = payload.get("recommendations", []) if list_name == "personal" else payload.get("items", [])
     stored_total = len(source_items)
