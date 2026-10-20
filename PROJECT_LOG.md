@@ -1,6 +1,6 @@
 ## 2026-10-20 — LISTENBRAINZ_TOKEN in deployment config
 
-- Branch `deploy/listenbrainz-token`. Owner-approved deployment-config change: `LISTENBRAINZ_TOKEN: ${LISTENBRAINZ_TOKEN:-}` in `compose.yaml`, a blank entry in `.env.example`, and a note plus commented example in `docs/DEPLOYMENT.md`. Empty default keeps behavior unchanged; no secret value committed. Checks: Docker is not installed on this machine, so `docker compose config` was not run (CI `container-smoke` and `validate-container` cover packaging); YAML parse only. Not done: merge, publication, deployment.
+- Branch `deploy/listenbrainz-token`. Owner-approved deployment-config change: `LISTENBRAINZ_TOKEN: ${LISTENBRAINZ_TOKEN:-}` in `compose.yaml`, a blank entry in `.env.example`, and a note plus commented example in `docs/DEPLOYMENT.md`. Empty default keeps behavior unchanged; no secret value committed. Checks: Docker is not installed on this machine, so `docker compose config` was not run (CI `container-smoke` and `validate-container` cover packaging); no local validation was possible (the one-line addition copies the neighbouring variables' syntax). Not done: merge, publication, deployment.
 
 ## 2026-10-20 — Cold-start batch no longer spends the MusicBrainz budget
 
