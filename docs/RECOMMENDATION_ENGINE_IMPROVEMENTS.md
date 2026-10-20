@@ -75,6 +75,10 @@ Limits: one sample; simulated time does not change ListenBrainz CF or the listen
 
 Decision: **do not reopen 3.2.** Repeats come from a small, stable pool; the cap moves at most one slot and a stronger cooldown would trade relevance for freshness. More supply breadth would need owner approval.
 
+## Finding — CF supply is limited by pages read, not the lookup budget (2026-10-20, measured; one sample)
+
+One live run (cold plus two warm). All 200 fetched CF recordings resolved every time; uncached per-recording MusicBrainz lookups were 0, so the 100-per-run budget never bound. The limit is `CF_MAX_PAGES = 2` × 100 of a 1,000-recording pool: 36 CF albums from 15 artists (top-2 share 47.5%), identical across runs. Details and an approval request for 3 or 4 pages: `docs/CF_PAGES_PROPOSAL_2026-10-20.md`. This corrects the earlier idea of spending spare budget on the already-fetched pool: there is no unresolved remainder. No code change; deeper reading needs owner approval.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
