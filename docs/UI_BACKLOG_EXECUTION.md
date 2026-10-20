@@ -3454,7 +3454,7 @@ Screenshots: `/mnt/project-files/phase-7-primary-button/screenshots/` (`before-*
 
 ## 41. Save bookmark control (`ui/save-bookmark`)
 
-Task 2 of `CLAUDE_CLI.md`, after PR #463 made `save` side-effect-free. Front end only.
+Task 2 of `CLAUDE_CLI.md`, after PR #463 made `save` side-effect-free. Front end only. Merged as PR #464 (`de528089ecc2861c85a82c61a14abba87eb6bac6`, exact head `6e3a815d9b98e73350e044c944187e62d716daca`; all four required workflows passed). The owner reports manual testing; no report was submitted, so the exact-head manual checklist is not recorded here.
 
 ### 41.1 What changed
 

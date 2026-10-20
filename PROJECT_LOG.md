@@ -1982,3 +1982,10 @@ Status: history parsing and descriptive window comparison completed; familiarity
 - All four required workflows passed on the exact PR head: Python syntax check, Docker packaging, container runtime smoke, and validation-only multi-architecture image validation. Publishing remains paused.
 - Owner reports manual testing was performed, but the report was not submitted. The detailed manual checklist and deep-dive-card behavior therefore remain undocumented; no screen-reader pass is claimed.
 - Not published or deployed; production runtime not verified.
+
+## 2026-10-20 — PR #463 side-effect-free save merged; next task handed off
+
+- PR: https://github.com/abucalip/navi-librarian/pull/463. Exact tested PR head `dcbe2dfc4a39842579713e69a29c03ead1aeb084`; merge commit `a12fb2f6eb6280dd4191fa520d9f420fe096f4cd` (squash).
+- `discovery_set_feedback(action="save")` writes the `for_me` row and returns. No thread and no slskd search; `_discovery_auto_acquire_for_me` and its lock were removed, as were the `auto_acquisition` and `note` response fields. Existing rows' `auto_acquisition` metadata is left alone. The unused `auto_acquire_for_me` setting (key, default, API validation, tests) was retired; stale stored values are ignored. `dismiss`, `dismiss_artist` and `remove_for_me` are unchanged. `navidrome_server.py` is 2,448 of 2,650 lines.
+- All four required workflows passed on the exact PR head. Publishing remains paused; not deployed; no live run.
+- With PR #464 the save loop is complete end to end. The seed's real tag yield is still unmeasured. Next task (handed off in `CLAUDE_CLI.md`): aggregate-only seed counters in `run_metrics`, no behavior change; a live measurement afterwards needs the owner's go-ahead.

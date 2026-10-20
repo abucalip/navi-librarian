@@ -1,46 +1,38 @@
-# Handoff for Claude CLI: bookmark Save (backend, then UI)
+# Handoff for Claude CLI: seed diagnostics (backend, one small PR)
 
 Read this first. It is written so you can pick up the next recommendation task from GitHub alone. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope" below).
 
 ## Getting started
 
 1. Clone `abucalip/navi-librarian`, then fetch `main`. Work on a branch from current `main`, never on `main` directly.
-2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the trimmed roadmap; its "Current state" and "Per-stage run timers" sections are the latest), and the top of `PROJECT_LOG.md`.
+2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the trimmed roadmap; its "Current state", roadmap 3.3 status and "Per-stage run timers" sections are the latest), and the top of `PROJECT_LOG.md`.
 3. Check the open PRs and the four required workflows on the exact head you will push.
 
 ## Current state
 
-- `main` includes PR #461 (`ace28d3`, roadmap 3.3 complete: saved albums seed supplementary tag-query selection; no added lookups; seeded plans capped at the unseeded plans) and PR #460 (`4201ed9`, deep-dive candidate collection extracted; `navidrome_server.py` is 2,536 of 2,650 lines). Verify the `main` head before you rely on it; it may have moved.
-- Roadmap 3.3 and 3.4 are both done. Feedback is a bounded signal (PR #456), refill toggle and stale-while-revalidate read path (PR #458, #459), save seed (PR #461).
+- `main` includes PR #464 (`de52808`, Save bookmark UI), PR #463 (`a12fb2f`, side-effect-free `save`; it also retired the unused `auto_acquire_for_me` setting), PR #461 (`ace28d3`, saved albums seed supplementary tag-query selection) and PR #460 (`4201ed9`; `navidrome_server.py` is 2,448 of 2,650 lines). Verify the `main` head before you rely on it; it may have moved.
+- Save is a bookmark (owner, 2026-10-20): it stores the album and metadata for the engine and a future "Saved" page, and never starts an slskd search. The UI Save control updates in place; the list endpoints hide saved albums, so a saved album leaves its list on the next load.
+- Roadmap 3.3 and 3.4 are done, and the save loop is now complete end to end (UI save, stored row, tag-query seed). Nothing yet reports whether the seed changes any query.
 - Live timing is done (single samples, roadmap section "Live stage-timing runs"). Two batch live runs failed on a non-JSON listening-history response (one retry succeeded). Cause not established; the ListenBrainz client must not be changed to get around it.
 
-## Next tasks (two PRs, in this order)
+## Next task: aggregate seed diagnostics (backend, one small PR, no behavior change)
 
-Product decision (owner, 2026-10-20): **Save is a bookmark.** It stores the album and its metadata for the recommendation engine and for a future "Saved" page. It never starts an slskd search; acquisition is the Get button's job. A "Saved" page will be added later and is not part of either task below.
+Why: the seed (PR #461) was verified only on a synthetic fixture. Before asking the owner for a live run to measure its real yield, the run must report what the seed did. This follows the PR #451/#452 pattern: counters only, so the next live run answers the question.
 
-### Task 1: make `save` side-effect-free (backend, one small PR)
+- Required: add aggregate-only counters to the existing `run_metrics` for the seed path in `discovery_candidate_gathering.py` (around the `saved_artist_seed_weights` block). Candidates: saved artists in the seed window; seeded from cached genres (MBID known); seeded from metadata `genres` (MBID unknown); skipped because the save had no `genres` and the MBID is unknown; planned supplementary queries that differ from the unseeded plan (initial and replenishment). Choose the final names yourself, keep them integers, and add them to the existing metrics map and its summarizer. Inspect `recommendation_run_metrics.py` first.
+- Not allowed: any identity-bearing value (artist, album, tag names, MBIDs) in the counters, a new lookup, a change to query selection, quotas, caps, scoring or the flag defaults, and any change to `navidrome_server.py` or `app/api/**` (stop and ask if either seems needed).
+- Acceptance (deterministic, synthetic): with no feedback provider, with feedback rows that seed no one, and with one MBID-known and one MBID-unknown save, the counters have the expected values; the planned queries and lookup count are identical to the run without the counters (assert it); a feedback-provider failure leaves the counters at zero and the run unseeded. Existing `tests/test_discovery_candidate_gathering*.py` modules for the changed file still pass.
+- Run `python -m py_compile` on each changed file and the focused modules only. If you add a Python module, add it to the Dockerfile `COPY` list.
+- Approval: `discovery_candidate_gathering.py` is a domain module. The owner's approval for this task is needed before you edit it (earlier approvals do not carry over).
+- Record the merge SHA in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (roadmap 3.3 status) and `PROJECT_LOG.md`.
+- After the merge, the live measurement itself (run the engine with a few real saves, read the counters) needs the owner's explicit go-ahead. Do not start it, and do not describe it as done.
 
-- Why first: today `discovery_set_feedback(action="save")` in `navidrome_server.py` writes the `for_me` row and then starts a daemon thread, `_discovery_auto_acquire_for_me`, which runs `discovery_acquire_album(..., auto_queue=True)` unless the `auto_acquire_for_me` setting is off (default on). That predates the redesign, when "For Me" meant "get this". A UI Save button wired to the endpoint would start slskd searches, which contradicts the decision above.
-- Required: `save` writes the row and returns; no thread, no search. Remove the `auto_acquisition` and `note` fields from the save response (or return them as `None`; keep the response shape otherwise). `dismiss`, `dismiss_artist` and `remove_for_me` do not change. The seed (PR #461) reads only `created_at` and `metadata.genres`, so it is unaffected.
-- Dead code: `_discovery_auto_acquire_for_me` and its lock/set become unused; delete them (this also frees server lines). Check the other writer of `metadata["auto_acquisition"]` near `navidrome_server.py:1572` before deleting anything it relies on, and leave existing rows' `auto_acquisition` metadata alone.
-- The `auto_acquire_for_me` setting: it is plumbed through `service_settings.py`, `app/api/settings.py`, `navidrome_server.py` and two test modules, and no UI references it. Do **not** retire it in this PR; leave the key and validation as they are, note it as unused, and ask the owner whether to remove it in a follow-up.
-- Approval: editing `navidrome_server.py` needs explicit owner approval for this task (earlier approvals do not carry over). Touching `app/api/**` is not needed; if it seems needed, stop and ask.
-- Acceptance (deterministic tests): saving does not start a thread or call `discovery_acquire_album` (patch both and assert not called); the `for_me` row is written with the supplied metadata; the response shape is unchanged apart from the removed fields; dismissal and `remove_for_me` behave as before; existing `tests/test_settings_routes.py` and `tests/test_quality_priority.py` still pass. Run `scripts/check_server_size.py`.
-- Record the merge SHA in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`.
+### Deferred (not this task)
 
-### Task 2: UI Save action (front end, one PR, after Task 1 is merged)
-
-- Gap: nothing in the UI creates a save. In `static/app.js` the cards offer the Get button (`createGetButton`), "Not for me" (`dismiss`) and "Dismiss artist" (`dismiss_artist`); `sendFeedback()` is the only caller of `POST /api/discovery/feedback` and no code path sends `save`.
-- Required: a Save control on recommendation cards that calls `sendFeedback('save', artist, album, item, listName)`. Send the whole `item` as metadata, as dismiss does: the seed reads `metadata.genres` for artists whose MBID is unknown, so do not strip it. Label it as a bookmark, not an acquisition. Provide a saved (pressed) state, an undo (`remove_for_me`, whose semantics do not change) and an error state. `sendFeedback()` reloads the list, so check the saved card is neither lost nor duplicated.
-- Do not change the backend, the API route or feedback semantics. If `app/api/**` or `app/main.py` seems necessary, stop and ask.
-- Scope: front end only. Read root `AGENTS.md`, `docs/DESIGN_SYSTEM.md`, `docs/REDESIGN_ROADMAP.md` and `docs/FRONTEND_DESIGN_GUIDE.md` first; edit only the permitted UI files (`static/app.{css,js}`, `app/templates/*.html`, narrow UI tests, `docs/UI_BACKLOG_EXECUTION.md`). The manual browser checklist runs against the exact tested SHA after CI passes; record the result.
-- Acceptance: Save is reachable by keyboard with an accessible name that includes the album; saving posts one feedback request with the item as metadata and starts no download (verify in the browser harness that no acquisition request follows); the card shows a saved state without a full-page flicker; undo posts `remove_for_me`; a failed request shows an error and leaves the card unchanged. Add narrow tests in the style of `tests/test_ui_keyboard_and_feedback_contract.py` and `tests/test_personal_discoveries_ui_contract.py`.
-
-### Deferred (neither task)
-
-- A "Saved" page that lists `for_me` rows.
-- Storing the artist MBID in save metadata (only worth it if saves of unknown-MBID artists without `genres` turn out to matter).
-- Measuring the seed's real tag yield on a live run (needs owner go-ahead).
+- A "Saved" page that lists `for_me` rows, and a way to undo a save after the list has reloaded.
+- Storing the artist MBID in save metadata (only worth it if the new counters show many skipped saves).
+- Rendered check of the artist deep-dive Save control (not covered by PR #464's harness).
+- Whether to enable the default-off flags (see "Open items").
 
 ## Testing scope (standing owner rule, 2026-10-20)
 
@@ -62,7 +54,7 @@ Product decision (owner, 2026-10-20): **Save is a bookmark.** It stores the albu
 
 ## Repository traps
 
-- `navidrome_server.py` is capped at 2650 lines by the CI compile job (currently 2,535). Prefer new modules over server growth. Run `scripts/check_server_size.py` after editing it.
+- `navidrome_server.py` is capped at 2650 lines by the CI compile job (currently 2,448). Prefer new modules over server growth. Run `scripts/check_server_size.py` after editing it.
 - A new Python module must be added to the `COPY` list in the Dockerfile, or `container-smoke` fails.
 - The docs-only change rule still applies: a docs PR needs the same four checks on its head.
 - The full suite has one known macOS-only failure: `test_acquisition_import.py::test_success_persists_importing_before_import_and_then_imported` (`/var` → `/private/var`). It fails on clean `main` too. CI on Linux passes it. The owner's independent full-suite run covers it; do not run the suite to check it.
@@ -76,7 +68,7 @@ Product decision (owner, 2026-10-20): **Save is a bookmark.** It stores the albu
 - ListenBrainz client. The app's HTTP client intermittently receives a browser-verification page instead of JSON. A fix that sends an honest client identifier and token would need the owner's go-ahead first. Do not change the client's user agent or fingerprint to get around the check.
 - Last.fm as a source is parked by the owner. Do not start a quality test or a combined path without a new decision.
 - Exploration slider (later). Map one user-facing value onto the existing `recommendation_diversity` setting (0–100). Backend first; no UI in backend PRs.
-- Feedback positive seed. Merged as PR #461. The remaining gap is the missing UI save action; Task 1 (side-effect-free save) comes first, then Task 2.
+- Feedback positive seed. Merged as PR #461; its UI (PR #464) and side-effect-free save (PR #463) are merged. Its real tag yield is unmeasured: seed diagnostics first (the task above), then a live run only with the owner's go-ahead.
 
 ## Working style
 
