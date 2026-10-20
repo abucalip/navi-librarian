@@ -1,3 +1,9 @@
+## 2026-10-21 — `CF_MAX_PAGES = 4` re-measured after #479; decision keep 2 (docs only)
+
+- Branch `docs/cf-max-pages-4-measurement`. Owner-approved live runs (aggregate only, disposable data directories deleted): 4-page cold 255.1 s and 316.1 s (diag) versus 141.0 s for the 2-page baseline on `main` `83b2583`. In the diag run both release-group requests returned 502 (HTML) after four 200 recording batches, so 300 recordings were skipped by the 100-per-run budget and cold supply fell to 14 albums from 4 artists. Warm 2 reached 77 albums from 42 artists once the cache filled.
+- Decision: keep `CF_MAX_PAGES = 2`; no code change. Cause of the 502s not established. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Tests: none run, no code changed. Focused modules passed on the abandoned 4-page edit (not committed). Not done: publication, deployment, full suite (standing rule).
+
 ## 2026-10-20 — Batch release-group resilience (PR #479 merged)
 
 - Branch `fix/batch-release-group-resilience`; exact final PR head `681feef0948f21e81c08a9611bd32132b448e50e`; squash merge `4cf66322866c5377fec612a297db05922d7a8e11`.

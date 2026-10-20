@@ -79,6 +79,24 @@ Decision: **do not reopen 3.2.** Repeats come from a small, stable pool; the cap
 
 One live run (cold plus two warm). All 200 fetched CF recordings resolved every time; uncached per-recording MusicBrainz lookups were 0, so the 100-per-run budget never bound. The limit is `CF_MAX_PAGES = 2` × 100 of a 1,000-recording pool: 36 CF albums from 15 artists (top-2 share 47.5%), identical across runs. Details and an approval request for 3 or 4 pages: `docs/CF_PAGES_PROPOSAL_2026-10-20.md`. This corrects the earlier idea of spending spare budget on the already-fetched pool: there is no unresolved remainder. No code change; deeper reading needs owner approval.
 
+## Finding — `CF_MAX_PAGES = 4` re-measured after the batch fix (2026-10-21, measured; one sample each; decision: keep 2)
+
+Owner-approved live runs on a fresh data directory, slskd off, aggregate only, directory deleted. Same harness for both configurations; the 2-page baseline ran from `main` at `83b2583`.
+
+| Config | Run | Seconds | CF recordings resolved / failed | Uncached MB lookups | CF albums / artists | Top-2 share |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 pages | cold | 141.0 | 200 / 0 | 0 | 36 / 15 | 47.5% |
+| 2 pages | warm 1, warm 2 | 2.4, 2.6 | 200 / 0 | 0 | 36 / 15 | 47.5% |
+| 4 pages | cold | 255.1 | 97 / 3 | 100 (budget reached, 300 skipped) | 14 / 4 | 54.6% |
+| 4 pages | warm 1 | 285.9 | 138 / 1 | 100 (203 skipped) | 33 / 12 | 44.2% |
+| 4 pages | warm 2 | 56.6 | 276 / 0 | 0 | 77 / 42 | 26.4% |
+
+A second 4-page cold run with the batch diagnostic took 316.1 s (14 albums, 4 artists). Its request log: four `recording_batch` calls returned 200 (0.4 to 1.1 s each); both `release_group` calls returned 502 with an HTML body. With #479 the failure no longer discards the batch, but recordings in a failed release-group chunk fall back to per-recording lookups, which spend the 100-per-run budget. At 2 pages the same endpoint path resolved all 200 recordings with no lookups.
+
+The cold run did not meet the success criterion (about 106 to 123 s with the batch path intact). The diversity gain (77 albums, 42 artists, top-2 26.4%) appears only after the cache fills. The cause of the 502s (request size, endpoint, or transient) is not established. Not measured: overlap with the previous list; `musicbrainz.recording_lookup` counts of 111 to 113 in the 4-page cold and warm 1 runs exceed the 100 budget, unexplained; `lastfm.api` calls (13 to 40) appeared in several runs, unexplained.
+
+Decision: **keep `CF_MAX_PAGES = 2`; no code change.** Revisit when the release-group 502s are understood. Single samples; no recommendation-quality claim.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
