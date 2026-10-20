@@ -5,6 +5,9 @@ import unittest
 from pathlib import Path
 
 from service_settings import (
+    automatic_refill_enabled_value,
+    get_automatic_refill_settings,
+    set_automatic_refill_settings,
     get_lastfm_settings,
     get_recommendation_diversity_settings,
     recommendation_diversity_value,
@@ -282,6 +285,34 @@ class ServiceSettingsTests(unittest.TestCase):
         ))
         self.assertEqual(result["status"], "not_found")
         self.assertNotIn("api_key", json.dumps(result))
+
+    def test_automatic_refill_defaults_on_and_fails_safe_on_corrupt_values(self):
+        self.assertTrue(automatic_refill_enabled_value(lambda: {}))
+        for corrupt in ("false", 0, 1, None, [], {"enabled": False}):
+            with self.subTest(corrupt=corrupt):
+                self.assertTrue(
+                    automatic_refill_enabled_value(lambda c=corrupt: {"automatic_refill_enabled": c})
+                )
+        self.assertFalse(
+            automatic_refill_enabled_value(lambda: {"automatic_refill_enabled": False})
+        )
+        self.assertEqual(
+            json.loads(get_automatic_refill_settings(lambda: {})),
+            {"automatic_refill_enabled": True},
+        )
+
+    def test_automatic_refill_setting_accepts_only_booleans_and_persists_them(self):
+        writes = []
+        result = json.loads(set_automatic_refill_settings(writes.append, False))
+        self.assertTrue(result["ok"])
+        self.assertEqual(writes, [{"automatic_refill_enabled": False}])
+
+        writes.clear()
+        for invalid in (0, 1, "false", None):
+            with self.subTest(invalid=invalid):
+                result = json.loads(set_automatic_refill_settings(writes.append, invalid))
+                self.assertFalse(result["ok"])
+        self.assertEqual(writes, [])
 
 
 if __name__ == "__main__":

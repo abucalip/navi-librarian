@@ -2610,7 +2610,7 @@ def _discovery_scheduler():
     while True:
         try:
             outcomes = discovery_refresh.refresh_stale_lists(
-                list_names,
+                list_names if _service_settings.automatic_refill_enabled_value(_discovery_settings_read) else (),
                 _discovery_read_list,
                 _discovery_scheduler_refresh_one,
                 now=time.time(),
