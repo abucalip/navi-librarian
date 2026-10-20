@@ -22,6 +22,7 @@ class ColdStartGateTests(unittest.TestCase):
     def test_steady_state_with_flags_off_does_not_batch(self):
         harness = _Harness(3)
         with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", False), \
+                mock.patch.object(gathering, "WARM_BATCH_ENABLED", False), \
                 mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", False):
             gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
 
@@ -84,3 +85,81 @@ class ColdStartRefreshTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class _CachingHarness(_Harness):
+    """Harness whose metadata cache actually stores values."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.store = {}
+
+    def providers(self):
+        base = super().providers()
+        return gathering.RecommendationProviders(**{
+            **base.__dict__,
+            "metadata_cache_get": lambda key, **kw: self.store.get(key),
+            "metadata_cache_set": lambda key, value, **kw: self.store.__setitem__(key, value),
+        })
+
+
+class WarmBatchTests(unittest.TestCase):
+    def test_warm_path_batches_by_default_and_skips_per_recording_calls(self):
+        harness = _Harness(3)
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
+
+        self.assertEqual(len(harness.posts), 1)
+        self.assertEqual(harness.mb_client.requested, [])
+
+    def test_warm_switch_off_does_not_batch(self):
+        harness = _Harness(3)
+        with mock.patch.object(gathering, "WARM_BATCH_ENABLED", False):
+            gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
+
+        self.assertEqual(harness.posts, [])
+        self.assertEqual(len(harness.mb_client.requested), 3)
+
+    def test_batch_hits_are_cached_under_their_own_key(self):
+        harness = _CachingHarness(3)
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=True)
+
+        prefix = gathering.BATCH_RECORDING_CACHE_PREFIX
+        self.assertEqual(sorted(k for k in harness.store if k.startswith(prefix)),
+                         [f"{prefix}rec-{i}" for i in range(3)])
+        # Never the key the full per-recording lookup trusts.
+        self.assertFalse(any(k.startswith("mb:recording:") for k in harness.store))
+
+    def test_second_run_reuses_cached_batch_hits_without_any_lookup(self):
+        harness = _CachingHarness(3)
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=True)
+        posts_after_first = len(harness.posts)
+        gets_after_first = len(harness.rg_gets)
+
+        result = gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
+
+        self.assertEqual(len(harness.posts), posts_after_first)
+        self.assertEqual(len(harness.rg_gets), gets_after_first)
+        self.assertEqual(harness.mb_client.requested, [])
+        self.assertEqual(len(result["albums"]), 3)
+
+    def test_cached_batch_hits_do_not_spend_the_budget_on_a_larger_pool(self):
+        harness = _CachingHarness(150)
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=True)
+        harness.posts.clear()
+
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
+
+        self.assertEqual(harness.posts, [])
+        self.assertEqual(harness.mb_client.requested, [])
+
+    def test_cache_write_failure_does_not_fail_the_run(self):
+        harness = _Harness(2)
+        base = harness.providers()
+
+        def broken(key, value, **kw):
+            raise OSError("disk full")
+
+        providers = gathering.RecommendationProviders(**{**base.__dict__, "metadata_cache_set": broken})
+        result = gathering.gather_recommendation_candidates(providers, cold_start=True)
+
+        self.assertEqual(len(result["albums"]), 2)
