@@ -25,6 +25,9 @@ ARTIST_DISMISS_PENALTY = 0.30
 TAG_DISMISS_PENALTY = 0.10
 MAX_DISMISS_PENALTY = 0.60
 SAVE_ARTIST_BOOST = 0.10
+# Weight a fresh save adds to its artist in supplementary tag-query selection,
+# in the same units as decayed listen weights (about one recent listen).
+SAVE_SEED_WEIGHT = 1.0
 
 
 def _decay(age: float, half_life: float, expiry: float) -> float:
@@ -116,6 +119,30 @@ def save_boost(artist_key: str, feedback: Iterable[Mapping[str, Any]], *, now: f
         weight = _decay(float(now) - stamp, POSITIVE_HALF_LIFE_SECONDS, POSITIVE_EXPIRY_SECONDS)
         boost = max(boost, SAVE_ARTIST_BOOST * weight)
     return boost
+
+
+def saved_artist_seed_weights(feedback: Iterable[Mapping[str, Any]], *, now: float) -> dict[str, float]:
+    """Return artist_key -> decayed seed weight from saved albums.
+
+    Same created_at window as save_boost (30-day half-life, 90-day expiry), so
+    an expired save contributes nothing. Pure; performs no I/O.
+    """
+    seeds: dict[str, float] = {}
+    for row in feedback:
+        if not isinstance(row, Mapping):
+            continue
+        if row.get("scope") != "album" or row.get("status") != "for_me":
+            continue
+        artist_key = row.get("artist_key")
+        stamp = _timestamp(row, "created_at")
+        if not artist_key or stamp is None:
+            continue
+        weight = SAVE_SEED_WEIGHT * _decay(
+            float(now) - stamp, POSITIVE_HALF_LIFE_SECONDS, POSITIVE_EXPIRY_SECONDS,
+        )
+        if weight > 0.0:
+            seeds[artist_key] = max(seeds.get(artist_key, 0.0), weight)
+    return seeds
 
 
 def apply_feedback_signal(
