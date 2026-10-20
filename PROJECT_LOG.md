@@ -1,3 +1,9 @@
+## 2026-10-20 — Steady-state (warm) final list measured (docs only)
+
+- Branch `docs/warm-final-list-measurement`. Offline warm-path trace plus one owner-approved live run (cold, then two warm refreshes, count 10, aggregate only, data dir deleted). Final list 10 distinct artists, top-2 20% in all three; overlap with the previous list 4 and 3 of 10; family cap rejected 24 to 39 per run and never blocked a full list; warm CF unowned supply 4 and 14 vs 17 cold (batch hits are not cached, so warm runs re-spend the 100 budget; inferred from code).
+- Decision: no reopening of 1.2, 3.1, 3.2; no code change. Harness bug: final-list source mix not captured. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Tests: none run, no code changed. PR/merge SHA and CI: see the PR. Not done: publication, deployment.
+
 ## 2026-10-20 — Cold-start supply gain measured in the final list (docs only)
 
 - Branch `docs/final-list-supply-measurement`. Offline trace of CF recording to final list, then an owner-approved live pair (before = `961266d`, the #471 parent; after = `7deaf46`), aggregate only, data dirs deleted. Final list 10 distinct artists, top-2 20% both times (allocator takes one album per artist); CF share of the final 10 rose 3 to 7; CF unowned candidates 4 to 17; 170 s vs 95 s (one sample each, noisy).

@@ -23,10 +23,36 @@ Result: the gain is real in provenance, not in spread. CF now supplies 7 of 10 f
 
 Decision: **do not reopen 1.2, 3.1 or 3.2.** The final spread is already at the allocator's ceiling, 3.1 and 3.2 are inert on a first build, and there is no measured defect to tune against. Risk named: the recent-genre family cap rejected 17 to 24 candidates per run; it is soft and relaxed in a later pass, and it filled the list both times, but it is the stage to look at first if warm-run spread ever drops. No code changed.
 
+## Finding — steady-state (warm) final list (2026-10-20, measured; PR pending)
+
+Offline trace: a warm `refresh_personal` finds a stored list, so `_cold_start` is off and the batch path is not used. Differences from cold: cooldown reads `recommendation_history` (written only when a list is stored; max 25% score penalty, 7-day half-life), the feedback signal applies, and cached metadata is reused. The 100-per-run uncached MusicBrainz budget applies again, and batch hits are not written to the metadata cache, so a cold build's 200 batch-resolved recordings are not cached for the next run.
+
+Owner-approved live run (the owner said the agent may do it), one fresh data dir, slskd off, aggregate only, count 10, cold build then two warm refreshes back to back, data dir deleted. One sample; interpret as indicative.
+
+| | cold | warm 1 | warm 2 |
+| --- | --- | --- | --- |
+| Albums / distinct artists / top-2 share | 10 / 10 / 20% | 10 / 10 / 20% | 10 / 10 / 20% |
+| Overlap with previous list | n/a | 4 of 10 | 3 of 10 |
+| Category counts (adj / cross / adv) | 4 / 3 / 3 | 4 / 3 / 3 | 4 / 3 / 3 |
+| Pool (candidates / unowned unique) | 74 / 55 | 52 / 42 | 70 / not recorded |
+| Unowned unique by source (CF / profile / exploration) | 17 / 30 / 8 | 4 / 30 / 8 | 14 / 30 / 8 |
+| Recent-genre family cap rejections | 39 | 24 | 37 |
+| Family cap relaxation attempts | 10 | 4 | 8 |
+| Wall time | 126 s | 230 s | 202 s |
+| Provider calls | LB CF 2, MB 86 (batch), Last.fm 40 | LB CF 2, MB recording lookups 117, Last.fm 22 | LB CF 2, MB recording lookups 113 |
+
+MusicBrainz recording-lookup counts include retries (up to 3 attempts per recording); resolutions stayed within the 100 budget. Of 30 history rows across the three lists, 21 are distinct identities.
+
+Result: spread is unchanged on warm refreshes (10 distinct artists, 20% top-2 share, quotas met every time). Repeats between consecutive lists were 3 to 4 of 10 even with cooldown history present. The stage that most plausibly causes repeats is the supply, not the penalty: the 30 profile-tag and 8 exploration-tag candidates were identical in count in all three runs, and the 25% cooldown cap is a soft multiplier that only reorders candidates with close scores. The recent-genre family cap rejected 24 to 39 candidates per run, was relaxed (4 to 10 attempts) and never prevented a full list. CF supply varied (4 to 17 unowned), consistent with the budget-bound warm resolution path, not with ranking.
+
+Limits: one sample; runs were back to back, so cooldown decay was negligible and history held at most two prior lists; the harness did not capture the source mix of the final list (its source field was misread), so that row is missing; the budget/caching explanation for warm CF supply is from code reading, not a cache-hit counter.
+
+Decision: **do not reopen 1.2, 3.1 or 3.2** on this evidence; no code change. Risk named: if repeat rate matters, the lever is CF supply on warm runs (batch hits are not cached, so warm runs re-spend the 100 budget). Caching batch hits or a warm batch path would change call patterns and needs owner approval. A follow-up measurement would need a cache-hit counter.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done (see the finding above). Next: steady-state (warm) final-list measurement, handed off in `CLAUDE_CLI.md`. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done (see the finding above). Warm measurement done (see the warm finding above); next: owner decision on caching batch hits or the default-on flags brief. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it
