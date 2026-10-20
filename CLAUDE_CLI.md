@@ -13,6 +13,7 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Cold-run budget **closed**: PR #471 (merge `93225291c03214f377689875df12454f6eb97375`, head `230cf97b44807fb07c60fd5a76de8f5dce483b97`, all four workflows passed). The cold-start batch path prefetches all uncached CF recordings (+1 ListenBrainz POST and +1 GET per cold run, owner-approved); batch hits do not spend the 100 MusicBrainz budget; batch misses still do. PR #470 closed as superseded.
 - Live, one sample, `_cold_start=True`, count 10: 117 s; 200/200 CF recordings resolved; 15 distinct CF artists; top-2 share 47.5%; 0 budget-skipped (before: 100/200, 4 artists, 55%). Time did not fall; it is spent in other stages. Provider-call counts were not captured (`run_metrics` was null in the wrapper's capture).
 - Earlier: Phase 4.3 closed, no change (PR #469): only `count`/`offset` on the CF endpoint; pool 1,000, app reads 200. Honest ListenBrainz identifier plus optional `LISTENBRAINZ_TOKEN` (in `config.env` in the harness project folder; never print or commit it).
+- `LISTENBRAINZ_TOKEN` is in `compose.yaml`, `.env.example` and `docs/DEPLOYMENT.md` (PR #472, merge `d7e5746b82b597e82c5747f0fdcfdf21ee17800a`). Not deployed; the live run uses the token from `config.env`.
 - Diversity setting: **paused by the owner**. No Settings UI, no mapping tuning. `navidrome_server.py` is 2,448 of 2,650 lines.
 
 ## Next task: does the wider cold-start supply change the final list? (measure first)
@@ -30,7 +31,6 @@ Acceptance: a recorded finding in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` w
 
 ### Deferred
 
-- Add `LISTENBRAINZ_TOKEN` to `compose.yaml` and `docs/DEPLOYMENT.md` (touches deployment config; ask first). Small and self-contained; a reasonable alternative if the owner prefers it first.
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
 - CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
