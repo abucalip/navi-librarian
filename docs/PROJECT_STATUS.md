@@ -1,5 +1,10 @@
 # Project status
 
+Last reviewed: 2026-10-20 (PR #464 merged at `de528089ecc2861c85a82c61a14abba87eb6bac6`; recommendation Save bookmark UI)
+
+**Recommendation Save bookmark control — PR #464 merged.** Front-end toggle adds Save/Undo controls to Personal, New releases, Classics, and artist deep-dive cards; it sends `save`/`remove_for_me` feedback with item metadata and does not trigger acquisition. Exact PR head `6e3a815d9b98e73350e044c944187e62d716daca` passed all four required workflows: Python syntax, Docker packaging, container runtime smoke, and validation-only image validation (publishing paused). Owner reports manual testing was performed, but no report was submitted, so detailed manual checklist results are not recorded here. No screen-reader pass is claimed. Merge commit `de528089ecc2861c85a82c61a14abba87eb6bac6`. Publishing and deployment remain paused; no production runtime verification.
+
+
 Last reviewed: 2026-10-20 (PR #461 merged at `ace28d3`; saved-album tag-query seed)
 
 ## Current focus
