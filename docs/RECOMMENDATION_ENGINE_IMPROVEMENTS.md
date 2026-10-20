@@ -637,9 +637,11 @@ Supply funnel from the same capture (`recommendation_replay.py`, aggregate): 200
 
 **Risk named.** Acting on the "4 artists" figure now would tune against a number that is partly an artifact of the 103 unresolved recordings. The failure class is unknown until PR #467's allowlist names it on a live run.
 
-**Open, needs the owner:** (1) the live cold/warm pair (blocked by the client timeout), which would show the artists of the failed recordings only once they resolve; (2) approval for any extra ListenBrainz page; (3) optionally, a one-request check of `total_mbid_count` from an already-made page (no extra request: the field is in the existing response) to learn the real CF pool size before deciding whether paging could help at all. Item 3 was approved by the owner and built: `cf_paging.total_mbid_count` (integer from the first page's response, else `None`); no extra request, no selection change.
+**Completed after the owner's approval (same day):** (a) `cf_paging.total_mbid_count`, an integer from the first page's response (else `None`), no extra request and no selection change; (b) the live cold/warm pair, recorded in the section below.
 
-**Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. Effect on the browser-verification timeout is unmeasured until a live run.
+**Still open, needs the owner:** approval for any extra ListenBrainz page, and the cold-run budget decision (see the roadmap open items).
+
+**Client identity (owner-approved 2026-10-20):** `listenbrainz_client.request_headers()` sends `User-Agent: NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)` and, only if the env var `LISTENBRAINZ_TOKEN` is set, `Authorization: Token <token>`. Applies to the recent-listens call; the token is never logged or stored. The recent-listens timeout did not recur in the live pair below; which change fixed it was not isolated.
 
 Tests (focused): `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` plus `py_compile` on the changed files. CI: see the PR.
 

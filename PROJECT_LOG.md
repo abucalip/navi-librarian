@@ -1,8 +1,10 @@
-## 2026-10-20 — Phase 4.3 wider CF pool: finding (docs only)
+## 2026-10-20 — Phase 4.3 wider CF pool: finding, counter, client identity, live pair (PR #469)
 
-- Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Traced the 4-artist concentration: it is measured over the 97 resolved recordings only, so it is partly an artifact of the 103 unresolved ones, and `CF_ARTIST_RESOLUTION_CAP` is inert on a cold run (cache-known recordings only).
-- Decision: no code change; widening paging would add ListenBrainz requests (not allowed without the owner). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
-- Owner approved the `total_mbid_count` counter: added to `cf_paging` in `discovery_candidate_gathering.py` with two tests. Focused run: `test_discovery_candidate_gathering` + `test_discovery_candidate_supply` (53, OK), `py_compile`. PR/CI: see the PR. Next: live cold/warm pair once the client reaches ListenBrainz; optional `total_mbid_count` counter (needs owner go-ahead).
+- Branch `docs/cf-pool-phase-4-3`. Read the official ListenBrainz recommendation docs: only `count` and `offset` exist; no artist-type or other filter. Phase 4.3 closed with no paging change (extra ListenBrainz requests need the owner).
+- Code, owner-approved: `cf_paging.total_mbid_count` in `discovery_candidate_gathering.py` (no extra request); `listenbrainz_client.request_headers()` sends an honest User-Agent and an optional `LISTENBRAINZ_TOKEN`. Focused tests: `test_discovery_candidate_gathering`, `test_discovery_candidate_supply` (53, OK), `test_listenbrainz_client` (7, OK), `py_compile`. No full suite. CI: see the PR.
+- Live cold/warm pair (owner-approved, aggregate only, data dir deleted): recent-listens timeout did not recur, 0 CF failures in both runs, pool 1,000 and 200 read; cold run budget-bound (86 skipped, 6 artists), warm run 15 artists. One sample; a first wrapper launch may have run a stray extra pass. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Earlier trace claim corrected: the 4-artist share is over resolved recordings only.
+- Remaining: the cold-run budget decision (batch resolution or ordering), `LISTENBRAINZ_TOKEN` in `compose.yaml` and `docs/DEPLOYMENT.md`, confirming the client fix. Not done: merge, publication, deployment.
 
 ## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
 
