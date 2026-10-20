@@ -1,3 +1,12 @@
+## 2026-10-20 — Roadmap 3.4 refill on/off setting (merged as PR #458)
+
+- Squash-merged to `main` as `7fb140e6d915ada98974d1b56002c03d4e5cfef0` after the owner named PR #458. All four required workflows passed on exact head `d72d650`.
+- Setting: `automatic_refill_enabled` (`service_settings.py`), default `true`; absent or non-boolean stored values fall back to `true`. `GET/PUT /api/settings/automatic-refill` accepts only JSON booleans (`app/api/settings.py`).
+- Gate: the hourly `_discovery_scheduler` passes an empty list to `refresh_stale_lists` when the setting is off, so no background cache reads or refreshes run. Foreground builds are unchanged. The toggle takes effect on the next hourly cycle; an in-flight refresh is not cancelled.
+- Tests: `tests/test_discovery_scheduler_refill_gate.py` (4 tests running one real scheduler cycle), plus policy and route tests in `tests/test_service_settings.py` and `tests/test_settings_routes.py`. Mutation check: removing the gate fails the disabled-case test.
+- Local full-suite run before merge: 1062 tests, one failure, the known macOS-only `test_acquisition_import` `/var` symlink case.
+- Still open: the stale-while-revalidate read path (roadmap 3.4), recorded as the next task in `CLAUDE_CLI.md`.
+
 ## 2026-10-20 — Handoff: roadmap 3.4 refill on/off setting (docs only)
 
 - PR #456 merged as `4680a187734dc05516ebdca639b8a003366aaeb2`. Its checks passed on head `7b0a3a0` before merge.

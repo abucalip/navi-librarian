@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-19 (PR #431 merged at b933d52; batch timing and genre-stage findings recorded)
+Last reviewed: 2026-10-20 (PR #458 merged at `7fb140e`; automatic refill on/off setting)
 
 ## Current focus
+
+**Automatic refill on/off setting — PR #458 merged as `7fb140e` (2026-10-20), default on.** Persisted `automatic_refill_enabled` gates the hourly discovery scheduler. Exact head `d72d650` passed all four required workflows. Next: the stale-while-revalidate read path for the stored snapshot (roadmap 3.4).
 
 **Supplementary tag lane early stop: flagged, default off (2026-10-19).** `TAG_LANE_EARLY_STOP_ENABLED` (default `False`) lets the tag lane continue past a single exhausted MusicBrainz query and stop after `TAG_LANE_EXHAUSTION_THRESHOLD` (2) consecutive exhausted ones. Flag off is unchanged; 7 synthetic regression tests. Test-copy findings (aggregate, single samples): the artist-tag endpoint returned tags for 8 of 8 artists, with 109 of 151 tag names matching our genres exactly (0.72); the genre breaker opened after 9 attempts in a forced-429 run, but the profile prefetch stage was not gated (48 requests, all 429); the same flag now also gates the prefetch (synthetic tests only, no live timing); flags on 80 s against flags off 299 s in one A/B pair, both at 10 recommendations. Turning the flags on by default is still the owner's decision. Publishing and deployment remain paused.
 

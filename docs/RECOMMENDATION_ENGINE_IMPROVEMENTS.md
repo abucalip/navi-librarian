@@ -8,11 +8,13 @@ Merged on `main`: candidate-supply diagnostics (PR #382); bounded CF paging with
 
 Per-stage run timers: the counters from PR #451 now include aggregate seconds for metadata resolution, genre prefetch, the supplementary tag lane, replenishment, and the genre lookup stage. Merged as PR #452 at `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9` from exact head `856df1f6ed50353ee671c6b129d51e86a49b4ad7`; all four required workflows succeeded on that head. See "Per-stage run timers" at the end of this file.
 
-Merged 2026-10-20: PR #456, roadmap 3.3 feedback as a bounded signal, on by default (merge `4680a187734dc05516ebdca639b8a003366aaeb2`; all four required workflows passed on head `7b0a3a0`). Next task: roadmap 3.4 refill on/off setting; see `CLAUDE_CLI.md`.
+Merged 2026-10-20: PR #456, roadmap 3.3 feedback as a bounded signal, on by default (merge `4680a187734dc05516ebdca639b8a003366aaeb2`; all four required workflows passed on head `7b0a3a0`).
+
+Merged 2026-10-20: PR #458, roadmap 3.4 automatic refill on/off setting, default on (squash merge `7fb140e6d915ada98974d1b56002c03d4e5cfef0`; all four required workflows passed on head `d72d650`; owner approved the `app/api/**` and `navidrome_server.py` changes). Next task: roadmap 3.4 stale-while-revalidate read path; see `CLAUDE_CLI.md`.
 
 Open items:
 - **CF freshness (P2):** undecided. No measurement has shown whether CF reflects all-time history. Needs an authorized two-sided capture; do not start without owner approval.
-- **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. The setting is not built yet; it is the next task.
+- **Refill toggle (3.4):** background refill runs by default on an hourly cycle, with a 24-hour staleness threshold. The owner decided on 2026-10-19 that it defaults to on and can be turned off. Built in PR #458 (`7fb140e`): persisted `automatic_refill_enabled`, default on, gates the hourly scheduler; `GET/PUT /api/settings/automatic-refill`.
 - **Default-on decisions (owner):** batch resolution (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`), the genre circuit breaker, and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
 - **Early-stop live measurement:** not yet run live. Needs owner "yes" for any live run.
 - **Exploration slider (later, product):** map one user-facing value onto the existing `recommendation_diversity` contract (0-100). Backend first; no UI in backend PRs.
@@ -256,7 +258,7 @@ Acceptance (deterministic tests): a failed build keeps the previous snapshot; a 
 
 Out of scope here: a per-item scored history store (deferred to Phase 4 item 5).
 
-**Current status (2026-10-20).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. Remaining: the refill on/off setting (default on, decided 2026-10-19; next task), and the persisted list served stale-while-revalidate is unchanged. Detailed history is archived in `PROJECT_LOG.md`.
+**Current status (2026-10-20).** Items (1) provider-failure count (threshold, PR #447, merge `e932c51`), (2) read-time ownership filter (PR #446, merge `80d796b`), and the snapshot guard (PR #445, merge `c5e9b17`) are merged. The refill on/off setting is merged as PR #458 (`7fb140e`, default on). Remaining: the read path does not yet serve the stored snapshot stale-while-revalidate or trigger a background rebuild when it is older than 24 hours. This is the next task. Detailed history is archived in `PROJECT_LOG.md`.
 
 ### Phase 4 — Evaluate additional candidate lanes (only when earlier phases justify them)
 
