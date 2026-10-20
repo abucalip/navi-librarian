@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from listenbrainz_client import recent_listens
+from listenbrainz_client import USER_AGENT, recent_listens, request_headers
 
 
 class FakeResponse:
@@ -35,6 +35,20 @@ class FakeClient:
         return response
 
 
+class RequestHeaderTests(unittest.TestCase):
+    def test_identifier_names_project_and_no_token_by_default(self):
+        headers = request_headers({})
+        self.assertEqual(headers, {"User-Agent": USER_AGENT})
+        self.assertIn("github.com/abucalip/navi-librarian", USER_AGENT)
+
+    def test_token_is_sent_as_authorization_when_configured(self):
+        headers = request_headers({"LISTENBRAINZ_TOKEN": "  abc  "})
+        self.assertEqual(headers["Authorization"], "Token abc")
+
+    def test_blank_token_is_ignored(self):
+        self.assertNotIn("Authorization", request_headers({"LISTENBRAINZ_TOKEN": "   "}))
+
+
 class ListenBrainzClientTests(unittest.TestCase):
     def test_fetches_bounded_pages_and_uses_oldest_timestamp_cursor(self):
         first_page = [{"listened_at": 1_700_000_000 - index} for index in range(100)]
@@ -56,7 +70,7 @@ class ListenBrainzClientTests(unittest.TestCase):
         first_url, first_params, first_headers = client.requests[0]
         self.assertEqual(first_url, "https://api.listenbrainz.org/1/user/test-user/listens")
         self.assertEqual(first_params, {"min_ts": 1_699_395_300, "count": 100})
-        self.assertEqual(first_headers, {"User-Agent": "NavidromeLibrarian/1.0"})
+        self.assertEqual(first_headers["User-Agent"], USER_AGENT)
         self.assertEqual(client.requests[1][1], {
             "min_ts": 1_699_395_300,
             "count": 100,
