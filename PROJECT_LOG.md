@@ -1,3 +1,10 @@
+## 2026-10-20 — Record PR #452 merge and Claude CLI handoff (docs only)
+
+- Merge recorded: PR #452 squash-merged to `main` as `76030c0f70e59ebe05b2e10ca5fcfc6a4fc75bd9`, from exact head `856df1f6ed50353ee671c6b129d51e86a49b4ad7` (base `42b6d81`). All four required workflows succeeded on that head: `compile`, `test-and-build`, `container-smoke`, `validate-container` (validation-only; publishing paused).
+- Change: merge SHA written into `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (current state and the per-stage timers section) and this log. New `CLAUDE_CLI.md` at the repository root: a short handoff so Claude CLI can start the next roadmap task from GitHub alone.
+- Not changed: no code, no tests, no settings, no flags, no live or Mac run.
+- Next: the owner's go-ahead for a repeated timing run that reads the stage keys (see `CLAUDE_CLI.md`).
+
 ## 2026-10-20 — Per-stage run timers for candidate gathering (offline, no behavior change)
 
 - Why: PR #451 timed gathering as one stage, so the flag-timing questions could not be attributed. The owner's priority is per-run time without added lookups.
