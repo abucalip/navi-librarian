@@ -219,7 +219,7 @@ class ServiceSettingsTests(unittest.TestCase):
                 self.read_settings, self.write_settings, lambda: Path("/music"),
                 self.set_music_dir, defaults, "http://slskd:5030/", "",
                 '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-                True, "/downloads", directory,
+                "/downloads", directory,
             ))
         self.assertTrue(result["ok"])
         self.assertEqual(self.state["slskd_api_key"], "slskd-secret")

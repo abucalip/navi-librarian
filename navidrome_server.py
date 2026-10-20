@@ -814,76 +814,6 @@ def _discovery_save_feedback(scope, artist, album, status, metadata=None):
         db.commit()
 
 
-# Prevent duplicate automatic searches for the same For Me album.
-_DISCOVERY_AUTO_ACQUIRE_LOCK = __import__("threading").Lock()
-_DISCOVERY_AUTO_ACQUIRE_ACTIVE = set()
-
-
-def _discovery_auto_acquire_for_me(artist, album):
-    identity = (_music_key(artist), _music_key(album))
-    with _DISCOVERY_AUTO_ACQUIRE_LOCK:
-        if identity in _DISCOVERY_AUTO_ACQUIRE_ACTIVE:
-            return
-        _DISCOVERY_AUTO_ACQUIRE_ACTIVE.add(identity)
-    try:
-        rows = _discovery_feedback_rows()
-        existing = next((
-            row for row in rows
-            if row["scope"] == "album"
-            and row["artist_key"] == identity[0]
-            and row["album_key"] == identity[1]
-            and row["status"] == "for_me"
-        ), None)
-        if not existing:
-            return
-        metadata = existing.get("metadata") or {}
-        prior = metadata.get("auto_acquisition") or {}
-        if prior.get("status") == "queued":
-            return
-        settings = _discovery_settings_read()
-        if not settings.get("auto_acquire_for_me", True):
-            metadata["auto_acquisition"] = {"status": "disabled", "checked_at": time.time()}
-            _discovery_save_feedback("album", artist, album, "for_me", metadata)
-            return
-        metadata["auto_acquisition"] = {"status": "searching", "started_at": time.time()}
-        _discovery_save_feedback("album", artist, album, "for_me", metadata)
-        result_text = discovery_acquire_album(
-            artist, album, metadata_json=json.dumps(metadata, ensure_ascii=False),
-            auto_queue=True,
-        )
-        try:
-            result = json.loads(result_text)
-        except (ValueError, TypeError):
-            result = {"ok": False, "status": "invalid_response"}
-        metadata["auto_acquisition"] = {
-            "status": result.get("status", "error"),
-            "checked_at": time.time(),
-            "result": result,
-        }
-        _discovery_save_feedback("album", artist, album, "for_me", metadata)
-    except Exception as exc:
-        try:
-            rows = _discovery_feedback_rows()
-            existing = next((
-                row for row in rows
-                if row["scope"] == "album"
-                and row["artist_key"] == identity[0]
-                and row["album_key"] == identity[1]
-                and row["status"] == "for_me"
-            ), None)
-            metadata = (existing or {}).get("metadata") or {}
-            metadata["auto_acquisition"] = {
-                "status": "error", "checked_at": time.time(),
-                "message": type(exc).__name__,
-            }
-            _discovery_save_feedback("album", artist, album, "for_me", metadata)
-        except Exception:
-            pass
-    finally:
-        with _DISCOVERY_AUTO_ACQUIRE_LOCK:
-            _DISCOVERY_AUTO_ACQUIRE_ACTIVE.discard(identity)
-
-
 def _discovery_refresh_personal(count=20, origin="manual"):
     return discovery_refresh.refresh_personal(
         _DISCOVERY_REFRESH_LOCK,
@@ -903,7 +833,7 @@ def discovery_set_feedback(
     action: str,
     metadata_json: str = "{}",
 ) -> str:
-    """Save an album to For Me, dismiss it, dismiss its artist, or remove it from For Me.
+    """Bookmark an album in For Me (no search or download), dismiss it, dismiss its artist, or remove it from For Me.
 
     action is save, dismiss, dismiss_artist, or remove_for_me. Dismissal is
     persisted internally and excluded from future visible recommendations.
@@ -925,13 +855,6 @@ def discovery_set_feedback(
     try:
         if action == "save":
             _discovery_save_feedback("album", artist, album, "for_me", metadata)
-            import threading
-            threading.Thread(
-                target=_discovery_auto_acquire_for_me,
-                args=(artist.strip(), album.strip()),
-                name="navidrome-auto-acquire",
-                daemon=True,
-            ).start()
         elif action == "dismiss":
             _discovery_save_feedback("album", artist, album, "not_for_me", metadata)
         elif action == "dismiss_artist":
@@ -950,14 +873,6 @@ def discovery_set_feedback(
             "action": action,
             "artist": artist.strip(),
             "album": album.strip(),
-            "auto_acquisition": (
-                "started_in_background"
-                if action == "save" else None
-            ),
-            "note": (
-                "For Me save triggers an slskd search. Only a clear, non-ambiguous album-folder match is queued automatically; uncertain matches require review."
-                if action == "save" else None
-            ),
         }, ensure_ascii=False)
     except Exception as exc:
         return json.dumps({"ok": False, "error": str(exc)})
@@ -1279,7 +1194,6 @@ _DISCOVERY_SETTINGS_DEFAULTS = {
         "flac_16_44",
         "flac_hires",
     ],
-    "auto_acquire_for_me": True,
     "recommendation_diversity": 0,
     "slskd_downloads_path": str(Path(
         os.environ.get("SLSKD_DOWNLOADS_DIR")
@@ -1412,7 +1326,6 @@ def discovery_set_slskd_settings(
     slskd_url: str = "",
     api_key: str = "",
     quality_priority_json: str = '["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
-    auto_acquire_for_me: bool | None = None,
     slskd_downloads_path: str | None = None,
     music_library_path: str | None = None,
 ) -> str:
@@ -1430,7 +1343,6 @@ def discovery_set_slskd_settings(
         slskd_url,
         api_key,
         quality_priority_json,
-        auto_acquire_for_me,
         slskd_downloads_path,
         music_library_path,
     )
