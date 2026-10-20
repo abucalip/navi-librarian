@@ -1,3 +1,11 @@
+## 2026-10-20 — Candidate supply diagnosis: trace, deferred live run, PR #468 closed (docs only)
+
+- Offline trace: budget and artist-cap skips `continue` before the CF record is appended, so they never reach `cf_failure_classes`; the 103 "other" failures (97 + 103 = 200) are exceptions outside the old allowlist. PR #467 (`2794237`) widened it; see the roadmap section "Candidate supply diagnosis".
+- Live pair (owner-approved) not recorded: two attempts failed after 30 s with a read timeout on recent listens, before any MusicBrainz call; a plain request to the same endpoint returned 200. Client left unchanged. Throwaway data dirs were kept outside the repo; no captures were written.
+- PR #468 (recent-listens page cap 3 to 5) closed unmerged by owner decision (ListenBrainz request cost). Branch `feat/listens-page-cap` kept.
+- Tests: none run for this docs entry. Code PR #467 CI: see its entry. Published directly to `main` on the owner's instruction (no PR).
+- Next: roadmap Phase 4.3, wider CF pool (`CLAUDE_CLI.md`); retry the live pair later.
+
 ## 2026-10-20 — Exploration setting audit (docs only)
 
 - Merged to `main` as `af801d6` (squash, PR #466) from exact head `0da5d6086ad9eb302b5633f7e8adfadbf2e147b9`; compile, test-and-build, container-smoke and validate-container all succeeded on that head. The squash title still says "UI-only next"; the content and this log supersede it (UI stays blocked, diversity setting paused). Recorded directly on `main` at the owner's instruction.
