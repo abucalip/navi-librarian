@@ -223,8 +223,8 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
 
 
 def _batch_resolution_enabled(providers: RecommendationProviders, cold_start: bool = False) -> bool:
-    # Cold-start and steady-state batch paths have separate switches. The legacy
-    # CF_BATCH_RESOLUTION_ENABLED path remains gated by the title-filter flag.
+    # Cold-start and warm batch paths have separate switches. The legacy opt-in
+    # path requires both CF_BATCH_RESOLUTION_ENABLED and the title-filter flag.
     if providers.http_post is None:
         return False
     if (COLD_START_BATCH_ENABLED if cold_start else WARM_BATCH_ENABLED):
