@@ -1,7 +1,7 @@
 """Direct regression tests for slskd search diagnostics."""
 import unittest
 
-from acquisition_search_diagnostics import (
+from acquisition.search_diagnostics import (
     candidate_diagnostics,
     count_audio_files,
     no_match_message,

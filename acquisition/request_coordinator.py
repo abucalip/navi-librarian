@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from acquisition_orchestration import (
+from acquisition.orchestration import (
     existing_acquisition_response,
     reactivate_dismissed_acquisition_if_needed,
     reserve_acquisition_request,

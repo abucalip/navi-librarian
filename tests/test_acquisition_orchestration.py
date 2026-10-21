@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_orchestration import (
+from acquisition.orchestration import (
     existing_acquisition_response,
     import_source_unless_dismissed,
     queue_candidate_unless_dismissed,
@@ -17,7 +17,7 @@ from acquisition_orchestration import (
     run_reserved_acquisition,
     switch_source_unless_dismissed,
 )
-from acquisition_lifecycle import should_resume_monitor, skip_request_error
+from acquisition.lifecycle import should_resume_monitor, skip_request_error
 
 
 class DismissedAcquisitionPreflightTests(unittest.TestCase):

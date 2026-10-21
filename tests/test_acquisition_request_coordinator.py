@@ -4,8 +4,8 @@ import threading
 import unittest
 from types import SimpleNamespace
 
-from acquisition_lifecycle import should_resume_monitor
-from acquisition_request_coordinator import acquire_album_request
+from acquisition.lifecycle import should_resume_monitor
+from acquisition.request_coordinator import acquire_album_request
 
 
 class AcquisitionRequestCoordinatorTests(unittest.TestCase):

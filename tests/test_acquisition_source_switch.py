@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-import acquisition_lifecycle
-from acquisition_source_switch import switch_to_next_source_locked
+from acquisition import lifecycle as acquisition_lifecycle
+from acquisition.source_switch import switch_to_next_source_locked
 
 
 class FakeHTTPError(Exception):

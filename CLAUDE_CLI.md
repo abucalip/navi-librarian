@@ -6,8 +6,7 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 The owner wants root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-layout effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
 
-**Next task — await owner go-ahead for the first move.** The design note is in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md` ("Design note: slskd leftovers, acquisition, discovery and the legacy server"). Safe seams: `acquisition/` (18 modules, three PRs) and the `discovery/` leaf cluster (6) then allocator (3). Blocked until the owner decides: store/refresh and the gathering core (`integrations/lastfm` imports `discovery_recommendations.music_key`). `navidrome_server` and slskd: nothing to move. Recommended first move: `acquisition/` PR 1 (request and queue, 8 modules). No move is pre-approved; branch from refreshed `main`, one PR per move, four required workflows on the exact head, never run the full suite. Root Python modules 48. Publishing/deployment stay paused.
-
+**Owner decisions (2026-10-21):** `acquisition/` first, in three PRs; fix the `music_key` inversion (separate code PR, before the discovery core moves); `recommendation_cooldown` moves with the store modules. **Status:** acquisition PR 1 (request and queue, 8 modules, root modules 40) is open for review; wait for CI on the exact head and for the owner to name the PR before merging. Next after merge: PR 2 (monitor: watcher, watcher_startup, progress_accounting, progress_snapshots, monitor_payload), PR 3 (completion, import, import_service, cleanup, recovery), the `music_key` PR, then `discovery/` leaves, allocator, store/refresh/cooldown, core. One PR per move; never run the full suite; publishing/deployment paused.
 
 After the layout work, or if the owner redirects: P1a (deeper CF pool, brief and plan only, no live run) below.
 

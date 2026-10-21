@@ -9,10 +9,10 @@ import threading
 import unittest
 from pathlib import Path
 
-import acquisition_lifecycle as _acquisition_lifecycle
-import acquisition_orchestration as _acquisition_orchestration
+from acquisition import lifecycle as _acquisition_lifecycle
+from acquisition import orchestration as _acquisition_orchestration
 from acquisition_import_service import import_completed_source_locked
-from acquisition_request_coordinator import acquire_album_request as _module_acquire_album_request
+from acquisition.request_coordinator import acquire_album_request as _module_acquire_album_request
 
 
 def load_helpers():

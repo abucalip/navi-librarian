@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from acquisition_state import list_jobs, reactivate_dismissed_job, save_job
+from acquisition.state import list_jobs, reactivate_dismissed_job, save_job
 
 
 class AcquisitionStateStoreTests(unittest.TestCase):
