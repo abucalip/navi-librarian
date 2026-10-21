@@ -7,7 +7,7 @@ import sqlite3
 import time
 import unicodedata
 import discovery_store
-import slskd_transfers as _slskd_transfers_module
+from integrations.slskd import transfers as _slskd_transfers_module
 import listenbrainz_client as _listenbrainz_client
 import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
@@ -1371,49 +1371,49 @@ def discovery_set_slskd_settings(
 
 def discovery_test_slskd_connection() -> str:
     """Compatibility adapter for the extracted slskd connectivity probe."""
-    from slskd_client import test_connection
+    from integrations.slskd.client import test_connection
 
     return test_connection(_slskd_config)
 
 
 def _slskd_quality_tier(file_record, filename, priority):
     """Compatibility wrapper for slskd audio-quality classification."""
-    from slskd_quality import quality_tier
+    from integrations.slskd.quality import quality_tier
 
     return quality_tier(file_record, filename, priority)
 
 def _discovery_expected_track_count(metadata):
     """Compatibility adapter for expected slskd album track-count extraction."""
-    from slskd_search import expected_track_count
+    from integrations.slskd.search import expected_track_count
 
     return expected_track_count(metadata)
 def _slskd_track_identity(filename):
     """Compatibility wrapper for slskd track identity normalization."""
-    from slskd_search import track_identity
+    from integrations.slskd.search import track_identity
 
     return track_identity(filename, _music_key)
 
 def _slskd_album_path_match(album, text):
     """Compatibility wrapper for slskd album-path matching."""
-    from slskd_search import album_path_match
+    from integrations.slskd.search import album_path_match
 
     return album_path_match(album, text)
 
 def _slskd_search_queries(artist, album):
     """Compatibility wrapper for bounded slskd query generation."""
-    from slskd_search import search_queries
+    from integrations.slskd.search import search_queries
 
     return search_queries(artist, album)
 
 def _slskd_search_response_items(payload):
     """Compatibility wrapper for slskd response normalization."""
-    from slskd_search import response_items
+    from integrations.slskd.search import response_items
 
     return response_items(payload)
 
 def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
     """Compatibility wrapper for bounded slskd path diagnostics."""
-    from slskd_search import path_match_diagnostics
+    from integrations.slskd.search import path_match_diagnostics
 
     return path_match_diagnostics(
         payload, artist, album, limit,
@@ -1423,7 +1423,7 @@ def _slskd_path_match_diagnostics(payload, artist, album, limit=10):
 
 def _slskd_extract_candidates(payload, artist, album, priority, expected_track_count=None):
     """Compatibility wrapper for slskd candidate grouping and ranking."""
-    from slskd_search import extract_candidates
+    from integrations.slskd.search import extract_candidates
 
     return extract_candidates(
         payload, artist, album, priority, expected_track_count,
@@ -1435,7 +1435,7 @@ def _slskd_extract_candidates(payload, artist, album, priority, expected_track_c
 
 def _slskd_download_transfer_files(base_url, headers, username):
     """Compatibility adapter for slskd transfer listing and normalization."""
-    from slskd_transfers import download_transfer_files
+    from integrations.slskd.transfers import download_transfer_files
 
     return download_transfer_files(base_url, headers, username, http_client=httpx)
 
@@ -1960,7 +1960,7 @@ def _discovery_acquire_album_impl(
     headers = {"X-API-KEY": api_key}
     search_queries = _slskd_search_queries(artist, album)
     try:
-        from slskd_search_polling import collect_search_responses
+        from integrations.slskd.search_polling import collect_search_responses
 
         search_result = collect_search_responses(
             search_queries,

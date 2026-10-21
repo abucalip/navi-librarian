@@ -59,3 +59,10 @@
 - Required CI passed on exact PR head: syntax/acquisition safety run 39639612889; Docker packaging/full unit suite/build 39639612870; container runtime smoke 39639612822; non-publishing multi-architecture validation 39639612866.
 - Agent-side focused tests and `py_compile` not run because the execution environment could not obtain a fresh GitHub checkout. No stale local checkout used. No publishing, deployment, or production runtime verification.
 - Next: regenerate/review the dependency map against post-merge main, finish the remaining module/caller/path/test inventory, and choose the next cohesive move only after checking dynamic imports, compatibility, and Docker assumptions.
+
+
+## 2026-10-21 — slskd integration package move opened as PR #511
+
+- Code commit: `2530192b703cdc023406ad8415008a5aa37fcbd5`, based on current main `ea4d50e2384617ba365d11b93f5f4f789af6e019`. Moved the five slskd modules into `integrations/slskd/`, updated lazy/top-level legacy-server imports and direct-import test paths, removed the root module copies, added a Docker package-presence regression test, and updated the syntax workflow compile list.
+- Refreshed dependency-map artifact ID `12368421891` from the audit workflow confirms independent module imports; exact artifact SHA-256 is `22440f9cabed53f77f21abbdeb0593a9553fbdcc5bc0791d0ff46498d5185ca5`. The artifact source SHA is audit head `8ba095c17040ea5dd40ab19ad36e132acb4ab2ee`, whose application source matches the main baseline.
+- All four required workflows passed on code head `664639724ef9d1cbf5edd1603a41ccb14a372ce3`: syntax/acquisition safety `39649449299`, Docker packaging/full unit suite/build `39649449147`, container smoke `39649449405`, and validation-only multi-architecture `39649449373`. A docs-only follow-up changes the PR head, so exact-final-head CI must be rechecked. Agent-side focused tests and `py_compile` were not run due lack of a fresh checkout. Not merged; publishing/deployment/runtime verification not performed.

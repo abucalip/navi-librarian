@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from slskd_transfers import (
+from integrations.slskd.transfers import (
     download_transfer_files, queue_download_files, match_expected_transfer_records,
     summarize_transfer_progress, estimate_transfer_speed,
 )

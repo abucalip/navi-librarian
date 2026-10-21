@@ -3,9 +3,9 @@
 import unittest
 from types import SimpleNamespace
 
-from slskd_search import response_items, search_queries
+from integrations.slskd.search import response_items, search_queries
 from acquisition_search_diagnostics import no_match_message
-from slskd_search_polling import collect_search_responses
+from integrations.slskd.search_polling import collect_search_responses
 
 
 class FakeHTTPError(Exception):

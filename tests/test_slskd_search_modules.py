@@ -2,8 +2,8 @@
 
 import unittest
 
-from slskd_quality import quality_tier
-from slskd_search import (
+from integrations.slskd.quality import quality_tier
+from integrations.slskd.search import (
     album_path_match,
     extract_candidates,
     path_match_diagnostics,

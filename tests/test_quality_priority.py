@@ -3,7 +3,7 @@ import json
 import tempfile
 from service_settings import set_slskd_settings
 from settings_persistence import SettingsPersistence
-from slskd_quality import quality_tier
+from integrations.slskd.quality import quality_tier
 import unittest
 from pathlib import Path
 
