@@ -1,3 +1,8 @@
+## 2026-10-21 — Discovery package PR 2: allocator (PR #522 merged)
+
+- PR #522 squash-merged as `bcd34c956e177ae43fcb895cb79dbfb095ec6463` from head `d989557adb9d78f83cfc73bb50b212faef4ad984`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
+- Moved `allocation_contract`, `personal_allocator`, `mmr` into `discovery/`; root Python modules 21. Focused tests and `py_compile` only (104 tests OK locally).
+
 ## 2026-10-21 — Discovery package PR 1: leaf cluster (PR #521 merged)
 
 - PR #521 squash-merged as `7fbea3a22d65cb5e3406981803392e91b7c15288` from head `2cf623a6ad24e4a8014eef9f4dae3ec8e7960d1d`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
