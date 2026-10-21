@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-20 (PRs #475 and #476 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #483 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #483 merged** as `28fb84026201b0779cd604efc5c50aa11203cff5` from exact final head `66b9c92b9276c2682903359985d03d1ebc3fc95e`. Documentation records the tag-lane rotation experiment and the decision **not to adopt it**. The experimental code and tests were removed because the flag was unwired and measurements showed no clear diversity benefit, more warm MusicBrainz calls, and slower warm refreshes. All four required workflows passed on the exact final head. No code behavior changed. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #475** merged as `79cd5757b7a537434e95740dbef4e1ddf0da027e` from exact final head `78f6515ab5af09337b79cd576d83fa9d69b5d23a`. The warm measurement showed 10 distinct artists and 20% top-2 share across cold and two warm builds, but the sample is too small to establish long-term quality.
 - **PR #476** merged as `61520d6a4cd8c64e5714a23f3fb7dacb4c5a7855` from exact final head `7f765ac5f5340b015af90df657002b0d9d11ea33`. Warm batch resolution is enabled by default and batch results are cached separately from full recording metadata. The 100-per-run MusicBrainz budget is unchanged.
