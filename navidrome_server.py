@@ -41,12 +41,12 @@ from acquisition.progress_snapshots import ProgressSnapshots as _ProgressSnapsho
 from acquisition.request_coordinator import acquire_album_request as _acquire_album_request
 from acquisition import state as _acquisition_state
 from acquisition.source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
-from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
-from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
+from acquisition.recovery import reconcile_interrupted_import as _reconcile_interrupted_import
+from acquisition.cleanup import clean_acquisition_source as _clean_acquisition_source
 import discovery_refresh
 from recommendation import listening_profile
-from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
-from acquisition_completion import (
+from acquisition.import_files import import_matched_album_files as _acquisition_import_matched_album_files
+from acquisition.completion import (
     filename_key as _acquisition_filename_key,
     inspect_completed_album,
     match_completed_album_files as _acquisition_match_completed_album_files,
@@ -1452,7 +1452,7 @@ def _slskd_candidate_start_state(base_url, headers, candidate, timeout=8):
     )
 
 def _discovery_safe_folder_name(value):
-    """Compatibility wrapper; implementation lives in acquisition_completion."""
+    """Compatibility wrapper; implementation lives in acquisition.completion."""
     return _acquisition_safe_folder_name(value)
 
 
@@ -1644,7 +1644,7 @@ def _discovery_import_watcher_entry(artist, album, candidate, settings, identity
 
 
 def _discovery_filename_key(value):
-    """Compatibility wrapper; implementation lives in acquisition_completion."""
+    """Compatibility wrapper; implementation lives in acquisition.completion."""
     return _acquisition_filename_key(value)
 
 
@@ -1669,7 +1669,7 @@ def _discovery_locate_completed_album(download_root, candidate):
     return _discovery_inspect_completed_album(download_root, candidate)["path"]
 
 def _discovery_import_matched_album_files(source, destination, candidate, expected_music_root=None, expected_device=None):
-    """Compatibility wrapper; filesystem import implementation lives in acquisition_import."""
+    """Compatibility wrapper; filesystem import implementation lives in acquisition.import_files."""
     return _acquisition_import_matched_album_files(
         source,
         destination,
@@ -1840,7 +1840,7 @@ def _discovery_import_completed_source(artist, album, source, music_root, candid
 
 def _discovery_import_completed_source_locked(artist, album, source, music_root, candidate):
     """Compatibility adapter for directly testable import-completion orchestration."""
-    from acquisition_import_service import import_completed_source_locked
+    from acquisition.import_service import import_completed_source_locked
     return import_completed_source_locked(
         artist, album, source, music_root, candidate,
         safe_folder_name=_discovery_safe_folder_name,

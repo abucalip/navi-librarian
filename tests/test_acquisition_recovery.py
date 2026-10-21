@@ -6,8 +6,8 @@ import threading
 import unittest
 from pathlib import Path
 
-from acquisition_completion import match_completed_album_files, safe_folder_name
-from acquisition_recovery import reconcile_interrupted_import
+from acquisition.completion import match_completed_album_files, safe_folder_name
+from acquisition.recovery import reconcile_interrupted_import
 
 
 class InterruptedImportRecoveryTests(unittest.TestCase):

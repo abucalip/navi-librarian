@@ -16,7 +16,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable
 
-from acquisition_completion import match_completed_album_files
+from acquisition.completion import match_completed_album_files
 
 
 _DIRECTORY_FLAGS = (

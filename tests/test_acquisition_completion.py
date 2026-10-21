@@ -4,7 +4,7 @@ import unittest
 import unicodedata
 from pathlib import Path
 
-from acquisition_completion import (
+from acquisition.completion import (
     filename_key,
     inspect_completed_album,
     match_completed_album_files,

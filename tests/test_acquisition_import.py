@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from acquisition_import import import_matched_album_files
-from acquisition_import_service import import_completed_source_locked
+from acquisition.import_files import import_matched_album_files
+from acquisition.import_service import import_completed_source_locked
 
 
 class AcquisitionImportTests(unittest.TestCase):

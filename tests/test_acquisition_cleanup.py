@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
-from acquisition_completion import safe_folder_name
+from acquisition.cleanup import clean_acquisition_source as _clean_acquisition_source
+from acquisition.completion import safe_folder_name
 
 
 class FakeHTTPError(Exception):
