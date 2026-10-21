@@ -1,8 +1,12 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #493 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PRs #495 and #497 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #497 merged** as `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929` from exact final head `aeb42803b5273a8e0862943c48ac48cf9d044102`, reconciling original PR #496 with PR #495 on current `main`. Removed redundant batch-resolution/title-filter flags; cold/warm switches alone gate batching and title-marker rejection is unconditional on the batch path. The legacy opt-in combination is no longer supported; current defaults are unchanged. All four required workflows passed on the exact head, including Docker packaging's full unit suite. Original PR #496 is superseded/closed. Publishing, deployment, and production-runtime verification remain unperformed.
+
+- **PR #495 merged** as `0825f0e06b25f498147e38f2f61c817894450ba8` from exact final head `d50f39a736681f7393f7bbfdc794b02bfe8a57c8`. Genre circuit breaker is on by default. Owner-approved simulated-throttle sample: 498.1 s / 207 MusicBrainz artist requests with breaker off versus 47.4 s / 18 with it on; final list 10 in both. Single samples; quality under typical conditions is not established. All four required workflows passed on the exact head. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #493 merged** as `b39e71a3456dc7baaba9e9446826bb643febe5ef` from exact final head `ad07334d6612bc9f035b2f0dd9535d46987442ff`. ListenBrainz CF, recording/release-group/artist batch, popularity, and tag-radio calls now use the shared app `User-Agent` and optional `LISTENBRAINZ_TOKEN`; MusicBrainz requests do not receive the token. All four required workflows passed on the exact head, including Docker packaging's full unit suite. Focused regression tests cover failed batch lookup fallback and token exclusion. The three owner-approved live samples did not establish prevention of blocking after repeated runs; popularity call-site coverage remains a noted limitation. Publishing, deployment, and runtime verification remain unperformed.
 
