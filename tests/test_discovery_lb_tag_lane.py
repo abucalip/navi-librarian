@@ -1,4 +1,6 @@
+import threading
 import unittest
+from unittest import mock
 from types import SimpleNamespace
 
 from discovery_lb_tag_lane import TAG_RADIO_COUNT, run_lb_tag_queries
@@ -76,6 +78,35 @@ class LaneTests(unittest.TestCase):
         self.assertEqual(out, [(5, None)])
         self.assertNotIn(("x0", "t0"), self.albums)
         self.assertGreater(TAG_RADIO_COUNT, 0)
+
+    def test_slow_tag_is_dropped_after_first_answer_and_not_cached(self):
+        release = threading.Event()
+
+        def get(url, params, headers, timeout):
+            if params["tag"] == "slow":
+                release.wait(5)
+                return Resp(200, [{"recording_mbid": R3}])
+            return Resp(200, [{"recording_mbid": R1}])
+        providers = SimpleNamespace(
+            http_get=get, music_key=str.casefold,
+            metadata_cache_get=lambda k, ttl_seconds: self.cache.get(k),
+            metadata_cache_set=self.cache.__setitem__)
+        queries = [(_query_for_tag("slow"), "f", "profile:slow"), (_query_for_tag("fast"), "f", "explore:fast")]
+        with mock.patch("discovery_lb_tag_lane.TAG_RADIO_STRAGGLER_SECONDS", 0.05):
+            out = run_lb_tag_queries(
+                queries, providers=providers, headers={}, albums=self.albums, failures=self.failures,
+                state=self.state, resolve=lambda items: {"r1": recording("A", "One", "g1")},
+                rejection=lambda g: None, merge_source=lambda c, s: None,
+                classify_error=lambda e: type(e).__name__, candidate_cap=60)
+        self.assertEqual(out, [(0, "TimeoutError"), (1, None)])
+        self.assertNotIn("lb:tag-radio:slow", self.cache)
+        release.set()
+        for _ in range(100):
+            if "lb:tag-radio:slow" in self.cache:
+                break
+            threading.Event().wait(0.02)
+        self.assertEqual(self.cache["lb:tag-radio:slow"], [R3], "late answer still warms the cache")
+        self.assertFalse(self.state["unavailable"])
 
 
 if __name__ == "__main__":

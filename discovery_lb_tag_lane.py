@@ -19,37 +19,99 @@ TAG_RADIO_TTL_SECONDS = 30 * 24 * 60 * 60
 TAG_RADIO_COUNT = 20
 CANDIDATES_PER_QUERY = 5
 RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
+# All tag GETs run at once (at most this many); once the first answer is in, the rest get
+# this long before they are dropped, so one slow tag cannot hold the lane.
+MAX_PARALLEL_TAG_CALLS = 8
+TAG_RADIO_STRAGGLER_SECONDS = 4.0
 
 
-def _fetch_tag_recordings(providers, tag, headers, state) -> list[str]:
-    from recommendation_run_metrics import record_provider_call
-
-    cache_key = f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}"
-    cached = providers.metadata_cache_get(cache_key, ttl_seconds=TAG_RADIO_TTL_SECONDS)
-    if cached is not None:
-        state["hits"] += 1
-        return list(cached)
-    state["misses"] += 1
-    record_provider_call("listenbrainz", "tag_radio")
+def _tag_radio_request(providers, tag, headers) -> list[str]:
+    """One tag-radio GET. Network only, so it is safe to run on a worker thread."""
     response = providers.http_get(
         LB_TAG_RADIO_URL,
         params={"tag": tag, "operator": "OR", "pop_begin": 0, "pop_end": 100,
                 "count": TAG_RADIO_COUNT},
         headers=dict(headers), timeout=40,
     )
-    if response.status_code in RETRYABLE_STATUS_CODES:
-        state["unavailable"] = True
     if response.status_code != 200:
-        raise RuntimeError(f"tag radio returned HTTP {response.status_code}")
+        raise _RadioHTTPError(response.status_code)
     body = response.json()
     if not isinstance(body, list):
         raise RuntimeError("tag radio returned a non-list body")
-    mbids = list(dict.fromkeys(
+    return list(dict.fromkeys(
         str(item["recording_mbid"]) for item in body
         if isinstance(item, dict) and item.get("recording_mbid")
     ))
-    providers.metadata_cache_set(cache_key, mbids)
-    return mbids
+
+
+class _RadioHTTPError(RuntimeError):
+    def __init__(self, status):
+        super().__init__(f"tag radio returned HTTP {status}")
+        self.status = status
+
+
+def _cache_answer(providers, tag, future) -> None:
+    try:
+        providers.metadata_cache_set(
+            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", future.result())
+    except Exception:
+        pass
+
+
+def _fetch_all_tag_recordings(providers, tags, headers, state):
+    """Return {tag: mbids or Exception}. Cached tags answer immediately; the rest are
+    fetched in parallel and the first answer wins: stragglers are dropped
+    ``TAG_RADIO_STRAGGLER_SECONDS`` after the first response, but still cache their answer
+    if one arrives later."""
+    from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+    from recommendation_run_metrics import record_provider_call
+    import time
+
+    results: dict[str, Any] = {}
+    pending: list[str] = []
+    for tag in dict.fromkeys(tags):
+        cached = providers.metadata_cache_get(
+            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", ttl_seconds=TAG_RADIO_TTL_SECONDS)
+        if cached is not None:
+            state["hits"] += 1
+            results[tag] = list(cached)
+        else:
+            state["misses"] += 1
+            pending.append(tag)
+    if not pending:
+        return results
+    executor = ThreadPoolExecutor(max_workers=min(len(pending), MAX_PARALLEL_TAG_CALLS))
+    try:
+        futures = {}
+        for tag in pending:
+            record_provider_call("listenbrainz", "tag_radio")
+            future = executor.submit(_tag_radio_request, providers, tag, headers)
+            # Cache on the worker thread, so a straggler that answers after the lane moved
+            # on still warms the cache for the next run (one SQLite connection per call).
+            future.add_done_callback(lambda fut, tag=tag: _cache_answer(providers, tag, fut))
+            futures[future] = tag
+        waiting = set(futures)
+        deadline = None
+        while waiting:
+            timeout = None if deadline is None else max(0.0, deadline - time.monotonic())
+            done, waiting = wait(waiting, timeout=timeout, return_when=FIRST_COMPLETED)
+            if not done:
+                break
+            for future in done:
+                tag = futures[future]
+                try:
+                    results[tag] = future.result()
+                except Exception as exc:
+                    results[tag] = exc
+                    if isinstance(exc, _RadioHTTPError) and exc.status in RETRYABLE_STATUS_CODES:
+                        state["unavailable"] = True
+            if deadline is None:
+                deadline = time.monotonic() + TAG_RADIO_STRAGGLER_SECONDS
+        for future in waiting:
+            results[futures[future]] = TimeoutError("tag radio straggler dropped")
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+    return results
 
 
 def run_lb_tag_queries(
@@ -63,21 +125,23 @@ def run_lb_tag_queries(
     """Add album candidates from tag radio. Same state and outcome contract as the
     MusicBrainz lane: one (added, error_class) pair per query attempted."""
     planned: list[tuple[str, str, str, str, list[str], str | None]] = []
+    tags = {query: tag_from_query(query) for query, _f, _s in queries}
+    fetched = _fetch_all_tag_recordings(
+        providers, [t for t in tags.values() if t], headers, state)
     for query, family, style in queries:
-        if state["unavailable"]:
-            break
-        tag = tag_from_query(query)
+        tag = tags[query]
         mbids: list[str] = []
         error_class = None
         if not tag:
             error_class = "invalid_query"
         else:
-            try:
-                mbids = _fetch_tag_recordings(providers, tag, headers, state)
-            except Exception as exc:
-                error_class = classify_error(exc)
+            got = fetched.get(tag)
+            if isinstance(got, Exception):
+                error_class = classify_error(got)
                 failures.append({"source": "listenbrainz_tag_radio", "query": query,
-                                 "error": str(exc)})
+                                 "error": str(got)})
+            else:
+                mbids = got or []
         planned.append((query, family, style, tag, mbids, error_class))
 
     wanted = list(dict.fromkeys(m for plan in planned for m in plan[4]))
