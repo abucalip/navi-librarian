@@ -6,6 +6,28 @@ import shutil
 import time
 
 
+FAILED_TOKENS = {"failed", "errored", "cancelled", "canceled", "timedout"}
+FAILED_TRACK_MAX_RETRIES = 3
+FAILED_TRACK_RETRY_INTERVAL = 30
+# After retries are spent, keep watching so a manual retry in the slskd UI can
+# still rescue the album before the source is declared failed.
+FAILED_TRACK_GRACE_SECONDS = 15 * 60
+
+
+def _state_tokens(value):
+    text = str(value or "").replace("_", "").casefold()
+    return {part for part in text.replace(",", " ").split() if part}
+
+
+def _state_rank(value):
+    tokens = _state_tokens(value)
+    if tokens & {"succeeded", "completed"} and not tokens & FAILED_TOKENS:
+        return 3
+    if tokens & FAILED_TOKENS:
+        return 0
+    return 2
+
+
 def watch_and_import_album(artist, album, candidate, settings, *, services):
     """Poll one queued acquisition and import only a strictly verified completed folder.
 
@@ -25,6 +47,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
     _discovery_update_acquisition_status = services["update_status"]
     _discovery_inspect_completed_album = services["inspect_completed_album"]
     clock = services.get("clock", time)
+    queue_files = services.get("queue_files")
     import shutil
     music_root = MUSIC_DIR.expanduser()
     if _discovery_reconcile_interrupted_import(artist, album, candidate):
@@ -51,6 +74,8 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
     last_progress_bytes = 0
     stall_detected_at = None
     source_switches = 0
+    retry_attempts = {}
+    last_retry_at = None
     while clock.monotonic() < deadline:
         try:
             if _discovery_is_dismissed(artist, album):
@@ -77,6 +102,7 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                 stall_detected_at = None
                 completed_at = None
                 source_switches += 1
+                retry_attempts, last_retry_at = {}, None
                 continue
             # Filesystem completion is authoritative: slskd may prune successful
             # transfer records before this watcher polls them again.
@@ -97,11 +123,10 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                 if name not in expected:
                     continue
                 previous = matching_by_name.get(name)
-                state = str(item.get("state") or "").replace("_", "").casefold()
-                previous_state = str((previous or {}).get("state") or "").replace("_", "").casefold()
+                # Prefer completed, then live, then failed records so a retried
+                # track is not masked by its stale errored predecessor.
                 if previous is None or (
-                    state in {"succeeded", "completed"}
-                    and previous_state not in {"succeeded", "completed"}
+                    _state_rank(item.get("state")) >= _state_rank(previous.get("state"))
                 ):
                     matching_by_name[name] = item
 
@@ -127,6 +152,46 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
             last_progress_at = progress["last_progress_at"]
             stall_detected_at = progress["stall_detected_at"]
             stalled_for = progress["stalled_for"]
+            failed_names = sorted(
+                name for name, item in matching_by_name.items()
+                if _state_tokens(item.get("state")) & FAILED_TOKENS
+            )
+            if failed_names:
+                now = clock.monotonic()
+                retryable = [n for n in failed_names
+                             if retry_attempts.get(n, 0) < FAILED_TRACK_MAX_RETRIES]
+                if (retryable and queue_files is not None and (
+                        last_retry_at is None
+                        or now - last_retry_at >= FAILED_TRACK_RETRY_INTERVAL)):
+                    files = [item for item in candidate.get("files", [])
+                             if str(item.get("filename") or "").replace("\\", "/")
+                             .rsplit("/", 1)[-1].casefold() in retryable]
+                    last_retry_at = now
+                    for name in retryable:
+                        retry_attempts[name] = retry_attempts.get(name, 0) + 1
+                    try:
+                        queue_files(base_url, headers, candidate["username"], files)
+                    except Exception:
+                        pass  # counted as an attempt; the next poll re-evaluates
+                    _discovery_update_acquisition_status(artist, album, "downloading", {
+                        "source_username": candidate.get("username"),
+                        "folder": candidate.get("folder"),
+                        "quality_summary": list(candidate.get("quality_summary") or []),
+                        "failed_tracks": failed_names,
+                        "track_retries": dict(retry_attempts),
+                        "message": f"Retrying {len(files)} failed track(s) from the same source.",
+                    })
+                elif (not retryable or queue_files is None) and (
+                        last_retry_at is None
+                        or now - last_retry_at >= FAILED_TRACK_GRACE_SECONDS):
+                    _discovery_update_acquisition_status(artist, album, "download_failed", {
+                        "source_username": candidate["username"],
+                        "states": sorted(states),
+                        "failed_tracks": failed_names,
+                    })
+                    return
+                # Another source would redo the whole album; hold off the stall switch.
+                stalled_for = 0
             if (stalled_for >= 120 and candidate.get("fallback_candidates")
                     and not (states and states.issubset({"succeeded", "completed"}))):
                 if stall_detected_at is None:
@@ -166,13 +231,8 @@ def watch_and_import_album(artist, album, candidate, settings, *, services):
                     stall_detected_at = None
                     completed_at = None
                     source_switches += 1
+                    retry_attempts, last_retry_at = {}, None
                     continue
-            if states.intersection({"failed", "errored", "cancelled", "canceled"}):
-                _discovery_update_acquisition_status(artist, album, "download_failed", {
-                    "source_username": candidate["username"], "states": sorted(states)
-                })
-                return
-
             # Byte counters can reach the advertised file sizes before slskd
             # switches transfers to succeeded/completed. Use them as completion
             # evidence too, while still requiring the files on disk before import.
