@@ -92,6 +92,13 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertFalse((root / f"{old}.py").exists())
                 self.assertNotIn(f"{old}.py", dockerfile)
 
+    def test_listening_profile_lives_in_recommendation_package(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertTrue((root / "recommendation" / "listening_profile.py").is_file())
+        self.assertFalse((root / "listening_profile.py").exists())
+        self.assertNotIn("listening_profile.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()

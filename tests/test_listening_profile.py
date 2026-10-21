@@ -1,6 +1,6 @@
 import unittest
 
-from listening_profile import build_listening_profile, refresh_and_persist_background_profile
+from recommendation.listening_profile import build_listening_profile, refresh_and_persist_background_profile
 
 
 class ListeningProfileTests(unittest.TestCase):

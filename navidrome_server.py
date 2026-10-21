@@ -44,7 +44,7 @@ from acquisition_source_switch import switch_to_next_source_locked as _switch_to
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
 import discovery_refresh
-import listening_profile
+from recommendation import listening_profile
 from acquisition_import import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition_completion import (
     filename_key as _acquisition_filename_key,
@@ -272,7 +272,7 @@ def recent_listening_profile(days: int = 30) -> str:
             "error": f"Could not retrieve ListenBrainz history: {exc}"
         }, ensure_ascii=False, indent=2)
 
-    from listening_profile import build_listening_profile
+    from recommendation.listening_profile import build_listening_profile
     return json.dumps(
         build_listening_profile(listens, _listenbrainz_username(), days),
         ensure_ascii=False,
