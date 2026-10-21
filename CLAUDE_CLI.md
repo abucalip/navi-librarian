@@ -20,19 +20,19 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0e — read-only design and quality comparison for the MusicBrainz tag lane (no code first)
+## Next task: P0f — read-only evidence brief for the four default-off flags (no code first)
 
-P0d is done. Cold 4-page run on current `main` (owner-approved, aggregate, single samples): cold 40.0 s, warm 2.9 s and 2.8 s; ListenBrainz never served HTML in 3 runs. The remaining cold floor is the sequential MusicBrainz tag lane: up to 8 searches at 1.1 s spacing plus about 1.2 s per response, about 16.9 s of the 40 s (the rest is CF paging, recording and release-group batches). Overlapping the lane with the Navidrome inventory fetch was measured and **dropped** (inventory 0.3 to 0.5 s for 1,733 albums, under 2% of a run). Overlapping with the genre stages is pointless (the lane's query plan needs the genre prefetch; the genre stages now cost about 1 s). The 1.1 s spacing is a margin over MusicBrainz's published 1 request per second, not a measured limit; do not lower it without owner approval. The P0d read-only findings are in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md` on `main` (merge `d71ba08`, pushed directly at the owner's instruction, no PR; the working branch `docs/p0d-cold-run-readonly` is no longer needed).
+P0e is done (findings on `main`, `0a9d429`, pushed directly at the owner's instruction, no PR). Owner-approved aggregate cold runs, single samples: MusicBrainz tag lane 20.0 s, tag radio only 15.6 s, split (4 MusicBrainz / 4 tag radio) 17.8 s and 25.9 s. The sources return disjoint tag pools (candidate overlap 0/58 MusicBrainz vs radio); final-pick overlap MusicBrainz vs split 9/10, vs radio 5/10. The time differences are within noise, so **MusicBrainz stays the default; split and tag-radio-default were measured and not adopted**. No browser-verification page appeared in 5 live runs (one extra run came from a harness launch mistake). Reopen only with a new idea that adds no lookups and shows a time gain beyond noise. The test-only harness `run_tag_split.py` was not committed (it lives in the harness project folder).
 
-PR #493 (merge `b39e71a3456dc7baaba9e9446826bb643febe5ef`, record in #494) sent the honest `User-Agent` and `LISTENBRAINZ_TOKEN` on every ListenBrainz request; MusicBrainz never receives the token (tested, including the batch-failure fallback). It is **not proven** to prevent the verification page, which appeared only after about ten full runs. Do not run more than the approved samples; stop at the first HTML response and never change the user agent or fingerprint to get around it.
+Every remaining item in the roadmap is owner-gated, so the next useful step is a decision brief, not a build: the four flags that are off by default (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, the genre circuit breaker, `TAG_LANE_EARLY_STOP_ENABLED`) each change output or call pattern, and the owner cannot decide on them without one place that shows the evidence.
 
 Do:
-1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P0e, the tag-radio finding (including the **Block** note) and the tag-lane rotation finding; read `discovery_candidate_gathering.py` (`_run_tag_queries`, `_run_tag_lane`) and `discovery_lb_tag_lane.py`.
-2. Read-only, from code and existing reports, compare the three alternatives named in P0e before any race: (a) per-search timeout or the existing `TAG_LANE_EARLY_STOP_ENABLED`; (b) a deterministic split (some tags MusicBrainz, some tag radio); (c) tag radio as default with MusicBrainz as fallback. For each: request counts per source before and after, expected cold seconds, effect on candidate pool and repeatability, and the block risk from bursts.
-3. Define the quality comparison on a fixed tag set (candidate overlap and final-pick overlap, aggregate only) and what it would cost in live requests. Do not run it.
-4. Report to the owner **before any code change or live run**. Any change to request count or pacing needs owner approval; added ListenBrainz requests are allowed only where they save time.
+1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P2 "Default-on flags", the warm and cold findings, the 502 finding) and the code that reads each flag in `discovery_candidate_gathering.py` and `discovery_batch_metadata.py`.
+2. Read-only, from code and existing reports, write one table: for each flag, what it changes (output, call pattern, or both), the existing evidence with its source finding, whether that evidence is measured or only unit-tested, the request counts and cold/warm seconds before and after where measured, the failure it guards against, and the risk of turning it on.
+3. For each flag, say what single measurement would settle it and what it would cost in live requests. Do not run it. A flag with enough evidence gets a recommendation (on, off, or measure first); a flag without gets "measure first".
+4. Report to the owner **before any code change or live run**. Changing a default is the owner's decision.
 
-Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`; a PR with four green workflows only if the owner approves a code change or a docs PR. Do not merge; the owner names the PR in words.
+Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, pushed to `main` only if the owner says so (as for P0d and P0e); any code or default change needs a PR with four green workflows and the owner naming the PR in words.
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -41,7 +41,7 @@ Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJEC
 
 ### Deferred
 
-- Roadmap P0e is the current task (above). P0c and P0d are complete (PR #490, reconciled PR #492, client identity PR #493).
+- Roadmap P0f is the current task (above). P0c, P0d and P0e are complete (PR #490, reconciled PR #492, client identity PR #493; P0d and P0e findings pushed directly).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
