@@ -91,3 +91,8 @@ class TagLaneEarlyStopTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TagLaneRotationFlagTests(unittest.TestCase):
+    def test_flag_is_off_by_default(self):
+        self.assertFalse(gathering.TAG_LANE_ROTATION_ENABLED)

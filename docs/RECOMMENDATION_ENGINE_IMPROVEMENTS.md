@@ -97,6 +97,23 @@ The cold run did not meet the success criterion (about 106 to 123 s with the bat
 
 Decision: **keep `CF_MAX_PAGES = 2`; no code change.** Revisit when the release-group 502s are understood. Single samples; no recommendation-quality claim.
 
+## Finding — tag-lane rotation measured (2026-10-21, one sample per arm; decision: keep off)
+
+Flag `TAG_LANE_ROTATION_ENABLED` (default off) with an explicit `tag_rotation` counter rotates the non-anchor profile tags (top 3 stay) and the exploration tags through the next-ranked window; query counts unchanged, deterministic per counter. Owner-approved live run, cold plus three warm, same harness for both arms, aggregate only, disposable data dirs deleted. Counter = run index.
+
+| | Off | On |
+| --- | --- | --- |
+| Overlap with previous list, warm1/2/3 (of 10) | 5 / 5 / 4 | 4 / 5 / 3 |
+| Tag-lane candidates / artists, cold | 38 / 37 | 38 / 37 |
+| Tag-lane candidates / artists, warm | 38 / 37 each run | 39/38, 32/32, 35/33 |
+| MusicBrainz calls, cold | 72 | 74 |
+| MusicBrainz calls, warm1/2/3 | 0 / 0 / 0 | 12 / 6 / 5 |
+| Last.fm calls, warm1/2/3 | 0 / 0 / 0 | 2 / 1 / 0 |
+| Wall time, cold | 168 s | 147 s |
+| Wall time, warm1/2/3 | 2.8 / 4.3 / 3.6 s | 20.9 / 10.7 / 8.6 s |
+
+Final mix stayed 4 CF / 6 tag in every run. Mean overlap 4.7 (off) vs 4.0 (on): within noise at three runs. Rotation did not widen tag supply, and newly sampled tag queries are uncached, so warm runs make provider calls the baseline does not (breaks "calls must not rise") and are 2-7x slower. Calls may fall once the rotation cycle is cached; not measured. Decision: keep off; nothing in the app supplies the counter. Harness: `run_tag_rotation.py` (test-only, not committed).
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification

@@ -57,3 +57,32 @@ class SupplementaryTagQueryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TagQueryRotationTests(unittest.TestCase):
+    PROFILE = {"a": 1.0}
+    TAGS = {"a": [f"tag{i}" for i in range(10)]}
+    POOL = [f"pool{i}" for i in range(6)]
+
+    def _styles(self, rotation):
+        return [i[2] for i in select_supplementary_tag_queries(
+            self.PROFILE, self.TAGS, self.POOL, rotation=rotation)]
+
+    def test_none_matches_default_and_counts_are_unchanged(self):
+        base = select_supplementary_tag_queries(self.PROFILE, self.TAGS, self.POOL)
+        self.assertEqual(base, select_supplementary_tag_queries(
+            self.PROFILE, self.TAGS, self.POOL, rotation=None))
+        for r in range(8):
+            self.assertEqual(len(self._styles(r)), len(base))
+
+    def test_rotation_is_deterministic_keeps_anchors_and_varies(self):
+        self.assertEqual(self._styles(3), self._styles(3))
+        seen = {tuple(self._styles(r)) for r in range(6)}
+        self.assertGreater(len(seen), 1)
+        for r in range(6):
+            self.assertEqual(self._styles(r)[:3], self._styles(None)[:3])
+
+    def test_rotation_with_short_supply_does_not_fail(self):
+        result = select_supplementary_tag_queries(
+            {"a": 1.0}, {"a": ["x"]}, ["p"], rotation=5)
+        self.assertEqual(len(result), 2)
