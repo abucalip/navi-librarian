@@ -99,6 +99,20 @@ class DockerPackagingTests(unittest.TestCase):
         self.assertFalse((root / "listening_profile.py").exists())
         self.assertNotIn("listening_profile.py", dockerfile)
 
+    def test_acquisition_request_modules_live_in_acquisition_package(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("acquisition/ ./acquisition/", dockerfile)
+        self.assertTrue((root / "acquisition" / "__init__.py").is_file())
+        for name in (
+            "candidate_queue", "candidate_start", "orchestration", "request_coordinator",
+            "source_switch", "search_diagnostics", "lifecycle", "state",
+        ):
+            with self.subTest(module=name):
+                self.assertTrue((root / "acquisition" / f"{name}.py").is_file())
+                self.assertFalse((root / f"acquisition_{name}.py").exists())
+                self.assertNotIn(f"acquisition_{name}.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()

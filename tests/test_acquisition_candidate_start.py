@@ -2,7 +2,7 @@
 import unittest
 from types import SimpleNamespace
 
-from acquisition_candidate_start import candidate_start_state
+from acquisition.candidate_start import candidate_start_state
 
 
 class FakeHTTPError(Exception):

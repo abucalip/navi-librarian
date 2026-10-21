@@ -1,7 +1,7 @@
 """Direct-import tests for reviewed slskd candidate payload normalization."""
 import unittest
 
-from acquisition_candidate_queue import normalize_reviewed_candidate_files
+from acquisition.candidate_queue import normalize_reviewed_candidate_files
 
 
 class ReviewedCandidateNormalizationTests(unittest.TestCase):

@@ -14,7 +14,7 @@ import musicbrainz_rating_client as _musicbrainz_rating_client
 from settings import service as _service_settings
 from settings.music_paths import default_music_dir as _default_music_dir_from_environment
 from integrations.navidrome import client as _navidrome_client
-from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
+from acquisition.candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
 from settings.persistence import SettingsPersistence
 from metadata_cache import MetadataCache
 from settings.service import (
@@ -33,14 +33,14 @@ from settings.service import (
     test_lastfm_connection as _service_test_lastfm_connection,
     test_listenbrainz_connection as _service_test_listenbrainz_connection,
 )
-import acquisition_lifecycle as _acquisition_lifecycle
-from acquisition_candidate_start import candidate_start_state as _module_candidate_start_state
+from acquisition import lifecycle as _acquisition_lifecycle
+from acquisition.candidate_start import candidate_start_state as _module_candidate_start_state
 from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
-import acquisition_orchestration
+from acquisition import orchestration as acquisition_orchestration
 from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
-from acquisition_request_coordinator import acquire_album_request as _acquire_album_request
-import acquisition_state as _acquisition_state
-from acquisition_source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
+from acquisition.request_coordinator import acquire_album_request as _acquire_album_request
+from acquisition import state as _acquisition_state
+from acquisition.source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition_recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition_cleanup import clean_acquisition_source as _clean_acquisition_source
 import discovery_refresh
@@ -1936,7 +1936,7 @@ def _discovery_acquire_album_impl(
     auto_queue: bool = True,
 ) -> str:
     """Search slskd; queue the best clear match, fall back to faster/next sources if it does not start, and import on completion."""
-    import acquisition_search_diagnostics as _acquisition_search_diagnostics
+    from acquisition import search_diagnostics as _acquisition_search_diagnostics
     import uuid
     if not artist.strip() or not album.strip():
         return json.dumps({"ok": False, "error": "Artist and album are required."})

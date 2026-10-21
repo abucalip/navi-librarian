@@ -1,7 +1,7 @@
 """Direct regression tests for acquisition lifecycle policy."""
 import unittest
 from types import SimpleNamespace
-from acquisition_lifecycle import (
+from acquisition.lifecycle import (
     CLEANUP_REQUIRED_STATUSES, RESUMABLE_ACQUISITION_STATUSES, cleanup_required,
     fallback_candidate_is_usable, normalized_candidate_files, queue_failure_action,
     should_resume_monitor, skip_request_error,

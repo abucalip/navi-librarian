@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 
 from integrations.slskd.search import response_items, search_queries
-from acquisition_search_diagnostics import no_match_message
+from acquisition.search_diagnostics import no_match_message
 from integrations.slskd.search_polling import collect_search_responses
 
 
