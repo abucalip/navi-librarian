@@ -7,7 +7,7 @@
 - Per owner instruction, manual UI checks were waived. The browser workflows were not independently verified. The Docker packaging workflow ran the full unit suite; no separate agent-side full-suite run was performed. Publishing, deployment, and production-runtime verification remain unperformed.
 - Current next action: continue the active recommendation-engine roadmap from its top item; publishing remains paused.
 
-Last reviewed: 2026-10-21 (PR #502 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PRs #503 and #504 merged; publishing remains paused)
 
 ## Current recommendation-engine state
 
