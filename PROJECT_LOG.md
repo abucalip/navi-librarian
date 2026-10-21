@@ -1,6 +1,7 @@
-## 2026-10-21 — Acquisition PR 3 merged (PR #519); music_key inversion (PR open)
+## 2026-10-21 — Acquisition PR 3 merged (PR #519); music_key inversion (PR #520 merged)
 
 - PR #519 squash-merged as `6e12466` after compile, test-and-build, container-smoke and validate-container passed on head `c2f584b4f09e9e264268fb644f7f4b4900a7a27f`. Not published or deployed.
+- PR #520 squash-merged as `b5e0622043737c89ccd4d4bfacb9881c366594f9` from head `886fb03c3a354738b1b51ced393783fe1aac80d5`; four checks passed; not published or deployed.
 - `music_key` moved to stdlib-only `recommendation/music_key.py`; `integrations/lastfm/client.py`, `recommendation_feedback.py` and `recommendation/profile_comparison.py` import it from there. `discovery_recommendations` re-exports the same function (other callers and tests use it). `tests/test_music_key.py` proves output identical to the previous implementation. Behavior unchanged; focused tests only; `httpx` missing locally so the Last.fm client was checked by AST, not import.
 
 ## 2026-10-21 — Acquisition package PR 3 (open, not merged)
