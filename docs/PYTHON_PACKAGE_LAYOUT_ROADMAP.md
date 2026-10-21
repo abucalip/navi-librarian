@@ -40,6 +40,37 @@ These are options, not a mandate to create every directory. Prefer existing `app
 - Production imports, direct-import regression tests, and Docker package inclusion were updated. The application entry point was unchanged.
 - All four required workflows passed on the exact PR head. Agent-side focused tests and syntax compilation were not run; see `PROJECT_LOG.md` for evidence and limitation.
 
+
+## Current-main inventory and second move (2026-10-21)
+
+### Evidence baseline
+
+- Current GitHub `main` before this change: `2acb6d5fb2b52329df03cc73233fcc963c768f6d`.
+- Refreshed dependency-map artifact: workflow run [39644560119](https://github.com/abucalip/navi-librarian/actions/runs/39644560119), artifact `modularization-dependency-map`, SHA-256 `8844d4cf9b10595837068cc32569be990cbfa236be6aa6b77911246fb7e35562`. The artifact was reviewed as a local audit input, not committed as tracked generated output.
+- The map covers 237 Python modules and records 67 root-level Python modules. It reports static AST imports, including imports inside functions; it does not resolve arbitrary string-based imports or dependency injection. The current tree and direct callers were inspected separately.
+- Four required workflows passed on this exact baseline: syntax [39644560119](https://github.com/abucalip/navi-librarian/actions/runs/39644560119), Docker packaging [39644560099](https://github.com/abucalip/navi-librarian/actions/runs/39644560099), runtime smoke [39644560116](https://github.com/abucalip/navi-librarian/actions/runs/39644560116), and validation-only image [39644560399](https://github.com/abucalip/navi-librarian/actions/runs/39644560399). These are baseline results, not results for the package-move PR.
+
+### Root-module inventory by responsibility
+
+The root modules fall into these existing groups; these are inventory categories, not instructions to move whole groups together.
+
+- **Acquisition (18):** `acquisition_candidate_queue`, `acquisition_candidate_start`, `acquisition_cleanup`, `acquisition_completion`, `acquisition_import`, `acquisition_import_service`, `acquisition_lifecycle`, `acquisition_monitor_payload`, `acquisition_orchestration`, `acquisition_progress_accounting`, `acquisition_progress_snapshots`, `acquisition_recovery`, `acquisition_request_coordinator`, `acquisition_search_diagnostics`, `acquisition_source_switch`, `acquisition_state`, `acquisition_watcher`, `acquisition_watcher_startup`. High safety sensitivity; do not combine with provider moves.
+- **Discovery (20):** `discovery_allocation_contract`, `discovery_batch_metadata`, `discovery_candidate_gathering`, `discovery_candidate_supply`, `discovery_classics_candidates`, `discovery_classics_genres`, `discovery_classics_ratings`, `discovery_deep_dive_candidates`, `discovery_lb_tag_lane`, `discovery_library_snapshot`, `discovery_list_payload`, `discovery_mmr`, `discovery_new_releases`, `discovery_personal_allocator`, `discovery_recommendation_payload`, `discovery_recommendations`, `discovery_refresh`, `discovery_snapshot`, `discovery_store`, `discovery_tag_queries`. Several are high-fan-in or orchestration modules; select seams only after caller-level review.
+- **Recommendation support (7):** `recommendation_cooldown`, `recommendation_diagnostics`, `recommendation_feedback`, `recommendation_mmr_evaluate`, `recommendation_profile_comparison`, `recommendation_replay`, `recommendation_run_metrics`. Keep shared metric imports and replay contracts stable.
+- **External providers (10):** `lastfm_client`, `listenbrainz_client`, `listenbrainz_popularity`, `musicbrainz_album_year`, `musicbrainz_rating_client`, `slskd_client`, `slskd_quality`, `slskd_search`, `slskd_search_polling`, `slskd_transfers`. These are not one interchangeable group: each provider and its caller/test contracts must be traced separately.
+- **Settings, paths, metadata, and policy (10):** `data_directory`, `diagnose_categories`, `listening_profile`, `metadata_cache`, `music_paths`, `music_tag_audit`, `read_only_command_policy`, `server_source_redaction`, `service_settings`, `settings_persistence`. Several are cross-cutting or path/state-sensitive; avoid a catch-all package.
+- **Legacy server and Navidrome compatibility (2):** `navidrome_server`, `navidrome_client`. The server remains the legacy adapter and must not be moved as part of a provider extraction; the client shim is retained from PR #508.
+
+### Selected boundary: MusicBrainz integration
+
+The second move groups `musicbrainz_album_year.py` and `musicbrainz_rating_client.py` into `integrations/musicbrainz/`.
+
+- The refreshed AST map showed exactly one production import site per module: `app/api/metadata.py` for album years and `navidrome_server.py` for rating lookups. Each also had one focused direct-import test module.
+- Both modules call the MusicBrainz service, have no `__file__`-based filesystem assumptions, and have no repository-local dependencies except the rating client's lazy metrics import. No dynamic import or source-reading test was identified for either module in the current AST/caller audit.
+- The Dockerfile already copies `integrations/`; its explicit root-module COPY list removes the moved album-year module. The rating module remains as a small compatibility shim because the legacy server imports it by its old path; the shim delegates to the canonical implementation.
+- The album-year production import and direct-import test use the canonical package path. The rating test covers the canonical implementation and the compatibility shim. The package move changes no request behavior or cache policy.
+- `slskd_*` remains a separate future candidate, not a size-driven bulk move. The five modules have several direct tests and legacy-server call sites; do not move them until their exact wrappers and path contracts are reviewed.
+
 ## Execution plan
 
 ### 1. Inventory and dependency map — first task

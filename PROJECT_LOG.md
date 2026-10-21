@@ -1,3 +1,10 @@
+## 2026-10-21 — Python package-layout inventory and MusicBrainz move in progress
+
+- Refreshed GitHub main at `2acb6d5fb2b52329df03cc73233fcc963c768f6d` and reviewed the current dependency-map artifact from syntax workflow run [39644560119](https://github.com/abucalip/navi-librarian/actions/runs/39644560119), digest `8844d4cf9b10595837068cc32569be990cbfa236be6aa6b77911246fb7e35562`. The map covers 237 Python modules and a static import closure; it is not runtime proof and was not committed as a generated tracked file.
+- Completed a responsibility inventory of the 67 root-level modules in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Selected the two MusicBrainz helpers as a cohesive provider package after checking AST callers, direct-import tests, and Docker inclusion.
+- Baseline current-main CI was green before changes: syntax run 39644560119, Docker packaging 39644560099, container smoke 39644560116, and non-publishing image validation 39644560399. These results do not establish PR-head CI.
+- PR #509 head `92345a749da3d3fcd4bf2b7e3b8c76e67cd2f114` (implementation commit `4385ce1ab1a0fd34b3e5899196af56d0930b7459`) moves the canonical helpers to `integrations/musicbrainz/`, updates the album-year caller/test and Docker list, and leaves a rating-client compatibility shim for `navidrome_server.py`. Agent-side focused tests and `py_compile` have not been run because no fresh checkout is available; do not run the full unit suite as an agent. Publishing/deployment remain paused.
+
 ## 2026-10-21 — v0.2 release preparation (PR #505)
 
 - PR #505 merged by squash as `99c0b88ed885de8b3c36686d63736b19a9235392`, exact PR head `fb34440b4893cc7f65678c90ba6e333616c0479d`. Added `docs/RELEASE_v0.2.md`: draft user-facing notes, configuration migration cautions, and a release/deployment checklist. No application code changed.
