@@ -1,8 +1,10 @@
-## 2026-10-21 — PR #491 reconciliation (ListenBrainz tag-radio lane; opt-in, default off)
+## 2026-10-21 — PR #491 reconciled and merged as PR #492: ListenBrainz tag-radio lane (opt-in, default off)
 
-- PR #491's original head was based before PR #490 and conflicted with current `main`. Reconciled as a clean, current-main-based PR, retaining PR #490's ListenBrainz popularity integration and adding only the flagged tag-radio lane plus its tests, Docker inclusion, diagnostics source, and measurement notes.
-- Feature remains disabled by default (`LB_TAG_LANE_ENABLED = False`). Measurements and known undocumented-endpoint/browser-verification risk are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`; it is not recommended as default.
-- Verification/merge status will be recorded after CI passes on the exact reconciled PR head.
+- Original PR #491 head `7a349357de1cf2ab1e9e3906bd833d0c6d54ce3d` conflicted with current `main` after PR #490. Reconciled onto current `main` in PR #492, preserving the ListenBrainz popularity integration. Exact final PR head: `cf18e453419c836efa8fb7a509f5c86b1baa0544`; squash merge commit: `37014f6f0a62d5d2b4096e37e08863ffa371241c`. Original PR #491 was closed as superseded.
+- Added `discovery_lb_tag_lane.py`, `tag_from_query`, optional candidate-gathering integration, Docker inclusion, the diagnostics source label, and `tests/test_discovery_lb_tag_lane.py`. The lane remains disabled by default (`LB_TAG_LANE_ENABLED = False`), so default behavior is unchanged.
+- All four required workflows passed on exact final PR head: Python syntax/acquisition safety `39538436325`; Docker packaging/full unit suite/build `39538436237` (unit tests and image build succeeded); container runtime smoke `39538436232`; validation-only multi-architecture image validation `39538436370` (publishing paused). No independent agent-side full-suite run (prohibited); CI full-suite step passed.
+- Owner-approved aggregate measurements did not justify making the lane default-on. The ListenBrainz tag-radio endpoint is undocumented, browser-verification HTML responses were observed, and final-pick overlap/quality was not measured reliably. Details and risks remain in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Merge is complete. Publishing, deployment, and production-runtime verification remain unperformed.
 
 ## 2026-10-21 — PR #490 merged: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (P0c)
 
