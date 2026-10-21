@@ -1,0 +1,208 @@
+"""ListenBrainz tag-radio supplementary lane (flagged, off by default).
+
+Replaces the one-MusicBrainz-search-per-tag lane: one ``GET /1/lb-radio/tags`` per tag
+returns recording MBIDs, and all of them resolve through the existing ListenBrainz
+batch recording and release-group endpoints. No MusicBrainz request is made. The batch
+endpoints carry no secondary release types, so the batch title-marker filter always
+applies. The endpoint is undocumented in the public API docs.
+"""
+from typing import Any, Callable
+
+from discovery_tag_queries import tag_from_query
+
+LB_TAG_RADIO_URL = "https://api.listenbrainz.org/1/lb-radio/tags"
+TAG_RADIO_CACHE_PREFIX = "lb:tag-radio:"
+TAG_RADIO_TTL_SECONDS = 30 * 24 * 60 * 60
+# Recordings per tag. About 5 albums per tag are used, and every recording costs batch
+# lookups; a 50-per-tag run hit the HTML browser-verification page on the release-group
+# endpoint once.
+TAG_RADIO_COUNT = 20
+CANDIDATES_PER_QUERY = 5
+RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
+# All tag GETs run at once (at most this many); once the first answer is in, the rest get
+# this long before they are dropped, so one slow tag cannot hold the lane.
+MAX_PARALLEL_TAG_CALLS = 8
+TAG_RADIO_STRAGGLER_SECONDS = 4.0
+
+
+def _tag_radio_request(providers, tag, headers) -> list[str]:
+    """One tag-radio GET. Network only, so it is safe to run on a worker thread."""
+    response = providers.http_get(
+        LB_TAG_RADIO_URL,
+        params={"tag": tag, "operator": "OR", "pop_begin": 0, "pop_end": 100,
+                "count": TAG_RADIO_COUNT},
+        headers=dict(headers), timeout=40,
+    )
+    if response.status_code != 200:
+        raise _RadioHTTPError(response.status_code)
+    body = response.json()
+    if not isinstance(body, list):
+        raise RuntimeError("tag radio returned a non-list body")
+    return list(dict.fromkeys(
+        str(item["recording_mbid"]) for item in body
+        if isinstance(item, dict) and item.get("recording_mbid")
+    ))
+
+
+class _RadioHTTPError(RuntimeError):
+    def __init__(self, status):
+        super().__init__(f"tag radio returned HTTP {status}")
+        self.status = status
+
+
+def _cache_answer(providers, tag, future) -> None:
+    try:
+        providers.metadata_cache_set(
+            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", future.result())
+    except Exception:
+        pass
+
+
+def _fetch_all_tag_recordings(providers, tags, headers, state):
+    """Return {tag: mbids or Exception}. Cached tags answer immediately; the rest are
+    fetched in parallel and the first answer wins: stragglers are dropped
+    ``TAG_RADIO_STRAGGLER_SECONDS`` after the first response, but still cache their answer
+    if one arrives later."""
+    from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+    from recommendation_run_metrics import record_provider_call
+    import time
+
+    results: dict[str, Any] = {}
+    pending: list[str] = []
+    for tag in dict.fromkeys(tags):
+        cached = providers.metadata_cache_get(
+            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", ttl_seconds=TAG_RADIO_TTL_SECONDS)
+        if cached is not None:
+            state["hits"] += 1
+            results[tag] = list(cached)
+        else:
+            state["misses"] += 1
+            pending.append(tag)
+    if not pending:
+        return results
+    executor = ThreadPoolExecutor(max_workers=min(len(pending), MAX_PARALLEL_TAG_CALLS))
+    try:
+        futures = {}
+        for tag in pending:
+            record_provider_call("listenbrainz", "tag_radio")
+            future = executor.submit(_tag_radio_request, providers, tag, headers)
+            # Cache on the worker thread, so a straggler that answers after the lane moved
+            # on still warms the cache for the next run (one SQLite connection per call).
+            future.add_done_callback(lambda fut, tag=tag: _cache_answer(providers, tag, fut))
+            futures[future] = tag
+        waiting = set(futures)
+        deadline = None
+        while waiting:
+            timeout = None if deadline is None else max(0.0, deadline - time.monotonic())
+            done, waiting = wait(waiting, timeout=timeout, return_when=FIRST_COMPLETED)
+            if not done:
+                break
+            for future in done:
+                tag = futures[future]
+                try:
+                    results[tag] = future.result()
+                except Exception as exc:
+                    results[tag] = exc
+                    if isinstance(exc, _RadioHTTPError) and exc.status in RETRYABLE_STATUS_CODES:
+                        state["unavailable"] = True
+            if deadline is None:
+                deadline = time.monotonic() + TAG_RADIO_STRAGGLER_SECONDS
+        for future in waiting:
+            results[futures[future]] = TimeoutError("tag radio straggler dropped")
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+    return results
+
+
+def run_lb_tag_queries(
+    queries, *, providers, headers, albums, failures, state,
+    resolve: Callable[[list[dict[str, str]]], dict[str, dict[str, Any]]],
+    rejection: Callable[[dict[str, Any]], Any],
+    merge_source: Callable[[dict[str, Any], str], Any],
+    classify_error: Callable[[Exception], str],
+    candidate_cap: int,
+):
+    """Add album candidates from tag radio. Same state and outcome contract as the
+    MusicBrainz lane: one (added, error_class) pair per query attempted."""
+    planned: list[tuple[str, str, str, str, list[str], str | None]] = []
+    tags = {query: tag_from_query(query) for query, _f, _s in queries}
+    fetched = _fetch_all_tag_recordings(
+        providers, [t for t in tags.values() if t], headers, state)
+    for query, family, style in queries:
+        tag = tags[query]
+        mbids: list[str] = []
+        error_class = None
+        if not tag:
+            error_class = "invalid_query"
+        else:
+            got = fetched.get(tag)
+            if isinstance(got, Exception):
+                error_class = classify_error(got)
+                failures.append({"source": "listenbrainz_tag_radio", "query": query,
+                                 "error": str(got)})
+            else:
+                mbids = got or []
+        planned.append((query, family, style, tag, mbids, error_class))
+
+    wanted = list(dict.fromkeys(m for plan in planned for m in plan[4]))
+    try:
+        recordings = resolve([{"recording_mbid": m} for m in wanted]) if wanted else {}
+    except Exception as exc:
+        recordings = {}
+        failures.append({"source": "listenbrainz_tag_radio", "query": "resolve",
+                         "error": str(exc)})
+
+    outcomes = []
+    for query, family, style, tag, mbids, error_class in planned:
+        added = 0
+        if error_class is None:
+            source = "profile_tag_search" if style.startswith("profile:") else "exploration_tag_search"
+            for mbid in mbids:
+                recording = recordings.get(mbid)
+                if not recording:
+                    continue
+                credit = recording.get("artist-credit") or []
+                artist = "".join(
+                    p.get("name", "") + p.get("joinphrase", "") for p in credit if isinstance(p, dict)
+                ).strip()
+                first = next((p for p in credit if isinstance(p, dict) and p.get("name")), None)
+                if not artist or first is None:
+                    continue
+                for release in recording.get("releases") or []:
+                    group = release.get("release-group") or {}
+                    state["seen"] += 1
+                    if rejection(group):
+                        continue
+                    title = group.get("title", "").strip()
+                    key = (providers.music_key(first["name"]), providers.music_key(title))
+                    if key in albums:
+                        existing = albums[key]
+                        merge_source(existing, source)
+                        families = existing.setdefault("regional_families", [])
+                        if family not in families:
+                            families.append(family)
+                        styles = existing.setdefault("regional_styles", [])
+                        if style not in styles:
+                            styles.append(style)
+                        continue
+                    if state["added"] >= candidate_cap:
+                        break
+                    albums[key] = {
+                        "artist": artist,
+                        "primary_artist": first["name"],
+                        "artist_mbid": (first.get("artist") or {}).get("id"),
+                        "album": title,
+                        "release_group_mbid": group.get("id"),
+                        "score": 0.035,
+                        "tracks": [],
+                        "discovery_source": "listenbrainz_tag_radio",
+                        "discovery_sources": [source],
+                        "regional_families": [family],
+                        "regional_styles": [style],
+                    }
+                    state["added"] += 1
+                    added += 1
+                if added >= CANDIDATES_PER_QUERY or state["added"] >= candidate_cap:
+                    break
+        outcomes.append((added, error_class))
+    return outcomes
