@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #489 merged after reconciling original PR #488; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #490 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #490 merged** as `58182ae02ce48a1f4a5e9c09c55ff5c963b18e63` from exact final head `0151a88f85f045ba67661c40e1b6cbfd7ecb17a0`. The ranking pass now uses batched ListenBrainz release-group popularity for up to 40 highest-scored candidates (chunks of 50, 30-day cache) instead of sequential Last.fm album lookups. The existing bonus fields/formula remain; Last.fm tag-based recent-profile adjustment is no longer available for these candidates, so the bonus behavior is not identical. Owner-approved single-sample harness: 23.6 s cold, 5.3/7.8 s warm; 40/40 groups returned counts with one cold POST and zero warm POSTs; earlier 40-GET samples were 40.9/51.9 s, not a same-day control. All four required workflows passed on the exact PR head; Docker packaging `Run unit tests` and image build succeeded. No agent-side full-suite run (prohibited by standing owner rule); CI ran the full unit suite. Publishing, deployment, and runtime verification remain unperformed.
 
 - **PR #489 merged** after recreating the focused change from original PR #488 on current `main` following PR #487. `CF_MAX_PAGES` is now 4; the paging regression test follows the configured limit and ignores the artist-metadata batch endpoint when counting CF pages. Owner-approved single-sample harness measurements: 3 pages 41.5 s cold / 2.9 and 2.6 s warm, 55 albums / 24 artists; 4 pages 40.9 s cold / 8.2 and 4.5 s warm, 79 albums / 42 artists. The larger supply came with one additional CF GET and two more MusicBrainz requests (8 to 10); sample size is too small to establish stable timing or recommendation quality. Exact final PR head `cda60a882d477311c33222b5615e05db0d7a219d`; squash merge `7128808f2110c4695e6d6fd2dec6d7c7bc05baec`. All four required workflows passed on that exact head. Publishing, deployment, and production-runtime verification remain unperformed.
 
@@ -19,7 +21,7 @@ Last reviewed: 2026-10-21 (PR #489 merged after reconciling original PR #488; pu
 - The active roadmap and root `PROJECT_LOG.md` record the measurement, code change, exact SHAs, test/CI evidence, and limitations. Historical notes remain in the recommendation archive.
 - Publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** investigate P0c, the Last.fm popularity-pass latency, read-only first. Do not change ranking weights or increase provider-call budgets without a measured defect and explicit approval.
+**Next action:** continue the recommendation-engine roadmap from its active top item. Treat PR #490's latency result as a single sample, not a quality claim; do not tune ranking weights or increase provider-call budgets without measured evidence and explicit approval.
 
 **Save-seed diagnostics — PR #465 merged as `6e1054b` (2026-10-20).** Seven aggregate `save_seed.*` counters in `run_metrics.counts`; no behavior change, no new lookup. Exact head `d962dd1` passed all four required workflows. One owner-approved live sample (4 saves): 1 initial query changed, 0 in replenishment; at most 3 of 4 saves reached the planner. Single sample, candidate quality unmeasured. Publishing and deployment remain paused. **Next action:** exploration-setting investigation, handed off in `CLAUDE_CLI.md`.
 
