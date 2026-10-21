@@ -46,6 +46,42 @@ class AcquisitionWatcherTests(unittest.TestCase):
     def run_watcher(self):
         return watch_and_import_album("Artist", "Album", dict(self.candidate), {}, services=self.services)
 
+    def test_failed_track_is_requeued_alone_without_source_switch(self):
+        self.candidate["files"] = [
+            {"filename": "Artist/Album/01.flac", "size": 4},
+            {"filename": "Artist/Album/02.flac", "size": 4},
+        ]
+        self.candidate["fallback_candidates"] = [{"username": "other"}]
+        self.calls["transfers"][:] = [
+            {"filename": "Artist/Album/01.flac", "state": "Succeeded", "bytesTransferred": 4},
+            {"filename": "Artist/Album/02.flac", "state": "Completed, Errored"},
+        ]
+        queued, switched = [], []
+        self.services["queue_files"] = lambda *args: queued.append(args)
+        self.services["switch_to_next_source"] = lambda *a: switched.append(a)
+        self.services["is_dismissed"] = lambda *_: self.clock.value >= 400
+        self.run_watcher()
+        self.assertEqual(switched, [])
+        self.assertEqual(len(queued), 3)
+        self.assertEqual([f["filename"] for f in queued[0][3]], ["Artist/Album/02.flac"])
+        self.assertFalse(any(a[2] == "download_failed" for a, _ in self.calls["status"]))
+
+    def test_failed_track_gives_up_after_retries_and_grace(self):
+        self.calls["transfers"].append({"filename": "Artist/Album/01.flac", "state": "Errored"})
+        self.services["queue_files"] = lambda *args: None
+        self.run_watcher()
+        self.assertTrue(any(a[2] == "download_failed" for a, _ in self.calls["status"]))
+
+    def test_retried_track_not_masked_by_stale_errored_record(self):
+        self.calls["transfers"][:] = [
+            {"filename": "Artist/Album/01.flac", "state": "Completed, Errored"},
+            {"filename": "Artist/Album/01.flac", "state": "InProgress", "bytesTransferred": 1},
+        ]
+        self.services["queue_files"] = lambda *args: self.fail("should not requeue")
+        self.services["is_dismissed"] = lambda *_: self.clock.value >= 10
+        self.run_watcher()
+        self.assertFalse(any(a[2] == "download_failed" for a, _ in self.calls["status"]))
+
     def test_dismissal_stops_before_transfer_poll_or_import(self):
         self.dismissed = True
         self.run_watcher()

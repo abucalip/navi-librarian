@@ -1884,6 +1884,11 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
             "locate_completed_album": _discovery_locate_completed_album,
             "import_completed_source": _discovery_import_completed_source,
             "download_transfer_files": _slskd_download_transfer_files,
+            "queue_files": lambda base_url, headers, username, files: (
+                _slskd_transfers_module.queue_download_files(
+                    base_url, headers, username, files, http_client=httpx
+                )
+            ),
             "update_status": _discovery_update_acquisition_status,
             "inspect_completed_album": _discovery_inspect_completed_album,
         },
