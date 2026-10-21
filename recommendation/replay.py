@@ -21,7 +21,7 @@ import threading
 from typing import Any, Callable
 
 SCHEMA_VERSION = 2
-_REPOSITORY_ROOT = Path(__file__).resolve().parent
+_REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _canonical_json(value: Any) -> str:

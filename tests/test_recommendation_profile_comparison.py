@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from recommendation_profile_comparison import (
+from recommendation.profile_comparison import (
     IdentityLastFmReplay,
     build_profile_variant,
     compare_outputs,

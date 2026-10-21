@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from recommendation_diagnostics import evaluate_replay_fixture
+from recommendation.diagnostics import evaluate_replay_fixture
 
 
 def main() -> int:

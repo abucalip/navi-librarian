@@ -1,6 +1,6 @@
 import unittest
 
-from recommendation_mmr_evaluate import evaluate_capture
+from recommendation.mmr_evaluate import evaluate_capture
 
 
 def row(artist, album, score, tags=None, **extra):

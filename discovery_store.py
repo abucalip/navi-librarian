@@ -322,7 +322,7 @@ def record_recommendation_diagnostics(
     """Persist the bounded pool snapshot using the completed gathering result."""
     from collections import Counter
     from discovery_candidate_supply import summarize_candidate_stages
-    from recommendation_diagnostics import summarize_candidate_diagnostics
+    from recommendation.diagnostics import summarize_candidate_diagnostics
 
     from recommendation_run_metrics import snapshot_and_reset
 
