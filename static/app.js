@@ -2346,11 +2346,12 @@ $('saveLastfm').addEventListener('click', async () => {
   } catch (error) { $('lastfmStatus').textContent = error.message; setStatusState($('lastfmStatus'), 'error'); }
 });
 
-async function loadListenbrainzSettings() {
+async function loadListenbrainzSettings(keepStatus = false) {
   try {
     const data = await requestJSON('/api/settings/listenbrainz');
     $('listenbrainzUsername').value = data.username || '';
     $('listenbrainzToken').value = '';
+    if (keepStatus) return;
     $('listenbrainzStatus').textContent = data.token_configured ? 'Username set. User token configured.' : 'Username set. User token not configured (optional).';
     setStatusState($('listenbrainzStatus'), 'idle');
   } catch (error) { $('listenbrainzStatus').textContent = error.message; setStatusState($('listenbrainzStatus'), 'error'); }
@@ -2364,7 +2365,7 @@ $('saveListenbrainz').addEventListener('click', async () => {
     $('listenbrainzToken').value = '';
     $('listenbrainzStatus').textContent = result.message || 'Settings saved.';
     setStatusState($('listenbrainzStatus'), 'success');
-    await loadListenbrainzSettings();
+    await loadListenbrainzSettings(true);
   } catch (error) { $('listenbrainzStatus').textContent = error.message; setStatusState($('listenbrainzStatus'), 'error'); }
 });
 
