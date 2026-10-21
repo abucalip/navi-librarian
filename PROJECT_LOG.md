@@ -1,3 +1,9 @@
+## 2026-10-22 — Failed-track retry in the acquisition watcher (PR #526 merged)
+
+- PR #526 squash-merged as `4fcd5ff78dc7cfebe99d289a49cd8505c6ca9138` from head `360e84287c01622fc19ba844954f55594a218ea9`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
+- Bug: one errored slskd track stopped byte progress, so the watcher ended in `download_failed` or, after 120s, switched to a fallback source and re-downloaded the whole album. `acquisition/watcher.py` now re-queues failed tracks alone from the same source (3 tries, 30s apart) through the injected `queue_files` service, suppresses the stall switch meanwhile, keeps watching 15 minutes before `download_failed` so a manual slskd retry can recover, and ranks completed > live > failed records per file. Without `queue_files` the old immediate-failure behavior is kept.
+- Tests: three regression tests in `tests/test_acquisition_watcher.py`; focused run only (13 OK). Not verified against a live slskd; real failure state strings are assumed (`Errored`, `Failed`, `Cancelled`, `TimedOut`, including slskd's `Completed, Errored` form).
+
 ## 2026-10-21 — Discovery package PR 4: gathering core (PR #524 merged); layout roadmap complete
 
 - PR #524 squash-merged as `a5b14191c02007db376b0642ecceeef0426bdbd5` from head `69c9359e80aa4ff192a073f69b39bf6ffcdc02f1`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.

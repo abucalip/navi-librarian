@@ -1,3 +1,8 @@
+## 2026-10-22 — PR #526 merged: failed-track retry
+
+- Merged as `4fcd5ff78dc7cfebe99d289a49cd8505c6ca9138`; CI passed on head `360e84287c01622fc19ba844954f55594a218ea9`. Details in root `PROJECT_LOG.md`. Not published, deployed or runtime-verified.
+- Next action: confirm against a real slskd with a deliberately failed track that the retry and the 15-minute grace behave as intended, and check the actual failed-state strings it reports.
+
 ## 2026-10-21 — PR #511 merged: slskd integration package
 
 - PR #511 squash-merged to `main` as `84fbb68afa7929a0bedae4e178d37ad2b6255c5a` from exact final PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`.
