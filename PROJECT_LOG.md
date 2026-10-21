@@ -1,3 +1,8 @@
+## 2026-10-21 — Discovery package PR 3: store, refresh and cooldown (PR #523 merged)
+
+- PR #523 squash-merged as `04c0798ea528e53ce5485ea0410b4620b00b3098` from head `279eeee39559dd469238c60be84faef95e8fdbe4`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
+- Moved `store`, `snapshot`, `refresh`, `list_payload`, `candidate_supply` and `recommendation_cooldown` (as `discovery/cooldown.py`) into `discovery/`; root Python modules 15. `navidrome_server.py` keeps the `discovery_store` and `discovery_refresh` names via `from discovery import ... as`. Focused tests and `py_compile` only.
+
 ## 2026-10-21 — Discovery package PR 2: allocator (PR #522 merged)
 
 - PR #522 squash-merged as `bcd34c956e177ae43fcb895cb79dbfb095ec6463` from head `d989557adb9d78f83cfc73bb50b212faef4ad984`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.

@@ -259,7 +259,7 @@ Edges and callers show four clusters:
 ### Recommended order and stop conditions
 
 1. `acquisition/` PR 1, then 2, then 3 (lowest dependency risk, biggest root-module reduction: 18).
-2. `discovery/` leaf cluster (6), then allocator (3). **Allocator done: PR #522, `bcd34c956e177ae43fcb895cb79dbfb095ec6463`; root modules 21.**
+2. `discovery/` leaf cluster (6), then allocator (3). **Allocator done: PR #522, `bcd34c956e177ae43fcb895cb79dbfb095ec6463`; root modules 21.** **Store/refresh/cooldown done: PR #523, `04c0798ea528e53ce5485ea0410b4620b00b3098`; root modules 15.**
 3. Owner decision before store/refresh and the gathering core (the `music_key` inversion and the `recommendation_cooldown` placement).
 
 Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the four required workflows on its exact head, no shims without a real caller, Dockerfile `COPY` and compile-list updates, and a packaging regression test. Publishing and deployment stay paused. No move here is pre-approved; each needs its own owner go-ahead.
