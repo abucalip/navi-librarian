@@ -264,9 +264,11 @@ Edges and callers show four clusters:
 
 Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the four required workflows on its exact head, no shims without a real caller, Dockerfile `COPY` and compile-list updates, and a packaging regression test. Publishing and deployment stay paused. No move here is pre-approved; each needs its own owner go-ahead.
 
-## Acquisition package, PR 1 of 3: request and queue (in review)
+## Acquisition package, PR 1 of 3: request and queue (PR #517 merged)
 
 - Moved `acquisition_{candidate_queue, candidate_start, orchestration, request_coordinator, source_switch, search_diagnostics, lifecycle, state}` to `acquisition/` (names drop the prefix). New package `acquisition/__init__.py`; Dockerfile gains `COPY acquisition/`; the eight root entries are removed. No shims.
 - `navidrome_server.py` keeps the name `acquisition_orchestration` (`from acquisition import orchestration as acquisition_orchestration`) because `tests/test_slskd_transfers.py` patches `navidrome_server.acquisition_orchestration.queue_candidate_unless_dismissed`. Callers and tests use canonical paths. `tests/test_docker_packaging.py` gains a packaging regression test. Root Python modules 48 -> 40. Behavior unchanged.
 - Local: focused modules for all eight plus `test_acquisition_safety`, `test_slskd_search_polling`, `test_docker_packaging`, `py_compile`, size and app-import checks pass. Two `test_slskd_transfers` adapter tests error locally on `ModuleNotFoundError: httpx`, identical on clean `main`; CI covers them. Full suite not run.
 - Remaining: PR 2 monitor modules, PR 3 import and cleanup modules. Then the `music_key` inversion fix (separate PR) and discovery moves, with `recommendation_cooldown` moving with the store modules (owner decision 2026-10-21).
+
+- Merged: PR #517 squash-merged as `2411740dc74d57b1a4fddbd33eeef80a461b40dd` from exact head `cd39e83ee7abe50378c015d4486b6306d4690270`; all four required workflows passed on it, including the CI-run adapter tests that error locally without httpx.
