@@ -1,7 +1,7 @@
 import hashlib
 import unittest
 
-from navidrome_client import (
+from integrations.navidrome.client import (
     api_call, items, search_result_payload, album_details_payload,
     library_overview_payload,
 )
