@@ -2,20 +2,21 @@
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
-## Current handoff: Python module package layout (new priority)
+## Current handoff: Python module package layout (active priority)
 
-The owner wants the many root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-organization effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
+The owner wants root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-layout effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
 
-**First task — inventory and propose the first safe move; then open a PR.**
+**Next task — refresh the dependency map and finish the inventory before selecting the second move.** PR #508 is merged as `f171a4e73915222292642ba17d6dcb568b8c929a`; the first package move is complete.
 
-1. Refresh GitHub `main`, recent commits, open PRs, and relevant CI first. Do not rely on a local checkout as the source of truth. Account for concurrent release PR #506; branch from the latest `main` and reconcile if needed.
-2. Read `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/MODULARIZATION_ROADMAP.md`, the new `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, and relevant architecture docs. The old modularization roadmap is closed; do not reopen its completed extraction work or perform size-only refactors.
-3. Inventory every root-level `.py` file and map imports/callers, tests, entry points, runtime/dynamic imports, configuration/file-path assumptions, Docker COPY/package rules, and CI/source-inspection tests. Use repository search and actual code; do not infer module groups from filenames alone.
-4. Select one cohesive, low-risk first group with a clear package boundary. Make the smallest move-only change possible: update imports and package initialization, preserve public entry points and behavior, and update Docker/package/test configuration. Do not combine unrelated bug fixes or broad refactoring.
-5. Add or adapt import/compatibility regression tests. Run focused test modules and syntax checks only; agents must not run the full unit suite. Review the complete diff and changed-file list.
-6. Open a focused PR and verify all four required workflows on its exact final head. Do not merge without the owner's explicit instruction naming the PR. Record actual tests/CI and any skipped checks; do not claim unrun checks passed.
+1. Refresh GitHub `main`, recent commits, open PRs, and CI. Current main at handoff: `f171a4e73915222292642ba17d6dcb568b8c929a`. Account for open release PR #506 and any new changes before branching.
+2. Read `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, and relevant architecture docs. Keep publishing/deployment paused and never run the full suite as an agent.
+3. Generate a fresh dependency map from the current GitHub revision using `python scripts/dep_map.py --output docs/architecture/dependency-map.json` in a clean checkout; review the graph rather than treating AST edges as runtime truth. Confirm whether the generated map is committed or a local audit artifact before changing tracked files.
+4. Finish the inventory of remaining root-level Python modules: production and test callers, lazy/dynamic imports, compatibility imports, AST/source-reading tests, entry points, filesystem/path assumptions, Docker COPY and CI references. The existing map is based on an older baseline and must not be treated as current after PR #508.
+5. Select one cohesive next group only after the caller/dependency map is grounded in code. Prefer a provider client or related pair with an obvious package boundary; preserve behavior and legacy imports where real callers require them. Update Docker, tests, and path assumptions. If the map exposes a higher-priority correctness/safety/verification gap, stop and report it instead of doing routine moves.
+6. Add focused import/behavior regression tests, run only affected focused modules and `python -m py_compile` on changed Python files, review the complete diff, open a PR, and verify all four required workflows on its exact final head. Do not merge without explicit owner instruction naming the PR.
+7. Record actual tests/CI, exact SHAs, skipped checks, and remaining risks in the roadmap, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md` as appropriate.
 
-**Acceptance:** the PR moves one clearly justified group into a package, preserves behavior and supported web/API startup, passes focused tests and required CI, and documents any remaining root modules/risks. If inventory shows no safe first group, stop and report the evidence instead of forcing a move.
+**Acceptance:** current dependency/caller inventory is grounded in GitHub main, the next move has a documented boundary and no unresolved packaging/import risks, and the PR changes only that move plus required tests/configuration. Do not bulk-reorganize the repository.
 
 ---
 
