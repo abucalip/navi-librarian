@@ -335,6 +335,8 @@ class RecommendationCfPagingTests(unittest.TestCase):
         cache = cache if cache is not None else {}
 
         def http_get(url, params=None, **kwargs):
+            if "/metadata/artist/" in url:  # batched genre lookup, not CF paging
+                return _Response([])
             calls.append(dict(params or {}))
             offset = params["offset"]
             if fail_page is not None and offset == fail_page:
