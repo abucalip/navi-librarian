@@ -1,6 +1,6 @@
-## 2026-10-21 — P0h: CF freshness capture protocol written (docs only)
+## 2026-10-21 — P0h: CF freshness capture protocol and baseline (docs only)
 
-- P0h measured and closed. Protocol revised (owner dropped first-vs-last-five-days once history was long): recent 30 days vs all-time top recordings, 1 added statistics GET (owner-approved, 0.36 s). One sample: CF 400 recordings; 3 in recent (0.75%), 37 in all-time (9.3%), 36 all-time-only (9.0%); all-time matches concentrated on page 1 (23/10/1/3). Mixed outcome: CF is not recency-skewed and not heard-excluded; keep defaults, no code change. Caveats: single sample, all-time side is top 420 recordings, CF recompute time after import unknown. Docs only; no tests run (full suite not run).
+- P0h protocol final; capture **parked, to be repeated later**. Owner-approved baseline (recent 30 days vs all-time top recordings, 1 statistics GET, 0.36 s): CF 400 recordings, 3 in recent (0.75%), 37 in all-time (9.3%), page-1 heavy. Owner reports ListenBrainz has not yet computed CF for the imported history, so this pool predates the import and the sample is a pre-recompute baseline, not a verdict (an earlier note that called it mixed/closed is withdrawn). Repeat once CF is recomputed, with a go-ahead naming the 1 statistics request. Docs only; no tests run (full suite not run).
 
 ## 2026-10-21 — Handoff: next task P0h (CF freshness capture protocol, read-only) (docs only)
 

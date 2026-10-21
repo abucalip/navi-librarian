@@ -22,16 +22,12 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0h — CF freshness: write the capture protocol (read-only), then ask
+## Next task: none assigned. P0h (CF freshness) is parked until ListenBrainz recomputes CF
 
-P0g is done and merged (PR #498). The remaining recommendation-engine items are all owner-gated, and the only unmeasured one is candidate freshness: whether ListenBrainz collaborative filtering reflects all-time history or mostly recent listening (roadmap P2 "CF freshness"; archive line "needs an authorized two-sided capture"). No live run or capture is allowed without the owner's go-ahead.
+The P0h protocol is written and was run once (owner-approved): recent 30 days vs all-time top recordings, 1 added `stats/user/<user>/recordings` GET. The sample is a **pre-recompute baseline**: ListenBrainz had not yet computed CF for the owner's imported (about 24-year) history, so no conclusion was drawn (3 of 400 CF recordings in the recent set, 37 in the all-time top set). Details and the decision table: `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0h).
 
-Do (no network, no live runs):
-1. Read the roadmap P2 entry, the "CF supply is limited by pages read" finding, and `discovery_candidate_gathering.py` where the CF pages are read (`CF_MAX_PAGES = 4`, 100 recordings per page).
-2. Write a one-page protocol in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0h): what "two-sided" means here (state the assumption and ask the owner to confirm it), exactly which requests would be made, their count and the time added, what is recorded (aggregate only: overlap, counts, age buckets; no identity-bearing data, no raw listens, no provider URLs), and the decision each outcome would drive. Within the standing rules: no added requests that add time without approval, recent listens stay at 3 pages of 100 within 30 days.
-3. Report the protocol to the owner and wait. Do not run the capture.
-
-Acceptance: protocol in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, pushed to `main` only if the owner says so. Any capture needs a separate go-ahead naming the requests.
+- **Do not repeat the capture until the owner says CF has been recomputed.** Then repeat it once, with an owner go-ahead naming the 1 statistics request, and compare with the baseline. Earlier captures under the dropped "first five days vs last five days" design were inconclusive and superseded.
+- No live run without the owner's go-ahead.
 
 Other options if the owner prefers something else (each needs a decision, none is started): a stale-flag check of defaults after PRs #495 to #498 (one healthy cold run and one warm run, owner go-ahead for the live runs); reading deeper into the CF pool; the Saved-page items under Deferred.
 
@@ -42,11 +38,11 @@ Other options if the owner prefers something else (each needs a decision, none i
 
 ### Deferred
 
-- Roadmap P0h is the current task (above). P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
+- Roadmap P0h is parked (above). P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
-- CF freshness capture (needs an authorized two-sided capture); Last.fm (parked); diversity setting UI (paused).
+- CF freshness capture: repeat after ListenBrainz recomputes CF for the imported history (needs a go-ahead); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
 
 ## Testing scope (standing owner rule, 2026-10-20)
@@ -80,7 +76,7 @@ Other options if the owner prefers something else (each needs a decision, none i
 - Default-on flags. The genre circuit breaker is on (PR #495). The two batch flags are removed (PR #497). `TAG_LANE_EARLY_STOP_ENABLED` is on (PR #498). Steady-state batch (`WARM_BATCH_ENABLED`) and cold-start batch are on.
 - Feedback signal (3.3). Merged as PR #456; default on, owner-approved 2026-10-20.
 - Refill toggle and read path (3.4). Merged as PR #458 (default on) and PR #459 (stale-while-revalidate). Roadmap 3.4 is complete.
-- Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
+- Candidate freshness (P2). Baseline captured but inconclusive: ListenBrainz had not yet recomputed CF for the imported history. Repeat the P0h capture later, only with the owner's go-ahead.
 - ListenBrainz client. Done in PR #493 (honest `User-Agent` plus token on every ListenBrainz request, never sent to MusicBrainz). Whether it prevents the verification page over repeated runs is unproven. Do not change the user agent or fingerprint to get around the check.
 - Last.fm as a source is parked by the owner. Do not start a quality test or a combined path without a new decision.
 - Exploration slider. The 0-100 `recommendation_diversity` setting, its API and the MMR penalty mapping already exist; the audit above decides whether anything backend is missing. No UI in backend PRs.

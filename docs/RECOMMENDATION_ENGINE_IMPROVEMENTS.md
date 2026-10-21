@@ -261,7 +261,7 @@ Test-only harness `run_p0g.py` (not committed): MusicBrainz release-group search
 - **Decision:** acceptance met (more tag candidates, within request budget, no added failure that hurts the list). Default turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). Limits: two clean single-pattern samples, real throttling during the runs.
 - **MusicBrainz OAuth credentials: not useful for this problem.** The registered application's client ID and secret cannot authenticate requests: `client_credentials` is rejected (`unsupported_grant_type`; only `authorization_code` and `refresh_token`). A user token obtained through the consent flow and sent as a bearer on the search requests did not avoid 503s (5 real 503s in 12 requests, versus 2 in 11 unauthenticated). The app does not use these credentials and should not.
 
-### P0h — CF freshness capture protocol (2026-10-21; revised after two inconclusive captures; proposal only, needs owner go-ahead)
+### P0h — CF freshness capture protocol (2026-10-21; protocol final, **capture to be repeated later**: the sample below predates ListenBrainz computing CF for the imported history)
 
 **Question.** Does the ListenBrainz collaborative-filtering (CF) pool reflect all-time history, or mostly recent listening?
 
@@ -302,8 +302,10 @@ No outcome changes code by itself.
 
 - CF in recent: 3 of 400 (R = 0.75%). CF in all-time: 37 (9.3%); all-time-only (X): 36 (9.0%). Baseline all-time-in-recent: 47.2%.
 - Per CF page, all-time matches 23, 10, 1, 3; recent matches 0, 0, 1, 2. Matches are concentrated on page 1.
-- **Reading:** by the table, X under 30% and R under 70% is "mixed": keep defaults, no change. CF clearly does not mirror recent listening (R under 1%) and does include recordings from the user's all-time history (page 1 most), so recency skew is not supported. CF being heard-exclusion is not supported either (37 heard all-time recordings are in it). Weak evidence: one sample, the all-time side is only the top 420 recordings (a biased slice), and CF recompute time after the import is unknown. Not enough to justify reading deeper or changing CF; a repeat after CF recomputes is the only follow-up, owner's call.
-- **Decision:** no code change; P0h closed as measured.
+- **Status (owner, 2026-10-21): ListenBrainz has not yet computed CF for the newly uploaded history.** This pool was therefore built from the earlier 17-day history, so the sample says nothing about whether CF reflects all-time history. It is a **pre-recompute baseline**, not a verdict. Do not read the table's "mixed" outcome as a decision, and do not use these numbers to change or keep anything about CF.
+- **What the baseline still shows:** CF at that point matched 0.75% of recent recordings and 9.3% of all-time top recordings (page 1 most). Because the pool predates the import, the all-time matches come from the 17-day history, not the imported years.
+- **Decision:** none. P0h is **open, parked until ListenBrainz recomputes CF**. No code change.
+- **To revisit:** when the owner says CF has been recomputed (or after a few days), repeat the same capture (4 CF pages, 3 recent-listen pages, 1 `stats/.../recordings` GET; `p0h_capture`-style harness, not committed), compare with this baseline, and apply the decision table. Owner go-ahead naming the 1 statistics request is needed again. A changed pool (different CF recordings from the baseline) is the signal that recompute happened.
 
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
@@ -313,7 +315,7 @@ No outcome changes code by itself.
 
 ### P2 — Explicit owner decisions / parked work
 - **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy; P0g measured it under simulated throttling and the default was turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
-- **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval. Measured in P0h (mixed; CF not recency-skewed; no change).
+- **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval. P0h baseline captured but inconclusive (CF not yet recomputed for the imported history); repeat later.
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.
 - **More ListenBrainz pages, extra provider lookups, or a higher MusicBrainz budget:** require explicit owner approval. The approved CF page limit is now 4 (PR #489, reconciled from original PR #488); do not raise it further without a new decision.
