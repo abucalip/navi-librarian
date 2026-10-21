@@ -1,12 +1,12 @@
 # Project status
 
-## 2026-10-21 — Python package-layout work (PR #508 open)
+## 2026-10-21 — Python package-layout PR #508 merged
 
-- First package-layout slice moves the Navidrome/Subsonic transport implementation to `integrations/navidrome/client.py`; `navidrome_client.py` remains a compatibility shim. `navidrome_server.py` uses the canonical package path, and Docker copies `integrations/` while preserving `uvicorn app.main:app`.
-- Inventory boundary: the client is dependency-injected and independent of app assembly; production callers identified in `navidrome_server.py`; direct behavior coverage is in `tests/test_navidrome_client.py`. PR description records the move map and rationale.
-- PR #508: https://github.com/abucalip/navi-librarian/pull/508. Agent-side focused tests and syntax checks were not run because a fresh GitHub checkout was unavailable in this execution environment. All four required workflows passed on exact code/docs head `cffb5486d6fedb091979e397ff545a22fd0502cf`: Python syntax/acquisition safety `39639446692`, Docker packaging/full unit suite/build `39639446681`, container runtime smoke `39639446683`, and validation-only multi-architecture image validation `39639446720` (publishing paused). This status/log update creates a new PR head, so all four workflows must be rechecked there.
-- Status: implemented in PR branch; local tests not run; CI passed on the recorded prior head; not merged; not published/deployed. Next action: verify all four required workflows on the exact final PR head and fix any failures.
-
+- PR #508 squash-merged to `main` as `f171a4e73915222292642ba17d6dcb568b8c929a`; exact tested PR head: `a6fe1bd656f77ae4fbd65cb94c067949d14cf140`.
+- The Navidrome/Subsonic client now lives at `integrations/navidrome/client.py`; `navidrome_client.py` remains a tested compatibility shim. Production imports, Docker packaging, and direct-import tests were updated. The ASGI entry point remains `uvicorn app.main:app`.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety [39639612889](https://github.com/abucalip/navi-librarian/actions/runs/39639612889), Docker packaging/full unit suite/build [39639612870](https://github.com/abucalip/navi-librarian/actions/runs/39639612870), container smoke [39639612822](https://github.com/abucalip/navi-librarian/actions/runs/39639612822), validation-only multi-architecture image [39639612866](https://github.com/abucalip/navi-librarian/actions/runs/39639612866). Agent-side focused tests and `py_compile` were not run because a fresh checkout was unavailable; no stale local checkout was used.
+- Published, deployed, and production-runtime verified: no. Publishing/deployment remain paused.
+- Next action: refresh the dependency map and complete caller/path/test inventory for remaining root modules before selecting the next cohesive package move.
 ## 2026-10-21 — v0.2 release preparation (PR #505)
 
 - PR #505 merged by squash as `99c0b88ed885de8b3c36686d63736b19a9235392`, from exact final PR head `fb34440b4893cc7f65678c90ba6e333616c0479d`. Adds `docs/RELEASE_v0.2.md` with draft release notes, deployment migration cautions, and explicit publication/deployment gates.
