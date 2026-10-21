@@ -1,3 +1,16 @@
+## 2026-10-21 — PR #511 merged: slskd integration package
+
+- PR #511 squash-merged to `main` as `84fbb68afa7929a0bedae4e178d37ad2b6255c5a` from exact final PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`.
+- Moved the five slskd helpers into `integrations/slskd/`; updated legacy-server imports while retaining its adapter functions, direct-import tests, Docker packaging regression, and syntax workflow compile list. Root-level Python module count is 61, down from 66 before this move.
+- All four required workflows passed on exact PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`:
+- Python syntax/acquisition safety: [39649756998](https://github.com/abucalip/navi-librarian/actions/runs/39649756998)
+- Docker packaging, full unit suite, and image build: [39649757098](https://github.com/abucalip/navi-librarian/actions/runs/39649757098)
+- Container runtime smoke: [39649756971](https://github.com/abucalip/navi-librarian/actions/runs/39649756971)
+- Validation-only multi-architecture image: [39649757030](https://github.com/abucalip/navi-librarian/actions/runs/39649757030)
+- Docker packaging CI ran the full unit suite successfully. Agent-side focused tests and `py_compile` were not run because no fresh isolated checkout was available.
+- No release publication, deployment, or production runtime verification was performed; publishing/deployment remain paused.
+- **Next action:** refresh the dependency map on post-merge main and audit `lastfm_client.py` and its callers before choosing the next package move; see `CLAUDE_CLI.md`.
+
 ## 2026-10-21 — slskd package move PR #511 opened
 
 - Five root-level helpers were moved to `integrations/slskd/{client,quality,search,search_polling,transfers}.py`; `navidrome_server.py` retains its adapters but now imports the canonical package modules. Docker already copies `integrations/`; a packaging regression test was added and the syntax workflow now compiles the moved files and affected tests.
