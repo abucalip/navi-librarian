@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #486 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #487 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #487 merged** as `5ef52c6c48b11730b5d47980cc0da828a4d3d328` from exact final head `95e78c008f214d92ba839fb38a55cc6501af33c6`. Batched genre lookup now uses ListenBrainz `metadata/artist/` in chunks of 75, keeps tags with `genre_mbid`, and fills the existing 90-day artist-genre cache; uncached/missing artists and failed batches retain the MusicBrainz fallback. The measured single 4-page harness run improved cold time from 207.6 s to 51.9 s with unchanged supply (79 albums / 42 artists); this is a single sample, and `CF_MAX_PAGES` remains 2. All four required workflows passed on the exact head, including the Docker packaging job's full unit suite. No independent local full-suite run. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #486 merged** as `f8a248d555bf557e4bb965757d279afbed77cc1d` from exact final head `65a868410df5b5065fb605a61d90b04169e16bdd`. Release-group requests now use chunks of 50 (measured endpoint cliff: 80 pass, 81 fail); retried MusicBrainz calls are counted separately as `recording_lookup_retry`. The PR also records the revised ListenBrainz request-time rule and adds the measured batched-genre lookup work to the roadmap; batched genre lookup is **not implemented** and `CF_MAX_PAGES` remains 2. All four required workflows passed on the exact head; Docker packaging's `test-and-build` job completed the full unit suite successfully. No independent local full-suite run. Publishing, deployment, and production-runtime verification remain unperformed.
 
