@@ -222,7 +222,7 @@
     </div>
     <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabNavidrome">
       <h3>Navidrome connection</h3>
-      <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://192.168.1.12:4533"></label>
+      <label>Navidrome URL <input id="navidromeUrl" type="url" placeholder="http://navidrome:4533"></label>
       <label>Username <input id="navidromeUser" type="text" autocomplete="username"></label>
       <label>Password <input id="navidromePassword" type="password" placeholder="Leave blank to keep the saved password" autocomplete="new-password"></label>
       <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
@@ -234,7 +234,7 @@
     <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabSlskd" hidden>
       <h3>slskd connection</h3>
       <p>The API key is never displayed. Leave the key field blank to retain the configured key.</p>
-      <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://192.168.1.12:5030"></label>
+      <label>slskd URL <input id="slskdUrl" type="url" placeholder="http://slskd:5030"></label>
       <label>API key <input id="slskdApiKey" type="password" placeholder="Enter key to set or replace it" autocomplete="new-password"></label>
       <label>slskd completed-download directory visible to the Librarian backend <input id="slskdDownloadsPath" type="text" placeholder="/media/downloads/slskd/complete"></label>
       <p class="muted">Use an absolute path on the machine/container running the Librarian backend. The directory must be mounted into the container when using Docker.</p>
