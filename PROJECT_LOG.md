@@ -16,7 +16,7 @@
 
 ## 2026-10-21 — P0f: genre circuit breaker on by default (PR #495 merged)
 
-- PR #495 squash-merged as `0825f0e06b25f498147e38f2f61c817894450ba8` from exact final head `d50f39a736681f7393f7bbfdc794b02bfe8a57c8`. `GENRE_CIRCUIT_BREAKER_ENABLED = True`. Owner-approved simulated-throttle sample: 498.1 s / 207 MusicBrainz artist requests with breaker off versus 47.4 s / 18 requests with it on; final list 10 in both. Single samples, simulated throttling; artists may lack genres only when batch genre lookup fails while MusicBrainz is throttling. Early stop remains off. All four required workflows passed on exact head, including CI's full unit suite. Publishing, deployment, and runtime verification remain unperformed.
+- PR #495 squash-merged as `0825f0e06b25f498147e38f2f61c817894450ba8` from exact final head `d50f39a736681f7393f7bbfdc794b02bfe8a57c8`. `GENRE_CIRCUIT_BREAKER_ENABLED = True`. Owner-approved simulated-throttle sample: 498.1 s / 207 MusicBrainz artist requests with breaker off versus 47.4 s / 18 requests with it on; final list 10 in both. Single samples, simulated throttling; artists may lack genres only when batch genre lookup fails while MusicBrainz is throttling. At the time of PR #495, early stop remained off; PR #498 subsequently enabled it by default. All four required workflows passed on exact head, including CI's full unit suite. Publishing, deployment, and runtime verification remain unperformed.
 
 ## 2026-10-21 — P0f: remove redundant batch flags (PR #497 reconciled and merged)
 
