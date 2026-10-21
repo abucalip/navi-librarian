@@ -40,7 +40,7 @@ Acceptance: a PR with the four workflows green on its head, the focused tests li
 
 - Roadmap P0c: test batch lookups for Last.fm (27.5 s of a 39.6 s cold run at 4 pages is up to 40 sequential `album.getInfo` calls). No batch method is known; check the docs, then concurrency, then ListenBrainz substitutes. Any change to Last.fm call count or pacing needs owner approval; Last.fm as a ranking source is otherwise parked.
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
-- P0b and the approved four-page re-measurement are complete (PRs #487 and #488).
+- P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
 - CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
