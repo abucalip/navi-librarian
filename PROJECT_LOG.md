@@ -59,3 +59,11 @@
 - Required CI passed on exact PR head: syntax/acquisition safety run 39639612889; Docker packaging/full unit suite/build 39639612870; container runtime smoke 39639612822; non-publishing multi-architecture validation 39639612866.
 - Agent-side focused tests and `py_compile` not run because the execution environment could not obtain a fresh GitHub checkout. No stale local checkout used. No publishing, deployment, or production runtime verification.
 - Next: regenerate/review the dependency map against post-merge main, finish the remaining module/caller/path/test inventory, and choose the next cohesive move only after checking dynamic imports, compatibility, and Docker assumptions.
+
+
+## 2026-10-21 — slskd integration boundary audit
+
+- Audited current-main source at `ea4d50e2384617ba365d11b93f5f4f789af6e019`, including the five `slskd_*` implementations, Docker COPY, `navidrome_server.py` lazy/top-level call sites, and direct-import tests for client/search/polling/transfers.
+- The five modules appear conceptually cohesive as an slskd integration package, but the exact whole-repository caller inventory is incomplete: repository-scoped code search yielded no results and the fresh post-PR #509 dependency-map artifact was not inspected. No move is authorized by incomplete evidence; no code or behavior changed.
+- No tests or `py_compile` were run. This was a source/documentation audit only. Publishing/deployment remain paused.
+- Next: inspect the dependency-map artifact generated from current main and complete exact references across tests, scripts, CI, dynamic imports, and quality-tier coverage before implementing any move.
