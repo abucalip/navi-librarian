@@ -23,7 +23,7 @@ These tests import or patch `navidrome_server` to check compatibility adapters, 
 
 - `tests/test_acquisition_routes.py`: patches `sys.modules["navidrome_server"]` to verify the API's lazy legacy-service adapter.
 - `tests/test_auth_routes_integration.py`: asserts importing the web app does not load `navidrome_server`; this is an important application-assembly boundary regression.
-- `tests/test_lastfm_client.py`: legacy wrappers delegate to the extracted Last.fm client and preserve filtering/error state.
+- `tests/test_lastfm_client.py`: legacy wrappers delegate to the extracted Last.fm client (`integrations/lastfm/client.py`) and preserve filtering/error state.
 - `tests/test_listenbrainz_client.py`: legacy recent-listens wrapper preserves username lookup and signature.
 - `tests/test_music_tag_audit.py`: legacy JSON/tool adapter preserves its response contract.
 - `tests/test_musicbrainz_rating_client.py`: legacy rating wrapper delegates while passing cache dependencies.

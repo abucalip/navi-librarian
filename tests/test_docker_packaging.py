@@ -53,6 +53,13 @@ class DockerPackagingTests(unittest.TestCase):
             with self.subTest(module=module):
                 self.assertTrue((root / "integrations" / "slskd" / module).is_file())
 
+    def test_lastfm_integration_package_is_copied_into_image(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=librarian:librarian integrations/ ./integrations/", dockerfile)
+        self.assertTrue((root / "integrations" / "lastfm" / "client.py").is_file())
+        self.assertFalse((root / "lastfm_client.py").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

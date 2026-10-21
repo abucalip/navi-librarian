@@ -9,7 +9,7 @@ import unicodedata
 import discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 import listenbrainz_client as _listenbrainz_client
-import lastfm_client as _lastfm_client_module
+from integrations.lastfm import client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
 import service_settings as _service_settings
 from music_paths import default_music_dir as _default_music_dir_from_environment
