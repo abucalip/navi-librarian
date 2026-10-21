@@ -24,15 +24,16 @@ def _empty_responses():
 
 
 class TagLaneEarlyStopTests(unittest.TestCase):
-    def test_flag_is_off_by_default(self):
-        self.assertFalse(gathering.TAG_LANE_EARLY_STOP_ENABLED)
+    def test_flag_is_on_by_default(self):
+        self.assertTrue(gathering.TAG_LANE_EARLY_STOP_ENABLED)
         self.assertEqual(gathering.TAG_LANE_EXHAUSTION_THRESHOLD, 2)
 
     def test_flag_off_stops_at_first_exhausted_query(self):
         responses = _empty_responses()
         responses["q-base-1"] = 503
 
-        _result, mb_client = _run(responses)
+        with mock.patch.object(gathering, "TAG_LANE_EARLY_STOP_ENABLED", False):
+            _result, mb_client = _run(responses)
 
         self.assertNotIn("q-base-2", mb_client.queries)
         self.assertNotIn("q-extra-1", mb_client.queries)

@@ -160,11 +160,11 @@ CF_ARTIST_RESOLUTION_CAP = 10
 # query costs at most one 1.1 s spacing sleep plus one 2 s retry backoff.
 SUPPLEMENTARY_CANDIDATE_CAP = 60
 REPLENISH_EXTRA_QUERIES = 2
-# Tag-lane early stop (flagged, off by default). When off, the lane stops at the first
+# Tag-lane early stop (on by default; measured in P0g). When off, the lane stops at the first
 # query that exhausts its retries, as before. When on, the lane keeps going after an
 # exhausted query and stops only after this many consecutive exhausted queries, so one
 # throttled search does not end the lane while the total request count stays bounded.
-TAG_LANE_EARLY_STOP_ENABLED = False
+TAG_LANE_EARLY_STOP_ENABLED = True
 # ListenBrainz tag-radio lane (flagged, off by default; owner decision pending): one GET
 # per tag plus the batch recording endpoints replace the MusicBrainz tag searches.
 LB_TAG_LANE_ENABLED = False
