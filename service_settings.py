@@ -237,7 +237,7 @@ def get_slskd_settings(settings_read, music_dir, defaults):
 
 def set_slskd_settings(
     settings_read, settings_write, get_music_dir, set_music_dir, defaults,
-    slskd_url="http://192.168.1.12:5030", api_key="",
+    slskd_url="", api_key="",
     quality_priority_json='["mp3_320","mp3_193_319","mp3_192","flac_cd","flac_16_44","flac_hires"]',
     slskd_downloads_path=None, music_library_path=None,
 ):
