@@ -13,7 +13,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import Any
 
-from discovery_allocation_contract import OwnershipStatus
+from discovery.allocation_contract import OwnershipStatus
 
 FEEDBACK_SIGNAL_ENABLED = True
 NEGATIVE_HALF_LIFE_SECONDS = 14 * 24 * 60 * 60

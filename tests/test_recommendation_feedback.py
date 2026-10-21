@@ -2,7 +2,7 @@ import unittest
 from dataclasses import replace
 from unittest import mock
 
-from discovery_allocation_contract import AllocationCandidate, OwnershipStatus
+from discovery.allocation_contract import AllocationCandidate, OwnershipStatus
 import recommendation_feedback as feedback_module
 from recommendation_cooldown import prepare_ranking_inputs
 from recommendation_feedback import apply_feedback_signal, feedback_penalty, save_boost

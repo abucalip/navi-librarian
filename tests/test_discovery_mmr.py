@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_mmr import (
+from discovery.mmr import (
     candidate_similarity,
     diversity_setting_to_penalty,
     diversity_metrics,

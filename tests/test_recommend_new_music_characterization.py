@@ -139,11 +139,11 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             return json.loads(server.recommend_new_music(count=10))
 
     def test_persisted_diversity_setting_maps_into_allocation_contract(self):
-        from discovery_personal_allocator import allocate_personal_recommendations
+        from discovery.personal_allocator import allocate_personal_recommendations
 
         for setting, expected_penalty in ((0, 0.0), (75, 0.75)):
             with self.subTest(setting=setting), patch(
-                "discovery_personal_allocator.allocate_personal_recommendations",
+                "discovery.personal_allocator.allocate_personal_recommendations",
                 wraps=allocate_personal_recommendations,
             ) as allocate:
                 self._run_recommendations([], diversity_setting=setting)

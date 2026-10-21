@@ -1,9 +1,9 @@
 import unittest
 
-from discovery_allocation_contract import (
+from discovery.allocation_contract import (
     AllocationCandidate, AllocationRequest, OwnershipStatus,
 )
-from discovery_personal_allocator import allocate_personal_recommendations
+from discovery.personal_allocator import allocate_personal_recommendations
 
 
 def item(cid, artist=None, album=None, category="adjacent", score=1.0,
