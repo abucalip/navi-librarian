@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_recommendation_payload import build_personal_recommendation_payload
+from discovery.recommendation_payload import build_personal_recommendation_payload
 
 
 def candidate(**overrides):

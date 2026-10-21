@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_deep_dive_candidates import (
+from discovery.deep_dive_candidates import (
     collect_missing_album_candidates,
     collect_similar_artist_candidates,
     enrich_candidate_genres,

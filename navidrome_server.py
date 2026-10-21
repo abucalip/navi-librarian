@@ -418,7 +418,7 @@ def recommend_new_music(
     )
     from discovery_personal_allocator import allocate_personal_recommendations
     from recommendation_cooldown import prepare_ranking_inputs
-    from discovery_recommendation_payload import (
+    from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
     )
 
@@ -957,7 +957,7 @@ def _discovery_is_various_artists(value):
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
     snapshot = _discovery_library_snapshot()
-    from discovery_new_releases import prepare_new_release_library_scope
+    from discovery.new_releases import prepare_new_release_library_scope
     owned, qualified_artists = prepare_new_release_library_scope(
         snapshot["artists"],
         snapshot["albums"],
@@ -965,7 +965,7 @@ def _build_new_releases_list():
         is_various_artists=_discovery_is_various_artists,
     )
     from datetime import date
-    from discovery_new_releases import new_release_window
+    from discovery.new_releases import new_release_window
     cutoff_date, earliest_year, current_year = new_release_window(date.today())
     candidates = {}
     errors = []
@@ -977,14 +977,14 @@ def _build_new_releases_list():
         if _discovery_is_various_artists(artist):
             continue
         artist_key = _music_key(artist)
-        from discovery_new_releases import build_new_release_lookup
+        from discovery.new_releases import build_new_release_lookup
         cache_key, query = build_new_release_lookup(
             artist,
             artist_key=artist_key,
             earliest_year=earliest_year,
             current_year=current_year,
         )
-        from discovery_new_releases import fetch_artist_release_groups
+        from discovery.new_releases import fetch_artist_release_groups
         payload, lookup_error = fetch_artist_release_groups(
             cache_key,
             query,
@@ -999,7 +999,7 @@ def _build_new_releases_list():
             errors.append({"artist": artist, "error": lookup_error})
             continue
 
-        from discovery_new_releases import select_artist_release_candidates
+        from discovery.new_releases import select_artist_release_candidates
         artist_candidates = select_artist_release_candidates(
             payload if isinstance(payload, list) else [],
             artist=artist,
@@ -1012,10 +1012,10 @@ def _build_new_releases_list():
             exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
             is_various_artists=_discovery_is_various_artists,
         )
-        from discovery_new_releases import merge_release_candidates
+        from discovery.new_releases import merge_release_candidates
         candidates = merge_release_candidates(candidates, artist_candidates)
 
-    from discovery_new_releases import build_new_release_response
+    from discovery.new_releases import build_new_release_response
     return build_new_release_response(
         candidates,
         qualified_library_artists=len(qualified_artists),
@@ -1036,7 +1036,7 @@ def _build_classics_list():
     }
     # Candidate collection policy is independently tested; provider/cache access
     # and pacing remain supplied by this adapter.
-    from discovery_classics_candidates import collect_classic_candidates
+    from discovery.classics_candidates import collect_classic_candidates
     candidates = collect_classic_candidates(
         library_artists,
         owned,
@@ -1047,7 +1047,7 @@ def _build_classics_list():
     )
 
     # Keep provider/cache access in the adapter; isolate shortlist policy.
-    from discovery_classics_ratings import enrich_critical_ratings
+    from discovery.classics_ratings import enrich_critical_ratings
     enrich_critical_ratings(candidates.values(), _musicbrainz_critical_rating)
 
     # Build a broad candidate pool before choosing the visible collection list.
@@ -1059,7 +1059,7 @@ def _build_classics_list():
     ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
 
     # Keep provider/cache access in the adapter; isolate bounded genre policy.
-    from discovery_classics_genres import enrich_classic_genres
+    from discovery.classics_genres import enrich_classic_genres
     enrich_classic_genres(
         ranked,
         _lastfm_artist_genres,
@@ -1111,7 +1111,7 @@ def _build_artist_deep_dive_list():
     ]
     candidates = {}
 
-    from discovery_deep_dive_candidates import (
+    from discovery.deep_dive_candidates import (
         collect_missing_album_candidates,
         collect_similar_artist_candidates,
         enrich_candidate_genres,

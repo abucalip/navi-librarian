@@ -1,7 +1,7 @@
 import unittest
-from discovery_new_releases import fetch_artist_release_groups
+from discovery.new_releases import fetch_artist_release_groups
 
-from discovery_new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
+from discovery.new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery_recommendations import is_album_candidate, is_various_artists, music_key
 
 
