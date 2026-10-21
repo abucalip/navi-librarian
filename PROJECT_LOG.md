@@ -1,3 +1,9 @@
+## 2026-10-21 — P0c: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (PR pending)
+
+- Branch `feat/listenbrainz-popularity`, owner-approved replacement. New `listenbrainz_popularity.py` (added to the Dockerfile `COPY`), `release_group_mbid` on candidates, `POPULARITY_CANDIDATE_LIMIT`, server wiring (server stays under the cap). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Focused tests run: `test_listenbrainz_popularity` (new), `test_recommend_new_music_characterization` (fixture ids made UUIDs, popularity patch moved), `test_discovery_candidate_gathering`, `test_discovery_recommendations`, `test_lastfm_recommendation_scoring`, `test_recommendation_replay_capture`, `test_recommendation_profile_comparison`, `test_discovery_recommendation_payload`; `py_compile` on changed files. Full suite not run per standing rule.
+- Live measurement (owner-approved, aggregate only, single sample): cold 23.6 s, warm 5.3 s and 7.8 s; 1 ListenBrainz popularity POST returned counts for 40 of 40 groups cold, 0 warm; previous cold samples were 40.9 to 51.9 s with 40 Last.fm GETs. Not done: CI on the PR head.
+
 ## 2026-10-21 — PR #489 merged: CF paging raised to four pages (reconciled from PR #488)
 
 - Reconciled the stacked PR onto current `main` after PR #487 had been squash-merged. The reconciled PR contains only the `CF_MAX_PAGES = 4` change, its configured-limit paging regression test, and corrected current documentation; the already-merged batched genre lookup was not duplicated.
