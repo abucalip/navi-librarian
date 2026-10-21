@@ -8,7 +8,7 @@ The owner wants root-level Python modules organized into logical packages. Follo
 
 **Next task — refresh the dependency map and finish the inventory before selecting the second move.** PR #508 is merged as `f171a4e73915222292642ba17d6dcb568b8c929a`; the first package move is complete.
 
-1. Refresh GitHub `main`, recent commits, open PRs, and CI. Current main at handoff: `f171a4e73915222292642ba17d6dcb568b8c929a`. Account for open release PR #506 and any new changes before branching.
+1. Refresh GitHub `main`, recent commits, open PRs, and CI before doing anything; do not assume the merge SHA is still current `main`. PR #508's merge commit is `f171a4e73915222292642ba17d6dcb568b8c929a`. Account for open release PR #506 and any new changes before branching.
 2. Read `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, and relevant architecture docs. Keep publishing/deployment paused and never run the full suite as an agent.
 3. Generate a fresh dependency map from the current GitHub revision using `python scripts/dep_map.py --output docs/architecture/dependency-map.json` in a clean checkout; review the graph rather than treating AST edges as runtime truth. Confirm whether the generated map is committed or a local audit artifact before changing tracked files.
 4. Finish the inventory of remaining root-level Python modules: production and test callers, lazy/dynamic imports, compatibility imports, AST/source-reading tests, entry points, filesystem/path assumptions, Docker COPY and CI references. The existing map is based on an older baseline and must not be treated as current after PR #508.
