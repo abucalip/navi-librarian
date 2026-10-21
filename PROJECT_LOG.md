@@ -67,3 +67,11 @@
 - The five modules appear conceptually cohesive as an slskd integration package, but the exact whole-repository caller inventory is incomplete: repository-scoped code search yielded no results and the fresh post-PR #509 dependency-map artifact was not inspected. No move is authorized by incomplete evidence; no code or behavior changed.
 - No tests or `py_compile` were run. This was a source/documentation audit only. Publishing/deployment remain paused.
 - Next: inspect the dependency-map artifact generated from current main and complete exact references across tests, scripts, CI, dynamic imports, and quality-tier coverage before implementing any move.
+
+
+## 2026-10-21 — PR #510 verification follow-up
+
+- PR #510 exact head `8ba095c17040ea5dd40ab19ad36e132acb4ab2ee`: all four required workflows passed (syntax/acquisition safety 39647691906; Docker packaging/full unit suite/build 39647691948; runtime smoke 39647692137; validation-only multi-architecture image 39647691919). No agent-side tests were run; the CI packaging workflow ran the full suite.
+- Downloaded and reviewed the dependency-map artifact from the exact head (SHA-256 `22440f9cabed53f77f21abbdeb0593a9553fbdcc5bc0791d0ff46498d5185ca5`). Static imports show the legacy server references all five modules, including lazy/function-local imports; the candidate modules have no local imports of their own.
+- Confirmed quality coverage in `tests/test_slskd_search_modules.py` and `tests/test_slskd_candidates.py`; Docker COPY explicitly includes all five modules. Corrected the previous audit's expected-path gap.
+- No implementation yet: a reliable exhaustive full-tree scan for string/dynamic references and non-Python path assumptions remains necessary; code-search zero results were marked incomplete and cannot establish absence. No merge, publish, or deployment.
