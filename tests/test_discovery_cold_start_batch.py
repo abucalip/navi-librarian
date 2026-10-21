@@ -10,20 +10,16 @@ from test_discovery_batch_lookup import _Harness
 
 
 class ColdStartGateTests(unittest.TestCase):
-    def test_cold_start_batches_with_steady_state_flags_off(self):
+    def test_cold_start_batches_with_warm_switch_off(self):
         harness = _Harness(3)
-        with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", False), \
-                mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", False):
-            gathering.gather_recommendation_candidates(harness.providers(), cold_start=True)
+        gathering.gather_recommendation_candidates(harness.providers(), cold_start=True)
 
         self.assertEqual(len(harness.posts), 1)
         self.assertEqual(len(harness.mb_client.requested), 0)
 
-    def test_steady_state_with_flags_off_does_not_batch(self):
+    def test_steady_state_with_warm_switch_off_does_not_batch(self):
         harness = _Harness(3)
-        with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", False), \
-                mock.patch.object(gathering, "WARM_BATCH_ENABLED", False), \
-                mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", False):
+        with mock.patch.object(gathering, "WARM_BATCH_ENABLED", False):
             gathering.gather_recommendation_candidates(harness.providers(), cold_start=False)
 
         self.assertEqual(harness.posts, [])
@@ -46,10 +42,8 @@ class ColdStartGateTests(unittest.TestCase):
 
     def test_cold_start_still_filters_marked_titles(self):
         self.assertEqual(
-            supply.batch_title_marker_rejection("Live at the Garden", enabled=True),
-            "batch_title_marker",
+            supply.batch_title_marker_rejection("Live at the Garden"), "batch_title_marker",
         )
-        self.assertIsNone(supply.batch_title_marker_rejection("Live at the Garden", enabled=False))
 
 
 class ColdStartRefreshTests(unittest.TestCase):

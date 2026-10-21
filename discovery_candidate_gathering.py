@@ -141,11 +141,6 @@ CF_PAGE_SIZE = 100
 CF_MAX_PAGES = 4
 # Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
 CF_MAX_UNCACHED_RESOLUTIONS = 100
-# Flagged batch resolution (off by default). Uncached recordings are looked up through
-# ListenBrainz batch endpoints instead of one MusicBrainz call each. It runs only when
-# the batch title-marker filter is also enabled, because the batch endpoints return no
-# secondary release types. Any batch failure falls back to per-recording lookups.
-CF_BATCH_RESOLUTION_ENABLED = False
 # Cold-start batch path: used only when no stored personal list exists yet, so the
 # first build is fast. Steady-state builds are unaffected. Its output has no secondary
 # release-type filter beyond the title markers, so it is a labelled first-run list.
@@ -234,16 +229,11 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
 
 
 def _batch_resolution_enabled(providers: RecommendationProviders, cold_start: bool = False) -> bool:
-    # Cold-start and warm batch paths have separate switches. The legacy opt-in
-    # path requires both CF_BATCH_RESOLUTION_ENABLED and the title-filter flag.
+    # Cold-start and warm batch paths have separate switches. Any batch failure
+    # falls back to per-recording lookups.
     if providers.http_post is None:
         return False
-    if (COLD_START_BATCH_ENABLED if cold_start else WARM_BATCH_ENABLED):
-        return True
-    return (
-        CF_BATCH_RESOLUTION_ENABLED
-        and _supply.BATCH_TITLE_FILTER_ENABLED
-    )
+    return COLD_START_BATCH_ENABLED if cold_start else WARM_BATCH_ENABLED
 
 
 def _prefetch_batch_recordings(
@@ -298,7 +288,7 @@ def _prefetch_batch_recordings(
         recording = synthesize_recording(
             entry, release_groups,
             # The batch path always filters titles: its endpoints return no secondary types.
-            title_rejection=lambda title: batch_title_marker_rejection(title, enabled=True),
+            title_rejection=lambda title: batch_title_marker_rejection(title),
         )
         if recording is not None:
             recordings[mbid] = recording

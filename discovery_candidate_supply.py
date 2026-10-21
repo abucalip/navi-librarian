@@ -196,11 +196,10 @@ CF_UNDESIRABLE_TITLE_PHRASES = (
     "essential",
     "complete collection",
 )
-# Batch-path title filter (flagged, off by default). The ListenBrainz batch
+# Batch-path title filter (always applied on the batch path). The ListenBrainz batch
 # metadata endpoints return no secondary release types, so live, compilation and
 # similar albums are caught here by whole-word title markers instead. Unmarked
 # live albums and compilations still pass; this is a partial safeguard.
-BATCH_TITLE_FILTER_ENABLED = False
 BATCH_TITLE_MARKERS = (
     "live",
     "compilation",
@@ -219,17 +218,12 @@ _BATCH_TITLE_MARKER_RE = re.compile(
 )
 
 
-def batch_title_marker_rejection(title: str, *, enabled: bool | None = None) -> str | None:
+def batch_title_marker_rejection(title: str) -> str | None:
     """Return "batch_title_marker" when a release title carries a live or compilation marker.
 
     Used only on the batch path, where secondary types are unavailable. Returns
-    None when the filter is off or the title has no whole-word marker. ``enabled``
-    overrides the module flag for the cold-start batch path, which always filters.
+    None when the title has no whole-word marker.
     """
-    if enabled is None:
-        enabled = BATCH_TITLE_FILTER_ENABLED
-    if not enabled:
-        return None
     normalized = " ".join(str(title or "").casefold().split())
     if _BATCH_TITLE_MARKER_RE.search(normalized):
         return "batch_title_marker"
