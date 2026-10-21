@@ -282,9 +282,9 @@ Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the f
 ## Acquisition package, PR 3 of 3: import and cleanup (open)
 
 - Moved `completion`, `import_files`, `import_service`, `cleanup`, `recovery` into `acquisition/`. `acquisition_import.py` is `acquisition/import_files.py` because `import` is a keyword. `import_files -> completion` is the only internal edge. No re-export shims; `navidrome_server.py` and tests import the new paths. The `python-syntax.yml` compile entry is now `acquisition/completion.py`.
-- Status: implemented and focused-tested only; CI, merge, publish and deploy not done.
+- Status: squash-merged as `7fbea3a22d65cb5e3406981803392e91b7c15288` from head `2cf623a6ad24e4a8014eef9f4dae3ec8e7960d1d`; four checks passed; not published or deployed.
 
-## Discovery package, PR 1 of 4: leaf cluster (open)
+## Discovery package, PR 1 of 4: leaf cluster (PR #521 merged)
 
 - Moved `classics_candidates`, `classics_genres`, `classics_ratings`, `deep_dive_candidates`, `new_releases`, `recommendation_payload` into the new `discovery/` package, dropping the `discovery_` prefix. No internal edges, no `mock.patch` string targets, no `__file__` use. Root Python modules 24.
-- Status: implemented and focused-tested only; CI, merge, publish and deploy not done.
+- Status: squash-merged as `7fbea3a22d65cb5e3406981803392e91b7c15288` from head `2cf623a6ad24e4a8014eef9f4dae3ec8e7960d1d`; four checks passed; not published or deployed.

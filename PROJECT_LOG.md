@@ -1,4 +1,6 @@
-## 2026-10-21 — Discovery package PR 1: leaf cluster (open, not merged)
+## 2026-10-21 — Discovery package PR 1: leaf cluster (PR #521 merged)
+
+- PR #521 squash-merged as `7fbea3a22d65cb5e3406981803392e91b7c15288` from head `2cf623a6ad24e4a8014eef9f4dae3ec8e7960d1d`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
 
 - Moved `classics_candidates`, `classics_genres`, `classics_ratings`, `deep_dive_candidates`, `new_releases`, `recommendation_payload` from `discovery_*.py` into the new `discovery/` package (no re-export shims; the only callers were `navidrome_server.py` and five test modules, all updated). Dockerfile gains `discovery/ ./discovery/` and drops the six root names. Root Python modules 24. Packaging test `test_discovery_leaf_modules_live_in_discovery_package` added.
 - Local: `py_compile`, `scripts/check_server_size.py` and the focused modules (`test_docker_packaging` plus the five moved-module tests) pass except 4 `test_discovery_new_releases` provider tests that need `httpx`, which the local python3 lacks (same 4 errors on clean `main`). Full suite not run. CI, merge, publish and deploy not done.
