@@ -1,4 +1,11 @@
-## 2026-10-21 — Last.fm integration package move (PR pending)
+## 2026-10-21 — PR #512 merged: Last.fm integration package
+
+- Squash merge commit on `main`: `7282cbb740dba6e27fa79aecfe0de5519c18d859`; exact final PR head `84b4f04b27025f35d1f8f353b152a78ee886ef59`, all four required workflows passed on it (syntax 39653199481, Docker packaging/full unit suite/build 39653199482, container smoke 39653199327, validation-only multi-architecture 39653199280). Merged on the owner's instruction naming PR 512.
+- Owner rules added to `CLAUDE_CLI.md` (2026-10-21): agents never run the full test suite; documentation-only updates are pushed directly to `main`.
+- Main also contains owner-merged PR #506 (`8e29044`, tag-triggered release workflow); out of scope here. Publishing, deployment and production-runtime verification remain unperformed.
+- Next task: audit the ListenBrainz modules as their own boundary. See `CLAUDE_CLI.md`.
+
+## Last.fm integration package move details (before merge)
 
 - Base: `main` `13790f8` (all four workflows green on it). Moved `lastfm_client.py` to `integrations/lastfm/client.py` (new `integrations/lastfm/__init__.py`); `navidrome_server.py` now imports the canonical module and keeps its `_lastfm_*` adapters unchanged. No root shim: AST/grep audit found exactly one production importer (`navidrome_server.py`) and one direct test module (`tests/test_lastfm_client.py`, switched to the canonical path); no dynamic/string imports, no `__file__` or path assumptions, no workflow or script references besides the syntax compile list.
 - Dependencies: the client imports `recommendation_run_metrics` and `discovery_recommendations.music_key` from the root. Both are stdlib-only leaf modules (no cycle) and resolve from `/app` in the image. `music_key` is only the default for the injectable `key_normalizer`; left as is to keep behavior unchanged. Decoupling it is a possible later cleanup, not part of this move.

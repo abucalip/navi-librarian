@@ -9,8 +9,8 @@
 - Validation-only multi-architecture image: [39649757030](https://github.com/abucalip/navi-librarian/actions/runs/39649757030)
 - Docker packaging CI ran the full unit suite successfully. Agent-side focused tests and `py_compile` were not run because no fresh isolated checkout was available.
 - No release publication, deployment, or production runtime verification was performed; publishing/deployment remain paused.
-- **Last.fm package move:** `lastfm_client.py` moved to `integrations/lastfm/client.py` in an open PR (not merged); root Python modules 61 to 60. Tested by focused tests locally; CI evidence is on the PR head.
-- **Next action:** after the owner decides on the Last.fm PR, audit the ListenBrainz modules separately; see `CLAUDE_CLI.md`.
+- **Last.fm package move:** merged (PR #512, `7282cbb740dba6e27fa79aecfe0de5519c18d859`); `integrations/lastfm/client.py`, root Python modules 60. Merged and CI-tested on its PR head; not published, deployed or runtime-verified.
+- **Next action:** audit `listenbrainz_client.py` and `listenbrainz_popularity.py` as their own boundary; see `CLAUDE_CLI.md`.
 
 ## 2026-10-21 — slskd package move PR #511 opened
 

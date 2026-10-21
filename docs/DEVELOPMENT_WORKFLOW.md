@@ -88,3 +88,7 @@ At meaningful session closeout, update `docs/PROJECT_STATUS.md` and root `PROJEC
 - A merge is not publication; publication is not deployment; deployment is not runtime verification.
 - Preserve configuration, persistent data, and a rollback reference. Do not weaken safety checks or delete production data to make tests pass.
 - Obtain appropriate authorization before consequential production actions.
+
+## Documentation-only changes (owner rule, 2026-10-21)
+
+Changes that touch only documentation are pushed directly to `main`, not through a PR. Changes that also touch code, tests, Docker/Compose or workflows still use a PR with the four required workflows on the exact final head. Agents never run the full unit suite.

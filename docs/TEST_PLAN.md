@@ -114,13 +114,13 @@ Never infer a later state from an earlier one. Record unavailable or skipped tes
 
 ## Documentation-only changes
 
-For documentation-only PRs:
+Documentation-only changes are pushed directly to `main` (owner rule, 2026-10-21; see `CLAUDE_CLI.md`). Before pushing:
 - inspect the changed docs against current GitHub code and PR state;
 - check internal paths, names, SHA references, and claims for accuracy;
 - search for duplicated or stale active instructions;
 - review the complete diff and ensure no application behavior changed;
 - run applicable documentation/link/lint checks if configured;
-- verify the required PR workflows when repository policy requires them, and report any unavailable gates honestly.
+- confirm the workflows on `main` pass after the push, and report any unavailable gates honestly.
 
 ## Historical evidence
 

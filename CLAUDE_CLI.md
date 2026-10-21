@@ -1,12 +1,12 @@
 # Handoff for Claude CLI: recommendation-engine follow-up
 
-Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
+Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Permanent rules").
 
 ## Current handoff: Python module package layout (active priority)
 
 The owner wants root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-layout effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
 
-**Next task — audit the ListenBrainz modules as their own boundary.** The Last.fm client moved to `integrations/lastfm/client.py` in an open PR (see `PROJECT_LOG.md`; not merged, owner must name the PR). Refresh GitHub `main`, open PRs and CI first. PR #506 (release publishing workflow) remains out of scope; publishing/deployment stay paused.
+**Next task — audit the ListenBrainz modules as their own boundary.** PR #512 is squash-merged to `main` as `7282cbb740dba6e27fa79aecfe0de5519c18d859` from exact final PR head `84b4f04b27025f35d1f8f353b152a78ee886ef59`: the Last.fm client now lives at `integrations/lastfm/client.py` (no root shim; root Python modules 60). Refresh GitHub `main`, open PRs and CI first. PR #506 (tag-triggered release workflow) is also merged to `main` (`8e29044`) by the owner; it is not part of this effort, and publishing/deployment stay paused until the owner says otherwise.
 
 1. Read `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md` and `docs/architecture/AST_TEST_INVENTORY.md`. Never run the full unit suite as an agent.
 2. Audit `listenbrainz_client.py` and `listenbrainz_popularity.py`: callers include `navidrome_server.py` (top-level and lazy imports) and `discovery_candidate_gathering.py`; trace tests, token-source/header contracts, Docker/CI references. Decide whether a safe cohesive `integrations/listenbrainz/` boundary exists; if unclear, stop with a design recommendation.
@@ -46,7 +46,7 @@ P0i is merged (PR #499, docs only: stale default-flag statements fixed). The art
 Do, in order:
 1. Read-only, no network: in the code and the findings ("CF supply is limited by pages read", "`CF_MAX_PAGES = 4` re-measured", P0b/P0f/P0g, P0h baseline), write a short brief in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` under P1: what grows with pages (batch recording lookups at 50 per chunk? release-group chunks of 50, genre batch size 75 per `ARTIST_GENRE_CHUNK`), what stays bounded (uncached MusicBrainz budget 100; batch hits do not spend it), the endpoint limits already found (release-group GET fails from 81 MBIDs; artist genre batch has no failing size up to 96), and an estimate of added requests and time per extra page from the existing measurements (3 pages 41.5 s, 4 pages 40.9 s cold, so marginal time per page is small and unmeasured beyond 4).
 2. Propose one measurement plan: pages 4 vs 6 (or 8), fresh data dir, slskd off, aggregate only, single cold plus one warm sample per arm, test-only harness not committed, counts of `listenbrainz.*` and `musicbrainz.bounded_get` before and after, final-list overlap, distinct artists, eligible unowned albums, cold time. State the added ListenBrainz GETs (about 1 CF page + 1 recording batch + up to 1 release-group GET per extra 100 recordings) and the pass/fail thresholds before running (for example: cold time within +10 s of the 4-page sample, eligible unowned albums up by at least 20%, no new 502s or 429s).
-3. Open a docs PR with the brief and plan, run the four required workflows on its head, and **wait for the owner** to approve the live measurement and name the PR before any merge. Do not change `CF_MAX_PAGES` in that PR.
+3. Push the brief and plan directly to `main` (documentation-only rule), and **wait for the owner** to approve the live measurement before any run. Do not change `CF_MAX_PAGES`.
 
 If the owner approves the run: run only what the plan names, record aggregates and request counts in the doc and `PROJECT_LOG.md`, and open a separate PR for any default change (keep the flag/constant change one line, with a rollback note).
 
@@ -67,6 +67,11 @@ Other options if the owner prefers something else: repeat the P0h capture after 
 - Reading deeper into the 1,000-recording CF pool: now the next task (P1a above); live measurement still needs owner approval.
 - CF freshness capture: repeat after ListenBrainz recomputes CF for the imported history (needs a go-ahead); Last.fm (parked); diversity setting UI (paused).
 - Saved-area leftovers: undo after reload, MBID in save metadata. (The Saved page is PR #501 and the deep-dive Save rendered check is PR #500, both merged.)
+
+## Permanent rules (owner, do not remove)
+
+1. **Never run the full test suite.** Agents must never run `python -m unittest discover -s tests` or any equivalent full-suite command, in any session, for any reason. Run only focused modules for the files you change plus `python -m py_compile`. The owner and the `test-and-build` CI workflow run the full suite.
+2. **Documentation-only updates are pushed directly to `main`.** No PR for changes that touch only documentation (`*.md` files such as `CLAUDE_CLI.md`, `PROJECT_LOG.md`, `docs/`). Refresh `main` first, commit with the attribution line, and push. Anything that also changes code, tests, Dockerfile/Compose or workflows still goes through a PR with the four required workflows on its exact final head.
 
 ## Testing scope (standing owner rule, 2026-10-20)
 
@@ -91,7 +96,7 @@ Other options if the owner prefers something else: repeat the P0h capture after 
 
 - `navidrome_server.py` is capped at 2650 lines by the CI compile job (currently 2,448). Prefer new modules over server growth. Run `scripts/check_server_size.py` after editing it.
 - A new Python module must be added to the `COPY` list in the Dockerfile, or `container-smoke` fails.
-- The docs-only change rule still applies: a docs PR needs the same four checks on its head.
+- Documentation-only changes go directly to `main` (see "Permanent rules"); any change touching code, tests, Dockerfile or workflows still needs a PR with the four checks.
 - The full suite has one known macOS-only failure: `test_acquisition_import.py::test_success_persists_importing_before_import_and_then_imported` (`/var` → `/private/var`). It fails on clean `main` too. CI on Linux passes it. The owner's independent full-suite run covers it; do not run the suite to check it.
 
 ## Open items and owner decisions

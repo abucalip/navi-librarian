@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: In progress; Navidrome, MusicBrainz, and slskd integration moves merged in PRs #508, #509, and #511.
+Status: In progress; Navidrome, MusicBrainz, slskd, and Last.fm integration moves merged in PRs #508, #509, #511, and #512.
 
 ## Goal
 
@@ -172,10 +172,11 @@ See the **Current handoff: Python module package layout** section at the top of 
 - Next: refresh the dependency map on post-merge `main`; audit `lastfm_client.py` and its callers as the next candidate, keeping ListenBrainz as a separate provider boundary. Do not move code until the current-main caller/path/test/packaging audit supports it.
 
 
-## Last.fm integration package move (2026-10-21, PR pending)
+## Last.fm integration package move (2026-10-21, PR #512 merged)
 
 - Baseline: `main` `13790f8`, four workflows green. The AST map plus direct grep of the tree found: one production importer (`navidrome_server.py`, top-level import, adapters `_lastfm_cached_call`, `_lastfm_top_albums`, `_lastfm_artist_genres`, `_lastfm_similar_artists`, album popularity), one direct test module, no lazy/dynamic/string imports, no `__file__`/path use, no workflow or script reference other than the syntax compile list, and the Docker root `COPY` list.
 - Dependencies: `recommendation_run_metrics` and `discovery_recommendations.music_key` (both stdlib-only leaves, no cycle). Same direction as the existing MusicBrainz and ListenBrainz helpers, which lazily import `recommendation_run_metrics`.
 - Result: canonical module `integrations/lastfm/client.py`; no root shim (no remaining importer needs the old path); test and compile list use the canonical path; Docker `COPY` entry removed; regression test asserts the package is copied and the old root file is gone. Root-level Python modules: 60.
 - ListenBrainz is not bundled: `listenbrainz_client` and `listenbrainz_popularity` have separate callers (including `discovery_candidate_gathering.py` and lazy imports in `navidrome_server.py`) and tests; audit next as its own boundary.
 - PR #512. CI on code head `76e5979d` (before this docs-only evidence commit): syntax [39652945862](https://github.com/abucalip/navi-librarian/actions/runs/39652945862), Docker packaging/full unit suite/build [39652945820](https://github.com/abucalip/navi-librarian/actions/runs/39652945820), container smoke [39652945713](https://github.com/abucalip/navi-librarian/actions/runs/39652945713), validation-only multi-architecture [39652945728](https://github.com/abucalip/navi-librarian/actions/runs/39652945728): all passed. PR is #512; the final head after this commit is re-verified in the PR checks.
+- Merged as `7282cbb740dba6e27fa79aecfe0de5519c18d859` from exact final head `84b4f04b27025f35d1f8f353b152a78ee886ef59` (owner named PR 512). Next: ListenBrainz audit (see `CLAUDE_CLI.md`); no move pre-approved.
