@@ -201,6 +201,7 @@ class ReplenishmentTests(unittest.TestCase):
         self.assertEqual(summary["extra_candidates_added"], 1)
         self.assertEqual(summary["eligible_unowned_after"], summary["eligible_unowned_before"] + 1)
 
+    @mock.patch("discovery_candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
     def test_lane_unavailable_in_first_pass_blocks_replenishment(self):
         artists = [("Alpha", "A1")]
         responses = {q: [] for q, _f, _s in BASE_QUERIES + EXTRA_QUERIES}

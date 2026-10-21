@@ -103,6 +103,7 @@ class SupplementaryLaneStopTests(unittest.TestCase):
         result = gather_recommendation_candidates(providers)
         return result, mb_client
 
+    @mock.patch("discovery_candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
     def test_persistent_503_stops_lane_after_one_bounded_retry(self):
         result, mb_client = self._run(release_group_statuses=[503] * 20)
 
