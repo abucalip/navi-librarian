@@ -5,7 +5,7 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from discovery_snapshot import serve_snapshot
+from discovery.snapshot import serve_snapshot
 
 
 def _owned_predicate(

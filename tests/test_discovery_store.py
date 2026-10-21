@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from discovery_store import read_list, recent_recommendation_history, write_list
+from discovery.store import read_list, recent_recommendation_history, write_list
 
 
 class DiscoveryStoreTests(unittest.TestCase):

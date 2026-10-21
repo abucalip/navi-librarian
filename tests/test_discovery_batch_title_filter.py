@@ -1,7 +1,7 @@
 """Offline tests for the batch-path title filter (no provider calls)."""
 import unittest
 
-import discovery_candidate_supply as supply
+from discovery import candidate_supply as supply
 
 
 class BatchTitleFilterTests(unittest.TestCase):

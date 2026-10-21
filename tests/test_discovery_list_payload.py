@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from discovery_list_payload import build_cached_discovery_list_response
+from discovery.list_payload import build_cached_discovery_list_response
 
 
 def music_key(value):

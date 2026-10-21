@@ -10,7 +10,7 @@ import math
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
-from discovery_store import recommendation_identity_hash
+from discovery.store import recommendation_identity_hash
 
 COOLDOWN_HALF_LIFE_SECONDS = 7 * 24 * 60 * 60
 COOLDOWN_EXPIRY_SECONDS = 30 * 24 * 60 * 60
@@ -79,7 +79,7 @@ def cooldown_adjusted_score(
 def read_history_for_cooldown(database_path: str, *, now: float) -> list[dict[str, Any]]:
     """Read the exact history input for ranking, preserving fail-open behavior."""
     import sqlite3
-    from discovery_store import recent_recommendation_history
+    from discovery.store import recent_recommendation_history
 
     try:
         return recent_recommendation_history(database_path, now=now)

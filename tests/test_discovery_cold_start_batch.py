@@ -4,8 +4,8 @@ from threading import Lock
 from unittest import mock
 
 import discovery_candidate_gathering as gathering
-import discovery_candidate_supply as supply
-from discovery_refresh import refresh_personal
+from discovery import candidate_supply as supply
+from discovery.refresh import refresh_personal
 from test_discovery_batch_lookup import _Harness
 
 

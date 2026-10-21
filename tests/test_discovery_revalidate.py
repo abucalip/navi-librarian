@@ -3,8 +3,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-import discovery_refresh
-from discovery_list_payload import build_cached_discovery_list_response
+from discovery import refresh as discovery_refresh
+from discovery.list_payload import build_cached_discovery_list_response
 
 import navidrome_server as server
 

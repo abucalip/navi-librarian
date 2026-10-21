@@ -6,7 +6,7 @@ injected HTTP callables, so tests use stubs and never touch the network.
 
 The batch endpoints return no secondary release types. Callers must therefore
 enable this path only together with the batch title-marker filter; see
-``discovery_candidate_supply.batch_title_marker_rejection``.
+``discovery.candidate_supply.batch_title_marker_rejection``.
 """
 from typing import Any, Callable, Mapping
 

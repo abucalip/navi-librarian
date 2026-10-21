@@ -6,7 +6,7 @@ import shutil
 import sqlite3
 import time
 import unicodedata
-import discovery_store
+from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
 from integrations.lastfm import client as _lastfm_client_module
@@ -43,7 +43,7 @@ from acquisition import state as _acquisition_state
 from acquisition.source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
 from acquisition.recovery import reconcile_interrupted_import as _reconcile_interrupted_import
 from acquisition.cleanup import clean_acquisition_source as _clean_acquisition_source
-import discovery_refresh
+from discovery import refresh as discovery_refresh
 from recommendation import listening_profile
 from acquisition.import_files import import_matched_album_files as _acquisition_import_matched_album_files
 from acquisition.completion import (
@@ -417,7 +417,7 @@ def recommend_new_music(
         OwnershipStatus,
     )
     from discovery.personal_allocator import allocate_personal_recommendations
-    from recommendation_cooldown import prepare_ranking_inputs
+    from discovery.cooldown import prepare_ranking_inputs
     from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
     )
@@ -639,7 +639,7 @@ def recommend_new_music(
 
     pool_diagnostics = None
     if _record_diagnostics:
-        from discovery_store import record_recommendation_diagnostics
+        from discovery.store import record_recommendation_diagnostics
         source_by_candidate = {
             (_music_key(candidate.get("artist", "")), _music_key(candidate.get("album", ""))):
                 candidate.get("discovery_sources", [])
@@ -2347,7 +2347,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
             "read_only_except_user_list": True,
         }, ensure_ascii=False, indent=2)
 
-    from discovery_list_payload import build_cached_discovery_list_response
+    from discovery.list_payload import build_cached_discovery_list_response
     return build_cached_discovery_list_response(
         list_name,
         count,

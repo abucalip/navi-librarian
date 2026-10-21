@@ -1,7 +1,7 @@
 import unittest
 from threading import Lock
 
-from discovery_refresh import (
+from discovery.refresh import (
     cache_staleness_reason,
     refresh_all,
     refresh_other,
