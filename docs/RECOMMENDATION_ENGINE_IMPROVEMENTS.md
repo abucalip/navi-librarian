@@ -183,7 +183,7 @@ What this showed (superseded in part by the bisection below, which found a size 
 
 ### P0b — Batched genre lookup (PR #487 merged)
 - **Result:** batched `metadata/artist/` genre lookup is implemented in `discovery_batch_metadata.py`, chunks of 75, populating the existing 90-day cache and retaining the per-artist MusicBrainz fallback. The single harness sample improved cold 4-page time from 207.6 s to 51.9 s with the same 79 albums / 42 artists; details and limitations are recorded in `PROJECT_LOG.md`.
-- **Follow-up complete in PR #488:** the owner-approved `CF_MAX_PAGES` increase to 4 was measured on the batched code and merged. Three pages yielded 55 albums / 24 artists (41.5 s cold); four pages yielded 79 albums / 42 artists (40.9 s cold). Single samples only; not a recommendation-quality claim.
+- **Follow-up complete in reconciled PR #489 (original PR #488):** the owner-approved `CF_MAX_PAGES` increase to 4 was measured on the batched code and merged. Three pages yielded 55 albums / 24 artists (41.5 s cold); four pages yielded 79 albums / 42 artists (40.9 s cold). Single samples only; not a recommendation-quality claim.
 
 ### P0c — Test batch lookups for Last.fm (added 2026-10-21)
 - After genre lookups are batched, the largest remaining cold-run cost at 4 pages is the Last.fm popularity pass: `apply_lastfm_popularity_bonus` makes up to 40 sequential `album.getInfo` calls (30-day cache; 27.5 s of a 39.6 s cold run, 0.5 to 0.7 s each, 0.2 s pacing between calls). Warm runs make none.
@@ -201,14 +201,14 @@ What this showed (superseded in part by the bisection below, which found a size 
 - **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval.
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.
-- **More ListenBrainz pages, extra provider lookups, or a higher MusicBrainz budget:** require explicit owner approval. The approved CF page limit is now 4 (PR #488); do not raise it further without a new decision.
+- **More ListenBrainz pages, extra provider lookups, or a higher MusicBrainz budget:** require explicit owner approval. The approved CF page limit is now 4 (PR #489, reconciled from original PR #488); do not raise it further without a new decision.
 
 ## Current implementation facts
 
 - ListenBrainz CF is the primary candidate source; MusicBrainz resolves recording metadata. A cold-start batch path is enabled for first builds and covers all uncached CF recordings in batches. Batch hits do not spend the 100-call MusicBrainz budget; batch misses remain bounded by it. Since 2026-10-21 (owner-approved) steady-state builds also use the batch path (`WARM_BATCH_ENABLED`), and batch results are cached under `mb:recording_batch:<mbid>` (never the full-lookup key, because batch data lacks secondary release types). Live effect: see the verification note under the warm finding.
 - Fixed MusicBrainz tag searches are supplementary candidates. The batch metadata response lacks secondary release types, so its title-marker filter is only a partial safeguard and stays behind its default-off flag.
 - Recommendation output is persisted. Candidate generation, scoring/allocation, eligibility, and snapshot freshness are separate layers; diagnose them separately.
-- Batch release-group lookups are resilient (PR #479, merge `4cf66322866c5377fec612a297db05922d7a8e11`): a failed chunk is retried once; if it still fails only its recordings fall back to per-recording lookups and the other chunks stay batch-resolved and cached. Found live at 400 CF recordings (a 502 HTML response discarded all four successful recording batches). The four-page path was measured in the owner-approved PR #488 harness sample; timing and recommendation-quality conclusions remain limited by the single sample.
+- Batch release-group lookups are resilient (PR #479, merge `4cf66322866c5377fec612a297db05922d7a8e11`): a failed chunk is retried once; if it still fails only its recordings fall back to per-recording lookups and the other chunks stay batch-resolved and cached. Found live at 400 CF recordings (a 502 HTML response discarded all four successful recording batches). The four-page path was measured in the owner-approved reconciled PR #489 harness sample; timing and recommendation-quality conclusions remain limited by the single sample.
 - Feedback-seed work and automatic refill/stale-while-revalidate are implemented. Roadmap 3.3 and 3.4 are complete.
 - `LISTENBRAINZ_TOKEN` is supported through `compose.yaml`, `.env.example`, and deployment documentation, but the change is **not deployed**.
 - Historical evidence is limited: live measurements are small samples; the final-list effect of the cold-start gain is unknown; available ListenBrainz history covers roughly two weeks.
