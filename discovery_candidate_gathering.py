@@ -135,7 +135,8 @@ class RecommendationProviders:
 # Bounded CF replenishment. One ListenBrainz call per page; the first page is
 # required, later pages may fail without discarding earlier pages.
 CF_PAGE_SIZE = 100
-CF_MAX_PAGES = 2
+# Owner-approved after batched genre lookup; four pages materially increase supply.
+CF_MAX_PAGES = 4
 # Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
 CF_MAX_UNCACHED_RESOLUTIONS = 100
 # Flagged batch resolution (off by default). Uncached recordings are looked up through
