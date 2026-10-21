@@ -114,11 +114,33 @@ An experimental patch (not merged; reviewed on PR #483 and removed) rotated the 
 
 Final mix stayed 4 CF / 6 tag in every run. Mean overlap 4.7 (off) vs 4.0 (on): within noise at three runs. Rotation did not widen tag supply, and newly sampled tag queries are uncached, so warm runs make provider calls the baseline does not (breaks "calls must not rise") and are 2-7x slower. Calls may fall once the rotation cycle is cached; not measured. Decision: keep off, and the code was not merged: no benefit was shown and nothing in the app supplied the counter. Reintroduce only if a future experiment shows a measurable benefit. Harness `run_tag_rotation.py` was test-only and never committed (adapted from `run_cf_budget.py`).
 
+## Finding — read-only look at release-group 502s and the unexplained counts (2026-10-21, code reading and existing reports only; no live run)
+
+**Request pattern (from `discovery_batch_metadata.py` and `_prefetch_batch_recordings`).** Recordings: one POST per 100 MBIDs to the ListenBrainz `metadata/recording/` endpoint (`BATCH_RECORDING_CHUNK = 100`), sent back to back with no spacing. Release groups: one GET per 100 release-group MBIDs to `metadata/release_group/`, with the MBIDs comma-joined in the query string (about 3.7 KB of MBIDs, about 3.9 KB once commas are percent-encoded), also with no spacing. Failed chunk: one retry after a 2 s sleep (#479), then its recordings fall back. Only the number of chunks changes with pages: at most 2 recording and 2 release-group requests at 2 pages, at most 4 and 4 at 4 pages. **Each request is the same size at both settings**, so request size per call does not explain a failure that appears only at 4 pages. The 4-page diag run logged two `release_group` calls, both 502 with an HTML body (an HTML 502 is typical of a gateway or proxy in front of the API, not the application's JSON error).
+
+**What is known:** the endpoint and method are the same at 2 and 4 pages; per-request URL size is the same; the 2-page path resolved all 200 recordings with no lookups (single sample); both release-group calls in the 4-page diag run returned 502; the retry gap is only 2 s.
+
+**What is not known:** whether the logged calls include the retry (if they do, the 502 hit the first request and its retry); whether the 502 depends on the number of release-group requests in a burst, on server load at the time, or on response time (a heavier cold lookup of up to 100 uncached groups); and whether it recurs at all, since the report holds one failing run, with the first 4-page cold run not logging individual calls. The aggregate reports contain no per-request size, status or latency table beyond that, so none could be tabulated offline.
+
+**Hypotheses, most to least likely:** (1) transient gateway timeout or throttling on a cold release-group lookup, made likelier by back-to-back requests and a 2 s retry gap; (2) a rate or burst limit on the second and later requests; (3) a URL-length or size limit (least likely: 100-MBID requests succeeded at 2 pages with the same URL length).
+
+**Unexplained counts, now explained from code (no run needed).**
+- `musicbrainz.recording_lookup` 111 to 113 against the 100 budget: `record_provider_call("musicbrainz", "recording_lookup")` sits inside the per-attempt retry loop (up to 3 attempts on 429/500/502/503/504), while the budget (`resolution_calls >= CF_MAX_UNCACHED_RESOLUTIONS`) is incremented once per recording. So the budget caps recordings resolved (100), not HTTP requests; the counter counts requests. The 11 to 13 extra are retried attempts. Real MusicBrainz traffic can therefore reach up to 300 requests per run in the worst case, and the 1.1 s spacing is applied per recording, not per retry (retries sleep 2 s and 4 s).
+- `lastfm.api` 13 to 40: `apply_lastfm_popularity_bonus` queries `album.getInfo` for the top 40 candidates by score (30-day cache). A cold run with an API key therefore makes up to 40 calls (13 means 27 were cached); warm runs make none, matching the 0 in the rotation experiment. The tag-rotation cold runs' 40 calls fit the same cap. This path is independent of CF paging.
+
+**Smallest candidate fixes, with request-pattern impact (none implemented; each needs owner approval).**
+1. Instrumentation only: record per-request status, latency and attempt number for release-group calls in the aggregate diagnostics. No added requests.
+2. Count retries separately (`recording_lookup_retry`) so the counter matches the budget. No request change.
+3. Space release-group chunks (for example 1 s) and/or lengthen the retry gap. No added requests, slightly longer runs.
+4. Smaller release-group chunks (for example 50). More requests: breaks the no-added-requests rule unless offset elsewhere.
+
+**Recommended next step:** do 1 and 2 (no request-pattern impact), then, only with an owner go-ahead for one live 4-page cold diag run, read the per-request log before touching spacing or chunk size. Do not reopen `CF_MAX_PAGES = 4` until the 502 cause is shown.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
 - Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Tag-lane rotation was measured and not adopted (see its finding). Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
-- Open question from the 4-page run: why release-group requests still return 502 after #479's retry at larger request sizes. Investigate only read-only first; any change to request pattern needs owner approval.
+- Open question from the 4-page run: why release-group requests still return 502 after #479's retry. Read-only look done (see its finding): per-request size is the same at 2 and 4 pages, cause still unestablished; next step is per-request diagnostics, then an owner-approved live diag run. Any change to request pattern needs owner approval.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
 ### P1 — Reopen ranking work only if measurements justify it

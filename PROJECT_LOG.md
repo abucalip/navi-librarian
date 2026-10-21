@@ -1,3 +1,10 @@
+## 2026-10-21 — Read-only look at release-group 502s (docs only)
+
+- Branch `docs/release-group-502-readonly-look`. Code reading plus existing reports; no live run, no code change, no tests run (docs only; full suite not run per standing rule).
+- 502 cause **not established**. Release-group requests are identical in size (100 MBIDs, GET, about 3.9 KB) at 2 and 4 pages; only the request count differs; retry gap is 2 s with no chunk spacing. Leading hypothesis: transient gateway timeout or burst throttling.
+- Unexplained counts explained from code: `recording_lookup` counts HTTP attempts (inside the retry loop) while the budget counts recordings, so 111 to 113 is 100 plus retries; `lastfm.api` is the top-40 `album.getInfo` popularity pass (30-day cache), independent of CF paging.
+- Recommended next step: per-request diagnostics and a separate retry counter (no request-pattern change), then one owner-approved live diag run. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+
 ## 2026-10-21 — PR #483 merged: tag-lane rotation measured; not adopted (docs only)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/483
