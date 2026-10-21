@@ -1,3 +1,12 @@
+## 2026-10-21 — PR #487 merged: batched genre lookup (P0b)
+
+- PR: https://github.com/abucalip/navi-librarian/pull/487
+- Exact final PR head: `95e78c008f214d92ba839fb38a55cc6501af33c6`; squash merge commit: `5ef52c6c48b11730b5d47980cc0da828a4d3d328`.
+- `prefetch_artist_genres` in `discovery_batch_metadata.py` batches uncached artists through ListenBrainz `metadata/artist/` (`inc=tag`, chunks of 75), keeps tags carrying `genre_mbid`, and writes the existing `mb:artist-genres:<mbid>` cache. Missing artists, failed batches, invalid responses, and exceptions remain uncached so the existing per-artist MusicBrainz path can fall back. The two prefetch call sites use the same cache, avoiding duplicate batch requests after the first fill. `CF_MAX_PAGES` remains 2.
+- Single owner-approved harness-only 4-page sample (aggregate only): cold time 207.6 s to 51.9 s; MusicBrainz requests 78 to 10; two artist-batch ListenBrainz GETs; supply unchanged at 79 albums from 42 artists. Warm samples were 3.7 s and 7.7 s with zero MusicBrainz requests. Single-sample evidence only; not proof of general latency or recommendation quality.
+- All four required workflows passed on exact final head: Python syntax/acquisition safety (`39531596336`), container runtime smoke (`39531596373`), non-publishing multi-architecture validation (`39531596340`), and Docker packaging/full unit suite/build (`39531596461`; `Run unit tests` succeeded). Focused modules and `py_compile` were also reported; no independent local full-suite run.
+- Publishing, deployment, and production-runtime verification remain unperformed.
+
 ## 2026-10-21 — Batched genre lookup implemented (P0b, PR pending)
 
 - Branch `feat/batched-genre-lookup`. `prefetch_artist_genres` in `discovery_batch_metadata.py` calls ListenBrainz `metadata/artist/` (`inc=tag`, `ARTIST_GENRE_CHUNK = 75`) for artists not yet cached, keeps tags carrying a `genre_mbid` (lower-cased, sorted, de-duplicated) and writes `mb:artist-genres:<mbid>`; it runs before the genre prefetch loop and before the genre stage loop. The per-artist MusicBrainz loops are unchanged and remain the fallback for any artist the batch misses, and for a non-200, non-list body or exception. Counted as `listenbrainz.artist_batch`. The live response is a **list** of entries carrying `artist_mbid`, not a dict keyed by MBID; a first version that assumed a dict silently fell back everywhere (cold 155.5 s, 84 MusicBrainz requests), caught by the live run.
