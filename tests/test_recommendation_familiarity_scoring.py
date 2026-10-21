@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from discovery_recommendations import apply_familiarity_exploration_bonus
+from discovery.recommendations import apply_familiarity_exploration_bonus
 
 
 class RecommendationFamiliarityScoringTests(unittest.TestCase):

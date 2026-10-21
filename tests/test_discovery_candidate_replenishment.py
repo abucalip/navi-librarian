@@ -2,7 +2,7 @@
 import unittest
 from unittest import mock
 
-from discovery_candidate_gathering import (
+from discovery.candidate_gathering import (
     REPLENISH_EXTRA_QUERIES,
     RecommendationProviders,
     gather_recommendation_candidates,
@@ -112,7 +112,7 @@ class ReplenishmentTests(unittest.TestCase):
             sleep=lambda _seconds: None,
         )
         with mock.patch(
-            "discovery_tag_queries.select_supplementary_tag_queries", side_effect=select,
+            "discovery.tag_queries.select_supplementary_tag_queries", side_effect=select,
         ):
             result = gather_recommendation_candidates(providers, shortlist_target=shortlist_target)
         return result, mb_client
@@ -201,7 +201,7 @@ class ReplenishmentTests(unittest.TestCase):
         self.assertEqual(summary["extra_candidates_added"], 1)
         self.assertEqual(summary["eligible_unowned_after"], summary["eligible_unowned_before"] + 1)
 
-    @mock.patch("discovery_candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
+    @mock.patch("discovery.candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
     def test_lane_unavailable_in_first_pass_blocks_replenishment(self):
         artists = [("Alpha", "A1")]
         responses = {q: [] for q, _f, _s in BASE_QUERIES + EXTRA_QUERIES}
@@ -272,7 +272,7 @@ class ReplenishmentTests(unittest.TestCase):
 
 class EligibleUnownedCountTests(unittest.TestCase):
     def test_count_is_unique_per_artist_and_title_and_excludes_owned(self):
-        from discovery_candidate_gathering import count_eligible_unowned_albums
+        from discovery.candidate_gathering import count_eligible_unowned_albums
 
         albums = {
             ("alpha", "a1"): {"album": "A1", "primary_artist": "Alpha"},

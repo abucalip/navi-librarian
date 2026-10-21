@@ -3,7 +3,7 @@ import time
 import unittest
 
 import recommendation_run_metrics as run_metrics
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 from recommendation_feedback import POSITIVE_EXPIRY_SECONDS, saved_artist_seed_weights
 
 PROFILE_MBID = "p-jazz"

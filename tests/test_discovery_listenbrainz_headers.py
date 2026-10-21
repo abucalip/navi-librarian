@@ -3,7 +3,7 @@ import os
 import unittest
 from unittest import mock
 
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 from integrations.listenbrainz.client import USER_AGENT
 
 TOKEN = "fixture-token-not-real"

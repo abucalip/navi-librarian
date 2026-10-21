@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_recommendations import classify_recommendation_category
+from discovery.recommendations import classify_recommendation_category
 
 
 class RecommendationCategoryPolicyTests(unittest.TestCase):

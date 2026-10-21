@@ -236,13 +236,13 @@ def _listenbrainz_recent(days=30, page_limit=3):
 
 
 def _artist_identity(candidate):
-    from discovery_recommendations import artist_identity
+    from discovery.recommendations import artist_identity
     return artist_identity(candidate)
 def _music_key(value):
-    from discovery_recommendations import music_key
+    from discovery.recommendations import music_key
     return music_key(value)
 def _discovery_is_album_candidate(item):
-    from discovery_recommendations import is_album_candidate
+    from discovery.recommendations import is_album_candidate
     return is_album_candidate(item)
 
 
@@ -310,7 +310,7 @@ def recommend_new_music(
         return "count must be between 1 and 20."
 
     from discovery.mmr import diversity_setting_to_penalty
-    from discovery_recommendations import (
+    from discovery.recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
         classify_recommendation_candidates,
@@ -320,7 +320,7 @@ def recommend_new_music(
     if _gathered_override is not None:
         gathered = _gathered_override
     else:
-        from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+        from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
         providers = RecommendationProviders(
             listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
             music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
@@ -381,7 +381,7 @@ def recommend_new_music(
     if _lastfm_popularity_fn is None:
         # Release-group popularity comes from one batched ListenBrainz request, not
         # one Last.fm call per album.
-        from discovery_recommendations import POPULARITY_CANDIDATE_LIMIT
+        from discovery.recommendations import POPULARITY_CANDIDATE_LIMIT
         from integrations.listenbrainz.client import request_headers as listenbrainz_request_headers
         from integrations.listenbrainz.popularity import build_popularity_lookup, fetch_release_group_popularity
         live_popularity = build_popularity_lookup(
@@ -908,7 +908,7 @@ def _lastfm_cached_call(method, ttl_seconds=30 * 24 * 60 * 60, **params):
 
 def _discovery_library_snapshot():
     """Compatibility adapter for cached Navidrome library inventory assembly."""
-    from discovery_library_snapshot import build_library_snapshot
+    from discovery.library_snapshot import build_library_snapshot
     return build_library_snapshot(
         api_call,
         items,
@@ -931,7 +931,7 @@ def _lastfm_artist_genres(artist):
 
 
 def _deep_dive_genre_families(tags):
-    from discovery_recommendations import deep_dive_genre_families
+    from discovery.recommendations import deep_dive_genre_families
     return deep_dive_genre_families(tags)
 def _lastfm_similar_artists(artist, limit=8):
     """Compatibility adapter for cached Last.fm similar-artist results."""
@@ -949,10 +949,10 @@ def _musicbrainz_critical_rating(mbid, include_year=False):
 
 
 def _discovery_exact_artist_credit_matches(artist_credit, artist_name):
-    from discovery_recommendations import exact_artist_credit_matches
+    from discovery.recommendations import exact_artist_credit_matches
     return exact_artist_credit_matches(artist_credit, artist_name)
 def _discovery_is_various_artists(value):
-    from discovery_recommendations import is_various_artists
+    from discovery.recommendations import is_various_artists
     return is_various_artists(value)
 def _build_new_releases_list():
     """Find recent full albums by library artists who own at least one full album."""
@@ -1053,7 +1053,7 @@ def _build_classics_list():
     # Build a broad candidate pool before choosing the visible collection list.
     # Popularity is only a weak tie-breaker; critical recognition and rotating
     # exploration have much more influence than Last.fm listener totals.
-    from discovery_recommendations import score_classic_candidates
+    from discovery.recommendations import score_classic_candidates
     score_classic_candidates(candidates.values(), random.uniform)
 
     ranked = sorted(candidates.values(), key=lambda item: item["exploration_score"], reverse=True)
@@ -1068,11 +1068,11 @@ def _build_classics_list():
 
     # Re-sort after enriching the broader pool; add fresh jitter so a manual
     # refresh can rotate recommendations even when upstream API caches are warm.
-    from discovery_recommendations import refresh_exploration_scores
+    from discovery.recommendations import refresh_exploration_scores
     refresh_exploration_scores(ranked, random.uniform)
     ranked.sort(key=lambda item: item["exploration_score"], reverse=True)
 
-    from discovery_recommendations import diversify_classic_candidates
+    from discovery.recommendations import diversify_classic_candidates
     diversified = diversify_classic_candidates(ranked, limit=100, per_artist=2, per_family=8)
     return {
         "list": "classics",
@@ -1142,7 +1142,7 @@ def _build_artist_deep_dive_list():
         genre_families=_deep_dive_genre_families,
         music_key=_music_key,
     )
-    from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+    from discovery.recommendations import rank_and_diversify_deep_dive_candidates
     ranked, diversified = rank_and_diversify_deep_dive_candidates(
         candidates.values(),
         music_key=_music_key,

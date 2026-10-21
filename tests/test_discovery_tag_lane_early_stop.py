@@ -2,7 +2,7 @@
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
+from discovery import candidate_gathering as gathering
 from test_discovery_candidate_replenishment import (
     BASE_QUERIES,
     EXTRA_QUERIES,

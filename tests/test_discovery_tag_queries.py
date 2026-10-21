@@ -1,7 +1,7 @@
 """Direct tests for profile-derived supplementary MusicBrainz queries."""
 import unittest
 
-from discovery_tag_queries import select_supplementary_tag_queries
+from discovery.tag_queries import select_supplementary_tag_queries
 
 
 class SupplementaryTagQueryTests(unittest.TestCase):

@@ -3,8 +3,8 @@ import unittest
 from unittest import mock
 from types import SimpleNamespace
 
-from discovery_lb_tag_lane import TAG_RADIO_COUNT, run_lb_tag_queries
-from discovery_tag_queries import _query_for_tag, tag_from_query
+from discovery.lb_tag_lane import TAG_RADIO_COUNT, run_lb_tag_queries
+from discovery.tag_queries import _query_for_tag, tag_from_query
 
 R1, R2, R3 = "r1", "r2", "r3"
 
@@ -92,7 +92,7 @@ class LaneTests(unittest.TestCase):
             metadata_cache_get=lambda k, ttl_seconds: self.cache.get(k),
             metadata_cache_set=self.cache.__setitem__)
         queries = [(_query_for_tag("slow"), "f", "profile:slow"), (_query_for_tag("fast"), "f", "explore:fast")]
-        with mock.patch("discovery_lb_tag_lane.TAG_RADIO_STRAGGLER_SECONDS", 0.05):
+        with mock.patch("discovery.lb_tag_lane.TAG_RADIO_STRAGGLER_SECONDS", 0.05):
             out = run_lb_tag_queries(
                 queries, providers=providers, headers={}, albums=self.albums, failures=self.failures,
                 state=self.state, resolve=lambda items: {"r1": recording("A", "One", "g1")},

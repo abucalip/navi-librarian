@@ -2,16 +2,16 @@
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
+from discovery import candidate_gathering as gathering
 from discovery import candidate_supply as supply
-from discovery_batch_metadata import (
+from discovery.batch_metadata import (
     BATCH_RECORDING_CHUNK,
     RELEASE_GROUP_CHUNK,
     LISTENBRAINZ_RECORDING_BATCH_URL,
     LISTENBRAINZ_RELEASE_GROUP_URL,
     synthesize_recording,
 )
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 
 
 def _mb_recording(index, *, artist="Synthetic Artist"):
@@ -271,7 +271,7 @@ class BatchResolutionPathTests(unittest.TestCase):
         self.assertIn(2, harness.sleeps)
 
     def test_release_group_fetch_raises_without_failure_collector(self):
-        from discovery_batch_metadata import fetch_release_group_metadata
+        from discovery.batch_metadata import fetch_release_group_metadata
 
         def get(url, params=None, headers=None, timeout=None):
             return _Response({}, status_code=502)
@@ -338,7 +338,7 @@ class SynthesizeRecordingTests(unittest.TestCase):
         return supply.batch_title_marker_rejection(title)
 
     def test_release_group_response_uses_wrapped_name_field(self):
-        from discovery_batch_metadata import fetch_release_group_metadata
+        from discovery.batch_metadata import fetch_release_group_metadata
 
         def get(url, params=None, headers=None, timeout=None):
             return _Response({"rg-a": {"release_group": {"name": "Quiet Studio", "type": "Album",

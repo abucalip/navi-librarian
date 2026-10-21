@@ -19,7 +19,7 @@ from discovery.candidate_supply import (
     candidate_supply_report,
     summarize_candidate_stages,
 )
-from discovery_recommendations import decayed_listen_weights, recent_style_families
+from discovery.recommendations import decayed_listen_weights, recent_style_families
 from recommendation.music_key import music_key
 from recommendation.replay import load_capture, thaw_gathered_inputs, _validate_ranking_context
 

@@ -8,7 +8,7 @@ import time
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
+from discovery import candidate_gathering as gathering
 import test_discovery_candidate_genre_prefetch as prefetch_fixture
 from test_discovery_candidate_genre_prefetch import CANDIDATE_GENRES, _run
 

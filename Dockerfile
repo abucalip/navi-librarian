@@ -23,7 +23,7 @@ COPY --chown=librarian:librarian integrations/ ./integrations/
 COPY --chown=librarian:librarian recommendation/ ./recommendation/
 COPY --chown=librarian:librarian settings/ ./settings/
 COPY --chown=librarian:librarian static/ ./static/
-COPY --chown=librarian:librarian recommendation_run_metrics.py musicbrainz_rating_client.py server_source_redaction.py navidrome_server.py navidrome_client.py metadata_cache.py discovery_candidate_gathering.py discovery_tag_queries.py discovery_lb_tag_lane.py discovery_recommendations.py recommendation_feedback.py discovery_library_snapshot.py music_tag_audit.py cassette.png ./
+COPY --chown=librarian:librarian recommendation_run_metrics.py musicbrainz_rating_client.py server_source_redaction.py navidrome_server.py navidrome_client.py metadata_cache.py recommendation_feedback.py music_tag_audit.py cassette.png ./
 
 USER librarian
 

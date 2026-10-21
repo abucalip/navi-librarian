@@ -127,7 +127,7 @@ def summarize_candidate_stages(
     artist and album names. Identity follows the allocator's
     artist-identity plus normalized album-title key.
     """
-    from discovery_recommendations import artist_identity, music_key
+    from discovery.recommendations import artist_identity, music_key
 
     decisions = {
         (music_key(row.get("artist", "")), music_key(row.get("album", ""))): row
@@ -432,7 +432,7 @@ def candidate_supply_report(
     MusicBrainz tape, album shares and stage counts from the frozen candidates.
     Identities stay in memory and are not returned.
     """
-    from discovery_recommendations import is_album_candidate, music_key
+    from discovery.recommendations import is_album_candidate, music_key
 
     gathered_inputs = payload["gathered_inputs"]
     events = payload.get("provider_events", [])

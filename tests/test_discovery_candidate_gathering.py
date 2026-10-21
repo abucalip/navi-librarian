@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest import mock
 
-from discovery_candidate_gathering import (
+from discovery.candidate_gathering import (
     RecommendationProviders,
     _RETRY_AFTER_MAX_SECONDS,
     _TAG_SEARCH_ATTEMPTS,
@@ -103,7 +103,7 @@ class SupplementaryLaneStopTests(unittest.TestCase):
         result = gather_recommendation_candidates(providers)
         return result, mb_client
 
-    @mock.patch("discovery_candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
+    @mock.patch("discovery.candidate_gathering.TAG_LANE_EARLY_STOP_ENABLED", False)
     def test_persistent_503_stops_lane_after_one_bounded_retry(self):
         result, mb_client = self._run(release_group_statuses=[503] * 20)
 
@@ -367,7 +367,7 @@ class RecommendationCfPagingTests(unittest.TestCase):
         return providers, calls, mb_client
 
     def test_pages_are_requested_with_offset_and_budget_stops_at_max_pages(self):
-        from discovery_candidate_gathering import CF_MAX_PAGES
+        from discovery.candidate_gathering import CF_MAX_PAGES
         pages = {
             offset: [_cf_item(i) for i in range(offset, offset + 100)]
             for offset in range(0, 100 * (CF_MAX_PAGES + 1), 100)
@@ -462,7 +462,7 @@ class RecommendationCfPagingTests(unittest.TestCase):
         recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(20)}
         providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
 
-        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+        with mock.patch("discovery.candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
             result = gather_recommendation_candidates(providers)
 
         self.assertEqual(len(mb_client.requested), 3)
@@ -477,7 +477,7 @@ class RecommendationCfPagingTests(unittest.TestCase):
         recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(3)}
         providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
 
-        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+        with mock.patch("discovery.candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
             result = gather_recommendation_candidates(providers)
 
         self.assertEqual(len(mb_client.requested), 3)
@@ -492,7 +492,7 @@ class RecommendationCfPagingTests(unittest.TestCase):
         recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(4)}
         providers, _, mb_client = self._providers(pages=pages, recordings=recordings)
 
-        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+        with mock.patch("discovery.candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
             result = gather_recommendation_candidates(providers)
 
         self.assertEqual(len(mb_client.requested), 3)
@@ -508,7 +508,7 @@ class RecommendationCfPagingTests(unittest.TestCase):
         cache = {f"mb:recording:rec-{i}": recordings[f"rec-{i}"] for i in range(3, 6)}
         providers, _, mb_client = self._providers(pages=pages, recordings=recordings, cache=cache)
 
-        with mock.patch("discovery_candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
+        with mock.patch("discovery.candidate_gathering.CF_MAX_UNCACHED_RESOLUTIONS", 3):
             result = gather_recommendation_candidates(providers)
 
         self.assertEqual(mb_client.requested, ["rec-0", "rec-1", "rec-2"])

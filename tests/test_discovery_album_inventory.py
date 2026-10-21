@@ -2,7 +2,7 @@
 
 import unittest
 
-from discovery_library_snapshot import (
+from discovery.library_snapshot import (
     AlbumInventoryLimitError,
     fetch_album_inventory,
 )

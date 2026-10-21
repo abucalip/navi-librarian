@@ -1,5 +1,5 @@
 import unittest
-from discovery_recommendations import (decayed_listen_weights, apply_familiarity_exploration_bonus, artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, merge_discovery_source, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates)
+from discovery.recommendations import (decayed_listen_weights, apply_familiarity_exploration_bonus, artist_identity, classify_diversity_style, classify_recommendation_candidates, deep_dive_genre_families, diversify_classic_candidates, exact_artist_credit_matches, genre_families, is_album_candidate, is_various_artists, merge_discovery_source, music_key, primary_recent_family, recent_style_families, refresh_exploration_scores, score_classic_candidates)
 
 class DiscoveryRecommendationRulesTests(unittest.TestCase):
  def test_discovery_sources_merge_once_and_reject_unknown_labels(self):
@@ -79,7 +79,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
 
 
  def test_deep_dive_ranking_weights_candidate_evidence_and_filters_candidates(self):
-  from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+  from discovery.recommendations import rank_and_diversify_deep_dive_candidates
   rows = [
    {"artist":"A","album":"Known","lastfm_listeners":1000000,"candidate_pool_score":0.0,
     "anchor_artist":"Anchor","anchor_album_count":5,"genre_families":["jazz"]},
@@ -97,7 +97,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertGreater(ranked[0]["discovery_score"], ranked[1]["discovery_score"])
 
  def test_deep_dive_diversity_caps_artist_anchor_and_genre(self):
-  from discovery_recommendations import rank_and_diversify_deep_dive_candidates
+  from discovery.recommendations import rank_and_diversify_deep_dive_candidates
   rows = [
    {"artist":"Same","album":f"Album {i}","lastfm_listeners":0,"anchor_artist":"Anchor",
     "anchor_album_count":3,"genre_families":["jazz"]}
@@ -118,7 +118,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertLessEqual(sum(item["anchor_artist"]=="Anchor" for item in diversified), 4)
 
  def test_artist_name_category_override_only_applies_without_provider_tags(self):
-  from discovery_recommendations import classify_recommendation_category
+  from discovery.recommendations import classify_recommendation_category
   core = {"jazz"}
   exploration = {"african", "north-african-middle-eastern"}
   category, families = classify_recommendation_category(

@@ -2,13 +2,13 @@
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
-from discovery_batch_metadata import (
+from discovery import candidate_gathering as gathering
+from discovery.batch_metadata import (
     ARTIST_GENRE_CHUNK,
     LISTENBRAINZ_ARTIST_URL,
     prefetch_artist_genres,
 )
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 
 
 class _Response:
