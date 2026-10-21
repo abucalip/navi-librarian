@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_classics_ratings import enrich_critical_ratings
+from discovery.classics_ratings import enrich_critical_ratings
 
 
 class ClassicsCriticalRatingTests(unittest.TestCase):
@@ -73,7 +73,7 @@ class ClassicsCriticalRatingTests(unittest.TestCase):
 
 class ClassicsGenreEnrichmentTests(unittest.TestCase):
     def test_enriches_prefix_and_uses_other_for_unclassified_genres(self):
-        from discovery_classics_genres import enrich_classic_genres
+        from discovery.classics_genres import enrich_classic_genres
 
         candidates = [
             {"artist": "Alpha", "id": 1},
@@ -96,7 +96,7 @@ class ClassicsGenreEnrichmentTests(unittest.TestCase):
         self.assertEqual([item["id"] for item in candidates], [1, 2, 3])
 
     def test_deduplicates_normalized_artist_lookups(self):
-        from discovery_classics_genres import enrich_classic_genres
+        from discovery.classics_genres import enrich_classic_genres
 
         candidates = [{"artist": "Beyoncé"}, {"artist": "Beyonce"}, {"artist": "Beyoncé"}]
         calls = []
@@ -109,7 +109,7 @@ class ClassicsGenreEnrichmentTests(unittest.TestCase):
         self.assertTrue(all(item["genres"] == ["soul"] for item in candidates))
 
     def test_limit_zero_and_negative_limit(self):
-        from discovery_classics_genres import enrich_classic_genres
+        from discovery.classics_genres import enrich_classic_genres
 
         candidates = [{"artist": "A"}]
         enrich_classic_genres(candidates, lambda artist: self.fail("lookup should not run"), lambda tags: [], limit=0)

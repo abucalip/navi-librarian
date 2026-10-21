@@ -1,7 +1,7 @@
 """Direct-import contract tests for classics candidate collection."""
 import unittest
 
-from discovery_classics_candidates import collect_classic_candidates
+from discovery.classics_candidates import collect_classic_candidates
 
 
 class ClassicsCandidateCollectionTests(unittest.TestCase):
