@@ -272,3 +272,8 @@ Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the f
 - Remaining: PR 2 monitor modules, PR 3 import and cleanup modules. Then the `music_key` inversion fix (separate PR) and discovery moves, with `recommendation_cooldown` moving with the store modules (owner decision 2026-10-21).
 
 - Merged: PR #517 squash-merged as `2411740dc74d57b1a4fddbd33eeef80a461b40dd` from exact head `cd39e83ee7abe50378c015d4486b6306d4690270`; all four required workflows passed on it, including the CI-run adapter tests that error locally without httpx.
+
+## Acquisition package, PR 2 of 3: monitor (open PR, not merged)
+
+- Moved `acquisition_{watcher, watcher_startup, progress_accounting, progress_snapshots, monitor_payload}` to `acquisition/` (prefix dropped). Only internal edge `watcher -> progress_accounting` now imports `acquisition.progress_accounting`. Callers: `navidrome_server.py` (two top-level imports, two function-local imports) and the four matching tests; no `mock.patch` string targets, no workflow compile-list entries. Dockerfile root `COPY` loses the five names; `tests/test_docker_packaging.py` gains `test_acquisition_monitor_modules_live_in_acquisition_package`. Root Python modules 40 -> 35. Behavior unchanged.
+- Local: focused modules for the four moved tests plus `test_docker_packaging`, `py_compile`, and `scripts/check_server_size.py` pass. Full suite not run. CI status on the exact head is recorded after the checks finish.

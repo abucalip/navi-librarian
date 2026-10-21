@@ -1,7 +1,7 @@
 """Direct-import contract tests for watcher progress accounting."""
 import unittest
 
-from acquisition_progress_accounting import observe_progress
+from acquisition.progress_accounting import observe_progress
 
 
 class AcquisitionProgressAccountingTests(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 import unittest
 
-from acquisition_monitor_payload import prepare_candidate_for_monitor
+from acquisition.monitor_payload import prepare_candidate_for_monitor
 
 
 class AcquisitionMonitorPayloadTests(unittest.TestCase):

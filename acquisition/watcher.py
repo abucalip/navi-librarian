@@ -1,7 +1,7 @@
 """Injected acquisition watcher lifecycle; no app/MCP initialization on import."""
 from pathlib import Path
 
-from acquisition_progress_accounting import observe_progress
+from acquisition.progress_accounting import observe_progress
 import shutil
 import time
 
