@@ -1,3 +1,10 @@
+## 2026-10-21 — MusicBrainz package move in progress
+
+- Refreshed and reviewed the dependency-map artifact generated on main SHA `2acb6d5fb2b52329df03cc73233fcc963c768f6d` (artifact digest `8844d4cf9b10595837068cc32569be990cbfa236be6aa6b77911246fb7e35562`). The artifact is audit input only; it was not committed as generated tracked output.
+- Inventory: 237 Python modules total, 67 root-level modules, classified in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. The selected second provider boundary is the MusicBrainz pair. Production callers are `app/api/metadata.py` and `navidrome_server.py`, with focused tests for both helpers. Docker already copies `integrations/`; its explicit root file list was updated.
+- Implementation commit: `4385ce1ab1a0fd34b3e5899196af56d0930b7459`; branch `refactor/musicbrainz-integration-package`. Agent-side focused tests and `py_compile` have not been run because a fresh checkout is unavailable in this environment. Do not treat baseline CI as PR CI; verify all four required workflows on the exact final PR head.
+- Publishing, deployment, and production-runtime verification remain paused/unperformed. Do not merge without explicit owner instruction naming the PR.
+
 # Project status
 
 ## 2026-10-21 — Python package-layout PR #508 merged
