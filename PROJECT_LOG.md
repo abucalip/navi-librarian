@@ -1,6 +1,6 @@
-## 2026-10-21 — ListenBrainz integration package move (PR open)
+## 2026-10-21 — ListenBrainz integration package move (PR #513 merged)
 
-- Moved `listenbrainz_client.py` and `listenbrainz_popularity.py` into `integrations/listenbrainz/` with canonical imports, no shims. Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Not merged, published, deployed or runtime-verified.
+- Moved `listenbrainz_client.py` and `listenbrainz_popularity.py` into `integrations/listenbrainz/` with canonical imports, no shims. Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Merge `4e392e6660706191d080a5a2e9c66739377a5c33` from head `935d8984002bc6d690a2a6c09c315816dea9e16e` (owner named PR 513). Not published, deployed or runtime-verified.
 
 ## 2026-10-21 — PR #512 merged: Last.fm integration package
 
