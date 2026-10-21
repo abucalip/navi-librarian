@@ -81,6 +81,17 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertFalse((root / f"recommendation_{module}.py").exists())
                 self.assertNotIn(f"recommendation_{module}.py", dockerfile)
 
+    def test_settings_package_is_copied_into_image(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=librarian:librarian settings/ ./settings/", dockerfile)
+        for module, old in (("service", "service_settings"), ("persistence", "settings_persistence"),
+                            ("music_paths", "music_paths"), ("data_directory", "data_directory")):
+            with self.subTest(module=module):
+                self.assertTrue((root / "settings" / f"{module}.py").is_file())
+                self.assertFalse((root / f"{old}.py").exists())
+                self.assertNotIn(f"{old}.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()

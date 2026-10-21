@@ -1,8 +1,8 @@
 """Regression tests for six-tier acquisition quality priorities and reordering UI."""
 import json
 import tempfile
-from service_settings import set_slskd_settings
-from settings_persistence import SettingsPersistence
+from settings.service import set_slskd_settings
+from settings.persistence import SettingsPersistence
 from integrations.slskd.quality import quality_tier
 import unittest
 from pathlib import Path

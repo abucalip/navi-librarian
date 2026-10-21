@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: In progress; provider integration moves merged in PRs #508, #509, #511, #512, #513; recommendation replay/diagnostics package merged in PR #514.
+Status: In progress; provider integration moves merged in PRs #508, #509, #511, #512, #513; recommendation replay/diagnostics package merged in PR #514; settings package in review (see below).
 
 ## Goal
 
@@ -198,3 +198,11 @@ See the **Current handoff: Python module package layout** section at the top of 
 - Focused tests run locally: replay_capture, diagnostics, mmr_evaluate, profile_comparison, docker_packaging, recommend_new_music_characterization, discovery_store; `py_compile` on changed files; `check_server_size.py` OK. Full suite not run.
 
 - Merged as `431c152642809e2aad1a36a556ac47610d0ddaa2` from exact final head `b636fcf2298f27b76befc3285034fe03285a32a0` (owner named PR 514); four required workflows passed on it (compile 39659386420, test-and-build 39659386566, container-smoke 39659385916, validate-container 39659386022). Next: audit the settings/paths group; the discovery and acquisition groups still need a design note before any move.
+
+
+## Settings package move (2026-10-21, in review)
+
+- Audit (current `main` `556b6fa`): the ten settings/paths/policy modules are leaves with no repo-local imports and no `__file__`, dynamic-import or source-reading assumptions. `data_directory` receives the server's `__file__` as a parameter, so it is path-safe to move.
+- Moved: `service_settings` -> `settings/service.py`, `settings_persistence` -> `settings/persistence.py`, `music_paths` -> `settings/music_paths.py`, `data_directory` -> `settings/data_directory.py`. No shims; production importers (`navidrome_server.py`, `app/api/settings.py`, `discovery_refresh.py`) and tests use canonical paths. Dockerfile copies `settings/`; `tests/test_docker_packaging.py` gains a packaging regression test. Root Python modules 54 -> 50.
+- Not moved: `metadata_cache`, `music_tag_audit`, `server_source_redaction` (single-purpose, no cohesive package), `listening_profile` (belongs with `recommendation/`; later candidate). `read_only_command_policy` (orphaned, unpackaged; kept per `docs/MCP_RETIREMENT_PLAN.md`) and `diagnose_categories.py` (one-shot patch script, not a module) need owner decisions on retention.
+- Status: implemented and focused-tested locally; merge, publication, deployment and runtime verification not yet done.

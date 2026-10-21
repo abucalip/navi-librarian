@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
-from service_settings import (
+from settings.service import (
     get_automatic_refill_settings as _get_automatic_refill_settings,
     get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
     set_automatic_refill_settings as _set_automatic_refill_settings,

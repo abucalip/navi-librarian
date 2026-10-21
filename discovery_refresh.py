@@ -14,7 +14,7 @@ from threading import Lock
 from typing import Any
 
 import discovery_snapshot
-import service_settings
+from settings import service as service_settings
 
 STALE_MAX_AGE_SECONDS = 24 * 60 * 60
 # After a read starts a rebuild, further stale reads leave it alone for this long, so a

@@ -11,13 +11,13 @@ from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
 from integrations.lastfm import client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
-import service_settings as _service_settings
-from music_paths import default_music_dir as _default_music_dir_from_environment
+from settings import service as _service_settings
+from settings.music_paths import default_music_dir as _default_music_dir_from_environment
 from integrations.navidrome import client as _navidrome_client
 from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
-from settings_persistence import SettingsPersistence
+from settings.persistence import SettingsPersistence
 from metadata_cache import MetadataCache
-from service_settings import (
+from settings.service import (
     get_lastfm_settings as _service_get_lastfm_settings,
     set_lastfm_settings as _service_set_lastfm_settings,
     get_navidrome_settings as _service_get_navidrome_settings,
@@ -54,7 +54,7 @@ from acquisition_completion import (
 )
 from pathlib import Path
 from urllib.parse import urlparse
-from data_directory import resolve_data_dir
+from settings.data_directory import resolve_data_dir
 from music_tag_audit import scan_missing_mbids
 
 import httpx
