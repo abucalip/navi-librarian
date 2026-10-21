@@ -125,6 +125,20 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertFalse((root / f"acquisition_{name}.py").exists())
                 self.assertNotIn(f"acquisition_{name}.py", dockerfile)
 
+    def test_acquisition_import_modules_live_in_acquisition_package(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        # "import" is a Python keyword, so acquisition_import.py became import_files.py.
+        for name, legacy in (
+            ("completion", "completion"), ("import_files", "import"),
+            ("import_service", "import_service"), ("cleanup", "cleanup"),
+            ("recovery", "recovery"),
+        ):
+            with self.subTest(module=name):
+                self.assertTrue((root / "acquisition" / f"{name}.py").is_file())
+                self.assertFalse((root / f"acquisition_{legacy}.py").exists())
+                self.assertNotIn(f"acquisition_{legacy}.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()

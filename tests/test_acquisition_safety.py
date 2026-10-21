@@ -11,7 +11,7 @@ from pathlib import Path
 
 from acquisition import lifecycle as _acquisition_lifecycle
 from acquisition import orchestration as _acquisition_orchestration
-from acquisition_import_service import import_completed_source_locked
+from acquisition.import_service import import_completed_source_locked
 from acquisition.request_coordinator import acquire_album_request as _module_acquire_album_request
 
 

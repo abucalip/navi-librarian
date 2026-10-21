@@ -278,3 +278,9 @@ Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the f
 - Moved `acquisition_{watcher, watcher_startup, progress_accounting, progress_snapshots, monitor_payload}` to `acquisition/` (prefix dropped). Only internal edge `watcher -> progress_accounting` now imports `acquisition.progress_accounting`. Callers: `navidrome_server.py` (two top-level imports, two function-local imports) and the four matching tests; no `mock.patch` string targets, no workflow compile-list entries. Dockerfile root `COPY` loses the five names; `tests/test_docker_packaging.py` gains `test_acquisition_monitor_modules_live_in_acquisition_package`. Root Python modules 40 -> 35. Behavior unchanged.
 - Local: focused modules for the four moved tests plus `test_docker_packaging`, `py_compile`, and `scripts/check_server_size.py` pass. Full suite not run. CI status on the exact head is recorded after the checks finish.
 - Merged: PR #518 squash-merged as `32b23176e1c22317ad1ce662b8ca22cb8970409d` from exact head `29e7879beb162098cc612e27e4781e1ba40bf6e4`; compile, test-and-build, container-smoke and validate-container passed on it.
+
+## Acquisition package, PR 3 of 3: import and cleanup (open)
+
+- Moved `completion`, `import_files`, `import_service`, `cleanup`, `recovery` into `acquisition/`. `acquisition_import.py` is `acquisition/import_files.py` because `import` is a keyword. `import_files -> completion` is the only internal edge. No re-export shims; `navidrome_server.py` and tests import the new paths. The `python-syntax.yml` compile entry is now `acquisition/completion.py`.
+- Status: implemented and focused-tested only; CI, merge, publish and deploy not done.
+
