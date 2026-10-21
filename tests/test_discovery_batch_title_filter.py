@@ -1,18 +1,12 @@
-"""Offline tests for the flagged batch-path title filter (no provider calls)."""
+"""Offline tests for the batch-path title filter (no provider calls)."""
 import unittest
-from unittest import mock
 
 import discovery_candidate_supply as supply
 
 
 class BatchTitleFilterTests(unittest.TestCase):
-    def rejection(self, title, enabled=True):
-        with mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", enabled):
-            return supply.batch_title_marker_rejection(title)
-
-    def test_disabled_by_default_passes_everything(self):
-        self.assertFalse(supply.BATCH_TITLE_FILTER_ENABLED)
-        self.assertIsNone(self.rejection("Live at the Garden", enabled=False))
+    def rejection(self, title):
+        return supply.batch_title_marker_rejection(title)
 
     def test_marked_titles_are_rejected_when_enabled(self):
         for title in ("Live at the Garden", "Unplugged", "Greatest Hits",
