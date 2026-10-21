@@ -51,7 +51,7 @@ def summarize_candidate_diagnostics(
     allowed_sources = {
         "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
         "similar_artist_lookup", "library_gap", "new_release",
-        "lastfm_popularity_fallback", "listenbrainz", "musicbrainz_tag_search",
+        "lastfm_popularity_fallback", "listenbrainz", "musicbrainz_tag_search", "listenbrainz_tag_radio",
     }
     for row in rows:
         provenance = row.get("discovery_sources")

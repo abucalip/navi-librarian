@@ -1,3 +1,9 @@
+## 2026-10-21 — ListenBrainz tag-radio tag lane (flagged, off by default; measurement)
+
+- Branch `feat/lb-tag-lane`. Adds `discovery_lb_tag_lane.py` (Dockerfile `COPY` updated), `LB_TAG_LANE_ENABLED = False`, `tag_from_query`, and the `listenbrainz_tag_radio` diagnostics label. Default behavior unchanged.
+- Focused tests: `test_discovery_lb_tag_lane` (new), `test_discovery_candidate_gathering`, `test_recommendation_diagnostics`, `test_discovery_tag_queries`; `py_compile` on changed files. Full suite not run per standing rule.
+- Live A/B (owner-approved, aggregate only, single samples): cold 47.8 s (MusicBrainz lane 18.6 s) vs 68.3 s (tag-radio lane 35.1 s, 0 MusicBrainz requests); one run at 50 recordings per tag hit the HTML verification page (139 s). Not recommended as default. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+
 ## 2026-10-21 — PR #489 merged: CF paging raised to four pages (reconciled from PR #488)
 
 - Reconciled the stacked PR onto current `main` after PR #487 had been squash-merged. The reconciled PR contains only the `CF_MAX_PAGES = 4` change, its configured-limit paging regression test, and corrected current documentation; the already-merged batched genre lookup was not duplicated.

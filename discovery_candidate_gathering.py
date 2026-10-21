@@ -168,6 +168,9 @@ REPLENISH_EXTRA_QUERIES = 2
 # exhausted query and stops only after this many consecutive exhausted queries, so one
 # throttled search does not end the lane while the total request count stays bounded.
 TAG_LANE_EARLY_STOP_ENABLED = False
+# ListenBrainz tag-radio lane (flagged, off by default, owner decision pending): one GET
+# per tag plus the batch recording endpoints replace the MusicBrainz tag searches.
+LB_TAG_LANE_ENABLED = False
 TAG_LANE_EXHAUSTION_THRESHOLD = 2
 # Top CF candidate-pool artists whose genres are prefetched before the tag lane.
 CANDIDATE_PREFETCH_LIMIT = 5
@@ -469,6 +472,39 @@ def _run_tag_queries(
             # Runs on the cap break inside the try, so the final query is recorded too.
             outcomes.append((regional_query_added, query_error_class))
     return outcomes
+
+
+def _run_tag_lane(queries, *, providers, client, headers, albums, failures, state):
+    """Run the flagged ListenBrainz tag-radio lane, else the MusicBrainz tag searches."""
+    if not (LB_TAG_LANE_ENABLED and providers.http_post is not None):
+        return _run_tag_queries(
+            queries, providers=providers, client=client, headers=headers,
+            albums=albums, failures=failures, state=state,
+        )
+    from discovery_lb_tag_lane import run_lb_tag_queries
+
+    def resolve(items):
+        batch = _prefetch_batch_recordings(providers, items, headers=headers)
+        for item in items:
+            mbid = item["recording_mbid"]
+            if mbid not in batch:
+                full = providers.metadata_cache_get(
+                    f"mb:recording:{mbid}", ttl_seconds=180 * 24 * 60 * 60,
+                )
+                if full is not None:
+                    batch[mbid] = full
+        return batch
+
+    return run_lb_tag_queries(
+        queries, providers=providers, headers=headers, albums=albums,
+        failures=failures, state=state, resolve=resolve,
+        rejection=lambda group: _supply.cf_release_group_rejection(
+            group, is_album_candidate=providers.is_album_candidate,
+            music_key=providers.music_key,
+        ),
+        merge_source=merge_discovery_source, classify_error=classify_error,
+        candidate_cap=SUPPLEMENTARY_CANDIDATE_CAP,
+    )
 
 
 def count_eligible_unowned_albums(albums, library_by_title, music_key) -> int:
@@ -921,7 +957,7 @@ def gather_recommendation_candidates(
     tag_lane_started = time.monotonic()
     supplementary_query_outcomes = []
     with providers.http_client(timeout=20, follow_redirects=True) as client:
-        supplementary_query_outcomes.extend(_run_tag_queries(
+        supplementary_query_outcomes.extend(_run_tag_lane(
             regional_queries, providers=providers, client=client,
             headers=headers, albums=albums, failures=failures,
             state=regional_state,
@@ -1003,7 +1039,7 @@ def gather_recommendation_candidates(
             )
         if replenish_queries:
             with providers.http_client(timeout=20, follow_redirects=True) as client:
-                replenish_outcomes = _run_tag_queries(
+                replenish_outcomes = _run_tag_lane(
                     replenish_queries, providers=providers, client=client,
                     headers=headers, albums=albums, failures=failures,
                     state=regional_state,

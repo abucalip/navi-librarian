@@ -95,3 +95,14 @@ def select_supplementary_tag_queries(
         append(tag, "explore")
 
     return selected
+
+
+def tag_from_query(query: str) -> str:
+    """Return the tag a query built by ``_query_for_tag`` searches for, or ``""``."""
+    prefix = "primarytype:album AND tag:"
+    if not query.startswith(prefix):
+        return ""
+    raw = query[len(prefix):]
+    if raw.startswith('"') and raw.endswith('"') and len(raw) >= 2:
+        raw = raw[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+    return raw
