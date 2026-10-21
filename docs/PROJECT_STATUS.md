@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (reconciled PR #491 merged as PR #492; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #493 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #493 merged** as `b39e71a3456dc7baaba9e9446826bb643febe5ef` from exact final head `ad07334d6612bc9f035b2f0dd9535d46987442ff`. ListenBrainz CF, recording/release-group/artist batch, popularity, and tag-radio calls now use the shared app `User-Agent` and optional `LISTENBRAINZ_TOKEN`; MusicBrainz requests do not receive the token. All four required workflows passed on the exact head, including Docker packaging's full unit suite. Focused regression tests cover failed batch lookup fallback and token exclusion. The three owner-approved live samples did not establish prevention of blocking after repeated runs; popularity call-site coverage remains a noted limitation. Publishing, deployment, and runtime verification remain unperformed.
 
 - **PR #492 merged** as `37014f6f0a62d5d2b4096e37e08863ffa371241c` from exact final PR head `cf18e453419c836efa8fb7a509f5c86b1baa0544`. This reconciles original PR #491 onto current `main`, preserving PR #490's `listenbrainz_popularity.py` integration. Adds the optional ListenBrainz tag-radio candidate lane (`discovery_lb_tag_lane.py`), query decoding, candidate-gathering integration, Docker inclusion, diagnostics source, tests, and measured limitations. `LB_TAG_LANE_ENABLED = False`: default behavior is unchanged. The endpoint is undocumented and browser-verification HTML was observed; measurements did not support enabling it by default and final-pick overlap/quality was not reliably measured. All four required workflows passed on exact head: Python syntax/acquisition safety `39538436325`; Docker packaging/full unit suite/build `39538436237` (unit tests and Docker build succeeded); container runtime smoke `39538436232`; validation-only multi-architecture image validation `39538436370` (publishing paused). No independent agent-side full-suite run (prohibited by standing owner rule); CI ran the full unit suite. Original PR #491 is closed as superseded. Publishing, deployment, and production-runtime verification remain unperformed.
 
