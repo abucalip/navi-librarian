@@ -328,7 +328,7 @@ def recommend_new_music(
             http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep, http_post=httpx.post,
             feedback_rows=_discovery_feedback_rows,
         )
-        from recommendation_replay import prepare_provider_tape
+        from recommendation.replay import prepare_provider_tape
         provider_tape = prepare_provider_tape(provider_tape, _capture_path)
         if provider_tape is not None:
             providers = provider_tape.wrap(providers)
@@ -376,7 +376,7 @@ def recommend_new_music(
         if _lastfm_available_override is None
         else bool(_lastfm_available_override)
     )
-    from recommendation_replay import prepare_lastfm_callback
+    from recommendation.replay import prepare_lastfm_callback
     live_popularity = _lastfm_album_popularity
     if _lastfm_popularity_fn is None:
         # Release-group popularity comes from one batched ListenBrainz request, not
@@ -722,7 +722,7 @@ def recommend_new_music(
     }
     encoded = json.dumps(result, ensure_ascii=False, indent=2)
     if _capture_path and _gathered_override is None and _provider_tape is None:
-        from recommendation_replay import write_capture_safely
+        from recommendation.replay import write_capture_safely
         write_capture_safely(
             _capture_path, gathered, _lastfm_calls, provider_tape, encoded, count,
             ranking_context=ranking_context,

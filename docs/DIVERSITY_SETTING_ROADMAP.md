@@ -23,7 +23,7 @@ The integration preserves ownership gates, existing category/style/family policy
 
 ### Existing frozen-fixture evidence (not a quality guarantee)
 
-The owner ran `recommendation_mmr_evaluate.py --identity-free` in the isolated environment using source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64` against the existing private fixture captured from source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The command exited 0, reported 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 rejected rows, 10 baseline recommendations, zero network providers, and no provider-tape replay. No fixture or identity-bearing report was committed.
+The owner ran `python -m recommendation.mmr_evaluate --identity-free` in the isolated environment using source revision `acb437f85d8d5c8ae2e6cdb5240457423e9b6e64` against the existing private fixture captured from source SHA `d8c1f3de5180b35919f55c304d55e5c939dad373`. The command exited 0, reported 83 gathered albums, 1,733 library albums, 66 scored candidates, 17 rejected rows, 10 baseline recommendations, zero network providers, and no provider-tape replay. No fixture or identity-bearing report was committed.
 
 Measured lambda points were only `0, 0.1, 0.25, 0.5, 0.75, 1.0`:
 - `0`: mean pairwise similarity 0.1044; 7/10 baseline items retained; baseline relevance-score retention 85.6%.

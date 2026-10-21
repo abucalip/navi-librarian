@@ -8,7 +8,7 @@ from discovery_store import (
     record_recommendation_pool_diagnostic,
     record_recommendation_diagnostics,
 )
-from recommendation_diagnostics import (
+from recommendation.diagnostics import (
     evaluate_replay_fixture, jaccard_overlap, summarize_candidate_diagnostics,
 )
 

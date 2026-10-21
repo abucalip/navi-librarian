@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from discovery_mmr import diversity_metrics, mmr_rerank
-from recommendation_replay import load_capture
+from recommendation.replay import load_capture
 
 DEFAULT_LAMBDAS = (0.0, 0.1, 0.25, 0.5, 0.75, 1.0)
 

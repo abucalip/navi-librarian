@@ -6,7 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 from discovery_candidate_gathering import RecommendationProviders
-from recommendation_replay import (
+from recommendation.replay import (
     LastFmReplay,
     ProviderTape,
     main as replay_main,

@@ -71,6 +71,16 @@ class DockerPackagingTests(unittest.TestCase):
         self.assertFalse((root / "listenbrainz_client.py").exists())
         self.assertFalse((root / "listenbrainz_popularity.py").exists())
 
+    def test_recommendation_package_is_copied_into_image(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=librarian:librarian recommendation/ ./recommendation/", dockerfile)
+        for module in ("replay", "diagnostics", "mmr_evaluate", "profile_comparison"):
+            with self.subTest(module=module):
+                self.assertTrue((root / "recommendation" / f"{module}.py").is_file())
+                self.assertFalse((root / f"recommendation_{module}.py").exists())
+                self.assertNotIn(f"recommendation_{module}.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()
