@@ -235,6 +235,15 @@ What this showed (superseded in part by the bisection below, which found a size 
 - **Block:** no HTML (browser-verification) response in any run. A launch mistake (missing output path in the harness) probably cost one extra live run, so 5 live runs in total.
 - **Decision:** keep the MusicBrainz lane as default; split and tag-radio-default measured, not adopted. Reopen only with a new idea that adds no lookups and shows a time gain beyond noise.
 
+### P0f — Default-off flags: evidence brief and measurements (2026-10-21; owner-approved; one sample per arm)
+
+Read-only brief from code and existing reports, then four owner-approved cold runs (`CF_MAX_PAGES = 4`, fresh data dir, slskd off, aggregate only, dirs deleted; test-only harness `run_p0f.py`, not committed).
+
+- **Batch flags are superseded.** `COLD_START_BATCH_ENABLED` and `WARM_BATCH_ENABLED` are on and always call the title filter with `enabled=True`, so `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` only matter if both of those are off. Earlier evidence for the batch path (332.5 s vs 105.7 s, 214 vs 85 uncached requests; cold 123 s, warm 32 s then 3 s under #476) stands. Secondary release types stay unavailable; the title filter is partial.
+- **Tag-lane early stop (live, MusicBrainz healthy):** off 17.3 s, on 27.1 s; both 8 release-group searches, 38 tag candidates, 117 candidate albums, final 10 (5 CF / 5 tag). Identical requests, so the time gap is noise and the flag has no effect when nothing is throttled. Its benefit under throttling is unmeasured. Left off.
+- **Genre circuit breaker (stubbed: MusicBrainz artist GETs forced to 429, ListenBrainz artist batch disabled, rest live):** off 498.1 s and 207 MusicBrainz artist requests; on 47.4 s and 18 requests (16 prefetch and 50 genre-stage artists skipped). Final list was 10 CF in both, with 0 tag candidates in both because the tag lane had no genres to query. The cost is lost genre data, and only when the batch call fails and MusicBrainz is throttled. Recommendation: on.
+- Limits: single samples; the throttle was simulated; supply quality was not measured.
+
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
 - **Phase 3.1 — MMR-style re-ranking:** evaluate only if eligible candidate pools are large enough to reorder meaningfully; preserve relevance and eligibility.
@@ -242,7 +251,7 @@ What this showed (superseded in part by the bisection below, which found a size 
 - For any reopened phase, define a baseline, metrics, acceptance thresholds, and rollback/flag strategy before implementation.
 
 ### P2 — Explicit owner decisions / parked work
-- **Default-on flags:** `CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, genre circuit breaker, and tag-lane early stop remain off by default. Each affects output or call patterns; do not change defaults without an explicit decision and evidence.
+- **Default-on flags:** measured in P0f (below). Breaker: recommended on. Early stop: no effect when healthy, left off. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` are redundant (cold and warm batch paths are on and always filter titles). The owner decides each default.
 - **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval.
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.

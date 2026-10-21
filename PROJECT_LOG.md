@@ -1,3 +1,7 @@
+## 2026-10-21 — P0f default-off flag evidence brief and measurements (docs only)
+
+- Pushed straight to `main` at the owner's instruction (no PR). Four owner-approved cold runs, aggregate only: early stop off/on 17.3 s / 27.1 s with identical requests (no effect when healthy); breaker with stubbed 429s off/on 498.1 s / 47.4 s, MusicBrainz artist requests 207 / 18, final list 10 in both. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` are redundant behind the cold and warm batch paths. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0f). No code change, no tests run (docs only; full suite not run).
+
 ## 2026-10-21 — P0e MusicBrainz vs tag radio vs split comparison (docs only)
 
 - Merged straight to `main` at the owner's instruction (no PR). Owner-approved aggregate live runs: MusicBrainz only 20.0 s (8 MB requests), tag radio only 15.6 s (8 tag GETs), split 17.8 s and 25.9 s (4 tag GETs, 5 and 3 MB requests). Tag-candidate overlap between sources 0/58; final-pick overlap MB vs split 9/10, MB vs radio 5/10. Time differences are within noise; no browser-verification page in any run; one extra live run from a harness launch mistake (5 total).
