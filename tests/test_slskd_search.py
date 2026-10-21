@@ -3,7 +3,7 @@
 import re
 import unittest
 
-from slskd_search import (
+from integrations.slskd.search import (
     album_path_match,
     path_match_diagnostics,
     response_items,

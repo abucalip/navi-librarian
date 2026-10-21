@@ -3,8 +3,8 @@
 import unittest
 
 from discovery_recommendations import music_key
-from slskd_quality import quality_tier
-from slskd_search import album_path_match, extract_candidates, track_identity
+from integrations.slskd.quality import quality_tier
+from integrations.slskd.search import album_path_match, extract_candidates, track_identity
 
 
 class SlskdCandidateExtractionTests(unittest.TestCase):

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import httpx
 
-from slskd_client import test_connection
+from integrations.slskd.client import test_connection
 
 
 class SlskdConnectionTests(unittest.TestCase):

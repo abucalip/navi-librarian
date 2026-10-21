@@ -2,7 +2,7 @@
 
 import unittest
 
-from slskd_transfers import download_transfer_files
+from integrations.slskd.transfers import download_transfer_files
 
 
 class FakeHTTPError(RuntimeError):
