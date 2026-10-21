@@ -1,3 +1,8 @@
+## 2026-10-21 — Recommendation replay/diagnostics package move (PR #514 merged)
+
+- Moved `recommendation_replay`, `recommendation_diagnostics`, `recommendation_mmr_evaluate`, `recommendation_profile_comparison` into `recommendation/` (no shims). `replay._REPOSITORY_ROOT` adjusted to the repo root. Merge `431c152642809e2aad1a36a556ac47610d0ddaa2`, exact final head `b636fcf2298f27b76befc3285034fe03285a32a0`, four required workflows passed. Root Python modules 54. `run_metrics`, `cooldown`, `feedback` stay in root. Focused tests and `py_compile` run locally; full suite not run. Publishing, deployment and runtime verification not performed.
+- Next task: audit settings/paths group. See `CLAUDE_CLI.md`.
+
 ## 2026-10-21 — ListenBrainz integration package move (PR #513 merged)
 
 - Moved `listenbrainz_client.py` and `listenbrainz_popularity.py` into `integrations/listenbrainz/` with canonical imports, no shims. Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Merge `4e392e6660706191d080a5a2e9c66739377a5c33` from head `935d8984002bc6d690a2a6c09c315816dea9e16e` (owner named PR 513). Not published, deployed or runtime-verified.

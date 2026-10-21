@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: In progress; Navidrome, MusicBrainz, slskd, and Last.fm integration moves merged in PRs #508, #509, #511, and #512.
+Status: In progress; provider integration moves merged in PRs #508, #509, #511, #512, #513; recommendation replay/diagnostics package merged in PR #514.
 
 ## Goal
 
@@ -188,7 +188,7 @@ See the **Current handoff: Python module package layout** section at the top of 
 - Not changed: `discovery_lb_tag_lane.py`, `discovery_batch_metadata.py` and `discovery_candidate_gathering.py` stay in the root (domain logic that calls ListenBrainz, not provider clients).
 - Merged as `4e392e6660706191d080a5a2e9c66739377a5c33` from exact final head `935d8984002bc6d690a2a6c09c315816dea9e16e` (owner named PR 513); four required workflows passed on it. Next: re-inventory remaining root modules and pick the next boundary (see `CLAUDE_CLI.md`); no move pre-approved.
 
-## Recommendation replay/diagnostics package move (PR pending)
+## Recommendation replay/diagnostics package move (PR #514 merged)
 
 - Audit (`main` `bbe4104`): the seven `recommendation_*` modules are not one boundary. `recommendation_run_metrics` is a cross-cutting leaf used by the provider clients and discovery; `recommendation_cooldown` and `recommendation_feedback` are tied to the discovery group (design note needed). They stay in the root.
 - Moved to the new `recommendation/` package: `replay.py`, `diagnostics.py`, `mmr_evaluate.py`, `profile_comparison.py` (no root shims; no remaining importer needs the old paths). Callers updated: `navidrome_server.py` (lazy imports), `discovery_store.py` (lazy import), `scripts/recommendation_replay.py`, tests.
@@ -196,3 +196,5 @@ See the **Current handoff: Python module package layout** section at the top of 
 - CLIs are now run as `python -m recommendation.replay`, `-m recommendation.mmr_evaluate`, `-m recommendation.profile_comparison` (TEST_PLAN and diversity roadmap updated; archived findings keep the historical commands).
 - Docker: new `COPY recommendation/` line; the two root modules removed from the explicit list. Syntax workflow compile list updated. Packaging regression test added. Root Python modules: 54.
 - Focused tests run locally: replay_capture, diagnostics, mmr_evaluate, profile_comparison, docker_packaging, recommend_new_music_characterization, discovery_store; `py_compile` on changed files; `check_server_size.py` OK. Full suite not run.
+
+- Merged as `431c152642809e2aad1a36a556ac47610d0ddaa2` from exact final head `b636fcf2298f27b76befc3285034fe03285a32a0` (owner named PR 514); four required workflows passed on it (compile 39659386420, test-and-build 39659386566, container-smoke 39659385916, validate-container 39659386022). Next: audit the settings/paths group; the discovery and acquisition groups still need a design note before any move.
