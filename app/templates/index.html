@@ -31,6 +31,7 @@
         </svg>
       </button>
       <div id="appMenu" class="header-menu-panel" hidden>
+        <button type="button" data-page="saved">Saved</button>
         <button type="button" data-page="settings">Settings</button>
         <div class="header-menu-separator" role="separator"></div>
         <button type="button" id="logoutButton">Log out</button>
@@ -196,6 +197,16 @@
     <button data-refresh-discovery="artist_deep_dive">Refresh</button>
     <p id="artistDeepDiveStatus" class="status-line" aria-live="polite"></p>
     <div id="artistDeepDiveCards" class="cards"></div>
+  </div>
+</section>
+
+<section id="saved" class="page hidden" aria-labelledby="savedHeading">
+  <div class="panel">
+    <h2 id="savedHeading">Saved</h2>
+    <p>Albums you bookmarked with Save, newest first. Saving never starts a download.</p>
+    <button type="button" data-refresh-saved>Refresh</button>
+    <p id="savedStatus" class="status-line" aria-live="polite"></p>
+    <div id="savedCards" class="ranked-list"></div>
   </div>
 </section>
 
