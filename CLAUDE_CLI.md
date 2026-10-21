@@ -20,22 +20,19 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0d — end-to-end cold-run verification on current `main`, then the remaining cold cost (read-only first)
+## Next task: P0e — read-only design and quality comparison for the MusicBrainz tag lane (no code first)
 
-P0c is done and merged: PR #490 (merge `58182ae02ce48a1f4a5e9c09c55ff5c963b18e63`) replaced the 40 Last.fm `album.getInfo` calls in the ranking pass with one batched ListenBrainz release-group popularity POST (cold 4-page 40.9 to 51.9 s down to 23.6 s in a single sample; 40 of 40 groups returned counts). Reconciled PR #492 (merge `37014f6f0a62d5d2b4096e37e08863ffa371241c`) added an opt-in ListenBrainz tag-radio lane, **default off, measured and not recommended as default** (see its finding). Do not reopen either without new evidence.
+P0d is done. Cold 4-page run on current `main` (owner-approved, aggregate, single samples): cold 40.0 s, warm 2.9 s and 2.8 s; ListenBrainz never served HTML in 3 runs. The remaining cold floor is the sequential MusicBrainz tag lane: up to 8 searches at 1.1 s spacing plus about 1.2 s per response, about 16.9 s of the 40 s (the rest is CF paging, recording and release-group batches). Overlapping the lane with the Navidrome inventory fetch was measured and **dropped** (inventory 0.3 to 0.5 s for 1,733 albums, under 2% of a run). Overlapping with the genre stages is pointless (the lane's query plan needs the genre prefetch; the genre stages now cost about 1 s). The 1.1 s spacing is a margin over MusicBrainz's published 1 request per second, not a measured limit; do not lower it without owner approval. The P0d read-only findings are on branch `docs/p0d-cold-run-readonly` (head `c4b70fd`), **pushed but not merged and no PR**; ask the owner before opening one.
 
-What is left of a cold 4-page run (about 23 s): the MusicBrainz supplementary tag lane (about 16 to 18 s, one search per tag at 1.1 s spacing, 30-day cache, none warm), the four CF pages, recording and release-group batches, and artist genre batches. Never measured together on current `main` with the defaults.
+PR #493 (merge `b39e71a3456dc7baaba9e9446826bb643febe5ef`, record in #494) sent the honest `User-Agent` and `LISTENBRAINZ_TOKEN` on every ListenBrainz request; MusicBrainz never receives the token (tested, including the batch-failure fallback). It is **not proven** to prevent the verification page, which appeared only after about ten full runs. Do not run more than the approved samples; stop at the first HTML response and never change the user agent or fingerprint to get around it.
 
 Do:
-1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0b, P0c, "P0c implementation", and the tag-radio finding including the **Block** note) and the top `PROJECT_LOG.md` entries.
-2. **Check ListenBrainz is not serving the browser-verification page first.** After about ten full live runs in a short time this machine got HTTP 200 `text/html` "Verifying your browser" on every request, including a plain GET. One cheap GET of `/1/metadata/artist/` decides it. If blocked, stop live work and report; do not change the user agent or fingerprint to get around it.
-3. Read-only, from code and existing reports: break the remaining cold time down by stage and by request (what is sequential, what is cached, what is paced by a provider rule). Candidate ideas to evaluate, none approved: a per-search timeout or early stop for the MusicBrainz tag lane; whether the 1.1 s spacing is the provider's rule or a safe margin; running the tag lane concurrently with the genre stages (no added requests); the ListenBrainz client identifier/token question below.
-4. Report findings and request counts to the owner **before any code change**. Any change to request count or pacing needs owner approval.
-5. If the owner approves a measurement, keep it to **one cold 4-page run and two warm runs** with the default configuration, aggregate only, disposable data dir deleted, spaced out, and stop at the first HTML response. Use `reports/repeat-rate/run_genre_batch_pr.py` from the harness project folder (update it: it still expects the old Last.fm stage; per-stage seconds now come from `recommendation_run_metrics`).
+1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P0e, the tag-radio finding (including the **Block** note) and the tag-lane rotation finding; read `discovery_candidate_gathering.py` (`_run_tag_queries`, `_run_tag_lane`) and `discovery_lb_tag_lane.py`.
+2. Read-only, from code and existing reports, compare the three alternatives named in P0e before any race: (a) per-search timeout or the existing `TAG_LANE_EARLY_STOP_ENABLED`; (b) a deterministic split (some tags MusicBrainz, some tag radio); (c) tag radio as default with MusicBrainz as fallback. For each: request counts per source before and after, expected cold seconds, effect on candidate pool and repeatability, and the block risk from bursts.
+3. Define the quality comparison on a fixed tag set (candidate overlap and final-pick overlap, aggregate only) and what it would cost in live requests. Do not run it.
+4. Report to the owner **before any code change or live run**. Any change to request count or pacing needs owner approval; added ListenBrainz requests are allowed only where they save time.
 
-Open decision for the owner: the ListenBrainz client intermittently receives the verification page. A fix that sends an honest client identifier and `LISTENBRAINZ_TOKEN` needs the owner's go-ahead first (see Open items). Frame it as a reliability question, with the block as evidence.
-
-Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md` for the read-only step; a PR with four green workflows only if the owner approves a code change. Do not merge; the owner names the PR in words.
+Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`; a PR with four green workflows only if the owner approves a code change or a docs PR. Do not merge; the owner names the PR in words.
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -44,7 +41,7 @@ Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJEC
 
 ### Deferred
 
-- Roadmap P0d is the current task (above). P0c is complete (PR #490 and reconciled PR #492).
+- Roadmap P0e is the current task (above). P0c and P0d are complete (PR #490, reconciled PR #492, client identity PR #493).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
@@ -83,7 +80,7 @@ Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJEC
 - Feedback signal (3.3). Merged as PR #456; default on, owner-approved 2026-10-20.
 - Refill toggle and read path (3.4). Merged as PR #458 (default on) and PR #459 (stale-while-revalidate). Roadmap 3.4 is complete.
 - Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
-- ListenBrainz client. The app's HTTP client intermittently receives a browser-verification page instead of JSON. A fix that sends an honest client identifier and token would need the owner's go-ahead first. Do not change the client's user agent or fingerprint to get around the check.
+- ListenBrainz client. Done in PR #493 (honest `User-Agent` plus token on every ListenBrainz request, never sent to MusicBrainz). Whether it prevents the verification page over repeated runs is unproven. Do not change the user agent or fingerprint to get around the check.
 - Last.fm as a source is parked by the owner. Do not start a quality test or a combined path without a new decision.
 - Exploration slider. The 0-100 `recommendation_diversity` setting, its API and the MMR penalty mapping already exist; the audit above decides whether anything backend is missing. No UI in backend PRs.
 - Feedback positive seed. Merged (PRs #461, #463, #464, #465). One live sample is recorded in the roadmap; any further live run needs the owner's go-ahead.
