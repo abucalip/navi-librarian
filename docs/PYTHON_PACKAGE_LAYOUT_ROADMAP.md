@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: Planned; no module moves have been made under this roadmap.
+Status: In progress; first move merged in PR #508.
 
 ## Goal
 
@@ -30,6 +30,15 @@ Use a small number of packages aligned to real responsibilities and existing bou
 - Root: keep project configuration, Docker/Compose files, scripts and documentation; retain only compatibility entry points when they serve a real purpose.
 
 These are options, not a mandate to create every directory. Prefer existing `app/` structure and current domain boundaries where appropriate. Avoid a giant `core/` or `utils/` catch-all, circular imports, deep package nesting, and wrappers that add no compatibility value.
+
+## Completed moves
+
+### PR #508 — Navidrome client package
+
+- Merged to `main` as `f171a4e73915222292642ba17d6dcb568b8c929a` from exact tested head `a6fe1bd656f77ae4fbd65cb94c067949d14cf140`.
+- Canonical implementation: `integrations/navidrome/client.py`; legacy `navidrome_client.py` is a tested re-export shim.
+- Production imports, direct-import regression tests, and Docker package inclusion were updated. The application entry point was unchanged.
+- All four required workflows passed on the exact PR head. Agent-side focused tests and syntax compilation were not run; see `PROJECT_LOG.md` for evidence and limitation.
 
 ## Execution plan
 
@@ -94,6 +103,6 @@ The effort is complete only when:
 - Documentation records the actual resulting layout, verified evidence, remaining exceptions, and merge SHAs.
 - No publication, deployment, or production-runtime verification is inferred from successful tests or merges.
 
-## First task handoff
+## Next task handoff
 
-See the **Current handoff: Python module package layout** section at the top of `CLAUDE_CLI.md`. The first task is inventory plus one carefully selected package move in a PR—not a bulk move and not a behavior rewrite.
+See the **Current handoff: Python module package layout** section at the top of `CLAUDE_CLI.md`. After PR #508, refresh the dependency map on current main and complete the remaining root-module inventory (production/test callers, dynamic imports, AST/source-reading tests, path assumptions, Docker/CI references). Then select one cohesive next package move with a documented caller map; do not bulk-move files or rewrite behavior.
