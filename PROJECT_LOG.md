@@ -3,6 +3,17 @@
 - Pushed straight to `main` at the owner's instruction. Owner-approved aggregate live runs with release-group search stubbed to 503 (query 2; queries 2 and 3). Single pattern: off 2 of 8 queries / 5 tag candidates / 17.2 s / 3 requests; on 8 of 8 / 23 / 27.7 s / 11 requests (token run: 5 vs 25, 21.4 s vs 26.9 s, 3 vs 12 requests). Double pattern: no gain (threshold 2). Final list 10 in all arms.
 - Decision: enable `TAG_LANE_EARLY_STOP_ENABLED` by default (separate PR). MusicBrainz OAuth client credentials are not useful here (client_credentials unsupported; a user bearer token did not avoid real 503s). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0g). No tests run (docs only; full suite not run).
 
+
+## 2026-10-21 — P0g implementation merged (PR #498)
+
+- PR #498 squash-merged directly into `main` as `ad88bbbb2fe669e511b70472178cd3f5676246d6`, from exact final PR head `92be9ea09e61472cd5b4408c99a6f627353d4d34`.
+- `TAG_LANE_EARLY_STOP_ENABLED` now defaults to `True`. The tag lane continues after one exhausted MusicBrainz tag query and stops after `TAG_LANE_EXHAUSTION_THRESHOLD = 2` consecutive exhausted queries. Two legacy-stop tests explicitly pin the flag off; the default test now asserts it is on.
+- Focused tests reported on the PR: `test_discovery_tag_lane_early_stop`, `test_discovery_candidate_gathering`, `test_discovery_candidate_replenishment`, `test_discovery_candidate_supply`, `test_discovery_cold_start_batch`, `test_discovery_lb_tag_lane`, and `test_discovery_tag_queries`; `py_compile` on changed Python files. The agent did not run a separate local full-suite command; CI's Docker packaging `Run unit tests` step ran and passed the full unit suite, and the Docker image build succeeded.
+- All four required workflows passed on the exact final PR head: Python syntax check, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation (publishing paused).
+- P0g owner-approved simulated-throttle evidence is one sample: continuing past the first exhausted query increased tag queries from 2/8 to 8/8 and tag candidates from 5 to 23 (another matched token run reported 25), while wall time rose from 17.2 s to about 27–28 s and MusicBrainz requests from 3 to 11–12. The final list remained 10 in every arm. This supports greater tag-lane supply during a single-query failure, not a general recommendation-quality or normal-condition latency claim; repeated-throttle behavior is bounded by the two-consecutive-exhaustions threshold.
+- Not published or deployed; production runtime not verified. Publishing remains paused.
+
+
 ## 2026-10-21 — P0f: genre circuit breaker on by default (PR #495 merged)
 
 - PR #495 squash-merged as `0825f0e06b25f498147e38f2f61c817894450ba8` from exact final head `d50f39a736681f7393f7bbfdc794b02bfe8a57c8`. `GENRE_CIRCUIT_BREAKER_ENABLED = True`. Owner-approved simulated-throttle sample: 498.1 s / 207 MusicBrainz artist requests with breaker off versus 47.4 s / 18 requests with it on; final list 10 in both. Single samples, simulated throttling; artists may lack genres only when batch genre lookup fails while MusicBrainz is throttling. Early stop remains off. All four required workflows passed on exact head, including CI's full unit suite. Publishing, deployment, and runtime verification remain unperformed.
