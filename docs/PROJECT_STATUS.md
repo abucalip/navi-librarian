@@ -1,5 +1,13 @@
 # Project status
 
+## 2026-10-21 — v0.2 release preparation (PR #505)
+
+- PR #505 merged by squash as `99c0b88ed885de8b3c36686d63736b19a9235392`, from exact final PR head `fb34440b4893cc7f65678c90ba6e333616c0479d`. Adds `docs/RELEASE_v0.2.md` with draft release notes, deployment migration cautions, and explicit publication/deployment gates.
+- All four required workflows passed on the exact merge commit `99c0b88ed885de8b3c36686d63736b19a9235392`: Python syntax `39634236552`, Docker packaging/full unit suite/build `39634236630`, container runtime smoke `39634236733`, and validation-only multi-architecture image validation `39634236750` (publishing paused).
+- The modularization roadmap is closed. No GitHub Release was present at preparation time; the audit did not confirm an existing tag. The current Docker workflow remains `push: false`, so it cannot publish. No tag, GitHub Release, GHCR image, deployment, or production-runtime verification was created/performed.
+- **Release status:** prepared, not released. After this documentation closeout, refresh `main` and run all four workflows on the exact final candidate SHA before tagging. The actual publish workflow still needs a deliberate, reviewed publishing path and explicit authorization for publication/deployment. Browser checks waived on PRs #503/#504 remain unperformed; they are disclosed in the release notes.
+- Next action: finish release-candidate preflight on the final main SHA; do not publish until the release path and authorization gates are satisfied.
+
 ## 2026-10-21 — PRs #504 and #503 merged
 
 - **PR #504** (neutral LAN defaults) merged by squash as `af78c9e9796c27c65f9503a64d61ca9c58357dba`, from exact PR head `4263f9c5bf3400cf6a5846c0f81a253a177e9543`. Removed the hard-coded private LAN address from slskd defaults and deployment docs; blank URLs now fail validation. All four required workflows passed on that exact head: Python syntax `39631742346`, Docker packaging/full unit suite/build `39631742366`, container runtime smoke `39631742152`, and validation-only multi-architecture image validation `39631742470` (publishing paused).
@@ -7,7 +15,7 @@
 - Per owner instruction, manual UI checks were waived. The browser workflows were not independently verified. The Docker packaging workflow ran the full unit suite; no separate agent-side full-suite run was performed. Publishing, deployment, and production-runtime verification remain unperformed.
 - Current next action: continue the active recommendation-engine roadmap from its top item; publishing remains paused.
 
-Last reviewed: 2026-10-21 (PRs #503 and #504 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (v0.2 release preparation merged; publication remains paused)
 
 ## Current recommendation-engine state
 
