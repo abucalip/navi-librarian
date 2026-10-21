@@ -6,18 +6,19 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 The owner wants root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-layout effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
 
-**Next task — audit the slskd integration boundary before proposing the next package move.** PR #509 is squash-merged as `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; PR #508 remains merged as `f171a4e73915222292642ba17d6dcb568b8c929a`. The MusicBrainz package move is complete and the root-level Python count is down from 67 to 66. See `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md` for the dependency-map artifact and responsibility inventory.
+**Current task — finish the slskd boundary evidence before moving code.** The read-only audit is recorded in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md` and `PROJECT_LOG.md`. The five modules look like a plausible provider package, but an exhaustive current-main caller map is not yet established. Do not move them until the following are complete:
 
-1. Refresh GitHub `main`, recent commits, open PRs, and CI before doing anything. PR #509 merge commit is `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; a documentation closeout commit follows it on `main`. Refresh `main` before branching rather than assuming a fixed head. Open PR #506 (release publishing workflow) remains out of scope; publishing and deployment stay paused.
-2. Read `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, and relevant architecture docs. Never run the full unit suite as an agent.
-3. Audit these candidate modules without changing code: `slskd_client.py`, `slskd_search.py`, `slskd_search_polling.py`, `slskd_transfers.py`, and `slskd_quality.py`. Trace all production callers, test imports, lazy/dynamic imports, compatibility contracts, AST/source-reading tests, path assumptions, and Docker/CI references. Read the full relevant implementations and tests from GitHub, not a stale local checkout.
-4. Produce a concise caller/dependency map and decide whether these five modules form one cohesive package or require a smaller boundary. Pay particular attention to `navidrome_server.py` callers and direct tests. Do not move them merely to reduce the root count; stop if a safety, correctness, or verification gap takes priority.
-5. Before implementing, refresh the current-main dependency evidence and check open PRs and required workflows. If the boundary is safe, make one focused move from current main, update canonical imports, preserve any real compatibility contract, adjust Docker and tests, and add focused import/behavior regression tests. Keep behavior unchanged.
-6. Run only affected focused tests and `python -m py_compile` on changed Python files, review the complete diff, and open a PR. Verify all four required workflows on the exact final PR-head SHA: Python syntax/acquisition safety, Docker packaging/full unit suite/build, container runtime smoke, and validation-only multi-architecture image validation. Do not merge without explicit owner instruction naming the PR. Do not publish or deploy.
-7. Record actual tests/CI, exact SHAs, skipped checks, and remaining risks in the roadmap, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md` as appropriate.
+1. Refresh GitHub `main`, recent commits, open PRs, and CI. Start from the latest `main`; do not assume this audit branch is still current.
+2. Review `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, and relevant architecture docs.
+3. Generate/review the `scripts/dep_map.py` artifact from post-PR #509 main. Search all repository files for the five `slskd_*` names, wrapper names, `quality_tier`, dynamic imports, AST/source-reading tests, CI/scripts, and Docker/package references. Do not rely on GitHub code search alone.
+4. Confirm quality-tier direct behavior coverage. If missing, include a focused direct-import regression test in the eventual move.
+5. If exhaustive evidence confirms the boundary is safe, make one focused `integrations/slskd/` move, update legacy-server imports, direct-import tests, Docker COPY, and docs. Preserve behavior and compatibility. Otherwise document the smaller safe boundary and stop.
+6. Run only affected focused tests and `python -m py_compile` on changed Python files; never run the full unit suite as an agent. Open a PR and verify all four required workflows on its exact final head. Do not merge without explicit owner instruction naming the PR. Do not publish or deploy.
+7. Record exact SHAs, tests actually run, CI evidence, limitations, and next action in the roadmap, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md`.
 
-**Acceptance:** the slskd caller map and package boundary are evidenced by current GitHub code; any move is minimal, has no unresolved packaging/import risks, preserves behavior and safety, and passes the required PR-head CI. Do not bulk-reorganize the repository.
+**Acceptance:** all production/test/dynamic/path/package callers are accounted for from current GitHub evidence; one safe boundary is chosen from that evidence; any move preserves behavior and passes focused checks plus all four required PR-head workflows. No bulk reorganization.
 
+---
 ---
 ## Getting started
 
