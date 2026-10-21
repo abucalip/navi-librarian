@@ -1,3 +1,7 @@
+## 2026-10-21 — Handoff: next task P0h (CF freshness capture protocol, read-only) (docs only)
+
+- Pushed straight to `main` at the owner's instruction. `CLAUDE_CLI.md` now records P0g as merged (PR #498, `ad88bbbb2fe669e511b70472178cd3f5676246d6`), the finding that MusicBrainz OAuth client credentials are not useful for 503s, and hands off P0h: write the CF freshness capture protocol with no live runs, then ask the owner. Roadmap P2 flag line updated to cite the merge. No code change, no tests run (docs only; full suite not run).
+
 ## 2026-10-21 — P0g: tag-lane early stop measured under simulated throttling (docs only)
 
 - Pushed straight to `main` at the owner's instruction. Owner-approved aggregate live runs with release-group search stubbed to 503 (query 2; queries 2 and 3). Single pattern: off 2 of 8 queries / 5 tag candidates / 17.2 s / 3 requests; on 8 of 8 / 23 / 27.7 s / 11 requests (token run: 5 vs 25, 21.4 s vs 26.9 s, 3 vs 12 requests). Double pattern: no gain (threshold 2). Final list 10 in all arms.
