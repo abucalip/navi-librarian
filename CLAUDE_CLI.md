@@ -4,19 +4,17 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current handoff: Python module package layout (active priority)
 
-The owner wants root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-layout effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
+Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`; no bulk move or behavior rewrite.
 
-**Current task — finish the slskd boundary evidence before moving code.** The read-only audit is recorded in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md` and `PROJECT_LOG.md`. The five modules look like a plausible provider package, but an exhaustive current-main caller map is not yet established. Do not move them until the following are complete:
+**Current task — complete the last slskd caller inventory, then decide the move.** PR #510 records the audit and its four required workflows passed on exact head `8ba095c17040ea5dd40ab19ad36e132acb4ab2ee`. Its syntax workflow generated dependency-map artifact SHA-256 `22440f9cabed53f77f21abbdeb0593a9553fbdcc5bc0791d0ff46498d5185ca5`. The map confirms `navidrome_server.py` imports all five slskd modules (including lazy imports); candidate modules have no local project imports. Quality tests exist in `tests/test_slskd_search_modules.py` and `tests/test_slskd_candidates.py`. Docker explicitly copies all five modules.
 
-1. Refresh GitHub `main`, recent commits, open PRs, and CI. Start from the latest `main`; do not assume this audit branch is still current.
-2. Review `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, and relevant architecture docs.
-3. Generate/review the `scripts/dep_map.py` artifact from post-PR #509 main. Search all repository files for the five `slskd_*` names, wrapper names, `quality_tier`, dynamic imports, AST/source-reading tests, CI/scripts, and Docker/package references. Do not rely on GitHub code search alone.
-4. Confirm quality-tier direct behavior coverage. If missing, include a focused direct-import regression test in the eventual move.
-5. If exhaustive evidence confirms the boundary is safe, make one focused `integrations/slskd/` move, update legacy-server imports, direct-import tests, Docker COPY, and docs. Preserve behavior and compatibility. Otherwise document the smaller safe boundary and stop.
-6. Run only affected focused tests and `python -m py_compile` on changed Python files; never run the full unit suite as an agent. Open a PR and verify all four required workflows on its exact final head. Do not merge without explicit owner instruction naming the PR. Do not publish or deploy.
-7. Record exact SHAs, tests actually run, CI evidence, limitations, and next action in the roadmap, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md`.
+1. Refresh current GitHub `main`, recent commits, open PRs and CI; read `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and the package-layout roadmap before proceeding. PR #506 remains out of scope; publishing/deployment stay paused.
+2. Finish a verifiable full-tree inventory for exact occurrences of the five module names, wrapper names, `quality_tier`, `importlib`/string-based imports, AST/source-reading tests, scripts, CI, docs and Docker/package references. GitHub code search returned zero results with `incomplete_results=true`, so do not interpret that as a clean search. Use the repository tree and a reliable whole-tree retrieval/scan; if the available tools cannot establish exhaustive coverage, state the limitation and stop rather than guess.
+3. If that scan finds no additional constraints and the boundary remains cohesive, branch from refreshed main and make one focused `integrations/slskd/` move. Update the legacy-server lazy/top-level imports, all direct-import tests, Docker COPY and any verified docs/path references. Preserve behavior; retain compatibility shims only for proven callers. Otherwise document the smallest safe boundary and stop.
+4. Run only affected focused test modules and `python -m py_compile` on changed Python files; agents must never run the full unit suite. Review the complete diff and open a PR. Verify all four required workflows on the exact final PR-head SHA. Do not merge without explicit owner instruction naming the PR. Do not publish or deploy.
+5. Record exact SHAs, tests actually run, CI evidence, skipped checks, remaining risks and the next action in the roadmap, `docs/PROJECT_STATUS.md`, and `PROJECT_LOG.md`.
 
-**Acceptance:** all production/test/dynamic/path/package callers are accounted for from current GitHub evidence; one safe boundary is chosen from that evidence; any move preserves behavior and passes focused checks plus all four required PR-head workflows. No bulk reorganization.
+**Acceptance:** exhaustive caller/path/package evidence supports the chosen boundary; a move, if justified, is minimal, preserves behavior and passes focused checks plus all four required PR-head workflows. No bulk reorganization.
 
 ---
 ---
