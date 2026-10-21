@@ -1,3 +1,11 @@
+## 2026-10-21 — PR #486 merged: release-group chunk cap and retry metrics
+
+- PR: https://github.com/abucalip/navi-librarian/pull/486
+- Exact final PR head: `65a868410df5b5065fb605a61d90b04169e16bdd`; squash merge commit: `f8a248d555bf557e4bb965757d279afbed77cc1d`.
+- Release-group GET chunks are capped at 50 after live threshold testing established 80 MBIDs pass and 81 fail. Retried MusicBrainz attempts are now counted under `recording_lookup_retry`, separate from initial `recording_lookup` attempts. `CF_MAX_PAGES` remains 2; batched genre lookup is a roadmap item only, not implemented.
+- All four required workflows passed on the exact final head: Python syntax/acquisition safety (`39530309331`), Docker packaging/full unit suite/build (`39530309361`), container runtime smoke (`39530309434`), and validation-only multi-architecture image validation (`39530309487`; publishing remains paused). The packaging job's `Run unit tests` step succeeded. Focused tests and `py_compile` were reported in the PR; no independent local full-suite run.
+- Publishing, deployment, and production-runtime verification remain unperformed.
+
 ## 2026-10-21 — Batched genre lookup added to the roadmap; ListenBrainz request rule revised (docs only)
 
 - Branch `docs/batch-genre-roadmap-and-listenbrainz-rule`. Owner instruction: the "no added ListenBrainz requests" rule stands only where requests add run time; batch lookups that work quickly may add requests. Recorded in `CLAUDE_CLI.md` and `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
