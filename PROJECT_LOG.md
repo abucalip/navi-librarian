@@ -1,7 +1,9 @@
-## 2026-10-21 — Tag-lane rotation measured; not adopted (docs only)
+## 2026-10-21 — PR #483 merged: tag-lane rotation measured; not adopted (docs only)
 
-- Branch `rec/tag-lane-rotation` (PR #483). An experimental flagged rotation patch was measured, then removed after review because it was unwired and showed no benefit; only the findings are kept. Owner-approved live run (cold + 3 warm per arm, aggregate only, data dirs deleted): warm overlap 5/5/4 off vs 4/5/3 on (noise); tag supply unchanged (about 32-39 candidates); warm MusicBrainz calls 0 off vs 12/6/5 on; warm time 2.8-4.3 s vs 8.6-20.9 s. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
-- No code change; no tests needed. Not done: publication, deployment, full suite (standing rule).
+- PR: https://github.com/abucalip/navi-librarian/pull/483
+- Exact final PR head: `66b9c92b9276c2682903359985d03d1ebc3fc95e`; squash merge commit: `28fb84026201b0779cd604efc5c50aa11203cff5`.
+- The experimental flagged rotation implementation and tests were removed after review because the flag was unwired and the measurement showed no clear diversity benefit. The documentation retains the decision **not to adopt rotation**. Owner-approved live run (cold + 3 warm per arm, aggregate only, disposable data dirs deleted): warm overlap 5/5/4 off vs 4/5/3 on (noise); tag supply unchanged (about 32–39 candidates); warm MusicBrainz calls 0 off vs 12/6/5 on; warm time 2.8–4.3 s vs 8.6–20.9 s. One sample per arm; not enough to establish a quality effect. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- All four required workflows passed on the exact final head: Python syntax/acquisition safety, Docker packaging/full unit suite, container runtime smoke, and validation-only multi-architecture image validation. Documentation-only diff; no additional local test run. Publishing, deployment, and production-runtime verification remain unperformed.
 
 ## 2026-10-21 — `CF_MAX_PAGES = 4` re-measured after #479; decision keep 2 (docs only)
 
