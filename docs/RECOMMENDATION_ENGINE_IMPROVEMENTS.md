@@ -219,6 +219,22 @@ What this showed (superseded in part by the bisection below, which found a size 
 - **Recommendation:** no code change on the evidence available. The cold run is now a floor set by the MusicBrainz tag lane. Options for the owner: accept it; try (b) if inventory time proves worth it (needs a one-run measurement); or P0e/tag radio, already measured as slower and less stable.
 - **ListenBrainz client (reliability question):** the verification page appeared only after about ten full live runs in a short time; today's single GET was clean. Sending an honest client identifier and `LISTENBRAINZ_TOKEN` is the proper fix for that, and needs the owner's go-ahead. Not done.
 
+### P0e — MusicBrainz vs tag radio vs split, measured (2026-10-21; decision: keep MusicBrainz default)
+- **Read-only comparison (code and existing reports):** (a) per-search timeout or `TAG_LANE_EARLY_STOP_ENABLED` bounds the worst case only, so the typical ~17 s lane is unchanged and no request count changes; (b) a deterministic split (first half of the queries MusicBrainz, second half tag radio) halves MusicBrainz requests and adds the same number of tag GETs; (c) tag radio as default removes MusicBrainz requests but carries the largest GET burst (8 parallel) and the heavy-tailed latency. Racing both sources was not proposed: it doubles requests per tag and a cancelled search still counts as provider load.
+- **Live comparison (owner-approved, aggregate only, single cold samples, same profile, fresh cache per run, `CF_MAX_PAGES = 4`; test-only harness `run_tag_split.py`, not committed):**
+
+| Arm | Cold s | MusicBrainz req | Tag-radio req | Tag candidates | Final mix (10) |
+|---|---|---|---|---|---|
+| MusicBrainz only | 20.0 | 8 | 0 | 38 | 5 CF / 5 MB |
+| Tag radio only | 15.6 | 0 | 8 | 20 | 8 CF / 2 radio |
+| Split run 1 | 17.8 | 5 | 4 | 30 | 5 CF / 4 MB / 1 radio |
+| Split run 2 | 25.9 | 3 | 4 | 25 | 7 CF / 1 MB / 2 radio |
+
+- **Overlap (shared/union):** tag candidates MB vs radio 0/58, MB vs split 15/53, radio vs split 0/50, split vs split 5/50. Final picks: MB vs split 9/10, MB vs radio 5/10, radio vs split 5/10, split vs split 6/10. The two sources return disjoint pools, so any radio use changes what is recommended; final lists overlap mostly through the stable CF picks.
+- **Speed:** radio saved ~4 s and the first split run ~2 s, but the second split run was 5.9 s slower than MusicBrainz only. Within noise from the heavy-tailed ListenBrainz latency; no time win shown.
+- **Block:** no HTML (browser-verification) response in any run. A launch mistake (missing output path in the harness) probably cost one extra live run, so 5 live runs in total.
+- **Decision:** keep the MusicBrainz lane as default; split and tag-radio-default measured, not adopted. Reopen only with a new idea that adds no lookups and shows a time gain beyond noise.
+
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
 - **Phase 3.1 — MMR-style re-ranking:** evaluate only if eligible candidate pools are large enough to reorder meaningfully; preserve relevance and eligibility.

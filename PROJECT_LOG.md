@@ -1,3 +1,8 @@
+## 2026-10-21 — P0e MusicBrainz vs tag radio vs split comparison (docs only)
+
+- Merged straight to `main` at the owner's instruction (no PR). Owner-approved aggregate live runs: MusicBrainz only 20.0 s (8 MB requests), tag radio only 15.6 s (8 tag GETs), split 17.8 s and 25.9 s (4 tag GETs, 5 and 3 MB requests). Tag-candidate overlap between sources 0/58; final-pick overlap MB vs split 9/10, MB vs radio 5/10. Time differences are within noise; no browser-verification page in any run; one extra live run from a harness launch mistake (5 total).
+- Decision: keep MusicBrainz as default; details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0e). No code change, no tests run (docs only; full suite not run).
+
 ## 2026-10-21 — P0d read-only cold-run breakdown (docs only)
 
 - Merged straight to `main` at the owner's instruction (no PR). One plain ListenBrainz GET: HTTP 400 JSON, no verification page. No live runs, no code change, no tests run (docs only; full suite not run per standing rule). Findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` under P0d: the remaining cold time is the sequential MusicBrainz tag lane (up to 8 searches at 1.1 s spacing, about 16 to 18 s); no no-added-request change shortens it except overlapping it with the Navidrome inventory fetch (measured afterwards at 0.3 to 0.5 s for 1,733 albums, not worth it). Awaiting owner decision.
