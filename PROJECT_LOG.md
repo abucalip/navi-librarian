@@ -1,3 +1,9 @@
+## 2026-10-21 — PR #491 reconciliation (ListenBrainz tag-radio lane; opt-in, default off)
+
+- PR #491's original head was based before PR #490 and conflicted with current `main`. Reconciled as a clean, current-main-based PR, retaining PR #490's ListenBrainz popularity integration and adding only the flagged tag-radio lane plus its tests, Docker inclusion, diagnostics source, and measurement notes.
+- Feature remains disabled by default (`LB_TAG_LANE_ENABLED = False`). Measurements and known undocumented-endpoint/browser-verification risk are recorded in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`; it is not recommended as default.
+- Verification/merge status will be recorded after CI passes on the exact reconciled PR head.
+
 ## 2026-10-21 — PR #490 merged: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (P0c)
 
 - Exact final PR head: `0151a88f85f045ba67661c40e1b6cbfd7ecb17a0`; squash merge commit: `58182ae02ce48a1f4a5e9c09c55ff5c963b18e63`.
