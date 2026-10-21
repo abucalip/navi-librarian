@@ -6,6 +6,8 @@ import unicodedata
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
+from recommendation.music_key import music_key  # noqa: F401  (re-exported for existing callers)
+
 _DISCOVERY_SOURCE_LABELS = {
     "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
     "similar_artist_lookup", "library_gap", "new_release",
@@ -37,10 +39,6 @@ def merge_discovery_source(
     return normalized
 
 
-def music_key(value: Any) -> str:
-    value = unicodedata.normalize("NFKD", str(value or ""))
-    value = "".join(c for c in value if not unicodedata.combining(c))
-    return "".join(c.casefold() for c in value if c.isalnum())
 
 def artist_identity(candidate: dict[str, Any]) -> str:
     return f"mbid:{candidate['artist_mbid']}" if candidate.get("artist_mbid") else f"name:{music_key(candidate.get('primary_artist', ''))}"

@@ -12,7 +12,7 @@ import httpx
 
 from recommendation_run_metrics import record_provider_call, timed_stage
 
-from discovery_recommendations import music_key
+from recommendation.music_key import music_key
 
 
 def _default_items(value: Any) -> list[Any]:
