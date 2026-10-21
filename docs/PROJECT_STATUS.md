@@ -1,9 +1,11 @@
-## 2026-10-21 — MusicBrainz package move in progress
+## 2026-10-21 — Python package-layout PR #509 merged
 
-- Refreshed and reviewed the dependency-map artifact generated on main SHA `2acb6d5fb2b52329df03cc73233fcc963c768f6d` (artifact digest `8844d4cf9b10595837068cc32569be990cbfa236be6aa6b77911246fb7e35562`). The artifact is audit input only; it was not committed as generated tracked output.
-- Inventory: 237 Python modules total, 67 root-level modules, classified in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. The selected second provider boundary is the MusicBrainz pair. Production callers are `app/api/metadata.py` and `navidrome_server.py`, with focused tests for both helpers. Docker already copies `integrations/`; its explicit root file list was updated.
-- PR #509 final head currently under CI: `92345a749da3d3fcd4bf2b7e3b8c76e67cd2f114` (implementation commit `4385ce1ab1a0fd34b3e5899196af56d0930b7459`); branch `refactor/musicbrainz-integration-package`. Agent-side focused tests and `py_compile` have not been run because a fresh checkout is unavailable in this environment. Do not treat baseline CI as PR CI; verify all four required workflows on the exact final PR head.
-- Publishing, deployment, and production-runtime verification remain paused/unperformed. Do not merge without explicit owner instruction naming the PR.
+- PR #509 squash-merged to `main` as `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; exact tested PR head: `c045865fea13e8944512fc5c987e609cbc41e443`.
+- Canonical MusicBrainz album-year and rating helpers now live in `integrations/musicbrainz/`. `musicbrainz_rating_client.py` remains as a compatibility shim for the legacy `navidrome_server.py` caller. The album-year production import and focused direct-import test use the canonical package path; Docker packaging was updated.
+- All four required workflows passed on the exact PR head: syntax [39646429894](https://github.com/abucalip/navi-librarian/actions/runs/39646429894), Docker packaging/full unit suite/build [39646429876](https://github.com/abucalip/navi-librarian/actions/runs/39646429876), container runtime smoke [39646429872](https://github.com/abucalip/navi-librarian/actions/runs/39646429872), and validation-only multi-architecture image [39646429885](https://github.com/abucalip/navi-librarian/actions/runs/39646429885). Agent-side focused tests and `py_compile` were not run because a fresh checkout was unavailable.
+- Root-level Python modules: 67 before the move, 66 after. The refreshed AST dependency map and module responsibility inventory remain documented in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`; the map is static evidence, not runtime proof.
+- Published, deployed, and production-runtime verified: no. Publishing/deployment remain paused.
+- Next task: audit the five `slskd_*` modules and their callers/tests/compatibility contracts before choosing the next safe package boundary. Handoff is in `CLAUDE_CLI.md`.
 
 # Project status
 

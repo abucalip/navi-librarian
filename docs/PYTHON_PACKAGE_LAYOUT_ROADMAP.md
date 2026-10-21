@@ -137,3 +137,12 @@ The effort is complete only when:
 ## Next task handoff
 
 See the **Current handoff: Python module package layout** section at the top of `CLAUDE_CLI.md`. After PR #508, refresh the dependency map on current main and complete the remaining root-module inventory (production/test callers, dynamic imports, AST/source-reading tests, path assumptions, Docker/CI references). Then select one cohesive next package move with a documented caller map; do not bulk-move files or rewrite behavior.
+
+
+## PR #509 closeout and next candidate (2026-10-21)
+
+- PR #509 squash-merged as `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; exact tested head `c045865fea13e8944512fc5c987e609cbc41e443`.
+- The canonical MusicBrainz helpers now live under `integrations/musicbrainz/`. The root `musicbrainz_rating_client.py` remains intentionally as a compatibility shim for the legacy server. The album-year root module was removed, reducing root-level Python modules from 67 to 66.
+- Required CI passed on the exact PR head: syntax 39646429894, Docker packaging/full unit suite/build 39646429876, container smoke 39646429872, and validation-only multi-architecture image 39646429885. Agent-side focused tests and `py_compile` were not run because a fresh checkout was unavailable.
+- Next candidate is the slskd integration, but no move is pre-approved. Audit `slskd_client.py`, `slskd_search.py`, `slskd_search_polling.py`, `slskd_transfers.py`, and `slskd_quality.py` with all callers, direct tests, dynamic imports, legacy-server compatibility, path assumptions, and Docker/CI references. Decide whether one package or a smaller boundary is justified before implementation.
+- Publishing, deployment, and production-runtime verification remain paused/unperformed.
