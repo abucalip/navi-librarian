@@ -1,3 +1,8 @@
+## 2026-10-21 — Release-group chunk capped at 50; retries counted apart
+
+- Branch `fix/release-group-chunk-cap`. Owner-approved after the live bisection and threshold search (PR #484): the release-group endpoint passes up to 80 MBIDs per GET and fails from 81. `RELEASE_GROUP_CHUNK = 50` replaces the shared 100 for release-group requests only (recording batches stay at 100). Request impact: 83 groups now take 2 requests instead of 1; runs with 50 or fewer groups send the same single request. `recording_lookup_retry` now counts retried MusicBrainz attempts, so `recording_lookup` matches the 100 budget.
+- Tests: focused modules only (`test_discovery_batch_lookup`, `test_discovery_candidate_gathering`, `test_discovery_cold_start_batch`, `test_recommendation_run_metrics`) plus `py_compile`; full suite not run (standing rule). Not measured live after the change; `CF_MAX_PAGES` stays 2.
+
 ## 2026-10-21 — PR #483 merged: tag-lane rotation measured; not adopted (docs only)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/483
