@@ -54,7 +54,7 @@ Do not mark v0.2 released until each applicable item has evidence:
 - [ ] Merge this preparation document, refresh main, and verify all four workflows on the exact post-merge SHA.
 - [ ] Review the final release diff and release notes; confirm no open, relevant blocker was overlooked.
 - [ ] Obtain explicit go-ahead to perform the actual publication/deployment steps. “Prepare” does not create a release or publish an image.
-- [ ] Implement/review the deliberate release workflow path: version `v0.2` and `sha-<commit>` tags, verify both point at the intended source SHA and do not retag/reuse them, `linux/amd64` and `linux/arm64`, provenance/SBOM, and no unintended `latest` movement. The current workflow is validation-only and cannot publish.
+- [ ] Review and merge PR #506, which adds `.github/workflows/docker-release.yml`: pull requests validate only (`push: false`); pushing a `vMAJOR.MINOR` or `vMAJOR.MINOR.PATCH` tag publishes `v*` and `sha-<commit>` image tags for `linux/amd64` and `linux/arm64`, with provenance/SBOM. The workflow requires the tag to point at the exact current `main` SHA and deliberately does not move `latest`.
 - [ ] Create the GitHub release for tag `v0.2` only after the exact source commit is verified.
 - [ ] Verify GHCR tag and immutable digest after publication; record both.
 - [ ] Before deployment, record the existing image tag/digest as rollback reference and validate Compose configuration and persistent-volume mappings.
@@ -68,4 +68,4 @@ Published: **no**.
 Deployed: **not verified by this preparation task**.  
 Runtime verified: **not verified by this preparation task**.
 
-The repository workflow remains intentionally non-publishing. This document prepares the release decision and checklist; it does not create a tag, release, registry image, or deployment.
+The existing `.github/workflows/docker-publish.yml` remains validation-only. PR #506 prepares a separate tag-triggered publishing path, but until that PR is reviewed/merged and an authorized release tag is pushed, no registry image is published. This document does not create a tag, GitHub release, registry image, or deployment.
