@@ -337,6 +337,8 @@ class RecommendationCfPagingTests(unittest.TestCase):
         def http_get(url, params=None, **kwargs):
             if "/metadata/artist/" in url:  # batched genre lookup, not CF paging
                 return _Response([])
+            if "/metadata/artist/" in url:  # batched genre lookup, not CF paging
+                return _Response([])
             calls.append(dict(params or {}))
             offset = params["offset"]
             if fail_page is not None and offset == fail_page:
@@ -365,23 +367,24 @@ class RecommendationCfPagingTests(unittest.TestCase):
         )
         return providers, calls, mb_client
 
-    def test_second_page_is_requested_with_offset_and_budget_stops_at_two_pages(self):
+    def test_pages_are_requested_with_offset_and_budget_stops_at_max_pages(self):
+        from discovery_candidate_gathering import CF_MAX_PAGES
         pages = {
-            0: [_cf_item(i) for i in range(100)],
-            100: [_cf_item(i) for i in range(100, 200)],
-            200: [_cf_item(i) for i in range(200, 300)],
+            offset: [_cf_item(i) for i in range(offset, offset + 100)]
+            for offset in range(0, 100 * (CF_MAX_PAGES + 1), 100)
         }
-        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(200)}
+        fetched = CF_MAX_PAGES * 100
+        recordings = {f"rec-{i}": _recording(f"Artist {i}", i) for i in range(fetched)}
         providers, calls, _ = self._providers(pages=pages, recordings=recordings)
 
         result = gather_recommendation_candidates(providers)
 
-        self.assertEqual([c["offset"] for c in calls], [0, 100])
+        self.assertEqual([c["offset"] for c in calls], list(range(0, fetched, 100)))
         self.assertTrue(all(c["count"] == 100 for c in calls))
-        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_returned"], 200)
+        self.assertEqual(result["candidate_supply"]["cf_recordings"]["cf_recordings_returned"], fetched)
         paging = result["candidate_supply"]["cf_paging"]
-        self.assertEqual(paging["pages_requested"], 2)
-        self.assertEqual(paging["pages_fetched"], 2)
+        self.assertEqual(paging["pages_requested"], CF_MAX_PAGES)
+        self.assertEqual(paging["pages_fetched"], CF_MAX_PAGES)
         self.assertIsNone(paging["page_failure_class"])
 
     def test_total_mbid_count_is_recorded_from_first_page_without_extra_request(self):
