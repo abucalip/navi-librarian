@@ -1,3 +1,7 @@
+## 2026-10-21 — P0f: genre circuit breaker on by default (PR open)
+
+- `GENRE_CIRCUIT_BREAKER_ENABLED = True` per the measurement in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0f): stubbed-429 run 498.1 s to 47.4 s, MusicBrainz artist requests 207 to 18, final list 10 in both. Tests: focused modules only (breaker, profile breaker, candidate gathering, genre prefetch, artist genre batch, tag-lane early stop, batch lookup, cold-start batch); full suite not run. Early stop stays off; the two redundant batch flags are not removed here. Merge SHA to be recorded after the owner names the PR.
+
 ## 2026-10-21 — P0f default-off flag evidence brief and measurements (docs only)
 
 - Pushed straight to `main` at the owner's instruction (no PR). Four owner-approved cold runs, aggregate only: early stop off/on 17.3 s / 27.1 s with identical requests (no effect when healthy); breaker with stubbed 429s off/on 498.1 s / 47.4 s, MusicBrainz artist requests 207 / 18, final list 10 in both. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` are redundant behind the cold and warm batch paths. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0f). No code change, no tests run (docs only; full suite not run).

@@ -1,4 +1,4 @@
-"""Synthetic tests: the genre-stage circuit breaker is off by default and stops only when enabled."""
+"""Synthetic tests: the genre-stage circuit breaker is on by default and stops only when enabled."""
 import unittest
 from unittest import mock
 
@@ -7,12 +7,13 @@ from test_discovery_candidate_genre_prefetch import CANDIDATE_GENRES, PROFILE_MB
 
 
 class GenreCircuitBreakerTests(unittest.TestCase):
-    def test_flag_is_off_by_default(self):
-        self.assertFalse(gathering.GENRE_CIRCUIT_BREAKER_ENABLED)
+    def test_flag_is_on_by_default(self):
+        self.assertTrue(gathering.GENRE_CIRCUIT_BREAKER_ENABLED)
 
     def test_flag_off_keeps_asking_about_every_artist_after_failures(self):
         failing = tuple(CANDIDATE_GENRES)
-        _result, log = _run(warm=False, failing_artists=failing, prefetch_limit=0)
+        with mock.patch.object(gathering, "GENRE_CIRCUIT_BREAKER_ENABLED", False):
+            _result, log = _run(warm=False, failing_artists=failing, prefetch_limit=0)
 
         self.assertEqual(set(log["artist"]), {PROFILE_MBID, *CANDIDATE_GENRES})
 

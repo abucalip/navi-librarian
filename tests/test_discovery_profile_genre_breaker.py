@@ -41,8 +41,7 @@ class ProfileGenreBreakerTests(unittest.TestCase):
             # the other profile artists need genre entries of their own.
             mock.patch.dict(CANDIDATE_GENRES, {artist_id: ["jazz"] for artist_id in PROFILE_ARTISTS}),
         ]
-        if enabled:
-            patches.append(mock.patch.object(gathering, "GENRE_CIRCUIT_BREAKER_ENABLED", True))
+        patches.append(mock.patch.object(gathering, "GENRE_CIRCUIT_BREAKER_ENABLED", bool(enabled)))
         patches.append(mock.patch.object(gathering, "GENRE_CIRCUIT_BREAKER_THRESHOLD", threshold))
         for patch in patches:
             patch.start()

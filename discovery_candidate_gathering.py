@@ -35,11 +35,11 @@ _GENRE_LOOKUP_ATTEMPTS = 3
 # over-limit requests with 503 until the rate drops, so the lane stops after a
 # query that exhausts this budget instead of sending more requests.
 _TAG_SEARCH_ATTEMPTS = 2
-# Genre-stage circuit breaker (flagged, off by default). When enabled, the stage
+# Genre-stage circuit breaker (flagged, on by default since P0f). When enabled, the stage
 # stops after this many consecutive artist lookups exhaust their retries, so a
-# throttled MusicBrainz is not asked about every remaining artist. Default output
-# is unchanged while the flag is off.
-GENRE_CIRCUIT_BREAKER_ENABLED = False
+# throttled MusicBrainz is not asked about every remaining artist. Skipped artists get no genre,
+# which only matters when the batch genre lookup failed and MusicBrainz is throttling.
+GENRE_CIRCUIT_BREAKER_ENABLED = True
 GENRE_CIRCUIT_BREAKER_THRESHOLD = 3
 
 # Retry-After is honored only on these statuses, and any honored wait is capped so
