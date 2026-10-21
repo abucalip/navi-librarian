@@ -9,20 +9,6 @@ from typing import Any
 MAX_PROFILE_QUERIES = 6
 MAX_EXPLORATION_QUERIES = 2
 MAX_TAG_LENGTH = 64
-# Rotation (opt-in): the top ROTATION_ANCHORS profile tags always stay; the remaining
-# profile slots rotate through the next ROTATION_SPREAD ranked tags.
-ROTATION_ANCHORS = 3
-ROTATION_SPREAD = 3
-ROTATION_EXPLORATION_SPREAD = 2
-
-
-def _rotate_window(items: list, keep: int, spread: int, rotation: int) -> list:
-    """Pick `keep` items from the first keep+spread, starting at a rotated offset."""
-    window = items[:keep + spread]
-    if len(window) <= keep:
-        return window
-    start = rotation % len(window)
-    return [window[(start + i) % len(window)] for i in range(keep)]
 
 
 def _clean_tag(value: Any) -> str:
@@ -50,7 +36,6 @@ def select_supplementary_tag_queries(
     *,
     profile_limit: int = MAX_PROFILE_QUERIES,
     exploration_limit: int = MAX_EXPLORATION_QUERIES,
-    rotation: int | None = None,
 ) -> list[tuple[str, str, str]]:
     """Return weighted profile queries plus a small candidate-pool exploration quota.
 
@@ -58,10 +43,6 @@ def select_supplementary_tag_queries(
     Profile tags are weighted by the decayed listening weight of their artists.
     Exploration tags come only from the broader candidate pool and cannot
     displace the profile-derived quota.
-
-    `rotation=None` keeps the fixed top-N choice. An integer rotates the non-anchor
-    profile slots and the exploration slots through a small window of the next-ranked
-    tags; the same value always gives the same queries, and the query count is unchanged.
     """
     if profile_limit < 0 or exploration_limit < 0:
         raise ValueError("query limits must be non-negative")
@@ -97,15 +78,7 @@ def select_supplementary_tag_queries(
         family = families[0] if families else "other"
         selected.append((_query_for_tag(tag), family, f"{source}:{slug}"))
 
-    ranked = sorted(weights.items(), key=lambda item: (-item[1], item[0]))
-    if rotation is None or profile_limit <= ROTATION_ANCHORS:
-        chosen = ranked[:profile_limit]
-    else:
-        chosen = ranked[:ROTATION_ANCHORS] + _rotate_window(
-            ranked[ROTATION_ANCHORS:], profile_limit - ROTATION_ANCHORS,
-            ROTATION_SPREAD, rotation,
-        )
-    for key, _weight in chosen:
+    for key, _weight in sorted(weights.items(), key=lambda item: (-item[1], item[0]))[:profile_limit]:
         append(display_tags[key], "profile")
 
     exploration_tags: dict[str, str] = {}
@@ -118,13 +91,7 @@ def select_supplementary_tag_queries(
     exploration = [
         tag for key, tag in exploration_tags.items() if key not in selected_keys
     ]
-    if rotation is None:
-        exploration = exploration[:exploration_limit]
-    else:
-        exploration = _rotate_window(
-            exploration, exploration_limit, ROTATION_EXPLORATION_SPREAD, rotation,
-        )
-    for tag in exploration:
+    for tag in exploration[:exploration_limit]:
         append(tag, "explore")
 
     return selected

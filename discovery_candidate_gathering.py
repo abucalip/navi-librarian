@@ -167,10 +167,6 @@ REPLENISH_EXTRA_QUERIES = 2
 # throttled search does not end the lane while the total request count stays bounded.
 TAG_LANE_EARLY_STOP_ENABLED = False
 TAG_LANE_EXHAUSTION_THRESHOLD = 2
-# Tag-lane rotation (flagged, off by default). When on and the caller passes an explicit
-# `tag_rotation` counter, the lane rotates which next-ranked profile and exploration tags
-# it samples. Query counts are unchanged; the same counter gives the same queries.
-TAG_LANE_ROTATION_ENABLED = False
 # Top CF candidate-pool artists whose genres are prefetched before the tag lane.
 CANDIDATE_PREFETCH_LIMIT = 5
 SHORTLIST_TARGET_DEFAULT = 10
@@ -498,7 +494,6 @@ def gather_recommendation_candidates(
     *,
     shortlist_target: int = SHORTLIST_TARGET_DEFAULT,
     cold_start: bool = False,
-    tag_rotation: int | None = None,
 ) -> dict[str, Any] | str:
     """Gather providers in legacy order; early errors retain their JSON contract."""
     import time
@@ -896,21 +891,16 @@ def gather_recommendation_candidates(
         if len(seen_candidate_artist_ids) >= 60:
             break
 
-    rotation = tag_rotation if TAG_LANE_ROTATION_ENABLED else None
-    # Flag off: the selector is called exactly as before.
-    rot = {} if rotation is None else {"rotation": rotation}
     regional_queries = select_supplementary_tag_queries(
         tag_query_weights,
         profile_tags_by_artist,
         candidate_pool_tags,
-        **rot,
     )
     initial_changed = 0
     if tag_query_weights is not recent_artist_mbid_counts:
         # A seed may replace a planned query but never add one (query budget).
         unseeded_plan = select_supplementary_tag_queries(
             recent_artist_mbid_counts, baseline_profile_tags, candidate_pool_tags,
-            **rot,
         )
         regional_queries = regional_queries[:len(unseeded_plan)]
         unseeded_plan_queries = {item[0] for item in unseeded_plan}
@@ -981,7 +971,6 @@ def gather_recommendation_candidates(
             candidate_pool_tags,
             profile_limit=MAX_PROFILE_QUERIES + REPLENISH_EXTRA_QUERIES,
             exploration_limit=MAX_EXPLORATION_QUERIES + REPLENISH_EXTRA_QUERIES,
-            **rot,
         )
         replenish_queries = [
             item for item in wider_queries if item[0] not in issued_queries

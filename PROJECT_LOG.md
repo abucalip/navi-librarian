@@ -1,7 +1,7 @@
-## 2026-10-21 — Tag-lane rotation measured; flag added, default off (decision: keep off)
+## 2026-10-21 — Tag-lane rotation measured; not adopted (docs only)
 
-- Branch `rec/tag-lane-rotation`. Adds `TAG_LANE_ROTATION_ENABLED = False`, an explicit `tag_rotation` argument and a `rotation` option on `select_supplementary_tag_queries`; flag off keeps the selector call unchanged. Owner-approved live run (cold + 3 warm per arm, aggregate only, data dirs deleted): warm overlap 5/5/4 off vs 4/5/3 on (noise); tag supply unchanged (about 32-39 candidates); warm MusicBrainz calls 0 off vs 12/6/5 on; warm time 2.8-4.3 s vs 8.6-20.9 s. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
-- Focused modules passed: `test_discovery_tag_queries`, `test_discovery_candidate_gathering`, `test_discovery_tag_lane_early_stop`, `test_discovery_save_tag_seed`, `test_discovery_candidate_replenishment`; `py_compile` on both changed files. Full suite not run (standing rule). Not done: wiring a counter, publication, deployment.
+- Branch `rec/tag-lane-rotation` (PR #483). An experimental flagged rotation patch was measured, then removed after review because it was unwired and showed no benefit; only the findings are kept. Owner-approved live run (cold + 3 warm per arm, aggregate only, data dirs deleted): warm overlap 5/5/4 off vs 4/5/3 on (noise); tag supply unchanged (about 32-39 candidates); warm MusicBrainz calls 0 off vs 12/6/5 on; warm time 2.8-4.3 s vs 8.6-20.9 s. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- No code change; no tests needed. Not done: publication, deployment, full suite (standing rule).
 
 ## 2026-10-21 — `CF_MAX_PAGES = 4` re-measured after #479; decision keep 2 (docs only)
 
