@@ -137,16 +137,13 @@ class _Harness:
         )
 
 
-def _run(harness, *, batch_enabled, title_filter_enabled=True):
-    with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", batch_enabled), \
-            mock.patch.object(gathering, "WARM_BATCH_ENABLED", False), \
-            mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", title_filter_enabled):
+def _run(harness, *, batch_enabled):
+    with mock.patch.object(gathering, "WARM_BATCH_ENABLED", batch_enabled):
         return gather_recommendation_candidates(harness.providers())
 
 
 class BatchFlagGateTests(unittest.TestCase):
-    def test_flag_off_by_default_uses_per_recording_lookups_only(self):
-        self.assertFalse(gathering.CF_BATCH_RESOLUTION_ENABLED)
+    def test_warm_switch_off_uses_per_recording_lookups_only(self):
         harness = _Harness(3)
 
         _run(harness, batch_enabled=False)
@@ -155,20 +152,11 @@ class BatchFlagGateTests(unittest.TestCase):
         self.assertEqual(harness.rg_gets, [])
         self.assertEqual(len(harness.mb_client.requested), 3)
 
-    def test_flag_on_without_title_filter_does_not_batch(self):
-        harness = _Harness(3)
-
-        _run(harness, batch_enabled=True, title_filter_enabled=False)
-
-        self.assertEqual(harness.posts, [])
-        self.assertEqual(len(harness.mb_client.requested), 3)
-
     def test_flag_on_without_post_client_does_not_batch(self):
         harness = _Harness(3)
         providers = harness.providers()
         providers = RecommendationProviders(**{**providers.__dict__, "http_post": None})
-        with mock.patch.object(gathering, "CF_BATCH_RESOLUTION_ENABLED", True), \
-                mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", True):
+        with mock.patch.object(gathering, "WARM_BATCH_ENABLED", True):
             gathering.gather_recommendation_candidates(providers)
 
         self.assertEqual(harness.posts, [])
@@ -347,8 +335,7 @@ class BatchEligibilityTests(unittest.TestCase):
 
 class SynthesizeRecordingTests(unittest.TestCase):
     def _reject(self, title):
-        with mock.patch.object(supply, "BATCH_TITLE_FILTER_ENABLED", True):
-            return supply.batch_title_marker_rejection(title)
+        return supply.batch_title_marker_rejection(title)
 
     def test_release_group_response_uses_wrapped_name_field(self):
         from discovery_batch_metadata import fetch_release_group_metadata
