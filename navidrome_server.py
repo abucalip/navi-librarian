@@ -376,12 +376,26 @@ def recommend_new_music(
         else bool(_lastfm_available_override)
     )
     from recommendation_replay import prepare_lastfm_callback
+    live_popularity = _lastfm_album_popularity
+    if _lastfm_popularity_fn is None:
+        # Release-group popularity comes from one batched ListenBrainz request, not
+        # one Last.fm call per album.
+        from discovery_recommendations import POPULARITY_CANDIDATE_LIMIT
+        from listenbrainz_popularity import build_popularity_lookup, fetch_release_group_popularity
+        live_popularity = build_popularity_lookup(
+            albums.values(), POPULARITY_CANDIDATE_LIMIT,
+            lambda mbids: fetch_release_group_popularity(
+                httpx.post, _metadata_cache_get, _metadata_cache_set, mbids,
+                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+            ),
+            _music_key,
+        )
     lastfm_callback, _lastfm_calls = prepare_lastfm_callback(
         _capture_path,
         _gathered_override,
         _provider_tape,
         _lastfm_popularity_fn,
-        _lastfm_album_popularity,
+        live_popularity,
     )
     lastfm_checked = apply_lastfm_popularity_bonus(
         albums.values(),

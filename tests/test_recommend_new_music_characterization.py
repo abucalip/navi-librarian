@@ -48,7 +48,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
                 }],
                 "releases": [{
                     "release-group": {
-                        "id": "release-group-1",
+                        "id": "11111111-1111-4111-8111-111111111111",
                         "title": "Blue Train",
                         "primary-type": "Album",
                         "secondary-types": [],
@@ -64,7 +64,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
                 }],
                 "releases": [{
                     "release-group": {
-                        "id": "release-group-2",
+                        "id": "22222222-2222-4222-8222-222222222222",
                         "title": "Moanin'",
                         "primary-type": "Album",
                         "secondary-types": [],
@@ -122,8 +122,11 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             patch.object(server, "_discovery_settings_read", return_value={
                 "recommendation_diversity": diversity_setting,
             }),
-            patch.object(
-                server, "_lastfm_album_popularity", return_value=lastfm_stats
+            patch(
+                "listenbrainz_popularity.fetch_release_group_popularity",
+                side_effect=lambda post, cache_get, cache_set, mbids, headers: {
+                    mbid: lastfm_stats for mbid in mbids
+                } if lastfm_stats else {},
             ),
             patch.object(server, "api_call", side_effect=api_call),
             patch("httpx.Client", return_value=_Client(regional_http_status)),

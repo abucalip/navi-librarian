@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
 from recommendation_run_metrics import add_stage_seconds, timed_stage
+import re
 import json
 import math
 import time
@@ -175,6 +176,10 @@ SHORTLIST_TARGET_DEFAULT = 10
 CF_RECOMMENDATION_URL = (
     "https://api.listenbrainz.org/1/cf/recommendation/user/{username}/recording"
 )
+
+
+def _looks_like_mbid(value: Any) -> bool:
+    return bool(re.fullmatch(r"[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", str(value or "")))
 
 
 def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[Any], dict[str, Any]]:
@@ -443,6 +448,9 @@ def _run_tag_queries(
                     "primary_artist": primary_artist,
                     "artist_mbid": artist_mbid,
                     "album": album_title,
+                    "release_group_mbid": (
+                        str(group["id"]) if _looks_like_mbid(group.get("id")) else None
+                    ),
                     "score": 0.035,
                     "tracks": [],
                     "discovery_source": "musicbrainz_tag_search",
@@ -687,6 +695,9 @@ def gather_recommendation_candidates(
                     continue
 
                 album_title = next(iter(album_groups.values()))
+                album_group_mbid = next(iter(album_groups))
+                if not _looks_like_mbid(album_group_mbid):
+                    album_group_mbid = None
 
                 key = (providers.music_key(primary_artist), providers.music_key(album_title))
                 score = item.get("score", 0)
@@ -697,6 +708,7 @@ def gather_recommendation_candidates(
                         "primary_artist": primary_artist,
                         "artist_mbid": primary_artist_mbid,
                         "album": album_title,
+                        "release_group_mbid": album_group_mbid,
                         "score": score,
                         "tracks": [],
                         "discovery_source": "listenbrainz",
@@ -704,6 +716,8 @@ def gather_recommendation_candidates(
                     }
 
                 candidate = albums[key]
+                if album_group_mbid and not candidate.get("release_group_mbid"):
+                    candidate["release_group_mbid"] = album_group_mbid
                 candidate["score"] = max(candidate["score"], score)
                 track = recording.get("title", "")
                 if track and track not in candidate["tracks"]:

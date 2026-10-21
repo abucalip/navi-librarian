@@ -376,6 +376,10 @@ def apply_familiarity_exploration_bonus(
     )
     return candidate["discovery_score"]
 
+# Candidates (by discovery_score) that receive a popularity lookup per run.
+POPULARITY_CANDIDATE_LIMIT = 40
+
+
 def apply_lastfm_popularity_bonus(
     candidates: Iterable[dict[str, Any]],
     recent_family_counts: Mapping[str, int],
@@ -391,7 +395,7 @@ def apply_lastfm_popularity_bonus(
         candidates,
         key=lambda album: album["discovery_score"],
         reverse=True,
-    )[:40]:
+    )[:POPULARITY_CANDIDATE_LIMIT]:
         stats = popularity_lookup(
             candidate.get("primary_artist") or candidate.get("artist", ""),
             candidate.get("album", ""),
