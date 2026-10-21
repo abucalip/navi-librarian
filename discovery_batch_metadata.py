@@ -16,6 +16,10 @@ LISTENBRAINZ_RELEASE_GROUP_URL = "https://api.listenbrainz.org/1/metadata/releas
 # Without "release" in inc the response has no release or release-group object.
 BATCH_RECORDING_INCLUDES = "artist release"
 BATCH_RECORDING_CHUNK = 100
+# Release groups per GET. The endpoint answers 200 up to 80 comma-joined MBIDs and
+# fails from 81 (dropped connection, then HTML 502 at 83), whichever MBIDs they are;
+# 50 keeps a margin under that measured limit. See docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
+RELEASE_GROUP_CHUNK = 50
 
 
 def _chunks(values: list[str], size: int):
@@ -74,7 +78,7 @@ def fetch_release_group_metadata(
     a set, the failed chunk's MBIDs are added to it and the other chunks are kept.
     """
     results: dict[str, Mapping[str, Any]] = {}
-    for chunk in _chunks(list(dict.fromkeys(release_group_mbids)), BATCH_RECORDING_CHUNK):
+    for chunk in _chunks(list(dict.fromkeys(release_group_mbids)), RELEASE_GROUP_CHUNK):
         for attempt in range(retries + 1):
             try:
                 response = get(

@@ -186,6 +186,11 @@ What this showed (superseded in part by the bisection below, which found a size 
 - Allowed by the revised ListenBrainz request rule (it adds about 3 ListenBrainz GETs and saves about 79 MusicBrainz requests and about 170 s of cold time at 4 pages). Report request counts and wall time before and after in the PR.
 - After it lands, re-measure `CF_MAX_PAGES = 4` end to end on `main` and decide with the owner whether to raise it (still the owner's call).
 
+### P0c — Test batch lookups for Last.fm (added 2026-10-21)
+- After genre lookups are batched, the largest remaining cold-run cost at 4 pages is the Last.fm popularity pass: `apply_lastfm_popularity_bonus` makes up to 40 sequential `album.getInfo` calls (30-day cache; 27.5 s of a 39.6 s cold run, 0.5 to 0.7 s each, 0.2 s pacing between calls). Warm runs make none.
+- Test, read-only first, whether this cost can fall: (a) whether any Last.fm API method returns album statistics for several albums in one request (none is known; `album.getInfo` takes one artist and album, so check the documentation before assuming a batch exists); (b) if there is no batch path, whether the same 40 calls issued with bounded concurrency (for example 4 at a time) cut wall time without breaching Last.fm's rate guidance, which changes the request pattern; (c) whether the ListenBrainz popularity or listen-count endpoints can replace some of the Last.fm calls (the batch recording and artist endpoints are already in use).
+- Measure cold time and request counts before and after, the same way as P0b, and report them. Any change to the number or pacing of Last.fm calls needs owner approval, and Last.fm as a ranking source is otherwise parked by the owner.
+
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
 - **Phase 3.1 — MMR-style re-ranking:** evaluate only if eligible candidate pools are large enough to reorder meaningfully; preserve relevance and eligibility.

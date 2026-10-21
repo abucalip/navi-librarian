@@ -6,6 +6,7 @@ import discovery_candidate_gathering as gathering
 import discovery_candidate_supply as supply
 from discovery_batch_metadata import (
     BATCH_RECORDING_CHUNK,
+    RELEASE_GROUP_CHUNK,
     LISTENBRAINZ_RECORDING_BATCH_URL,
     LISTENBRAINZ_RELEASE_GROUP_URL,
     synthesize_recording,
@@ -243,23 +244,33 @@ class BatchResolutionPathTests(unittest.TestCase):
 
         self.assertEqual(len(harness.mb_client.requested), 2)
 
+    def test_release_group_requests_stay_under_the_measured_endpoint_limit(self):
+        # Live: 80 MBIDs pass, 81 fail. 83 groups must split into 50 + 33.
+        self.assertLessEqual(RELEASE_GROUP_CHUNK, 80)
+        harness = _Harness(83)
+
+        _run(harness, batch_enabled=True)
+
+        self.assertEqual([len(ids) for ids in harness.rg_gets], [RELEASE_GROUP_CHUNK, 83 - RELEASE_GROUP_CHUNK])
+
     def test_failed_release_group_chunk_keeps_other_chunks_batch_resolved(self):
-        # 150 recordings -> release-group chunks of 100 and 50; calls 2 and 3 are the
-        # second chunk and its single retry, so only that chunk falls back.
-        count = BATCH_RECORDING_CHUNK + 50
+        # 3 release-group chunks of RELEASE_GROUP_CHUNK; calls 2 and 3 are the second
+        # chunk and its single retry, so only that chunk falls back.
+        count = RELEASE_GROUP_CHUNK * 3
+        failed = range(RELEASE_GROUP_CHUNK, RELEASE_GROUP_CHUNK * 2)
         harness = _Harness(count, rg_fail_calls={2, 3}, mb_recordings={
-            f"rec-{i}": _mb_recording(i) for i in range(BATCH_RECORDING_CHUNK, count)
+            f"rec-{i}": _mb_recording(i) for i in failed
         })
 
         result = _run(harness, batch_enabled=True)
 
-        self.assertEqual(harness.mb_client.requested, [f"rec-{i}" for i in range(BATCH_RECORDING_CHUNK, count)])
+        self.assertEqual(harness.mb_client.requested, [f"rec-{i}" for i in failed])
         self.assertEqual(len(result["albums"]), count)
-        self.assertEqual(harness.rg_call_count, 3)
+        self.assertEqual(harness.rg_call_count, 4)
         batch_keys = [k for k in harness.cache_writes if k.startswith(gathering.BATCH_RECORDING_CACHE_PREFIX)]
         full_keys = [k for k in harness.cache_writes if k.startswith("mb:recording:")]
-        self.assertEqual(len(batch_keys), BATCH_RECORDING_CHUNK)
-        self.assertEqual(len(full_keys), count - BATCH_RECORDING_CHUNK)
+        self.assertEqual(len(batch_keys), count - len(failed))
+        self.assertEqual(len(full_keys), len(failed))
 
     def test_transient_release_group_failure_is_retried_once_without_fallback(self):
         harness = _Harness(3, rg_fail_calls={1})
