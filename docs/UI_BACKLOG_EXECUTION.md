@@ -1765,15 +1765,15 @@ Roadmap item: Phase 3, fourth item (Add to your collection, the Classics list). 
 - Not for me: clicking × posts `action: dismiss` with the album metadata to `/api/discovery/feedback` and reloads the list.
 - Keyboard after Load albums: Refresh, row link, Get, Not for me, Dismiss artist, next row link.
 - Not run: a real Get request (the brief forbids acquisition on a sandbox without authorisation, and the sandbox has no acquisition path), a live library and real artwork, Dismiss artist clicked (it would post to the server), reduced-motion emulation, and the full manual checklist against the PR head SHA.
-- Live-library check (other albums by artists who have a full album in the library): **skipped**, for Hamdi to run locally.
+- Live-library check (other albums by artists who have a full album in the library): **skipped**, for the owner to run locally.
 
 **Impeccable.** `/impeccable context` ran. Its `CONTEXT_STALE` note is about `buildPath` in `.impeccable/config.json` and was not acted on. `impeccable detect` ran on `static/app.js` (no findings, regex-only), `app/templates/index.html` (`<img>` with no `src` and 11px text, both in code this PR did not touch) and `static/app.css` (advisory design-system radius, colour and type-ramp literals, all pre-existing; this PR removed one rule and added none). Applied: shared ranked row, muted index instead of a numeral, sort-basis label. Rejected: a red numeral (the order is not a stable score ranking), and a new clamp or tooltip on the shared row (kept to the existing `.ranked-row h3`).
 
 **web-design-guidelines.** The skill's WebFetch of the rules URL returned a summary, not the rule list, so the rules were **not** checked line by line. The summary's categories (focus, touch targets, motion, text overflow, labels) were checked against the changed lines by reading: visible focus is inherited from `.ranked-row:focus-visible` and the button styles; the reduced-motion rule for the skeleton remains in `app.css`; text truncates with the full name in `title`. This is a limitation, not a pass.
 
-**Known limitations.** The title tooltip no longer carries the year. The 390px bottom tab bar overlaps the list (the open follow-up for seven bottom tabs under 620px). Artwork is absent in the fixture. The live-library check is for Hamdi to run.
+**Known limitations.** The title tooltip no longer carries the year. The 390px bottom tab bar overlaps the list (the open follow-up for seven bottom tabs under 620px). Artwork is absent in the fixture. The live-library check is for the owner to run.
 
-**Next action.** Hamdi runs this page on a live library locally against the PR head SHA, and decides whether to merge.
+**Next action.** the owner runs this page on a live library locally against the PR head SHA, and decides whether to merge.
 
 ## 17. Redesign Phase 4 — Artist Deep Dives (`ui/phase-4-artist-deep-dives`, PR #378, merged)
 
@@ -2157,9 +2157,9 @@ Rendered screenshots: `phase-7-motion/screenshots/before-recommendations-{1440,1
 
 ### 23.5 Deviations and limits
 
-- **Looping periods have no token.** The Get arc rotates over 1.15s and the skeleton pulses over 1.4s. Section 11 names no duration for loops, and `--dur-slow` (260ms) would spin the arc too fast. Both keep their periods and linear or ease-in-out timing. Hamdi to decide: add a loop token, or accept these two.
+- **Looping periods have no token.** The Get arc rotates over 1.15s and the skeleton pulses over 1.4s. Section 11 names no duration for loops, and `--dur-slow` (260ms) would spin the arc too fast. Both keep their periods and linear or ease-in-out timing. The owner to decide: add a loop token, or accept these two.
 - **Hover colour is instant.** Section 11 lists `--dur-fast` for hover, but also says to animate only transform and opacity. I took the second rule, so hover fills and borders change without a transition.
-- **Removed, not in the table:** the card hover lift, the artwork fade-in, and the colour transitions. If Hamdi wants the card lift kept, it is a one-line change, but it would be outside the table.
+- **Removed, not in the table:** the card hover lift, the artwork fade-in, and the colour transitions. If the owner wants the card lift kept, it is a one-line change, but it would be outside the table.
 - **Not changed:** vendored Notyf toast animations (restyle-only, per section 9.6; reduced motion still shortens them and never removes them). The global `html { scroll-behavior: smooth }` and the JS scroll behaviour are existing tested behaviour, so I left them.
 - **Reduced motion verified by emulation only in Chromium.** No real OS setting or screen reader was used. Toast reduced-motion timing was not exercised with a live toast.
 - **Live library checks: skipped.** The sandbox has no Navidrome library, and the helper described in `docs/LOCAL_UI_TESTING.md` is not available here. Discover music was rendered from synthetic fixtures only.
@@ -2230,11 +2230,11 @@ Console: the only errors are `net::ERR_FAILED` from the harness aborting third-p
 
 ### 24.5 Limits, deviations and open items
 
-- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for Hamdi. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness. **Resolved in section 37** (three marks vendored, two text-only).
-- **Bottom tab bar under 620px (Hamdi's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
+- **Third-party logo requests in the album modal (B2, not fixed).** Platform links load logos at runtime from `cdn.simpleicons.org`, `raw.githubusercontent.com` and `community.qobuz.com`. AGENTS.md forbids runtime third-party assets. Fixing this means vendoring brand logos under `static/vendor/` with their licences, or dropping the images for text labels, which is a brand and licensing decision. Left for the owner. Without the images the links show abbreviations ("Li", "Ap", "Sp") as fallback text in the harness. **Resolved in section 37** (three marks vendored, two text-only).
+- **Bottom tab bar under 620px (the owner's call, not redesigned).** The seven destinations still scroll sideways at 390px; four are visible in the 390px render. Shorter labels or a More tab would change the shell, so this is reported, not changed.
 - **Screen reader pass: not done.** No screen reader was available. The role change in 24.2 is based on the ARIA rule about interactive descendants, not on a spoken test.
 - **Album articles keep an `aria-label`.** The label ("View details for …") now names the article, so a screen reader may announce the Get or Dismiss buttons inside it as part of the article. Verifying that needs the screen-reader pass above.
-- **Live library and the isolated helper: skipped.** `~/navi-librarian-test/test-pr.sh` is not present in this sandbox, and the cloud sandbox has no Navidrome library. Every check above used reconstructed fixtures. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA is not run here and is for Hamdi.
+- **Live library and the isolated helper: skipped.** `~/navi-librarian-test/test-pr.sh` is not present in this sandbox, and the cloud sandbox has no Navidrome library. Every check above used reconstructed fixtures. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA is not run here and is for the owner.
 - **Reduced motion.** This PR changes no animation. The motion checks from section 23 still hold (`tests/test_motion_ui_contract.py` passes).
 - **Remaining font and radius drift.** The detector's advisory notes (about 33) flag literal sizes such as 11px, 13px and 18px, radii of 3px and 999px, and undocumented colours against `DESIGN.md`. They are advisory and not fixed in this PR; they belong to the `DESIGN.md` regeneration and a typography decision at the end of Phase 7.
 
@@ -2258,7 +2258,7 @@ Owner: review this PR's diff and the before and after screenshots, then decide t
 
 Roadmap item: Phase 7, the `DESIGN.md` regeneration and the Phase 0 performance comparison (roadmap section 4, Phase 7 bullets 3 and 4). Design system sections applied: 4 to 12 (read against the built CSS), and 15 (decisions, unchanged). Base: `origin/main` at `8849e7e`, which includes PR #394 (merge `7b26d10`). Designated branch: the session brief named the stem `ui/phase-7-document`; the session's designated branch was `ui/phase-7-document-ryetdc`, and the PR uses that name.
 
-Status, kept separate: **implemented**: docs only (`DESIGN.md`, `docs/DESIGN_SYSTEM.md` section 16, roadmap and this section). **Automated-tested**: yes, listed in 25.4. **Browser-tested**: performance capture only, in headless Chromium against a live empty sandbox; no manual checklist and no screenshots (25.5). **Merged**: yes, PR #396, squash `173a8fa`, on Hamdi's instruction after a clean check on head `e5974ef`. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: docs only (`DESIGN.md`, `docs/DESIGN_SYSTEM.md` section 16, roadmap and this section). **Automated-tested**: yes, listed in 25.4. **Browser-tested**: performance capture only, in headless Chromium against a live empty sandbox; no manual checklist and no screenshots (25.5). **Merged**: yes, PR #396, squash `173a8fa`, on the owner's instruction after a clean check on head `e5974ef`. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 25.1 Acceptance criteria (stated before the work)
 
@@ -2317,19 +2317,19 @@ The numbers are in `docs/DESIGN_SYSTEM.md` section 16.4. In short: the dashboard
 
 ### 25.8 Next action
 
-Hamdi reviews this PR's diff (docs only) and decides the owner items in `docs/DESIGN_SYSTEM.md` section 16.5, starting with the rail width and the "Recommendations" label. After that, a follow-up typography PR (drift row 4) and a gradient and colour removal PR (rows 5 to 7), each with before and after screenshots at the five widths. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA of this PR is still to be run by the owner.
+The owner reviews this PR's diff (docs only) and decides the owner items in `docs/DESIGN_SYSTEM.md` section 16.5, starting with the rail width and the "Recommendations" label. After that, a follow-up typography PR (drift row 4) and a gradient and colour removal PR (rows 5 to 7), each with before and after screenshots at the five widths. The manual checklist from `docs/TEST_PLAN.md` against the exact head SHA of this PR is still to be run by the owner.
 
 ## 26. Redesign Phase 7 — Typography to the type ramp, item 4 (`ui/phase-7-typography-zfk4p0`, PR #398, merged, squash `bce6017`)
 
 Roadmap item: Phase 7, item 4, added by this PR (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes `docs/DESIGN_SYSTEM.md` section 16.2 row 4. Design system sections applied: 5 (type ramp and rules), 9.7 (forms and tabs, unchanged), 12 (floor and performance), 13 (page-head cap). Base: `origin/main` at `173a8fa`, which includes PR #396. PR: #398, merged as squash `bce6017`. Head reviewed: `ed34127`; CI on that head was green (compile, test-and-build, container-smoke, validate-container).
 
-Status, kept separate: **implemented**: yes, in `static/app.css` and one narrow test assertion. **Automated-tested**: yes, 26.4. **Browser-tested**: sandbox render at five widths on four pages plus a clipping check on the populated dashboard, 26.5. A keyboard walk, the screen-reader pass and the manual checklist were not run on this change (26.7). **Merged**: yes, PR #398, squash `bce6017`, after Hamdi's review and test. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` and one narrow test assertion. **Automated-tested**: yes, 26.4. **Browser-tested**: sandbox render at five widths on four pages plus a clipping check on the populated dashboard, 26.5. A keyboard walk, the screen-reader pass and the manual checklist were not run on this change (26.7). **Merged**: yes, PR #398, squash `bce6017`, after the owner's review and test. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 26.1 Acceptance criteria (stated before the work)
 
 - No text below 12px (`--text-xs`) anywhere in `static/app.css`.
 - Every literal `font-size` or `font` size that is off the section 5 ramp (9, 10, 11, 14, 16, 18, 23, 28, 29, 34, 36px) moves to the nearest step, and the mapping is written down (26.2).
-- The 29px header title and the 34px desktop `.panel h2` go to 30px (`--text-2xl`), as decided by Hamdi in the Design doc thread. Section 13 caps the page head at 30px.
+- The 29px header title and the 34px desktop `.panel h2` go to 30px (`--text-2xl`), as decided by the owner in the Design doc thread. Section 13 caps the page head at 30px.
 - The on-ramp literals (12, 13, 15, 20, 24, 30px) are written as ramp tokens. Their values do not change.
 - No horizontal overflow at 1440, 1200, 900, 620 and 390px. No truncated or clipped labels on the pages whose text changed.
 - Out of scope and unchanged: the display face in controls and data, the "Recommendations" rail label, radius (row 8), gradients and colours (rows 5 to 7), the primary button (row 10), the rail width and gutter (rows 1 and 14), and every behaviour, API, auth and Get/Dismiss path.
@@ -2348,8 +2348,8 @@ The mapping, per declaration. "Display" means the display face is kept; only the
 | 18px | 4 | `.quality-priority-grip` (glyph), `.card h3`, `.acq-row h3`, `.ranked-row h3` (≤620px) | 17px `--text-md` |
 | 23px | 1 | `.genre-row-heading h3` (display) | 24px `--text-xl` |
 | 28px | 2 | `.card-art-placeholder::before` "NL / 01" (display), `.rank-numeral` (≤620px) | 30px `--text-2xl` |
-| 29px | 1 | `header h1` (display) | 30px `--text-2xl` (Hamdi) |
-| 34px | 1 | `.panel h2` (desktop) | 30px `--text-2xl` (Hamdi; section 13 cap) |
+| 29px | 1 | `header h1` (display) | 30px `--text-2xl` (the owner) |
+| 34px | 1 | `.panel h2` (desktop) | 30px `--text-2xl` (the owner; section 13 cap) |
 | 36px | 1 | `.rank-numeral` (desktop) | 30px `--text-2xl` (nearest text step, see 26.7) |
 
 Total: 25 off-ramp declarations on `origin/main`, 0 on this branch. The regex count on `origin/main` found 57 literal sizes in all, of which 25 were off the ramp; the other 32 were on the ramp and are now tokens with unchanged values.
@@ -2369,7 +2369,7 @@ Other changes in this PR:
 - **Impeccable skill:** not loaded in this run. The typography rules were applied from `docs/DESIGN_SYSTEM.md` section 5 and `DESIGN.md`, not from the skill's guidance.
 - **Applied:** the ramp rules in section 5 (floor 12px, no off-ramp sizes, display face kept to the page head and data-free labels).
 - **Rejected:** moving the rank numeral to the 56px `--num-row` token. Section 5 names that token, but it is a layout change to the ranked row, not a typography step, so it is left for a separate decision.
-- **Rejected:** changing the display face on controls or data cells. Hamdi named that as out of scope.
+- **Rejected:** changing the display face on controls or data cells. The owner named that as out of scope.
 
 ### 26.4 Checks actually run
 
@@ -2406,19 +2406,19 @@ Other changes in this PR:
 
 ### 26.7 Next action
 
-Hamdi reviews the before and after screenshots and this table. If the 30px rank numeral is too small on the ranked rows, decide between 30px and the `--num-row` token before the rank numeral is touched again. Next roadmap item after this one: the gradient and colour removal (section 16.2 rows 5 to 7), with before and after screenshots at the five widths.
+The owner reviews the before and after screenshots and this table. If the 30px rank numeral is too small on the ranked rows, decide between 30px and the `--num-row` token before the rank numeral is touched again. Next roadmap item after this one: the gradient and colour removal (section 16.2 rows 5 to 7), with before and after screenshots at the five widths.
 
 ## 27. Redesign Phase 7 — Rank numerals to the 56px row token and rank 1 lead, item 6 (`ui/phase-7-rank-numeral-nk9ue4`, PR #400, merged)
 
 Roadmap item: Phase 7, follow-up item 6 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes the rank numeral row of `docs/DESIGN_SYSTEM.md` section 16.2 row 4, applies the rank 1 lead size (row 15), and records the Get shadow decision (row 6). Design system sections applied: 5 (`--num-row`, `--num-lead`), 8 (rank numeral truthfulness rules), 9.4 (ranked row). Base: `origin/main` at `daf424d` (includes PR #398 squash `bce6017` and PR #399 `daf424d`), then merged with `origin/main` at `870992c` (PR #389, a three-line backlog doc change) by merge commit, no rebase. The branch name the brief gave was `ui/phase-7-rank-numeral`; the branch assigned for this session is `ui/phase-7-rank-numeral-nk9ue4`, and that is the one used.
 
-Status, kept separate: **implemented**: yes, in `static/app.css` only (no JavaScript, template or test change). **Automated-tested**: yes, 27.4. **Browser-tested**: sandbox render at five widths on the three lists that show numerals, plus the Discover sort check, 27.5. Keyboard walk, screen-reader pass and the helper checklist were not run (27.5). **Merged**: PR #400, after Hamdi's decision on 2026-10-19 that rank 1 uses 80px and the muted index numerals are smaller than the red rank. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` only (no JavaScript, template or test change). **Automated-tested**: yes, 27.4. **Browser-tested**: sandbox render at five widths on the three lists that show numerals, plus the Discover sort check, 27.5. Keyboard walk, screen-reader pass and the helper checklist were not run (27.5). **Merged**: PR #400, after the owner's decision on 2026-10-19 that rank 1 uses 80px and the muted index numerals are smaller than the red rank. **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 27.1 Acceptance criteria (stated before the work)
 
 - `.rank-numeral` uses `--num-row` (3.5rem, 56px) at every width, replacing 30px on desktop and the 30px phone override.
 - Rank 1 uses `--num-lead` (5rem, 80px) on wide screens (above 1200px, where the 72px numeral column has room). Rank 1 is the first row of a numbered list only.
-- Muted index numerals (`.is-index`) are smaller than the red rank: `--text-2xl` (30px), at every width. Decided by Hamdi.
+- Muted index numerals (`.is-index`) are smaller than the red rank: `--text-2xl` (30px), at every width. Decided by the owner.
 - Both tokens are defined on `:root`. Section 5 and `DESIGN.md` already named them, but `static/app.css` did not define them before this PR.
 - Numerals appear only where the list has a sort basis the API returns, and the basis is named in the status line. Lists sorted by name, or with missing values, show no visible numeral.
 - No horizontal overflow at 1440, 1200, 900, 620 and 390px; no numeral overlaps artwork; no title or Get control is pushed out of its row; the row height of a non-rank-1 row does not change.
@@ -2445,7 +2445,7 @@ Read from `static/app.js` (`rankingBasis`, `buildRecommendationRow` and the thre
 | Add to your collection (`#classicsCards`) | Muted index (`is-index`), not red | 30px | "Picked for exploration, not ranked by score" |
 | New releases | None; the release date replaces the numeral | n/a | Release-date order |
 
-Decision: Hamdi chose on 2026-10-19 that rank 1 uses `--num-lead` (80px) on wide screens, and that the muted index numerals are smaller than the red rank (30px here). The index size is the text ramp's `--text-2xl`, chosen so the index stays readable but does not compete with the red rank.
+Decision: The owner chose on 2026-10-19 that rank 1 uses `--num-lead` (80px) on wide screens, and that the muted index numerals are smaller than the red rank (30px here). The index size is the text ramp's `--text-2xl`, chosen so the index stays readable but does not compete with the red rank.
 
 ### 27.4 Checks actually run
 
@@ -2491,7 +2491,7 @@ Next Phase 7 item: the gradient and one-off colour pass (`docs/DESIGN_SYSTEM.md`
 
 Roadmap item: Phase 7, follow-up item 7 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes rows 5 and 7 of `docs/DESIGN_SYSTEM.md` section 16.2. Row 6 (shadows) and row 9 (artwork hover stripe) are not changed. Design system sections applied: 4 (tokens, usage rules), 13 (no gradients), 9.4 (artwork placeholder on ranked rows). Base: `origin/main` at `5cff896` (PR #400). The branch the brief named was `ui/phase-7-gradients`; the server suffixed it to `ui/phase-7-gradients-9djfjj`.
 
-Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 28.4. **Browser-tested**: sandbox render at five widths on the pages that show artwork placeholders, 28.5. **Merged**: yes, PR #401, squash `96fdc53`, after Hamdi's instruction on 2026-10-19. CI on the head `ec58f37` was green (`test-and-build`, `container-smoke`, `validate-container`, `compile`). **Published**: no. **Deployed**: no. **Runtime-verified**: no.
+Status, kept separate: **implemented**: yes, in `static/app.css` and one new contract test file. **Automated-tested**: yes, 28.4. **Browser-tested**: sandbox render at five widths on the pages that show artwork placeholders, 28.5. **Merged**: yes, PR #401, squash `96fdc53`, after the owner's instruction on 2026-10-19. CI on the head `ec58f37` was green (`test-and-build`, `container-smoke`, `validate-container`, `compile`). **Published**: no. **Deployed**: no. **Runtime-verified**: no.
 
 ### 28.1 Acceptance criteria (stated before the work)
 
@@ -2510,7 +2510,7 @@ Status, kept separate: **implemented**: yes, in `static/app.css` and one new con
 | `#353124` | `.card-category` fill (the genre or discovery label on tiles and cards) | `var(--surface-hover)` (`#2d2926`) | Row 7. Nearest token in luminance to the old fill. Measured: the old fill is 1.34:1 against `--surface`, `--surface-hover` is 1.20:1, `--surface-raised` 1.10:1. Accent text on the fill is 8.83:1 before and 9.80:1 after. |
 | `#2a2c29` | `.card-actions button` fill | `var(--surface-raised)` (`#252220`) | Row 7. Measured: the old fill is 1.23:1 against `--surface`, `--surface-raised` is 1.10:1. Chosen over `--surface-hover` so the resting control is darker than its hover state (`--surface-hover`), which keeps the hover change visible. |
 | `rgba(0,0,0,.5)` | `.notyf__toast` shadow | unchanged | Row 6. The toast is a vendored component; its shadow was accepted. No token added. |
-| `rgba(0,0,0,.55)` | `.get-album` shadow over artwork | unchanged | Row 6. Decided as an overlay rule (Hamdi, 2026-10-19). No token added. |
+| `rgba(0,0,0,.55)` | `.get-album` shadow over artwork | unchanged | Row 6. Decided as an overlay rule (the owner, 2026-10-19). No token added. |
 | `rgb(20 18 17 / .8)` | `.album-modal-backdrop` scrim | unchanged | `--ink` at 80%, as specified in section 9.8. Not a one-off. |
 
 The `.card-actions` fill change lands on a path the current UI does not reach from the sandbox (see 28.6). It is made for token consistency, not because a visible state changed.
@@ -2557,11 +2557,11 @@ Setup: two local uvicorn servers with their own data directories under the sessi
 
 ### 28.7 Next action
 
-Hamdi's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
+The owner's decision on the remaining Phase 7 rows: radius (row 8), primary button (row 10), and the section 16.5 owner decisions (rail width, "Recommendations" label, phone tab bar, gutters). Not merged, published or deployed by the author.
 
 ## 29. Redesign Phase 7 — Radius to the chip token, follow-up item 8 (`ui/phase-7-radius-cux3ev`, PR #406, merged as squash `94824aa`)
 
-Roadmap item: Phase 7, follow-up item 8 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 8 of `docs/DESIGN_SYSTEM.md` section 16.2 and the radius decision in section 16.5. Base: `origin/main` at `96fdc53` (PR #401). Design system sections applied: 7 (shape: 2px chips and artwork, 4px controls, 6px panels and modal) and 9.2 (pill and circle for Get, kept). Hamdi approved radius as the next item on 2026-10-19.
+Roadmap item: Phase 7, follow-up item 8 (`docs/REDESIGN_ROADMAP.md`, Phase 7 status). It closes row 8 of `docs/DESIGN_SYSTEM.md` section 16.2 and the radius decision in section 16.5. Base: `origin/main` at `96fdc53` (PR #401). Design system sections applied: 7 (shape: 2px chips and artwork, 4px controls, 6px panels and modal) and 9.2 (pill and circle for Get, kept). The owner approved radius as the next item on 2026-10-19.
 
 The branch name is the one the server designated (`ui/phase-7-radius-cux3ev`). The requested name `ui/phase-7-radius` was not used.
 
@@ -2629,7 +2629,7 @@ Setup: two local uvicorn servers (`app.main:app`), each with its own data direct
 
 ### 29.7 Next action
 
-Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+The owner's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
 
 
 ## 30. Redesign Phase 7 — Contrast re-measure of status pairs, follow-up item 9 (`ui/phase-7-contrast-cc6445`)
@@ -2736,7 +2736,7 @@ Setup: two local uvicorn servers (`app.main:app`), each with its own data direct
 
 ### 30.9 Next action
 
-Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+The owner's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
 
 
 ## 31. Card action boundary (Phase 7 follow-up item 10)
@@ -2809,11 +2809,11 @@ Screenshots in `/mnt/project-files/phase-7-card-actions/screenshots/`: `before-R
 
 ### 31.7 Next action
 
-Hamdi's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
+The owner's review of the PR, then the manual checklist against the exact PR-head SHA with the owner's helper (sandbox paths, slskd disabled). Not merged, published or deployed by the author.
 
 ## 32. Screen-reader pass on card actions, Get states and the album modal (Phase 7 follow-up item 11)
 
-**Merged**: yes, PR #425, squash `7982df6`, after Hamdi's instruction on 2026-10-19. **Deployed**: no.
+**Merged**: yes, PR #425, squash `7982df6`, after the owner's instruction on 2026-10-19. **Deployed**: no.
 
 Scope (PR #425): names, roles, state announcement and focus order on the card actions, the Get control, the album modal and acquisition Dismiss. Roadmap follow-up item 11. Branch `ui/phase-7-screen-reader-1deshe` from `origin/main` at `57d68df` (PR #412 is `3905ed9`, already in main). No behaviour, API, auth, Get, Dismiss or settings-secret path changed.
 
@@ -3000,7 +3000,7 @@ AGENTS.md sets 44x44 as the touch-target floor. `docs/DESIGN_SYSTEM.md` section 
 ### 34.4 Decision
 
 - No target fails the 44px floor, so no touch-target fix is needed at these widths.
-- Decided by Hamdi (2026-10-19): login and first-run inputs stay 44px. Section 9.7 is updated for the login page in the same PR. Section 9.1 (primary button) and other form inputs are not covered.
+- Decided by the owner (2026-10-19): login and first-run inputs stay 44px. Section 9.7 is updated for the login page in the same PR. Section 9.1 (primary button) and other form inputs are not covered.
 - No CSS, template, script or test change. The `tests/*_ui_contract.py` assertions are unchanged.
 
 ### 34.5 Skills and tools
@@ -3099,7 +3099,7 @@ Also checked: no horizontal page overflow at 1440, 1200, 900, 620 or 390 on any 
 
 ## 36. Phone bottom bar overflow at 390px (Phase 7 follow-up item 15)
 
-Status: **implemented on branch `ui/phase-7-bottom-nav-q4094i` from main `76ec40e`; not merged, not published, not deployed.** Fixes the defect in section 35.5 item 1. The owner chose four destinations plus More on the decision card (Hamdi, 2026-10-19; `docs/DESIGN_SYSTEM.md` 16.5 row 2 is now decided).
+Status: **implemented on branch `ui/phase-7-bottom-nav-q4094i` from main `76ec40e`; not merged, not published, not deployed.** Fixes the defect in section 35.5 item 1. The owner chose four destinations plus More on the decision card (the owner, 2026-10-19; `docs/DESIGN_SYSTEM.md` 16.5 row 2 is now decided).
 
 ### 36.1 Question
 
@@ -3129,7 +3129,7 @@ Label widths at 12px in the app face (measured in Chromium): Dashboard 62px, Acq
 
 ### 36.5 Trade-offs and open items for the owner
 
-1. **Destination set decided: four plus More** (Hamdi, 2026-10-19, on the decision card; the coordinator relayed it). Five plus More breaks four labels inside words at 390px (36.2); keeping seven needs wrapped or stacked labels. `docs/DESIGN_SYSTEM.md` section 6 and 16.5 row 2 now record four plus More.
+1. **Destination set decided: four plus More** (the owner, 2026-10-19, on the decision card; the coordinator relayed it). Five plus More breaks four labels inside words at 390px (36.2); keeping seven needs wrapped or stacked labels. `docs/DESIGN_SYSTEM.md` section 6 and 16.5 row 2 now record four plus More.
 2. **Bar height is 80px**, not the 64px the earlier bar used, because labels take up to two lines. The bottom padding of `main` follows it.
 3. **Safe-area inset** is applied as bottom padding inside the 80px minimum height. Not verified on a notched device; the sandbox is desktop Chromium, where the inset is zero.
 4. **Hyphenation** is set (`hyphens: auto`) but did not take effect in the sandbox Chromium. Labels break inside words only where needed. Not verified on phone browsers.
@@ -3187,7 +3187,7 @@ The album modal's five platform links each carried a logo image on a third-party
 
 ### 37.2 Decision and what was built
 
-- **Owner decision (Hamdi, card tap on PR #437, 2026-10-19): vendor logos.** The first version of this PR used text labels as the default; that was replaced on the owner's choice.
+- **Owner decision (the owner, card tap on PR #437, 2026-10-19): vendor logos.** The first version of this PR used text labels as the default; that was replaced on the owner's choice.
 - **Vendored:** Apple Music, Spotify and Bandcamp marks from `simple-icons` 16.35.0 (`static/vendor/simple-icons/applemusic.svg`, `spotify.svg`, `bandcamp.svg`). Each keeps its brand colour as a `fill` on the root `<svg>`. The package's CC0 licence is copied to `static/vendor/simple-icons/LICENSE.md`, and `NOTICE.md` records the source and states that the marks remain their owners' trademarks.
 - **Text only:** ListenBrainz and Qobuz. Simple Icons has no mark for either, and no licence was checked for the logo files the old code used, so those two keep a text label. This is the fallback the owner's instruction allows.
 - Each link still shows its platform name as visible text beside the mark (WCAG label-in-name), and keeps its `aria-label`, `title`, search URL, `target` and `rel`. Marks are decorative (`alt=""`).
@@ -3251,7 +3251,7 @@ Not run: the helper and the live library, the exact-head manual checklist, and k
 - Browser checks are sandbox-only (see 37.5), not the helper.
 - ListenBrainz and Qobuz have no vendored mark; text-only links.
 - Trademarks: the marks stay their owners'. The CC0 licence covers the drawings in the package, not the marks.
-- The manual checklist against the exact PR head SHA is for Hamdi.
+- The manual checklist against the exact PR head SHA is for the owner.
 - No screen-reader pass.
 - Not merged, not published, not deployed.
 
@@ -3317,13 +3317,13 @@ No before/after pair is recorded here because the code did not change; the befor
 ### 38.8 Limitations
 
 - ListenBrainz and Qobuz remain text-only. A licensed mark needs an owner decision or a source with clear terms; a CC icon copy from an aggregator was not treated as enough.
-- Browser checks are sandbox-only, on reconstructed fixtures, not the helper and not the live library. The exact-head manual checklist is for Hamdi.
+- Browser checks are sandbox-only, on reconstructed fixtures, not the helper and not the live library. The exact-head manual checklist is for the owner.
 - No screen-reader pass.
 - Not merged, not published, not deployed.
 
 ## 39. Owner decisions on the open section 16.5 rows (Phase 7 follow-up item 17)
 
-Status: **docs only; no product code changed; branch `ui/owner-decisions-ft85kj` from main `66a8db6` (PR #439); not merged, not published, not deployed.** Records six decisions Hamdi gave on 2026-10-19 in the Librarian Redesign project. The primary button is decided here and built in a separate PR.
+Status: **docs only; no product code changed; branch `ui/owner-decisions-ft85kj` from main `66a8db6` (PR #439); not merged, not published, not deployed.** Records six decisions the owner gave on 2026-10-19 in the Librarian Redesign project. The primary button is decided here and built in a separate PR.
 
 ### 39.1 Question
 
@@ -3331,7 +3331,7 @@ Status: **docs only; no product code changed; branch `ui/owner-decisions-ft85kj`
 
 ### 39.2 Decisions
 
-| Row | Item | Decision (Hamdi, 2026-10-19) | Where recorded |
+| Row | Item | Decision (the owner, 2026-10-19) | Where recorded |
 |---|---|---|---|
 | 1 | Icon rail, 621–900px | 72px, the built value. The doc changes, not the code. | DESIGN_SYSTEM section 6, 16.2 row 1 |
 | 3 | Rail label for the Discover page | "Recommendations". The page heading stays "Discover music". | sections 6 and 8, 16.2 row 3 |
@@ -3386,7 +3386,7 @@ Section 16.2 row 10 said the accent fill "appears only on the Get requested stat
 | Settings, Last.fm tab | Save settings (`#saveLastfm`) | Same. |
 | Settings, ListenBrainz tab | Save settings (`#saveListenbrainz`) | Same. |
 
-Not given the variant, so the region keeps one clear primary: the Load and Refresh buttons on the discovery pages (Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives), Shuffle picks on the dashboard, Refresh status on acquisitions, and Test connection (secondary by design). The sign-in and first-run button in `static/login.css` already is the page's one primary and is unchanged. Hamdi can change this list; each addition is a class on one button.
+Not given the variant, so the region keeps one clear primary: the Load and Refresh buttons on the discovery pages (Discover music, New releases, Personal Discoveries, Add to your collection, Artist Deep Dives), Shuffle picks on the dashboard, Refresh status on acquisitions, and Test connection (secondary by design). The sign-in and first-run button in `static/login.css` already is the page's one primary and is unchanged. The owner can change this list; each addition is a class on one button.
 
 ### 40.3 What changed
 
@@ -3444,7 +3444,7 @@ Screenshots: `/mnt/project-files/phase-7-primary-button/screenshots/` (`before-*
 
 ### 40.8 Limitations
 
-- Sandbox only, with no library, no artwork, and no discovery content. The helper (`~/navi-librarian-test/test-pr.sh`) is not in this container, so the exact-head manual checklist is for Hamdi to run.
+- Sandbox only, with no library, no artwork, and no discovery content. The helper (`~/navi-librarian-test/test-pr.sh`) is not in this container, so the exact-head manual checklist is for the owner to run.
 - The ListenBrainz settings call returns 502 with no username saved (backend limit B1). It is recorded, not fixed here.
 - No screen-reader pass.
 - Hover on Save settings changes from accent to `--accent-hover`; this is intended (one primary rule) and small.
