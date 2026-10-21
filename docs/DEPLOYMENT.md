@@ -4,11 +4,11 @@ Last updated: 2026-10-12
 
 ## Target environment
 
-Current intended host is the Debian media VM at `192.168.1.12`, alongside the existing Docker media stack in `/opt/media-stack/compose.yml`.
+The intended host is a Debian media VM (`<host-ip>` below), alongside the existing Docker media stack (for example `/opt/media-stack/compose.yml`).
 
 Expected existing service endpoints:
-- Navidrome: `http://navidrome:4533` from containers on the same Compose network, or `http://192.168.1.12:4533` from outside that network.
-- slskd: `http://slskd:5030` from containers on the same Compose network, or `http://192.168.1.12:5030` from outside that network.
+- Navidrome: `http://navidrome:4533` from containers on the same Compose network, or `http://<host-ip>:4533` from outside that network.
+- slskd: `http://slskd:5030` from containers on the same Compose network, or `http://<host-ip>:5030` from outside that network.
 - Music library host path: `/media/library/music` (verify against the live host before deployment).
 - Completed slskd downloads host path: `/media/downloads/slskd/complete` (verify against the live host before deployment).
 - Proposed host UI port: `8689` for the media-stack deployment; container port is `8080`.
