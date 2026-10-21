@@ -181,7 +181,7 @@ def get_slskd_settings(librarian=Depends(get_librarian)):
 
 @router.put("/api/settings/slskd")
 def set_slskd_settings(payload: dict, librarian=Depends(get_librarian)):
-    url = str(payload.get("slskd_url") or "http://192.168.1.12:5030")
+    url = str(payload.get("slskd_url") or "")
     api_key = str(payload.get("api_key") or "")
     quality = payload.get("quality_priority")
     if quality is None:
