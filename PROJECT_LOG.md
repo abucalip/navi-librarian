@@ -1,3 +1,8 @@
+## 2026-10-21 — ListenBrainz calls send the honest client identity and token (reliability, PR pending)
+
+- Branch `fix/listenbrainz-client-identity`, owner-authorized. Only `recent_listens` used `listenbrainz_client.request_headers()`; the CF GET, recording/release-group/artist batches, popularity POST and tag-radio lane sent a bare or MusicBrainz-style `User-Agent` and no token. They now use `request_headers()` (app `User-Agent` plus `Authorization: Token ...` only when `LISTENBRAINZ_TOKEN` is set). MusicBrainz requests keep their own headers and never receive the token. No added requests, no pacing change, no browser-like user agent or fingerprint.
+- Tests: new `tests/test_discovery_listenbrainz_headers.py` (fails on the old code, 2 of 3), plus focused modules `test_discovery_artist_genre_batch`, `test_discovery_candidate_gathering`, `test_discovery_batch_lookup`, `test_discovery_lb_tag_lane`, `test_listenbrainz_client`, `test_listenbrainz_popularity`, `test_discovery_candidate_genre_prefetch`; `py_compile` and `scripts/check_server_size.py` OK. Full suite not run (standing rule). Whether this stops the verification page is **unmeasured**; no live run was made.
+
 ## 2026-10-21 — PR #491 reconciled and merged as PR #492: ListenBrainz tag-radio lane (opt-in, default off)
 
 - Original PR #491 head `7a349357de1cf2ab1e9e3906bd833d0c6d54ce3d` conflicted with current `main` after PR #490. Reconciled onto current `main` in PR #492, preserving the ListenBrainz popularity integration. Exact final PR head: `cf18e453419c836efa8fb7a509f5c86b1baa0544`; squash merge commit: `37014f6f0a62d5d2b4096e37e08863ffa371241c`. Original PR #491 was closed as superseded.
