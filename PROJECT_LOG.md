@@ -2,7 +2,7 @@
 
 - Owner waived P0h and approved one cold plus one warm run for `CF_MAX_PAGES` 4 vs 6 (test-only harness, not committed, fresh data dirs, slskd off, aggregate only).
 - 4 pages: cold 25.2 s, warm 5.1 s, 117 candidate albums / 85 artists, 0 uncached recording lookups. 6 pages: cold 183.6 s (2 ListenBrainz 429s, batch fallback, 100 lookups, 47 albums), warm 10.0 s (162 albums / 109 artists). Final list 10 in all runs; overlap 4 of 10.
-- Decision: keep `CF_MAX_PAGES = 4`. Single samples, order effect not excluded. No code change. Merge awaits the owner naming the PR.
+- Decision: keep `CF_MAX_PAGES = 4`. Single samples, order effect not excluded. No code change. PR #502 merged by squash as `6e0718699740ce96539321e6b82ce15c0f632c06` from exact final PR head `ba29be2429484620415232db91ef97471470826a`.
 
 ## 2026-10-21 — PRs #500 and #501 merged
 
