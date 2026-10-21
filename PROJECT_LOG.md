@@ -1,3 +1,9 @@
+## 2026-10-21 — PR #488 merged: CF paging raised to four pages
+
+- Reconciled the stacked PR onto current `main` after PR #487 had been squash-merged. The resulting PR contains only the `CF_MAX_PAGES = 4` change, its configured-limit paging regression test, and corrected current documentation; the already-merged batched genre lookup was not duplicated.
+- Owner-approved aggregate-only harness samples: 3 pages: cold 41.5 s, warm 2.9 s and 2.6 s, 55 CF albums / 24 artists, 3 CF GETs, 8 MusicBrainz requests; 4 pages: cold 40.9 s, warm 8.2 s and 4.5 s, 79 CF albums / 42 artists, 4 CF GETs, 10 MusicBrainz requests. Last.fm calls remained 40. These are single samples and do not establish stable performance or recommendation quality.
+- Focused test: `test_discovery_candidate_gathering`; full unit suite was verified by the Docker packaging workflow on the exact final PR head. All four required workflows passed on that SHA. No independent agent-run full suite (prohibited by the standing owner rule). Merge commit and exact head are recorded after merge verification below.
+
 ## 2026-10-21 — PR #487 merged: batched genre lookup (P0b)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/487
