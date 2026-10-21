@@ -1,11 +1,11 @@
-# Handoff for Claude CLI: tag-lane rotation measurement
+# Handoff for Claude CLI: read-only look at release-group 502s
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
 ## Getting started
 
 1. Clone `abucalip/navi-librarian`, fetch `main`, branch from current `main`.
-2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the findings "cold-start supply gain", "steady-state (warm) final list" and "Verification of caching + warm batch path", then Phases 1.2, 3.1, 3.2) and the top of `PROJECT_LOG.md`.
+2. Read, in order: `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the findings "cold-start supply gain", "steady-state (warm) final list" and "Verification of caching + warm batch path", then Phases 1.2, 3.1, 3.2) and the top of `PROJECT_LOG.md`, then the "`CF_MAX_PAGES = 4` re-measured" and "tag-lane rotation" findings.
 3. Check open PRs and the four required workflows on the exact head you push.
 
 ## Current state
@@ -13,21 +13,21 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
 - PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
 - `CF_MAX_PAGES = 4` re-measured (PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`): **kept at 2**. Cold 4-page runs took 255 s and 316 s against 141 s at 2 pages, because release-group requests still returned 502 after the retry, so recordings fell back to per-recording lookups and spent the 100 budget. Warm 2 at 4 pages reached 77 CF albums from 42 artists (top-2 26.4%) once cached. Unexplained: 111 to 113 `recording_lookup` calls (budget is 100) and `lastfm.api` calls (13 to 40) in some runs.
+- Tag-lane rotation (PR #483, merge `28fb84026201b0779cd604efc5c50aa11203cff5`): **measured and not adopted**; the code was removed after review, only the findings remain. Warm overlap 5/5/4 off vs 4/5/3 on (noise), tag supply unchanged, warm MusicBrainz calls 0 vs 12/6/5, warm time 2.8-4.3 s vs 8.6-20.9 s. Do not reopen without a new idea that adds no lookups.
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: measure rotating the tag lane's sampled tags per run
+## Next task: read-only look at why release-group requests return 502 at larger sizes
 
-Why: with CF supply capped at 2 pages, the tag lane supplies 6 of the final 10 and was the noisiest input (38 vs 10 candidates across a cold pair). Rotating which profile and exploration tags it samples per run could widen run-to-run variety with no added lookups or requests, which the standing rules allow without extra approval. Background: `docs/CF_PAGES_PROPOSAL_2026-10-20.md` ("Alternative that needs no approval").
+Why: it is the open P0 question in the roadmap and the gate for revisiting `CF_MAX_PAGES = 4`. At 4 pages, release-group requests still returned 502 (HTML body) after #479's single retry, so recordings fell back to per-recording lookups and spent the 100 budget (cold 255 s and 316 s against 141 s at 2 pages). The cause is not established.
 
-Steps:
-1. Read `_run_tag_queries` and tag selection in `discovery_candidate_gathering.py` (`TAG_LANE_EARLY_STOP_ENABLED` stays off). Offline first: trace how tags are chosen today and whether selection is deterministic per profile.
-2. Define the baseline, metrics and a rollback flag before coding: distinct tag-lane candidates and artists per run, overlap with the previous list across 3+ consecutive runs, MusicBrainz and other provider calls per run (must not rise), wall time.
-3. Implement behind a flag, default off. Selection must be deterministic given an explicit seed or run counter so tests are stable. Focused tests only (`test_discovery_candidate_gathering` plus any tag modules); `py_compile` on changed files.
-4. Ask the owner for a live run (fresh data dir, slskd off, aggregate only, deleted afterwards) using `reports/repeat-rate/run_cf_budget.py`. It runs cold plus two warm. Set it up so the flag-off baseline and flag-on runs come from the same harness. Allow about 5 minutes per cold run and run it in the background.
-5. Record numbers in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`; say keep, keep-off or revert in the PR.
+Steps (all read-only; no request-pattern change without owner approval):
+1. Read `_prefetch_batch_recordings` and the release-group chunking and retry in `discovery_candidate_gathering.py`, and the batch client code it calls. Record chunk size, request count, spacing and which endpoint and method are used at 2 vs 4 pages.
+2. Offline: from existing aggregate reports (PRs #479 and #482, `reports/`), tabulate request size against outcome. Check whether the 502 appears only above a size, only on the first release-group request, or is intermittent. Keep identity-bearing data, URLs and credentials out of anything written.
+3. Also look at the two unexplained counts: 111 to 113 `recording_lookup` calls against the 100 budget, and 13 to 40 `lastfm.api` calls in some runs. Find where each is counted and whether the budget check is per call or per batch. Note that cold runs of the tag-rotation experiment also made 40 `lastfm.api` calls at 2 pages.
+4. Write findings, hypotheses and the smallest candidate fixes with their request-pattern impact in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`. A diagnostic live run, smaller chunks, different spacing or more requests all need the owner's go-ahead first; ask before running anything live.
 
-Acceptance: PR with the flagged change, focused tests, measured numbers, and the four workflows green on the final head. Do not run the full suite. Ownership checks, duplicate suppression and release-eligibility filtering stay unchanged.
+Acceptance: a docs-only PR (four workflows green on its head) that states what is known, what is not, and a recommended next step. No code change unless the owner approves one. Do not run the full suite.
 
 ### Deferred
 
