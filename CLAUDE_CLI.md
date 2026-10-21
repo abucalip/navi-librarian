@@ -1,4 +1,4 @@
-# Handoff for Claude CLI: read-only look at release-group 502s
+# Handoff for Claude CLI: implement batched genre lookup (P0b)
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
@@ -12,28 +12,34 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 - Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
 - PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
-- `CF_MAX_PAGES = 4` re-measured (PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`): **kept at 2**. Cold 4-page runs took 255 s and 316 s against 141 s at 2 pages, because release-group requests still returned 502 after the retry, so recordings fell back to per-recording lookups and spent the 100 budget. Warm 2 at 4 pages reached 77 CF albums from 42 artists (top-2 26.4%) once cached. Unexplained: 111 to 113 `recording_lookup` calls (budget is 100) and `lastfm.api` calls (13 to 40) in some runs.
+- Release-group 502s solved (PR #486, merge `f8a248d555bf557e4bb965757d279afbed77cc1d`). Cause: the ListenBrainz release-group endpoint passes 80 comma-joined MBIDs per GET and fails from 81 (dropped connection, then HTML 502 at 83), whichever MBIDs; the old chunk of 100 failed whenever a run had more than 80 distinct groups (the 4-page run had 83). Fix: `RELEASE_GROUP_CHUNK = 50`. Also: retried MusicBrainz attempts count as `recording_lookup_retry`, so `recording_lookup` matches the 100 budget. `lastfm.api` 13 to 40 is the top-40 `album.getInfo` popularity pass (30-day cache).
+- 4 pages is now bound by per-artist genre lookups, not the 502s. Cold 4-page profile after the fix: 207 to 319 s, of which `genre_lookup` about 111 to 121 s (up to 75 artists, one uncached MusicBrainz request each at 1.1 s spacing plus about 1.2 s response) and `genre_prefetch` about 38 s. With a test-only batch patch (not committed) the same cold run took 36.5 to 39.6 s with identical supply (79 CF albums from 42 artists), 2 to 3 MusicBrainz requests, warm 16.5 s and 4.2 s. `CF_MAX_PAGES` stays **2** until the owner decides after the code lands.
+- ListenBrainz `metadata/artist/` (`inc=tag`): one GET returns tags for many artists. Tags carrying a `genre_mbid` matched the MusicBrainz genre set for 5 of 5 sampled artists. Sizes 25 to 96 artists all returned 200 (47 KB to 173 KB, 0.5 to 1.1 s); **no failing size found**, the limit is above 96 and unlocated. The app needs at most about 75 artists.
 - Tag-lane rotation (PR #483, merge `28fb84026201b0779cd604efc5c50aa11203cff5`): **measured and not adopted**; the code was removed after review, only the findings remain. Warm overlap 5/5/4 off vs 4/5/3 on (noise), tag supply unchanged, warm MusicBrainz calls 0 vs 12/6/5, warm time 2.8-4.3 s vs 8.6-20.9 s. Do not reopen without a new idea that adds no lookups.
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: read-only look at why release-group requests return 502 at larger sizes
+## Next task: implement batched genre lookup (roadmap P0b)
 
-Why: it is the open P0 question in the roadmap and the gate for revisiting `CF_MAX_PAGES = 4`. At 4 pages, release-group requests still returned 502 (HTML body) after #479's single retry, so recordings fell back to per-recording lookups and spent the 100 budget (cold 255 s and 316 s against 141 s at 2 pages). The cause is not established.
+Why: it removes about 150 s of cold time at 4 pages, with identical supply, and it is the gate for revisiting `CF_MAX_PAGES = 4`. The owner approved the approach and revised the ListenBrainz rule (see Standing rules): added ListenBrainz requests are allowed because they save time.
 
-Steps (all read-only; no request-pattern change without owner approval):
-1. Read `_prefetch_batch_recordings` and the release-group chunking and retry in `discovery_candidate_gathering.py`, and the batch client code it calls. Record chunk size, request count, spacing and which endpoint and method are used at 2 vs 4 pages.
-2. Offline: from existing aggregate reports (PRs #479 and #482, `reports/`), tabulate request size against outcome. Check whether the 502 appears only above a size, only on the first release-group request, or is intermittent. Keep identity-bearing data, URLs and credentials out of anything written.
-3. Also look at the two unexplained counts: 111 to 113 `recording_lookup` calls against the 100 budget, and 13 to 40 `lastfm.api` calls in some runs. Find where each is counted and whether the budget check is per call or per batch. Note that cold runs of the tag-rotation experiment also made 40 `lastfm.api` calls at 2 pages.
-4. Write findings, hypotheses and the smallest candidate fixes with their request-pattern impact in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`. A diagnostic live run, smaller chunks, different spacing or more requests all need the owner's go-ahead first; ask before running anything live.
+Do:
+1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (the finding "batched genre lookup, endpoint limit and 4-page re-measurement" and roadmap P0b), the genre prefetch (`genre_prefetch_started`) and the genre stage (`genre_lookup_started`) in `discovery_candidate_gathering.py`, and `discovery_batch_metadata.py`.
+2. Add a batch client function to `discovery_batch_metadata.py` (no new module, so no Dockerfile change): `GET https://api.listenbrainz.org/1/metadata/artist/` with `artist_mbids` (comma-joined) and `inc=tag`, chunks of up to 75 (`ARTIST_GENRE_CHUNK`; named constant with a comment citing the measured 96-artist pass). For each returned artist keep tags that have a `genre_mbid`, lower-cased and stripped, sorted and de-duplicated, exactly the shape the per-artist loop writes. Write them to `providers.metadata_cache_set(f"mb:artist-genres:{artist_id}", ...)` so everything downstream (cache keys, 90-day TTL, `genre_cache`) is unchanged.
+3. Call it before the prefetch loop (profile artists plus the top `CANDIDATE_PREFETCH_LIMIT` candidate artists) and before the genre stage loop (the `artist_ids` list), only for artists not already cached. Keep the existing per-artist MusicBrainz loops as the fallback: an artist missing from the response, a non-200, a non-JSON body or any exception must leave it uncached so the loop looks it up as before. Never raise out of the batch. Do not change the 1.1 s spacing, the circuit breaker or the budget logic.
+4. Record the new call with `record_provider_call("listenbrainz", "artist_batch")`.
+5. Tests (stubbed HTTP, `tests/test_discovery_batch_lookup.py` or a narrow new test file): chunking at the constant, genre filtering by `genre_mbid`, cache-write shape, fallback on missing artist and on failure, cached artists not re-requested, spacing sleeps skipped for batch hits. Run only the focused modules for the files you change plus `python -m py_compile` on each changed file. Do not run the full suite.
+6. Live measurement (owner pre-approved the batch work and the live runs; re-confirm only if the plan changes): on the PR branch, one cold 4-page run (the harness-only `CF_MAX_PAGES = 4` override, not a code change) then two warm runs; report wall time, per-stage seconds, MusicBrainz and ListenBrainz request counts before and after, and CF albums/artists. Aggregate only, disposable data dir deleted. Harnesses from the previous session are in the harness project folder under `reports/repeat-rate/` (`run_genre_arm.py` has the batch patch used for the measurement).
+7. Update `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, and this file's handoff when done.
 
-Acceptance: a docs-only PR (four workflows green on its head) that states what is known, what is not, and a recommended next step. No code change unless the owner approves one. Do not run the full suite.
+Acceptance: a PR with the four workflows green on its head, the focused tests listed in the description, and the before/after numbers. Do not change `CF_MAX_PAGES`; raising it is a separate owner decision after this lands. Do not merge; the owner names the PR in words.
 
 ### Deferred
 
-- Read-only look at why release-group requests 502 at larger sizes, and the unexplained lookup and Last.fm call counts. Any request-pattern change needs owner approval.
+- Roadmap P0c: test batch lookups for Last.fm (27.5 s of a 39.6 s cold run at 4 pages is up to 40 sequential `album.getInfo` calls). No batch method is known; check the docs, then concurrency, then ListenBrainz substitutes. Any change to Last.fm call count or pacing needs owner approval; Last.fm as a ranking source is otherwise parked.
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
-- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval); revisit 4 pages only after the 502s are understood.
+- After P0b lands: re-measure `CF_MAX_PAGES = 4` end to end on `main` and bring the numbers to the owner.
+- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval); revisit 4 pages after P0b lands.
 - CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
 
