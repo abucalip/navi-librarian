@@ -1,7 +1,8 @@
 import hashlib
 import unittest
 
-from navidrome_client import (
+from navidrome_client import api_call as legacy_api_call
+from integrations.navidrome.client import (
     api_call, items, search_result_payload, album_details_payload,
     library_overview_payload,
 )
@@ -174,6 +175,13 @@ class NavidromeClientTests(unittest.TestCase):
     def _configured_client(client, options):
         client.options = options
         return client
+
+
+class NavidromeClientImportCompatibilityTests(unittest.TestCase):
+    def test_legacy_module_reexports_packaged_client(self):
+        from integrations.navidrome.client import api_call
+
+        self.assertIs(legacy_api_call, api_call)
 
 
 if __name__ == "__main__":
