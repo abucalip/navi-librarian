@@ -313,6 +313,37 @@ No outcome changes code by itself.
 - **Phase 3.2 — Cooldown calibration:** evaluate only after supply and shortlist behavior are understood.
 - For any reopened phase, define a baseline, metrics, acceptance thresholds, and rollback/flag strategy before implementation.
 
+### P1a — Deeper CF pool: brief and measurement plan (2026-10-21; read-only, no network, no code change; **live run needs owner approval**)
+
+**Question.** `CF_MAX_PAGES = 4` x `CF_PAGE_SIZE = 100` reads the first 400 of a roughly 1,000-recording pool (`_fetch_cf_recommendations`, `discovery_candidate_gathering.py`). Would pages 5 to 10 add enough distinct, eligible, unowned albums to change the final list at an acceptable time cost?
+
+**Gate.** Added ListenBrainz requests are allowed only when they save time (owner rule, 2026-10-21). Deeper paging adds requests whose only effect is more data to resolve, so it needs owner approval before any live run. The owner also wants P0h (CF freshness, parked, see above) settled first: deeper pages of a stale pool are not worth reading. The P0h baseline shows all-time matches concentrated on page 1 (23, 10, 1, 3 per page), which is a further reason to doubt the tail, but it predates the CF recompute and decides nothing.
+
+**What grows with pages (per extra 100 recordings).**
+| Stage | Unit | Added per extra page |
+| --- | --- | --- |
+| CF fetch | `cf_recommendations` GET, count 100 | 1 |
+| Recording batch | `BATCH_RECORDING_CHUNK = 100` (not 50) | 1 `recording_batch` GET (0.4 to 1.1 s each in the logged 4-page run) |
+| Release groups | `RELEASE_GROUP_CHUNK = 50` | The 4-page run had 83 distinct groups, so about 21 per page: roughly 0 to 1 GET per page, 2 at 4 pages, about 5 at 10 pages if the ratio held (fewer, since later pages repeat groups) |
+| Artist genres | `ARTIST_GENRE_CHUNK = 75` | Up to about 75 artists fit one GET at 4 pages; more pages add a second chunk. Sizes to 96 returned 200 (47 to 173 KB, 0.5 to 1.1 s); no failing size found |
+| Downstream | ownership, eligibility, ranking | CPU and cache reads only; cost not measured beyond 4 pages |
+
+**What stays bounded.** The uncached MusicBrainz budget `CF_MAX_UNCACHED_RESOLUTIONS = 100` per run; batch hits do not spend it, so more pages add no MusicBrainz requests unless a chunk fails and its recordings fall back to per-recording lookups (#479). The top-40 `album.getInfo` popularity pass is fixed at 40 (30-day cache). Recent listens stay at 3 pages. Ownership, duplicate-identity and release-eligibility filters are untouched.
+
+**Limits already found.** The release-group GET fails from 81 MBIDs (PR #486), so chunks stay at 50. The artist metadata GET has no failing size up to 96. The recording batch is only verified at 100; any change to that chunk is out of scope.
+
+**Estimate per extra page (from existing samples, not new data).** About 2 to 3 ListenBrainz GETs, about 1 to 3 s if the logged latencies hold. Existing cold samples are 3 pages 41.5 s and 4 pages 40.9 s (PR #489 harness), so the marginal cost of the 4th page was below noise. Beyond 4 pages it is unmeasured. Risks to watch: a new 502 or 429 (more recordings per run, a larger share of unmapped ones), and a second artist-genre chunk. The 4-page cold profile before the batch fix (207 to 319 s) is not a guide to the current path.
+
+**Measurement plan (proposed; needs owner approval, including the added ListenBrainz GETs).**
+- Arms: `CF_MAX_PAGES` 4 (control) vs 6 (and optionally 8). Test-only harness override, not committed. Fresh data dir per arm, slskd off, aggregate only, dir deleted afterwards. One cold and one warm sample per arm.
+- Added ListenBrainz GETs, 6-page arm vs 4: about 2 CF pages + 2 recording batches + up to 1 release-group GET (+ 1 artist chunk if over 75 artists), so about 5 to 6. The 8-page arm roughly doubles that. No added MusicBrainz requests expected; the budget of 100 is unchanged.
+- Record, before and after: counts of `listenbrainz.*` calls by kind and `musicbrainz.bounded_get`; cold and warm seconds; CF recordings resolved/failed; final-list overlap with the 4-page list; distinct artists; eligible unowned albums; top-2 artist share; any 429/502 by class.
+- Pass thresholds (set before running): cold time within +10 s of the 4-page sample; eligible unowned albums up at least 20%; no new 502 or 429; `musicbrainz.recording_lookup` still at or under 100; final list unchanged in size (10).
+- Fail or inconclusive: any threshold missed, or a gain only in the warm run. Result: keep `CF_MAX_PAGES = 4`. Single samples cannot support a quality claim; say so.
+- If the owner approves a default change, it goes in a separate PR: a one-line `CF_MAX_PAGES` change with a rollback note (set back to 4).
+
+**Status.** Docs only. No live run, no network, no code change. Waiting for the owner: (1) P0h settled or an explicit waiver, (2) approval of the run and its added ListenBrainz GETs, (3) the PR named in words before any merge.
+
 ### P2 — Explicit owner decisions / parked work
 - **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy; P0g measured it under simulated throttling and the default was turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
 - **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval. P0h baseline captured but inconclusive (CF not yet recomputed for the imported history); repeat later.
