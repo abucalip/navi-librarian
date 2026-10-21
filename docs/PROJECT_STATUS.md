@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #498 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #499 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #499 merged** as `90d127eb46b0528a12ea0255ba81f25e1617ac4a` from exact final PR head `b5404cfcb80f65d36d61f309bb8c90b54d40b091`. Documentation-only stale-flag audit: corrected the active status/history wording for the genre circuit breaker and batch-path/title-filter defaults after PRs #495–#498; updated the tag-lane test docstring to say early stop is on by default. No application behavior changed. All four required workflows passed on the exact head: Python syntax/acquisition safety run `39621883615`, Docker packaging/full unit suite/build `39621883770` (unit tests and image build succeeded), container runtime smoke `39621883534`, and validation-only multi-architecture image validation `39621883758` (publishing paused). No separate local suite run (per owner rule). Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #498 merged** as `ad88bbbb2fe669e511b70472178cd3f5676246d6` from exact final head `92be9ea09e61472cd5b4408c99a6f627353d4d34`. `TAG_LANE_EARLY_STOP_ENABLED` now defaults to `True`: after one exhausted MusicBrainz tag query, the supplementary tag lane continues and stops after two consecutive exhausted queries. The owner-approved P0g simulated-throttle sample increased query coverage from 2/8 to 8/8 and tag candidates from 5 to 23, with wall time 17.2 s to 27–28 s and MusicBrainz requests 3 to 11–12; final list stayed at 10. This is a single throttled sample, so the supply/time tradeoff and recommendation quality under typical conditions are not established. All four required workflows passed on the exact PR head; Docker packaging's `Run unit tests` and image build succeeded. Publishing, deployment, and production-runtime verification remain unperformed.
 
