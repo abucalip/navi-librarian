@@ -2,6 +2,23 @@
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
+## Current handoff: Python module package layout (new priority)
+
+The owner wants the many root-level Python modules organized into logical packages. Follow `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. This is a repository-organization effort, not permission to rewrite behavior or reopen the completed modularization roadmap.
+
+**First task — inventory and propose the first safe move; then open a PR.**
+
+1. Refresh GitHub `main`, recent commits, open PRs, and relevant CI first. Do not rely on a local checkout as the source of truth. Account for concurrent release PR #506; branch from the latest `main` and reconcile if needed.
+2. Read `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/REQUIREMENTS.md`, `docs/MODULARIZATION_ROADMAP.md`, the new `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`, and relevant architecture docs. The old modularization roadmap is closed; do not reopen its completed extraction work or perform size-only refactors.
+3. Inventory every root-level `.py` file and map imports/callers, tests, entry points, runtime/dynamic imports, configuration/file-path assumptions, Docker COPY/package rules, and CI/source-inspection tests. Use repository search and actual code; do not infer module groups from filenames alone.
+4. Select one cohesive, low-risk first group with a clear package boundary. Make the smallest move-only change possible: update imports and package initialization, preserve public entry points and behavior, and update Docker/package/test configuration. Do not combine unrelated bug fixes or broad refactoring.
+5. Add or adapt import/compatibility regression tests. Run focused test modules and syntax checks only; agents must not run the full unit suite. Review the complete diff and changed-file list.
+6. Open a focused PR and verify all four required workflows on its exact final head. Do not merge without the owner's explicit instruction naming the PR. Record actual tests/CI and any skipped checks; do not claim unrun checks passed.
+
+**Acceptance:** the PR moves one clearly justified group into a package, preserves behavior and supported web/API startup, passes focused tests and required CI, and documents any remaining root modules/risks. If inventory shows no safe first group, stop and report the evidence instead of forcing a move.
+
+---
+
 ## Getting started
 
 1. Clone `abucalip/navi-librarian`, fetch `main`, branch from current `main`.
