@@ -1,3 +1,10 @@
+## 2026-10-21 — v0.2 release preparation (PR #505)
+
+- PR #505 merged by squash as `99c0b88ed885de8b3c36686d63736b19a9235392`, exact PR head `fb34440b4893cc7f65678c90ba6e333616c0479d`. Added `docs/RELEASE_v0.2.md`: draft user-facing notes, configuration migration cautions, and a release/deployment checklist. No application code changed.
+- All four required workflows passed on exact merge SHA `99c0b88ed885de8b3c36686d63736b19a9235392`: Python syntax `39634236552`; Docker packaging/full unit suite/build `39634236630`; container runtime smoke `39634236733`; validation-only multi-architecture image validation `39634236750` (`push: false`).
+- Modularization roadmap is closed. No GitHub Release was present at preparation time; an existing tag was not confirmed. The current workflow remains validation-only; no tag, release, image publication, deployment, or runtime verification was performed.
+- Release state is prepared, not released. The release notes disclose that the PR #503/#504 Settings browser checks were waived. After this closeout commit, the exact final main SHA still needs all four required workflows checked before tagging. A deliberate publishing workflow path and explicit authorization are still required before publication/deployment.
+
 ## 2026-10-21 — PRs #504 and #503 merged
 
 - **PR #504 — neutral LAN defaults:** squash merge `af78c9e9796c27c65f9503a64d61ca9c58357dba`; exact tested PR head `4263f9c5bf3400cf6a5846c0f81a253a177e9543`. Removes the private LAN IP default and uses neutral placeholders/docs; blank slskd URLs fail validation. All four required workflows passed on the exact head: Python syntax `39631742346`, Docker packaging/full unit suite/build `39631742366`, runtime smoke `39631742152`, and validation-only multi-architecture validation `39631742470`.
