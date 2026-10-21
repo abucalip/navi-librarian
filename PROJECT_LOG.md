@@ -1,3 +1,8 @@
+## 2026-10-21 — Tag-lane rotation measured; not adopted (docs only)
+
+- Branch `rec/tag-lane-rotation` (PR #483). An experimental flagged rotation patch was measured, then removed after review because it was unwired and showed no benefit; only the findings are kept. Owner-approved live run (cold + 3 warm per arm, aggregate only, data dirs deleted): warm overlap 5/5/4 off vs 4/5/3 on (noise); tag supply unchanged (about 32-39 candidates); warm MusicBrainz calls 0 off vs 12/6/5 on; warm time 2.8-4.3 s vs 8.6-20.9 s. Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- No code change; no tests needed. Not done: publication, deployment, full suite (standing rule).
+
 ## 2026-10-21 — `CF_MAX_PAGES = 4` re-measured after #479; decision keep 2 (docs only)
 
 - Branch `docs/cf-max-pages-4-measurement`; exact final PR head `5807a90c40a22c9a4ad9e7dc90204eab58bce6f2`; squash merge `c02e4966c3835f893f27a09bef0b1172b8578d66` (PR #482; compile, test-and-build, container-smoke and validate-container passed on that head). Owner-approved live runs (aggregate only, disposable data directories deleted): 4-page cold 255.1 s and 316.1 s (diag) versus 141.0 s for the 2-page baseline on `main` `83b2583`. In the diag run both release-group requests returned 502 (HTML) after four 200 recording batches, so 300 recordings were skipped by the 100-per-run budget and cold supply fell to 14 albums from 4 artists. Warm 2 reached 77 albums from 42 artists once the cache filled.

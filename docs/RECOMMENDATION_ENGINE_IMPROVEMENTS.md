@@ -97,10 +97,27 @@ The cold run did not meet the success criterion (about 106 to 123 s with the bat
 
 Decision: **keep `CF_MAX_PAGES = 2`; no code change.** Revisit when the release-group 502s are understood. Single samples; no recommendation-quality claim.
 
+## Finding — tag-lane rotation measured (2026-10-21, one sample per arm; decision: keep off)
+
+An experimental patch (not merged; reviewed on PR #483 and removed) rotated the non-anchor profile tags (top 3 stayed) and the exploration tags through the next-ranked window behind a default-off flag; query counts unchanged, deterministic per counter. Owner-approved live run, cold plus three warm, same harness for both arms, aggregate only, disposable data dirs deleted. Counter = run index.
+
+| | Off | On |
+| --- | --- | --- |
+| Overlap with previous list, warm1/2/3 (of 10) | 5 / 5 / 4 | 4 / 5 / 3 |
+| Tag-lane candidates / artists, cold | 38 / 37 | 38 / 37 |
+| Tag-lane candidates / artists, warm | 38 / 37 each run | 39/38, 32/32, 35/33 |
+| MusicBrainz calls, cold | 72 | 74 |
+| MusicBrainz calls, warm1/2/3 | 0 / 0 / 0 | 12 / 6 / 5 |
+| Last.fm calls, warm1/2/3 | 0 / 0 / 0 | 2 / 1 / 0 |
+| Wall time, cold | 168 s | 147 s |
+| Wall time, warm1/2/3 | 2.8 / 4.3 / 3.6 s | 20.9 / 10.7 / 8.6 s |
+
+Final mix stayed 4 CF / 6 tag in every run. Mean overlap 4.7 (off) vs 4.0 (on): within noise at three runs. Rotation did not widen tag supply, and newly sampled tag queries are uncached, so warm runs make provider calls the baseline does not (breaks "calls must not rise") and are 2-7x slower. Calls may fall once the rotation cycle is cached; not measured. Decision: keep off, and the code was not merged: no benefit was shown and nothing in the app supplied the counter. Reintroduce only if a future experiment shows a measurable benefit. Harness `run_tag_rotation.py` was test-only and never committed (adapted from `run_cf_budget.py`).
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Next: measure rotating the tag lane's sampled tags per run (no added lookups or requests), because the tag lane is the noisiest input. Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Tag-lane rotation was measured and not adopted (see its finding). Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
 - Open question from the 4-page run: why release-group requests still return 502 after #479's retry at larger request sizes. Investigate only read-only first; any change to request pattern needs owner approval.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
