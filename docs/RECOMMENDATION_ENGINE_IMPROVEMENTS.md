@@ -342,7 +342,20 @@ No outcome changes code by itself.
 - Fail or inconclusive: any threshold missed, or a gain only in the warm run. Result: keep `CF_MAX_PAGES = 4`. Single samples cannot support a quality claim; say so.
 - If the owner approves a default change, it goes in a separate PR: a one-line `CF_MAX_PAGES` change with a rollback note (set back to 4).
 
-**Status.** Docs only. No live run, no network, no code change. Waiting for the owner: (1) P0h settled or an explicit waiver, (2) approval of the run and its added ListenBrainz GETs, (3) the PR named in words before any merge.
+**Result (2026-10-21; owner waived P0h and approved the run; single samples, aggregate only, harness not committed, data dirs deleted, slskd off).** 4-page arm ran first, then the 6-page arm, each on a fresh data dir with one cold and one warm run.
+| Arm | Run | Seconds | Candidate albums / artists | CF albums | Final list (artists) | `cf_recommendations` GETs | HTTP: ListenBrainz / MusicBrainz non-200 | `musicbrainz.recording_lookup` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 4 pages | cold | 25.2 | 117 / 85 | 79 | 10 (10) | 4 | 0 / 1 x 503 | 0 |
+| 4 pages | warm | 5.1 | 117 / 85 | 79 | 10 (10) | 4 | 0 / 0 | 0 |
+| 6 pages | cold | 183.6 | 47 / 38 | 14 | 10 (10) | 4 (pages 5 and 6 not recorded) | 2 x 429 / 6 x 503 | 100 (+4 retries; budget reached) |
+| 6 pages | warm | 10.0 | 162 / 109 | 124 | 10 (10) | 6 | 0 / 0 | 0 |
+- Final-list overlap, 6 pages vs 4 pages: 4 of 10 cold, 4 of 10 warm.
+- **Cold 6-page run failed the plan:** +158 s against the +10 s threshold, two new 429s, and the CF albums fell to 14 because the batch path failed and the run fell back to per-recording lookups until the 100 budget was reached (same shape as the 4-page cold run before PR #486). Eligible unowned albums were down, not up.
+- **Warm 6-page run:** candidate albums 162 vs 117 (+38%), CF albums 124 vs 79, artists 109 vs 85, with 2 more ListenBrainz CF GETs and about 5 s more than the 4-page warm run. The final list stayed at 10 with 4 of 10 shared. This gain appears only once the cache is filled.
+- Caveats: single samples; the 4-page arm ran immediately before the 6-page arm, so a cumulative ListenBrainz rate limit cannot be ruled out; the 4-page cold time (25.2 s) is faster than the earlier 40.9 s sample, so run-to-run variation is large. No recommendation-quality claim.
+- **Decision: keep `CF_MAX_PAGES = 4`; no code change.** Thresholds missed on the cold run (time, 429s, eligible albums). Reopen only with a new idea that avoids the cold-run 429/fallback (for example, an owner-approved repeat with a pause between arms).
+
+**Status.** Docs only. Live measurement done as above; no code or default changed. Merge waits for the owner to name the PR.
 
 ### P2 — Explicit owner decisions / parked work
 - **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy; P0g measured it under simulated throttling and the default was turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
