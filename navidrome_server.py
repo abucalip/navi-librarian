@@ -1827,7 +1827,7 @@ def _discovery_switch_to_next_source_locked(artist, album, candidate, settings, 
 
 def _discovery_import_completed_source(artist, album, source, music_root, candidate):
     """Import a verified source only if dismissal has not won the race."""
-    return _acquisition_orchestration.import_source_unless_dismissed(
+    return acquisition_orchestration.import_source_unless_dismissed(
         artist,
         album,
         transition_lock=_DISCOVERY_IMPORT_TRANSITION_LOCK,

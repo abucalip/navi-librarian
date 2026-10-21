@@ -8,6 +8,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from acquisition import lifecycle as _acquisition_lifecycle
 from acquisition import orchestration as _acquisition_orchestration
@@ -131,6 +132,30 @@ class AcquisitionLifecycleTests(unittest.TestCase):
         self.assertEqual(result, "failed")
         self.assertEqual(import_calls, [])
         self.assertEqual(status_calls[0][2], "importing")
+
+    def test_legacy_import_adapter_reaches_orchestration_guard(self):
+        """The production adapter must resolve its orchestration module (NameError regression)."""
+        import navidrome_server as server
+
+        calls = []
+        with patch.object(server, "_discovery_is_dismissed", lambda artist, album: False), \
+                patch.object(server, "_discovery_import_completed_source_locked",
+                             lambda *args: calls.append(args) or "imported"):
+            result = server._discovery_import_completed_source(
+                "Artist", "Album", Path("/src"), Path("/music"), {"username": "peer"}
+            )
+        self.assertEqual(result, "imported")
+        self.assertEqual(len(calls), 1)
+        with patch.object(server, "_discovery_is_dismissed", lambda artist, album: True), \
+                patch.object(server, "_discovery_import_completed_source_locked",
+                             lambda *args: calls.append(args) or "imported"):
+            self.assertEqual(
+                server._discovery_import_completed_source(
+                    "Artist", "Album", Path("/src"), Path("/music"), {"username": "peer"}
+                ),
+                "dismissed",
+            )
+        self.assertEqual(len(calls), 1)
 
     def test_incomplete_saved_download_details_do_not_start_or_requeue(self):
         self.ns["jobs"].append({
