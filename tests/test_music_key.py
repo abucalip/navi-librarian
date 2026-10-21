@@ -3,7 +3,7 @@ import unicodedata
 import unittest
 from pathlib import Path
 
-import discovery_recommendations
+from discovery import recommendations as discovery_recommendations
 from recommendation.music_key import music_key
 
 
@@ -32,7 +32,7 @@ class MusicKeyTests(unittest.TestCase):
             with self.subTest(module=rel):
                 tree = ast.parse((root / rel).read_text(encoding="utf-8"))
                 for node in ast.walk(tree):
-                    if isinstance(node, ast.ImportFrom) and node.module == "discovery_recommendations":
+                    if isinstance(node, ast.ImportFrom) and node.module == "discovery.recommendations":
                         self.assertNotIn("music_key", [a.name for a in node.names])
 
     def test_leaf_is_stdlib_only(self):

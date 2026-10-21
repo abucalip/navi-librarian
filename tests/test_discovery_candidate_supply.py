@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest import mock
 
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 from discovery.candidate_supply import (
     candidate_supply_report,
     classify_error,
@@ -242,7 +242,7 @@ class GatheringSupplyTests(unittest.TestCase):
             "r3": HTTPStatusError("503"),
         }
         providers = self._providers(["r1", "r2", "r3"], recordings)
-        with mock.patch("discovery_library_snapshot.fetch_album_inventory", return_value=[]):
+        with mock.patch("discovery.library_snapshot.fetch_album_inventory", return_value=[]):
             gathered = gather_recommendation_candidates(providers)
         supply = gathered["candidate_supply"]
         self.assertEqual(supply["cf_recordings"]["cf_recordings_returned"], 3)
@@ -292,7 +292,7 @@ class EligibilityBoundaryTests(unittest.TestCase):
     """Synthetic boundary checks: release-type filtering, ownership, duplicates, sources."""
 
     def _groups(self):
-        from discovery_recommendations import is_album_candidate
+        from discovery.recommendations import is_album_candidate
         return is_album_candidate, _key
 
     def test_release_group_predicate_labels_each_rejection(self):

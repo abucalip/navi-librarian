@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_library_snapshot import build_library_snapshot
+from discovery.library_snapshot import build_library_snapshot
 
 
 def items(value):

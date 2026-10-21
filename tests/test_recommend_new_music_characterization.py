@@ -6,7 +6,7 @@ from contextlib import nullcontext
 from unittest.mock import patch
 
 import navidrome_server as server
-from discovery_library_snapshot import AlbumInventoryLimitError
+from discovery.library_snapshot import AlbumInventoryLimitError
 
 
 class _Response:
@@ -103,7 +103,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
 
         inventory_patch = (
             patch(
-                "discovery_library_snapshot.fetch_album_inventory",
+                "discovery.library_snapshot.fetch_album_inventory",
                 side_effect=AlbumInventoryLimitError(inventory_limit),
             )
             if inventory_limit is not None

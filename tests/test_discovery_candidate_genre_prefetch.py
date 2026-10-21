@@ -3,8 +3,8 @@ import time
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery import candidate_gathering as gathering
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 
 PROFILE_MBID = "p-jazz"
 PROFILE_GENRES = ["jazz", "modal jazz"]

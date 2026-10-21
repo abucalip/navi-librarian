@@ -5,7 +5,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
-from discovery_candidate_gathering import RecommendationProviders
+from discovery.candidate_gathering import RecommendationProviders
 from recommendation.replay import (
     LastFmReplay,
     ProviderTape,

@@ -2,7 +2,7 @@
 import unittest
 from unittest import mock
 
-import discovery_candidate_gathering as gathering
+from discovery import candidate_gathering as gathering
 from test_discovery_candidate_genre_prefetch import CANDIDATE_GENRES, PROFILE_MBID, _run
 
 

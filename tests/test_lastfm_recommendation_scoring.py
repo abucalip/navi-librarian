@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_recommendations import apply_lastfm_popularity_bonus
+from discovery.recommendations import apply_lastfm_popularity_bonus
 
 
 class LastFMRecommendationScoringTests(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 import unittest
 
-from discovery_recommendations import music_key
+from discovery.recommendations import music_key
 from integrations.slskd.quality import quality_tier
 from integrations.slskd.search import album_path_match, extract_candidates, track_identity
 

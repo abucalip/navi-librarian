@@ -8,7 +8,7 @@ applies. The endpoint is undocumented in the public API docs.
 """
 from typing import Any, Callable
 
-from discovery_tag_queries import tag_from_query
+from discovery.tag_queries import tag_from_query
 
 LB_TAG_RADIO_URL = "https://api.listenbrainz.org/1/lb-radio/tags"
 TAG_RADIO_CACHE_PREFIX = "lb:tag-radio:"

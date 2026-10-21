@@ -2,7 +2,7 @@
 import time
 import unittest
 
-from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
 
 PROFILE_MBID = "p-jazz"
 PROFILE_GENRES = ["jazz", "modal jazz"]

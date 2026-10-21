@@ -12,7 +12,7 @@ import time
 from typing import Any, Callable
 
 from discovery import candidate_supply as _supply
-from discovery_batch_metadata import (
+from discovery.batch_metadata import (
     fetch_batch_recordings,
     fetch_release_group_metadata,
     prefetch_artist_genres,
@@ -27,7 +27,7 @@ from discovery.candidate_supply import (
     summarize_cf_recordings,
     summarize_supplementary_yield,
 )
-from discovery_recommendations import decayed_listen_weights, merge_discovery_source
+from discovery.recommendations import decayed_listen_weights, merge_discovery_source
 
 _RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 _GENRE_LOOKUP_ATTEMPTS = 3
@@ -480,7 +480,7 @@ def _run_tag_lane(queries, *, providers, client, headers, albums, failures, stat
             queries, providers=providers, client=client, headers=headers,
             albums=albums, failures=failures, state=state,
         )
-    from discovery_lb_tag_lane import run_lb_tag_queries
+    from discovery.lb_tag_lane import run_lb_tag_queries
     lb_headers = listenbrainz_headers()
 
     def resolve(items):
@@ -845,7 +845,7 @@ def gather_recommendation_candidates(
     # Select supplementary queries from cached listening-profile genres and
     # reserve a small exploration quota for tags found in the CF candidate pool.
     # Cache reads are bounded and do not add provider calls or bypass TTL policy.
-    from discovery_tag_queries import (
+    from discovery.tag_queries import (
         MAX_EXPLORATION_QUERIES,
         MAX_PROFILE_QUERIES,
         select_supplementary_tag_queries,
@@ -973,7 +973,7 @@ def gather_recommendation_candidates(
 
     # Build a complete, paginated Navidrome album inventory.
 
-    from discovery_library_snapshot import (
+    from discovery.library_snapshot import (
         AlbumInventoryLimitError,
         fetch_album_inventory,
     )
@@ -1153,7 +1153,7 @@ def gather_recommendation_candidates(
 
     # Broad musical families suggested by the recent listening profile.
     # These are ranking heuristics, not definitive genre classifications.
-    from discovery_recommendations import (
+    from discovery.recommendations import (
         classify_diversity_style,
         genre_families,
         primary_recent_family,
