@@ -48,7 +48,7 @@ Acceptance: a docs-only PR (four workflows green on its head) that states what i
 - GitHub is the source of truth. Never merge local-only commits.
 - Ownership checks, duplicate-identity suppression and release-eligibility filtering are never weakened to raise coverage.
 - No added lookups per run. The uncached MusicBrainz budget stays at 100 per run.
-- No added ListenBrainz requests per run (owner, 2026-10-20). Recent listens stay at 3 pages of 100 within 30 days.
+- ListenBrainz requests (owner, 2026-10-20, revised 2026-10-21): the limit exists to protect per-run time. Added ListenBrainz requests that **save time** are allowed, for example batch lookups that replace many slower per-item requests (measured: +3 ListenBrainz GETs replace about 79 MusicBrainz requests and cut a cold 4-page run from about 212 s to about 40 s). Requests that add time, or whose only effect is more data to resolve, still need owner approval. Recent listens stay at 3 pages of 100 within 30 days. Always measure the time effect and report the request counts before and after.
 - Per-run time is a constraint on new work.
 - Diagnostics are aggregate-only. Keep identity-bearing data, raw listens, credentials and provider URLs out of GitHub.
 - Publishing and deployment are paused.

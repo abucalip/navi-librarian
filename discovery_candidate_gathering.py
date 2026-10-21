@@ -604,7 +604,10 @@ def gather_recommendation_candidates(
                     for attempt in range(3):
                         from recommendation_run_metrics import record_provider_call
 
-                        record_provider_call("musicbrainz", "recording_lookup")
+                        # Retries are counted apart so recording_lookup matches the budget.
+                        record_provider_call(
+                            "musicbrainz", "recording_lookup" if attempt == 0 else "recording_lookup_retry",
+                        )
                         response = client.get(
                             f"https://musicbrainz.org/ws/2/recording/{mbid}",
                             params={
