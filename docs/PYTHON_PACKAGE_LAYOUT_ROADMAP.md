@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: In progress; first move merged in PR #508.
+Status: In progress; Navidrome, MusicBrainz, and slskd integration moves merged in PRs #508, #509, and #511.
 
 ## Goal
 
@@ -160,3 +160,13 @@ See the **Current handoff: Python module package layout** section at the top of 
   - Container runtime smoke: [39649449405](https://github.com/abucalip/navi-librarian/actions/runs/39649449405)
   - Validation-only multi-architecture image: [39649449373](https://github.com/abucalip/navi-librarian/actions/runs/39649449373)
 - This verification commit updates documentation only, so the workflows must be checked again on the resulting final PR head before merge. Agent-side focused tests and `py_compile` were not run because no fresh checkout was available. Do not merge without explicit owner instruction. Publishing/deployment remain paused.
+
+
+## PR #511 closeout — slskd integration package (2026-10-21)
+
+- Squash-merged to `main` as `84fbb68afa7929a0bedae4e178d37ad2b6255c5a` from exact final PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`.
+- The five canonical helpers now live under `integrations/slskd/`. Legacy `navidrome_server.py` adapter functions remain and delegate to canonical imports. Direct-import tests, Docker package regression coverage, and the syntax workflow compile list were updated.
+- Root-level Python module count is 61 after the move, down from 66 before it. No compatibility shims remain for the old five root paths because the caller audit found no production/test imports that still required them.
+- All four required workflows passed on exact final PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`: syntax/acquisition safety [39649756998](https://github.com/abucalip/navi-librarian/actions/runs/39649756998), Docker packaging/full unit suite/build [39649757098](https://github.com/abucalip/navi-librarian/actions/runs/39649757098), container runtime smoke [39649756971](https://github.com/abucalip/navi-librarian/actions/runs/39649756971), and validation-only multi-architecture image [39649757030](https://github.com/abucalip/navi-librarian/actions/runs/39649757030).
+- Docker packaging CI ran the full unit suite successfully. Agent-side focused tests and `py_compile` were not run because no fresh isolated checkout was available. Publication, deployment, and production runtime verification remain unperformed.
+- Next: refresh the dependency map on post-merge `main`; audit `lastfm_client.py` and its callers as the next candidate, keeping ListenBrainz as a separate provider boundary. Do not move code until the current-main caller/path/test/packaging audit supports it.
