@@ -1,3 +1,7 @@
+## 2026-10-21 — P0h: CF freshness capture protocol written (docs only)
+
+- P0h measured and closed. Protocol revised (owner dropped first-vs-last-five-days once history was long): recent 30 days vs all-time top recordings, 1 added statistics GET (owner-approved, 0.36 s). One sample: CF 400 recordings; 3 in recent (0.75%), 37 in all-time (9.3%), 36 all-time-only (9.0%); all-time matches concentrated on page 1 (23/10/1/3). Mixed outcome: CF is not recency-skewed and not heard-excluded; keep defaults, no code change. Caveats: single sample, all-time side is top 420 recordings, CF recompute time after import unknown. Docs only; no tests run (full suite not run).
+
 ## 2026-10-21 — Handoff: next task P0h (CF freshness capture protocol, read-only) (docs only)
 
 - Pushed straight to `main` at the owner's instruction. `CLAUDE_CLI.md` now records P0g as merged (PR #498, `ad88bbbb2fe669e511b70472178cd3f5676246d6`), the finding that MusicBrainz OAuth client credentials are not useful for 503s, and hands off P0h: write the CF freshness capture protocol with no live runs, then ask the owner. Roadmap P2 flag line updated to cite the merge. No code change, no tests run (docs only; full suite not run).

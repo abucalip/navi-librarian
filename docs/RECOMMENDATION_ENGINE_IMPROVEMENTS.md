@@ -261,6 +261,50 @@ Test-only harness `run_p0g.py` (not committed): MusicBrainz release-group search
 - **Decision:** acceptance met (more tag candidates, within request budget, no added failure that hurts the list). Default turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). Limits: two clean single-pattern samples, real throttling during the runs.
 - **MusicBrainz OAuth credentials: not useful for this problem.** The registered application's client ID and secret cannot authenticate requests: `client_credentials` is rejected (`unsupported_grant_type`; only `authorization_code` and `refresh_token`). A user token obtained through the consent flow and sent as a bearer on the search requests did not avoid 503s (5 real 503s in 12 requests, versus 2 in 11 unauthenticated). The app does not use these credentials and should not.
 
+### P0h — CF freshness capture protocol (2026-10-21; revised after two inconclusive captures; proposal only, needs owner go-ahead)
+
+**Question.** Does the ListenBrainz collaborative-filtering (CF) pool reflect all-time history, or mostly recent listening?
+
+**Why the earlier design was dropped.** The owner's first-five-days vs last-five-days definition existed because the account's history was too short (16.9 days). The history now spans about 24 years (an import), so the all-time side can be read from ListenBrainz statistics instead of a tiny window at the oldest end. Two captures under the old design were inconclusive (no CF overlap with either window; the first window's earliest timestamp may be an import artefact).
+
+**Two-sided (revised, owner to confirm):** compare the CF pool with (A) the user's **recent** listening, the last 30 days the app already reads (3 pages of 100), and (B) the user's **all-time** listening, taken as the all-time top recordings from ListenBrainz statistics.
+
+**Requests.**
+- CF pool: none added (the 4 `cf_recommendations` GETs of a normal run).
+- Side A: none added (the existing 3 pages of recent listens).
+- Side B: 1 added ListenBrainz GET, `stats/user/<user>/recordings?range=all_time&count=1000` (one-off harness, not app code). Time added about 0.5 to 1 s (unmeasured for this endpoint). HTTP 204 (statistics still being computed) stops the capture with no retry loop. No MusicBrainz requests; the 100 uncached-lookup budget is untouched.
+- Overlap is by recording MBID only. Artist-level overlap would need MusicBrainz lookups to resolve CF recordings and stays out.
+
+**Recorded (aggregate only).** No names, MBIDs, usernames, listen timestamps, URLs or tokens.
+- Set sizes: CF pool, recent 30-day recordings, all-time top recordings, and how many listens carried a recording MBID (imported listens are mapped after upload; unmapped ones cannot be counted).
+- |CF ∩ recent| / |CF| and |CF ∩ all-time| / |CF|; the share of CF in all-time but not recent (`all-time-only`); the same per CF page (1 to 4).
+- Baseline: |all-time ∩ recent| / |recent|.
+- Date of the capture, so a repeat after CF recomputes can be compared. CF recomputation time is not observable from the data, so a capture right after an import is flagged as possibly stale.
+
+**Decisions** (thresholds proposed). Let X = all-time-only share of CF and R = recent overlap:
+| Outcome | Reading | Decision |
+|---|---|---|
+| X at least 30% | CF reflects long history | Keep CF as is; no change. |
+| R at least 70% and X under 10% | CF mostly mirrors recent listening | Do not read deeper; ask the owner whether CF earns its slot against the tag lane. |
+| Anything else | Mixed | Record, keep defaults. |
+| Zero overlap with both | Possible exclusion of already-heard recordings, or CF not yet recomputed | Repeat after a day; if still zero, record that CF excludes heard recordings and judge freshness from non-heard overlap only (needs a new proposal). |
+No outcome changes code by itself.
+
+**Limits.** One sample; the top-1000 recordings are a biased slice of all-time listening; CF recomputed periodically.
+
+**Result (2026-10-21, owner-approved: 1 statistics GET, one sample, aggregate only).** Requests: 4 CF pages, 2 recent-listen pages, 1 `stats/.../recordings` GET (200, 0.36 s). Earlier captures under the dropped first-vs-last-five-days design (17-day history; imported history) were inconclusive and are superseded.
+
+| Set | Recordings |
+|---|---|
+| CF pool | 400 |
+| Recent 30 days | 100 listens, 89 distinct mapped recordings |
+| All-time top | 420 items, 347 with a recording MBID |
+
+- CF in recent: 3 of 400 (R = 0.75%). CF in all-time: 37 (9.3%); all-time-only (X): 36 (9.0%). Baseline all-time-in-recent: 47.2%.
+- Per CF page, all-time matches 23, 10, 1, 3; recent matches 0, 0, 1, 2. Matches are concentrated on page 1.
+- **Reading:** by the table, X under 30% and R under 70% is "mixed": keep defaults, no change. CF clearly does not mirror recent listening (R under 1%) and does include recordings from the user's all-time history (page 1 most), so recency skew is not supported. CF being heard-exclusion is not supported either (37 heard all-time recordings are in it). Weak evidence: one sample, the all-time side is only the top 420 recordings (a biased slice), and CF recompute time after the import is unknown. Not enough to justify reading deeper or changing CF; a repeat after CF recomputes is the only follow-up, owner's call.
+- **Decision:** no code change; P0h closed as measured.
+
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
 - **Phase 3.1 — MMR-style re-ranking:** evaluate only if eligible candidate pools are large enough to reorder meaningfully; preserve relevance and eligibility.
@@ -269,7 +313,7 @@ Test-only harness `run_p0g.py` (not committed): MusicBrainz release-group search
 
 ### P2 — Explicit owner decisions / parked work
 - **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy; P0g measured it under simulated throttling and the default was turned on in merged PR #498 (`ad88bbbb2fe669e511b70472178cd3f5676246d6`). `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
-- **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval.
+- **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval. Measured in P0h (mixed; CF not recency-skewed; no change).
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.
 - **More ListenBrainz pages, extra provider lookups, or a higher MusicBrainz budget:** require explicit owner approval. The approved CF page limit is now 4 (PR #489, reconciled from original PR #488); do not raise it further without a new decision.
