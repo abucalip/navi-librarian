@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from acquisition_watcher import watch_and_import_album
-from acquisition_watcher_startup import start_import_watcher
+from acquisition.watcher import watch_and_import_album
+from acquisition.watcher_startup import start_import_watcher
 
 
 class FakeClock:

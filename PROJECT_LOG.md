@@ -1,3 +1,7 @@
+## 2026-10-21 — Acquisition package PR 2 (monitor, open)
+
+- Moved five monitor modules into `acquisition/`; details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only. Not merged, published or deployed.
+
 ## 2026-10-21 — Acquisition package PR 1 (PR #517 merged)
 
 - Moved eight request/queue modules into `acquisition/`; owner approved this order and the `music_key` fix, and `recommendation_cooldown` moving with the store modules. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only. Squash merge `2411740dc74d57b1a4fddbd33eeef80a461b40dd`, exact head `cd39e83ee7abe50378c015d4486b6306d4690270`, four required workflows passed. Root modules 40. Publication, deployment and runtime verification not performed. Next steps in `CLAUDE_CLI.md`.

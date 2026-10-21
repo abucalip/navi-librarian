@@ -1,7 +1,7 @@
 """Direct regression tests for per-acquisition progress snapshots."""
 import unittest
 
-from acquisition_progress_snapshots import ProgressSnapshots
+from acquisition.progress_snapshots import ProgressSnapshots
 
 
 class ProgressSnapshotsTests(unittest.TestCase):

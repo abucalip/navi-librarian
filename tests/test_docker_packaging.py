@@ -113,6 +113,18 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertFalse((root / f"acquisition_{name}.py").exists())
                 self.assertNotIn(f"acquisition_{name}.py", dockerfile)
 
+    def test_acquisition_monitor_modules_live_in_acquisition_package(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        for name in (
+            "watcher", "watcher_startup", "progress_accounting",
+            "progress_snapshots", "monitor_payload",
+        ):
+            with self.subTest(module=name):
+                self.assertTrue((root / "acquisition" / f"{name}.py").is_file())
+                self.assertFalse((root / f"acquisition_{name}.py").exists())
+                self.assertNotIn(f"acquisition_{name}.py", dockerfile)
+
 
 if __name__ == "__main__":
     unittest.main()

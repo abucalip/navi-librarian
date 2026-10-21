@@ -35,9 +35,9 @@ from settings.service import (
 )
 from acquisition import lifecycle as _acquisition_lifecycle
 from acquisition.candidate_start import candidate_start_state as _module_candidate_start_state
-from acquisition_monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
+from acquisition.monitor_payload import prepare_candidate_for_monitor as _prepare_candidate_for_monitor
 from acquisition import orchestration as acquisition_orchestration
-from acquisition_progress_snapshots import ProgressSnapshots as _ProgressSnapshots
+from acquisition.progress_snapshots import ProgressSnapshots as _ProgressSnapshots
 from acquisition.request_coordinator import acquire_album_request as _acquire_album_request
 from acquisition import state as _acquisition_state
 from acquisition.source_switch import switch_to_next_source_locked as _switch_to_next_source_locked
@@ -1870,7 +1870,7 @@ def _discovery_reconcile_interrupted_import(artist, album, candidate):
 
 def _discovery_watch_and_import_album(artist, album, candidate, settings):
     """Compatibility adapter for the importable acquisition watcher."""
-    from acquisition_watcher import watch_and_import_album
+    from acquisition.watcher import watch_and_import_album
     return watch_and_import_album(
         artist, album, candidate, settings,
         services={
@@ -1891,7 +1891,7 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
 
 def _discovery_start_import_watcher(artist, album, candidate, settings):
     """Compatibility adapter for dependency-injected watcher startup."""
-    from acquisition_watcher_startup import start_import_watcher
+    from acquisition.watcher_startup import start_import_watcher
     start_import_watcher(
         artist, album, candidate, settings,
         services={
