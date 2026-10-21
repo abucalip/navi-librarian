@@ -1,6 +1,6 @@
 # Recommendation engine improvement roadmap
 
-Last reviewed: 2026-10-21 (PR #502 merged as `6e0718699740ce96539321e6b82ce15c0f632c06`, exact head `ba29be2429484620415232db91ef97471470826a`). This is the active plan only; historical measurements, completed changes, and superseded task orderings are in [the archive](RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md). GitHub `main` is authoritative. Publishing and deployment remain paused.
+Last reviewed: 2026-10-21 (PR #502 merged as `6e0718699740ce96539321e6b82ce15c0f632c06`, exact head `ba29be2429484620415232db91ef97471470826a`; package-layout PR #508 merged as `f171a4e73915222292642ba17d6dcb568b8c929a`, recorded here per merge-closeout policy). This is the active plan only; historical measurements, completed changes, and superseded task orderings are in [the archive](RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md). GitHub `main` is authoritative. Publishing and deployment remain paused.
 
 ## Finding — cold-start supply gain in the final list (2026-10-20, measured; merged as `aedc34e44034a04bb20c177458f9c8b73b12900f`, PR #474)
 
