@@ -1,5 +1,12 @@
 # Project status
 
+## 2026-10-21 — PRs #504 and #503 merged
+
+- **PR #504** (neutral LAN defaults) merged by squash as `af78c9e9796c27c65f9503a64d61ca9c58357dba`, from exact PR head `4263f9c5bf3400cf6a5846c0f81a253a177e9543`. Removed the hard-coded private LAN address from slskd defaults and deployment docs; blank URLs now fail validation. All four required workflows passed on that exact head: Python syntax `39631742346`, Docker packaging/full unit suite/build `39631742366`, container runtime smoke `39631742152`, and validation-only multi-architecture image validation `39631742470` (publishing paused).
+- **PR #503** (ListenBrainz token in Settings) reconciled with PR #504/current main, then merged by squash as `c3d5e02a4e5f113bb2914b12986cdef41e5863b5`, from final reconciled head `cd0d53cb9f962b361f7ea84abba12b32b7efb17a`. Reconciliation commits: `f1b136669dc790842d86aa9e16a56abd28fc5aee` and `cd0d53cb9f962b361f7ea84abba12b32b7efb17a`. The optional token is saved in the existing settings DB; API responses expose only `token_configured`; token validation blocks header injection; blank input preserves the saved token; the environment-variable fallback remains; the token is not sent to MusicBrainz. The reconciled version retains PR #504's neutral slskd URL validation/defaults. All four required workflows passed on the exact final head: Python syntax `39632632729`, Docker packaging/full unit suite/build `39632632823`, container runtime smoke `39632632791`, and validation-only multi-architecture image validation `39632633039` (publishing paused).
+- Per owner instruction, manual UI checks were waived. The browser workflows were not independently verified. The Docker packaging workflow ran the full unit suite; no separate agent-side full-suite run was performed. Publishing, deployment, and production-runtime verification remain unperformed.
+- Current next action: continue the active recommendation-engine roadmap from its top item; publishing remains paused.
+
 Last reviewed: 2026-10-21 (PR #502 merged; publishing remains paused)
 
 ## Current recommendation-engine state
