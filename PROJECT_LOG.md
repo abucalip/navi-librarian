@@ -1,3 +1,9 @@
+## 2026-10-21 — Batched genre lookup added to the roadmap; ListenBrainz request rule revised (docs only)
+
+- Branch `docs/batch-genre-roadmap-and-listenbrainz-rule`. Owner instruction: the "no added ListenBrainz requests" rule stands only where requests add run time; batch lookups that work quickly may add requests. Recorded in `CLAUDE_CLI.md` and `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
+- Owner-approved live runs (test-only harness, aggregate only): `metadata/artist/` size limit not found up to 96 artists (47 KB to 173 KB responses, all 200); 4 pages end to end with the batch patch: cold 39.6 s, warm 16.5 s and 4.2 s, 79 CF albums from 42 artists, 3 MusicBrainz requests in the cold run. Options compared (batch, top-20, cap-30) are in the improvements doc. New roadmap item P0b: implement batched genre lookup in code (not started). `CF_MAX_PAGES` stays 2.
+- No code changed, no tests run (docs only; full suite not run per standing rule).
+
 ## 2026-10-21 — PR #483 merged: tag-lane rotation measured; not adopted (docs only)
 
 - PR: https://github.com/abucalip/navi-librarian/pull/483

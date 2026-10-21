@@ -114,12 +114,48 @@ An experimental patch (not merged; reviewed on PR #483 and removed) rotated the 
 
 Final mix stayed 4 CF / 6 tag in every run. Mean overlap 4.7 (off) vs 4.0 (on): within noise at three runs. Rotation did not widen tag supply, and newly sampled tag queries are uncached, so warm runs make provider calls the baseline does not (breaks "calls must not rise") and are 2-7x slower. Calls may fall once the rotation cycle is cached; not measured. Decision: keep off, and the code was not merged: no benefit was shown and nothing in the app supplied the counter. Reintroduce only if a future experiment shows a measurable benefit. Harness `run_tag_rotation.py` was test-only and never committed (adapted from `run_cf_budget.py`).
 
+## Finding — batched genre lookup, endpoint limit and 4-page re-measurement (2026-10-21; owner-approved live runs, test-only patches not committed, aggregate only, disposable data dirs deleted)
+
+**ListenBrainz request rule (owner, revised 2026-10-21).** "No added ListenBrainz requests per run" stands only where the requests add run time. Batch lookups that work quickly may add requests when they reduce total time. Each such change still reports request counts and wall time before and after.
+
+**Context.** After the release-group chunk cap (PRs #484 and #485: the release-group endpoint passes 80 MBIDs per GET and fails from 81; chunk set to 50), a cold 4-page run still took 207 to 319 s. The profile put about 111 to 121 s of it in `genre_lookup` (up to 75 artists, one uncached MusicBrainz request each at 1.1 s spacing plus about 1.2 s response time) and about 37 to 39 s in `genre_prefetch`.
+
+**Batch genre lookup.** The ListenBrainz `metadata/artist/` endpoint (`inc=tag`) returns tags for many artists per GET. Keeping tags that carry a `genre_mbid` gave exactly the MusicBrainz genre set for 5 of 5 sampled artists. Patch (test-only): before the prefetch and before the genre stage, fetch uncached artists in one chunk and write `mb:artist-genres:<id>`; the existing per-artist MusicBrainz loop remains as the fallback for artists the batch misses.
+
+**Endpoint size limit measured.** Requests of 25, 40, 50, 60, 70, 80 and 96 artist MBIDs all returned 200 `application/json` with every artist present (response 47 KB at 25, 173 KB at 96; 0.5 to 1.1 s). **No failing size was found up to 96, the most distinct artists the 400-recording CF set offered.** The limit is therefore above 96 and not located; the app needs at most about 75 artists per call (60 candidate artists plus recents, deduplicated), so one chunk of 75 is used, 22% under the largest size verified. This is a different endpoint from the release-group one, which fails at 81.
+
+**Options compared (cold 4-page runs, one run per arm unless noted; same CF supply in every arm: 79 albums from 42 artists).**
+
+| Arm | Cold time | MusicBrainz requests | `genre_lookup` |
+| --- | --- | --- | --- |
+| Baseline | 212.2 s (a second baseline: 93.5 s) | 81 (73) | 111.3 s (43.1 s) |
+| Batch (25 per request) | 36.5 s | 2 | 1.0 s |
+| Top-20 candidate artists only | 75.3 s, 78.5 s | 52 | 15.7 s |
+| Cap of 30 artists | 112.7 s | 53 | 37.4 s |
+
+Top-20 and cap-30 save time by giving fewer artists a genre (less scoring data). Batch removes the time without removing data. Final-list overlap cannot compare arms: two identical baseline runs overlapped 2 of 10, arms overlapped 3 to 7 of 10, so run-to-run noise exceeds any arm effect. The baseline time itself varies 93 to 319 s between runs (MusicBrainz response time).
+
+**4 pages end to end with the batch patch (chunk 75, release-group chunk 50, cold then two warm runs, one session).**
+
+| Run | Wall time | CF albums / artists | MusicBrainz requests | Last.fm calls | `genre_lookup` | `lastfm_album_popularity` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Cold | 39.6 s | 79 / 42 | 3 | 40 | 0.7 s | 27.5 s |
+| Warm 1 | 16.5 s | 79 / 42 | 8 | 0 | 0.5 s | 0.02 s |
+| Warm 2 | 4.2 s | 79 / 42 | 1 | 0 | 0.04 s | 0.03 s |
+
+For comparison, the 2-page baseline cold run was 141.0 s and the unpatched 4-page cold runs were 207 to 363 s. ListenBrainz requests in the cold run: 4 CF pages, 4 recording batches, 2 release-group GETs and 1 genre-batch GET for the prefetch plus 1 for the genre stage, plus the recent-listens calls (about 15 in all against 12 before). The remaining cold time is mostly the 40 Last.fm popularity calls (27.5 s, 30-day cache) and the tag lane. Single sample per row; no recommendation-quality claim. With the rule revised above, the added ListenBrainz GETs are allowed because they cut cold time by about 80%. **Not implemented in code**; the roadmap item below tracks it. `CF_MAX_PAGES` stays 2 until the owner decides after a code-level measurement.
+
 ## Remaining work, in dependency order
 
 ### P0 — Candidate supply → final-list verification
-- Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Tag-lane rotation was measured and not adopted (see its finding). Keep the 100-per-run MusicBrainz budget and current ListenBrainz request count unchanged unless the owner explicitly approves otherwise.
+- Done: cold and warm candidate supply, final-list effects, longer-interval repeat rate (no reopening of 3.2) and the `CF_MAX_PAGES = 4` re-measurement (kept at 2; PR #482, merge `c02e4966c3835f893f27a09bef0b1172b8578d66`) are measured. Tag-lane rotation was measured and not adopted (see its finding). Keep the 100-per-run MusicBrainz budget unchanged unless the owner explicitly approves otherwise. The ListenBrainz request count may rise only when the added requests save run time (owner rule, revised 2026-10-21; see "ListenBrainz request rule" below).
 - Open question from the 4-page run: why release-group requests still return 502 after #479's retry at larger request sizes. Investigate only read-only first; any change to request pattern needs owner approval.
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
+
+### P0b — Implement batched genre lookup (added 2026-10-21)
+- Replace the per-artist MusicBrainz genre lookups (prefetch and genre stage) with `metadata/artist/` batches of up to 75 artists, keeping tags with a `genre_mbid`, writing the same `mb:artist-genres:<id>` cache entries and keeping the per-artist MusicBrainz loop as a fallback for artists the batch misses or when a batch request fails. Put the batch client in `discovery_batch_metadata.py` (new function, no new module), add tests with stubbed HTTP, and keep `navidrome_server.py` size unchanged.
+- Allowed by the revised ListenBrainz request rule (it adds about 3 ListenBrainz GETs and saves about 79 MusicBrainz requests and about 170 s of cold time at 4 pages). Report request counts and wall time before and after in the PR.
+- After it lands, re-measure `CF_MAX_PAGES = 4` end to end on `main` and decide with the owner whether to raise it (still the owner's call).
 
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
