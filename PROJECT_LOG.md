@@ -1,3 +1,13 @@
+## 2026-10-21 — PR #511 merged: slskd integration package
+
+- Squash merge commit on `main`: `84fbb68afa7929a0bedae4e178d37ad2b6255c5a`; exact final PR head: `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`.
+- Moved `slskd_client.py`, `slskd_quality.py`, `slskd_search.py`, `slskd_search_polling.py`, and `slskd_transfers.py` to `integrations/slskd/{client,quality,search,search_polling,transfers}.py`. Updated production imports in `navidrome_server.py`, preserving its adapters; updated direct-import tests, Docker packaging regression coverage, and the syntax workflow compile list. No old root-level shims were retained because the caller audit found no remaining direct imports requiring them.
+- Root-level Python module count: 61 after the move, down from 66 before it.
+- Four required workflows passed on exact PR head `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`: syntax/acquisition safety [39649756998](https://github.com/abucalip/navi-librarian/actions/runs/39649756998); Docker packaging/full unit suite/build [39649757098](https://github.com/abucalip/navi-librarian/actions/runs/39649757098); container runtime smoke [39649756971](https://github.com/abucalip/navi-librarian/actions/runs/39649756971); validation-only multi-architecture image [39649757030](https://github.com/abucalip/navi-librarian/actions/runs/39649757030).
+- The Docker packaging workflow's full unit suite passed. Agent-side focused tests and `py_compile` were not run because no fresh isolated checkout was available. Do not infer tests on the merge commit beyond the verified PR-head evidence.
+- Published, deployed, and production-runtime verified: no. Publishing/deployment remain paused.
+- Next task: refresh the dependency map on post-merge `main` and audit `lastfm_client.py` plus its callers, direct tests, dynamic imports, path assumptions, and Docker/CI references before deciding whether to move it to `integrations/lastfm/`. See `CLAUDE_CLI.md`.
+
 ## 2026-10-21 — Python package-layout PR #509 merged
 
 - Squash merge commit on `main`: `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; tested PR head `c045865fea13e8944512fc5c987e609cbc41e443`.
