@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from settings_persistence import SettingsPersistence
+from settings.persistence import SettingsPersistence
 
 
 class SettingsPersistenceTests(unittest.TestCase):

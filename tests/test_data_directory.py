@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from data_directory import resolve_data_dir
+from settings.data_directory import resolve_data_dir
 
 
 class ResolveDataDirTests(unittest.TestCase):

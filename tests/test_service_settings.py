@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from service_settings import (
+from settings.service import (
     automatic_refill_enabled_value,
     get_automatic_refill_settings,
     set_automatic_refill_settings,
@@ -177,7 +177,7 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(self.writes, before)
 
     def test_listenbrainz_token_saved_preserved_validated_and_never_returned(self):
-        from service_settings import get_listenbrainz_settings
+        from settings.service import get_listenbrainz_settings
         result = json.dumps(json.loads(set_listenbrainz_settings(self.write_settings, "listener", "abc-123_XYZ")))
         self.assertEqual(self.state["listenbrainz_token"], "abc-123_XYZ")
         self.assertNotIn("abc-123_XYZ", result)
@@ -194,7 +194,7 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertFalse(json.loads(get_listenbrainz_settings(self.read_settings, "listener"))["token_configured"])
 
     def test_slskd_settings_redact_key_and_use_defaults(self):
-        from service_settings import get_slskd_settings
+        from settings.service import get_slskd_settings
         result = json.loads(get_slskd_settings(
             self.read_settings, Path("/music"),
             {
@@ -208,7 +208,7 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertIn("quality_labels", result)
 
     def test_slskd_config_requires_valid_url_and_api_key(self):
-        from service_settings import slskd_config
+        from settings.service import slskd_config
         self.state.update({"slskd_url": "http://slskd:5030", "slskd_api_key": "slskd-secret"})
         self.assertEqual(slskd_config(self.read_settings)[:2], ("http://slskd:5030", "slskd-secret"))
         self.state["slskd_url"] = "file:///bad"
@@ -222,7 +222,7 @@ class ServiceSettingsTests(unittest.TestCase):
             slskd_config(self.read_settings)
 
     def test_slskd_save_preserves_key_and_validates_all_inputs_before_write(self):
-        from service_settings import set_slskd_settings
+        from settings.service import set_slskd_settings
         defaults = {
             "slskd_url": "http://slskd:5030",
             "slskd_downloads_path": "/downloads",

@@ -1,7 +1,7 @@
 """Direct-import regressions for music library path selection."""
 import unittest
 from pathlib import Path
-from music_paths import default_music_dir
+from settings.music_paths import default_music_dir
 
 
 class DefaultMusicDirTests(unittest.TestCase):

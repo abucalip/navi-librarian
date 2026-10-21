@@ -1,3 +1,7 @@
+
+## 2026-10-21 — Settings package move (PR pending)
+
+- Moved `service_settings`, `settings_persistence`, `music_paths`, `data_directory` into `settings/` (no shims). Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only; CI evidence to be added after the PR runs.
 ## 2026-10-21 — Recommendation replay/diagnostics package move (PR #514 merged)
 
 - Moved `recommendation_replay`, `recommendation_diagnostics`, `recommendation_mmr_evaluate`, `recommendation_profile_comparison` into `recommendation/` (no shims). `replay._REPOSITORY_ROOT` adjusted to the repo root. Merge `431c152642809e2aad1a36a556ac47610d0ddaa2`, exact final head `b636fcf2298f27b76befc3285034fe03285a32a0`, four required workflows passed. Root Python modules 54. `run_metrics`, `cooldown`, `feedback` stay in root. Focused tests and `py_compile` run locally; full suite not run. Publishing, deployment and runtime verification not performed.
