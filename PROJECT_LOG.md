@@ -42,3 +42,12 @@
 - Moved the Navidrome client implementation to `integrations/navidrome/client.py`, added package initializers, updated production imports, retained `navidrome_client.py` as a compatibility shim, updated direct-import tests, and added the package to Docker COPY.
 - Regression coverage added for identity of the legacy re-export and canonical callable. Agent-side focused tests and `py_compile` were not run: the execution environment could not resolve github.com for a fresh checkout. No stale local checkout was used.
 - All four required workflows passed on exact head `cffb5486d6fedb091979e397ff545a22fd0502cf`: Python syntax/acquisition safety `39639446692`; Docker packaging/full unit suite/build `39639446681` (unit tests and image build succeeded); container runtime smoke `39639446683`; validation-only multi-architecture image validation `39639446720` (non-publishing). This documentation closeout advances the PR head, so the four workflows must be checked again on the new exact head. Not merged, published, deployed, or runtime-verified.
+
+
+## 2026-10-21 — Python package-layout first move merged (PR #508)
+
+- Squash merge: `f171a4e73915222292642ba17d6dcb568b8c929a`; exact tested PR head: `a6fe1bd656f77ae4fbd65cb94c067949d14cf140`.
+- Moved the Navidrome/Subsonic client implementation to `integrations/navidrome/client.py`; added package initializers, switched production imports, retained and tested `navidrome_client.py` as a compatibility shim, updated direct-import tests, and added `integrations/` to Docker packaging. ASGI entry point unchanged.
+- Required CI passed on exact PR head: syntax/acquisition safety run 39639612889; Docker packaging/full unit suite/build 39639612870; container runtime smoke 39639612822; non-publishing multi-architecture validation 39639612866.
+- Agent-side focused tests and `py_compile` not run because the execution environment could not obtain a fresh GitHub checkout. No stale local checkout used. No publishing, deployment, or production runtime verification.
+- Next: regenerate/review the dependency map against post-merge main, finish the remaining module/caller/path/test inventory, and choose the next cohesive move only after checking dynamic imports, compatibility, and Docker assumptions.
