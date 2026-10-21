@@ -3,6 +3,12 @@
 - Branch `docs/batch-genre-roadmap-and-listenbrainz-rule`. Owner instruction: the "no added ListenBrainz requests" rule stands only where requests add run time; batch lookups that work quickly may add requests. Recorded in `CLAUDE_CLI.md` and `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - Owner-approved live runs (test-only harness, aggregate only): `metadata/artist/` size limit not found up to 96 artists (47 KB to 173 KB responses, all 200); 4 pages end to end with the batch patch: cold 39.6 s, warm 16.5 s and 4.2 s, 79 CF albums from 42 artists, 3 MusicBrainz requests in the cold run. Options compared (batch, top-20, cap-30) are in the improvements doc. New roadmap item P0b: implement batched genre lookup in code (not started). `CF_MAX_PAGES` stays 2.
 - No code changed, no tests run (docs only; full suite not run per standing rule).
+## 2026-10-21 — Read-only look at release-group 502s (docs only)
+
+- Branch `docs/release-group-502-readonly-look`. Code reading plus existing reports; one live diag run (above), no code change, no tests run (docs only; full suite not run per standing rule).
+- 502 cause **established by bisection: request size**. Owner-approved live 4-page cold diag (one run, aggregate only): four recording batches 200; one release-group chunk of 83 MBIDs returned 502 `text/html` in 0.5 s, retry 502 in 0.7 s; 363.6 s, 14 albums from 4 artists, `recording_lookup` 105, `lastfm.api` 40. Bisection (owner-approved): the identical 83-MBID request failed 3 of 3 (502 HTML, 0.5 s), including after a pause; the 41- and 42-MBID halves both returned 200. Not a single bad MBID, not transient. Threshold search: 62/72/77/80 MBIDs pass; 81 drops the connection; 83 returns 502, on prefix and tail slices alike, so the limit is request length (80 pass / 81 fail), not content. URL-vs-response not separated.
+- Unexplained counts explained from code: `recording_lookup` counts HTTP attempts (inside the retry loop) while the budget counts recordings, so 111 to 113 is 100 plus retries; `lastfm.api` is the top-40 `album.getInfo` popularity pass (30-day cache), independent of CF paging.
+- Recommended next step: per-request diagnostics and a separate retry counter (no request-pattern change), then, with owner approval (adds requests), release-group chunks of 50 (2 requests instead of 1 at 4 pages). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 
 ## 2026-10-21 — PR #483 merged: tag-lane rotation measured; not adopted (docs only)
 
