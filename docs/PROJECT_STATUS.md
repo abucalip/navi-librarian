@@ -1,3 +1,10 @@
+## 2026-10-21 — PR #510 CI and dependency-map follow-up
+
+- All four required workflows passed on exact PR head `8ba095c17040ea5dd40ab19ad36e132acb4ab2ee`; Docker packaging CI ran the full unit suite, and multi-architecture validation remained non-publishing. See roadmap for run links.
+- Inspected exact-head dependency-map artifact (SHA-256 `22440f9cabed53f77f21abbdeb0593a9553fbdcc5bc0791d0ff46498d5185ca5`). It confirms AST-local imports from `navidrome_server` to all five modules and no local imports within those modules themselves.
+- Found existing quality-tier tests in `tests/test_slskd_search_modules.py` and `tests/test_slskd_candidates.py`; corrected the earlier tentative inventory. Docker COPY explicitly includes all five modules.
+- Still no code move: GitHub code search is incomplete, and a reliable full-tree search for dynamic/string imports, docs/scripts/CI references, and source-reading assertions is not yet complete. Publishing/deployment remain paused.
+
 ## 2026-10-21 — slskd package-boundary audit (PR pending)
 
 - Audited current-main implementations and the lazy/top-level `navidrome_server.py` call sites for the five `slskd_*` modules. Confirmed direct-import tests for client, search, polling, and transfers; the expected quality-specific test path is absent.
