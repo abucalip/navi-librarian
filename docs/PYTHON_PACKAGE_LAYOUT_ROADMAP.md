@@ -1,7 +1,7 @@
 # Python package layout roadmap
 
 Last reviewed: 2026-10-21
-Status: In progress; provider integration moves merged in PRs #508, #509, #511, #512, #513; recommendation replay/diagnostics package merged in PR #514; settings package merged in PR #515.
+Status: In progress; provider integration moves merged in PRs #508, #509, #511, #512, #513; recommendation replay/diagnostics package merged in PR #514; settings package merged in PR #515; listening profile merged in PR #516; design note for acquisition/discovery/legacy server recorded (no move pre-approved).
 
 ## Goal
 
@@ -215,3 +215,51 @@ See the **Current handoff: Python module package layout** section at the top of 
 - Moved: `listening_profile` -> `recommendation/listening_profile.py`. No shim. `recommendation/` was already in the Dockerfile; the root COPY entry was removed. `tests/test_docker_packaging.py` gains a packaging regression test. Root Python modules 49 -> 48.
 - Merged: PR #516 squash-merged as `adc66e88d522b0240ffc1c271643d7ba0a90e403` from exact head `462ffcb28456ff734522266c7f5fc4f8cae7ff93`; all four required workflows passed on it (syntax 39666604856, Docker packaging 39666604989, runtime smoke 39666604686, validation-only image 39666604973). An earlier head failed compile and test-and-build because the root file was left in place; fixed before merge. Agent-side: focused tests and `py_compile` only (`test_discovery_scheduler_refill_gate` cannot import locally without httpx; CI covers it). Publication, deployment and runtime verification not performed.
 - Next: design note (docs-only) for `slskd` leftovers, `acquisition_*` (18), `discovery_*` (20) and the legacy `navidrome_server`; stop and report if no safe seam.
+
+
+## Design note: slskd leftovers, acquisition, discovery and the legacy server (2026-10-21, docs-only)
+
+Baseline: `main` `f84dfce13dc027d4b3a390f31084eac6407431d6`, 48 root Python modules, open PRs 358 and 368 are docs-only. Evidence is a static AST import graph over all root modules (including imports inside functions) plus grep of tests, scripts, workflows and the Dockerfile. It does not resolve string or injected imports; those were searched separately. No code was changed and no tests were run. Result: **safe seams exist** for `acquisition_*` and for part of `discovery_*`; the rest needs a prerequisite or stays put.
+
+### slskd: nothing left to move
+
+All five helpers are in `integrations/slskd/`. No root module, script or workflow names the old `slskd_*` paths. What remains in `navidrome_server.py` are the `_slskd_*` / `discovery_*_slskd_*` compatibility adapters, and the slskd settings live in `settings/service.py`. Nothing to relocate; the adapters are part of the legacy-server decision below.
+
+### acquisition_* (18): one clean package, three PRs
+
+- **Edges:** no `acquisition_*` module imports any root module outside the group. Only three internal edges exist: `import -> completion`, `request_coordinator -> orchestration`, `watcher -> progress_accounting`. No cycles.
+- **Callers:** the sole production importer of every module is `navidrome_server.py` (17 import sites, top-level and lazy), plus the three internal edges. `app/` does not import them (`scripts/check_app_legacy_imports.py` boundary). 18 test modules import them directly.
+- **Path and source assumptions:** no `__file__`, no dynamic imports, no `mock.patch("acquisition_...")` string targets, no source-reading test of these files. Packaging references: the long Dockerfile root `COPY` line and the `acquisition_completion.py` entry in the `python-syntax.yml` compile list.
+- **Proposed boundary:** a new `acquisition/` package (names drop the prefix, e.g. `acquisition/completion.py`), flat, no shims unless a caller audit at move time finds one. Split into three PRs, each closed under the internal edges:
+  1. **Request and queue:** `candidate_queue`, `candidate_start`, `orchestration`, `request_coordinator`, `source_switch`, `search_diagnostics`, `lifecycle`, `state`.
+  2. **Monitor:** `watcher`, `watcher_startup`, `progress_accounting`, `progress_snapshots`, `monitor_payload`.
+  3. **Import and cleanup (highest safety sensitivity, last):** `completion`, `import`, `import_service`, `cleanup`, `recovery`.
+- **Why three:** the modules are independent enough for one PR, but this group carries the filesystem and import safety guarantees; small diffs keep the exact-head review tractable. Behavior, ordering and locking stay untouched; each PR is import-path, test-import, Dockerfile and compile-list edits only, plus a packaging regression test as in PRs #515 and #516.
+
+### discovery_* (20): one leaf cluster is safe now, the core is not
+
+Edges and callers show four clusters:
+
+| Cluster | Modules | Coupling |
+|---|---|---|
+| Server-only leaves (6) | `classics_candidates`, `classics_genres`, `classics_ratings`, `deep_dive_candidates`, `new_releases`, `recommendation_payload` | No root imports, only `navidrome_server.py` calls them, 1 test each. **Safe seam.** |
+| Allocator (3) | `allocation_contract`, `personal_allocator`, `mmr` | Internal edges only plus `recommendation_run_metrics`. Also imported by `recommendation_feedback` (-> `allocation_contract`) and `recommendation/mmr_evaluate` (-> `mmr`). Safe once those two callers are updated. |
+| Store and refresh (5) | `store`, `snapshot`, `refresh`, `list_payload`, `candidate_supply` | `store` is imported by `recommendation_cooldown` and lazily by `recommendation/*`; `candidate_supply` is imported by `recommendation/profile_comparison` and `replay`. Movable together with those callers. |
+| Gathering core (6) | `candidate_gathering`, `batch_metadata`, `lb_tag_lane`, `tag_queries`, `library_snapshot`, `recommendations` | Heaviest fan-in/out; 14 tests import `candidate_gathering`; six `mock.patch("discovery_candidate_gathering.*")`, one each for `library_snapshot` and `lb_tag_lane` string targets must be rewritten with any move. |
+
+- No import cycles exist among root modules today.
+- **One inversion blocks the core:** `integrations/lastfm/client.py` imports `music_key` from `discovery_recommendations` (a provider importing domain code), and `recommendation_feedback` lazily does the same. Moving `discovery_recommendations` first would force `integrations/` to depend on a new `discovery/` package. A prerequisite (separate code PR, not a move) would relocate or duplicate `music_key` in a neutral leaf. This is a behavior-adjacent change and needs owner approval; until then the core stays in root.
+- **Proposed target:** a `discovery/` package, not `recommendation/` (that package holds replay, diagnostics and the profile; keep the two concepts apart). Sequence: (a) leaf cluster, 6 modules; (b) allocator, with the two `recommendation_*` callers' imports updated; (c) store and refresh, together with `recommendation_cooldown` if the owner wants it beside them; (d) gathering core only after the `music_key` prerequisite is decided.
+- `recommendation_run_metrics` stays in root as the shared leaf every group imports.
+
+### navidrome_server: no move
+
+`navidrome_server.py` is 2,469 lines (the handoff says 2,448; the ratchet reports OK against the 2,650 cap). It is the legacy adapter that wires every group and holds the compatibility wrappers; it imports 37 root modules. Relocating it is out of scope and risky (`app.main` assembly, 36 lazy imports, `tests/test_docker_packaging.py` parses it with AST, `test_mcp_retirement` reads it). Moving the groups above does not shrink it. Its natural reduction path is the existing modularization roadmap, not this one. Leave it in root.
+
+### Recommended order and stop conditions
+
+1. `acquisition/` PR 1, then 2, then 3 (lowest dependency risk, biggest root-module reduction: 18).
+2. `discovery/` leaf cluster (6), then allocator (3).
+3. Owner decision before store/refresh and the gathering core (the `music_key` inversion and the `recommendation_cooldown` placement).
+
+Expected root-module count if 1 and 2 land: 48 -> 21. Every PR still needs the four required workflows on its exact head, no shims without a real caller, Dockerfile `COPY` and compile-list updates, and a packaging regression test. Publishing and deployment stay paused. No move here is pre-approved; each needs its own owner go-ahead.

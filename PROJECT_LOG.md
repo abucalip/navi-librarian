@@ -1,3 +1,7 @@
+## 2026-10-21 — Package layout design note (docs-only)
+
+- Audited `main` `f84dfce` with an AST import graph plus grep. slskd: nothing left to move. `acquisition_*` (18): no outward dependencies, only `navidrome_server.py` calls them; proposed `acquisition/` in three PRs. `discovery_*` (20): six server-only leaves and the 3-module allocator are safe; store/refresh and the gathering core are blocked by the `integrations/lastfm` -> `discovery_recommendations.music_key` inversion (needs an owner decision). `navidrome_server` stays. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. No code changed, no tests run. Next: owner picks the first move (recommended: `acquisition/` PR 1).
+
 ## 2026-10-21 — Listening profile move (PR #516 merged)
 
 - Moved `listening_profile` into `recommendation/listening_profile.py` (no shim). Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only. Squash merge `adc66e88d522b0240ffc1c271643d7ba0a90e403`, exact head `462ffcb28456ff734522266c7f5fc4f8cae7ff93`, all four required workflows passed. Root modules 48. Next: design note for slskd leftovers, acquisition, discovery and the legacy server. See `CLAUDE_CLI.md`.
