@@ -22,14 +22,19 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: none assigned. P0h (CF freshness) is parked until ListenBrainz recomputes CF
+## Next task: P0i — stale-flag audit: do the docs still match the code defaults? (read-only, then docs PR)
 
-The P0h protocol is written and was run once (owner-approved): recent 30 days vs all-time top recordings, 1 added `stats/user/<user>/recordings` GET. The sample is a **pre-recompute baseline**: ListenBrainz had not yet computed CF for the owner's imported (about 24-year) history, so no conclusion was drawn (3 of 400 CF recordings in the recent set, 37 in the all-time top set). Details and the decision table: `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0h).
+P0h (CF freshness) is parked until ListenBrainz recomputes CF for the imported history (see "Open items"); do not repeat that capture without the owner's go-ahead. The next safe item needs no network and no live run: after PRs #495 to #498 changed defaults and removed flags, check that nothing still describes the old state.
 
-- **Do not repeat the capture until the owner says CF has been recomputed.** Then repeat it once, with an owner go-ahead naming the 1 statistics request, and compare with the baseline. Earlier captures under the dropped "first five days vs last five days" design were inconclusive and superseded.
-- No live run without the owner's go-ahead.
+Do:
+1. Treat code as the source of truth. In `discovery_candidate_gathering.py` the defaults are `GENRE_CIRCUIT_BREAKER_ENABLED = True`, `COLD_START_BATCH_ENABLED = True`, `WARM_BATCH_ENABLED = True`, `TAG_LANE_EARLY_STOP_ENABLED = True`; `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` no longer exist. Confirm with `grep`, do not trust this list.
+2. Search `docs/` (except `RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md` and dated findings, which are history and stay as written), `README`-level docs, `DOCKER.md`, `compose.yaml` and code comments for statements that contradict those defaults. Known suspect: `docs/PROJECT_STATUS.md` (about line 55) says the batch lookup, breaker and genre-stage throttling PRs (#429, #430, #431) are "off by default". Also check the `TAG_LANE_EARLY_STOP` mention in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (about lines 218 and 223) and the tests' flag pins (`test_discovery_candidate_gathering.py` and `test_discovery_candidate_replenishment.py` pin early stop off on purpose; confirm each still tests what its name says).
+3. Fix contradictions with minimal wording changes that say what is true now and cite the merge (PR #495 `0825f0e0`, #497 `b25d2cbd`, #498 `ad88bbbb`). Do not edit history sections, and do not change code or defaults.
+4. Branch from current `main`, open a docs PR, run the four required workflows on the exact head, and wait for the owner to name the PR before any merge. Run only focused tests if you touch a test (see "Testing scope"); a docs-only change needs none, and `python -m py_compile` on any changed Python file.
 
-Other options if the owner prefers something else (each needs a decision, none is started): a stale-flag check of defaults after PRs #495 to #498 (one healthy cold run and one warm run, owner go-ahead for the live runs); reading deeper into the CF pool; the Saved-page items under Deferred.
+Acceptance: a list in the PR description of each stale statement found, where, and what it now says; or "none found" with the greps used. No live runs, no network.
+
+Other options if the owner prefers something else (each needs a decision, none is started): repeat the P0h capture after CF recompute (go-ahead naming the 1 statistics request); one healthy cold run and one warm run to confirm defaults live (owner go-ahead); reading deeper into the CF pool (owner approval, and only after P0h); the Saved-page items under Deferred.
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -38,7 +43,7 @@ Other options if the owner prefers something else (each needs a decision, none i
 
 ### Deferred
 
-- Roadmap P0h is parked (above). P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
+- Roadmap P0h is parked (see Open items); P0i (stale-flag audit) is the next task. P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
