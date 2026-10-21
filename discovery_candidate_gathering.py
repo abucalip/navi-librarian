@@ -3,6 +3,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
+from listenbrainz_client import request_headers as listenbrainz_headers
 from recommendation_run_metrics import add_stage_seconds, timed_stage
 import re
 import json
@@ -205,7 +206,7 @@ def _fetch_cf_recommendations(providers: RecommendationProviders) -> tuple[list[
             response = providers.http_get(
                 url,
                 params={"count": CF_PAGE_SIZE, "offset": page * CF_PAGE_SIZE},
-                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                headers=listenbrainz_headers(),
                 timeout=30,
             )
             response.raise_for_status()
@@ -490,9 +491,10 @@ def _run_tag_lane(queries, *, providers, client, headers, albums, failures, stat
             albums=albums, failures=failures, state=state,
         )
     from discovery_lb_tag_lane import run_lb_tag_queries
+    lb_headers = listenbrainz_headers()
 
     def resolve(items):
-        batch = _prefetch_batch_recordings(providers, items, headers=headers)
+        batch = _prefetch_batch_recordings(providers, items, headers=lb_headers)
         for item in items:
             mbid = item["recording_mbid"]
             if mbid not in batch:
@@ -504,7 +506,7 @@ def _run_tag_lane(queries, *, providers, client, headers, albums, failures, stat
         return batch
 
     return run_lb_tag_queries(
-        queries, providers=providers, headers=headers, albums=albums,
+        queries, providers=providers, headers=lb_headers, albums=albums,
         failures=failures, state=state, resolve=resolve,
         rejection=lambda group: _supply.cf_release_group_rejection(
             group, is_album_candidate=providers.is_album_candidate,
@@ -607,7 +609,7 @@ def gather_recommendation_candidates(
     cf_skips = Counter()
     metadata_started = time.monotonic()
     batch_recordings = (
-        _prefetch_batch_recordings(providers, recommendations, headers=headers)
+        _prefetch_batch_recordings(providers, recommendations, headers=listenbrainz_headers())
         if _batch_resolution_enabled(providers, cold_start) else {}
     )
     with providers.http_client(timeout=20, follow_redirects=True) as client:
@@ -790,7 +792,7 @@ def gather_recommendation_candidates(
     ]
     prefetch_ids = profile_prefetch_ids + candidate_prefetch_ids
     prefetch_artist_genres(
-        providers.http_get, prefetch_ids, headers=headers,
+        providers.http_get, prefetch_ids, headers=listenbrainz_headers(),
         cache_get=providers.metadata_cache_get, cache_set=providers.metadata_cache_set,
     )
     candidate_prefetch_stopped = False
@@ -1096,7 +1098,7 @@ def gather_recommendation_candidates(
 
     genre_lookup_started = time.monotonic()
     prefetch_artist_genres(
-        providers.http_get, artist_ids, headers=headers,
+        providers.http_get, artist_ids, headers=listenbrainz_headers(),
         cache_get=providers.metadata_cache_get, cache_set=providers.metadata_cache_set,
     )
     genre_exhausted_streak = 0

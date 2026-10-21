@@ -381,12 +381,13 @@ def recommend_new_music(
         # Release-group popularity comes from one batched ListenBrainz request, not
         # one Last.fm call per album.
         from discovery_recommendations import POPULARITY_CANDIDATE_LIMIT
+        from listenbrainz_client import request_headers as listenbrainz_request_headers
         from listenbrainz_popularity import build_popularity_lookup, fetch_release_group_popularity
         live_popularity = build_popularity_lookup(
             albums.values(), POPULARITY_CANDIDATE_LIMIT,
             lambda mbids: fetch_release_group_popularity(
                 httpx.post, _metadata_cache_get, _metadata_cache_set, mbids,
-                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                headers=listenbrainz_request_headers(),
             ),
             _music_key,
         )
