@@ -3476,6 +3476,7 @@ The list endpoints hide saved albums (`discovery_list_payload.py`), so `sendFeed
 ### 41.4 Limitations
 
 - Artist deep-dive cards carry the control but were not rendered in the harness.
+- **Rendered check done (2026-10-21):** the artist deep-dive Save control was driven in Chromium (Playwright 1.64.1, stubbed API, sandbox server): 4 controls render, 44 px high, not covered by the card art or Get button (hit test), save then undo send `save` then `remove_for_me` with no acquire request and no list reload, a 500 leaves the control unpressed with Retry, and 375 px has no horizontal overflow. Not run: screen reader, real data. Harness and screenshots: `reports/pr-deepdive-save/` in the session harness (not in the repo).
 - Dashboard tiles and the album modal have no Save control (out of scope).
 - Exact-head manual checklist is for the owner after CI. No screen-reader pass. Not merged, not deployed.
 
