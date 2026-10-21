@@ -10,6 +10,7 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current state
 
+- P0c merged: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (PR #490, `58182ae0`); the opt-in ListenBrainz tag-radio lane is merged but off (reconciled PR #492, `37014f6f`; original PR #491 closed as superseded). Last.fm stays in classics and deep dives only; as a ranking source it is still parked.
 - Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
 - PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
 - Release-group 502s solved (PR #486, merge `f8a248d555bf557e4bb965757d279afbed77cc1d`). Cause: the ListenBrainz release-group endpoint passes 80 comma-joined MBIDs per GET and fails from 81 (dropped connection, then HTML 502 at 83), whichever MBIDs; the old chunk of 100 failed whenever a run had more than 80 distinct groups (the 4-page run had 83). Fix: `RELEASE_GROUP_CHUNK = 50`. Also: retried MusicBrainz attempts count as `recording_lookup_retry`, so `recording_lookup` matches the 100 budget. `lastfm.api` 13 to 40 is the top-40 `album.getInfo` popularity pass (30-day cache).
@@ -19,17 +20,22 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0c — Last.fm popularity-pass latency (read-only investigation first)
+## Next task: P0d — end-to-end cold-run verification on current `main`, then the remaining cold cost (read-only first)
 
-PR #487 (batched genre lookup, P0b) and PR #489 (`CF_MAX_PAGES = 4`, reconciled from original PR #488) are merged; do not reopen them without new evidence. Batched genre lookup left a 4-page cold run at about 41 to 52 s with 79 CF albums / 42 artists. What is left of it: `lastfm_album_popularity` 19 to 25 s (40 sequential `album.getInfo` calls, about 0.5 s each plus 0.2 s pacing, 30-day cache, none on warm runs) and `supplementary_tag_lane` 10 to 18 s (MusicBrainz tag searches at 1.1 s spacing). Source: `apply_lastfm_popularity_bonus` in `discovery_recommendations.py`, called from `navidrome_server.py` (mind the 2,650-line cap).
+P0c is done and merged: PR #490 (merge `58182ae02ce48a1f4a5e9c09c55ff5c963b18e63`) replaced the 40 Last.fm `album.getInfo` calls in the ranking pass with one batched ListenBrainz release-group popularity POST (cold 4-page 40.9 to 51.9 s down to 23.6 s in a single sample; 40 of 40 groups returned counts). Reconciled PR #492 (merge `37014f6f0a62d5d2b4096e37e08863ffa371241c`) added an opt-in ListenBrainz tag-radio lane, **default off, measured and not recommended as default** (see its finding). Do not reopen either without new evidence.
+
+What is left of a cold 4-page run (about 23 s): the MusicBrainz supplementary tag lane (about 16 to 18 s, one search per tag at 1.1 s spacing, 30-day cache, none warm), the four CF pages, recording and release-group batches, and artist genre batches. Never measured together on current `main` with the defaults.
 
 Do:
-1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` P0c and the "Last.fm" notes in `docs/`, then `apply_lastfm_popularity_bonus` and its cache.
-2. Read-only first, in this order: (a) Last.fm API docs: does any method return album statistics for several albums in one request? None is known. (b) Without a batch path: would bounded concurrency (for example 4 at a time) cut wall time within Last.fm's rate guidance? (c) Can ListenBrainz popularity or listen-count endpoints replace some Last.fm calls? (d) Whether the 40-call cap or the cache key choice leaves avoidable calls.
-3. Report findings and request counts before and after to the owner **before any code change**. Any change to the number or pacing of Last.fm calls needs owner approval; Last.fm as a ranking source stays parked, so do not start a quality test or a combined path.
-4. If the owner approves a change, measure it like P0b: one cold 4-page run (harness-only override is no longer needed, the default is 4) then two warm runs, wall time, per-stage seconds, per-provider request counts, CF albums/artists; aggregate only, disposable data dir deleted. Harnesses are in the harness project folder under `reports/repeat-rate/` (`run_genre_batch_pr.py` runs cold plus two warm). Focused tests only (see Testing scope).
+1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0b, P0c, "P0c implementation", and the tag-radio finding including the **Block** note) and the top `PROJECT_LOG.md` entries.
+2. **Check ListenBrainz is not serving the browser-verification page first.** After about ten full live runs in a short time this machine got HTTP 200 `text/html` "Verifying your browser" on every request, including a plain GET. One cheap GET of `/1/metadata/artist/` decides it. If blocked, stop live work and report; do not change the user agent or fingerprint to get around it.
+3. Read-only, from code and existing reports: break the remaining cold time down by stage and by request (what is sequential, what is cached, what is paced by a provider rule). Candidate ideas to evaluate, none approved: a per-search timeout or early stop for the MusicBrainz tag lane; whether the 1.1 s spacing is the provider's rule or a safe margin; running the tag lane concurrently with the genre stages (no added requests); the ListenBrainz client identifier/token question below.
+4. Report findings and request counts to the owner **before any code change**. Any change to request count or pacing needs owner approval.
+5. If the owner approves a measurement, keep it to **one cold 4-page run and two warm runs** with the default configuration, aggregate only, disposable data dir deleted, spaced out, and stop at the first HTML response. Use `reports/repeat-rate/run_genre_batch_pr.py` from the harness project folder (update it: it still expects the old Last.fm stage; per-stage seconds now come from `recommendation_run_metrics`).
 
-Acceptance: findings document in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md` for the read-only step; a PR with four green workflows only if the owner approves a code change. Do not merge; the owner names the PR in words.
+Open decision for the owner: the ListenBrainz client intermittently receives the verification page. A fix that sends an honest client identifier and `LISTENBRAINZ_TOKEN` needs the owner's go-ahead first (see Open items). Frame it as a reliability question, with the block as evidence.
+
+Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md` for the read-only step; a PR with four green workflows only if the owner approves a code change. Do not merge; the owner names the PR in words.
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -38,7 +44,7 @@ Acceptance: findings document in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` an
 
 ### Deferred
 
-- Roadmap P0c is the current task (above).
+- Roadmap P0d is the current task (above). P0c is complete (PR #490 and reconciled PR #492).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
