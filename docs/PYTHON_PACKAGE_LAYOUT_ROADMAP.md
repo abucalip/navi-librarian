@@ -146,3 +146,25 @@ See the **Current handoff: Python module package layout** section at the top of 
 - Required CI passed on the exact PR head: syntax 39646429894, Docker packaging/full unit suite/build 39646429876, container smoke 39646429872, and validation-only multi-architecture image 39646429885. Agent-side focused tests and `py_compile` were not run because a fresh checkout was unavailable.
 - Next candidate is the slskd integration, but no move is pre-approved. Audit `slskd_client.py`, `slskd_search.py`, `slskd_search_polling.py`, `slskd_transfers.py`, and `slskd_quality.py` with all callers, direct tests, dynamic imports, legacy-server compatibility, path assumptions, and Docker/CI references. Decide whether one package or a smaller boundary is justified before implementation.
 - Publishing, deployment, and production-runtime verification remain paused/unperformed.
+
+
+## slskd integration boundary audit (2026-10-21; read-only)
+
+### Caller and dependency evidence inspected
+
+- Current `main` at audit start: `ea4d50e2384617ba365d11b93f5f4f789af6e019` (after PR #509 and the follow-up handoff commits). The current source is not the older 2acb6d5 baseline cited in the previous inventory.
+- `navidrome_server.py` is 2,470 lines at blob `43e1e2e3f52cb2cbc907fef9259ef061e9a99488`. Its direct top-level dependency is `slskd_transfers`; its slskd client, quality, search, and polling helpers are imported lazily in legacy adapter functions. Call sites include connection test (around 1374), quality/search adapter functions (1379–1432), transfer listing/progress (1436–1575), queueing (1915), and search polling (1961–1973). Keep these wrappers and their response/state behavior stable during any move.
+- `slskd_search.py` provides query/response/path/candidate helpers and imports `Path` for filename normalization; no module-relative file lookup was observed in the inspected source. `slskd_search_polling.py` performs HTTP search/polling but injects its HTTP client and response/query helpers, so it does not need to import the legacy server. `slskd_transfers.py` performs HTTP transfer calls with an injected client and uses URL quoting; it also owns transfer-record matching, progress aggregation, and speed snapshots. `slskd_quality.py` is a pure quality-tier classifier. `slskd_client.py` is the injected-config connectivity probe and imports `httpx`.
+- Confirmed direct-import tests: `tests/test_slskd_client.py`, `tests/test_slskd_search.py`, `tests/test_slskd_search_polling.py`, and `tests/test_slskd_transfers.py`. The search tests also assert the legacy-server adapter contract. No `tests/test_slskd_quality.py` exists at the expected path; a repository-wide exact caller/test inventory is still needed to locate any quality-tier coverage elsewhere.
+- The Dockerfile explicitly lists all five root modules in its COPY instruction; `integrations/` is copied as a directory. Any move must update Docker packaging and every lazy import, direct-import test, and remaining source/path contract.
+
+### Boundary decision
+
+The five modules are plausibly one `integrations/slskd/` provider package, with a useful internal split between pure search/quality policy and injected HTTP I/O. However, **do not move them in this change**: the GitHub code-search connector returned no repository-scoped results, so the audit has not established an exhaustive inventory of hidden imports, quality tests, string-based imports, source-reading tests, and CI/script path references. Moving files before that inventory would be guessing, not a verified safe boundary. No behavior or code was changed.
+
+### Required next evidence before implementation
+
+1. Generate/review `scripts/dep_map.py` output for current `main` (post-PR #509) and inspect the exact-source CI artifact; do not reuse the older 2acb6d5 map.
+2. Search the full repository tree and every test/CI/script/Docker reference for all five names, wrapper names, and `quality_tier`; classify dynamic/lazy imports and source-reading assertions.
+3. Confirm quality-tier behavior coverage and add a direct-import test if missing.
+4. If the map confirms no additional compatibility/path contracts, move the five modules as one focused provider-package PR, update legacy-server lazy imports and transfer import, direct-import tests and Docker COPY, then run focused tests plus `py_compile`. Required four workflows must pass on the exact final PR head. Do not merge without explicit owner instruction; do not publish or deploy.
