@@ -13,7 +13,7 @@ import lastfm_client as _lastfm_client_module
 import musicbrainz_rating_client as _musicbrainz_rating_client
 import service_settings as _service_settings
 from music_paths import default_music_dir as _default_music_dir_from_environment
-import navidrome_client as _navidrome_client
+from integrations.navidrome import client as _navidrome_client
 from acquisition_candidate_queue import normalize_reviewed_candidate_files as _normalize_reviewed_candidate_files
 from settings_persistence import SettingsPersistence
 from metadata_cache import MetadataCache
@@ -161,7 +161,7 @@ def library_overview() -> str:
         albums_root.get("albumList2", {}).get("album")
     )
 
-    from navidrome_client import library_overview_payload
+    from integrations.navidrome.client import library_overview_payload
     return json.dumps(
         library_overview_payload(artists, albums),
         ensure_ascii=False,
@@ -189,7 +189,7 @@ def search_music(query: str, category: str = "all") -> str:
     )
     result = root.get("searchResult3", {})
 
-    from navidrome_client import search_result_payload
+    from integrations.navidrome.client import search_result_payload
     return json.dumps(
         search_result_payload(result, category, items),
         ensure_ascii=False,
@@ -205,7 +205,7 @@ def get_album_details(album_id: str) -> str:
     root = api_call("getAlbum", id=album_id)
     album = root.get("album", {})
 
-    from navidrome_client import album_details_payload
+    from integrations.navidrome.client import album_details_payload
     return json.dumps(
         album_details_payload(album, items),
         ensure_ascii=False,
