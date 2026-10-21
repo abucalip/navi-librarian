@@ -169,13 +169,30 @@ def set_lastfm_settings(settings_read, settings_write, api_key=""):
     })
 
 
-def set_listenbrainz_settings(settings_write, username):
-    """Validate and save a ListenBrainz username."""
+def get_listenbrainz_settings(settings_read, username):
+    """Return the username and whether a token is saved, never the token itself."""
+    return json.dumps({
+        "username": username,
+        "token_configured": bool(str(settings_read().get("listenbrainz_token") or "").strip()),
+    })
+
+
+def set_listenbrainz_settings(settings_write, username, token=""):
+    """Validate and save a ListenBrainz username; a blank token preserves the saved one."""
     value = str(username or "").strip()
     if not value or not re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", value):
         return json.dumps({"ok": False, "error": "Enter a valid ListenBrainz username (letters, numbers, dot, underscore or hyphen)."})
-    settings_write({"listenbrainz_username": value})
-    return json.dumps({"ok": True, "username": value, "message": "ListenBrainz settings saved."})
+    values = {"listenbrainz_username": value}
+    token_value = str(token or "").strip()
+    if token_value:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", token_value):
+            return json.dumps({"ok": False, "error": "The ListenBrainz token may only contain letters, numbers, hyphens and underscores."})
+        values["listenbrainz_token"] = token_value
+    settings_write(values)
+    return json.dumps({
+        "ok": True, "username": value,
+        "message": "ListenBrainz settings saved; the token is never returned.",
+    })
 
 
 SLSKD_QUALITY_TIERS = {

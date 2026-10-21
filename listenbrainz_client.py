@@ -12,11 +12,31 @@ import httpx
 USER_AGENT = "NavidromeLibrarian/1.0 (+https://github.com/abucalip/navi-librarian)"
 
 
+_token_source: Callable[[], str] | None = None
+
+
+def set_token_source(source: Callable[[], str] | None) -> None:
+    """Register where the saved token is read from (the app's Settings store)."""
+    global _token_source
+    _token_source = source
+
+
 def request_headers(environ: dict[str, str] | None = None) -> dict[str, str]:
-    """Identify the app honestly; add the owner's token only when one is configured."""
-    env = os.environ if environ is None else environ
+    """Identify the app honestly; add the owner's token only when one is configured.
+
+    An explicit ``environ`` is read as given. Otherwise the saved Settings token is
+    used, with the ``LISTENBRAINZ_TOKEN`` environment variable as a fallback.
+    """
     headers = {"User-Agent": USER_AGENT}
-    token = str(env.get("LISTENBRAINZ_TOKEN") or "").strip()
+    token = ""
+    if environ is None and _token_source is not None:
+        try:
+            token = str(_token_source() or "").strip()
+        except Exception:
+            token = ""
+    if not token:
+        env = os.environ if environ is None else environ
+        token = str(env.get("LISTENBRAINZ_TOKEN") or "").strip()
     if token:
         headers["Authorization"] = f"Token {token}"
     return headers
