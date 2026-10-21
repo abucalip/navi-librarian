@@ -10,7 +10,7 @@
 - Docker packaging CI ran the full unit suite successfully. Agent-side focused tests and `py_compile` were not run because no fresh isolated checkout was available.
 - No release publication, deployment, or production runtime verification was performed; publishing/deployment remain paused.
 - **Last.fm package move:** merged (PR #512, `7282cbb740dba6e27fa79aecfe0de5519c18d859`); `integrations/lastfm/client.py`, root Python modules 60. Merged and CI-tested on its PR head; not published, deployed or runtime-verified.
-- **Next action:** audit `listenbrainz_client.py` and `listenbrainz_popularity.py` as their own boundary; see `CLAUDE_CLI.md`.
+- **ListenBrainz package move:** in PR (not merged); `integrations/listenbrainz/client.py` and `popularity.py`, root Python modules 58. Focused tests and `py_compile` only; not published, deployed or runtime-verified.
 
 ## 2026-10-21 — slskd package move PR #511 opened
 

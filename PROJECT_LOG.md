@@ -1,3 +1,7 @@
+## 2026-10-21 — ListenBrainz integration package move (PR open)
+
+- Moved `listenbrainz_client.py` and `listenbrainz_popularity.py` into `integrations/listenbrainz/` with canonical imports, no shims. Behavior unchanged. Details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Not merged, published, deployed or runtime-verified.
+
 ## 2026-10-21 — PR #512 merged: Last.fm integration package
 
 - Squash merge commit on `main`: `7282cbb740dba6e27fa79aecfe0de5519c18d859`; exact final PR head `84b4f04b27025f35d1f8f353b152a78ee886ef59`, all four required workflows passed on it (syntax 39653199481, Docker packaging/full unit suite/build 39653199482, container smoke 39653199327, validation-only multi-architecture 39653199280). Merged on the owner's instruction naming PR 512.
