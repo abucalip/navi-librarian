@@ -1,4 +1,12 @@
-## 2026-10-21 — P0c: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (PR pending)
+## 2026-10-21 — PR #490 merged: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (P0c)
+
+- Exact final PR head: `0151a88f85f045ba67661c40e1b6cbfd7ecb17a0`; squash merge commit: `58182ae02ce48a1f4a5e9c09c55ff5c963b18e63`.
+- Added `listenbrainz_popularity.py`, Docker packaging inclusion, release-group MBIDs on CF/tag-lane candidates, and batched cached popularity for up to 40 top-ranked candidates. The existing `lastfm_listeners` / `lastfm_playcount` fields and bounded bonus formula remain; Last.fm tag-based recent-profile adjustment is skipped for these candidates. Last.fm remains in classics and deep-dive paths.
+- Owner-approved aggregate-only live sample: 23.6 s cold, 5.3 s and 7.8 s warm; one cold popularity POST returned counts for 40/40 groups, and warm runs made zero popularity requests. Previous 40-Last.fm-GET samples were 40.9 s and 51.9 s; these were not same-day controls. Single-sample evidence only, not a recommendation-quality claim; batch maximum beyond the 40-item observed request remains unverified.
+- All four required workflows passed on exact PR head: Python syntax/acquisition safety `39534905845`; Docker packaging/full unit suite/build `39534905868` (`Run unit tests` and `Build Docker image` succeeded); container runtime smoke `39534905862`; validation-only multi-architecture image validation `39534905861` (publishing paused). No independent agent-side full-suite run (prohibited by standing owner rule); CI full-suite step passed.
+- Merge is complete. Publishing, deployment, and production-runtime verification remain unperformed.
+
+
 
 - Branch `feat/listenbrainz-popularity`, owner-approved replacement. New `listenbrainz_popularity.py` (added to the Dockerfile `COPY`), `release_group_mbid` on candidates, `POPULARITY_CANDIDATE_LIMIT`, server wiring (server stays under the cap). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md`.
 - Focused tests run: `test_listenbrainz_popularity` (new), `test_recommend_new_music_characterization` (fixture ids made UUIDs, popularity patch moved), `test_discovery_candidate_gathering`, `test_discovery_recommendations`, `test_lastfm_recommendation_scoring`, `test_recommendation_replay_capture`, `test_recommendation_profile_comparison`, `test_discovery_recommendation_payload`; `py_compile` on changed files. Full suite not run per standing rule.
