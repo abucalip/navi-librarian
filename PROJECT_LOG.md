@@ -1,3 +1,7 @@
+## 2026-10-21 — P0d read-only cold-run breakdown (docs only)
+
+- Branch `docs/p0d-cold-run-readonly`. One plain ListenBrainz GET: HTTP 400 JSON, no verification page. No live runs, no code change, no tests run (docs only; full suite not run per standing rule). Findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` under P0d: the remaining cold time is the sequential MusicBrainz tag lane (up to 8 searches at 1.1 s spacing, about 16 to 18 s); no no-added-request change shortens it except overlapping it with the Navidrome inventory fetch (unmeasured). Awaiting owner decision.
+
 ## 2026-10-21 — PR #491 reconciled and merged as PR #492: ListenBrainz tag-radio lane (opt-in, default off)
 
 - Original PR #491 head `7a349357de1cf2ab1e9e3906bd833d0c6d54ce3d` conflicted with current `main` after PR #490. Reconciled onto current `main` in PR #492, preserving the ListenBrainz popularity integration. Exact final PR head: `cf18e453419c836efa8fb7a509f5c86b1baa0544`; squash merge commit: `37014f6f0a62d5d2b4096e37e08863ffa371241c`. Original PR #491 was closed as superseded.
