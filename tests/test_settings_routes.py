@@ -77,6 +77,11 @@ class SettingsRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 400)
         self.assertEqual(raised.exception.detail, "invalid")
 
+    def test_set_listenbrainz_forwards_token_to_the_librarian(self):
+        self.librarian.discovery_set_listenbrainz_settings.return_value = '{"ok": true}'
+        settings.set_listenbrainz_settings({"username": "u", "token": "tok"}, librarian=self.librarian)
+        self.librarian.discovery_set_listenbrainz_settings.assert_called_once_with(username="u", token="tok")
+
     def test_slskd_defaults_quality_priority_and_trims_optional_paths(self):
         self.librarian.discovery_set_slskd_settings.return_value = '{"ok": true}'
         result = settings.set_slskd_settings({

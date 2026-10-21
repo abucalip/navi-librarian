@@ -23,6 +23,7 @@ from service_settings import (
     get_navidrome_settings as _service_get_navidrome_settings,
     listenbrainz_username as _service_listenbrainz_username,
     navidrome_config as _service_navidrome_config,
+    get_listenbrainz_settings as _service_get_listenbrainz_settings,
     set_listenbrainz_settings as _service_set_listenbrainz_settings,
     set_navidrome_settings as _service_set_navidrome_settings,
     get_slskd_settings as _service_get_slskd_settings,
@@ -1260,6 +1261,11 @@ def _listenbrainz_username():
     return _service_listenbrainz_username(_discovery_settings_read)
 
 
+_listenbrainz_client.set_token_source(
+    lambda: str(_discovery_settings_read().get("listenbrainz_token") or "")
+)
+
+
 def discovery_get_navidrome_settings() -> str:
     """Return Navidrome settings without exposing the saved password."""
     return _service_get_navidrome_settings(_discovery_settings_read, MUSIC_DIR)
@@ -1311,13 +1317,13 @@ def discovery_test_lastfm_connection() -> str:
 
 
 def discovery_get_listenbrainz_settings() -> str:
-    """Return the configured ListenBrainz username."""
-    return json.dumps({"username": _listenbrainz_username()})
+    """Return the configured ListenBrainz username and whether a token is saved."""
+    return _service_get_listenbrainz_settings(_discovery_settings_read, _listenbrainz_username())
 
 
-def discovery_set_listenbrainz_settings(username: str) -> str:
-    """Save a ListenBrainz username."""
-    return _service_set_listenbrainz_settings(_discovery_settings_write, username)
+def discovery_set_listenbrainz_settings(username: str, token: str = "") -> str:
+    """Save a ListenBrainz username and, when given, its token."""
+    return _service_set_listenbrainz_settings(_discovery_settings_write, username, token)
 
 
 def discovery_test_listenbrainz_connection() -> str:

@@ -254,8 +254,9 @@
     </div>
     <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabListenbrainz" hidden>
       <h3>ListenBrainz profile</h3>
-      <p class="muted">Used for recent listening context and personalized recommendations. Only the public username is needed.</p>
+      <p class="muted">Used for recent listening context and personalized recommendations. The public username is enough; an optional user token is sent with requests to ListenBrainz.</p>
       <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
+      <label>User token (optional) <input id="listenbrainzToken" type="password" placeholder="Leave blank to keep the saved token" autocomplete="new-password"></label>
       <p id="listenbrainzStatus" class="status-line" aria-live="polite"></p>
       <p><button id="saveListenbrainz" class="btn-primary">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
     </div>

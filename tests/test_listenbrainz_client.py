@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from listenbrainz_client import USER_AGENT, recent_listens, request_headers
+from listenbrainz_client import USER_AGENT, recent_listens, request_headers, set_token_source
 
 
 class FakeResponse:
@@ -36,6 +36,19 @@ class FakeClient:
 
 
 class RequestHeaderTests(unittest.TestCase):
+    def tearDown(self):
+        set_token_source(None)
+
+    def test_saved_token_source_wins_then_env_fallback_and_errors_are_ignored(self):
+        set_token_source(lambda: " saved ")
+        with patch.dict("os.environ", {"LISTENBRAINZ_TOKEN": "env"}):
+            self.assertEqual(request_headers()["Authorization"], "Token saved")
+            set_token_source(lambda: "")
+            self.assertEqual(request_headers()["Authorization"], "Token env")
+            set_token_source(lambda: 1 / 0)
+            self.assertEqual(request_headers()["Authorization"], "Token env")
+            self.assertNotIn("Authorization", request_headers({}))
+
     def test_identifier_names_project_and_no_token_by_default(self):
         headers = request_headers({})
         self.assertEqual(headers, {"User-Agent": USER_AGENT})

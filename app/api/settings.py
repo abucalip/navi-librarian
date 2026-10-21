@@ -152,7 +152,8 @@ def get_listenbrainz_settings(librarian=Depends(get_librarian)):
 @router.put("/api/settings/listenbrainz")
 def set_listenbrainz_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
-        result = parse_result(librarian.discovery_set_listenbrainz_settings(username=str(payload.get("username") or "")))
+        result = parse_result(librarian.discovery_set_listenbrainz_settings(
+            username=str(payload.get("username") or ""), token=str(payload.get("token") or "")))
         if isinstance(result, dict) and not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error", "Invalid settings"))
         return result

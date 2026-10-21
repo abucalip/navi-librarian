@@ -176,7 +176,22 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(self.state["listenbrainz_username"], "new.listener")
         self.assertEqual(self.writes, before)
 
-
+    def test_listenbrainz_token_saved_preserved_validated_and_never_returned(self):
+        from service_settings import get_listenbrainz_settings
+        result = json.dumps(json.loads(set_listenbrainz_settings(self.write_settings, "listener", "abc-123_XYZ")))
+        self.assertEqual(self.state["listenbrainz_token"], "abc-123_XYZ")
+        self.assertNotIn("abc-123_XYZ", result)
+        json.loads(set_listenbrainz_settings(self.write_settings, "listener", ""))
+        self.assertEqual(self.state["listenbrainz_token"], "abc-123_XYZ")
+        before = list(self.writes)
+        bad = json.loads(set_listenbrainz_settings(self.write_settings, "listener", "bad token\r\nX: y"))
+        self.assertFalse(bad["ok"])
+        self.assertEqual(self.writes, before)
+        status = get_listenbrainz_settings(self.read_settings, "listener")
+        self.assertTrue(json.loads(status)["token_configured"])
+        self.assertNotIn("abc-123_XYZ", status)
+        self.state["listenbrainz_token"] = ""
+        self.assertFalse(json.loads(get_listenbrainz_settings(self.read_settings, "listener"))["token_configured"])
 
     def test_slskd_settings_redact_key_and_use_defaults(self):
         from service_settings import get_slskd_settings
