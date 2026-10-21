@@ -4,8 +4,8 @@
 
 - First package-layout slice moves the Navidrome/Subsonic transport implementation to `integrations/navidrome/client.py`; `navidrome_client.py` remains a compatibility shim. `navidrome_server.py` uses the canonical package path, and Docker copies `integrations/` while preserving `uvicorn app.main:app`.
 - Inventory boundary: the client is dependency-injected and independent of app assembly; production callers identified in `navidrome_server.py`; direct behavior coverage is in `tests/test_navidrome_client.py`. PR description records the move map and rationale.
-- PR #508: https://github.com/abucalip/navi-librarian/pull/508. Focused tests and syntax checks were not run by the agent because a fresh GitHub checkout was unavailable in this execution environment. Required CI was started on the initial PR head; final-head results must be refreshed after documentation closeout.
-- Status: implemented in PR branch; local tests not run; CI pending; not merged; not published/deployed. Next action: verify all four required workflows on the exact final PR head and fix any failures.
+- PR #508: https://github.com/abucalip/navi-librarian/pull/508. Agent-side focused tests and syntax checks were not run because a fresh GitHub checkout was unavailable in this execution environment. All four required workflows passed on exact code/docs head `cffb5486d6fedb091979e397ff545a22fd0502cf`: Python syntax/acquisition safety `39639446692`, Docker packaging/full unit suite/build `39639446681`, container runtime smoke `39639446683`, and validation-only multi-architecture image validation `39639446720` (publishing paused). This status/log update creates a new PR head, so all four workflows must be rechecked there.
+- Status: implemented in PR branch; local tests not run; CI passed on the recorded prior head; not merged; not published/deployed. Next action: verify all four required workflows on the exact final PR head and fix any failures.
 
 ## 2026-10-21 — v0.2 release preparation (PR #505)
 
