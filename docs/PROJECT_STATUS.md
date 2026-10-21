@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #501 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #502 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #502 merged** as `6e0718699740ce96539321e6b82ce15c0f632c06` from exact final PR head `ba29be2429484620415232db91ef97471470826a`. Documentation-only P1a brief and measurement plan for deeper collaborative-filtering pages; `CF_MAX_PAGES = 4` remains unchanged. Owner-approved single-sample comparison: 4 pages cold/warm 25.2/5.1 s with 117 candidate albums / 85 artists and 0 uncached recording lookups; 6 pages cold/warm 183.6/10.0 s, with two ListenBrainz 429s, batch fallback, 100 lookups, and 47 albums cold (warm 162 albums / 109 artists). Final list had 10 items in all runs; overlap 4/10. Keep 4 pages; single samples and order effects limit conclusions. Docs only; no tests run for the documentation change. Four required workflows passed on exact head per PR report. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #501 merged** as `990c83d3c0fdee816d7b511a7c6bd347bc715532` from exact final PR head `10d0defec37479606ebb9bca143a21eb9d5cfd7c`. Adds a Saved page in the header menu using the existing `/api/discovery/for_me` endpoint, including saved-date/ownership display, remove/undo, refresh/revisit reload, loading/empty/error states, and no Get action for owned albums; also removes the footer copy at the owner's request. Five focused UI-contract tests and all UI-contract modules passed per PR report; `node --check static/app.js` passed. Owner-reported rendered Playwright/Chromium report covers menu/navigation, row states, save/remove without acquisition or reload, refresh/revisit, empty/error states, and 375 px overflow. Not verified: live Navidrome data or screen-reader behavior. All four required workflows passed on exact head: Python syntax `39626079394`, Docker packaging/full unit suite/build `39626079244`, container runtime smoke `39626079346`, and validation-only multi-architecture image validation `39626079497` (publishing paused). Publishing, deployment, and production-runtime verification remain unperformed.
 
