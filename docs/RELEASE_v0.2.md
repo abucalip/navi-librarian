@@ -54,7 +54,7 @@ Do not mark v0.2 released until each applicable item has evidence:
 - [ ] Merge this preparation document, refresh main, and verify all four workflows on the exact post-merge SHA.
 - [ ] Review the final release diff and release notes; confirm no open, relevant blocker was overlooked.
 - [ ] Obtain explicit go-ahead to perform the actual publication/deployment steps. “Prepare” does not create a release or publish an image.
-- [ ] Implement/review the deliberate release workflow path: immutable `v0.2` and `sha-<commit>` tags, correct source SHA, `linux/amd64` and `linux/arm64`, provenance/SBOM, and no unintended `latest` movement. The current workflow is validation-only and cannot publish.
+- [ ] Implement/review the deliberate release workflow path: version `v0.2` and `sha-<commit>` tags, verify both point at the intended source SHA and do not retag/reuse them, `linux/amd64` and `linux/arm64`, provenance/SBOM, and no unintended `latest` movement. The current workflow is validation-only and cannot publish.
 - [ ] Create the GitHub release for tag `v0.2` only after the exact source commit is verified.
 - [ ] Verify GHCR tag and immutable digest after publication; record both.
 - [ ] Before deployment, record the existing image tag/digest as rollback reference and validate Compose configuration and persistent-volume mappings.
