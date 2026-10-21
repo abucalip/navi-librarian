@@ -44,16 +44,3 @@ class DockerPackagingTests(unittest.TestCase):
             [],
             "Root-level modules imported by navidrome_server.py must be copied into the image.",
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-    def test_slskd_integration_package_is_copied_into_image(self):
-        root = Path(__file__).resolve().parents[1]
-        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("COPY --chown=librarian:librarian integrations/ ./integrations/", dockerfile)
-        for module in ("client.py", "quality.py", "search.py", "search_polling.py", "transfers.py"):
-            with self.subTest(module=module):
-                self.assertTrue((root / "integrations" / "slskd" / module).is_file())

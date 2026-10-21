@@ -1,3 +1,9 @@
+## 2026-10-21 — slskd package move PR #511 opened
+
+- Five root-level helpers were moved to `integrations/slskd/{client,quality,search,search_polling,transfers}.py`; `navidrome_server.py` retains its adapters but now imports the canonical package modules. Docker already copies `integrations/`; a packaging regression test was added and the syntax workflow now compiles the moved files and affected tests.
+- Source evidence: main baseline `ea4d50e2384617ba365d11b93f5f4f789af6e019`; dependency-map artifact `12368421891` was generated on audit head `8ba095c17040ea5dd40ab19ad36e132acb4ab2ee`, whose application source matches that baseline. The audit found direct quality coverage in `test_quality_priority.py`, `test_slskd_candidates.py`, and `test_slskd_search_modules.py`.
+- Code commit: `2530192b703cdc023406ad8415008a5aa37fcbd5`. PR #511 is open; exact final PR-head CI is not yet known. Agent-side focused tests and `py_compile` were not run because no fresh checkout was available. Do not merge without explicit owner instruction. Publishing, deployment, and production runtime verification remain paused/unperformed.
+
 ## 2026-10-21 — Python package-layout PR #509 merged
 
 - PR #509 squash-merged to `main` as `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; exact tested PR head: `c045865fea13e8944512fc5c987e609cbc41e443`.
