@@ -1,4 +1,4 @@
-"""Synthetic tests: the tag-lane early stop is off by default and continues past single exhaustions only when enabled."""
+"""Synthetic tests: the tag-lane early stop is on by default (PR #498) and continues past single exhaustions only when enabled."""
 import unittest
 from unittest import mock
 
