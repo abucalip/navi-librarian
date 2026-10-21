@@ -1,3 +1,9 @@
+## 2026-10-21 — PRs #504 and #503 merged
+
+- **PR #504 — neutral LAN defaults:** squash merge `af78c9e9796c27c65f9503a64d61ca9c58357dba`; exact tested PR head `4263f9c5bf3400cf6a5846c0f81a253a177e9543`. Removes the private LAN IP default and uses neutral placeholders/docs; blank slskd URLs fail validation. All four required workflows passed on the exact head: Python syntax `39631742346`, Docker packaging/full unit suite/build `39631742366`, runtime smoke `39631742152`, and validation-only multi-architecture validation `39631742470`.
+- **PR #503 — ListenBrainz token setting:** reconciled after #504, then squash merged as `c3d5e02a4e5f113bb2914b12986cdef41e5863b5` from exact final PR head `cd0d53cb9f962b361f7ea84abba12b32b7efb17a`. Reconciliation commits `f1b136669dc790842d86aa9e16a56abd28fc5aee` and `cd0d53cb9f962b361f7ea84abba12b32b7efb17a` carried the token API/service changes onto current main while preserving #504's blank-URL validation. Token is optional, validated against `[A-Za-z0-9_-]{1,200}`, stored in the existing settings DB, never returned by the API, and not sent to MusicBrainz; blank input preserves a saved token and the environment fallback remains. All four required workflows passed on the exact final head: Python syntax `39632632729`, Docker packaging/full unit suite/build `39632632823`, runtime smoke `39632632791`, and validation-only multi-architecture validation `39632633039`.
+- The Docker packaging workflow ran the full unit suite for each tested head. No separate agent-side full-suite run was performed (standing workflow rule). Manual UI checks were waived by the owner and not performed. Publishing remains paused; no image publication, deployment, or production-runtime verification is claimed.
+
 ## 2026-10-21 — P1a deeper CF pool measured (PR #502, docs only)
 
 - Owner waived P0h and approved one cold plus one warm run for `CF_MAX_PAGES` 4 vs 6 (test-only harness, not committed, fresh data dirs, slskd off, aggregate only).
