@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #487 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #488 reconciled and merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #488 merged** after recreating its focused change on current `main` following PR #487. `CF_MAX_PAGES` is now 4; the paging regression test follows the configured limit and ignores the artist-metadata batch endpoint when counting CF pages. Owner-approved single-sample harness measurements: 3 pages 41.5 s cold / 2.9 and 2.6 s warm, 55 albums / 24 artists; 4 pages 40.9 s cold / 8.2 and 4.5 s warm, 79 albums / 42 artists. The larger supply came with one additional CF GET and two more MusicBrainz requests (8 to 10); sample size is too small to establish stable timing or recommendation quality. Exact head, CI and merge evidence are recorded in `PROJECT_LOG.md`. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #487 merged** as `5ef52c6c48b11730b5d47980cc0da828a4d3d328` from exact final head `95e78c008f214d92ba839fb38a55cc6501af33c6`. Batched genre lookup now uses ListenBrainz `metadata/artist/` in chunks of 75, keeps tags with `genre_mbid`, and fills the existing 90-day artist-genre cache; uncached/missing artists and failed batches retain the MusicBrainz fallback. The measured single 4-page harness run improved cold time from 207.6 s to 51.9 s with unchanged supply (79 albums / 42 artists); this is a single sample, and `CF_MAX_PAGES` remains 2. All four required workflows passed on the exact head, including the Docker packaging job's full unit suite. No independent local full-suite run. Publishing, deployment, and production-runtime verification remain unperformed.
 
@@ -17,7 +19,7 @@ Last reviewed: 2026-10-21 (PR #487 merged; publishing remains paused)
 - The active roadmap and root `PROJECT_LOG.md` record the measurement, code change, exact SHAs, test/CI evidence, and limitations. Historical notes remain in the recommendation archive.
 - Publishing, deployment, and production-runtime verification remain unperformed.
 
-**Next action:** collect a longer-interval, aggregate-only repeat-rate measurement before considering any cooldown calibration. Do not change ranking weights or increase provider-call budgets without a measured defect and explicit approval.
+**Next action:** investigate P0c, the Last.fm popularity-pass latency, read-only first. Do not change ranking weights or increase provider-call budgets without a measured defect and explicit approval.
 
 **Save-seed diagnostics — PR #465 merged as `6e1054b` (2026-10-20).** Seven aggregate `save_seed.*` counters in `run_metrics.counts`; no behavior change, no new lookup. Exact head `d962dd1` passed all four required workflows. One owner-approved live sample (4 saves): 1 initial query changed, 0 in replenishment; at most 3 of 4 saves reached the planner. Single sample, candidate quality unmeasured. Publishing and deployment remain paused. **Next action:** exploration-setting investigation, handed off in `CLAUDE_CLI.md`.
 
