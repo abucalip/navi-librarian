@@ -22,19 +22,24 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0i — stale-flag audit: do the docs still match the code defaults? (read-only, then docs PR)
+## Next task: P1a — deeper CF pool: measure first, change nothing without approval (read-only design, then one gated measurement)
 
-P0h (CF freshness) is parked until ListenBrainz recomputes CF for the imported history (see "Open items"); do not repeat that capture without the owner's go-ahead. The next safe item needs no network and no live run: after PRs #495 to #498 changed defaults and removed flags, check that nothing still describes the old state.
+P0i is merged (PR #499, docs only: stale default-flag statements fixed). The artist deep-dive Save check (PR #500) and the Saved page (PR #501) are merged; their remaining Saved-area items (undo after reload, MBID in save metadata) are separate and not this task.
 
-Do:
-1. Treat code as the source of truth. In `discovery_candidate_gathering.py` the defaults are `GENRE_CIRCUIT_BREAKER_ENABLED = True`, `COLD_START_BATCH_ENABLED = True`, `WARM_BATCH_ENABLED = True`, `TAG_LANE_EARLY_STOP_ENABLED = True`; `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` no longer exist. Confirm with `grep`, do not trust this list.
-2. Search `docs/` (except `RECOMMENDATION_ENGINE_IMPROVEMENTS_ARCHIVE.md` and dated findings, which are history and stay as written), `README`-level docs, `DOCKER.md`, `compose.yaml` and code comments for statements that contradict those defaults. Known suspect: `docs/PROJECT_STATUS.md` (about line 55) says the batch lookup, breaker and genre-stage throttling PRs (#429, #430, #431) are "off by default". Also check the `TAG_LANE_EARLY_STOP` mention in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (about lines 218 and 223) and the tests' flag pins (`test_discovery_candidate_gathering.py` and `test_discovery_candidate_replenishment.py` pin early stop off on purpose; confirm each still tests what its name says).
-3. Fix contradictions with minimal wording changes that say what is true now and cite the merge (PR #495 `0825f0e0`, #497 `b25d2cbd`, #498 `ad88bbbb`). Do not edit history sections, and do not change code or defaults.
-4. Branch from current `main`, open a docs PR, run the four required workflows on the exact head, and wait for the owner to name the PR before any merge. Run only focused tests if you touch a test (see "Testing scope"); a docs-only change needs none, and `python -m py_compile` on any changed Python file.
+**Question.** `CF_MAX_PAGES = 4` x `CF_PAGE_SIZE = 100` reads the first 400 of a roughly 1,000-recording ListenBrainz CF pool (`discovery_candidate_gathering.py`, `fetch` loop near line 185). Would reading deeper (pages 5 to 10) add enough distinct, eligible, unowned albums to change the final list, at an acceptable time cost?
 
-Acceptance: a list in the PR description of each stale statement found, where, and what it now says; or "none found" with the greps used. No live runs, no network.
+**Gate (owner rule, 2026-10-21).** Added ListenBrainz requests are allowed only when they save time. Deeper paging adds requests whose effect is more data to resolve, so it **needs owner approval before any live run**, and the owner wants P0h (CF freshness, parked) settled first because deeper pages of a stale pool are not worth reading. Do the read-only part, then stop and ask.
 
-Other options if the owner prefers something else (each needs a decision, none is started): repeat the P0h capture after CF recompute (go-ahead naming the 1 statistics request); one healthy cold run and one warm run to confirm defaults live (owner go-ahead); reading deeper into the CF pool (owner approval, and only after P0h); the Saved-page items under Deferred.
+Do, in order:
+1. Read-only, no network: in the code and the findings ("CF supply is limited by pages read", "`CF_MAX_PAGES = 4` re-measured", P0b/P0f/P0g, P0h baseline), write a short brief in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` under P1: what grows with pages (batch recording lookups at 50 per chunk? release-group chunks of 50, genre batch size 75 per `ARTIST_GENRE_CHUNK`), what stays bounded (uncached MusicBrainz budget 100; batch hits do not spend it), the endpoint limits already found (release-group GET fails from 81 MBIDs; artist genre batch has no failing size up to 96), and an estimate of added requests and time per extra page from the existing measurements (3 pages 41.5 s, 4 pages 40.9 s cold, so marginal time per page is small and unmeasured beyond 4).
+2. Propose one measurement plan: pages 4 vs 6 (or 8), fresh data dir, slskd off, aggregate only, single cold plus one warm sample per arm, test-only harness not committed, counts of `listenbrainz.*` and `musicbrainz.bounded_get` before and after, final-list overlap, distinct artists, eligible unowned albums, cold time. State the added ListenBrainz GETs (about 1 CF page + 1 recording batch + up to 1 release-group GET per extra 100 recordings) and the pass/fail thresholds before running (for example: cold time within +10 s of the 4-page sample, eligible unowned albums up by at least 20%, no new 502s or 429s).
+3. Open a docs PR with the brief and plan, run the four required workflows on its head, and **wait for the owner** to approve the live measurement and name the PR before any merge. Do not change `CF_MAX_PAGES` in that PR.
+
+If the owner approves the run: run only what the plan names, record aggregates and request counts in the doc and `PROJECT_LOG.md`, and open a separate PR for any default change (keep the flag/constant change one line, with a rollback note).
+
+Acceptance: the brief and plan are in the doc with numbers sourced from existing findings (cite them); no live run, no network, no code change until approval.
+
+Other options if the owner prefers something else: repeat the P0h capture after CF recompute (go-ahead naming the 1 statistics request); one healthy cold run and one warm run to confirm defaults live; undo after reload, MBID in save metadata (backend, needs approval).
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -43,12 +48,12 @@ Other options if the owner prefers something else (each needs a decision, none i
 
 ### Deferred
 
-- Roadmap P0h is parked (see Open items); P0i (stale-flag audit) is the next task. P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
+- Roadmap P0h is parked (see Open items); P1a (deeper CF pool, brief and plan only) is the next task; P0i is merged (PR #499). P0c, P0d, P0e, P0f and P0g are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497, early stop on PR #498; P0d, P0e and the P0f and P0g findings pushed directly).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
-- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
+- Reading deeper into the 1,000-recording CF pool: now the next task (P1a above); live measurement still needs owner approval.
 - CF freshness capture: repeat after ListenBrainz recomputes CF for the imported history (needs a go-ahead); Last.fm (parked); diversity setting UI (paused).
-- A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
+- Saved-area leftovers: undo after reload, MBID in save metadata. (The Saved page is PR #501 and the deep-dive Save rendered check is PR #500, both merged.)
 
 ## Testing scope (standing owner rule, 2026-10-20)
 
