@@ -20,8 +20,9 @@ class _Response:
 
 
 class _Client:
-    def __init__(self, mb_headers):
+    def __init__(self, mb_headers, mb_urls):
         self.mb_headers = mb_headers
+        self.mb_urls = mb_urls
 
     def __enter__(self):
         return self
@@ -31,14 +32,19 @@ class _Client:
 
     def get(self, url, params=None, headers=None):
         self.mb_headers.append(dict(headers or {}))
+        self.mb_urls.append(url)
         response = _Response()
         response.json = lambda: {"genres": [], "release-groups": []}
         return response
 
 
+def _raise_status():
+    raise RuntimeError("502")
+
+
 class ListenBrainzHeaderTests(unittest.TestCase):
     def _run(self, env):
-        lb, mb = [], []
+        lb, mb, self.mb_urls = [], [], []
 
         def http_get(url, params=None, headers=None, **kwargs):
             lb.append((url, dict(headers or {})))
@@ -50,7 +56,8 @@ class ListenBrainzHeaderTests(unittest.TestCase):
         def http_post(url, json=None, headers=None, **kwargs):
             lb.append((url, dict(headers or {})))
             response = _Response()
-            response.json = lambda: []
+            response.status_code = 502
+            response.raise_for_status = _raise_status
             return response
 
         providers = RecommendationProviders(
@@ -65,7 +72,7 @@ class ListenBrainzHeaderTests(unittest.TestCase):
             items=lambda response: [],
             http_get=http_get,
             http_post=http_post,
-            http_client=lambda *args, **kwargs: _Client(mb),
+            http_client=lambda *args, **kwargs: _Client(mb, self.mb_urls),
             sleep=lambda seconds: None,
         )
         with mock.patch.dict(os.environ, env, clear=False):
@@ -85,6 +92,10 @@ class ListenBrainzHeaderTests(unittest.TestCase):
     def test_musicbrainz_never_receives_the_token(self):
         _, mb = self._run({"LISTENBRAINZ_TOKEN": TOKEN})
         self.assertTrue(mb, "guard: no MusicBrainz request was captured")
+        self.assertTrue(
+            any("/ws/2/recording/" in url for url in self.mb_urls),
+            "guard: the failed batch must fall back to a per-recording MusicBrainz request",
+        )
         for headers in mb:
             self.assertNotIn("Authorization", headers)
 
