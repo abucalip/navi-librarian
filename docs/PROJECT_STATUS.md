@@ -1,3 +1,10 @@
+## 2026-10-21 — slskd package-boundary audit (PR pending)
+
+- Audited current-main implementations and the lazy/top-level `navidrome_server.py` call sites for the five `slskd_*` modules. Confirmed direct-import tests for client, search, polling, and transfers; the expected quality-specific test path is absent.
+- Boundary is plausible but not yet safe to implement: repository-wide exact references and a refreshed dependency-map artifact have not been verified. No code changed and no focused tests were run in this read-only audit.
+- Proposed next action: generate/review the dependency map on post-PR #509 main, finish exhaustive test/CI/script/dynamic-import discovery, and then either make one cohesive `integrations/slskd/` move or document the smaller safe boundary.
+- Publishing, deployment, and production runtime verification remain paused/unperformed.
+
 ## 2026-10-21 — Python package-layout PR #509 merged
 
 - PR #509 squash-merged to `main` as `8fe825a41c0122bd3fd6d3260ca8978cdbf0d27f`; exact tested PR head: `c045865fea13e8944512fc5c987e609cbc41e443`.
