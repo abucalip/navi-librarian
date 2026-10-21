@@ -1,8 +1,10 @@
 # Project status
 
-Last reviewed: 2026-10-21 (PR #483 merged; publishing remains paused)
+Last reviewed: 2026-10-21 (PR #486 merged; publishing remains paused)
 
 ## Current recommendation-engine state
+
+- **PR #486 merged** as `f8a248d555bf557e4bb965757d279afbed77cc1d` from exact final head `65a868410df5b5065fb605a61d90b04169e16bdd`. Release-group requests now use chunks of 50 (measured endpoint cliff: 80 pass, 81 fail); retried MusicBrainz calls are counted separately as `recording_lookup_retry`. The PR also records the revised ListenBrainz request-time rule and adds the measured batched-genre lookup work to the roadmap; batched genre lookup is **not implemented** and `CF_MAX_PAGES` remains 2. All four required workflows passed on the exact head; Docker packaging's `test-and-build` job completed the full unit suite successfully. No independent local full-suite run. Publishing, deployment, and production-runtime verification remain unperformed.
 
 - **PR #483 merged** as `28fb84026201b0779cd604efc5c50aa11203cff5` from exact final head `66b9c92b9276c2682903359985d03d1ebc3fc95e`. Documentation records the tag-lane rotation experiment and the decision **not to adopt it**. The experimental code and tests were removed because the flag was unwired and measurements showed no clear diversity benefit, more warm MusicBrainz calls, and slower warm refreshes. All four required workflows passed on the exact final head. No code behavior changed. Publishing, deployment, and production-runtime verification remain unperformed.
 
