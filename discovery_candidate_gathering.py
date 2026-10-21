@@ -3,7 +3,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import timezone
 from email.utils import parsedate_to_datetime
-from listenbrainz_client import request_headers as listenbrainz_headers
+from integrations.listenbrainz.client import request_headers as listenbrainz_headers
 from recommendation_run_metrics import add_stage_seconds, timed_stage
 import re
 import json

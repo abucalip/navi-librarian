@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from listenbrainz_client import USER_AGENT, recent_listens, request_headers, set_token_source
+from integrations.listenbrainz.client import USER_AGENT, recent_listens, request_headers, set_token_source
 
 
 class FakeResponse:

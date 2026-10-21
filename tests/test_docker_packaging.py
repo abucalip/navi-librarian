@@ -60,6 +60,17 @@ class DockerPackagingTests(unittest.TestCase):
         self.assertTrue((root / "integrations" / "lastfm" / "client.py").is_file())
         self.assertFalse((root / "lastfm_client.py").exists())
 
+    def test_listenbrainz_integration_package_is_copied_into_image(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=librarian:librarian integrations/ ./integrations/", dockerfile)
+        for module in ("client.py", "popularity.py"):
+            with self.subTest(module=module):
+                self.assertTrue((root / "integrations" / "listenbrainz" / module).is_file())
+        self.assertNotIn("listenbrainz_client.py", dockerfile)
+        self.assertFalse((root / "listenbrainz_client.py").exists())
+        self.assertFalse((root / "listenbrainz_popularity.py").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

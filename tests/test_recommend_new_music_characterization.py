@@ -123,7 +123,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
                 "recommendation_diversity": diversity_setting,
             }),
             patch(
-                "listenbrainz_popularity.fetch_release_group_popularity",
+                "integrations.listenbrainz.popularity.fetch_release_group_popularity",
                 side_effect=lambda post, cache_get, cache_set, mbids, headers: {
                     mbid: lastfm_stats for mbid in mbids
                 } if lastfm_stats else {},

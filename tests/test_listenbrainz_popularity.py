@@ -1,6 +1,6 @@
 import unittest
 
-from listenbrainz_popularity import (
+from integrations.listenbrainz.popularity import (
     POPULARITY_CHUNK,
     build_popularity_lookup,
     fetch_release_group_popularity,
