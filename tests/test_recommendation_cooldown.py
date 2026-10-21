@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from discovery.allocation_contract import AllocationCandidate, OwnershipStatus
-from discovery_store import recommendation_identity_hash, write_list
-from recommendation_cooldown import apply_history_cooldown, cooldown_adjusted_score, prepare_ranking_inputs
+from discovery.store import recommendation_identity_hash, write_list
+from discovery.cooldown import apply_history_cooldown, cooldown_adjusted_score, prepare_ranking_inputs
 
 
 class RecommendationCooldownTests(unittest.TestCase):

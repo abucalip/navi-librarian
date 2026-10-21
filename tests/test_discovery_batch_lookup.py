@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 
 import discovery_candidate_gathering as gathering
-import discovery_candidate_supply as supply
+from discovery import candidate_supply as supply
 from discovery_batch_metadata import (
     BATCH_RECORDING_CHUNK,
     RELEASE_GROUP_CHUNK,

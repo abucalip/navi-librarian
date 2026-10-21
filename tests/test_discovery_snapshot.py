@@ -1,8 +1,8 @@
 import unittest
 from threading import Lock
 
-from discovery_refresh import refresh_personal
-from discovery_snapshot import (
+from discovery.refresh import refresh_personal
+from discovery.snapshot import (
     filter_snapshot,
     replacement_decision,
     serve_snapshot,
@@ -175,7 +175,7 @@ class RefreshPersonalSnapshotGuardTests(unittest.TestCase):
             )
 
     def test_threshold_boundary_is_inclusive(self):
-        from discovery_snapshot import PROVIDER_FAILURE_SHARE_THRESHOLD
+        from discovery.snapshot import PROVIDER_FAILURE_SHARE_THRESHOLD
         lookups = 10
         failures = int(PROVIDER_FAILURE_SHARE_THRESHOLD * lookups)
         self.assertEqual(

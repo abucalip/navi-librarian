@@ -11,14 +11,14 @@ import math
 import time
 from typing import Any, Callable
 
-import discovery_candidate_supply as _supply
+from discovery import candidate_supply as _supply
 from discovery_batch_metadata import (
     fetch_batch_recordings,
     fetch_release_group_metadata,
     prefetch_artist_genres,
     synthesize_recording,
 )
-from discovery_candidate_supply import (
+from discovery.candidate_supply import (
     batch_title_marker_rejection,
     cf_release_group_rejection,
     classify_error,

@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 
 from discovery_candidate_gathering import RecommendationProviders, gather_recommendation_candidates
-from discovery_candidate_supply import (
+from discovery.candidate_supply import (
     candidate_supply_report,
     classify_error,
     cf_records_from_tape,
@@ -296,7 +296,7 @@ class EligibilityBoundaryTests(unittest.TestCase):
         return is_album_candidate, _key
 
     def test_release_group_predicate_labels_each_rejection(self):
-        from discovery_candidate_supply import cf_release_group_rejection
+        from discovery.candidate_supply import cf_release_group_rejection
         is_album, music_key = self._groups()
 
         def reason(group):
@@ -322,7 +322,7 @@ class EligibilityBoundaryTests(unittest.TestCase):
         )
 
     def test_eligibility_counts_come_from_tape_recordings_only(self):
-        from discovery_candidate_supply import summarize_cf_release_eligibility
+        from discovery.candidate_supply import summarize_cf_release_eligibility
         is_album, music_key = self._groups()
         ok = {"release-group": {"primary-type": "Album", "title": "Fixture Record One", "secondary-types": []}}
         comp = {"release-group": {"primary-type": "Album", "title": "Fixture Record Two", "secondary-types": ["Compilation"]}}
@@ -342,7 +342,7 @@ class EligibilityBoundaryTests(unittest.TestCase):
         self.assertNotIn(ARTIST_A, json.dumps(result))
 
     def test_unowned_unique_counts_per_discovery_source(self):
-        from discovery_candidate_supply import summarize_candidate_stages
+        from discovery.candidate_supply import summarize_candidate_stages
         albums = [
             {"artist": ARTIST_A, "primary_artist": ARTIST_A, "album": "One", "artist_mbid": "m1",
              "discovery_sources": ["listenbrainz_cf", "profile_tag_search"]},

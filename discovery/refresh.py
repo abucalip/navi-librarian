@@ -13,7 +13,7 @@ from collections.abc import Callable, Mapping, Sequence
 from threading import Lock
 from typing import Any
 
-import discovery_snapshot
+from discovery import snapshot as discovery_snapshot
 from settings import service as service_settings
 
 STALE_MAX_AGE_SECONDS = 24 * 60 * 60
@@ -164,7 +164,7 @@ def refresh_personal(
     """Refresh the personal list and record a bounded manual/scheduler outcome.
 
     When ``read_previous`` is given, a build that the snapshot policy rejects
-    (see ``discovery_snapshot.replacement_decision``) leaves the stored list in
+    (see ``discovery.snapshot.replacement_decision``) leaves the stored list in
     place. Without it, behavior is unchanged.
     """
     if not lock.acquire(blocking=False):

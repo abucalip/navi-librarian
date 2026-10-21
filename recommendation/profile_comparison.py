@@ -15,7 +15,7 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
-from discovery_candidate_supply import (
+from discovery.candidate_supply import (
     candidate_supply_report,
     summarize_candidate_stages,
 )

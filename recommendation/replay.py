@@ -542,7 +542,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         actual = json.loads(actual_text)
         lastfm.assert_consumed()
-        from discovery_candidate_supply import candidate_supply_report
+        from discovery.candidate_supply import candidate_supply_report
         expected = payload["expected_output"]
         matches = _comparable_output(actual) == _comparable_output(expected)
         report = {

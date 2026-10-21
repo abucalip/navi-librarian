@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from discovery_store import (
+from discovery.store import (
     record_discovery_refresh_outcome,
     record_recommendation_pool_diagnostic,
     record_recommendation_diagnostics,

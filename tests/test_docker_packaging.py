@@ -136,6 +136,20 @@ class DockerPackagingTests(unittest.TestCase):
                 self.assertFalse((root / f"discovery_{name}.py").exists())
                 self.assertNotIn(f"discovery_{name}.py", dockerfile)
 
+    def test_discovery_store_modules_live_in_discovery_package(self):
+        root = Path(__file__).resolve().parents[1]
+        dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")
+        for name, old in (
+            ("store", "discovery_store"), ("snapshot", "discovery_snapshot"),
+            ("refresh", "discovery_refresh"), ("list_payload", "discovery_list_payload"),
+            ("candidate_supply", "discovery_candidate_supply"),
+            ("cooldown", "recommendation_cooldown"),
+        ):
+            with self.subTest(module=name):
+                self.assertTrue((root / "discovery" / f"{name}.py").is_file())
+                self.assertFalse((root / f"{old}.py").exists())
+                self.assertNotIn(f"{old}.py", dockerfile)
+
     def test_acquisition_monitor_modules_live_in_acquisition_package(self):
         root = Path(__file__).resolve().parents[1]
         dockerfile = (root / "Dockerfile").read_text(encoding="utf-8")

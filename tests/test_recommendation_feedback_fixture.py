@@ -9,7 +9,7 @@ import unittest
 
 from discovery.allocation_contract import AllocationCandidate, AllocationRequest, OwnershipStatus
 from discovery.personal_allocator import allocate_personal_recommendations
-from recommendation_cooldown import prepare_ranking_inputs
+from discovery.cooldown import prepare_ranking_inputs
 
 NOW = 2_000_000.0
 DAY = 24 * 60 * 60

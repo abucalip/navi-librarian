@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from discovery_store import recommendation_identity_hash
+from discovery.store import recommendation_identity_hash
 
 REASON_NO_PREVIOUS = "no_previous"
 REASON_ACCEPTED = "accepted"
