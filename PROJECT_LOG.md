@@ -1,3 +1,8 @@
+## 2026-10-21 — Acquisition PR 3 merged (PR #519); music_key inversion (PR open)
+
+- PR #519 squash-merged as `6e12466` after compile, test-and-build, container-smoke and validate-container passed on head `c2f584b4f09e9e264268fb644f7f4b4900a7a27f`. Not published or deployed.
+- `music_key` moved to stdlib-only `recommendation/music_key.py`; `integrations/lastfm/client.py`, `recommendation_feedback.py` and `recommendation/profile_comparison.py` import it from there. `discovery_recommendations` re-exports the same function (other callers and tests use it). `tests/test_music_key.py` proves output identical to the previous implementation. Behavior unchanged; focused tests only; `httpx` missing locally so the Last.fm client was checked by AST, not import.
+
 ## 2026-10-21 — Acquisition package PR 3 (open, not merged)
 
 - Moved the five import/cleanup modules into `acquisition/`: `completion`, `import_files` (was `acquisition_import`; `import` is a Python keyword, so `acquisition/import.py` is not importable), `import_service`, `cleanup`, `recovery`. Callers, tests, Dockerfile COPY line and the `python-syntax.yml` compile entry updated; packaging test added. Behavior unchanged. Focused tests and `py_compile` only; the one failure is the known macOS `/var` case. Root Python modules 30. Not merged, published or deployed.

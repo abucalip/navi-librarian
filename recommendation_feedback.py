@@ -53,7 +53,7 @@ def _active_dismissal(row: Mapping[str, Any], *, now: float) -> bool:
 
 
 def _artist_name_key(candidate_source: Mapping[str, Any]) -> str:
-    from discovery_recommendations import music_key
+    from recommendation.music_key import music_key
 
     return music_key(candidate_source.get("primary_artist") or candidate_source.get("artist") or "")
 
