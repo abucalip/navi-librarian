@@ -251,7 +251,7 @@ Read-only brief from code and existing reports, then four owner-approved cold ru
 - For any reopened phase, define a baseline, metrics, acceptance thresholds, and rollback/flag strategy before implementation.
 
 ### P2 — Explicit owner decisions / parked work
-- **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy, left off. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` are redundant (cold and warm batch paths are on and always filter titles) and are removed by the P0f cleanup PR (pending merge; record its merge SHA here). The owner decides each default.
+- **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy, left off. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
 - **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval.
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.
