@@ -13,6 +13,7 @@ import discovery_candidate_supply as _supply
 from discovery_batch_metadata import (
     fetch_batch_recordings,
     fetch_release_group_metadata,
+    prefetch_artist_genres,
     synthesize_recording,
 )
 from discovery_candidate_supply import (
@@ -737,6 +738,10 @@ def gather_recommendation_candidates(
         if artist_id not in profile_prefetch_ids
     ]
     prefetch_ids = profile_prefetch_ids + candidate_prefetch_ids
+    prefetch_artist_genres(
+        providers.http_get, prefetch_ids, headers=headers,
+        cache_get=providers.metadata_cache_get, cache_set=providers.metadata_cache_set,
+    )
     candidate_prefetch_stopped = False
     # Shares the genre-stage breaker flag. Once the streak opens, the remaining
     # prefetch lookups are skipped and counted, not sent.
@@ -1039,6 +1044,10 @@ def gather_recommendation_candidates(
             artist_ids.append(artist_id)
 
     genre_lookup_started = time.monotonic()
+    prefetch_artist_genres(
+        providers.http_get, artist_ids, headers=headers,
+        cache_get=providers.metadata_cache_get, cache_set=providers.metadata_cache_set,
+    )
     genre_exhausted_streak = 0
     with providers.http_client(timeout=15, follow_redirects=True) as client:
         for index, artist_id in enumerate(artist_ids):

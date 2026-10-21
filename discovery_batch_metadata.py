@@ -12,6 +12,13 @@ from typing import Any, Callable, Mapping
 
 LISTENBRAINZ_RECORDING_BATCH_URL = "https://api.listenbrainz.org/1/metadata/recording/"
 LISTENBRAINZ_RELEASE_GROUP_URL = "https://api.listenbrainz.org/1/metadata/release_group/"
+LISTENBRAINZ_ARTIST_URL = "https://api.listenbrainz.org/1/metadata/artist/"
+ARTIST_GENRE_CACHE_PREFIX = "mb:artist-genres:"
+ARTIST_GENRE_TTL_SECONDS = 90 * 24 * 60 * 60
+# Artists per genre GET. A measured pass of 96 artists (inc=tag) answered 200 in about
+# 1.1 s and no failing size was found; the app needs at most about 75 artists per run.
+# See docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md.
+ARTIST_GENRE_CHUNK = 75
 # Recordings per batch request. The live sample used 100; larger batches are unverified.
 # Without "release" in inc the response has no release or release-group object.
 BATCH_RECORDING_INCLUDES = "artist release"
@@ -165,3 +172,74 @@ def synthesize_recording(
         "artist-credit": credit,
         "releases": releases,
     }
+
+
+def _artist_genres(entry: Any) -> list[str] | None:
+    """Genre names from one artist entry, or None when it carries no tag object."""
+    tag = entry.get("tag") if isinstance(entry, dict) else None
+    if isinstance(tag, dict):
+        tag = tag.get("artist")
+    if not isinstance(tag, list):
+        return None
+    return sorted({
+        str(item["tag"]).strip().casefold()
+        for item in tag
+        if isinstance(item, dict) and item.get("genre_mbid") and str(item.get("tag") or "").strip()
+    })
+
+
+def prefetch_artist_genres(
+    get: Callable[..., Any],
+    artist_mbids: list[str],
+    *,
+    headers: Mapping[str, str],
+    cache_get: Callable[..., Any],
+    cache_set: Callable[..., Any],
+    timeout: float = 30,
+) -> dict[str, list[str]]:
+    """Batch-fill ``mb:artist-genres:<mbid>`` for artists that are not cached yet.
+
+    Keeps tags that carry a ``genre_mbid`` (the MusicBrainz genre set), lower-cased,
+    sorted and de-duplicated, which is the shape the per-artist MusicBrainz loop
+    writes. Best-effort and never raises: an artist missing from the response, a
+    non-200, a non-JSON body or any exception leaves it uncached, so the per-artist
+    loop looks it up as before. Returns {artist_mbid: genres} for the artists written.
+    """
+    written: dict[str, list[str]] = {}
+    try:
+        uncached = [
+            mbid for mbid in dict.fromkeys(str(m) for m in artist_mbids if m)
+            if cache_get(f"{ARTIST_GENRE_CACHE_PREFIX}{mbid}", ttl_seconds=ARTIST_GENRE_TTL_SECONDS) is None
+        ]
+    except Exception:
+        return written
+    from recommendation_run_metrics import record_provider_call
+
+    for chunk in _chunks(uncached, ARTIST_GENRE_CHUNK):
+        try:
+            record_provider_call("listenbrainz", "artist_batch")
+            response = get(
+                LISTENBRAINZ_ARTIST_URL,
+                params={"artist_mbids": ",".join(chunk), "inc": "tag"},
+                headers=dict(headers),
+                timeout=timeout,
+            )
+            if response.status_code != 200:
+                continue
+            body = response.json()
+            # The live response is a list of entries that each carry ``artist_mbid``.
+            if not isinstance(body, list):
+                continue
+            by_mbid = {
+                str(entry["artist_mbid"]): entry
+                for entry in body if isinstance(entry, dict) and entry.get("artist_mbid")
+            }
+            for mbid in chunk:
+                genres = _artist_genres(by_mbid.get(mbid))
+                if genres is None:
+                    continue
+                cache_set(f"{ARTIST_GENRE_CACHE_PREFIX}{mbid}", genres)
+                written[mbid] = genres
+        except Exception:
+            continue
+    return written

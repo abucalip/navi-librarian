@@ -181,7 +181,8 @@ What this showed (superseded in part by the bisection below, which found a size 
 - Release-group 502s: cause found (request size: 80 MBIDs pass, 81 fail); fixed by `RELEASE_GROUP_CHUNK = 50` (see the findings above and the PROJECT_LOG entry). Remaining 4-page cold time is dominated by per-artist genre lookups (P0b below).
 - Do not tune ranking weights to compensate for an unmeasured supply bottleneck.
 
-### P0b — Implement batched genre lookup (added 2026-10-21)
+### P0b — Implement batched genre lookup (added 2026-10-21; implemented on `feat/batched-genre-lookup`, PR pending)
+- **Result:** cold 4-page run 207.6 s to 51.9 s, MusicBrainz requests 78 to 10, `listenbrainz.artist_batch` 2, identical supply (79 albums, 42 artists); warm 3.7 s and 7.7 s. Details in PROJECT_LOG. The `metadata/artist/` response is a list of entries with `artist_mbid`.
 - Replace the per-artist MusicBrainz genre lookups (prefetch and genre stage) with `metadata/artist/` batches of up to 75 artists, keeping tags with a `genre_mbid`, writing the same `mb:artist-genres:<id>` cache entries and keeping the per-artist MusicBrainz loop as a fallback for artists the batch misses or when a batch request fails. Put the batch client in `discovery_batch_metadata.py` (new function, no new module), add tests with stubbed HTTP, and keep `navidrome_server.py` size unchanged.
 - Allowed by the revised ListenBrainz request rule (it adds about 3 ListenBrainz GETs and saves about 79 MusicBrainz requests and about 170 s of cold time at 4 pages). Report request counts and wall time before and after in the PR.
 - After it lands, re-measure `CF_MAX_PAGES = 4` end to end on `main` and decide with the owner whether to raise it (still the owner's call).

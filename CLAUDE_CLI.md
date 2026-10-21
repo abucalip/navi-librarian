@@ -19,7 +19,9 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: implement batched genre lookup (roadmap P0b)
+## Status: batched genre lookup (roadmap P0b) implemented on `feat/batched-genre-lookup`, PR awaiting four workflows and owner review. Original brief follows.
+
+## Task brief: implement batched genre lookup (roadmap P0b)
 
 Why: it removes about 150 s of cold time at 4 pages, with identical supply, and it is the gate for revisiting `CF_MAX_PAGES = 4`. The owner approved the approach and revised the ListenBrainz rule (see Standing rules): added ListenBrainz requests are allowed because they save time.
 
