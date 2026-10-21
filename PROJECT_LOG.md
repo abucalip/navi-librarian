@@ -1,3 +1,8 @@
+## 2026-10-21 — Discovery package PR 4: gathering core (PR #524 merged); layout roadmap complete
+
+- PR #524 squash-merged as `a5b14191c02007db376b0642ecceeef0426bdbd5` from head `69c9359e80aa4ff192a073f69b39bf6ffcdc02f1`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
+- Moved `candidate_gathering`, `batch_metadata`, `lb_tag_lane`, `tag_queries`, `library_snapshot`, `recommendations` into `discovery/`; `mock.patch` string targets rewritten. Root Python modules 9. Focused tests and `py_compile` only.
+
 ## 2026-10-21 — Discovery package PR 3: store, refresh and cooldown (PR #523 merged)
 
 - PR #523 squash-merged as `04c0798ea528e53ce5485ea0410b4620b00b3098` from head `279eeee39559dd469238c60be84faef95e8fdbe4`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
