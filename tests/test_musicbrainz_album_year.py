@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-import musicbrainz_album_year as service
+from integrations.musicbrainz import album_year as service
 
 
 class _Response:
