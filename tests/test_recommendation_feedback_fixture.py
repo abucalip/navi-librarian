@@ -7,8 +7,8 @@ feedback rows, and checks that repeats drop while relevance and eligibility hold
 """
 import unittest
 
-from discovery_allocation_contract import AllocationCandidate, AllocationRequest, OwnershipStatus
-from discovery_personal_allocator import allocate_personal_recommendations
+from discovery.allocation_contract import AllocationCandidate, AllocationRequest, OwnershipStatus
+from discovery.personal_allocator import allocate_personal_recommendations
 from recommendation_cooldown import prepare_ranking_inputs
 
 NOW = 2_000_000.0

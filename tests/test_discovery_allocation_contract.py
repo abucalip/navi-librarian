@@ -1,6 +1,6 @@
 import unittest
 
-from discovery_allocation_contract import (
+from discovery.allocation_contract import (
     AllocationCandidate,
     AllocationRequest,
     AllocationResult,

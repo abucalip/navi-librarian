@@ -11,9 +11,9 @@ from typing import Iterable
 
 from recommendation_run_metrics import timed_stage
 
-from discovery_mmr import candidate_similarity
+from discovery.mmr import candidate_similarity
 
-from discovery_allocation_contract import (
+from discovery.allocation_contract import (
     AllocationCandidate,
     AllocationRequest,
     AllocationResult,

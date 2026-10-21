@@ -309,7 +309,7 @@ def recommend_new_music(
     if not 1 <= count <= 20:
         return "count must be between 1 and 20."
 
-    from discovery_mmr import diversity_setting_to_penalty
+    from discovery.mmr import diversity_setting_to_penalty
     from discovery_recommendations import (
         apply_familiarity_exploration_bonus,
         apply_lastfm_popularity_bonus,
@@ -411,12 +411,12 @@ def recommend_new_music(
             reverse=True,
         )
 
-    from discovery_allocation_contract import (
+    from discovery.allocation_contract import (
         AllocationCandidate,
         AllocationRequest,
         OwnershipStatus,
     )
-    from discovery_personal_allocator import allocate_personal_recommendations
+    from discovery.personal_allocator import allocate_personal_recommendations
     from recommendation_cooldown import prepare_ranking_inputs
     from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
