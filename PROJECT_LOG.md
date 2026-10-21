@@ -1,3 +1,12 @@
+## 2026-10-21 — Last.fm integration package move (PR pending)
+
+- Base: `main` `13790f8` (all four workflows green on it). Moved `lastfm_client.py` to `integrations/lastfm/client.py` (new `integrations/lastfm/__init__.py`); `navidrome_server.py` now imports the canonical module and keeps its `_lastfm_*` adapters unchanged. No root shim: AST/grep audit found exactly one production importer (`navidrome_server.py`) and one direct test module (`tests/test_lastfm_client.py`, switched to the canonical path); no dynamic/string imports, no `__file__` or path assumptions, no workflow or script references besides the syntax compile list.
+- Dependencies: the client imports `recommendation_run_metrics` and `discovery_recommendations.music_key` from the root. Both are stdlib-only leaf modules (no cycle) and resolve from `/app` in the image. `music_key` is only the default for the injectable `key_normalizer`; left as is to keep behavior unchanged. Decoupling it is a possible later cleanup, not part of this move.
+- ListenBrainz modules (`listenbrainz_client`, `listenbrainz_popularity`) were inspected separately and not moved: three production call sites across `navidrome_server.py` and `discovery_candidate_gathering.py`, plus lazy imports, so they need their own audit.
+- Docker: root `COPY` list drops `lastfm_client.py`; `integrations/` is already copied. Added a packaging regression test. Root-level Python modules: 61 to 60.
+- Agent-side checks (macOS, venv from `requirements.txt`): `py_compile` on changed Python files; focused `tests.test_lastfm_client`, `tests.test_docker_packaging`, `tests.test_lastfm_recommendation_scoring` (26 tests OK); `scripts/check_server_size.py` OK. Full suite not run. CI evidence on the exact final head is recorded in the PR.
+- Not merged, published, deployed, or runtime-verified.
+
 ## 2026-10-21 — PR #511 merged: slskd integration package
 
 - Squash merge commit on `main`: `84fbb68afa7929a0bedae4e178d37ad2b6255c5a`; exact final PR head: `00712197ea7ba48b4ae07735fb9a9a1100e1eab9`.

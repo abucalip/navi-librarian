@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import httpx
 
-from lastfm_client import LastFmClient
+from integrations.lastfm.client import LastFmClient
 
 
 class FakeResponse:
