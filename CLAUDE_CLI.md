@@ -10,6 +10,7 @@ Read this first. GitHub is the single source of truth; this file never overrides
 
 ## Current state
 
+- P0f merged: genre circuit breaker on by default (PR #495, `0825f0e0`; simulated-throttle sample 498.1 s to 47.4 s, MusicBrainz artist requests 207 to 18, final list 10 in both); redundant batch flags removed (reconciled PR #497, `b25d2cbd`). Early stop measured healthy-only: no effect, left off.
 - P0c merged: ListenBrainz release-group popularity replaces Last.fm in the ranking pass (PR #490, `58182ae0`); the opt-in ListenBrainz tag-radio lane is merged but off (reconciled PR #492, `37014f6f`; original PR #491 closed as superseded). Last.fm stays in classics and deep dives only; as a ranking source it is still parked.
 - Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
 - PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
@@ -20,19 +21,19 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Next task: P0f — read-only evidence brief for the four default-off flags (no code first)
+## Next task: P0g — measure the tag-lane early stop under simulated throttling (stubbed, then decide)
 
-P0e is done (findings on `main`, `0a9d429`, pushed directly at the owner's instruction, no PR). Owner-approved aggregate cold runs, single samples: MusicBrainz tag lane 20.0 s, tag radio only 15.6 s, split (4 MusicBrainz / 4 tag radio) 17.8 s and 25.9 s. The sources return disjoint tag pools (candidate overlap 0/58 MusicBrainz vs radio); final-pick overlap MusicBrainz vs split 9/10, vs radio 5/10. The time differences are within noise, so **MusicBrainz stays the default; split and tag-radio-default were measured and not adopted**. No browser-verification page appeared in 5 live runs (one extra run came from a harness launch mistake). Reopen only with a new idea that adds no lookups and shows a time gain beyond noise. The test-only harness `run_tag_split.py` was not committed (it lives in the harness project folder).
-
-Every remaining item in the roadmap is owner-gated, so the next useful step is a decision brief, not a build: the four flags that are off by default (`CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, the genre circuit breaker, `TAG_LANE_EARLY_STOP_ENABLED`) each change output or call pattern, and the owner cannot decide on them without one place that shows the evidence.
+P0f is done. Breaker on by default (PR #495, `0825f0e0`); redundant batch flags removed (reconciled PR #497, `b25d2cbd`; original PR #496 closed as superseded). Findings are in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0f). `TAG_LANE_EARLY_STOP_ENABLED` is the only default-off flag left in that group: with MusicBrainz healthy, off and on made identical requests (17.3 s and 27.1 s, 8 searches, 38 tag candidates, 10 final, noise), so its value under throttling is the open question. Do not change its default on that evidence.
 
 Do:
-1. Read `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P2 "Default-on flags", the warm and cold findings, the 502 finding) and the code that reads each flag in `discovery_candidate_gathering.py` and `discovery_batch_metadata.py`.
-2. Read-only, from code and existing reports, write one table: for each flag, what it changes (output, call pattern, or both), the existing evidence with its source finding, whether that evidence is measured or only unit-tested, the request counts and cold/warm seconds before and after where measured, the failure it guards against, and the risk of turning it on.
-3. For each flag, say what single measurement would settle it and what it would cost in live requests. Do not run it. A flag with enough evidence gets a recommendation (on, off, or measure first); a flag without gets "measure first".
-4. Report to the owner **before any code change or live run**. Changing a default is the owner's decision.
+1. Read `_run_tag_queries` and `TAG_LANE_EXHAUSTION_THRESHOLD` in `discovery_candidate_gathering.py` and `tests/test_discovery_tag_lane_early_stop.py`.
+2. Extend the test-only harness (the P0f `run_p0f.py` lives in the harness project folder, `reports/p0f/`; not committed). Stub MusicBrainz **release-group search** responses (`musicbrainz.org/ws/2/release-group`) so query 2 returns 503 once and every other query answers normally, then a second pattern where queries 2 and 3 both fail. Everything else stays live. Arms: flag off, flag on; one cold run each per pattern (4 runs).
+3. Report per arm: tag queries attempted of 8, tag candidates, candidate albums, final list size and source mix, cold seconds, and MusicBrainz request count (must not exceed the healthy 8 plus retries). Aggregate only.
+4. Report to the owner **before any default change**. Acceptance for recommending on: more tag candidates than off with no more than the healthy request count, and no added failure. If it only adds retry sleeps, recommend leaving it off.
 
-Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, pushed to `main` only if the owner says so (as for P0d and P0e); any code or default change needs a PR with four green workflows and the owner naming the PR in words.
+Cost: 4 live cold runs (about 20 to 50 s each; no extra MusicBrainz requests beyond the stubbed ones). Needs the owner's go-ahead for the live runs; the read and the harness do not.
+
+Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, pushed to `main` only if the owner says so; any default change needs a PR with four green workflows and the owner naming the PR in words.
 
 ## Completed task record: batched genre lookup (roadmap P0b) and four-page CF paging
 
@@ -41,11 +42,11 @@ Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJEC
 
 ### Deferred
 
-- Roadmap P0f is the current task (above). P0c, P0d and P0e are complete (PR #490, reconciled PR #492, client identity PR #493; P0d and P0e findings pushed directly).
+- Roadmap P0g is the current task (above). P0c, P0d, P0e and P0f are complete (PR #490, reconciled PR #492, client identity PR #493, breaker PR #495, flag cleanup PR #497; P0d, P0e and the P0f findings pushed directly).
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
 - P0b and the approved four-page re-measurement are complete (PR #487 and reconciled PR #489; original PR #488 was superseded).
 - Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
-- CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
+- CF freshness capture (needs an authorized two-sided capture); the tag-lane early stop default (P0g); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
 
 ## Testing scope (standing owner rule, 2026-10-20)
@@ -76,7 +77,7 @@ Acceptance: findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJEC
 
 ## Open items and owner decisions
 
-- Default-on flags. `CF_BATCH_RESOLUTION_ENABLED`, `BATCH_TITLE_FILTER_ENABLED`, the genre circuit breaker and the tag-lane early stop are all off by default. Each changes output or call pattern, so each needs an owner decision.
+- Default-on flags. The genre circuit breaker is on (PR #495). The two batch flags are removed (PR #497). `TAG_LANE_EARLY_STOP_ENABLED` is off by default and its decision waits on P0g. Steady-state batch (`WARM_BATCH_ENABLED`) and cold-start batch are on.
 - Feedback signal (3.3). Merged as PR #456; default on, owner-approved 2026-10-20.
 - Refill toggle and read path (3.4). Merged as PR #458 (default on) and PR #459 (stale-while-revalidate). Roadmap 3.4 is complete.
 - Candidate freshness (P2). Unmeasured: whether collaborative filtering reflects all-time history. This needs an authorized two-sided capture; do not start it without approval.
