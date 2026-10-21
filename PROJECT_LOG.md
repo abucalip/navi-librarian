@@ -1,3 +1,8 @@
+## 2026-10-21 — P0g: tag-lane early stop measured under simulated throttling (docs only)
+
+- Pushed straight to `main` at the owner's instruction. Owner-approved aggregate live runs with release-group search stubbed to 503 (query 2; queries 2 and 3). Single pattern: off 2 of 8 queries / 5 tag candidates / 17.2 s / 3 requests; on 8 of 8 / 23 / 27.7 s / 11 requests (token run: 5 vs 25, 21.4 s vs 26.9 s, 3 vs 12 requests). Double pattern: no gain (threshold 2). Final list 10 in all arms.
+- Decision: enable `TAG_LANE_EARLY_STOP_ENABLED` by default (separate PR). MusicBrainz OAuth client credentials are not useful here (client_credentials unsupported; a user bearer token did not avoid real 503s). Details in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` (P0g). No tests run (docs only; full suite not run).
+
 ## 2026-10-21 — P0f: genre circuit breaker on by default (PR #495 merged)
 
 - PR #495 squash-merged as `0825f0e06b25f498147e38f2f61c817894450ba8` from exact final head `d50f39a736681f7393f7bbfdc794b02bfe8a57c8`. `GENRE_CIRCUIT_BREAKER_ENABLED = True`. Owner-approved simulated-throttle sample: 498.1 s / 207 MusicBrainz artist requests with breaker off versus 47.4 s / 18 requests with it on; final list 10 in both. Single samples, simulated throttling; artists may lack genres only when batch genre lookup fails while MusicBrainz is throttling. Early stop remains off. All four required workflows passed on exact head, including CI's full unit suite. Publishing, deployment, and runtime verification remain unperformed.

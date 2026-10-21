@@ -244,6 +244,23 @@ Read-only brief from code and existing reports, then four owner-approved cold ru
 - **Genre circuit breaker (stubbed: MusicBrainz artist GETs forced to 429, ListenBrainz artist batch disabled, rest live):** off 498.1 s and 207 MusicBrainz artist requests; on 47.4 s and 18 requests (16 prefetch and 50 genre-stage artists skipped). Final list was 10 CF in both, with 0 tag candidates in both because the tag lane had no genres to query. The cost is lost genre data, and only when the batch call fails and MusicBrainz is throttled. Recommendation: on.
 - Limits: single samples; the throttle was simulated; supply quality was not measured.
 
+### P0g — Tag-lane early stop under simulated throttling (2026-10-21; owner-approved; single samples)
+
+Test-only harness `run_p0g.py` (not committed): MusicBrainz release-group search stubbed to return 503 on every attempt of distinct tag query 2 (single) or queries 2 and 3 (double); everything else live; `CF_MAX_PAGES = 4`, fresh data dir, slskd off, aggregate only. A single 503 would be retried and succeed (`_TAG_SEARCH_ATTEMPTS = 2`), so "failed query" means both attempts fail. Real MusicBrainz 503s also occurred during some runs; they are counted separately where noted.
+
+| Pattern / flag | Tag queries (of 8) | Tag candidates | Candidate albums | Final list | Cold s | MB requests |
+|---|---|---|---|---|---|---|
+| single, off | 2 | 5 | 84 | 10 (8 LB, 2 tag) | 17.2 | 3 |
+| single, on | 8 | 23 | 102 | 10 (5 LB, 5 tag) | 27.7 | 11 |
+| single, off, token | 2 | 5 | 84 | 10 (8 LB, 2 tag) | 21.4 | 3 |
+| single, on, token | 8 | 25 | 104 | 10 (5 LB, 5 tag) | 26.9 | 12 |
+| double, off | 2 | 5 | 84 | 10 (8 LB, 2 tag) | 12.5 | 4 |
+| double, on | 3 | 5 | 84 | 10 (8 LB, 2 tag) | 17.0 | 5 |
+
+- **Result:** with one exhausted query the flag keeps the lane going: 23 and 25 tag candidates against 5, 5 tag albums in the final list against 2, final list 10 in every arm, no HTML responses. Requests stay within the healthy 8 plus retries (11 and 12; 2 stubbed, the rest real 503 retries). Cost: about 5 to 10 s. With two consecutive exhausted queries the threshold of 2 stops the lane either way; no gain, one extra attempt. Two earlier single-on samples were contaminated (a harness bug, then a real 503 on query 1 giving two consecutive failures) and are discarded.
+- **Decision:** acceptance met (more tag candidates, within request budget, no added failure that hurts the list). Default turned on in a separate PR (see `PROJECT_LOG.md`). Limits: two clean single-pattern samples, real throttling during the runs.
+- **MusicBrainz OAuth credentials: not useful for this problem.** The registered application's client ID and secret cannot authenticate requests: `client_credentials` is rejected (`unsupported_grant_type`; only `authorization_code` and `refresh_token`). A user token obtained through the consent flow and sent as a bearer on the search requests did not avoid 503s (5 real 503s in 12 requests, versus 2 in 11 unauthenticated). The app does not use these credentials and should not.
+
 ### P1 — Reopen ranking work only if measurements justify it
 - **Phase 1.2 — Familiarity/profile balance:** evaluate the current multiplicative score and the strong familiarity spread against deterministic fixtures; change weights only with comparative evidence.
 - **Phase 3.1 — MMR-style re-ranking:** evaluate only if eligible candidate pools are large enough to reorder meaningfully; preserve relevance and eligibility.
@@ -251,7 +268,7 @@ Read-only brief from code and existing reports, then four owner-approved cold ru
 - For any reopened phase, define a baseline, metrics, acceptance thresholds, and rollback/flag strategy before implementation.
 
 ### P2 — Explicit owner decisions / parked work
-- **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy, left off. `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
+- **Default-on flags:** measured in P0f (below). Breaker: default turned on in merged PR #495 (`0825f0e06b25f498147e38f2f61c817894450ba8`). Early stop: no effect when healthy; P0g measured it under simulated throttling and the default is being turned on by PR (see P0g). `CF_BATCH_RESOLUTION_ENABLED` and `BATCH_TITLE_FILTER_ENABLED` were redundant (cold and warm batch paths are on and always filter titles) and were removed in reconciled PR #497, squash merge `b25d2cbd0f0d0669c86a6bcee0ea5d856d11d929`. The legacy opt-in combination is no longer supported; current defaults are unchanged.
 - **CF freshness:** unknown whether ListenBrainz CF reflects all-time history. Any two-sided capture requires owner approval.
 - **Diversity setting/UI:** paused. Do not build the Settings UI or tune the mapping until candidate supply supports meaningful cross-pool evaluation and the separate diversity roadmap gates are met.
 - **Last.fm as a source:** parked. Do not start a quality test or combined path without a new decision.
