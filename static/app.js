@@ -26,7 +26,7 @@ function showPage(name) {
   document.querySelectorAll('nav button[data-page]').forEach(el =>
     el.classList.toggle('active', el.dataset.page === name));
   // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
-  $('appMenuButton').classList.toggle('is-current', name === 'settings');
+  $('appMenuButton').classList.toggle('is-current', name === 'settings' || name === 'saved');
   // The phone bar's More control carries the cue when one of its two destinations is current.
   $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
@@ -73,6 +73,8 @@ function initializePage(name) {
 function navigateTo(name) {
   showPage(name);
   initializePage(name);
+  // Saved is read on every visit: saves made on other pages since the last visit must appear.
+  if (name === 'saved') loadSaved();
   if (name !== 'acquisitions') stopAcquisitionStream();
 }
 
@@ -1252,8 +1254,15 @@ function buildRecommendationRow(item, rank, options = {}) {
 
   const actions = document.createElement('div');
   actions.className = 'row-actions';
-  actions.append(createGetButton(artist, album, item));
+  // An album already in the library has nothing to get.
+  if (!options.owned) actions.append(createGetButton(artist, album, item));
   if (options.listName) actions.append(createSaveButton(artist, album, item, options.listName));
+  if (options.saved) {
+    // Every row on the Saved page is saved: the control starts pressed, and its next press undoes.
+    setSaveButtonState(actions.querySelector('.save-album'), true, album);
+    row.append(actions);
+    return row;
+  }
   const dismissButton = document.createElement('button');
   dismissButton.type = 'button';
   dismissButton.className = 'deep-dive-dismiss';
@@ -1479,7 +1488,8 @@ const discoveryViews = {
   personal: ['personalCards','personalStatus'],
   classics: ['classicsCards','classicsStatus'],
   artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus'],
-  new_releases: ['newReleasesCards','newReleasesStatus']
+  new_releases: ['newReleasesCards','newReleasesStatus'],
+  saved: ['savedCards','savedStatus']
 };
 
 const qualityOptions = [
@@ -1992,6 +2002,56 @@ function createSaveButton(artist, album, metadata, listName) {
   });
   return button;
 }
+
+// Saved page: the albums bookmarked with Save, read from the For Me list. A row stays after Remove
+// so the bookmark can be restored; it leaves the list on the next visit or Refresh (same rule as
+// the Save control on the other lists). Saved albums already in the library show no Get button.
+function formatSavedDate(seconds) {
+  const date = new Date(Number(seconds) * 1000);
+  if (!Number.isFinite(date.getTime())) return '';
+  return 'Saved ' + monthAbbreviations[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+}
+
+function buildSavedRow(entry, index) {
+  const item = {...(entry.metadata || {}), artist: entry.artist, album: entry.album};
+  const owned = entry.acquired === true;
+  return buildRecommendationRow(item, index + 1, {
+    indexed: true,
+    saved: true,
+    owned,
+    listName: 'saved',
+    meta: [formatSavedDate(entry.saved_at), owned ? 'Already in your library' : '']
+  });
+}
+
+async function loadSaved() {
+  const target = $('savedCards');
+  discoveryStatus('saved', 'Loading saved albums…', 'loading');
+  target.replaceChildren(...skeletonRows(4));
+  try {
+    const data = await requestJSON('/api/discovery/for_me?count=150&nonce=' + Date.now());
+    const entries = data.items || [];
+    target.replaceChildren();
+    if (!entries.length) {
+      discoveryStatus('saved', '', 'idle');
+      const empty = addTextElement(target, 'p', 'status-line',
+        'Nothing saved yet. Select Save on any album in Personal Discoveries, New releases or the other lists to keep it here.');
+      setStatusState(empty, 'empty');
+      return;
+    }
+    const total = Number(data.total) || entries.length;
+    discoveryStatus('saved', total > entries.length
+      ? 'Showing ' + entries.length + ' of ' + total + ' saved albums · Newest first'
+      : pluralize(entries.length, 'saved album', 'saved albums') + ' · Newest first', 'idle');
+    for (const [index, entry] of entries.entries()) target.append(buildSavedRow(entry, index));
+  } catch (error) {
+    target.replaceChildren();
+    discoveryStatus('saved', 'Saved albums could not be loaded: ' + error.message);
+  }
+}
+
+document.querySelectorAll('[data-refresh-saved]').forEach(button =>
+  button.addEventListener('click', loadSaved));
 
 async function refreshDiscovery(name) {
   discoveryStatus(name, 'Starting a fresh discovery pass…');

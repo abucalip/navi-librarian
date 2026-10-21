@@ -31,6 +31,7 @@
         </svg>
       </button>
       <div id="appMenu" class="header-menu-panel" hidden>
+        <button type="button" data-page="saved">Saved</button>
         <button type="button" data-page="settings">Settings</button>
         <div class="header-menu-separator" role="separator"></div>
         <button type="button" id="logoutButton">Log out</button>
@@ -199,6 +200,16 @@
   </div>
 </section>
 
+<section id="saved" class="page hidden" aria-labelledby="savedHeading">
+  <div class="panel">
+    <h2 id="savedHeading">Saved</h2>
+    <p>Albums you bookmarked with Save, newest first. Saving never starts a download.</p>
+    <button type="button" data-refresh-saved>Refresh</button>
+    <p id="savedStatus" class="status-line" aria-live="polite"></p>
+    <div id="savedCards" class="ranked-list"></div>
+  </div>
+</section>
+
 <section id="settings" class="page hidden" aria-labelledby="settingsHeading">
   <div class="panel">
     <h2 id="settingsHeading">Settings</h2>
@@ -264,14 +275,6 @@
 
 
 </main>
-
-<!-- Outside <main>, so it is a contentinfo landmark reached after the page content on
-     every route. It previously sat between two sections inside <main>, which put it above
-     the page heading on the five routes whose section follows it, and made its reading
-     order differ per route. -->
-<footer>
-  Discovery, feedback and acquisition controls use your existing Librarian backend. Artwork is optional and never blocks recommendations.
-</footer>
 
 <div id="albumModalBackdrop" class="album-modal-backdrop" hidden>
   <section class="album-modal" role="dialog" aria-modal="true" aria-labelledby="albumModalTitle">
