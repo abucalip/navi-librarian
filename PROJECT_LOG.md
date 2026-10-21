@@ -1,3 +1,7 @@
+## 2026-10-21 — P0d read-only cold-run breakdown (docs only)
+
+- Merged straight to `main` at the owner's instruction (no PR). One plain ListenBrainz GET: HTTP 400 JSON, no verification page. No live runs, no code change, no tests run (docs only; full suite not run per standing rule). Findings in `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` under P0d: the remaining cold time is the sequential MusicBrainz tag lane (up to 8 searches at 1.1 s spacing, about 16 to 18 s); no no-added-request change shortens it except overlapping it with the Navidrome inventory fetch (measured afterwards at 0.3 to 0.5 s for 1,733 albums, not worth it). Awaiting owner decision.
+
 ## 2026-10-21 — ListenBrainz calls send the honest client identity and token (reliability, PR #493 merged)
 
 - PR #493 squash-merged as `b39e71a3456dc7baaba9e9446826bb643febe5ef` from exact final head `ad07334d6612bc9f035b2f0dd9535d46987442ff`; branch `fix/listenbrainz-client-identity`, owner-authorized. Only `recent_listens` used `listenbrainz_client.request_headers()`; the CF GET, recording/release-group/artist batches, popularity POST and tag-radio lane sent a bare or MusicBrainz-style `User-Agent` and no token. They now use `request_headers()` (app `User-Agent` plus `Authorization: Token ...` only when `LISTENBRAINZ_TOKEN` is set). MusicBrainz requests keep their own headers and never receive the token. No added requests, no pacing change, no browser-like user agent or fingerprint.
