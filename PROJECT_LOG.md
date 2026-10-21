@@ -1,6 +1,6 @@
-## 2026-10-21 — Acquisition package PR 2 (monitor, open)
+## 2026-10-21 — Acquisition package PR 2 (PR #518 merged)
 
-- Moved five monitor modules into `acquisition/`; details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only. Not merged, published or deployed.
+- Moved five monitor modules into `acquisition/`; details in `docs/PYTHON_PACKAGE_LAYOUT_ROADMAP.md`. Focused tests and `py_compile` only. Squash merge `32b23176e1c22317ad1ce662b8ca22cb8970409d` from head `29e7879beb162098cc612e27e4781e1ba40bf6e4`; four required checks passed. Not published or deployed.
 
 ## 2026-10-21 — Acquisition package PR 1 (PR #517 merged)
 
