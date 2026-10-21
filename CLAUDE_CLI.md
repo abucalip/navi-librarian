@@ -1,4 +1,4 @@
-# Handoff for Claude CLI: implement batched genre lookup (P0b)
+# Handoff for Claude CLI: recommendation-engine follow-up
 
 Read this first. GitHub is the single source of truth; this file never overrides the docs it points to, except where it states an owner instruction explicitly (see "Testing scope").
 
@@ -13,15 +13,15 @@ Read this first. GitHub is the single source of truth; this file never overrides
 - Repeat rate at simulated intervals measured (PRs #477, #478): decision not to reopen 3.2. Cold-start supply gain (PR #474) and warm final list (PR #475) measured: do not reopen 1.2, 3.1 or 3.2.
 - PR #476: steady-state builds use the batch path (`WARM_BATCH_ENABLED`, default on) and cache batch results under `mb:recording_batch:<mbid>`. PR #479: a failed release-group chunk falls back only for its own recordings.
 - Release-group 502s solved (PR #486, merge `f8a248d555bf557e4bb965757d279afbed77cc1d`). Cause: the ListenBrainz release-group endpoint passes 80 comma-joined MBIDs per GET and fails from 81 (dropped connection, then HTML 502 at 83), whichever MBIDs; the old chunk of 100 failed whenever a run had more than 80 distinct groups (the 4-page run had 83). Fix: `RELEASE_GROUP_CHUNK = 50`. Also: retried MusicBrainz attempts count as `recording_lookup_retry`, so `recording_lookup` matches the 100 budget. `lastfm.api` 13 to 40 is the top-40 `album.getInfo` popularity pass (30-day cache).
-- 4 pages is now bound by per-artist genre lookups, not the 502s. Cold 4-page profile after the fix: 207 to 319 s, of which `genre_lookup` about 111 to 121 s (up to 75 artists, one uncached MusicBrainz request each at 1.1 s spacing plus about 1.2 s response) and `genre_prefetch` about 38 s. With a test-only batch patch (not committed) the same cold run took 36.5 to 39.6 s with identical supply (79 CF albums from 42 artists), 2 to 3 MusicBrainz requests, warm 16.5 s and 4.2 s. `CF_MAX_PAGES` stays **2** until the owner decides after the code lands.
+- 4 pages is now bound by per-artist genre lookups, not the 502s. Cold 4-page profile after the fix: 207 to 319 s, of which `genre_lookup` about 111 to 121 s (up to 75 artists, one uncached MusicBrainz request each at 1.1 s spacing plus about 1.2 s response) and `genre_prefetch` about 38 s. With the merged batch implementation, the owner-approved PR #488 harness sample measured 3 pages at 41.5 s cold (55 albums / 24 artists) and 4 pages at 40.9 s cold (79 albums / 42 artists). `CF_MAX_PAGES` is now **4**; these are single samples.
 - ListenBrainz `metadata/artist/` (`inc=tag`): one GET returns tags for many artists. Tags carrying a `genre_mbid` matched the MusicBrainz genre set for 5 of 5 sampled artists. Sizes 25 to 96 artists all returned 200 (47 KB to 173 KB, 0.5 to 1.1 s); **no failing size found**, the limit is above 96 and unlocated. The app needs at most about 75 artists.
 - Tag-lane rotation (PR #483, merge `28fb84026201b0779cd604efc5c50aa11203cff5`): **measured and not adopted**; the code was removed after review, only the findings remain. Warm overlap 5/5/4 off vs 4/5/3 on (noise), tag supply unchanged, warm MusicBrainz calls 0 vs 12/6/5, warm time 2.8-4.3 s vs 8.6-20.9 s. Do not reopen without a new idea that adds no lookups.
 - Side effect to watch: overlap with the previous list is 5 of 10 because supply is stable run to run, so the soft cooldown (max 25%, 7-day half-life, 30-day expiry) is the only repeat damper.
 - `LISTENBRAINZ_TOKEN` is in Compose/docs (PR #472, not deployed). The token is in `config.env` in the harness project folder; never print or commit it. Diversity setting: paused by the owner. `navidrome_server.py` is 2,448 of 2,650 lines.
 
-## Status: batched genre lookup (roadmap P0b) implemented on `feat/batched-genre-lookup`, PR awaiting four workflows and owner review. Original brief follows.
+## Current focus: P0c — investigate Last.fm popularity-pass latency read-only first. PR #487 batched genre lookup and PR #488 four-page CF paging are merged; do not reopen them without new evidence.
 
-## Task brief: implement batched genre lookup (roadmap P0b)
+## Completed task record: batched genre lookup (roadmap P0b)
 
 Why: it removes about 150 s of cold time at 4 pages, with identical supply, and it is the gate for revisiting `CF_MAX_PAGES = 4`. The owner approved the approach and revised the ListenBrainz rule (see Standing rules): added ListenBrainz requests are allowed because they save time.
 
@@ -34,14 +34,14 @@ Do:
 6. Live measurement (owner pre-approved the batch work and the live runs; re-confirm only if the plan changes): on the PR branch, one cold 4-page run (the harness-only `CF_MAX_PAGES = 4` override, not a code change) then two warm runs; report wall time, per-stage seconds, MusicBrainz and ListenBrainz request counts before and after, and CF albums/artists. Aggregate only, disposable data dir deleted. Harnesses from the previous session are in the harness project folder under `reports/repeat-rate/` (`run_genre_arm.py` has the batch patch used for the measurement).
 7. Update `docs/RECOMMENDATION_ENGINE_IMPROVEMENTS.md` and `PROJECT_LOG.md`, and this file's handoff when done.
 
-Acceptance: a PR with the four workflows green on its head, the focused tests listed in the description, and the before/after numbers. Do not change `CF_MAX_PAGES`; raising it is a separate owner decision after this lands. Do not merge; the owner names the PR in words.
+Acceptance: a PR with the four workflows green on its head, the focused tests listed in the description, and the before/after numbers. The owner separately approved raising `CF_MAX_PAGES`; this landed in PR #488. Do not raise it further without another decision.
 
 ### Deferred
 
 - Roadmap P0c: test batch lookups for Last.fm (27.5 s of a 39.6 s cold run at 4 pages is up to 40 sequential `album.getInfo` calls). No batch method is known; check the docs, then concurrency, then ListenBrainz substitutes. Any change to Last.fm call count or pacing needs owner approval; Last.fm as a ranking source is otherwise parked.
 - Confirm the client fix over more runs; reopen the failure-class thread only if CF failures return.
-- After P0b lands: re-measure `CF_MAX_PAGES = 4` end to end on `main` and bring the numbers to the owner.
-- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval); revisit 4 pages after P0b lands.
+- P0b and the approved four-page re-measurement are complete (PRs #487 and #488).
+- Reading deeper into the 1,000-recording CF pool (more ListenBrainz requests; owner approval).
 - CF freshness capture (needs an authorized two-sided capture); default-on decisions for the remaining flags (`BATCH_TITLE_FILTER_ENABLED` and steady-state `CF_BATCH_RESOLUTION_ENABLED`, genre breaker, tag-lane early stop); Last.fm (parked); diversity setting UI (paused).
 - A "Saved" page, undo after reload, MBID in save metadata, rendered check of the artist deep-dive Save control.
 
