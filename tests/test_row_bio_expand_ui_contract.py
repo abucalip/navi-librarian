@@ -10,7 +10,7 @@ CSS = (ROOT / "static" / "app.css").read_text(encoding="utf-8")
 
 class RowBioExpandTests(unittest.TestCase):
     def test_rows_have_one_height_and_the_bio_is_clamped_with_an_ellipsis(self):
-        self.assertIn("--row-art: 96px;", CSS)
+        self.assertIn("--row-art: 136px;", CSS)
         self.assertRegex(CSS, r"\.ranked-row \.row-main \{[^}]*height: var\(--row-art\);")
         rule = re.search(r"\.ranked-row \.artist-bio \{([^}]*)\}", CSS).group(1)
         self.assertIn("-webkit-line-clamp: 2", rule)

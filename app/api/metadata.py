@@ -23,7 +23,12 @@ router = APIRouter()
 
 _EXTERNAL_HTTP = httpx.Client(
     timeout=httpx.Timeout(3.0, connect=1.5),
-    headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)"},
+    # Wikimedia answers 403 ("robot policy") to this User-Agent when the request carries httpx's
+    # default `Accept: */*`, so every artist bio came back empty. A JSON Accept header fixes it.
+    headers={
+        "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)",
+        "Accept": "application/json",
+    },
 )
 
 # Artist biographies are cached for a day. Wikidata identifies the intended
@@ -68,10 +73,12 @@ def artist_bio(artist: str):
         summary_future = pool.submit(_EXTERNAL_HTTP.get, summary_url)
         entities = []
         page = {}
+        search_ok = False
         try:
             search_response = search_future.result()
             search_response.raise_for_status()
             entities = search_response.json().get("search", [])
+            search_ok = True
         except Exception:
             pass
         try:
@@ -83,7 +90,9 @@ def artist_bio(artist: str):
 
     bio = resolve_artist_bio(name, entities, page)
 
-    _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+    # A failed Wikidata lookup is not "this artist has no bio": do not cache it for a day.
+    if search_ok:
+        _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
     return {"artist": name, "bio": bio}
 
 
