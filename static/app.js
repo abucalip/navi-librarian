@@ -677,6 +677,41 @@ const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
 const albumYearRequests = new Map();
 const artistBioRequests = new Map();
+// Browsers allow about six connections to this server at once. Bio lookups call two outside
+// services and take a second or more, so letting a whole page of them run at once left artwork
+// requests waiting behind them (some for many seconds). At most two bios load at a time; a bio the
+// person asked for by opening an album goes to the front of the queue.
+const BIO_CONCURRENCY = 2;
+const bioQueue = [];
+let bioInFlight = 0;
+
+function drainBioQueue() {
+  while (bioInFlight < BIO_CONCURRENCY && bioQueue.length) {
+    bioInFlight += 1;
+    bioQueue.shift()();
+  }
+}
+
+function cachedBioRequest(key, artist, urgent = false) {
+  if (!artistBioRequests.has(key)) {
+    const url = '/api/artist-bio?artist=' + encodeURIComponent(artist);
+    const request = new Promise(start => {
+      if (urgent) bioQueue.unshift(start); else bioQueue.push(start);
+      drainBioQueue();
+    })
+      .then(() => fetch(url))
+      .then(response => response.ok ? response.json() : null)
+      .catch(() => null)
+      .then(data => {
+        bioInFlight -= 1;
+        drainBioQueue();
+        if (data === null) artistBioRequests.delete(key);
+        return data;
+      });
+    artistBioRequests.set(key, request);
+  }
+  return artistBioRequests.get(key);
+}
 const albumCardMetadata = new WeakMap();
 let activeAlbumModal = null;
 
@@ -871,7 +906,7 @@ function loadAlbumModalBio(card, artist) {
   bio.hidden = true;
   if (!artist || artist === 'Unknown artist') return;
   const bioKey = artist.trim().toLocaleLowerCase();
-  cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+  cachedBioRequest(bioKey, artist, true)
     .then(result => {
       if (!result || !result.bio || !activeAlbumModal || activeAlbumModal.card !== card) return;
       bio.textContent = result.bio;
@@ -1469,7 +1504,7 @@ function attachCardArtistBio(card, container, artist) {
     if (card.dataset.bioRequested) return;
     card.dataset.bioRequested = 'true';
     const bioKey = artist.trim().toLocaleLowerCase();
-    cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+    cachedBioRequest(bioKey, artist)
       .then(result => {
         if (!result || !result.bio) return;
         bio.textContent = result.bio;
@@ -1494,7 +1529,7 @@ function attachArtistBio(row, container, artist) {
     if (row.dataset.bioRequested) return;
     row.dataset.bioRequested = 'true';
     const bioKey = artist.trim().toLocaleLowerCase();
-    cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+    cachedBioRequest(bioKey, artist)
       .then(result => {
         if (!result || !result.bio) return;
         bio.textContent = result.bio;
@@ -1724,7 +1759,26 @@ function spriteIcon(name) {
 const genreRowObservers = [];
 const genreRowResizeHandlers = [];
 
+const laneArtworkObservers = new Map();
+
+function laneArtworkObserver(track) {
+  if (!laneArtworkObservers.has(track)) {
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const load = artworkLoaders.get(entry.target);
+        if (load) load();
+        observer.unobserve(entry.target);
+      }
+    }, {root: track, rootMargin: '0px 700px 0px 700px'});
+    laneArtworkObservers.set(track, observer);
+    genreRowObservers.push(observer);
+  }
+  return laneArtworkObservers.get(track);
+}
+
 function disconnectGenreRowObservers() {
+  laneArtworkObservers.clear();
   while (genreRowObservers.length) genreRowObservers.pop().disconnect();
   while (genreRowResizeHandlers.length) {
     window.removeEventListener('resize', genreRowResizeHandlers.pop());
@@ -1954,7 +2008,14 @@ async function loadDiscovery(name, options = {}) {
       }
 
       card.append(actions);
-      (destinationByItem.get(item) || target).append(card);
+      const destination = destinationByItem.get(item) || target;
+      destination.append(card);
+      // A lane scrolls sideways, and the page-wide artwork observer cannot see past the lane's own
+      // edge. Observing against the lane itself starts the next few covers before they scroll in.
+      const art = card.querySelector('.card-art');
+      if (art && destination !== target && 'IntersectionObserver' in window) {
+        laneArtworkObserver(destination).observe(art);
+      }
     }
 
     // Each section explains its own precondition and names the action that resolves it,
