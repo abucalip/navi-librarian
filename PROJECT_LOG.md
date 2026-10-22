@@ -334,3 +334,12 @@
 - Retargeted PR #564 to `main` after #563 merged. Review of head `9cae06937a4dc65e9a3f12be484f008a0a49d839` found that sparse-history fallback returns fixed core/exploration sets but retains `profile_mode="derived"`, so fixed-mode classification exceptions remain disabled. Posted a review comment requesting an effective-mode fix and regression coverage. GitHub rejected a formal REQUEST_CHANGES review because the PR was authored by the connected account; the finding was posted as a COMMENT review instead.
 - No workflow runs are visible for PR #564's current head after retargeting, so the requested full suite and four required CI workflows are **not verified** on that head. The repository workflow says agents do not run the full suite manually; it must run in CI. PR #564 remains open and unmerged. Derived mode remains off by default; multi-profile replay evidence and owner approval are still required before enabling it.
 - No manual UI checks, publication, deployment, or runtime verification were performed.
+
+
+## 2026-10-22 — PR #564 merged: opt-in derived taste profile
+
+- PR #564 squash-merged to `main` as `508269f1177e35075330c903775f74e23c2f14af`, from exact tested PR head `6c08e385dccb21a28dd3b1e54531cb554ef26db8`.
+- The sparse-history fallback issue was corrected: when derived profiling falls back to shipped defaults, the effective mode is now `fixed`, preserving fixed adventurous-tag and regional artist fallback behavior. Regression coverage checks effective mode, classification, and exploration bonus.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety `39862938840`; Docker packaging, full unit suite and image build `39862938736`; container runtime smoke `39862938685`; validation-only multi-architecture image build `39862938695` (`push: false`). The full unit-test and Docker-build steps succeeded. These runs are associated with the PR head, not the squash merge commit.
+- The stacked branch's review diff included already-merged #563 changes, but comparison of the squash merge commit against pre-merge `main` shows only the seven derived-profile files changed; #563 defaults are not duplicated in the net merge diff. No separate branch reconciliation commit was created before merge.
+- Derived mode remains off by default. Multi-profile replay evidence is not supplied and enabling the mode requires a separate owner decision. No image publication, deployment, or runtime verification was performed.
