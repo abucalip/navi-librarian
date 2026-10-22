@@ -1,6 +1,6 @@
 # Plan: replace hard-coded taste with derived behavior
 
-Status: Phases 1-3 merged (PRs #561-#564); Phase 4 tooling and first evidence merged (PRs #565-#568); derived mode is opt-in and off by default. Awaiting the owner's decision on making it the default. Evidence: `PROJECT_LOG.md`. The line references below predate the refactor.
+Status: Phases 1-3 merged (PRs #561-#564); Phase 4 tooling and first evidence merged (PRs #565-#568); the owner made derived mode the default in PR #569. The fixed tables remain for the `fixed` option and the sparse-history fallback; removing them is an optional follow-up. Evidence: `PROJECT_LOG.md`. The line references below predate the refactor.
 
 ## Problem
 
