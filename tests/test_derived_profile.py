@@ -179,3 +179,32 @@ class AncestryGroupingTests(unittest.TestCase):
         self.assertLessEqual(families, {
             "jazz", "hip-hop", "electronic", "metal", "punk", "rock", "pop",
             "classical", "folk", "blues", "country", "reggae", "rnb-soul", "funk"})
+
+
+class CoreClusterTests(unittest.TestCase):
+    def _rows(self):
+        # pop and rock always co-occur; jazz is separate.
+        return listens([["pop", "rock"]] * 6 + [["jazz"]] * 6)
+
+    def test_cooccurring_core_families_share_a_cluster(self):
+        core, _, source = dp.derive_profile(self._rows(), [])
+        self.assertEqual(source, "derived")
+        self.assertEqual(core, {"pop", "rock", "jazz"})
+        self.assertEqual(core.cluster_of["pop"], core.cluster_of["rock"])
+        self.assertNotEqual(core.cluster_of["pop"], core.cluster_of["jazz"])
+
+    def test_cross_genre_needs_two_distinct_clusters(self):
+        core, _, _ = dp.derive_profile(self._rows(), [])
+        same, _ = classify_recommendation_category({"artist": "x"}, ["pop", "rock"], core, set(), derived=True)
+        across, _ = classify_recommendation_category({"artist": "x"}, ["rock", "jazz"], core, set(), derived=True)
+        self.assertEqual((same, across), ("adjacent", "cross_genre"))
+
+    def test_plain_sets_keep_the_original_cross_genre_rule(self):
+        category, _ = classify_recommendation_category(
+            {"artist": "x"}, ["pop", "rock"], {"pop", "rock"}, set(), derived=True)
+        self.assertEqual(category, "cross_genre")
+
+    def test_separate_families_stay_separate(self):
+        rows = listens([["jazz"]] * 6 + [["metal"]] * 6)
+        core, _, _ = dp.derive_profile(rows, [])
+        self.assertEqual(len(set(core.cluster_of.values())), 2)
