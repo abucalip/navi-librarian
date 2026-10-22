@@ -52,6 +52,30 @@ class MetadataRoutesTests(unittest.TestCase):
             })
         client.get.assert_not_called()
 
+    def test_artist_bio_client_sends_json_accept_header(self):
+        # Wikimedia returns 403 for the default `Accept: */*`; every bio was empty because of it.
+        self.assertEqual(metadata._EXTERNAL_HTTP.headers["accept"], "application/json")
+
+    def test_artist_bio_does_not_cache_a_failed_wikidata_lookup(self):
+        def get(url, params=None):
+            if "wikidata" in url:
+                return _Response({}, status_code=403)
+            return _Response({}, status_code=404)
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = get
+            self.assertEqual(metadata.artist_bio("Artist")["bio"], "")
+        self.assertNotIn("artist", metadata._artist_bio_cache)
+
+    def test_artist_bio_caches_a_successful_lookup_without_a_bio(self):
+        def get(url, params=None):
+            if "wikidata" in url:
+                return _Response({"search": []})
+            return _Response({}, status_code=404)
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = get
+            metadata.artist_bio("Artist")
+        self.assertIn("artist", metadata._artist_bio_cache)
+
     def test_album_year_prefers_musicbrainz_and_validates_input(self):
         with self.assertRaises(HTTPException) as raised:
             metadata.album_year("Artist", "")

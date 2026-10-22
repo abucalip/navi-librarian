@@ -61,9 +61,10 @@ class AlbumModalStyleTests(unittest.TestCase):
         self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,6}\b", self.block))
         self.assertIsNone(re.search(r"rgba?\(", self.block.replace("rgb(20 18 17 / .8)", "")))
 
-    def test_year_is_metadata_not_the_accent(self):
+    def test_year_uses_the_accent_like_every_other_year(self):
+        # The owner asked for yellow years everywhere except the New releases date column.
         year = re.search(r"\.album-modal-year \{[^}]*\}", self.block).group(0)
-        self.assertNotIn("var(--accent)", year)
+        self.assertIn("var(--accent)", year)
 
     def test_motion_is_opacity_and_an_eight_pixel_translate_only(self):
         self.assertIn("@keyframes album-modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }", self.block)

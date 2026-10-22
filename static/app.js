@@ -761,7 +761,8 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
 
 function ensureAlbumYearBadge(card) {
   const year = Number(card && card.dataset ? card.dataset.releaseYear : 0);
-  const title = card && card.querySelector('h3');
+  // Deep Dive cards put the artist in the heading, so their year belongs on the album line.
+  const title = card && card.querySelector(card.dataset.yearTarget === 'supporting' ? '.card-artist' : 'h3');
   if (title && year >= 1900 && year <= 2100 && !title.querySelector('.album-year')) {
     addTextElement(title, 'span', 'album-year', String(year));
   }
@@ -1046,6 +1047,7 @@ function buildDashboardTile(item) {
   if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
   meta.append(title);
   addTextElement(meta, 'p', 'card-artist', artist);
+  if (artist !== 'Unknown artist') attachCardArtistBio(tile, meta, artist);
   tile.append(meta);
   ensureAlbumYearBadge(tile);
 
@@ -1317,7 +1319,9 @@ function buildRecommendationRow(item, rank, options = {}) {
   } else {
     addRecommendationMeta(meta, item);
   }
-  row.append(meta);
+  // A row with nothing to say in the metadata column drops it, so the bio gets the width.
+  if (meta.childElementCount) row.append(meta);
+  else row.classList.add('no-meta');
 
   const actions = document.createElement('div');
   actions.className = 'row-actions';
@@ -1404,10 +1408,7 @@ function buildNewReleaseRow(item) {
   return buildRecommendationRow(item, null, {
     releaseDate: true,
     artistBio: true,
-    meta: [
-      item.reason,
-      item.discovery_source ? 'Source: ' + item.discovery_source.replaceAll('_', ' ') : ''
-    ],
+    meta: [],
     listName: 'new_releases',
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', row),
     onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)
@@ -1424,8 +1425,9 @@ function buildPersonalRow(item, index) {
     // Every row shows the artist bio, fetched when the row scrolls near the viewport.
     artistBio: true,
     meta: [
-      item.discovery_category ? item.discovery_category.replaceAll('_', ' ') : '',
-      item.reason,
+      categoryLabel(item.discovery_category),
+      item.discovery_category === 'unclassified' || item.genre_metadata_available === false
+        ? 'Low confidence: genre data unavailable' : '',
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
     listName: 'personal',
@@ -1446,7 +1448,7 @@ function buildClassicsRow(item, index) {
     indexed: true,
     artistBio: hasBio,
     meta: [
-      (item.discovery_type || item.discovery_category || '').replaceAll('_', ' '),
+      categoryLabel(item.discovery_type || item.discovery_category || ''),
       item.anchor_artist ? 'Similar to ' + item.anchor_artist : '',
       hasBio ? '' : item.reason,
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
@@ -1455,6 +1457,31 @@ function buildClassicsRow(item, index) {
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'classics', row),
     onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics', row)
   });
+}
+
+// Lazy artist bio for a card (Deep Dives, Discover cards, dashboard tiles). One request per artist
+// (cached in artistBioRequests), made when the card nears the viewport; the paragraph stays hidden
+// unless the API returns a bio. Text is set with textContent.
+function attachCardArtistBio(card, container, artist) {
+  // The paragraph keeps its two-line space while the bio loads, so the card does not jump.
+  const bio = addTextElement(container, 'p', 'artist-bio is-pending', '');
+  const loadBio = () => {
+    if (card.dataset.bioRequested) return;
+    card.dataset.bioRequested = 'true';
+    const bioKey = artist.trim().toLocaleLowerCase();
+    cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+      .then(result => {
+        if (!result || !result.bio) return;
+        bio.textContent = result.bio;
+        // The card clamps the bio; the full text stays available on hover.
+        bio.title = result.bio;
+        bio.classList.remove('is-pending');
+      })
+      .catch(() => {});
+  };
+  bioLoaders.set(card, loadBio);
+  if (artistBioObserver) artistBioObserver.observe(card);
+  else loadBio();
 }
 
 // Lazy artist bio for a ranked row. Same contract as the editorial card: one request per artist
@@ -1503,9 +1530,15 @@ function makeBioExpandable(row, bio) {
   });
 }
 
+// "adventurous" is shown as "Adventurous discovery"; other categories keep their plain name.
+function categoryLabel(category) {
+  const name = String(category || '').replaceAll('_', ' ');
+  return name === 'adventurous' ? 'Adventurous discovery' : name;
+}
+
 // Discover music metadata lines. Each line appears only when the API returned the value.
 function addRecommendationMeta(meta, item) {
-  addTextElement(meta, 'p', 'row-meta-line row-category', (item.discovery_category || 'Unclassified').replaceAll('_', ' '));
+  addTextElement(meta, 'p', 'row-meta-line row-category', categoryLabel(item.discovery_category || 'Unclassified'));
   const genres = [...new Set([
     ...(Array.isArray(item.genres) ? item.genres : []),
     ...(Array.isArray(item.genre_families) ? item.genre_families : [])
@@ -1851,7 +1884,7 @@ async function loadDiscovery(name, options = {}) {
       // repetition, not labelling, so proximity does the grouping instead of a tag per card.
       if (!isDeepDive) {
         addTextElement(card, 'p', 'card-category',
-          (item.discovery_type || item.discovery_category || name).replaceAll('_',' '));
+          categoryLabel(item.discovery_type || item.discovery_category || name));
       }
       const title = document.createElement('h3');
       // This section's task is artist-led: its own copy reads "Explore missing albums by
@@ -1862,33 +1895,18 @@ async function loadDiscovery(name, options = {}) {
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
       if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
-      ensureAlbumYearBadge(card);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.
       const supportingLine = addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);
+      if (isDeepDive) card.dataset.yearTarget = 'supporting';
       // Keep release-year metadata with the album when the artist is the primary heading.
       if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));
+      ensureAlbumYearBadge(card);
 
       const needsBio = isDeepDive ||
         /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
       if (needsBio) {
-        const bio = addTextElement(card, 'p', 'artist-bio', '');
-        bio.hidden = true;
-        const loadBio = () => {
-          if (card.dataset.bioRequested) return;
-          card.dataset.bioRequested = 'true';
-          const bioKey = artist.trim().toLocaleLowerCase();
-          cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
-            .then(result => {
-              if (!result || !result.bio) return;
-              bio.textContent = result.bio;
-              bio.hidden = false;
-            })
-            .catch(() => {});
-        };
-        bioLoaders.set(card, loadBio);
-        if (artistBioObserver) artistBioObserver.observe(card);
-        else loadBio();
+        attachCardArtistBio(card, card, artist);
       }
 
       if (item.reason && !needsBio) addTextElement(card, 'p', 'card-meta', item.reason);
