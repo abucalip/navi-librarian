@@ -25,13 +25,11 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Deep Dives artwork speed — code change merged in PR [#558](https://github.com/abucalip/navi-librarian/pull/558)** (`d44c01669611bd11acfaa4f1197905afed7f9f08`, tested head `976c86e77034322e53cc7aea9691fa840c2d6146`). Full suite and required automated workflows passed. The owner waived manual browser verification; artwork timing was not re-measured and the change is not browser-verified. No publication/deployment. If the issue persists after an authorized deployment, measure browser timings before another fix.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
 
-## 2b. Replace hard-coded taste with derived behavior — proposed
+## 2b. Replace hard-coded taste with derived behavior — gated
 
-Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). The engine hard-codes one listener's genre families and named artists; the goal is for it to work for any taste. First tasks (Phases 1–2 change no behavior and need no ranking approval):
+Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). PR #563 externalized the shipped defaults (`9a659f6e9da175e475aa22f86c69492f40206869`); PR #564 then merged the opt-in `taste_profile_mode=derived` implementation as `508269f1177e35075330c903775f74e23c2f14af`. Its sparse-history fallback regression is fixed and all four required workflows passed on the exact PR head, including the full unit suite.
 
-- **Consolidate the family vocabulary:** move the duplicated tag-to-family rules (`genre_families`, `recent_style_families`, `primary_recent_family`, `deep_dive_genre_families`, and the `static/app.js` copy and labels) into one module. Record where the existing tables differ in `PROJECT_LOG.md`; the owner decides which behavior is canonical. Existing tests must pass unchanged.
-- **Externalize the defaults:** move the core/exploration family sets, the regional artist fallback list, and the adventurous tag list into a settings file whose shipped default reproduces current output. Confirm identical output with replay and profile comparison.
-- **Then stop and ask the owner** before the derived-profile mode (Phase 3). It changes ranking and needs replay evidence across several non-jazz profiles and owner approval.
+- **Remaining gate:** Phase 4 requires replay evidence across several profiles, which is not yet available. Keep derived mode off by default; enabling it requires a separate owner decision. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
 
 ## 3. Recommendation engine — gated
 
