@@ -50,6 +50,22 @@ class NewReleaseCandidateSelectionTests(unittest.TestCase):
         self.assertEqual(candidate["discovery_type"], "new_release")
         self.assertEqual(candidate["artist_library_album_count"], 4)
 
+    def test_excludes_releases_after_today_but_keeps_today_and_earlier(self):
+        groups = [
+            group("Tomorrow", "2026-10-23"),
+            group("Later this year", "2026-12-01"),
+            group("Later month only", "2026-11"),
+            group("Today", "2026-10-22"),
+            group("Earlier", "2026-10-01"),
+        ]
+        result = select_artist_release_candidates(
+            groups, artist="Björk", artist_record={"album_count": 4}, owned=set(),
+            cutoff_date="2024-10-16", current_year=2026, today="2026-10-22",
+            music_key=music_key, is_album_candidate=is_album_candidate,
+            exact_artist_credit_matches=exact_credit, is_various_artists=is_various_artists,
+        )
+        self.assertEqual({c["album"] for c in result.values()}, {"Today", "Earlier"})
+
     def test_rejects_non_album_bad_date_out_of_window_and_future_year(self):
         result = self.select([
             group("EP", "2025-01-01", primary="EP"),
