@@ -72,6 +72,31 @@ def album_path_match(album, text):
     return overlap >= max(2, math.ceil(len(unique_tokens) * 0.6))
 
 
+def _mask_word(word):
+    """Replace the first alphanumeric character of a word with a Soulseek wildcard."""
+    for index, char in enumerate(word):
+        if char.isalnum():
+            return word[:index] + "*" + word[index + 1:]
+    return word
+
+
+def masked_artist_variants(artist):
+    """Return wildcard-masked artist names for terms the network blocks outright.
+
+    First the first word only ("*orillaz"), then every word ("*ink *loyd").
+    Words under three characters are left intact to keep queries selective.
+    """
+    words = artist.split()
+    if not words:
+        return []
+    first_only = [
+        _mask_word(word) if index == 0 and len(word) >= 3 else word
+        for index, word in enumerate(words)
+    ]
+    every_word = [_mask_word(word) if len(word) >= 3 else word for word in words]
+    return [" ".join(first_only), " ".join(every_word)]
+
+
 def search_queries(artist, album):
     """Return a small, ordered set of progressively broader Soulseek queries."""
     import re
@@ -85,6 +110,7 @@ def search_queries(artist, album):
     primary_title = re.sub(r"\s*\([^)]*\)", " ", album)
     variants = [
         f"{artist} {album}",
+        *(f"{masked} {album}" for masked in masked_artist_variants(artist)),
         f"{artist} {punctuation_normalized}",
         f"{artist} {primary_title}",
     ]
