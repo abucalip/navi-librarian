@@ -61,7 +61,7 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
         self.assertNotIn("makeScrollTrackFocusable(", dashboard)
         self.assertIn("makeScrollTrackFocusable($('dashboardCarousel'));", self.js)
         self.assertIn(
-            "makeScrollTrackFocusable(track, genreRowLabel(genre) + ' albums');", self.js
+            "makeScrollTrackFocusable(track, genreRowLabel(genre, rowLabels) + ' albums');", self.js
         )
 
     def test_scroll_motion_is_suppressed_under_reduced_motion(self):

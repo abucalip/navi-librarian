@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from discovery.taste_families import deep_dive_row
 
 router = APIRouter()
 
@@ -47,11 +48,17 @@ def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librar
     if not 1 <= count <= 150:
         raise HTTPException(status_code=400, detail="count must be between 1 and 150")
     try:
-        return parse_result(
+        data = parse_result(
             librarian.discovery_get_list(list_name=list_name, count=count)
         )
     except Exception:
         raise HTTPException(status_code=502, detail="Could not retrieve the discovery list.")
+    if list_name == "artist_deep_dive" and isinstance(data, dict):
+        for key in ("items", "recommendations"):
+            for item in data.get(key) or []:
+                if isinstance(item, dict):
+                    item.update(deep_dive_row(item))
+    return data
 
 
 @router.post("/api/discovery/{list_name}/refresh")
