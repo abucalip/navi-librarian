@@ -27,11 +27,9 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## 2b. Replace hard-coded taste with derived behavior — gated
 
-Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). PR #563 externalized the shipped defaults and merged as `9a659f6e9da175e475aa22f86c69492f40206869`; all four required workflows passed on its exact head, including the full unit suite. PR #564 proposes `taste_profile_mode=derived` (off by default) and remains under review.
+Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). PR #563 externalized the shipped defaults (`9a659f6e9da175e475aa22f86c69492f40206869`); PR #564 then merged the opt-in `taste_profile_mode=derived` implementation as `508269f1177e35075330c903775f74e23c2f14af`. Its sparse-history fallback regression is fixed and all four required workflows passed on the exact PR head, including the full unit suite.
 
-- **Current blocker in PR #564:** sparse history returns the fixed core/exploration sets but leaves the effective mode as `derived`, so ranking still uses derived tag-family classification and bypasses fixed adventurous-tag and regional artist fallback rules. A review comment records this finding. Fix the effective-mode fallback and add a regression test before merge.
-- Run the full unit suite through CI and verify all four required workflows on the exact final PR head. No current-head workflow run is visible yet.
-- **Do not enable derived mode by default.** Phase 4 still requires replay evidence across several profiles and a separate owner decision. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
+- **Remaining gate:** Phase 4 requires replay evidence across several profiles, which is not yet available. Keep derived mode off by default; enabling it requires a separate owner decision. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
 
 ## 3. Recommendation engine — gated
 
