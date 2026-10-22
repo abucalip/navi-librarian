@@ -5,7 +5,19 @@ from app.services.deezer_artwork import select_album_artwork, select_artist_artw
 
 
 class DeezerArtworkTests(unittest.TestCase):
-    def test_album_selection_uses_best_relevant_candidate_and_highest_resolution(self):
+    def test_card_artwork_prefers_the_500px_cover_over_the_1000px_one(self):
+        album = {
+            "artist": {"name": "Artist"}, "title": "Album", "release_date": "2002-03-04",
+            "cover_xl": "http://images.test/xl.jpg", "cover_big": "http://images.test/big.jpg",
+            "cover_medium": "http://images.test/medium.jpg",
+        }
+        self.assertEqual(select_album_artwork([album], "Artist", "Album")["artwork_url"], "https://images.test/big.jpg")
+        del album["cover_big"]
+        self.assertEqual(select_album_artwork([album], "Artist", "Album")["artwork_url"], "https://images.test/xl.jpg")
+        artist = [{"name": "Artist", "picture_xl": "http://images.test/pxl.jpg", "picture_big": "http://images.test/pbig.jpg"}]
+        self.assertEqual(select_artist_artwork(artist, "Artist")["artwork_url"], "https://images.test/pbig.jpg")
+
+    def test_album_selection_uses_best_relevant_candidate_and_card_sized_cover(self):
         result = select_album_artwork([
             {
                 "artist": {"name": "Artist"}, "title": "Album Deluxe",
