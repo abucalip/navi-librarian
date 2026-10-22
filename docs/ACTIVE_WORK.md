@@ -25,7 +25,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Section labels:** use a smaller font size for the section labels ("Personal discoveries" and others) on the dashboard page to leave room for the bios.
 - **Dashboard album cards:** show the bios on the album cards.
 - **Album panel bio (still broken):** bios still do not show in the album panel (the one opened by clicking an album, showing the tracklist), despite PR #547. Investigate the root cause before re-fixing.
-- **Deep Dives artwork speed:** artwork still takes a long time to load on Deep Dives (despite PR #535). Measure and find the root cause before re-fixing.
+- **Deep Dives artwork speed — code change merged in PR [#558](https://github.com/abucalip/navi-librarian/pull/558)** (`d44c01669611bd11acfaa4f1197905afed7f9f08`, tested head `976c86e77034322e53cc7aea9691fa840c2d6146`). Full suite and required automated workflows passed. The owner waived manual browser verification; artwork timing was not re-measured and the change is not browser-verified. No publication/deployment. If the issue persists after an authorized deployment, measure browser timings before another fix.
 - **Deep Dives cards:** show the artist bio and the album year on the cards.
 - **Deep Dives card spacing:** the album title sits too close to the artwork and looks sloppy; add space between the title and the artwork.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
