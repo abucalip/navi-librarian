@@ -1,6 +1,6 @@
-## 2026-10-22 — Wildcard-masked artist queries for blocked slskd searches (PR open)
+## 2026-10-22 — Wildcard-masked artist queries for blocked slskd searches (PR #527 merged)
 
-- Branch `fix/slskd-masked-artist-queries`; PR and head SHA are recorded in `docs/PROJECT_STATUS.md` once CI has run. Not merged, published or deployed.
+- PR #527 squash-merged as `e03f4b3` from head `8f51626677473aa069c81e34eaa9007f18cd6623`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
 - Why: slskd blocks some artist names (e.g. "Gorillaz Plastic Beach" returns zero) although the music is on the network; replacing a first letter with `*` ("*orillaz Plastic Beach") bypasses it.
 - Change: `integrations/slskd/search.py` adds `masked_artist_variants()`; `search_queries()` inserts the first-word-masked and every-word-masked artist queries right after the unmasked one, before the existing punctuation/parenthetical fallbacks. Words under 3 characters are not masked. No change to `search_polling.py`, candidate extraction or diagnostics.
 - Tests: new cases in `tests/test_slskd_search.py` (single word, multi-word, short words); old query-list expectations updated in `test_slskd_search`, `test_slskd_search_modules` and `test_slskd_search_polling` (the latter two were missed on the first head and failed CI). Focused run of five slskd/acquisition modules with `.venv`: 32 OK. Live slskd behavior not verified.
