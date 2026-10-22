@@ -8,6 +8,8 @@ shipped vocabulary still get a family of their own.
 from __future__ import annotations
 
 from collections import Counter
+import json
+from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
 from discovery import taste_families
@@ -21,18 +23,45 @@ MIN_PROFILE_WEIGHT = 5.0
 EXPLORATION_MIN_POOL_SHARE = 0.05
 MAX_EXPLORATION_FAMILIES = 3
 
+ANCESTRY_PATH = Path(__file__).resolve().parent.parent / "settings" / "genre_ancestry.json"
+# A tag that ends in one of these words belongs to that family ("doom metal").
+ROOT_WORDS = frozenset({
+    "metal", "punk", "rock", "pop", "jazz", "folk", "blues", "country",
+    "reggae", "funk", "classical",
+})
+
+
+def _load_ancestry(path: Path = ANCESTRY_PATH) -> dict[str, str]:
+    """Tag -> root family from the Wikidata-built table; empty if unavailable."""
+    try:
+        with path.open(encoding="utf-8") as handle:
+            tags = json.load(handle).get("tags", {})
+    except (OSError, ValueError, AttributeError):
+        return {}
+    return {str(k): str(v) for k, v in tags.items()}
+
+
+_ANCESTRY = _load_ancestry()
 _GENERIC_SUFFIXES = {"music", "genre", "genres"}
 
 
 def fallback_family(tag: str) -> str:
     """Normalized family key for a tag no shipped rule matches.
 
-    Genre names put the head noun last ("heavy metal", "dream pop"), so the last
-    word groups sub-genres under their root. This is a heuristic, not ancestry.
+    Order: a trailing root word ("doom metal" -> metal), then the Wikidata
+    ancestry table ("boom bap" -> hip-hop), then the head-noun heuristic.
+
+    Otherwise genre names put the head noun last ("k-pop"), so the last word is
+    the key. Only the table is ancestry; the other two steps are heuristics.
     """
-    words = [w for w in str(tag or "").casefold().replace("_", " ").split() if w]
+    text = str(tag or "").casefold().strip()
+    words = [w for w in text.replace("_", " ").split() if w]
     while len(words) > 1 and words[-1] in _GENERIC_SUFFIXES:
         words.pop()
+    if words and words[-1] in ROOT_WORDS:
+        return words[-1]
+    if text in _ANCESTRY:
+        return _ANCESTRY[text]
     return words[-1].strip("-") if words else ""
 
 
