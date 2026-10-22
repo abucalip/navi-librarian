@@ -145,10 +145,11 @@ class AncestryGroupingTests(unittest.TestCase):
 
     def test_shipped_table_is_well_formed(self):
         families = set(dp._ANCESTRY.values())
-        self.assertGreater(len(dp._ANCESTRY), 100)
+        self.assertGreater(len(dp._ANCESTRY), 300)
         self.assertLessEqual(families, {
             "jazz", "hip-hop", "electronic", "metal", "punk", "rock", "pop",
-            "classical", "folk", "blues", "country", "reggae", "rnb-soul", "funk"})
+            "classical", "folk", "blues", "country", "reggae", "rnb-soul", "funk",
+            "gospel", "latin", "african", "brazilian"})
 
 
 class CoreClusterTests(unittest.TestCase):
@@ -184,7 +185,12 @@ class AncestryTableCorrectionTests(unittest.TestCase):
     def test_curated_corrections_apply(self):
         for tag, family in {"thrash metal": "metal", "punk rock": "punk", "stoner rock": "rock",
                             "hip hop soul": "rnb-soul", "alternative dance": "electronic",
-                            "dub": "reggae", "baroque": "classical"}.items():
+                            "dub": "reggae", "baroque": "classical",
+                            "metalcore": "metal", "djent": "metal", "post-metal": "metal",
+                            "amapiano": "african", "choro": "brazilian", "ska": "reggae",
+                            "salsa": "latin", "gospel": "gospel", "lovers rock": "reggae",
+                            "rhythm and blues": "rnb-soul", "chillwave": "electronic",
+                            "nu jazz": "jazz", "g-funk": "funk"}.items():
             self.assertEqual(dp._ANCESTRY[tag], family, tag)
 
     def test_table_agrees_with_trailing_root_word_unless_overridden(self):

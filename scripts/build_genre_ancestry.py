@@ -25,7 +25,8 @@ ROOTS = {
     "Q8341": "jazz", "Q11401": "hip-hop", "Q9778": "electronic",
     "Q38848": "metal", "Q3071": "punk", "Q11399": "rock", "Q37073": "pop",
     "Q9730": "classical", "Q43343": "folk", "Q9759": "blues",
-    "Q83440": "country", "Q9794": "reggae", "Q45981": "rnb-soul",
+    "Q83440": "country", "Q9794": "reggae", "Q54365": "reggae",
+    "Q180268": "gospel", "Q18345375": "latin", "Q45981": "rnb-soul",
     "Q131272": "rnb-soul", "Q164444": "funk",
 }
 MAX_DEPTH = 8
@@ -39,11 +40,17 @@ OVERRIDES = {
     "new jack swing": "rnb-soul", "rap metal": "metal", "rapcore": "metal",
     "punk rock": "punk", "punk blues": "punk", "electronic rock": "electronic",
     "rap rock": "rock", "desert rock": "rock", "stoner rock": "rock",
+    "amapiano": "african", "gqom": "african", "kwaito": "african", "kuduro": "african",
+    "afrobeats": "african", "choro": "brazilian", "forro": "brazilian",
+    "deathcore": "metal", "grindcore": "metal", "mathcore": "metal", "metalcore": "metal",
+    "djent": "metal", "post-metal": "metal", "neue deutsche welle": "rock",
+    "lovers rock": "reggae", "hyperpop": "pop", "rhythm and blues": "rnb-soul",
+    "red dirt": "country",
 }
 # A tag that ends in one of these words belongs to that family ("doom metal").
 ROOT_WORDS = frozenset({
     "metal", "punk", "rock", "pop", "jazz", "folk", "blues", "country",
-    "reggae", "funk", "classical",
+    "reggae", "funk", "classical", "gospel", "latin",
 })
 
 
@@ -60,11 +67,15 @@ _GENRE_WORDS = ("genre", "music", "style", "subgenre", "movement")
 
 
 def _get(client: httpx.Client, url: str, params: dict) -> dict:
-    for attempt in range(3):
-        response = client.get(url, params=params, headers=UA, timeout=40)
+    """GET JSON, backing off when Wikidata throttles (429 or an empty body)."""
+    for attempt in range(6):
+        response = client.get(url, params=params, headers=UA, timeout=60)
         if response.status_code == 200:
-            return response.json()
-        time.sleep(2 * (attempt + 1))
+            try:
+                return response.json()
+            except ValueError:
+                pass
+        time.sleep(5 * (attempt + 1))
     response.raise_for_status()
     return {}
 
@@ -142,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
             qid = resolve(client, tag)
             if qid:
                 qid_by_tag[tag] = qid
-            time.sleep(0.3)
+            time.sleep(1.0)
         roots = nearest_roots(client, set(qid_by_tag.values()))
     for tag, qid in qid_by_tag.items():
         if qid in roots:
