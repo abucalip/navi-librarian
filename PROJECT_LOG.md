@@ -1,3 +1,12 @@
+## 2026-10-22 — PR #528 merged: hide future-dated New Releases
+
+- Squash merge commit on `main`: `1e55da1b7b25fe59d4f905a1c9d8985e8c8c7750`; exact tested PR head: `295148dcf817479f4098195200ada4c4173733fe`.
+- Candidate selection now excludes release groups dated after today, including partial dates using their earliest possible day. Cached New Releases responses also hide stored future-dated items, so stale cached lists are corrected on read.
+- Regression coverage: `tests/test_discovery_new_releases.py` and `tests/test_discovery_list_payload.py`; PR report records 46 focused tests passing and `py_compile` on `navidrome_server.py`.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety run 39770936745; Docker packaging/full unit suite/build 39770936858 (unit tests and image build passed); container runtime smoke 39770936556; validation-only multi-architecture image validation 39770936564. The release workflow's publishing job was skipped; its validation job passed.
+- Full unit suite was run by CI on the exact PR head, not separately in the agent environment. No manual browser check or live-library verification was performed. Not published, deployed, or runtime-verified.
+- Removed the resolved future-release bug from `docs/ACTIVE_WORK.md`; `docs/PROJECT_STATUS.md` records the merge. Next action remains live-runtime verification of PRs #526 and #527.
+
 ## 2026-10-22 — Exclusive “the owner” reference convention
 
 - Added a permanent rule requiring all repository documentation, source comments, commit/PR text, reviews, issues, and other project communications to refer to the person directing the project exclusively as “the owner”; personal names and account usernames/handles must not be used for that person.
