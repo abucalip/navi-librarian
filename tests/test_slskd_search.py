@@ -4,6 +4,7 @@ import re
 import unittest
 
 from integrations.slskd.search import (
+    masked_artist_variants,
     album_path_match,
     path_match_diagnostics,
     response_items,
@@ -51,10 +52,29 @@ class SlskdSearchQueryTests(unittest.TestCase):
         queries = search_queries("Tinariwen", "Idrache (Traces of the Past)")
         self.assertEqual(queries, [
             "Tinariwen Idrache (Traces of the Past)",
+            "*inariwen Idrache (Traces of the Past)",
             "Tinariwen Idrache Traces of the Past",
             "Tinariwen Idrache",
         ])
         self.assertEqual(len({query.casefold() for query in queries}), len(queries))
+
+    def test_single_word_artist_masks_once_after_the_unmasked_query(self):
+        self.assertEqual(search_queries("Gorillaz", "Plastic Beach"), [
+            "Gorillaz Plastic Beach",
+            "*orillaz Plastic Beach",
+        ])
+
+    def test_every_word_of_a_multiword_artist_is_masked_as_a_later_variant(self):
+        self.assertEqual(search_queries("Pink Floyd", "The Wall")[:3], [
+            "Pink Floyd The Wall",
+            "*ink Floyd The Wall",
+            "*ink *loyd The Wall",
+        ])
+        self.assertEqual(search_queries("John Lennon", "Imagine")[2], "*ohn *ennon Imagine")
+
+    def test_short_words_are_not_masked(self):
+        self.assertEqual(masked_artist_variants("Bo Burnham"), ["Bo Burnham", "Bo *urnham"])
+        self.assertEqual(masked_artist_variants("U2"), ["U2", "U2"])
 
     def test_queries_reject_blank_artist_or_album(self):
         self.assertEqual(search_queries("", "Album"), [])

@@ -1,3 +1,10 @@
+## 2026-10-22 — Wildcard-masked artist queries for blocked slskd searches (PR open)
+
+- Branch `fix/slskd-masked-artist-queries`; PR and head SHA are recorded in `docs/PROJECT_STATUS.md` once CI has run. Not merged, published or deployed.
+- Why: slskd blocks some artist names (e.g. "Gorillaz Plastic Beach" returns zero) although the music is on the network; replacing a first letter with `*` ("*orillaz Plastic Beach") bypasses it.
+- Change: `integrations/slskd/search.py` adds `masked_artist_variants()`; `search_queries()` inserts the first-word-masked and every-word-masked artist queries right after the unmasked one, before the existing punctuation/parenthetical fallbacks. Words under 3 characters are not masked. No change to `search_polling.py`, candidate extraction or diagnostics.
+- Tests: new cases in `tests/test_slskd_search.py` (single word, multi-word, short words) and the Tinariwen expectation updated; focused run 15 of 16 OK, remaining error is a missing local `httpx`. Live slskd behavior not verified.
+
 ## 2026-10-22 — Failed-track retry in the acquisition watcher (PR #526 merged)
 
 - PR #526 squash-merged as `4fcd5ff78dc7cfebe99d289a49cd8505c6ca9138` from head `360e84287c01622fc19ba844954f55594a218ea9`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
