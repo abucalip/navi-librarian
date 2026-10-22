@@ -137,3 +137,24 @@ FAMILY_LABELS: dict[str, str] = {
     "bossa-nova-brazilian": "Brazilian / Bossa Nova",
     "rock": "Rock", "pop": "Pop", "other": "Other Discoveries",
 }
+
+
+def family_label(key: str) -> str:
+    """Display label for a family key; unknown keys are title-cased."""
+    if key in FAMILY_LABELS:
+        return FAMILY_LABELS[key]
+    return " ".join(w[:1].upper() + w[1:] for w in key.replace("-", " ").split())
+
+
+def deep_dive_row(item: dict) -> dict[str, str]:
+    """Row key and label for a Deep Dives item, decided server-side."""
+    families = item.get("genre_families")
+    families = families if isinstance(families, list) else []
+    key = next((str(f).strip() for f in families if str(f or "").strip()), "")
+    if key:
+        key = key.replace("_", "-").casefold()
+    else:
+        genres = item.get("genres")
+        text = " ".join(str(g).casefold() for g in (genres if isinstance(genres, list) else []))
+        key = next((f for f, terms in DEEP_DIVE_RULES if any(t in text for t in terms)), "other")
+    return {"genre_row": key, "genre_row_label": family_label(key)}

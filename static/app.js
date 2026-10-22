@@ -1787,39 +1787,13 @@ function setStatusState(el, kind) {
   if (kind && kind !== 'idle') el.classList.add('is-' + kind);
 }
 
+// The server decides each Deep Dives row (genre_row) and its display label.
 function deepDiveGenre(item) {
-  const families = Array.isArray(item.genre_families) ? item.genre_families : [];
-  const family = families.find(value => String(value || '').trim());
-  if (family) return String(family).replaceAll('_', '-').toLocaleLowerCase();
-  const tags = Array.isArray(item.genres) ? item.genres : [];
-  const text = tags.join(' ').toLocaleLowerCase();
-  const rules = [
-    ['jazz', /jazz|bebop|swing/],
-    ['african', /african|afrobeat|afropop|highlife|soukous|malian|tuareg|desert blues|ethiopian/],
-    ['alternative', /alternative|indie rock|post-punk|art rock|garage rock|shoegaze/],
-    ['brazilian', /brazilian|samba|bossa nova|\bmpb\b|tropic[aá]lia/],
-    ['hip-hop', /hip.?hop|rap/],
-    ['rnb-soul', /r&b|rnb|neo-soul|soul/],
-    ['electronic', /electronic|electronica|house|techno|trip.?hop|downtempo/],
-    ['funk', /funk/],
-    ['north-african-middle-eastern', /arabic|ra[iï]|maghreb|north african|algerian|moroccan|tunisian|gnawa|chaabi|middle eastern/],
-    ['rock', /rock|punk|metal|grunge/],
-    ['pop', /pop/],
-  ];
-  const match = rules.find(([, pattern]) => pattern.test(text));
-  return match ? match[0] : 'other';
+  return String(item.genre_row || 'other');
 }
 
-function genreRowLabel(key) {
-  const labels = {
-    'jazz': 'Jazz', 'african': 'African Music', 'alternative': 'Alternative',
-    'brazilian': 'Brazilian Music', 'hip-hop': 'Hip-Hop', 'rnb-soul': 'R&B / Soul',
-    'electronic': 'Electronic', 'funk': 'Funk',
-    'north-african-middle-eastern': 'North African & Middle Eastern',
-    'north-african': 'North African', 'bossa-nova-brazilian': 'Brazilian / Bossa Nova',
-    'rock': 'Rock', 'pop': 'Pop', 'other': 'Other Discoveries',
-  };
-  return labels[key] || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+function genreRowLabel(key, labels) {
+  return (labels && labels.get(key)) || key.replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 }
 
 /** Icon from the vendored sprite (DESIGN_SYSTEM.md 10). The name is always a literal, so no
@@ -1914,6 +1888,7 @@ async function loadDiscovery(name, options = {}) {
     if (name === 'artist_deep_dive') {
       const grouped = new Map();
       const artistsByGenre = new Map();
+      const rowLabels = new Map(items.map(item => [deepDiveGenre(item), item.genre_row_label]));
       for (const item of items) {
         const key = deepDiveGenre(item);
         const artistKey = String(item.artist || item.album_artist || '').trim().toLocaleLowerCase();
@@ -1942,13 +1917,13 @@ async function loadDiscovery(name, options = {}) {
         row.className = 'genre-row';
         const heading = document.createElement('div');
         heading.className = 'genre-row-heading';
-        addTextElement(heading, 'h3', '', genreRowLabel(genre));
+        addTextElement(heading, 'h3', '', genreRowLabel(genre, rowLabels));
         addTextElement(heading, 'span', 'genre-row-count', pluralize(genreItems.length, 'album', 'albums'));
         const arrows = document.createElement('div');
         arrows.className = 'genre-row-arrows';
         const track = document.createElement('div');
         track.className = 'genre-row-track';
-        makeScrollTrackFocusable(track, genreRowLabel(genre) + ' albums');
+        makeScrollTrackFocusable(track, genreRowLabel(genre, rowLabels) + ' albums');
         const arrowList = [];
         for (const [icon, direction] of [['chevron-left', -1], ['chevron-right', 1]]) {
           const arrow = document.createElement('button');
