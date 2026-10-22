@@ -1,3 +1,9 @@
+## 2026-10-22 — Retire obsolete local UI test helper instructions
+
+- Updated `docs/LOCAL_UI_TESTING.md` in commit `a8a63764036c265a30e322adccf134b5485f8f6d`: explicitly marked `~/navi-librarian-test/test-pr.sh` obsolete, removed its commands and helper-specific setup/report assumptions, and retained a current browser checklist requiring exact-SHA identification, isolated test data, disabled acquisition services unless authorized, and recording pass/fail/skip results. The document points to the replacement local test environment without inventing an unverified launcher command.
+- Updated `docs/PROJECT_STATUS.md` in commit `ee15bacdac965442c85fd4999faf15343024b581` to reflect the documentation change and PR #557's outstanding manual browser gate.
+- PR #557 head remains `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`; automated full-suite and required CI evidence previously passed on that head. Manual browser testing has not been performed. The instruction to merge did not explicitly waive the documented manual UI gate, so the PR remains unmerged pending the browser check or an explicit waiver. No publishing or deployment occurred.
+
 ## 2026-10-22 — PR #556 review; reconciled replacement PR #557
 
 - Reviewed PR #556, “Add ‘Similar to’ labels to Recommendations and Personal rows.” Its base was the feature branch from merged PR #555, so retargeting it to `main` would include duplicated/conflicting stacked changes. Closed #556 as superseded and created replacement PR [#557](https://github.com/abucalip/navi-librarian/pull/557) directly from current `main`, preserving only the intended four-file change.
