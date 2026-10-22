@@ -183,3 +183,9 @@
 
 - Renamed the root `CLAUDE_CLI.md` handoff pointer to `handoff.md` in two documentation-only commits: `c2df9e820fff4ee3610eeb88988af51c0706a8ca` (add new path) and `b931899cca0b02cf27fb728865ce6d62b17a3fc0` (remove old path). The handoff content is unchanged; current queue and permanent rules remain in `docs/ACTIVE_WORK.md` and `docs/DEVELOPMENT_WORKFLOW.md`.
 - No application tests or CI run; this was a documentation-only rename. No publication, deployment, or runtime verification performed.
+
+
+## 2026-10-22 — Full test suite requires owner approval
+
+- Updated `docs/TEST_PLAN.md` to state that manually running `python -m unittest discover -s tests -v` requires explicit owner approval. Without approval, agents run focused tests only; CI's `test-and-build` workflow continues to run the full suite on the PR head. Updated the stale handoff reference to `handoff.md`.
+- Documentation-only commit: `841c8b2d912eac7032473558601bd7ec7ee87138`. No tests or CI run for this documentation-only change; no publication, deployment, or runtime verification performed.
