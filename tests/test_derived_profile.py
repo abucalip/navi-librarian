@@ -149,3 +149,33 @@ class SparseHistoryFallbackTests(unittest.TestCase):
         boosted = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, ["afrobeat"], {"african"}, derived)
         plain = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, ["metal"], {"african"}, derived)
         self.assertAlmostEqual(boosted / plain, 1.10)
+
+
+class AncestryGroupingTests(unittest.TestCase):
+    def test_trailing_root_word_wins(self):
+        for tag in ("doom metal", "alternative metal", "dream pop", "hard rock"):
+            self.assertEqual(dp.fallback_family(tag), tag.split()[-1], tag)
+
+    def test_ancestry_table_groups_names_without_a_root_word(self):
+        self.assertEqual(dp.fallback_family("boom bap"), "hip-hop")
+        self.assertEqual(dp.fallback_family("britpop"), "rock")
+        self.assertEqual(dp.fallback_family("new wave"), "rock")
+
+    def test_unknown_tag_still_uses_head_noun(self):
+        self.assertEqual(dp.fallback_family("k-pop"), "k-pop")
+
+    def test_table_loader_tolerates_missing_or_bad_files(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(dp._load_ancestry(Path(tmp) / "none.json"), {})
+            bad = Path(tmp) / "bad.json"
+            bad.write_text("[1]", encoding="utf-8")
+            self.assertEqual(dp._load_ancestry(bad), {})
+
+    def test_shipped_table_is_well_formed(self):
+        families = set(dp._ANCESTRY.values())
+        self.assertGreater(len(dp._ANCESTRY), 100)
+        self.assertLessEqual(families, {
+            "jazz", "hip-hop", "electronic", "metal", "punk", "rock", "pop",
+            "classical", "folk", "blues", "country", "reggae", "rnb-soul", "funk"})
