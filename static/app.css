@@ -330,6 +330,8 @@ p { line-height: 1.55; }
 .album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; font-size: var(--text-xs); }
 .album-modal-copy h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl)/1.05 var(--display); overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
+.album-modal-bio { margin: var(--space-3) 0 0; color: var(--text-muted); font: 400 var(--text-sm)/1.5 var(--body); max-width: 60ch; }
+.album-modal-bio[hidden] { display: none; }
 .album-modal-year { margin: 0; color: var(--text-subtle); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
 /* Tracklist rhythm (section 6): compact 48px rows, tabular numbers, one divider per row. */
 .album-modal-tracklist { margin: var(--space-4) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--edge); }
