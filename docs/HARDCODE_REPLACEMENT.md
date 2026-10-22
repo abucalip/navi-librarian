@@ -1,6 +1,6 @@
 # Plan: replace hard-coded taste with derived behavior
 
-Status: proposed, not started. GitHub `main` is authoritative; verify the line references below against `main` before starting (they were read from a local feature branch).
+Status: Phases 1-3 merged (PRs #561-#564); Phase 4 tooling and first evidence merged (PRs #565-#568); derived mode is opt-in and off by default. Awaiting the owner's decision on making it the default. Evidence: `PROJECT_LOG.md`. The line references below predate the refactor.
 
 ## Problem
 

@@ -29,7 +29,8 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). PR #563 externalized the shipped defaults (`9a659f6e9da175e475aa22f86c69492f40206869`); PR #564 then merged the opt-in `taste_profile_mode=derived` implementation as `508269f1177e35075330c903775f74e23c2f14af`. Its sparse-history fallback regression is fixed and all four required workflows passed on the exact PR head, including the full unit suite.
 
-- **Remaining gate:** Phase 4 requires replay evidence across several profiles, which is not yet available. Keep derived mode off by default; enabling it requires a separate owner decision. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
+- **Phases 2-4 evidence merged** in PRs #565-#568 (details in `PROJECT_LOG.md`): ancestry grouping, taste clusters, a synthetic evaluator, and a fixed-vs-derived frozen-capture comparison. On the owner's live capture the top 10 shares 8 of 10 picks between modes, but 44 candidates receive an exploration bonus that the fixed profile never gives.
+- **Remaining gate:** only one real (jazz-leaning) profile has been captured; non-jazz evidence is synthetic. Keep derived mode off by default. Making it the default, or removing the fixed tables, is a separate owner decision. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
 
 ## 3. Recommendation engine — gated
 
