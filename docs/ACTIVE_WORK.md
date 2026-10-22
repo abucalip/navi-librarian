@@ -24,6 +24,9 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Section labels:** use a smaller font size for the section labels ("Personal discoveries" and others) on the dashboard page to leave room for the bios.
 - **Dashboard album cards:** show the bios on the album cards.
 - **Album panel bio (still broken):** bios still do not show in the album panel (the one opened by clicking an album, showing the tracklist), despite PR #547. Investigate the root cause before re-fixing.
+- **Deep Dives artwork speed:** artwork still takes a long time to load on Deep Dives (despite PR #535). Measure and find the root cause before re-fixing.
+- **Deep Dives cards:** show the artist bio and the album year on the cards.
+- **Deep Dives card spacing:** the album title sits too close to the artwork and looks sloppy; add space between the title and the artwork.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
 
 ## 3. Recommendation engine — gated
