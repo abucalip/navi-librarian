@@ -333,7 +333,7 @@ def recommend_new_music(
         provider_tape = prepare_provider_tape(provider_tape, _capture_path)
         if provider_tape is not None:
             providers = provider_tape.wrap(providers)
-        gathered = gather_recommendation_candidates(providers, shortlist_target=count, cold_start=_cold_start)
+        gathered = gather_recommendation_candidates(providers, shortlist_target=count, cold_start=_cold_start, profile_mode=_service_settings.taste_profile_mode_value(_discovery_settings_read))
     if isinstance(gathered, str):
         return gathered
     listens = gathered["listens"]
@@ -364,12 +364,12 @@ def recommend_new_music(
         )
         candidate_tags = genre_cache.get(candidate.get("artist_mbid"), [])
         apply_familiarity_exploration_bonus(
-            candidate, recent_count, candidate_tags, exploration_families
+            candidate, recent_count, candidate_tags, exploration_families, gathered.get("profile_mode") == "derived"
         )
 
     candidates_by_category = classify_recommendation_candidates(
         albums, genre_cache, core_families, exploration_families,
-        recent_family_counts, music_key_fn=_music_key,
+        recent_family_counts, music_key_fn=_music_key, derived=gathered.get("profile_mode") == "derived",
     )
 
     lastfm_available = (
@@ -539,7 +539,7 @@ def recommend_new_music(
         tags = genre_cache.get(candidate.get("artist_mbid"), [])
         category, families = classify_recommendation_category(
             candidate, tags, core_families, exploration_families,
-            music_key_fn=_music_key,
+            music_key_fn=_music_key, derived=gathered.get("profile_mode") == "derived",
         )
 
         title_key = _music_key(candidate["album"])

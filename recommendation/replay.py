@@ -81,6 +81,7 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
         "core_families": sorted(gathered["core_families"]),
         "exploration_families": sorted(gathered["exploration_families"]),
         "profile_families": sorted(gathered["profile_families"]),
+        "profile_mode": gathered.get("profile_mode", "fixed"),
     }
 
 
@@ -128,6 +129,7 @@ def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
         "core_families": set(payload["core_families"]),
         "exploration_families": set(payload["exploration_families"]),
         "profile_families": set(payload["profile_families"]),
+        "profile_mode": payload.get("profile_mode", "fixed"),
     }
 
 

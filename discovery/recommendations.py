@@ -112,8 +112,14 @@ def diversify_classic_candidates(ranked: Iterable[dict[str,Any]], *, limit: int=
     return output
 
 
-def genre_families(tags: Iterable[str]) -> set[str]:
-    """Map MusicBrainz genre tags to broad recommendation families."""
+def genre_families(tags: Iterable[str], derived: bool = False) -> set[str]:
+    """Map MusicBrainz genre tags to broad recommendation families.
+
+    In derived mode, tags no shipped rule matches get a normalized family key.
+    """
+    if derived:
+        from discovery.derived_profile import derived_genre_families
+        return derived_genre_families(tags)
     families = set()
     for tag in tags:
         g = tag.casefold()
@@ -134,6 +140,7 @@ def classify_recommendation_category(
     exploration_families: set[str],
     *,
     music_key_fn: Callable[[Any], str] = music_key,
+    derived: bool = False,
 ) -> tuple[str, set[str]]:
     """Return the established category and family set for a recommendation candidate.
 
@@ -141,7 +148,7 @@ def classify_recommendation_category(
     overrides and adventurous-tag precedence cannot drift between the two paths.
     """
     tags = list(tags)
-    families = genre_families(tags)
+    families = genre_families(tags, derived)
     families.update(candidate.get("regional_families", []))
     artist_key = music_key_fn(
         candidate.get("primary_artist") or candidate.get("artist", "")
@@ -150,14 +157,16 @@ def classify_recommendation_category(
     # only a last-resort fallback when metadata is unavailable.
     regional_family = (
         _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES.get(artist_key)
-        if not tags else None
+        if not tags and not derived else None
     )
     if regional_family:
         families.add(regional_family)
 
     core_overlap = families & core_families
     exploration_overlap = families & exploration_families
-    adventurous_signal = any(
+    # Derived mode defines "adventurous" relative to the profile (no overlap
+    # with core or exploration families), not by a fixed tag list.
+    adventurous_signal = not derived and any(
         signal in tag.casefold()
         for tag in tags
         for signal in _ADVENTUROUS_RECOMMENDATION_TAGS
@@ -265,6 +274,7 @@ def apply_familiarity_exploration_bonus(
     recent_artist_count: float,
     genre_tags: Iterable[str],
     exploration_families: set[str],
+    derived: bool = False,
 ) -> float:
     """Apply the established recent-familiarity and exploration score multipliers."""
     # Smoothly favor artists with a little familiarity over both extremes:
@@ -273,7 +283,7 @@ def apply_familiarity_exploration_bonus(
     count = max(0.0, float(recent_artist_count or 0))
     familiarity_factor = 0.82 + 0.42 * math.exp(-((count - 1.5) / 3.0) ** 2)
 
-    candidate_families = genre_families(genre_tags)
+    candidate_families = genre_families(genre_tags, derived)
     exploration_bonus = (
         1.10 if candidate_families & exploration_families else 1.0
     )
@@ -500,6 +510,7 @@ def classify_recommendation_candidates(
     recent_family_counts: Mapping[str, int],
     *,
     music_key_fn: Callable[[Any], str] = music_key,
+    derived: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     """Enrich recommendation candidates and group them by discovery category."""
     candidates_by_category = {
@@ -510,7 +521,7 @@ def classify_recommendation_candidates(
         candidate["diversity_style"] = classify_diversity_style(candidate, tags)
         category, families = classify_recommendation_category(
             candidate, tags, core_families, exploration_families,
-            music_key_fn=music_key_fn,
+            music_key_fn=music_key_fn, derived=derived,
         )
         candidate["genres"] = tags
         candidate["genre_families"] = sorted(families)
