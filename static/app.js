@@ -295,12 +295,41 @@ function showAcquisitionSkeleton() {
   target.replaceChildren(...rows);
 }
 
+// The stream resends the whole list every second, and the server orders it by last update, so an
+// active download kept moving to the top. Rows are ordered by when they were requested instead,
+// which never changes, and render in place: a row whose data is unchanged is kept as the same
+// element (so its artwork does not reload and focus is not lost), and a changed row takes over
+// the artwork element of the row it replaces.
+function acquisitionRowKey(job) {
+  return [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
+}
+
+function orderAcquisitions(jobs) {
+  return jobs.map((job, index) => ({job, index})).sort((a, b) =>
+    (Number(b.job.created_at) || 0) - (Number(a.job.created_at) || 0) ||
+    acquisitionRowKey(a.job).localeCompare(acquisitionRowKey(b.job)) ||
+    a.index - b.index
+  ).map(entry => entry.job);
+}
+
+function acquisitionRowSignature(job) {
+  const details = job.details || {};
+  // The skip-source button counts down from the clock, so a stalled row changes every second.
+  const tick = job.status === 'downloading' && details.stall_detected_at ? Math.floor(Date.now() / 1000) : 0;
+  return JSON.stringify([job, tick]);
+}
+
 function renderAcquisitions(data, targetOverride = null, statusOverride = null, onlyIdentity = null) {
   const target = targetOverride || $('acquisitionCards');
   const status = statusOverride || $('acquisitionsStatus');
   try {
-    target.replaceChildren();
-    const jobs = Array.isArray(data.acquisitions) ? data.acquisitions : [];
+    const existingRows = new Map();
+    for (const child of Array.from(target.children)) {
+      if (child.dataset && child.dataset.acqKey) existingRows.set(child.dataset.acqKey, child);
+      else child.remove();
+    }
+    const orderedRows = [];
+    const jobs = orderAcquisitions(Array.isArray(data.acquisitions) ? data.acquisitions : []);
     updateActiveDownloadBadge(data);
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
     status.textContent = jobs.length
@@ -316,8 +345,15 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
     }
     for (const job of jobs) {
       if (onlyIdentity && [job.artist || '', job.album || ''].join('::').toLocaleLowerCase() !== onlyIdentity) continue;
-      const dismissalKey = [job.artist || '', job.album || ''].join('::').toLocaleLowerCase();
+      const dismissalKey = acquisitionRowKey(job);
       if (job.status === 'imported' && dismissed.has(dismissalKey)) continue;
+      const signature = acquisitionRowSignature(job);
+      const existing = existingRows.get(dismissalKey);
+      if (existing && existing.dataset.sig === signature) {
+        orderedRows.push(existing);
+        existingRows.delete(dismissalKey);
+        continue;
+      }
       const details = job.details || {};
       const metadata = details.metadata || {};
       const info = acquisitionStatusInfo(job.status);
@@ -524,8 +560,21 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
         actions.append(dismiss);
       }
       if (actions.childElementCount) row.append(actions);
-      target.append(row);
+      row.dataset.acqKey = dismissalKey;
+      row.dataset.sig = signature;
+      const oldArt = existing && existing.querySelector('.card-art');
+      const newArt = row.querySelector('.card-art');
+      if (oldArt && newArt) newArt.replaceWith(oldArt);
+      if (existing) {
+        existing.replaceWith(row);
+        existingRows.delete(dismissalKey);
+      }
+      orderedRows.push(row);
     }
+    for (const stale of existingRows.values()) stale.remove();
+    orderedRows.forEach((node, index) => {
+      if (target.children[index] !== node) target.insertBefore(node, target.children[index] || null);
+    });
   } catch (error) {
     status.textContent = error.message;
   }
