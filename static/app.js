@@ -1471,14 +1471,36 @@ function attachArtistBio(row, container, artist) {
       .then(result => {
         if (!result || !result.bio) return;
         bio.textContent = result.bio;
-        bio.title = result.bio;
         bio.hidden = false;
+        // Rows stay one height. A bio that does not fit in its two lines can be clicked open.
+        requestAnimationFrame(() => makeBioExpandable(row, bio));
       })
       .catch(() => {});
   };
   bioLoaders.set(row, loadBio);
   if (artistBioObserver) artistBioObserver.observe(row);
   else loadBio();
+}
+
+// Turns a clamped bio into a toggle that grows only its own row. Clicks and keys stop here so they
+// do not also open the album modal.
+function makeBioExpandable(row, bio) {
+  if (bio.scrollHeight <= bio.clientHeight + 1) return;
+  bio.classList.add('is-expandable');
+  bio.setAttribute('role', 'button');
+  bio.setAttribute('tabindex', '0');
+  bio.setAttribute('aria-expanded', 'false');
+  const toggle = () => {
+    const open = row.classList.toggle('is-bio-open');
+    bio.setAttribute('aria-expanded', String(open));
+  };
+  bio.addEventListener('click', event => { event.stopPropagation(); toggle(); });
+  bio.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    event.stopPropagation();
+    toggle();
+  });
 }
 
 // Discover music metadata lines. Each line appears only when the API returned the value.
