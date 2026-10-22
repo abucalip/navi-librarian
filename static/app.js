@@ -1425,7 +1425,7 @@ function buildPersonalRow(item, index) {
     // Every row shows the artist bio, fetched when the row scrolls near the viewport.
     artistBio: true,
     meta: [
-      categoryLabel(item.discovery_category),
+      categoryLine(item),
       item.discovery_category === 'unclassified' || item.genre_metadata_available === false
         ? 'Low confidence: genre data unavailable' : '',
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
@@ -1449,7 +1449,7 @@ function buildClassicsRow(item, index) {
     artistBio: hasBio,
     meta: [
       categoryLabel(item.discovery_type || item.discovery_category || ''),
-      item.anchor_artist ? 'Similar to ' + item.anchor_artist : '',
+      item.anchor_artist ? 'Similar to: ' + item.anchor_artist : '',
       hasBio ? '' : item.reason,
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
@@ -1536,9 +1536,17 @@ function categoryLabel(category) {
   return name === 'adventurous' ? 'Adventurous discovery' : name;
 }
 
+// An adjacent pick is named by the artists you play that share its genres ("Similar to: A, B");
+// the server computes them. With none to name, or for any other category, the category label shows.
+function categoryLine(item) {
+  const similar = Array.isArray(item.similar_to) ? item.similar_to.filter(Boolean) : [];
+  if (item.discovery_category === 'adjacent' && similar.length) return 'Similar to: ' + similar.join(', ');
+  return categoryLabel(item.discovery_category);
+}
+
 // Discover music metadata lines. Each line appears only when the API returned the value.
 function addRecommendationMeta(meta, item) {
-  addTextElement(meta, 'p', 'row-meta-line row-category', categoryLabel(item.discovery_category || 'Unclassified'));
+  addTextElement(meta, 'p', 'row-meta-line row-category', categoryLine({...item, discovery_category: item.discovery_category || 'Unclassified'}));
   const genres = [...new Set([
     ...(Array.isArray(item.genres) ? item.genres : []),
     ...(Array.isArray(item.genre_families) ? item.genre_families : [])
@@ -1911,7 +1919,7 @@ async function loadDiscovery(name, options = {}) {
 
       if (item.reason && !needsBio) addTextElement(card, 'p', 'card-meta', item.reason);
       if (item.anchor_artist) addTextElement(card, 'p', 'card-meta',
-        `Similar to ${item.anchor_artist}`);
+        `Similar to: ${item.anchor_artist}`);
       if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
         `Last.fm playcount: ${Number(item.lastfm_playcount).toLocaleString()}`);
 
