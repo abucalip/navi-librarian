@@ -1,7 +1,7 @@
 ## 2026-10-22 — Wildcard-masked artist queries for blocked slskd searches (PR open)
 
 - Branch `fix/slskd-masked-artist-queries`. slskd refuses some artist names outright (zero results for "Gorillaz Plastic Beach" while "*orillaz Plastic Beach" returns thousands). `search_queries` now follows the unmasked query with two masked variants: first word only (`*ink Floyd`), then every word (`*ink *loyd`). Words under 3 characters stay intact; duplicates are dropped. Candidate matching is unchanged and still uses the real artist/album names.
-- Tested: `tests.test_slskd_search` focused run only (15 of 16 OK; the one error is the `httpx` import in the legacy-adapter test, missing locally). Full suite not run. CI on the exact final PR head, merge, publish and deploy: not done. Not verified against a live slskd.
+- Tested: focused run with the repo `.venv` of `test_slskd_search`, `test_slskd_search_modules`, `test_slskd_search_polling`, `test_slskd_candidates` and `test_acquisition_search_diagnostics` (32 OK). The first PR head failed CI because `test_slskd_search_modules` and `test_slskd_search_polling` still asserted the old query list; both updated. Full suite not run locally. CI on the exact final PR head, merge, publish and deploy: not done. Not verified against a live slskd.
 - Risk to check: up to five queries now share the 45 s overall deadline, so late fallbacks may be cut off if blocked searches respond slowly.
 - Next action: confirm with a real slskd that a blocked artist now gets candidates, and check the attempted-query list in the no-match message.
 

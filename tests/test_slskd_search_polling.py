@@ -99,6 +99,7 @@ class SlskdSearchPollingTests(unittest.TestCase):
         queries = search_queries("Tinariwen", "Idrache (Traces of the Past)")
         self.assertEqual(queries, [
             "Tinariwen Idrache (Traces of the Past)",
+            "*inariwen Idrache (Traces of the Past)",
             "Tinariwen Idrache Traces of the Past",
             "Tinariwen Idrache",
         ])

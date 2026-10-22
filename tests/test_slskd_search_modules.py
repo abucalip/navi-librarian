@@ -44,11 +44,12 @@ class SlskdSearchModuleTests(unittest.TestCase):
     def test_query_fallback_order_and_deduplication(self):
         self.assertEqual(search_queries("Tinariwen", "Idrache (Traces of the Past)"), [
             "Tinariwen Idrache (Traces of the Past)",
+            "*inariwen Idrache (Traces of the Past)",
             "Tinariwen Idrache Traces of the Past",
             "Tinariwen Idrache",
         ])
         self.assertEqual(search_queries("", "Album"), [])
-        self.assertEqual(search_queries("Artist", "Album"), ["Artist Album"])
+        self.assertEqual(search_queries("Artist", "Album"), ["Artist Album", "*rtist Album"])
 
     def test_response_normalization_handles_supported_shapes(self):
         first, second = {"username": "a"}, {"username": "b"}
