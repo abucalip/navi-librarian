@@ -22,7 +22,7 @@ class AlbumModalArtistBioContractTests(unittest.TestCase):
 
     def test_open_requests_the_bio_through_the_shared_cache_and_endpoint(self):
         body = re.search(r"function loadAlbumModalBio\(.*?\n\}\n", JS, re.S).group(0)
-        self.assertIn("cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))", body)
+        self.assertIn("cachedBioRequest(bioKey, artist, true)", body)
         self.assertIn("bio.textContent = result.bio;", body)
         self.assertNotIn("innerHTML", body)
         self.assertIn("activeAlbumModal.card !== card", body)
@@ -30,7 +30,7 @@ class AlbumModalArtistBioContractTests(unittest.TestCase):
 
     def test_bio_resets_on_each_open_and_is_skipped_for_unknown_artist(self):
         body = re.search(r"function loadAlbumModalBio\(.*?\n\}\n", JS, re.S).group(0)
-        self.assertLess(body.index("bio.hidden = true;"), body.index("cachedJSONRequest"))
+        self.assertLess(body.index("bio.hidden = true;"), body.index("cachedBioRequest"))
         self.assertIn("'Unknown artist'", body)
 
 

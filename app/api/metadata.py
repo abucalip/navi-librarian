@@ -11,18 +11,26 @@ from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
 from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
-from integrations.musicbrainz.album_year import lookup_album_year as _lookup_musicbrainz_album_year, year_cache as _musicbrainz_year_cache
+from integrations.musicbrainz.album_year import (
+    lookup_album_year as _lookup_musicbrainz_album_year,
+    lookup_album_years as _lookup_musicbrainz_album_years,
+    year_cache as _musicbrainz_year_cache,
+)
 
 router = APIRouter()
 
 _EXTERNAL_HTTP = httpx.Client(
     timeout=httpx.Timeout(3.0, connect=1.5),
+    # httpx closes idle connections after 5 s, so a burst of lookups after a short pause paid a
+    # fresh TCP and TLS handshake each. Keep them open for a minute.
+    limits=httpx.Limits(keepalive_expiry=60.0),
     # Wikimedia answers 403 ("robot policy") to this User-Agent when the request carries httpx's
     # default `Accept: */*`, so every artist bio came back empty. A JSON Accept header fixes it.
     headers={
@@ -105,6 +113,30 @@ _artwork_cache = {}
 def _musicbrainz_album_year(artist: str, album: str):
     """Compatibility adapter for the directly testable MusicBrainz lookup."""
     return _lookup_musicbrainz_album_year(artist, album)
+
+
+class AlbumYearItem(BaseModel):
+    artist: str = Field(max_length=180)
+    album: str = Field(max_length=180)
+
+
+class AlbumYearsRequest(BaseModel):
+    items: list[AlbumYearItem] = Field(max_length=60)
+
+
+@router.post("/api/album-years")
+def album_years(body: AlbumYearsRequest):
+    """Years for many albums with few catalog requests (MusicBrainz exact matches only).
+
+    Each result is {"artist", "album", "year"}; an album with no exact match has year null, and an
+    album whose catalog request failed is left out so the page can ask again later.
+    """
+    pairs = [(item.artist.strip(), item.album.strip()) for item in body.items]
+    years = _lookup_musicbrainz_album_years(pairs)
+    return {"years": [
+        {"artist": artist, "album": album, "year": year}
+        for (artist, album), year in years.items()
+    ]}
 
 
 @router.get("/api/album-year")

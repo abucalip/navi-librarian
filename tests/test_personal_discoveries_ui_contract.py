@@ -98,7 +98,7 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
 
     def test_artist_bio_uses_the_existing_endpoint_cache_and_text_api(self):
         body = self._function_body("function attachArtistBio(", "// Discover music metadata lines.")
-        self.assertIn("cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))", body)
+        self.assertIn("cachedBioRequest(bioKey, artist)", body)
         self.assertIn("bio.textContent = result.bio;", body)
         self.assertIn("if (artistBioObserver) artistBioObserver.observe(row);", body)
         self.assertNotIn("innerHTML", body)
