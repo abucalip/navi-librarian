@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 from recommendation.music_key import music_key  # noqa: F401  (re-exported for existing callers)
+from discovery import taste_families as _tf
 
 _DISCOVERY_SOURCE_LABELS = {
     "listenbrainz_cf", "profile_tag_search", "exploration_tag_search",
@@ -73,16 +74,7 @@ def is_various_artists(value: Any) -> bool:
 
 def deep_dive_genre_families(tags: Iterable[Any]) -> list[str]:
     text = " ".join(str(t).casefold() for t in tags)
-    rules = [
-      ("jazz",("jazz","bebop","swing")),
-      ("african",("african","afrobeat","afrobeats","afropop","highlife","soukous","malian","tuareg","desert blues","ethiopian","mbalax","senegalese")),
-      ("alternative",("alternative","indie rock","post-punk","art rock","garage rock","shoegaze")),
-      ("brazilian",("brazilian","samba","bossa nova","mpb","tropicalia","tropicália")),
-      ("hip-hop",("hip hop","hip-hop","rap")),("rnb-soul",("r&b","rnb","neo-soul","soul")),
-      ("electronic",("electronic","electronica","house","techno","trip hop","trip-hop","downtempo","idm")),
-      ("funk",("funk",)),("north-african-middle-eastern",("arabic","raï","rai","maghreb","north african","algerian","moroccan","tunisian","gnawa","gnaoua","chaabi","middle eastern","andalusi","malouf")),
-      ("rock",("rock","punk","metal","grunge")),("pop",("pop",))]
-    return [family for family, terms in rules if any(term in text for term in terms)]
+    return [family for family, terms in _tf.DEEP_DIVE_RULES if any(term in text for term in terms)]
 
 def score_classic_candidates(candidates: Iterable[dict[str, Any]], jitter: Callable[[float,float],float]) -> list[dict[str,Any]]:
     output = list(candidates)
@@ -125,70 +117,14 @@ def genre_families(tags: Iterable[str]) -> set[str]:
     families = set()
     for tag in tags:
         g = tag.casefold()
-        if any(x in g for x in ("jazz", "bebop", "hard bop", "swing")):
-            families.add("jazz")
-        if any(x in g for x in ("hip hop", "hip-hop", "rap")):
-            families.add("hip-hop")
-        if any(x in g for x in ("alternative", "indie rock", "post-punk",
-                                "art rock", "garage rock")):
-            families.add("alternative")
-        if any(x in g for x in ("brazilian", "samba", "bossa nova",
-                                "mpb", "tropicalia", "tropicália")):
-            families.add("brazilian")
-        if any(x in g for x in ("african", "afrobeat", "ethiopian",
-                                "ethiopian jazz", "highlife", "soukous",
-                                "senegalese", "malian", "afropop",
-                                "mbalax", "desert blues")):
-            families.add("african")
-        if any(x in g for x in ("r&b", "rnb", "neo-soul", "soul")):
-            families.add("rnb-soul")
-        if any(x in g for x in ("electronic", "electronica", "electropop",
-                                "downtempo", "trip hop", "trip-hop")):
-            families.add("electronic")
-        if "funk" in g:
-            families.add("funk")
-        if any(x in g for x in (
-            "middle eastern", "arabic", "raï", "rai", "north african",
-            "north-african", "maghrebi", "maghreb", "chaabi",
-            "gnawa", "gnaoua", "malouf", "andalusi", "andalusian",
-            "algerian", "moroccan", "tunisian", "mawwal", "tarab",
-            "maqam", "levantine", "khaliji", "khaleeji", "dabke",
-            "oud music", "arab pop", "arabic pop", "shaabi",
-        )):
-            families.add("north-african-middle-eastern")
+        for family, terms in _tf.CATEGORY_RULES:
+            if any(x in g for x in terms):
+                families.add(family)
     return families
 
 
-_REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = {
-    "chebmami": "north-african-middle-eastern",
-    "vieuxfarkatoure": "african",
-    "alifarkatoure": "african",
-    "bombino": "african",
-    "tinariwen": "african",
-    "mdoumoctar": "african",
-    "imarhan": "african",
-    "khaled": "north-african-middle-eastern",
-    "chebkhaled": "north-african-middle-eastern",
-    "faudel": "north-african-middle-eastern",
-    "rachidtaha": "north-african-middle-eastern",
-    "idir": "north-african-middle-eastern",
-    "souadmassi": "north-african-middle-eastern",
-    "hamidelkasri": "north-african-middle-eastern",
-    "takfarinas": "north-african-middle-eastern",
-    "bouchenak": "north-african-middle-eastern",
-    "liliboniche": "north-african-middle-eastern",
-    "orchestrenationaldebarbes": "north-african-middle-eastern",
-    "chebsahraoui": "north-african-middle-eastern",
-    "شابصحراوي": "north-african-middle-eastern",
-}
-
-_ADVENTUROUS_RECOMMENDATION_TAGS = (
-    "idm", "experimental", "avant-garde", "avant garde",
-    "free improvisation", "free jazz", "drone", "noise",
-    "musique concrète", "musique concrete",
-    "electroacoustic", "dark ambient", "glitch",
-    "deconstructed club",
-)
+_REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = _tf.REGIONAL_ARTIST_FAMILIES
+_ADVENTUROUS_RECOMMENDATION_TAGS = _tf.ADVENTUROUS_TAGS
 
 
 def classify_recommendation_category(
@@ -245,46 +181,22 @@ def recent_style_families(tags: Iterable[str]) -> set[str]:
     result = set()
     joined = " ".join(text_tags)
     if any(
-        ("jazz" in tag and "jazz rap" not in tag)
-        or tag in {"bebop", "swing"}
+        ("jazz" in tag and _tf.RECENT_STYLE_JAZZ_EXCLUDED not in tag)
+        or tag in _tf.RECENT_STYLE_JAZZ_EXACT
         for tag in text_tags
     ):
         result.add("jazz")
-    if any(term in joined for term in ("soul", "r&b", "rnb", "neo-soul")):
-        result.add("soul")
-    if any(
-        any(term in tag for term in (
-            "rock", "punk", "grunge", "metal", "shoegaze", "post-punk"
-        ))
-        and "electronic rock" not in tag
-        for tag in text_tags
-    ):
-        result.add("rock")
-    if any(term in joined for term in (
-        "bossa nova", "samba", "mpb", "tropicalia", "tropicália", "brazilian"
-    )):
-        result.add("bossa_nova_brazilian")
-    if any(term in joined for term in ("hip hop", "hip-hop", "rap")):
-        result.add("hip-hop")
-    if any(term in joined for term in (
-        "electronic", "electronica", "house", "techno", "edm",
-        "synth-pop", "synthpop", "idm", "trip hop", "trip-hop"
-    )):
-        result.add("electronic")
-    if any(term in joined for term in (
-        "african", "afrobeat", "afrobeats", "afropop", "highlife",
-        "malian", "tuareg", "desert blues", "soukous", "mbalax"
-    )):
-        result.add("african")
-    if any(term in joined for term in (
-        "raï", "rai", "gnawa", "chaabi", "maghreb", "north african",
-        "algerian", "moroccan", "tunisian", "amazigh"
-    )):
-        result.add("north_african")
-    if "funk" in joined:
-        result.add("funk")
-    if any(term in joined for term in ("pop", "dance-pop", "synthpop")):
-        result.add("pop")
+    for family, terms in _tf.RECENT_STYLE_TERMS.items():
+        if family == "rock":
+            matched = any(
+                any(term in tag for term in terms)
+                and _tf.RECENT_STYLE_ROCK_EXCLUDED not in tag
+                for tag in text_tags
+            )
+        else:
+            matched = any(term in joined for term in terms)
+        if matched:
+            result.add(family)
     return result
 
 
@@ -292,18 +204,14 @@ def primary_recent_family(tags: Iterable[str], family_counts: Mapping[str, int])
     """Choose a representative family from more album-specific tags first."""
     families = recent_style_families(tags)
     has_hiphop_tag = any(
-        any(term in tag for term in ("hip hop", "hip-hop", "rap"))
+        any(term in tag for term in _tf.PRIMARY_HIPHOP_TERMS)
         for tag in tags
     )
     has_specific_jazz_tag = any(
-        any(term in tag for term in (
-            "acid jazz", "afro-jazz", "afro jazz", "jazz fusion",
-            "free jazz", "latin jazz", "ethiopian jazz", "ethio-jazz",
-        ))
+        any(term in tag for term in _tf.PRIMARY_SPECIFIC_JAZZ_TERMS)
         for tag in tags
     )
-    priority = ["bossa_nova_brazilian", "rock", "hip-hop", "soul",
-                "electronic", "african", "north_african", "funk", "pop"]
+    priority = list(_tf.PRIMARY_RECENT_PRIORITY)
     if "jazz" in families and (not has_hiphop_tag or has_specific_jazz_tag):
         priority.insert(1, "jazz")
     for family in priority:
