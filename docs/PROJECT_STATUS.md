@@ -4,6 +4,8 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Current state
 
+- PR #562 (server-provided Artist Deep Dives row keys and labels) squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85` from final reconciled PR head `76142e1d0f2d48b59a1355e36c7372c4ed6f7123`. All four required workflows passed on that exact head, including the full unit suite/Docker build; release-workflow validation passed with publishing skipped. The owner waived manual browser verification; it was not performed. No publication or deployment.
+
 - **Published, not deployed:** image `ghcr.io/abucalip/navi-librarian:v0.2.2` (tag at `main` `0b1111114e0e751928312e76a287123061640343`; digest `sha256:8ec36eaea585292f73ff7ec3546d96e4c5bc135b08fb3ccbcee789675f3f3ea2`) was published by release run 39835121956 with the owner's authorization. `latest` was not moved. Per-platform manifests were not inspected, no deployment occurred, and live-runtime behavior is not verified. Evidence: `PROJECT_LOG.md`.
 - PR #558 (Deep Dives artwork loading/performance) squash-merged as `d44c01669611bd11acfaa4f1197905afed7f9f08` from exact tested head `976c86e77034322e53cc7aea9691fa840c2d6146`. Review blockers were resolved, and the full unit suite/Docker build, Python syntax, container smoke, validation-only multi-architecture image validation, and release-workflow validation passed on that exact head (publishing skipped). The owner explicitly waived manual browser verification; it was not performed, and artwork performance was not re-measured in a browser. No publication, deployment, or live-runtime verification.
 
