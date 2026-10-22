@@ -25,13 +25,9 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Deep Dives artwork speed — code change merged in PR [#558](https://github.com/abucalip/navi-librarian/pull/558)** (`d44c01669611bd11acfaa4f1197905afed7f9f08`, tested head `976c86e77034322e53cc7aea9691fa840c2d6146`). Full suite and required automated workflows passed. The owner waived manual browser verification; artwork timing was not re-measured and the change is not browser-verified. No publication/deployment. If the issue persists after an authorized deployment, measure browser timings before another fix.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
 
-## 2b. Replace hard-coded taste with derived behavior — gated
+## 2b. Replace hard-coded taste with derived behavior — closed
 
-Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). PR #563 externalized the shipped defaults (`9a659f6e9da175e475aa22f86c69492f40206869`); PR #564 then merged the opt-in `taste_profile_mode=derived` implementation as `508269f1177e35075330c903775f74e23c2f14af`. Its sparse-history fallback regression is fixed and all four required workflows passed on the exact PR head, including the full unit suite.
-
-- **Phases 2-4 evidence merged** in PRs #565-#568 (details in `PROJECT_LOG.md`): ancestry grouping, taste clusters, a synthetic evaluator, and a fixed-vs-derived frozen-capture comparison. On the owner's live capture the top 10 shares 8 of 10 picks between modes, but 44 candidates receive an exploration bonus that the fixed profile never gives.
-- **Complete.** Derived is the only mode (PR #569 made it the default; PRs #570 and #571, `b0a0132578e729edfaeec2303f68e67366c78fda` and `ba2f235a4f9e82fdb98139c50b5c512c83438824`, moved Deep Dives and tag-query labels to the derived vocabulary, corrected the ancestry table, and removed the fixed taste tables and the mode switch). Evidence is limited to one real jazz-leaning profile plus synthetic profiles.
-- **Optional follow-ups, each needing its own go-ahead:** browser-check the new Deep Dives rows and "Style:" label; decide whether to drop the tag-to-family grouping rules in `settings/taste_defaults.json` (would lose regional families like African and Brazilian); extend the ancestry table further via `scripts/build_genre_ancestry.py` (extended to 398 tags in PR #572); capture a non-jazz profile if one becomes available. See [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md).
+The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phases remain and nothing from it is queued. Derived is the only taste-profile mode and the fixed taste tables and mode switch are removed (PRs #561-#572). Evidence and limits are in `PROJECT_LOG.md`.
 
 ## 3. Recommendation engine — gated
 
