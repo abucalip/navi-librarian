@@ -1,3 +1,13 @@
+## 2026-10-22 — PR #555: artist bios and dashboard discovery UI refinements
+
+- **PR #555** squash-merged as `f80254550369ed56b66e114faebb2b9fb72ed6bf` from exact head `58bbe0e4ef7320c14146a6fa4ea5a3ef0d266953`.
+- Changes include the Wikidata `Accept: application/json` header and avoiding a 24-hour empty-bio cache when the Wikidata search request fails; artist bios on dashboard and discovery cards; removal of New Releases source/reason text; more specific low-confidence genre messaging; consistent “Adventurous discovery” labels; responsive row artwork sizing; Deep Dives album-year placement; smaller one-line category tags; and yellow year styling. Three artist-bio regression tests were added.
+- **Full unit suite:** passed in GitHub Actions on the exact PR head, run `39806088731`, job `test-and-build` (“Run unit tests” succeeded). Docker image build succeeded in the same job.
+- **Required workflows on exact head:** Python syntax check `39806088756` passed; container runtime smoke test `39806088730` passed; Docker packaging/full unit suite/build `39806088731` passed; validation-only multi-architecture image check `39806088814` passed. Release workflow validation `39806088786` passed with the publishing job skipped.
+- **Manual UI verification:** the owner reported the PR was manually tested in the browser and all is working well. No separate browser test was run in this session.
+- No image publication, deployment, or live-runtime verification. The existing publication/deployment pause remains in effect.
+- **Next action:** retain the runtime-verification priority in `docs/ACTIVE_WORK.md`; do not publish or deploy.
+
 ## 2026-10-22 — PR #554: larger row artwork and artist bio on discovery rows
 
 - **PR #554** squash-merged as `c9fcf3289f37984258aca5b62891d700c569d5c1` from exact head `8c8d473f3b9576fbf0dc278c702b9843b422d991` (branch `feat/dashboard-row-bios`, two feature commits plus one review fix). Ranked-row artwork is 96px (80px up to 1200px wide, 64px up to 620px wide). The artist bio now shows in the middle of every row on Recommendations, New releases, and Personal discoveries (previously only genre-connected Personal rows). "Add to your collection" and Saved rows are unchanged.
