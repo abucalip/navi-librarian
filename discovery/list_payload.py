@@ -31,6 +31,7 @@ def build_cached_discovery_list_response(
     is_album_candidate: Callable[[Any], bool],
     library_snapshot: Callable[[], Mapping[str, Any]] | None = None,
     on_stale: Callable[[Mapping[str, Any]], Any] | None = None,
+    today: str | None = None,
     acquired: set[tuple[str, str]] | None = None,
 ) -> str:
     """Build the legacy JSON response for a cached discovery list.
@@ -40,8 +41,10 @@ def build_cached_discovery_list_response(
     be read, the stored items are served unfiltered and the diagnostics say so.
     ``on_stale`` (personal list only) is called with the stored row so a stale snapshot
     can start a background rebuild; the stored list is served regardless of its outcome.
-    ``acquired`` holds (artist_key, album_key) identities already imported by the app;
-    they are hidden from every list because the library snapshot lags Navidrome's rescan.
+    ``today`` (ISO date, new_releases only) hides stored items released after it, so a
+    list built earlier never shows releases that are still in the future.
+    ``acquired`` contains normalized identities already imported by the app and hides
+    them from every list while the library snapshot catches up with Navidrome.
     Non-personal lists are also re-checked against the library snapshot on read.
     """
     cached = read_list(list_name)
@@ -101,6 +104,12 @@ def build_cached_discovery_list_response(
         if identity in saved:
             continue
         if identity in acquired or (library_owned is not None and library_owned(item)):
+            continue
+        if (
+            list_name == "new_releases"
+            and today is not None
+            and str(item.get("first_release_date") or "") > today
+        ):
             continue
         visible.append(item)
 

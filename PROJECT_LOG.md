@@ -1,3 +1,33 @@
+## 2026-10-22 — Open PR review and full-suite validation for PRs #530–#535
+
+- Reviewed all six open product PRs. PR #530 (imported-album cache filtering) has no code-review blocker identified and its exact final head `df3dd651051826f483831b5a868dd16483f75fa4` passed all required CI, including the full unit suite: syntax/acquisition-safety run 39772679218; Docker packaging/full suite/build 39772679339; container smoke 39772679292; validation-only multi-architecture image 39772679145; release workflow 39772679160 (publishing job skipped; validation-only job passed).
+- Reviewed UI stack PRs #531–#535. Main findings: all five are stacked on branches rather than `main`, starting from closed stale PR #529; required workflows filter pull requests to `main`, so there were no CI runs on their original head SHAs. Manual browser checks required by `docs/LOCAL_UI_TESTING.md` have not been performed. Do not merge these original PR heads until the stack is rebased/reconciled and final-head CI plus browser checks are complete.
+- To exercise the cumulative UI changes against current `main` without altering original PR branches, created temporary validation-only commits by overlaying the changed-file state through each PR onto current main, then closed the temporary validation PRs after testing. These commits are integration test candidates, not the original PR heads:
+  - Through #531: `53026bcbff794c04b6f901aefeb4fa939403cd7e`; all four workflows passed (syntax 39779026542; full suite/build 39779026314; smoke 39779026388; non-publishing multi-arch 39779026309; release validation 39779026400).
+  - Through #532: `c20bb6d0ac00067f2e00dab41fa899183ccf1f0a`; all four passed (syntax 39779175672; full suite/build 39779175738; smoke 39779175835; non-publishing multi-arch 39779175783; release validation 39779175705).
+  - Through #533: `da4a3e72146ec60c8c0c700f4ed5f387bf864723`; all four passed (syntax 39779276986; full suite/build 39779276674; smoke 39779276863; non-publishing multi-arch 39779276675; release validation 39779276967).
+  - Through #534: `d319d8c5cc5f661a834035dabf99a26a1431655a`; all four passed (syntax 39779388308; full suite/build 39779388280; smoke 39779388596; non-publishing multi-arch 39779388383; release validation 39779388204).
+  - Through #535: `1d803c6f1daf198d3c77741cbbb5c51eb5c490e0`; all four passed (syntax 39779671933; full suite/build 39779672016; smoke 39779672162; non-publishing multi-arch 39779671942; release validation 39779672201).
+- Release workflow publishing jobs were skipped; validation-only multi-architecture builds passed. No image was published, no deployment occurred, and no manual browser or live-runtime verification is claimed. The local checkout attempt failed because the environment could not resolve github.com; full-suite evidence above comes from GitHub Actions.
+- No product PR was merged. Next action: review/merge #530 if desired, then reconcile #531–#535 onto current main and run required checks on the actual final PR heads plus manual browser checks.
+
+## 2026-10-22 — PR #529 reconciled; full CI suite passed on replacement PR #530
+
+- Closed stale PR #529 because its branch predated the current `main` and its `discovery/list_payload.py` version omitted PR #528's cached future-release filter. Replacement PR #530 is based on current `main` and retains both behaviors.
+- Exact tested PR #530 head: `34b926249a6e71aeab4e2243500fa91eb47e226b`; compare reported 3 commits ahead, 0 behind at review time. Changed files: `discovery/list_payload.py`, `navidrome_server.py`, `tests/test_discovery_list_payload.py`.
+- Regression coverage hides imported acquisition identities across lists, excludes library-owned items from non-personal lists, preserves the future-date filter, and keeps imported items hidden when the library snapshot fails.
+- Exact-head CI: Python syntax/acquisition safety run 39772357314 passed; Docker packaging/full unit suite/image build run 39772357012 passed (the full unit-test step succeeded); container runtime smoke run 39772356995 passed; validation-only multi-architecture image run 39772356972 passed. Release workflow run 39772357053 skipped the publishing job; its validation-only build completed successfully. No image was published.
+- PR #530 remains open and unmerged. No manual browser or live-library/runtime check was performed; not published or deployed. Next action: review final PR state and merge #530 if all gates remain green, then continue live-runtime verification of #526/#527.
+
+## 2026-10-22 — PR #528 merged: hide future-dated New Releases
+
+- Squash merge commit on `main`: `1e55da1b7b25fe59d4f905a1c9d8985e8c8c7750`; exact tested PR head: `295148dcf817479f4098195200ada4c4173733fe`.
+- Candidate selection now excludes release groups dated after today, including partial dates using their earliest possible day. Cached New Releases responses also hide stored future-dated items, so stale cached lists are corrected on read.
+- Regression coverage: `tests/test_discovery_new_releases.py` and `tests/test_discovery_list_payload.py`; PR report records 46 focused tests passing and `py_compile` on `navidrome_server.py`.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety run 39770936745; Docker packaging/full unit suite/build 39770936858 (unit tests and image build passed); container runtime smoke 39770936556; validation-only multi-architecture image validation 39770936564. The release workflow's publishing job was skipped; its validation job passed.
+- Full unit suite was run by CI on the exact PR head, not separately in the agent environment. No manual browser check or live-library verification was performed. Not published, deployed, or runtime-verified.
+- Removed the resolved future-release bug from `docs/ACTIVE_WORK.md`; `docs/PROJECT_STATUS.md` records the merge. Next action remains live-runtime verification of PRs #526 and #527.
+
 ## 2026-10-22 — Exclusive “the owner” reference convention
 
 - Added a permanent rule requiring all repository documentation, source comments, commit/PR text, reviews, issues, and other project communications to refer to the person directing the project exclusively as “the owner”; personal names and account usernames/handles must not be used for that person.
