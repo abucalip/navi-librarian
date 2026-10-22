@@ -92,6 +92,18 @@ class BatchAlbumYearTests(unittest.TestCase):
         self.assertEqual(self.module.lookup_album_years([("A", "One")], fetch=broken), {})
         self.assertEqual(self.module.year_cache, {})
 
+    def test_one_retry_recovers_from_a_rate_limited_request(self):
+        attempts = []
+
+        def flaky(query, limit):
+            attempts.append(query)
+            if len(attempts) == 1:
+                raise RuntimeError("503")
+            return [self._group("One", "A", "1999")]
+
+        self.assertEqual(self.module.lookup_album_years([("A", "One")], fetch=flaky), {("A", "One"): 1999})
+        self.assertEqual(len(attempts), 2)
+
     def test_quotes_in_names_are_escaped(self):
         seen = []
         self.module.lookup_album_years([('A "B"', "C")], fetch=lambda q, n: seen.append(q) or [])

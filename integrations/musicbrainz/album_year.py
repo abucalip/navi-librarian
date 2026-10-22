@@ -96,6 +96,7 @@ def lookup_album_year(artist: str, album: str):
 # of requests instead of one each. 15 pairs keep the URL near 1.3 KB.
 BATCH_PAIR_LIMIT = 15
 BATCH_RESULT_LIMIT = 100
+BATCH_RETRY_PAUSE = 3.0
 
 
 def _escape(value: str) -> str:
@@ -142,14 +143,20 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
         query = " OR ".join(
             f'(artist:"{_escape(artist)}" AND releasegroup:"{_escape(album)}")' for artist, album in chunk
         )
-        try:
-            with _year_lock:
-                wait = 1.1 - (monotonic() - _last_request)
-                if wait > 0:
-                    sleep(wait)
-                _last_request = monotonic()
-                groups = fetch(query, BATCH_RESULT_LIMIT)
-        except Exception:
+        groups = None
+        # MusicBrainz answers 503 when requests run over its rate limit; one retry after a pause.
+        for attempt in range(2):
+            try:
+                with _year_lock:
+                    wait = (1.1 if attempt == 0 else BATCH_RETRY_PAUSE) - (monotonic() - _last_request)
+                    if wait > 0:
+                        sleep(wait)
+                    _last_request = monotonic()
+                    groups = fetch(query, BATCH_RESULT_LIMIT)
+                break
+            except Exception:
+                groups = None
+        if groups is None:
             continue
         for artist, album in chunk:
             year = _exact_year(groups, artist, album)
