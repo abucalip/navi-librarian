@@ -548,7 +548,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .ranked-list { display: flex; flex-direction: column; border-top: 1px solid var(--edge); }
 .ranked-row {
   position: relative; min-width: 0; cursor: pointer;
-  display: grid; grid-template-columns: 72px 64px minmax(0, 1fr) minmax(0, 220px) auto;
+  display: grid; grid-template-columns: 72px 64px minmax(0, 1fr) 220px auto;
   align-items: center; gap: 0 16px; padding: 12px 16px 12px 18px;
   background: var(--surface); border-bottom: 1px solid var(--edge);
 }
@@ -597,6 +597,9 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-meta { min-width: 0; color: var(--text-muted); font-size: var(--text-xs); }
 .row-meta-line { margin: 0; overflow-wrap: anywhere; }
 .row-meta-line + .row-meta-line { margin-top: 2px; }
+/* Long tag lists are clamped so a row with many genres is the same size as one with two or three;
+   the full list stays in the title attribute. */
+.row-genres { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .row-category { color: var(--text); font-weight: 600; }
 .row-source { color: var(--text-subtle); }
 .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -619,7 +622,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .ranked-row .skeleton-meta { display: block; height: 36px; width: 100%; background: var(--surface-raised); border-radius: var(--radius-chip); }
 @keyframes skeleton-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
-@media (max-width: 1200px) { .ranked-row { grid-template-columns: 64px 56px minmax(0, 1fr) minmax(0, 180px) auto; } .ranked-row .card-art { width: 56px; height: 56px; } .ranked-row .skeleton-art { width: 56px; height: 56px; } }
+@media (max-width: 1200px) { .ranked-row { grid-template-columns: 64px 56px minmax(0, 1fr) 180px auto; } .ranked-row .card-art { width: 56px; height: 56px; } .ranked-row .skeleton-art { width: 56px; height: 56px; } }
 @media (max-width: 620px) {
   .ranked-row {
     grid-template-columns: 44px 52px minmax(0, 1fr); gap: 10px 12px; padding: 12px 10px 12px 14px;
