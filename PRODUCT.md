@@ -25,17 +25,13 @@ Librarian is an acquisition-aware discovery tool, not a player. It knows the use
 ## Capabilities and Constraints
 - The existing API is authoritative. No endpoint or field may be invented; needs are written up as contract proposals.
 - No playback exists. Reference mockups show a player bar; the owner's decision is to borrow the visual language only. A now-playing or streaming bar is out of scope unless separately approved with an API contract.
-- Fonts currently load from Google Fonts via `@import`; self-hosting is an open decision.
+- Fonts and icons are self-hosted; do not introduce third-party runtime asset requests without explicit approval.
 - Acquisition information (quality, progress, status, actions) must stay coherent and scannable.
-- The repository's UI restrictions in `AGENTS.md` and `docs/FRONTEND_DESIGN_GUIDE.md` are to be rewritten by the owner to permit the redesign. Until then the roadmap treats them as superseded for planning only.
+- The current front-end redesign is complete. Historical design decisions and phase evidence are preserved in `docs/archive/redesign/`; permanent interaction, accessibility, safety, and testing rules live in `docs/DEVELOPMENT_WORKFLOW.md` and `docs/TEST_PLAN.md`.
 
-## Brand Commitments
-Name: Navidrome Librarian. Existing cassette mark at `assets/cassette.png`. The current yellow/red accents and the Barlow Condensed / IBM Plex trio are starting points, not commitments: the owner has opened color, type, icons and motion to exploration.
+## Current interface identity
 
-## Evidence on Hand
-- Four owner-supplied reference mockups (dark music apps: red-orange hero with green accents; blue-accent artwork rows; yellow-on-charcoal with a hero banner; orange-accent mobile screens with a lyrics/playlist view).
-- A shipped, audited front end with measured contrast and accessibility history in `docs/UI_BACKLOG_EXECUTION.md`.
-- No user research, analytics, or testimonials exist. None may be fabricated.
+The shipped interface uses a warm, dark ink palette with chart-red emphasis, yellow for primary/selected states, and artwork-led, scannable layouts. Typography and detailed visual tokens are documented historically in `docs/archive/redesign/DESIGN.md` and `docs/archive/redesign/DESIGN_SYSTEM.md`; consult them when maintaining existing visual consistency, not as an unfinished roadmap.
 
 ## Product Principles
 1. Artwork leads; metadata supports.

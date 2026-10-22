@@ -34,15 +34,6 @@ These are responsibility summaries, not an assertion that every dependency is al
 7. Review package/Docker inclusion and AST-coupled test assumptions whenever modules or imports move.
 8. Keep MCP compatibility during modularization. Retirement is a separate decision and migration gate.
 
-## Completion audit
+## Modularization disposition
 
-Before declaring modularization complete:
-- run `scripts/dep_map.py` and review the generated import graph for `app/main.py`, API modules, and `navidrome_server.py`;
-- trace `app/main.py` and API dependencies on `navidrome_server.py`;
-- distinguish intentional compatibility adapters from accidental coupling;
-- inventory AST/source-reading tests in `docs/architecture/AST_TEST_INVENTORY.md` and move behavioral assertions to direct-import tests without weakening safety coverage;
-- run `grep -r "navidrome_server" app/ --include="*.py"` and allow only explicitly documented compatibility adapters. Current known web edge: `app/api/dependencies.py` lazily imports the legacy server inside `get_librarian()`; preserve the app-import isolation regression in `tests/test_auth_routes_integration.py`.
-- verify direct-import and adapter-level regressions for extracted boundaries;
-- identify remaining responsibilities that are justified orchestration/provider wiring rather than forcing further extraction.
-
-The active candidate list and acceptance criteria are in `docs/MODULARIZATION_ROADMAP.md`. Required checks are in `docs/TEST_PLAN.md`; workflow and release gates are in `docs/DEVELOPMENT_WORKFLOW.md`.
+The planned domain modularization and Python package-layout migrations are complete. Do not resume size-only extraction work. Historical boundaries and closeout evidence are retained in [the archive](archive/completed/MODULARIZATION_ROADMAP.md) and root `PROJECT_LOG.md`. Current outstanding work is listed in [`ACTIVE_WORK.md`](ACTIVE_WORK.md); required verification is in [`TEST_PLAN.md`](TEST_PLAN.md) and release gates are in [`DEVELOPMENT_WORKFLOW.md`](DEVELOPMENT_WORKFLOW.md).

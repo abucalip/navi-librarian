@@ -90,13 +90,12 @@ This is a profile-responsiveness experiment, not a chronological future-listen h
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.
 
-Redesign slices (`docs/REDESIGN_ROADMAP.md`) add these requirements:
-- **Viewport matrix:** render every affected page at 1440, 1200, 900, 620 and 390px and record horizontal overflow, console errors and network errors per width.
-- **Visual baseline:** compare against the Phase 0 baseline captured on the identified `main` SHA; attach before/after screenshots. State which states were populated from reconstructed DOM rather than a real library.
-- **Token-only changes:** prove purity by comparing computed styles old versus new for the affected selectors; report differences, which must be only the intended value changes.
-- **Contrast:** measure text and control-boundary contrast on the rendered build for any color change; report the pairs and ratios.
-- **Contract tests:** when a `tests/*_ui_contract.py` assertion changes because a class name or structure changed intentionally, show the before and after assertion and the reason; never delete or weaken a behavioral assertion.
-- **Impeccable:** record `impeccable detect` findings applied and rejected when a UI slice is finished.
+For UI changes, also:
+- Verify affected workflows at representative desktop and narrow/mobile widths, including long names, missing artwork, empty/error/loading states, and horizontal overflow where relevant.
+- Inspect browser console/network errors and keyboard/focus behavior on the exact tested SHA.
+- Check text/control contrast for color changes; preserve visible focus, reduced-motion support, accessible labels, and status distinctions that do not rely on color alone.
+- Update UI contract tests narrowly when structure changes intentionally; never weaken behavioral assertions merely to pass a test.
+- Use self-hosted assets and do not introduce third-party runtime requests without explicit approval.
 
 ## Reporting states separately
 
