@@ -65,7 +65,6 @@ function initializePage(name) {
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
   else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
-  else if (name === 'acquisitions') startAcquisitionStream();
 }
 
 // One navigation path for the rail and the header menu, so Settings in the menu still runs
@@ -75,7 +74,10 @@ function navigateTo(name) {
   initializePage(name);
   // Saved is read on every visit: saves made on other pages since the last visit must appear.
   if (name === 'saved') loadSaved();
-  if (name !== 'acquisitions') stopAcquisitionStream();
+  // The stream is closed on leaving Acquisitions, so it must restart on every visit, not only
+  // the first one that initializePage handles; startAcquisitionStream is a no-op while open.
+  if (name === 'acquisitions') startAcquisitionStream();
+  else stopAcquisitionStream();
 }
 
 document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>
@@ -171,7 +173,7 @@ document.addEventListener('click', event => {
 });
 
 document.querySelectorAll('button[data-go]').forEach(button =>
-  button.addEventListener('click', () => showPage(button.dataset.go)));
+  button.addEventListener('click', () => navigateTo(button.dataset.go)));
 
 // Place the indicator once layout is settled, and keep it aligned when the rail is
 // resized. offsetTop is only meaningful after layout, so the first move waits a frame.
