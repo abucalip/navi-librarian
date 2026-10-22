@@ -1,9 +1,9 @@
 """Single home for the genre-family vocabulary used by discovery.
 
-The tables live in settings/taste_defaults.json, loaded once at import. The
-shipped file reproduces the original hard-coded behavior exactly. Each profile
-is a deliberately separate table: they differ today and the owner decides which
-behavior is canonical. Do not merge profiles here. Rule tables are ordered
+The tables live in settings/taste_defaults.json, loaded once at import. They
+only name and group genres (tag -> family rules and display labels); what counts
+as a listener's interest is derived from their listening in derived_profile.
+Each profile is a deliberately separate table. Rule tables are ordered
 (family, substring terms) pairs matched against casefolded tags.
 """
 from __future__ import annotations
@@ -41,16 +41,6 @@ RECENT_STYLE_ROCK_EXCLUDED = _DEFAULTS["recent_style_rock_excluded"]
 PRIMARY_RECENT_PRIORITY: tuple[str, ...] = tuple(_DEFAULTS["primary_recent_priority"])
 PRIMARY_HIPHOP_TERMS = tuple(_DEFAULTS["primary_hiphop_terms"])
 PRIMARY_SPECIFIC_JAZZ_TERMS = tuple(_DEFAULTS["primary_specific_jazz_terms"])
-
-# Defaults for what counts as a listener interest.
-CORE_FAMILIES = frozenset(_DEFAULTS["core_families"])
-EXPLORATION_FAMILIES = frozenset(_DEFAULTS["exploration_families"])
-
-# Last-resort artist fallback, used only when a candidate has no tags.
-REGIONAL_ARTIST_FAMILIES: dict[str, str] = dict(_DEFAULTS["regional_artist_families"])
-
-# Tags that force the "adventurous" category.
-ADVENTUROUS_TAGS: tuple[str, ...] = tuple(_DEFAULTS["adventurous_tags"])
 
 # Display labels, sent by the server so the browser keeps no copy.
 FAMILY_LABELS: dict[str, str] = dict(_DEFAULTS["family_labels"])

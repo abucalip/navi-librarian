@@ -1,7 +1,6 @@
 """Derive a listener's core and exploration families from their own data.
 
-Used only when the taste profile mode is "derived". The fixed tables in
-taste_families stay the default. Family keys come from the shipped category
+Family keys come from the shipped category
 rules where one matches, otherwise from a normalized tag, so genres outside the
 shipped vocabulary still get a family of their own.
 """
@@ -163,17 +162,23 @@ def derive_profile(
     tag_lists_and_weights: Iterable[tuple[Iterable[str], float]],
     pool_tags: Sequence[str],
 ) -> tuple[set[str], set[str], str]:
-    """Return (core, exploration, source); sparse history falls back to defaults."""
+    """Return (core, exploration, source).
+
+    With sparse listening history the core comes from the candidate pool, which
+    is built from the listener's similar artists, and nothing is exploration.
+    """
     family_sets = [(derived_genre_families(tags), w) for tags, w in tag_lists_and_weights]
     weights: Counter = Counter()
     for families, weight in family_sets:
         for family in families:
             weights[family] += weight
     if sum(weights.values()) < MIN_PROFILE_WEIGHT:
-        return (
-            set(taste_families.CORE_FAMILIES),
-            set(taste_families.EXPLORATION_FAMILIES),
-            "defaults_sparse_history",
-        )
+        pool_weights: Counter = Counter()
+        for tag in pool_tags:
+            for family in derived_genre_families([tag]):
+                pool_weights[family] += 1.0
+        core = ClusteredFamilies(derive_core_families(pool_weights))
+        core.cluster_of = {family: family for family in core}
+        return core, set(), "candidate_pool_sparse_history" if core else "no_profile"
     core = cluster_core(derive_core_families(weights), family_sets)
     return core, derive_exploration_families(pool_tags, core), "derived"

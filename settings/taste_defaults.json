@@ -219,58 +219,6 @@
   "ethiopian jazz",
   "ethio-jazz"
  ],
- "core_families": [
-  "alternative",
-  "brazilian",
-  "electronic",
-  "funk",
-  "hip-hop",
-  "jazz",
-  "rnb-soul",
-  "rock"
- ],
- "exploration_families": [
-  "african",
-  "north-african-middle-eastern"
- ],
- "regional_artist_families": {
-  "chebmami": "north-african-middle-eastern",
-  "vieuxfarkatoure": "african",
-  "alifarkatoure": "african",
-  "bombino": "african",
-  "tinariwen": "african",
-  "mdoumoctar": "african",
-  "imarhan": "african",
-  "khaled": "north-african-middle-eastern",
-  "chebkhaled": "north-african-middle-eastern",
-  "faudel": "north-african-middle-eastern",
-  "rachidtaha": "north-african-middle-eastern",
-  "idir": "north-african-middle-eastern",
-  "souadmassi": "north-african-middle-eastern",
-  "hamidelkasri": "north-african-middle-eastern",
-  "takfarinas": "north-african-middle-eastern",
-  "bouchenak": "north-african-middle-eastern",
-  "liliboniche": "north-african-middle-eastern",
-  "orchestrenationaldebarbes": "north-african-middle-eastern",
-  "chebsahraoui": "north-african-middle-eastern",
-  "شابصحراوي": "north-african-middle-eastern"
- },
- "adventurous_tags": [
-  "idm",
-  "experimental",
-  "avant-garde",
-  "avant garde",
-  "free improvisation",
-  "free jazz",
-  "drone",
-  "noise",
-  "musique concrète",
-  "musique concrete",
-  "electroacoustic",
-  "dark ambient",
-  "glitch",
-  "deconstructed club"
- ],
  "family_labels": {
   "jazz": "Jazz",
   "african": "African Music",

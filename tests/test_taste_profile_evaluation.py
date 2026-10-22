@@ -8,27 +8,25 @@ class TasteProfileEvaluationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.report = evaluate_all()
 
-    def test_report_covers_every_profile_in_both_modes(self):
+    def test_report_covers_every_profile(self):
         self.assertEqual(set(self.report), set(SYNTHETIC_PROFILES))
         for result in self.report.values():
             self.assertEqual(result["profile_source"], "derived")
-            for mode in ("fixed", "derived"):
-                self.assertEqual(sum(result[mode]["category_counts"].values()), 10)
+            self.assertEqual(sum(result["category_counts"].values()), 10)
 
     def test_report_is_deterministic(self):
         self.assertEqual(self.report, evaluate_all())
 
-    def test_derived_reduces_vocabulary_miss_for_non_jazz_profiles(self):
+    def test_non_jazz_profiles_have_few_vocabulary_miss_adventurous_candidates(self):
+        # Adventurous that is neither core nor exploration: the old vocabulary-miss symptom.
         for name in ("metal", "k-pop", "classical"):
-            r = self.report[name]
-            self.assertLess(r["derived"]["adventurous_share"], r["fixed"]["adventurous_share"], name)
-        self.assertLess(self.report["metal"]["derived"]["adventurous_share"], 0.5)
+            self.assertLess(self.report[name]["adventurous_outside_exploration_share"], 0.5, name)
 
-    def test_derived_exploration_does_not_depend_on_fixed_regional_set(self):
+    def test_exploration_does_not_depend_on_a_regional_set(self):
         for name in ("metal", "classical"):
             self.assertFalse(
                 {"african", "north-african-middle-eastern"}
-                & set(self.report[name]["derived"]["exploration_families"]), name)
+                & set(self.report[name]["exploration_families"]), name)
 
     def test_aggregates_only(self):
         self.assertNotIn("synthetic", str(self.report))

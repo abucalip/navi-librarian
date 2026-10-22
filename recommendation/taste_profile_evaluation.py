@@ -1,10 +1,10 @@
-"""Offline fixed-vs-derived taste profile comparison on synthetic profiles.
+"""Offline derived taste profile evaluation on synthetic profiles.
 
 Each profile is a weighted listening history plus a candidate pool, all tag
-lists with no artist identities. The evaluator runs the real classification
-and exploration-bonus code in both modes and reports aggregates only. Synthetic
-profiles show whether the derived mode removes vocabulary misses; they are not
-evidence about real listeners, which needs private captures (Phase 4 approval).
+lists with no artist identities. The evaluator runs the real profile derivation,
+classification and exploration-bonus code and reports aggregates only. Synthetic
+profiles show whether classification adapts to different tastes; they are not
+evidence about real listeners.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from collections import Counter
 import json
 from typing import Any
 
-from discovery import derived_profile, taste_families
+from discovery import derived_profile
 from discovery.recommendations import (
     apply_familiarity_exploration_bonus,
     classify_recommendation_category,
@@ -62,38 +62,32 @@ SYNTHETIC_PROFILES: dict[str, tuple[list, list[list[str]]]] = {
 
 def evaluate_profile(history, pool: list[list[str]]) -> dict[str, Any]:
     pool_tags = [tag for tags in pool for tag in tags]
-    d_core, d_expl, source = derived_profile.derive_profile(history, pool_tags)
-    modes = {
-        "fixed": (set(taste_families.CORE_FAMILIES),
-                  set(taste_families.EXPLORATION_FAMILIES), False),
-        "derived": (d_core, d_expl, True),
+    core, expl, source = derived_profile.derive_profile(history, pool_tags)
+    categories: Counter = Counter()
+    families: Counter = Counter()
+    bonus_hits = 0
+    outside_everything = 0
+    for tags in pool:
+        category, fams = classify_recommendation_category(
+            {"artist": "synthetic"}, tags, core, expl)
+        categories[category] += 1
+        families.update(fams)
+        outside_everything += category == "adventurous" and not (fams & expl)
+        boosted = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, tags, expl)
+        plain = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, tags, set())
+        bonus_hits += boosted > plain
+    total = len(pool)
+    return {
+        "profile_source": source,
+        "core_families": sorted(core),
+        "exploration_families": sorted(expl),
+        "category_counts": {c: categories.get(c, 0) for c in CATEGORIES},
+        "adventurous_share": round(categories["adventurous"] / total, 3),
+        "adventurous_outside_exploration_share": round(outside_everything / total, 3),
+        "unclassified_share": round(categories["unclassified"] / total, 3),
+        "distinct_candidate_families": len(families),
+        "exploration_bonus_candidates": bonus_hits,
     }
-    report: dict[str, Any] = {"profile_source": source}
-    for mode, (core, expl, derived) in modes.items():
-        categories: Counter = Counter()
-        families: Counter = Counter()
-        bonus_hits = 0
-        for tags in pool:
-            category, fams = classify_recommendation_category(
-                {"artist": "synthetic"}, tags, core, expl, derived=derived)
-            categories[category] += 1
-            families.update(fams)
-            score = apply_familiarity_exploration_bonus(
-                {"score": 1.0}, 1.5, tags, expl, derived)
-            plain = apply_familiarity_exploration_bonus(
-                {"score": 1.0}, 1.5, tags, set(), derived)
-            bonus_hits += score > plain
-        total = len(pool)
-        report[mode] = {
-            "core_families": sorted(core),
-            "exploration_families": sorted(expl),
-            "category_counts": {c: categories.get(c, 0) for c in CATEGORIES},
-            "adventurous_share": round(categories["adventurous"] / total, 3),
-            "unclassified_share": round(categories["unclassified"] / total, 3),
-            "distinct_candidate_families": len(families),
-            "exploration_bonus_candidates": bonus_hits,
-        }
-    return report
 
 
 def evaluate_all() -> dict[str, Any]:

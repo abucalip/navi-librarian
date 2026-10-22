@@ -19,20 +19,18 @@ class RecommendationCategoryPolicyTests(unittest.TestCase):
         self.assertEqual(category, "unclassified")
         self.assertEqual(families, set())
 
-    def test_regional_artist_override_can_make_candidate_adjacent_without_tags(self):
+    def test_artist_names_do_not_classify_candidates_without_tags(self):
         category, families = self.classify(
-            {"primary_artist": "Tinariwen"}, [],
-            exploration={"african"},
+            {"primary_artist": "Tinariwen"}, [], exploration={"african"},
         )
-        self.assertEqual(category, "adjacent")
-        self.assertEqual(families, {"african"})
+        self.assertEqual((category, families), ("unclassified", set()))
 
-    def test_adventurous_tag_precedes_core_family_overlap(self):
+    def test_free_jazz_overlapping_a_core_family_is_not_forced_adventurous(self):
         category, families = self.classify(
             {"primary_artist": "Artist"}, ["free jazz"],
-            core={"jazz"}, exploration={"jazz"},
+            core={"jazz"}, exploration=set(),
         )
-        self.assertEqual(category, "adventurous")
+        self.assertEqual(category, "adjacent")
         self.assertEqual(families, {"jazz"})
 
     def test_two_core_family_overlaps_are_cross_genre(self):
@@ -48,6 +46,27 @@ class RecommendationCategoryPolicyTests(unittest.TestCase):
             {"primary_artist": "Artist"}, ["jazz"], core={"jazz"}
         )
         self.assertEqual(category, "adjacent")
+
+    def test_exploration_thread_makes_a_core_candidate_adventurous(self):
+        category, families = self.classify(
+            {"primary_artist": "Artist"}, ["jazz", "electronic"],
+            core={"jazz"}, exploration={"electronic"},
+        )
+        self.assertEqual((category, families), ("adventurous", {"jazz", "electronic"}))
+
+    def test_two_core_clusters_beat_an_exploration_thread(self):
+        category, _ = self.classify(
+            {"primary_artist": "Artist"}, ["jazz", "bossa nova", "electronic"],
+            core={"jazz", "brazilian"}, exploration={"electronic"},
+        )
+        self.assertEqual(category, "cross_genre")
+
+    def test_exploration_overlap_is_adventurous_but_keeps_its_bonus(self):
+        category, families = self.classify(
+            {"primary_artist": "Artist"}, ["electronic"],
+            core={"jazz"}, exploration={"electronic"},
+        )
+        self.assertEqual((category, families), ("adventurous", {"electronic"}))
 
     def test_non_overlapping_classified_candidate_falls_back_to_adventurous(self):
         category, families = self.classify(

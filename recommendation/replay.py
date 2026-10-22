@@ -79,10 +79,21 @@ def freeze_gathered_inputs(gathered: dict[str, Any]) -> dict[str, Any]:
         "recent_family_counts": dict(gathered["recent_family_counts"]),
         "recent_family_play_counts": dict(gathered.get("recent_family_play_counts", gathered["recent_family_counts"])),
         "core_families": sorted(gathered["core_families"]),
+        "core_clusters": dict(getattr(gathered["core_families"], "cluster_of", {}) or {}),
         "exploration_families": sorted(gathered["exploration_families"]),
         "profile_families": sorted(gathered["profile_families"]),
-        "profile_mode": gathered.get("profile_mode", "fixed"),
     }
+
+
+def _thaw_core(payload: dict[str, Any]) -> set[str]:
+    """Core families, with their taste clusters when the capture recorded them."""
+    clusters = payload.get("core_clusters")
+    if not clusters:
+        return set(payload["core_families"])
+    from discovery.derived_profile import ClusteredFamilies
+    core = ClusteredFamilies(payload["core_families"])
+    core.cluster_of = dict(clusters)
+    return core
 
 
 def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
@@ -126,10 +137,9 @@ def thaw_gathered_inputs(payload: dict[str, Any]) -> dict[str, Any]:
         "supplementary_cache_misses": payload.get("supplementary_cache_misses", 0),
         "recent_family_counts": Counter(payload["recent_family_counts"]),
         "recent_family_play_counts": Counter(payload["recent_family_play_counts"]),
-        "core_families": set(payload["core_families"]),
+        "core_families": _thaw_core(payload),
         "exploration_families": set(payload["exploration_families"]),
         "profile_families": set(payload["profile_families"]),
-        "profile_mode": payload.get("profile_mode", "fixed"),
     }
 
 
@@ -514,25 +524,6 @@ class LastFmReplay:
             )
 
 
-class KeyedLastFmReplay:
-    """Last.fm tape looked up by (artist, album) for what-if runs.
-
-    A different profile mode may ask about albums the capture never looked up.
-    Those get no Last.fm data (no popularity adjustment) and are counted, so the
-    comparison can state how much of the derived run is missing Last.fm input.
-    """
-    def __init__(self, calls: list[dict[str, Any]]):
-        self._by_key = {(c.get("artist"), c.get("album")): c.get("result") for c in calls}
-        self.uncaptured = 0
-
-    def __call__(self, artist: str, album: str) -> Any:
-        if (artist, album) not in self._by_key:
-            self.uncaptured += 1
-            return None
-        value = self._by_key[(artist, album)]
-        return tuple(value) if isinstance(value, list) and len(value) == 2 else value
-
-
 def _comparable_output(value: dict[str, Any]) -> dict[str, Any]:
     # Diagnostics contain timestamps and previous-run overlap by design. They
     # are not ranking outputs and are not part of deterministic equivalence.
@@ -540,102 +531,13 @@ def _comparable_output(value: dict[str, Any]) -> dict[str, Any]:
             if key not in {"pool_diagnostics", "lastfm_last_error"}}
 
 
-def rederive_profile(gathered: dict[str, Any]) -> dict[str, Any]:
-    """Return frozen inputs re-classified in derived taste profile mode.
-
-    The profile is rebuilt from the captured listens and genre cache. The
-    candidate pool tags are all captured candidates' tags, a superset of what
-    live gathering saw; sparse history falls back to fixed, as in production.
-    """
-    from discovery.derived_profile import derive_profile
-    from discovery.recommendations import decayed_listen_weights
-
-    cache = gathered["genre_cache"]
-    listen_tags = []
-    for listen, weight in zip(gathered["listens"], decayed_listen_weights(gathered["listens"], half_life_days=14.0)):
-        info = listen.get("track_metadata", {}).get("additional_info", {})
-        mbids = info.get("artist_mbids")
-        mbid = info.get("artist_mbid") or (mbids[0] if isinstance(mbids, list) and mbids else None)
-        if mbid:
-            listen_tags.append((cache.get(mbid, []), weight))
-    pool = [t for album in gathered["albums"].values() for t in cache.get(album.get("artist_mbid"), [])]
-    core, exploration, source = derive_profile(listen_tags, pool)
-    derived = dict(gathered)
-    derived.update(
-        core_families=core, exploration_families=exploration,
-        profile_families=set(core) | set(exploration),
-        profile_mode="derived" if source == "derived" else "fixed", profile_source=source,
-    )
-    return derived
-
-
-def compare_profile_modes(payload: dict[str, Any], top_n: int = 10) -> dict[str, Any]:
-    """Rank the same frozen capture in fixed and derived mode; aggregates only."""
-    import navidrome_server
-    from collections import Counter as _Counter
-
-    runs: dict[str, Any] = {}
-
-    def run(mode: str) -> dict[str, Any]:
-        gathered = thaw_gathered_inputs(payload["gathered_inputs"])
-        if mode == "derived":
-            gathered = rederive_profile(gathered)
-        lastfm = KeyedLastFmReplay(payload["lastfm_calls"]) if mode == "derived" else LastFmReplay(payload["lastfm_calls"])
-        runs[mode] = lastfm
-        return json.loads(navidrome_server.recommend_new_music(
-            count=int(payload["count"]), _gathered_override=gathered,
-            _ranking_context_override=_validate_ranking_context(payload["ranking_context"]),
-            _lastfm_popularity_fn=lastfm,
-            _lastfm_available_override=bool(payload["expected_output"].get("lastfm_api_configured")),
-            _record_diagnostics=False,
-        ))
-
-    fixed, derived = run("fixed"), run("derived")
-
-    def ranked(result: dict[str, Any]) -> list[tuple[str, str]]:
-        return [(r["artist"], r["album"]) for r in result["recommendations"]][:top_n]
-
-    fixed_rank, derived_rank = ranked(fixed), ranked(derived)
-    shared = [item for item in fixed_rank if item in derived_rank]
-    shifts = [abs(fixed_rank.index(i) - derived_rank.index(i)) for i in shared]
-    return {
-        "top_n": top_n,
-        "derived_lastfm_lookups_without_capture": runs["derived"].uncaptured,
-        "fixed_matches_capture": _comparable_output(fixed) == _comparable_output(payload["expected_output"]),
-        "shared_in_top_n": len(shared),
-        "only_in_fixed": len(fixed_rank) - len(shared),
-        "only_in_derived": len(derived_rank) - len(shared),
-        "mean_rank_shift_of_shared": round(sum(shifts) / len(shifts), 2) if shifts else None,
-        "selected_category_mix": {
-            mode: dict(_Counter(r["discovery_category"] for r in result["recommendations"]))
-            for mode, result in (("fixed", fixed), ("derived", derived))
-        },
-        "category_counts": {"fixed": fixed.get("category_counts"), "derived": derived.get("category_counts")},
-        "distinct_selected_families": {
-            mode: len({f for r in result["recommendations"] for f in r.get("genre_families", [])})
-            for mode, result in (("fixed", fixed), ("derived", derived))
-        },
-        "selected_adventurous": {
-            mode: sum(1 for r in result["recommendations"] if r.get("discovery_category") == "adventurous")
-            for mode, result in (("fixed", fixed), ("derived", derived))
-        },
-    }
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Replay a private recommendation capture offline.")
     parser.add_argument("capture", help="absolute path to a private capture JSON file")
-    parser.add_argument(
-        "--compare-profile-modes", action="store_true",
-        help="rank the capture in fixed and derived taste profile mode and compare (aggregates only)",
-    )
     args = parser.parse_args(argv)
     try:
         envelope = load_capture(args.capture)
         payload = envelope["payload"]
-        if args.compare_profile_modes:
-            print(json.dumps(compare_profile_modes(payload), indent=2, sort_keys=True))
-            return 0
         gathered = thaw_gathered_inputs(payload["gathered_inputs"])
         ranking_context = _validate_ranking_context(payload["ranking_context"])
         lastfm = LastFmReplay(payload["lastfm_calls"])
