@@ -118,8 +118,9 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
 
     Returns {(artist, album): year or None} for every usable pair given. Cached pairs cost no
     request. A request that fails leaves its pairs out of the result and out of the cache, so a
-    later call retries them; a pair absent from a successful response is cached as no year, as
-    the single lookup does. Same exact title and artist-credit rule, same pacing lock.
+    later call retries them; a pair absent from a complete response is cached as no year, as the
+    single lookup does. A response filled to the result limit is incomplete, so its chunk is split
+    and re-queried rather than trusted. Same exact title and artist-credit rule, same pacing lock.
     """
     global _last_request
     results = {}
@@ -138,8 +139,7 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
                 continue
         missing.append((artist, album))
 
-    for start in range(0, len(missing), BATCH_PAIR_LIMIT):
-        chunk = missing[start:start + BATCH_PAIR_LIMIT]
+    def resolve(chunk):
         query = " OR ".join(
             f'(artist:"{_escape(artist)}" AND releasegroup:"{_escape(album)}")' for artist, album in chunk
         )
@@ -157,9 +157,19 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
             except Exception:
                 groups = None
         if groups is None:
-            continue
+            return
+        if len(groups) >= BATCH_RESULT_LIMIT and len(chunk) > 1:
+            # A capped response may have dropped a valid match, so absence proves nothing:
+            # split the chunk until each half is answered in full.
+            middle = len(chunk) // 2
+            resolve(chunk[:middle])
+            resolve(chunk[middle:])
+            return
         for artist, album in chunk:
             year = _exact_year(groups, artist, album)
             year_cache[(_norm(artist), _norm(album))] = {"time": monotonic(), "year": year}
             results[(artist, album)] = year
+
+    for start in range(0, len(missing), BATCH_PAIR_LIMIT):
+        resolve(missing[start:start + BATCH_PAIR_LIMIT])
     return results

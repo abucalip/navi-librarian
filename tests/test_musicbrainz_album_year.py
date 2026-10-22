@@ -104,6 +104,21 @@ class BatchAlbumYearTests(unittest.TestCase):
         self.assertEqual(self.module.lookup_album_years([("A", "One")], fetch=flaky), {("A", "One"): 1999})
         self.assertEqual(len(attempts), 2)
 
+    def test_a_capped_response_never_caches_a_missing_pair_as_no_year(self):
+        pairs = [(f"Artist {i}", f"Album {i}") for i in range(4)]
+        calls = []
+
+        def fetch(query, limit):
+            calls.append(query)
+            if all(f'"Album {i}"' in query for i in range(4)):
+                return [self._group(f"Filler {n}", "Nobody", "2000") for n in range(limit)]
+            return [self._group(f"Album {i}", f"Artist {i}", str(2000 + i)) for i in range(4)
+                    if f'"Album {i}"' in query]
+
+        result = self.module.lookup_album_years(pairs, fetch=fetch)
+        self.assertEqual(result, {pair: 2000 + i for i, pair in enumerate(pairs)})
+        self.assertEqual(len(calls), 3)
+
     def test_quotes_in_names_are_escaped(self):
         seen = []
         self.module.lookup_album_years([('A "B"', "C")], fetch=lambda q, n: seen.append(q) or [])
