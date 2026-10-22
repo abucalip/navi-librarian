@@ -15,9 +15,9 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - UI fixes from original PRs #531–#535 are integrated: icon-only mobile navigation (#546), artist bio in the album panel (#547), equal-width ranked rows (#533), stable acquisition rendering (#534), and smaller/faster card artwork (#535). Required workflows passed on each final reconciled head; details are recorded in `PROJECT_LOG.md`.
 - The owner waived manual browser checks for this merge batch; they were not performed. Artwork performance was not measured, and live browser/runtime behavior is not claimed. No image publication or deployment occurred.
 
-## 2a. Dashboard UI bugs/changes — reported by the owner, not started
+## 2a. Dashboard UI bugs/changes — reported by the owner
 
-- **Bios in album rows:** larger album artwork, and show the artist bio in the middle of each album row in Recommendations, New releases, and Personal discoveries.
+- **Bios in album rows — done in PR [#554](https://github.com/abucalip/navi-librarian/pull/554)** (`c9fcf3289f37984258aca5b62891d700c569d5c1`): larger artwork and the artist bio in the middle of Recommendations, New releases, and Personal discoveries rows; fixed row height with click-to-expand bios. Remaining check: confirm the Docker packaging/full-suite run for the merged head finished green.
 - **"Similar to:" label:** in album bars, replace the "adjacent" label with "Similar to: …", listing the library artists that led to the album/artist being recommended (a better indicator for the user). Apply to Recommendations and Personal discoveries.
 - **Adventurous rows:** rename the label to "Adventurous discovery", remove the "available genre tags" text and similar, and show the bio in the middle of the row.
 - **New releases rows:** remove the "released in *year* by *artist*" text and the "source: MusicBrainz" text; show the artist bio instead.
