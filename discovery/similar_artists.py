@@ -44,6 +44,24 @@ def build_profile_artists(
     ]
 
 
+def build_similar_to_lookup(
+    listens: Iterable[Mapping[str, Any]],
+    genre_cache: Mapping[str, Sequence[str]],
+    music_key: Callable[[Any], str],
+) -> Callable[[Mapping[str, Any]], list[str]]:
+    """Prepare a reusable candidate-to-similar-artists lookup for one recommendation run."""
+    profile_artists = build_profile_artists(listens, genre_cache, music_key)
+
+    def similar_to(candidate: Mapping[str, Any]) -> list[str]:
+        return similar_library_artists(
+            genre_cache.get(candidate.get("artist_mbid"), []),
+            music_key(candidate["primary_artist"]),
+            profile_artists,
+        )
+
+    return similar_to
+
+
 def similar_library_artists(
     candidate_tags: Iterable[str],
     candidate_artist_key: str,
