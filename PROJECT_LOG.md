@@ -1,3 +1,13 @@
+## 2026-10-22 — PR #554: larger row artwork and artist bio on discovery rows
+
+- **PR #554** squash-merged as `c9fcf3289f37984258aca5b62891d700c569d5c1` from exact head `8c8d473f3b9576fbf0dc278c702b9843b422d991` (branch `feat/dashboard-row-bios`, two feature commits plus one review fix). Ranked-row artwork is 96px (80px up to 1200px wide, 64px up to 620px wide). The artist bio now shows in the middle of every row on Recommendations, New releases, and Personal discoveries (previously only genre-connected Personal rows). "Add to your collection" and Saved rows are unchanged.
+- Rows keep one height (the artwork size). The bio is clamped to two lines with an ellipsis; a bio that does not fit becomes a keyboard-operable toggle (`role="button"`, `aria-expanded`, Enter/Space) that grows only its own row and does not open the album panel. A review pass caught that the first CSS edit had also enlarged acquisition-row artwork; this was reverted before merge.
+- **Tests run (focused only):** all `tests/*ui_contract.py` (251 passed) and `node --check static/app.js`. New contract file `tests/test_row_bio_expand_ui_contract.py`; the title-clamp count test now allows the bio clamp. The full unit suite was not run locally.
+- **CI on the exact head:** Python syntax check, container runtime smoke test, and release-workflow validation passed. Docker packaging (`Validate Docker packaging`, run `39796796155`, which runs the full unit suite) and `Validate Docker image (publishing paused)` (run `39796795957`) had **not completed** when this entry was written, and the PR was merged before they finished. Their results are not recorded here; check them on `main`.
+- **Manual browser check (`LOCAL_UI_TESTING.md`, `test-pr.sh 554`):** performed by the owner against this head, reported as "tested and working". Specific checklist items were not itemized, and performance was not measured.
+- No image publication, deployment, or live-runtime verification.
+- **Next action:** confirm the remaining CI runs for `c9fcf3289f37984258aca5b62891d700c569d5c1` finished green, then continue with the next item in `docs/ACTIVE_WORK.md` section 2a ("Similar to:" labels).
+
 ## 2026-10-22 — Live-runtime verification attempt for PRs #526 and #527 blocked by access
 
 - Re-read current project status, requirements, development workflow, test plan, active work, and the merged PRs. Current `main` before this documentation update was `fbc806badd9006853d2ccab45af19101809cb15a`.
