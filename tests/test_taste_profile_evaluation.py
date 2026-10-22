@@ -17,9 +17,10 @@ class TasteProfileEvaluationTests(unittest.TestCase):
     def test_report_is_deterministic(self):
         self.assertEqual(self.report, evaluate_all())
 
-    def test_non_jazz_profiles_are_mostly_not_adventurous(self):
+    def test_non_jazz_profiles_have_few_vocabulary_miss_adventurous_candidates(self):
+        # Adventurous that is neither core nor exploration: the old vocabulary-miss symptom.
         for name in ("metal", "k-pop", "classical"):
-            self.assertLess(self.report[name]["adventurous_share"], 0.5, name)
+            self.assertLess(self.report[name]["adventurous_outside_exploration_share"], 0.5, name)
 
     def test_exploration_does_not_depend_on_a_regional_set(self):
         for name in ("metal", "classical"):

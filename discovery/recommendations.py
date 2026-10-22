@@ -145,8 +145,11 @@ def classify_recommendation_category(
     """Return the established category and family set for a recommendation candidate.
 
     This policy is shared by selection and diagnostic projection so the two paths
-    cannot drift. A candidate is adventurous when it overlaps none of the
-    listener's derived core or exploration families.
+    cannot drift. Two or more distinct core taste clusters make a candidate
+    cross-genre; any overlap with an exploration family (outside the core by
+    definition, and still boosted by the exploration bonus) makes it adventurous,
+    even if it also touches a core family; otherwise core overlap is adjacent and
+    no overlap at all is adventurous.
     """
     tags = list(tags)
     families = genre_families(tags)
@@ -159,7 +162,9 @@ def classify_recommendation_category(
         category = "unclassified"
     elif _distinct_core_clusters(core_overlap, core_families) >= 2:
         category = "cross_genre"
-    elif core_overlap or exploration_overlap:
+    elif exploration_overlap:
+        category = "adventurous"
+    elif core_overlap:
         category = "adjacent"
     else:
         category = "adventurous"

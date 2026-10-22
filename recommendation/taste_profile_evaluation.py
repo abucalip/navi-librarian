@@ -66,11 +66,13 @@ def evaluate_profile(history, pool: list[list[str]]) -> dict[str, Any]:
     categories: Counter = Counter()
     families: Counter = Counter()
     bonus_hits = 0
+    outside_everything = 0
     for tags in pool:
         category, fams = classify_recommendation_category(
             {"artist": "synthetic"}, tags, core, expl)
         categories[category] += 1
         families.update(fams)
+        outside_everything += category == "adventurous" and not (fams & expl)
         boosted = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, tags, expl)
         plain = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, tags, set())
         bonus_hits += boosted > plain
@@ -81,6 +83,7 @@ def evaluate_profile(history, pool: list[list[str]]) -> dict[str, Any]:
         "exploration_families": sorted(expl),
         "category_counts": {c: categories.get(c, 0) for c in CATEGORIES},
         "adventurous_share": round(categories["adventurous"] / total, 3),
+        "adventurous_outside_exploration_share": round(outside_everything / total, 3),
         "unclassified_share": round(categories["unclassified"] / total, 3),
         "distinct_candidate_families": len(families),
         "exploration_bonus_candidates": bonus_hits,
