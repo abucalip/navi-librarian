@@ -4,6 +4,9 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Current state
 
+- PR #563 (externalize taste-family defaults) squash-merged as `9a659f6e9da175e475aa22f86c69492f40206869` from exact head `0de6a16c6058c053f0948c6b46c74f50092b7bf9`. All four required workflows passed on that head, including a fresh Docker packaging/full-unit-suite run `39861151000`; no publication or deployment.
+- PR #564 (`taste_profile_mode=derived`, off by default) remains open on head `9cae06937a4dc65e9a3f12be484f008a0a49d839`, retargeted to `main` after #563 merged. Review found a sparse-history fallback defect: the code restores fixed core/exploration sets but still enables derived classification, disabling fixed adventurous-tag and regional artist fallback behavior. A review comment records the finding. No workflow runs are visible for the current PR head, so the full suite and four required CI gates are not verified for #564. Not merged, published, or deployed.
+
 - PR #562 (server-provided Artist Deep Dives row keys and labels) squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85` from final reconciled PR head `76142e1d0f2d48b59a1355e36c7372c4ed6f7123`. All four required workflows passed on that exact head, including the full unit suite/Docker build; release-workflow validation passed with publishing skipped. The owner waived manual browser verification; it was not performed. No publication or deployment.
 
 - **Published, not deployed:** image `ghcr.io/abucalip/navi-librarian:v0.2.2` (tag at `main` `0b1111114e0e751928312e76a287123061640343`; digest `sha256:8ec36eaea585292f73ff7ec3546d96e4c5bc135b08fb3ccbcee789675f3f3ea2`) was published by release run 39835121956 with the owner's authorization. `latest` was not moved. Per-platform manifests were not inspected, no deployment occurred, and live-runtime behavior is not verified. Evidence: `PROJECT_LOG.md`.
@@ -24,7 +27,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Next action
 
-Proceed with the first behavior-preserving phase of [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md): consolidate duplicated taste-family vocabulary while documenting the differences between existing mappings. Do not choose a canonical mapping or change output without the owner's decision; preserve behavior and existing tests.
+Resolve the review finding on PR #564: make sparse-history fallback use complete fixed-mode classification behavior and add a regression test. Then run the required CI on the exact final PR head, including the full unit suite, before reconsidering merge. Do not enable derived mode by default; replay evidence across several profiles and the owner's approval remain required.
 
 ## Where to look
 
