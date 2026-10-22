@@ -23,6 +23,9 @@ router = APIRouter()
 
 _EXTERNAL_HTTP = httpx.Client(
     timeout=httpx.Timeout(3.0, connect=1.5),
+    # httpx closes idle connections after 5 s, so a burst of lookups after a short pause paid a
+    # fresh TCP and TLS handshake each. Keep them open for a minute.
+    limits=httpx.Limits(keepalive_expiry=60.0),
     # Wikimedia answers 403 ("robot policy") to this User-Agent when the request carries httpx's
     # default `Accept: */*`, so every artist bio came back empty. A JSON Accept header fixes it.
     headers={

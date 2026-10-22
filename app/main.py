@@ -133,6 +133,20 @@ app.middleware("http")(create_app_login_middleware(
     cookie_name=AUTH_COOKIE_NAME,
 ))
 
+
+
+@app.middleware("http")
+async def server_timing_header(request, call_next):
+    """Report how long the server spent on an API request, so a slow request can be told apart
+    from one that waited in the browser's connection queue (read from the resource timing
+    entry's `serverTiming`)."""
+    started = time.perf_counter()
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Server-Timing"] = f"app;dur={(time.perf_counter() - started) * 1000:.0f}"
+    return response
+
+
 LOGIN_PAGE = (_TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
 
 

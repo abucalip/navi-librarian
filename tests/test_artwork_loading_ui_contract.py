@@ -35,3 +35,14 @@ class LaneArtworkPrefetchTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ServerTimingTests(unittest.TestCase):
+    def test_api_responses_report_server_time_and_provider_connections_stay_open(self):
+        with open("app/main.py", encoding="utf-8") as handle:
+            main = handle.read()
+        with open("app/api/metadata.py", encoding="utf-8") as handle:
+            metadata = handle.read()
+        self.assertIn('response.headers["Server-Timing"]', main)
+        self.assertIn('request.url.path.startswith("/api/")', main)
+        self.assertIn("keepalive_expiry=60.0", metadata)
