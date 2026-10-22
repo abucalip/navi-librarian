@@ -26,7 +26,7 @@ ANCESTRY_PATH = Path(__file__).resolve().parent.parent / "settings" / "genre_anc
 # A tag that ends in one of these words belongs to that family ("doom metal").
 ROOT_WORDS = frozenset({
     "metal", "punk", "rock", "pop", "jazz", "folk", "blues", "country",
-    "reggae", "funk", "classical",
+    "reggae", "funk", "classical", "gospel", "latin",
 })
 
 
