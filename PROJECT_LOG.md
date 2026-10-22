@@ -1,3 +1,14 @@
+## 2026-10-22 — PR #556 review; reconciled replacement PR #557
+
+- Reviewed PR #556, “Add ‘Similar to’ labels to Recommendations and Personal rows.” Its base was the feature branch from merged PR #555, so retargeting it to `main` would include duplicated/conflicting stacked changes. Closed #556 as superseded and created replacement PR [#557](https://github.com/abucalip/navi-librarian/pull/557) directly from current `main`, preserving only the intended four-file change.
+- Replacement PR head: `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`. It adds a directly tested `build_similar_to_lookup` helper, attaches `similar_to` to normal and ownership-review payloads, and updates the UI labels. No provider calls or recommendation ranking budgets were added.
+- The first syntax/guard run failed because `recommend_new_music()` reached 461 lines, above its 450-line ceiling. The lookup construction was moved into the reusable helper, with a regression test. The next run showed 452 lines, so redundant blank lines were removed; the final exact-head syntax/size guard passed. No guard thresholds were changed.
+- **Full unit suite:** passed on the exact final head in Docker packaging workflow run `39807842282`, job `test-and-build`; Docker image build also passed.
+- **Required workflows on exact final head:** Python syntax/acquisition-safety run `39807842253` passed; container runtime smoke `39807842257` passed; Docker packaging/full unit suite/build `39807842282` passed; validation-only multi-architecture image check `39807842351` passed. Release workflow validation `39807842267` passed with its publishing job skipped.
+- **Manual UI verification:** not performed in this session. `docs/LOCAL_UI_TESTING.md` requires browser checks against the exact tested SHA for UI-facing changes. PR #557 remains open and unmerged pending that gate. The owner may test with `~/navi-librarian-test/test-pr.sh 557` or explicitly waive the manual gate.
+- No image publication, deployment, or live-runtime verification.
+- **Next action:** complete or explicitly waive manual browser testing for exact head `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`; then recheck PR state and merge only if the gate is satisfied.
+
 ## 2026-10-22 — PR #555: artist bios and dashboard discovery UI refinements
 
 - **PR #555** squash-merged as `f80254550369ed56b66e114faebb2b9fb72ed6bf` from exact head `58bbe0e4ef7320c14146a6fa4ea5a3ef0d266953`.
