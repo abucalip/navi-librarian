@@ -18,6 +18,12 @@ class ArtistBioResolutionTests(unittest.TestCase):
             "Artist is a musician.",
         )
 
+    def test_instrumentalist_descriptions_count_as_music_entities(self):
+        for description in ("American jazz saxophonist (1926–1967)", "American jazz pianist", "jazz quartet led by a saxophonist"):
+            with self.subTest(description=description):
+                entities = [{"id": "Q7346", "label": "John Coltrane", "description": description}]
+                self.assertEqual(resolve_artist_bio("John Coltrane", entities, {}), description)
+
     def test_mismatched_wikipedia_identity_uses_music_description(self):
         entities = [
             {"id": "Q1", "label": "Rainbow", "description": "English rock band"},

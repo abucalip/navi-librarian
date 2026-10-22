@@ -9,7 +9,11 @@ _ARTIST_DESCRIPTION_RE = re.compile(
     r"\b(?:band|musical group|rock group|pop group|music group|duo|orchestra|"
     r"choir|singer|singer-songwriter|musician|rapper|vocalist|songwriter|composer|"
     r"guitarist|bassist|drummer|keyboardist|record producer|music producer|"
-    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician)\b",
+    r"electronic musician|disc jockey|\bdj\b|folk musician|jazz musician|"
+    r"instrumentalist|bandleader|conductor|arranger|saxophonist|pianist|trumpeter|"
+    r"trombonist|clarinetist|flautist|flutist|violinist|cellist|violist|organist|"
+    r"harpist|percussionist|vibraphonist|banjoist|lutenist|accordionist|"
+    r"quartet|quintet|trio|ensemble|big band|vocal group)\b",
     re.IGNORECASE,
 )
 
