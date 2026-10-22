@@ -1,7 +1,7 @@
 """Tests for the pure "similar to" lookup."""
 import unittest
 
-from discovery.similar_artists import build_profile_artists, similar_library_artists
+from discovery.similar_artists import build_profile_artists, build_similar_to_lookup, similar_library_artists
 
 
 def _key(value):
@@ -22,6 +22,14 @@ class BuildProfileArtistsTests(unittest.TestCase):
     def test_reads_the_first_of_artist_mbids(self):
         listen = {"track_metadata": {"artist_name": "A", "additional_info": {"artist_mbids": ["a"]}}}
         self.assertEqual(len(build_profile_artists([listen], {"a": ["jazz"]}, _key)), 1)
+
+
+class BuildSimilarToLookupTests(unittest.TestCase):
+    def test_lookup_uses_candidate_genres_and_excludes_candidate_artist(self):
+        listens = [_listen("Jazz One", "j1"), _listen("Soul One", "s1")]
+        genres = {"j1": ["jazz"], "s1": ["soul"], "candidate": ["jazz"]}
+        lookup = build_similar_to_lookup(listens, genres, _key)
+        self.assertEqual(lookup({"artist_mbid": "candidate", "primary_artist": "New Artist"}), ["Jazz One"])
 
 
 class SimilarLibraryArtistsTests(unittest.TestCase):
