@@ -81,12 +81,15 @@ def select_artist_release_candidates(
     is_album_candidate: Callable[[Any], bool],
     exact_artist_credit_matches: Callable[[Any, str], bool],
     is_various_artists: Callable[[Any], bool],
+    today: str | None = None,
 ) -> dict[tuple[str, str], dict[str, Any]]:
     """Select eligible, unowned release groups credited exactly to one library artist.
 
     Provider retrieval, cache/error handling, rate limiting, and global candidate
     merging remain with the caller. Dependencies are injected to preserve the
-    existing discovery rules without importing the server module.
+    existing discovery rules without importing the server module. When ``today``
+    (ISO date) is given, releases dated after it are excluded; partial dates
+    compare as their earliest possible day.
     """
     selected: dict[tuple[str, str], dict[str, Any]] = {}
     for group in release_groups:
@@ -99,6 +102,8 @@ def select_artist_release_candidates(
             continue
         year = int(year_text)
         if release_date < cutoff_date or year > current_year:
+            continue
+        if today is not None and release_date > today:
             continue
         candidate = {
             "artist": artist,

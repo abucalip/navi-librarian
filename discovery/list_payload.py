@@ -31,6 +31,7 @@ def build_cached_discovery_list_response(
     is_album_candidate: Callable[[Any], bool],
     library_snapshot: Callable[[], Mapping[str, Any]] | None = None,
     on_stale: Callable[[Mapping[str, Any]], Any] | None = None,
+    today: str | None = None,
 ) -> str:
     """Build the legacy JSON response for a cached discovery list.
 
@@ -39,6 +40,8 @@ def build_cached_discovery_list_response(
     be read, the stored items are served unfiltered and the diagnostics say so.
     ``on_stale`` (personal list only) is called with the stored row so a stale snapshot
     can start a background rebuild; the stored list is served regardless of its outcome.
+    ``today`` (ISO date, new_releases only) hides stored items released after it, so a
+    list built earlier never shows releases that are still in the future.
     """
     cached = read_list(list_name)
     if not cached:
@@ -88,6 +91,12 @@ def build_cached_discovery_list_response(
         if identity in dismissed_albums or artist_key in dismissed_artists:
             continue
         if identity in saved:
+            continue
+        if (
+            list_name == "new_releases"
+            and today is not None
+            and str(item.get("first_release_date") or "") > today
+        ):
             continue
         visible.append(item)
 
