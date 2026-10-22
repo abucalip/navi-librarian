@@ -1,3 +1,12 @@
+## 2026-10-22 — PR #558 merged: Deep Dives artwork loading improvements
+
+- PR [#558](https://github.com/abucalip/navi-librarian/pull/558) squash-merged to `main` as `d44c01669611bd11acfaa4f1197905afed7f9f08`, from exact tested PR head `976c86e77034322e53cc7aea9691fa840c2d6146`.
+- Review blockers were resolved before merge: capped MusicBrainz result sets are recursively split so a truncated response cannot cause a missing album year to be negatively cached, and regression coverage exercises that case. The PR was aligned to current `main`.
+- **Automated verification on the exact PR head:** full unit suite and Docker build passed in workflow `39827794898`; Python syntax passed in `39827794888`; container runtime smoke passed in `39827794833`; validation-only multi-architecture image check passed in `39827794825`; release-workflow validation passed in `39827794824`. The publishing job was skipped as intended.
+- **Manual browser verification:** explicitly waived by the owner and not performed. Deep Dives artwork performance was not re-measured in a browser, so UI behavior/performance is not claimed as verified.
+- No image was published, no deployment occurred, and live runtime was not verified. Publishing/deployment remain paused.
+- Documentation closeout: `docs/PROJECT_STATUS.md` updated in `05cd398b17055cf8724c44f9fdf5fd3892a704eb`; `docs/ACTIVE_WORK.md` updated in `64fd0b6f9b29dab956ef14656dbf8a84e14b8a7c`. This log entry is the remaining closeout update.
+
 ## 2026-10-22 — PR #557 merged: similar-to discovery labels
 
 - Merged PR [#557](https://github.com/abucalip/navi-librarian/pull/557) by squash. Merge commit on `main`: `45cf5abe0257e70fe0d0573365259c2d0c7c2c10`; exact tested PR head: `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`.
