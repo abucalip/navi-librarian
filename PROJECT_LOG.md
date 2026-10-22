@@ -311,3 +311,10 @@
 
 - Updated `docs/TEST_PLAN.md` to state that manually running `python -m unittest discover -s tests -v` requires explicit owner approval. Without approval, agents run focused tests only; CI's `test-and-build` workflow continues to run the full suite on the PR head. Updated the stale handoff reference to `handoff.md`.
 - Documentation-only commit: `841c8b2d912eac7032473558601bd7ec7ee87138`. No tests or CI run for this documentation-only change; no publication, deployment, or runtime verification performed.
+
+## 2026-10-22 — Reconcile and merge PR #562
+
+- Reconciled stacked branch `taste-families-server-labels` with the then-current `main` after PR #561 merged, preserving the PR branch as a parent and avoiding a force-push. Final tested PR head: `76142e1d0f2d48b59a1355e36c7372c4ed6f7123`.
+- Reviewed the final diff: server API adds `genre_row` and `genre_row_label`; the UI consumes those fields rather than maintaining duplicate classification rules. The fallback behavior change for a small set of tags is described in the PR.
+- Required workflows on the exact final head all passed: Python syntax (`39860454090`), Docker packaging/full unit suite (`39860454167`), container runtime smoke (`39860454213`), and validation-only Docker image validation (`39860454082`). Release-workflow validation (`39860454120`) passed; the publishing job was skipped. Manual browser verification was explicitly waived by the owner and was not performed.
+- PR #562 squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85`. Documentation closeout commit: `82f9be0c41455c035a1abf729d7a290483e1fdce`. No image publication, deployment, or live-runtime verification.
