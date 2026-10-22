@@ -16,7 +16,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 - PR #555 (artist bios and dashboard discovery UI refinements) merged as `f80254550369ed56b66e114faebb2b9fb72ed6bf` from exact head `58bbe0e4ef7320c14146a6fa4ea5a3ef0d266953`. All four required workflows passed on that exact head, including the full unit suite and Docker build; release validation passed with publishing skipped. The owner reported successful manual browser testing. Not published or deployed.
 - PR #556 (“Similar to” labels) was a stacked PR based on the now-merged PR #555 branch, so it was closed as superseded. Replacement PR [#557](https://github.com/abucalip/navi-librarian/pull/557) merged as `45cf5abe0257e70fe0d0573365259c2d0c7c2c10` from exact tested PR head `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`. It adds a directly tested similar-artist lookup and exposes “Similar to: …” labels in Recommendations and Personal discovery rows. The full unit suite/Docker build, Python syntax/size and safety checks, container smoke, validation-only multi-architecture image validation, and release-workflow validation passed on that exact PR head (publishing job skipped). The owner explicitly waived manual browser testing for this PR; it was not performed. No publication or deployment.
 
-- PR #526 (failed-track retry) and PR #527 (masked slskd artist queries) are merged and CI-verified, but live-runtime verification is blocked: this session has no connection to the running Librarian host or slskd API, and these changes are in the published v0.2.2 image but have not been deployed. No live search or transfer was attempted. Keep deployment paused until authorized.
+- The owner confirmed that failed-track retry/recovery and masked slskd artist-query behavior have been tested and approved. No additional runtime verification is pending for those behaviors. The v0.2.2 image remains published but not deployed; test approval does not authorize deployment.
 - Python package-layout work is complete through PR #524. The earlier modularization roadmap is closed; do not restart size-only extraction work.
 - MCP is retired as a supported repository interface. External-client migration is not verifiable from repository evidence.
 - The front-end redesign is complete. Its design briefs, phase plans, and agent-specific restrictions have been archived.
@@ -24,7 +24,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Next action
 
-Arrange authorized access to an isolated Librarian test instance connected to the real slskd service, then verify PRs [#526](https://github.com/abucalip/navi-librarian/pull/526) and [#527](https://github.com/abucalip/navi-librarian/pull/527) without publishing or deploying. Current session has no connection to the running Librarian host or slskd API, and these merged changes are published in v0.2.2 but not deployed; live verification remains incomplete. Do not enqueue production transfers as a substitute for an isolated test.
+Proceed with the first behavior-preserving phase of [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md): consolidate duplicated taste-family vocabulary while documenting the differences between existing mappings. Do not choose a canonical mapping or change output without the owner's decision; preserve behavior and existing tests.
 
 ## Where to look
 
