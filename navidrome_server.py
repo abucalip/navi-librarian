@@ -424,7 +424,6 @@ def recommend_new_music(
     )
 
     similar_to = build_similar_to_lookup(listens, genre_cache, _music_key)
-
     # Empty style targets let measured MMR provide soft diversity.
     diversity_style_targets = {}
     targets = {
@@ -532,7 +531,6 @@ def recommend_new_music(
             "artist credit. Review before treating this as new."
         )
         possible_matches.append(result)
-
 
     # Temporary diagnostics: inspect all resolved candidates before return.
     candidate_debug = []
