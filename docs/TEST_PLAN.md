@@ -1,13 +1,13 @@
 # Test plan
 
-Last updated: 2026-10-17 (agent session search tests added)
+Last updated: 2026-10-22 (full-suite execution requires explicit owner approval)
 
 This document defines the **verification baseline**, not a chronological record of past PRs. Exact historical test evidence belongs in the root `PROJECT_LOG.md`. Always verify current results for the exact revision being proposed.
 
 ## Required checks for backend changes
 
 1. **Focused regressions:** run the tests covering the changed behavior and new direct-import tests for extracted logic.
-2. **Full unit suite:** `python -m unittest discover -s tests -v` is run by the owner and by the `test-and-build` workflow. **Agents working on PRs must never run it** (owner rule, 2026-10-20); run only focused modules and report which. A few modules import siblings and need `discover -s tests -p <file>`.
+2. **Full unit suite — owner approval required:** `python -m unittest discover -s tests -v` may be run manually only with the owner's explicit approval. Without that approval, agents must not run it; run focused modules instead and report exactly which. The `test-and-build` GitHub Actions workflow runs the full unit suite as part of CI on the PR head. A few modules import siblings and need `discover -s tests -p <file>`.
 3. **Syntax and static checks:** run the repository's Python syntax/acquisition-safety workflow and applicable syntax checks.
 4. **API and package checks:** exercise relevant API contracts and verify changed modules are included by Docker/package configuration.
 5. **Safety cases:** for acquisition, import, cleanup, and deletion, test intended success and unsafe refusal. Cover canonical-root validation, traversal/symlink escape, ambiguous paths, unrelated-file preservation, no-overwrite behavior, incomplete files, and relevant state/race boundaries.
@@ -113,7 +113,7 @@ Never infer a later state from an earlier one. Record unavailable or skipped tes
 
 ## Documentation-only changes
 
-Documentation-only changes are pushed directly to `main` (owner rule, 2026-10-21; see `CLAUDE_CLI.md`). Before pushing:
+Documentation-only changes are pushed directly to `main` (owner rule, 2026-10-21; see [`handoff.md`](../handoff.md)). Before pushing:
 - inspect the changed docs against current GitHub code and PR state;
 - check internal paths, names, SHA references, and claims for accuracy;
 - search for duplicated or stale active instructions;
