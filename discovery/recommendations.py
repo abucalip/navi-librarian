@@ -73,8 +73,14 @@ def is_various_artists(value: Any) -> bool:
     return value in {"various artists","various artist","various","v a"}
 
 def deep_dive_genre_families(tags: Iterable[Any]) -> list[str]:
-    text = " ".join(str(t).casefold() for t in tags)
-    return [family for family, terms in _tf.DEEP_DIVE_RULES if any(term in text for term in terms)]
+    """Families for Deep Dives rows, in tag order (the first tag is the primary)."""
+    from discovery.derived_profile import derived_genre_families
+    ordered: list[str] = []
+    for tag in tags:
+        for family in sorted(derived_genre_families([tag])):
+            if family not in ordered:
+                ordered.append(family)
+    return ordered
 
 def score_classic_candidates(candidates: Iterable[dict[str, Any]], jitter: Callable[[float,float],float]) -> list[dict[str,Any]]:
     output = list(candidates)

@@ -18,7 +18,7 @@ class FallbackFamilyTests(unittest.TestCase):
         for tag in ("Heavy Metal", "thrash metal", "metal"):
             self.assertEqual(dp.fallback_family(tag), "metal")
         self.assertEqual(dp.fallback_family("classical music"), "classical")
-        self.assertEqual(dp.fallback_family("k-pop"), "k-pop")
+        self.assertEqual(dp.fallback_family("k-pop"), "pop")
         self.assertEqual(dp.fallback_family(""), "")
 
     def test_shipped_rules_win_over_fallback(self):
@@ -163,7 +163,7 @@ class AncestryGroupingTests(unittest.TestCase):
         self.assertEqual(dp.fallback_family("new wave"), "rock")
 
     def test_unknown_tag_still_uses_head_noun(self):
-        self.assertEqual(dp.fallback_family("k-pop"), "k-pop")
+        self.assertEqual(dp.fallback_family("gypsy zouk"), "zouk")
 
     def test_table_loader_tolerates_missing_or_bad_files(self):
         import tempfile
@@ -209,3 +209,22 @@ class CoreClusterTests(unittest.TestCase):
         rows = listens([["jazz"]] * 6 + [["metal"]] * 6)
         core, _, _ = dp.derive_profile(rows, [])
         self.assertEqual(len(set(core.cluster_of.values())), 2)
+
+
+class AncestryTableCorrectionTests(unittest.TestCase):
+    def test_curated_corrections_apply(self):
+        for tag, family in {"thrash metal": "metal", "punk rock": "punk", "stoner rock": "rock",
+                            "hip hop soul": "rnb-soul", "alternative dance": "electronic",
+                            "dub": "reggae", "baroque": "classical"}.items():
+            self.assertEqual(dp._ANCESTRY[tag], family, tag)
+
+    def test_table_agrees_with_trailing_root_word_unless_overridden(self):
+        import importlib.util, sys, types
+        sys.modules.setdefault("httpx", types.ModuleType("httpx"))
+        spec = importlib.util.spec_from_file_location("b", "scripts/build_genre_ancestry.py")
+        build = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build)
+        for tag, family in dp._ANCESTRY.items():
+            last = tag.split()[-1]
+            if last in dp.ROOT_WORDS and tag not in build.OVERRIDES:
+                self.assertEqual(family, last, tag)

@@ -28,9 +28,6 @@ _DEFAULTS = _load()
 # Recommendation categories, exploration bonus, and query labels.
 CATEGORY_RULES = _rules(_DEFAULTS["category_rules"])
 
-# Deep Dives rows: first matching rule order matters only for output order.
-DEEP_DIVE_RULES = _rules(_DEFAULTS["deep_dive_rules"])
-
 # Rolling listening profile. Exclusions ("jazz rap", "electronic rock") and the
 # jazz special cases stay in recommendations.recent_style_families.
 RECENT_STYLE_TERMS: dict[str, tuple[str, ...]] = {
@@ -74,7 +71,8 @@ def deep_dive_row(item: dict) -> dict[str, str]:
     if key:
         key = key.replace("_", "-").casefold()
     else:
+        from discovery.recommendations import deep_dive_genre_families
         genres = item.get("genres")
-        text = " ".join(str(g).casefold() for g in (genres if isinstance(genres, list) else []))
-        key = next((f for f, terms in DEEP_DIVE_RULES if any(t in text for t in terms)), "other")
+        derived = deep_dive_genre_families(genres if isinstance(genres, list) else [])
+        key = derived[0] if derived else "other"
     return {"genre_row": key, "genre_row_label": family_label(key)}

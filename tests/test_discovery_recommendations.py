@@ -35,7 +35,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
    self.assertTrue(is_various_artists(value), value)
   self.assertFalse(is_various_artists("The Various"))
  def test_genre_families(self):
-  self.assertEqual(deep_dive_genre_families(["Malian desert blues","Bossa Nova","Jazz"]),["jazz","african","brazilian"])
+  self.assertEqual(deep_dive_genre_families(["Malian desert blues","Bossa Nova","Jazz"]),["african","brazilian","jazz"])
  def test_scoring(self):
   rows=[{"lastfm_listeners":0,"lastfm_playcount":0},{"lastfm_listeners":100000,"lastfm_playcount":500000},{"musicbrainz_rating":4.5,"musicbrainz_rating_votes":20}]
   score_classic_candidates(rows,lambda _a,_b:0)
