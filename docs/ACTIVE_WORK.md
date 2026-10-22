@@ -20,14 +20,9 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Bios in album rows — done in PR [#554](https://github.com/abucalip/navi-librarian/pull/554)** (`c9fcf3289f37984258aca5b62891d700c569d5c1`): larger artwork and the artist bio in the middle of Recommendations, New releases, and Personal discoveries rows; fixed row height with click-to-expand bios. Remaining check: confirm the Docker packaging/full-suite run for the merged head finished green.
 - **“Similar to:” label — merged in PR [#557](https://github.com/abucalip/navi-librarian/pull/557)** as `45cf5abe0257e70fe0d0573365259c2d0c7c2c10`, from tested head `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`. The server now supplies similar listened-to artists for adjacent recommendations; Recommendations and Personal discovery rows display “Similar to: …” when available. Full suite and required CI passed on the exact PR head. The owner waived manual browser checks; they were not performed. Not published or deployed.
 
-- **Adventurous rows:** rename the label to "Adventurous discovery", remove the "available genre tags" text and similar, and show the bio in the middle of the row.
-- **New releases rows:** remove the "released in *year* by *artist*" text and the "source: MusicBrainz" text; show the artist bio instead.
-- **Section labels:** use a smaller font size for the section labels ("Personal discoveries" and others) on the dashboard page to leave room for the bios.
-- **Dashboard album cards:** show the bios on the album cards.
-- **Album panel bio (still broken):** bios still do not show in the album panel (the one opened by clicking an album, showing the tracklist), despite PR #547. Investigate the root cause before re-fixing.
+- **Remaining 2a items — done.** Adventurous rows, New releases rows, dashboard album-card bios, and Deep Dives bio/year were integrated earlier (PR #555 and related; the owner browser-tested #555). The owner confirmed the smaller section labels and the Deep Dives card spacing are done.
+- **Album panel bio — fixed in PR [#560](https://github.com/abucalip/navi-librarian/pull/560)** (`ffff550c2336ca3dcd56a301c9ae7fffe9f0104b`, head `0f2ae27562a175e237a7c7364d380dae7b49f5a0`). Root cause: the server's artist-bio filter rejected Wikidata descriptions without band/singer-type words, so "jazz saxophonist", "pianist", and similar returned no bio. Not browser-verified.
 - **Deep Dives artwork speed — code change merged in PR [#558](https://github.com/abucalip/navi-librarian/pull/558)** (`d44c01669611bd11acfaa4f1197905afed7f9f08`, tested head `976c86e77034322e53cc7aea9691fa840c2d6146`). Full suite and required automated workflows passed. The owner waived manual browser verification; artwork timing was not re-measured and the change is not browser-verified. No publication/deployment. If the issue persists after an authorized deployment, measure browser timings before another fix.
-- **Deep Dives cards:** show the artist bio and the album year on the cards.
-- **Deep Dives card spacing:** the album title sits too close to the artwork and looks sloppy; add space between the title and the artwork.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
 
 ## 2b. Replace hard-coded taste with derived behavior — proposed

@@ -1,3 +1,9 @@
+## 2026-10-22 — PR #560 merged: artist bios for instrumentalists
+
+- PR #560 squash-merged as `ffff550c2336ca3dcd56a301c9ae7fffe9f0104b` from exact head `0f2ae27562a175e237a7c7364d380dae7b49f5a0`. Root cause of the missing album-panel bio: `_ARTIST_DESCRIPTION_RE` in `app/services/artist_bio.py` had no instrument terms, so Wikidata descriptions such as "American jazz saxophonist" were rejected and the bio came back empty. Added instrumentalist and ensemble terms.
+- Tests actually run: `tests/test_artist_bio_service.py` (7 pass), plus a direct endpoint call returning bios for John Coltrane, Bill Evans, and Art Blakey. Required CI (compile, container-smoke, test-and-build, validate-container, validate-release-workflow) passed on that exact head; publishing skipped. No browser check; not published or deployed.
+- The owner confirmed the section-label size and Deep Dives card spacing items are done, which closes the 2a list.
+
 ## 2026-10-22 — Published image v0.2.2
 
 - Owner explicitly authorized publication. Annotated tag `v0.2.2` was pushed at `0b1111114e0e751928312e76a287123061640343`, the then-current `main` head. All four required workflows had passed on that exact commit.
