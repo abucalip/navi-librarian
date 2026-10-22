@@ -140,6 +140,7 @@ def lookup_album_years(pairs, fetch=_fetch_release_groups):
         missing.append((artist, album))
 
     def resolve(chunk):
+        global _last_request
         query = " OR ".join(
             f'(artist:"{_escape(artist)}" AND releasegroup:"{_escape(album)}")' for artist, album in chunk
         )
