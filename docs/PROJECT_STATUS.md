@@ -5,7 +5,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 ## Current state
 
 - PR #563 (externalize taste-family defaults) squash-merged as `9a659f6e9da175e475aa22f86c69492f40206869` from exact head `0de6a16c6058c053f0948c6b46c74f50092b7bf9`. All four required workflows passed on that head, including a fresh Docker packaging/full-unit-suite run `39861151000`; no publication or deployment.
-- PR #564 (`taste_profile_mode=derived`, off by default) remains open on head `9cae06937a4dc65e9a3f12be484f008a0a49d839`, retargeted to `main` after #563 merged. Review found a sparse-history fallback defect: the code restores fixed core/exploration sets but still enables derived classification, disabling fixed adventurous-tag and regional artist fallback behavior. A review comment records the finding. No workflow runs are visible for the current PR head, so the full suite and four required CI gates are not verified for #564. Not merged, published, or deployed.
+- PR #564 (`taste_profile_mode=derived`, off by default) squash-merged as `508269f1177e35075330c903775f74e23c2f14af` from exact PR head `6c08e385dccb21a28dd3b1e54531cb554ef26db8`. The sparse-history fallback now reports effective mode `fixed`, with regression coverage for fixed classification and exploration bonus. All four required workflows passed on the exact PR head: Python syntax/acquisition safety (`39862938840`), Docker packaging/full unit suite/image build (`39862938736`), container runtime smoke (`39862938685`), and non-publishing multi-architecture validation (`39862938695`). A compare of the merge commit against pre-merge `main` shows only the seven derived-profile files changed; the already-merged #563 defaults are not duplicated in the net merge diff. Derived mode remains off by default pending multi-profile replay evidence and the owner's approval. No publication or deployment.
 
 - PR #562 (server-provided Artist Deep Dives row keys and labels) squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85` from final reconciled PR head `76142e1d0f2d48b59a1355e36c7372c4ed6f7123`. All four required workflows passed on that exact head, including the full unit suite/Docker build; release-workflow validation passed with publishing skipped. The owner waived manual browser verification; it was not performed. No publication or deployment.
 
@@ -27,7 +27,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Next action
 
-Resolve the review finding on PR #564: make sparse-history fallback use complete fixed-mode classification behavior and add a regression test. Then run the required CI on the exact final PR head, including the full unit suite, before reconsidering merge. Do not enable derived mode by default; replay evidence across several profiles and the owner's approval remain required.
+Keep `taste_profile_mode=derived` disabled by default. The implementation is merged, but multi-profile replay evidence and a separate owner decision are still required before enabling it. Continue from the remaining gates in `ACTIVE_WORK.md`.
 
 ## Where to look
 
