@@ -1,3 +1,11 @@
+## 2026-10-22 — Live-runtime verification attempt for PRs #526 and #527 blocked by access
+
+- Re-read current project status, requirements, development workflow, test plan, active work, and the merged PRs. Current `main` before this documentation update was `fbc806badd9006853d2ccab45af19101809cb15a`.
+- Confirmed PR #526 is merged as `4fcd5ff78dc7cfebe99d289a49cd8505c6ca9138`; it retries only failed tracks from the same source, at most three times 30 seconds apart, and keeps a 15-minute recovery grace. Its automated regression tests and CI do not establish behavior against real slskd state strings or queue operations.
+- Confirmed PR #527 is merged as `e03f4b35c66745f71b45f01481dbed5547c7a45e`; masked artist variants are inserted after the unmasked query. Its automated tests do not establish live search behavior or real no-match diagnostics.
+- **Runtime verification not performed:** this session has no connection to the running Librarian host or slskd API. These changes have not been published/deployed. No live search was issued, no transfer was queued, and no production data was changed. Publishing/deployment remain paused.
+- **Next action:** arrange authorized access to an isolated Librarian test instance connected to the real slskd service. Test failed-track retry/recovery using an isolated test acquisition, then test masked queries and no-match diagnostics. Do not claim completion until results are captured; do not use a production transfer as a test substitute.
+
 ## 2026-10-22 — Reconciled and merged PRs #530–#535
 
 - **PR #530 — imported-album filtering:** squash-merged as `0b2bda011b86d2c08a0179e5df801c7891c10f9a` from exact tested head `c52af5d8f660500074e799c77ada9ded61d73ec3`. Required workflow runs passed: syntax/acquisition safety `39780311719`, Docker packaging/full unit suite/build `39780311736`, container smoke `39780311752`, validation-only multi-architecture `39780311800`, and release validation `39780311809` (publishing skipped).
