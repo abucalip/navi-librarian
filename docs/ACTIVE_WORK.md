@@ -10,7 +10,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## 2. Reported bugs — owner list
 
-- After a successful acquisition, prevent the imported album from appearing again in suggestions. Reconciled implementation is in open PR [#530](https://github.com/abucalip/navi-librarian/pull/530); all required CI checks, including the full unit suite, passed on its exact head `34b926249a6e71aeab4e2243500fa91eb47e226b`. Not merged or runtime-verified.
+- After a successful acquisition, prevent the imported album from appearing again in suggestions. Reconciled implementation is in open PR [#530](https://github.com/abucalip/navi-librarian/pull/530); all required CI checks, including the full unit suite, passed on tested head `c52af5d8f660500074e799c77ada9ded61d73ec3`. Not merged or runtime-verified.
 - UI PR stack [#531–#535](https://github.com/abucalip/navi-librarian/pulls) addresses mobile icon-only navigation, album-panel artist bio, equal-width ranked rows, stable acquisition rendering, and artwork loading. The original heads have no CI because their PR bases are feature branches while required workflows only target `main`. Reconstructed current-main cumulative candidates passed the full unit suite and all four required workflows (recorded in `PROJECT_STATUS.md` and `PROJECT_LOG.md`), but these are not verification of the original PR heads. Rebase the stack off closed PR #529/current main, rerun required CI on the actual final heads, and complete manual browser testing before merging.
 - Mobile status/navigation bar must be narrower and show icons only, not names, so at least five icons fit.
 - The album panel must show the artist's bio.
