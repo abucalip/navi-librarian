@@ -4,6 +4,9 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Current state
 
+- PR #563 (externalize taste-family defaults) squash-merged as `9a659f6e9da175e475aa22f86c69492f40206869` from exact head `0de6a16c6058c053f0948c6b46c74f50092b7bf9`. All four required workflows passed on that head, including a fresh Docker packaging/full-unit-suite run `39861151000`; no publication or deployment.
+- PR #564 (`taste_profile_mode=derived`, off by default) squash-merged as `508269f1177e35075330c903775f74e23c2f14af` from exact PR head `6c08e385dccb21a28dd3b1e54531cb554ef26db8`. The sparse-history fallback now reports effective mode `fixed`, with regression coverage for fixed classification and exploration bonus. All four required workflows passed on the exact PR head: Python syntax/acquisition safety (`39862938840`), Docker packaging/full unit suite/image build (`39862938736`), container runtime smoke (`39862938685`), and non-publishing multi-architecture validation (`39862938695`). A compare of the merge commit against pre-merge `main` shows only the seven derived-profile files changed; the already-merged #563 defaults are not duplicated in the net merge diff. Derived mode remains off by default pending multi-profile replay evidence and the owner's approval. No publication or deployment.
+
 - PR #562 (server-provided Artist Deep Dives row keys and labels) squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85` from final reconciled PR head `76142e1d0f2d48b59a1355e36c7372c4ed6f7123`. All four required workflows passed on that exact head, including the full unit suite/Docker build; release-workflow validation passed with publishing skipped. The owner waived manual browser verification; it was not performed. No publication or deployment.
 
 - **Published, not deployed:** image `ghcr.io/abucalip/navi-librarian:v0.2.2` (tag at `main` `0b1111114e0e751928312e76a287123061640343`; digest `sha256:8ec36eaea585292f73ff7ec3546d96e4c5bc135b08fb3ccbcee789675f3f3ea2`) was published by release run 39835121956 with the owner's authorization. `latest` was not moved. Per-platform manifests were not inspected, no deployment occurred, and live-runtime behavior is not verified. Evidence: `PROJECT_LOG.md`.
@@ -24,7 +27,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Next action
 
-Proceed with the first behavior-preserving phase of [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md): consolidate duplicated taste-family vocabulary while documenting the differences between existing mappings. Do not choose a canonical mapping or change output without the owner's decision; preserve behavior and existing tests.
+Keep `taste_profile_mode=derived` disabled by default. The implementation is merged, but multi-profile replay evidence and a separate owner decision are still required before enabling it. Continue from the remaining gates in `ACTIVE_WORK.md`.
 
 ## Where to look
 

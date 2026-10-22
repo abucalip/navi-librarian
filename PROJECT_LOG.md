@@ -318,3 +318,28 @@
 - Reviewed the final diff: server API adds `genre_row` and `genre_row_label`; the UI consumes those fields rather than maintaining duplicate classification rules. The fallback behavior change for a small set of tags is described in the PR.
 - Required workflows on the exact final head all passed: Python syntax (`39860454090`), Docker packaging/full unit suite (`39860454167`), container runtime smoke (`39860454213`), and validation-only Docker image validation (`39860454082`). Release-workflow validation (`39860454120`) passed; the publishing job was skipped. Manual browser verification was explicitly waived by the owner and was not performed.
 - PR #562 squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85`. Documentation closeout commit: `82f9be0c41455c035a1abf729d7a290483e1fdce`. No image publication, deployment, or live-runtime verification.
+
+
+## 2026-10-22 — Close approved runtime verification tasks
+
+- The owner confirmed that failed-track retry/recovery and masked slskd artist-query behavior have been tested and approved. These are removed from the active work queue; no further verification task remains for those behaviors.
+- Updated `docs/ACTIVE_WORK.md` in `22c54d99e118eb89ba9fff143c26419b78fbf8b6` and `docs/PROJECT_STATUS.md` in `6157b273155264db880dbecc78b53239465e29c5` to reflect the confirmation and remove stale outstanding-verification references.
+- The v0.2.2 image remains published and not deployed. Approval of the behavior tests does not itself authorize deployment.
+- Next eligible repository task: begin the behavior-preserving taste-family vocabulary consolidation described in `docs/HARDCODE_REPLACEMENT.md`; document current mapping differences and do not change canonical behavior without the owner's decision.
+
+
+## 2026-10-22 — Merge PR #563 and review PR #564
+
+- PR #563 externalized the existing taste-family defaults to `settings/taste_defaults.json`; squash-merged as `9a659f6e9da175e475aa22f86c69492f40206869` from exact PR head `0de6a16c6058c053f0948c6b46c74f50092b7bf9`. All four required workflows passed on that head: Python syntax `39861151203`, Docker packaging/full unit suite/build `39861151000`, container runtime smoke `39861150857`, and validation-only multi-architecture image validation `39861150831`. The Docker packaging workflow's full unit suite passed on the exact head. No publication or deployment.
+- Retargeted PR #564 to `main` after #563 merged. Review of head `9cae06937a4dc65e9a3f12be484f008a0a49d839` found that sparse-history fallback returns fixed core/exploration sets but retains `profile_mode="derived"`, so fixed-mode classification exceptions remain disabled. Posted a review comment requesting an effective-mode fix and regression coverage. GitHub rejected a formal REQUEST_CHANGES review because the PR was authored by the connected account; the finding was posted as a COMMENT review instead.
+- No workflow runs are visible for PR #564's current head after retargeting, so the requested full suite and four required CI workflows are **not verified** on that head. The repository workflow says agents do not run the full suite manually; it must run in CI. PR #564 remains open and unmerged. Derived mode remains off by default; multi-profile replay evidence and owner approval are still required before enabling it.
+- No manual UI checks, publication, deployment, or runtime verification were performed.
+
+
+## 2026-10-22 — PR #564 merged: opt-in derived taste profile
+
+- PR #564 squash-merged to `main` as `508269f1177e35075330c903775f74e23c2f14af`, from exact tested PR head `6c08e385dccb21a28dd3b1e54531cb554ef26db8`.
+- The sparse-history fallback issue was corrected: when derived profiling falls back to shipped defaults, the effective mode is now `fixed`, preserving fixed adventurous-tag and regional artist fallback behavior. Regression coverage checks effective mode, classification, and exploration bonus.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety `39862938840`; Docker packaging, full unit suite and image build `39862938736`; container runtime smoke `39862938685`; validation-only multi-architecture image build `39862938695` (`push: false`). The full unit-test and Docker-build steps succeeded. These runs are associated with the PR head, not the squash merge commit.
+- The stacked branch's review diff included already-merged #563 changes, but comparison of the squash merge commit against pre-merge `main` shows only the seven derived-profile files changed; #563 defaults are not duplicated in the net merge diff. No separate branch reconciliation commit was created before merge.
+- Derived mode remains off by default. Multi-profile replay evidence is not supplied and enabling the mode requires a separate owner decision. No image publication, deployment, or runtime verification was performed.
