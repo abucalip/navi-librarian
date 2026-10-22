@@ -12,6 +12,7 @@ import time
 from typing import Any, Callable
 
 from discovery import candidate_supply as _supply
+from discovery import taste_families
 from discovery.batch_metadata import (
     fetch_batch_recordings,
     fetch_release_group_metadata,
@@ -1182,13 +1183,8 @@ def gather_recommendation_candidates(
     # African and North African/Middle Eastern music are explicit
     # exploration interests: they should be represented without making
     # every unfamiliar genre automatically count as a core match.
-    core_families = {
-        "jazz", "hip-hop", "alternative", "rock", "brazilian",
-        "rnb-soul", "electronic", "funk",
-    }
-    exploration_families = {
-        "african", "north-african-middle-eastern",
-    }
+    core_families = set(taste_families.CORE_FAMILIES)
+    exploration_families = set(taste_families.EXPLORATION_FAMILIES)
     profile_families = core_families | exploration_families
 
 
