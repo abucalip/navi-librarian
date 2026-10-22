@@ -1007,6 +1007,7 @@ def _build_new_releases_list():
             owned=owned,
             cutoff_date=cutoff_date,
             current_year=current_year,
+            today=date.today().isoformat(),
             music_key=_music_key,
             is_album_candidate=_discovery_is_album_candidate,
             exact_artist_credit_matches=_discovery_exact_artist_credit_matches,
@@ -2352,6 +2353,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
             "read_only_except_user_list": True,
         }, ensure_ascii=False, indent=2)
 
+    from datetime import date
     from discovery.list_payload import build_cached_discovery_list_response
     try:
         acquired = {
@@ -2369,6 +2371,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         saved,
         _music_key,
         _discovery_is_album_candidate, _discovery_library_snapshot,
+        today=date.today().isoformat(),
         acquired=acquired,
         on_stale=lambda cached: discovery_refresh.revalidate_on_read(
             "personal", cached, lambda _name: _discovery_refresh_personal(20, origin="read"), _discovery_settings_read),
