@@ -330,6 +330,8 @@ p { line-height: 1.55; }
 .album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; font-size: var(--text-xs); }
 .album-modal-copy h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl)/1.05 var(--display); overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
+.album-modal-bio { margin: var(--space-3) 0 0; color: var(--text-muted); font: 400 var(--text-sm)/1.5 var(--body); max-width: 60ch; }
+.album-modal-bio[hidden] { display: none; }
 .album-modal-year { margin: 0; color: var(--text-subtle); font: 500 var(--text-sm)/1.4 var(--body); font-variant-numeric: tabular-nums; }
 /* Tracklist rhythm (section 6): compact 48px rows, tabular numbers, one divider per row. */
 .album-modal-tracklist { margin: var(--space-4) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--edge); }
@@ -476,7 +478,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 @keyframes undo-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 /* The row hides at once when a dismissal is queued; it returns if the user taps Undo. */
 .is-dismissing { display: none !important; }
-@media (max-width: 620px) { .undo-snackbar { left: 14px; right: 14px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); max-width: none; } }
+@media (max-width: 620px) { .undo-snackbar { left: 14px; right: 14px; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); max-width: none; } }
 @media (max-width: 1200px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } main { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } footer { margin-left: calc(var(--rail-w) + 18px); margin-right: 25px; } }
 /* Icon-only rail between 621 and 900px. Item names, group names and the count stay in the
    accessibility tree (visually hidden), and each button keeps a title for hover. */
@@ -493,34 +495,34 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 @media (max-width: 900px) { nav button .nav-count { position: absolute; top: 5px; right: 5px; margin-left: 0; font-size: var(--text-xs); } }
 @media (max-width: 620px) {
   header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: var(--text-xl); } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
-  /* Bottom tab bar. Icon above label, 44px+ targets, scrolls sideways when the tabs do not fit. */
-  nav { inset: auto 0 0 0; width: auto; min-height: 80px; flex-direction: row; align-items: stretch; gap: 0; padding: 0 4px env(safe-area-inset-bottom, 0px); overflow-x: auto; overflow-y: hidden; border-right: 0; border-top: 1px solid var(--edge); border-bottom: 0; }
+  /* Bottom tab bar. Icons only (names stay visually hidden for assistive tech), 44px+ targets, scrolls sideways when the tabs do not fit. */
+  nav { inset: auto 0 0 0; width: auto; min-height: 56px; flex-direction: row; align-items: stretch; gap: 0; padding: 0 4px env(safe-area-inset-bottom, 0px); overflow-x: auto; overflow-y: hidden; border-right: 0; border-top: 1px solid var(--edge); border-bottom: 0; }
   main > nav::before { display: none; }
   .nav-list { flex-direction: row; align-items: stretch; gap: 0; }
   .nav-group { flex-direction: row; gap: 0; }
   .nav-group + .nav-group { margin: 0; padding-left: 4px; border-left: 1px solid var(--edge); }
   .nav-group-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .nav-indicator { display: none; }
-  /* Five slots share the bar (four destinations and More) with no sideways scroll. Collection
-     and Discover each keep two destinations in the bar, so they share the destination slots
-     equally. The 12px labels only fit whole at this count (see UI_BACKLOG_EXECUTION 36). */
-  .nav-list { flex: 4 1 0; min-width: 0; }
+  /* Six slots share the bar (five destinations and More) with no sideways scroll. Collection keeps
+     two destinations and Discover three, so the groups share the destination slots in that ratio.
+     Without labels each slot is an icon target, so six fit at 360px. */
+  .nav-list { flex: 5 1 0; min-width: 0; }
   .nav-group { flex: 2 1 0; min-width: 0; }
-  nav button { flex: 1 1 0; width: auto; min-width: 0; min-height: 56px; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 2px; font-size: var(--text-xs); line-height: 1.2; text-align: center; }
-  /* Labels wrap at word breaks, then hyphenate, then break inside a word, so a label never
-     spills out of its slot. Six slots at 390px cannot hold the longest labels whole. */
-  nav button > span:not(.nav-count) { max-width: 100%; hyphens: auto; overflow-wrap: anywhere; }
+  .nav-group + .nav-group { flex-grow: 3; }
+  nav button { flex: 1 1 0; width: auto; min-width: 0; min-height: 56px; flex-direction: column; justify-content: center; gap: 0; padding: 6px 2px; font-size: var(--text-xs); line-height: 1.2; text-align: center; }
+  /* Names (including More) are visually hidden but stay in the accessibility tree; each button keeps its title. */
+  nav button > span:not(.nav-count) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   nav button.active { box-shadow: inset 0 3px var(--accent); }
   nav .nav-overflow { display: none; }
   nav .nav-more-toggle { display: flex; }
-  nav .nav-more-panel:not([hidden]) { position: fixed; z-index: 1; right: 8px; bottom: calc(89px + env(safe-area-inset-bottom, 0px)); display: block; min-width: 216px; max-width: calc(100vw - 16px); padding: 4px; background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); }
+  nav .nav-more-panel:not([hidden]) { position: fixed; z-index: 1; right: 8px; bottom: calc(65px + env(safe-area-inset-bottom, 0px)); display: block; min-width: 216px; max-width: calc(100vw - 16px); padding: 4px; background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); box-shadow: var(--shadow-menu); }
   .nav-more-panel button { flex: none; display: block; width: 100%; min-height: 44px; padding: 10px 14px; color: var(--text); background: transparent; border: 0; border-radius: var(--radius-chip); font: 400 var(--text-sm)/1.4 var(--body); text-align: left; }
   .nav-more-panel button:hover { background: var(--surface-hover); }
   .nav-more-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .nav-more-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent); }
   .nav-more-toggle[aria-expanded="true"], .nav-more-toggle.is-current { color: var(--accent); }
   .nav-more-toggle.is-current { box-shadow: inset 0 3px var(--accent); }
-  main { margin: 94px 14px 0; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: var(--text-2xl); } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: var(--text-md); } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
+  main { margin: 94px 14px 0; padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: var(--text-2xl); } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: var(--text-md); } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
 @media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
