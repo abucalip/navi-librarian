@@ -74,7 +74,7 @@ def select_supplementary_tag_queries(
         selected_keys.add(key)
         slug = re.sub(r"[^a-z0-9]+", "_", tag.casefold()).strip("_") or "other"
         from discovery.recommendations import genre_families
-        families = sorted(genre_families([tag]))
+        families = sorted(genre_families([tag], derived=True))
         family = families[0] if families else "other"
         selected.append((_query_for_tag(tag), family, f"{source}:{slug}"))
 

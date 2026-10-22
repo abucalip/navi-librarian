@@ -50,7 +50,7 @@ class SupplementaryTagQueryTests(unittest.TestCase):
             ),
             [
                 ("primarytype:album AND tag:jazz", "jazz", "profile:jazz"),
-                ("primarytype:album AND tag:ambient", "other", "explore:ambient"),
+                ("primarytype:album AND tag:ambient", "electronic", "explore:ambient"),
             ],
         )
 
