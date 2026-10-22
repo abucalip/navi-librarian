@@ -88,9 +88,10 @@ class DerivedModeBehaviorTests(unittest.TestCase):
 
 
 class ModeSettingTests(unittest.TestCase):
-    def test_defaults_to_fixed(self):
-        self.assertEqual(taste_profile_mode_value(lambda: {}), "fixed")
-        self.assertEqual(taste_profile_mode_value(lambda: {"taste_profile_mode": "bogus"}), "fixed")
+    def test_defaults_to_derived_and_fixed_stays_selectable(self):
+        self.assertEqual(taste_profile_mode_value(lambda: {}), "derived")
+        self.assertEqual(taste_profile_mode_value(lambda: {"taste_profile_mode": "bogus"}), "derived")
+        self.assertEqual(taste_profile_mode_value(lambda: {"taste_profile_mode": "fixed"}), "fixed")
         self.assertEqual(taste_profile_mode_value(lambda: {"taste_profile_mode": "derived"}), "derived")
 
 
