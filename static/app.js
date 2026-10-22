@@ -676,39 +676,52 @@ const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
 const albumYearRequests = new Map();
+const albumYearLoaders = new WeakMap();
 const artistBioRequests = new Map();
-// Browsers allow about six connections to this server at once. Bio lookups call two outside
-// services and take a second or more, so letting a whole page of them run at once left artwork
-// requests waiting behind them (some for many seconds). At most two bios load at a time; a bio the
-// person asked for by opening an album goes to the front of the queue.
-const BIO_CONCURRENCY = 2;
-const bioQueue = [];
-let bioInFlight = 0;
-
-function drainBioQueue() {
-  while (bioInFlight < BIO_CONCURRENCY && bioQueue.length) {
-    bioInFlight += 1;
-    bioQueue.shift()();
+// Browsers allow about six connections to this server at once, and the server answers some
+// metadata lookups slowly (outside services, rate limits). A page that fires one per card filled
+// every connection and left artwork requests waiting behind them for many seconds. These lookups
+// go through small queues instead, so artwork always has connections free.
+function createRequestQueue(limit) {
+  const waiting = [];
+  let active = 0;
+  function drain() {
+    while (active < limit && waiting.length) {
+      active += 1;
+      waiting.shift()();
+    }
   }
+  return {
+    // Runs `task` when a slot is free. A failed task resolves to null. `urgent` goes first.
+    run(task, urgent = false) {
+      return new Promise(resolve => {
+        const start = () => {
+          Promise.resolve().then(task).catch(() => null).then(value => {
+            active -= 1;
+            drain();
+            resolve(value);
+          });
+        };
+        if (urgent) waiting.unshift(start); else waiting.push(start);
+        drain();
+      });
+    }
+  };
 }
+
+const fetchJSONOrNull = url => fetch(url).then(response => response.ok ? response.json() : null);
+// Two bios at a time; a bio the person asked for by opening an album goes to the front.
+const bioQueue = createRequestQueue(2);
+// Album years come from a rate-limited catalog and are cosmetic: one at a time.
+const yearQueue = createRequestQueue(1);
 
 function cachedBioRequest(key, artist, urgent = false) {
   if (!artistBioRequests.has(key)) {
     const url = '/api/artist-bio?artist=' + encodeURIComponent(artist);
-    const request = new Promise(start => {
-      if (urgent) bioQueue.unshift(start); else bioQueue.push(start);
-      drainBioQueue();
-    })
-      .then(() => fetch(url))
-      .then(response => response.ok ? response.json() : null)
-      .catch(() => null)
-      .then(data => {
-        bioInFlight -= 1;
-        drainBioQueue();
-        if (data === null) artistBioRequests.delete(key);
-        return data;
-      });
-    artistBioRequests.set(key, request);
+    artistBioRequests.set(key, bioQueue.run(() => fetchJSONOrNull(url), urgent).then(data => {
+      if (data === null) artistBioRequests.delete(key);
+      return data;
+    }));
   }
   return artistBioRequests.get(key);
 }
@@ -738,6 +751,16 @@ const artistBioObserver = 'IntersectionObserver' in window
         const load = bioLoaders.get(entry.target);
         if (load) load();
         artistBioObserver.unobserve(entry.target);
+      }
+    }, {rootMargin: '240px'})
+  : null;
+const albumYearObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const load = albumYearLoaders.get(entry.target);
+        if (load) load();
+        albumYearObserver.unobserve(entry.target);
       }
     }, {rootMargin: '240px'})
   : null;
@@ -788,9 +811,26 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
     const query = new URLSearchParams({artist: String(artist), album: String(album)});
-    cachedJSONRequest(albumYearRequests, cacheKey, '/api/album-year?' + query.toString())
-      .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
-      .catch(() => {});
+    // The year is looked up only when the card is near the viewport, and never when the artwork
+    // response has already supplied one by the time its turn in the queue comes.
+    const loadYear = () => {
+      if (card.dataset.releaseYear) return;
+      if (!albumYearRequests.has(cacheKey)) {
+        const url = '/api/album-year?' + query.toString();
+        albumYearRequests.set(cacheKey, yearQueue.run(
+          () => (card.dataset.releaseYear ? null : fetchJSONOrNull(url))
+        ).then(data => {
+          if (data === null) albumYearRequests.delete(cacheKey);
+          return data;
+        }));
+      }
+      albumYearRequests.get(cacheKey)
+        .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
+        .catch(() => {});
+    };
+    albumYearLoaders.set(card, loadYear);
+    if (albumYearObserver) albumYearObserver.observe(card);
+    else loadYear();
   }
 }
 

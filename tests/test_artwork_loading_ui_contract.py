@@ -6,21 +6,39 @@ with open("static/app.js", encoding="utf-8") as handle:
     JS = handle.read()
 
 
-class BioRequestLimitTests(unittest.TestCase):
-    def test_bio_requests_go_through_one_limited_queue(self):
-        self.assertIn("const BIO_CONCURRENCY = 2;", JS)
+class RequestQueueTests(unittest.TestCase):
+    def test_bio_requests_go_through_a_two_at_a_time_queue(self):
+        self.assertIn("const bioQueue = createRequestQueue(2);", JS)
         self.assertNotIn("cachedJSONRequest(artistBioRequests", JS)
         self.assertEqual(len(re.findall(r"cachedBioRequest\(bioKey, artist", JS)), 3)
 
     def test_the_album_dialog_bio_jumps_the_queue(self):
-        dialog = JS[JS.index("function loadAlbumModalBio"):]
-        self.assertIn("cachedBioRequest(bioKey, artist, true)", dialog.split("async function openAlbumModal")[0])
-        self.assertIn("bioQueue.unshift(start)", JS)
+        dialog = JS[JS.index("function loadAlbumModalBio"):].split("async function openAlbumModal")[0]
+        self.assertIn("cachedBioRequest(bioKey, artist, true)", dialog)
+        self.assertIn("if (urgent) waiting.unshift(start); else waiting.push(start);", JS)
 
-    def test_a_failed_bio_is_dropped_from_the_cache_and_frees_its_slot(self):
-        body = JS[JS.index("function cachedBioRequest"):JS.index("const artistBioObserver")]
-        self.assertIn("bioInFlight -= 1;", body)
-        self.assertIn("artistBioRequests.delete(key)", body)
+    def test_a_failed_lookup_frees_its_slot_and_leaves_the_cache(self):
+        queue = JS[JS.index("function createRequestQueue"):JS.index("const fetchJSONOrNull")]
+        self.assertIn("active -= 1;", queue)
+        self.assertIn(".catch(() => null)", queue)
+        bio = JS[JS.index("function cachedBioRequest"):JS.index("const artistBioObserver")]
+        self.assertIn("artistBioRequests.delete(key)", bio)
+
+
+class AlbumYearLoadingTests(unittest.TestCase):
+    """Deep Dives fired one /api/album-year per card at once, which starved artwork requests."""
+
+    def test_year_lookups_run_one_at_a_time(self):
+        self.assertIn("const yearQueue = createRequestQueue(1);", JS)
+
+    def test_year_lookup_waits_until_the_card_is_near_the_viewport(self):
+        card = JS[JS.index("function makeAlbumCardInteractive"):JS.index("function ensureAlbumYearBadge")]
+        self.assertIn("albumYearObserver.observe(card)", card)
+        self.assertNotIn("cachedJSONRequest(albumYearRequests", card)
+
+    def test_a_year_the_artwork_already_supplied_skips_the_lookup(self):
+        card = JS[JS.index("function makeAlbumCardInteractive"):JS.index("function ensureAlbumYearBadge")]
+        self.assertIn("card.dataset.releaseYear ? null : fetchJSONOrNull(url)", card)
 
 
 class LaneArtworkPrefetchTests(unittest.TestCase):
