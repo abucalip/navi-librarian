@@ -30,6 +30,14 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - **Deep Dives card spacing:** the album title sits too close to the artwork and looks sloppy; add space between the title and the artwork.
 - Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
 
+## 2b. Replace hard-coded taste with derived behavior — proposed
+
+Plan: [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md). The engine hard-codes one listener's genre families and named artists; the goal is for it to work for any taste. First tasks (Phases 1–2 change no behavior and need no ranking approval):
+
+- **Consolidate the family vocabulary:** move the duplicated tag-to-family rules (`genre_families`, `recent_style_families`, `primary_recent_family`, `deep_dive_genre_families`, and the `static/app.js` copy and labels) into one module. Record where the existing tables differ in `PROJECT_LOG.md`; the owner decides which behavior is canonical. Existing tests must pass unchanged.
+- **Externalize the defaults:** move the core/exploration family sets, the regional artist fallback list, and the adventurous tag list into a settings file whose shipped default reproduces current output. Confirm identical output with replay and profile comparison.
+- **Then stop and ask the owner** before the derived-profile mode (Phase 3). It changes ranking and needs replay evidence across several non-jazz profiles and owner approval.
+
 ## 3. Recommendation engine — gated
 
 - Repeat the ListenBrainz collaborative-filtering (CF) freshness capture after imported history has been recomputed. Any live capture requires owner approval.
