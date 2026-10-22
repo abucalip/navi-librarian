@@ -22,6 +22,19 @@ class DiscoveryListPayloadTests(unittest.TestCase):
             "message": "No saved list yet. Use discovery_refresh_list or wait for the daily background refresh.",
         })
 
+    def test_new_releases_hides_stored_future_items_only_when_today_given(self):
+        rows = [
+            {"artist": "A", "album": "Past", "first_release_date": "2026-10-01"},
+            {"artist": "A", "album": "Today", "first_release_date": "2026-10-22"},
+            {"artist": "A", "album": "Future", "first_release_date": "2026-12-01"},
+        ]
+        read = lambda _name: {"generated_at": 1, "payload": {"items": rows}}
+        def albums(**kw):
+            return [i["album"] for i in json.loads(build_cached_discovery_list_response(
+                "new_releases", 10, read, [], {}, music_key, is_album_candidate, **kw))["items"]]
+        self.assertEqual(albums(today="2026-10-22"), ["Past", "Today"])
+        self.assertEqual(albums(), ["Past", "Today", "Future"])
+
     def test_hides_imported_and_library_owned_albums_on_non_personal_lists(self):
         rows = [
             {"artist": "A", "album": "Imported"},
@@ -33,7 +46,7 @@ class DiscoveryListPayloadTests(unittest.TestCase):
         for name in ("classics", "artist_deep_dive", "new_releases"):
             result = json.loads(build_cached_discovery_list_response(
                 name, 10, read, [], {}, music_key, is_album_candidate, snapshot,
-                acquired={("a", "imported")},
+                acquired={("a", "imported")}, today="2026-10-22",
             ))
             self.assertEqual([i["album"] for i in result["items"]], ["Keep"], name)
 
