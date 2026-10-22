@@ -17,7 +17,7 @@ function isAlbumRecommendation(item) {
 
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
-const NAV_MORE_PAGES = ['recommendations', 'classics', 'artistDeepDive'];
+const NAV_MORE_PAGES = ['classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
