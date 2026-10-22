@@ -10,7 +10,6 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## 2. Reported bugs — owner list
 
-- "New releases" must show only releases dated before today, not future releases.
 - After a successful acquisition, check the cache and prevent the imported album from appearing again in suggestions.
 - Mobile status/navigation bar must be narrower and show icons only, not names, so at least five icons fit.
 - The album panel must show the artist's bio.
@@ -32,7 +31,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## Reference map
 
-- Current status and next action: [PROJECT_STATUS.md](PROJECT_STATUS.md)
+- Current status and single next action: [PROJECT_STATUS.md](PROJECT_STATUS.md)
 - Permanent development rules: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)
 - Product behavior: [REQUIREMENTS.md](REQUIREMENTS.md)
 - Test gates: [TEST_PLAN.md](TEST_PLAN.md)
