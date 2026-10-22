@@ -6,6 +6,7 @@ import shutil
 import sqlite3
 import time
 import unicodedata
+from discovery.similar_artists import build_similar_to_lookup
 from discovery import store as discovery_store
 from integrations.slskd import transfers as _slskd_transfers_module
 from integrations.listenbrainz import client as _listenbrainz_client
@@ -422,16 +423,7 @@ def recommend_new_music(
         build_personal_recommendation_payload,
     )
 
-    from discovery.similar_artists import build_profile_artists, similar_library_artists
-    # The artists you play most, with their genre tags, name what each pick is similar to.
-    profile_artists = build_profile_artists(listens, genre_cache, _music_key)
-
-    def similar_to(candidate):
-        return similar_library_artists(
-            genre_cache.get(candidate.get("artist_mbid"), []),
-            _music_key(candidate["primary_artist"]),
-            profile_artists,
-        )
+    similar_to = build_similar_to_lookup(listens, genre_cache, _music_key)
 
     # Empty style targets let measured MMR provide soft diversity.
     diversity_style_targets = {}
