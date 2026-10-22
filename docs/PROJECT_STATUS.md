@@ -4,6 +4,7 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 
 ## Current state
 
+- **Published, not deployed:** image `ghcr.io/abucalip/navi-librarian:v0.2.2` (tag at `main` `0b1111114e0e751928312e76a287123061640343`; digest `sha256:8ec36eaea585292f73ff7ec3546d96e4c5bc135b08fb3ccbcee789675f3f3ea2`) was published by release run 39835121956 with the owner's authorization. `latest` was not moved. Per-platform manifests were not inspected, no deployment occurred, and live-runtime behavior is not verified. Evidence: `PROJECT_LOG.md`.
 - PR #558 (Deep Dives artwork loading/performance) squash-merged as `d44c01669611bd11acfaa4f1197905afed7f9f08` from exact tested head `976c86e77034322e53cc7aea9691fa840c2d6146`. Review blockers were resolved, and the full unit suite/Docker build, Python syntax, container smoke, validation-only multi-architecture image validation, and release-workflow validation passed on that exact head (publishing skipped). The owner explicitly waived manual browser verification; it was not performed, and artwork performance was not re-measured in a browser. No publication, deployment, or live-runtime verification.
 
 - PR #528 (hide future-dated New Releases) is merged as `1e55da1b7b25fe59d4f905a1c9d8985e8c8c7750` from exact PR head `295148dcf817479f4098195200ada4c4173733fe`. All four required CI workflows passed on that exact head; the Docker packaging workflow ran the full unit suite successfully. Future-dated releases are filtered both during candidate selection and when serving cached New Releases. Not published or deployed; no live-library/browser verification claimed.
@@ -13,15 +14,15 @@ Last checked: 2026-10-22. GitHub `main` is authoritative.
 - PR #555 (artist bios and dashboard discovery UI refinements) merged as `f80254550369ed56b66e114faebb2b9fb72ed6bf` from exact head `58bbe0e4ef7320c14146a6fa4ea5a3ef0d266953`. All four required workflows passed on that exact head, including the full unit suite and Docker build; release validation passed with publishing skipped. The owner reported successful manual browser testing. Not published or deployed.
 - PR #556 (“Similar to” labels) was a stacked PR based on the now-merged PR #555 branch, so it was closed as superseded. Replacement PR [#557](https://github.com/abucalip/navi-librarian/pull/557) merged as `45cf5abe0257e70fe0d0573365259c2d0c7c2c10` from exact tested PR head `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`. It adds a directly tested similar-artist lookup and exposes “Similar to: …” labels in Recommendations and Personal discovery rows. The full unit suite/Docker build, Python syntax/size and safety checks, container smoke, validation-only multi-architecture image validation, and release-workflow validation passed on that exact PR head (publishing job skipped). The owner explicitly waived manual browser testing for this PR; it was not performed. No publication or deployment.
 
-- PR #526 (failed-track retry) and PR #527 (masked slskd artist queries) are merged and CI-verified, but live-runtime verification is blocked: this session has no connection to the running Librarian host or slskd API, and these changes have not been published or deployed. No live search or transfer was attempted. Keep publication/deployment paused.
+- PR #526 (failed-track retry) and PR #527 (masked slskd artist queries) are merged and CI-verified, but live-runtime verification is blocked: this session has no connection to the running Librarian host or slskd API, and these changes are in the published v0.2.2 image but have not been deployed. No live search or transfer was attempted. Keep deployment paused until authorized.
 - Python package-layout work is complete through PR #524. The earlier modularization roadmap is closed; do not restart size-only extraction work.
 - MCP is retired as a supported repository interface. External-client migration is not verifiable from repository evidence.
 - The front-end redesign is complete. Its design briefs, phase plans, and agent-specific restrictions have been archived.
-- Image publication and deployment remain paused until explicitly authorized.
+- Further image publication and any deployment require explicit owner authorization (v0.2.2 was published with it; not deployed).
 
 ## Next action
 
-Arrange authorized access to an isolated Librarian test instance connected to the real slskd service, then verify PRs [#526](https://github.com/abucalip/navi-librarian/pull/526) and [#527](https://github.com/abucalip/navi-librarian/pull/527) without publishing or deploying. Current session has no connection to the running Librarian host or slskd API, and these merged changes are not deployed; live verification remains incomplete. Do not enqueue production transfers as a substitute for an isolated test.
+Arrange authorized access to an isolated Librarian test instance connected to the real slskd service, then verify PRs [#526](https://github.com/abucalip/navi-librarian/pull/526) and [#527](https://github.com/abucalip/navi-librarian/pull/527) without publishing or deploying. Current session has no connection to the running Librarian host or slskd API, and these merged changes are published in v0.2.2 but not deployed; live verification remains incomplete. Do not enqueue production transfers as a substitute for an isolated test.
 
 ## Where to look
 

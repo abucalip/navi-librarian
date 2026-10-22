@@ -4,7 +4,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## 1. Runtime verification — highest priority
 
-- **Attempted 2026-10-22; blocked by access.** Repository review confirms PRs #526 and #527 are merged and CI-verified, but this session has no connection to the running Librarian host or slskd API. These changes have not been published/deployed, and no live search or transfer was attempted.
+- **Attempted 2026-10-22; blocked by access.** Repository review confirms PRs #526 and #527 are merged and CI-verified, but this session has no connection to the running Librarian host or slskd API. These changes are in the published v0.2.2 image but not deployed, and no live search or transfer was attempted.
 - For PR [#526](https://github.com/abucalip/navi-librarian/pull/526), verify a deliberately failed test track is re-queued alone from the same source, retry cadence/limit is respected, and the 15-minute recovery grace works. This changes the slskd queue, so use an isolated test acquisition/folder; do not create a production transfer just to test it.
 - For PR [#527](https://github.com/abucalip/navi-librarian/pull/527), compare an unmasked blocked artist query with masked variants and confirm candidates are returned where available; on no-match, confirm diagnostics list attempted queries and response counts.
 - **Next:** arrange authorized access to an isolated Librarian test instance connected to the real slskd service. Do not publish/deploy or claim runtime verification until these checks are actually run.
@@ -39,7 +39,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 ## 4. Parked decisions — do not start without a new decision
 
 - **Recommendation diversity setting/UI:** paused until candidate supply supports meaningful cross-pool evaluation. See [archived diversity roadmap](archive/parked/DIVERSITY_SETTING_ROADMAP.md).
-- **v0.2 release:** preparation notes exist, but publishing/deployment remain paused until explicitly authorized. See [archived release preparation](archive/release/RELEASE_v0.2.md).
+- **Releases:** v0.2.2 image published 2026-10-22 (see `PROJECT_STATUS.md`); not deployed. Further publication or deployment requires explicit owner authorization. See [archived release preparation](archive/release/RELEASE_v0.2.md).
 - **External MCP clients:** repository MCP retirement is complete; any external-client migration is unverified and outside repository evidence. See [archived MCP retirement record](archive/completed/MCP_RETIREMENT_PLAN.md).
 
 ## Reference map

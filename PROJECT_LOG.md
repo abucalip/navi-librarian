@@ -1,3 +1,10 @@
+## 2026-10-22 — Published image v0.2.2
+
+- Owner explicitly authorized publication. Annotated tag `v0.2.2` was pushed at `0b1111114e0e751928312e76a287123061640343`, the then-current `main` head. All four required workflows had passed on that exact commit.
+- Release workflow "Publish Docker release" run [39835121956](https://github.com/abucalip/navi-librarian/actions/runs/39835121956) succeeded (`publish-release`; the validation job was skipped for a tag push). It enforces tag == current `main`, runs the container smoke test, and builds `linux/amd64` and `linux/arm64` with provenance and SBOM.
+- **Published:** `ghcr.io/abucalip/navi-librarian:v0.2.2` and `ghcr.io/abucalip/navi-librarian:sha-0b1111114e0e751928312e76a287123061640343`; package version digest `sha256:8ec36eaea585292f73ff7ec3546d96e4c5bc135b08fb3ccbcee789675f3f3ea2` (from the GitHub Packages API). `latest` was not moved.
+- **Not verified:** per-platform manifests were not inspected, the image was not pulled or run, and no GitHub Release was created. Not deployed; no live-runtime verification. Manual browser checks for the included UI changes remain waived/not performed; PR #526/#527 runtime checks remain outstanding.
+
 ## 2026-10-22 — PR #558 merged: Deep Dives artwork loading improvements
 
 - PR [#558](https://github.com/abucalip/navi-librarian/pull/558) squash-merged to `main` as `d44c01669611bd11acfaa4f1197905afed7f9f08`, from exact tested PR head `976c86e77034322e53cc7aea9691fa840c2d6146`.
