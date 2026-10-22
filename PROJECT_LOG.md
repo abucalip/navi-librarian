@@ -177,3 +177,9 @@
 - Closed superseded documentation PRs [#358](https://github.com/abucalip/navi-librarian/pull/358) and [#368](https://github.com/abucalip/navi-librarian/pull/368) with explanatory comments; their proposed status corrections are retained in the archive.
 - Verification: re-read the resulting GitHub tree and active work/handoff/workflow files; confirmed archived files exist at their new paths and active handoff no longer points to redesign roadmaps. No automated link checker or application tests were run because this was documentation-only. No CI, publication, deployment, or runtime verification is claimed.
 - Next action remains live-runtime verification of merged PRs #526 and #527; see `docs/ACTIVE_WORK.md`. Image publication/deployment remain paused.
+
+
+## 2026-10-22 — Rename agent entry point
+
+- Renamed the root `CLAUDE_CLI.md` handoff pointer to `handoff.md` in two documentation-only commits: `c2df9e820fff4ee3610eeb88988af51c0706a8ca` (add new path) and `b931899cca0b02cf27fb728865ce6d62b17a3fc0` (remove old path). The handoff content is unchanged; current queue and permanent rules remain in `docs/ACTIVE_WORK.md` and `docs/DEVELOPMENT_WORKFLOW.md`.
+- No application tests or CI run; this was a documentation-only rename. No publication, deployment, or runtime verification performed.
