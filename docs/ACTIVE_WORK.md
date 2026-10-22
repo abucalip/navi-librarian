@@ -15,6 +15,17 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - UI fixes from original PRs #531–#535 are integrated: icon-only mobile navigation (#546), artist bio in the album panel (#547), equal-width ranked rows (#533), stable acquisition rendering (#534), and smaller/faster card artwork (#535). Required workflows passed on each final reconciled head; details are recorded in `PROJECT_LOG.md`.
 - The owner waived manual browser checks for this merge batch; they were not performed. Artwork performance was not measured, and live browser/runtime behavior is not claimed. No image publication or deployment occurred.
 
+## 2a. Dashboard UI bugs/changes — reported by the owner, not started
+
+- **Bios in album rows:** larger album artwork, and show the artist bio in the middle of each album row in Recommendations, New releases, and Personal discoveries.
+- **"Similar to:" label:** in album bars, replace the "adjacent" label with "Similar to: …", listing the library artists that led to the album/artist being recommended (a better indicator for the user). Apply to Recommendations and Personal discoveries.
+- **Adventurous rows:** rename the label to "Adventurous discovery", remove the "available genre tags" text and similar, and show the bio in the middle of the row.
+- **New releases rows:** remove the "released in *year* by *artist*" text and the "source: MusicBrainz" text; show the artist bio instead.
+- **Section labels:** use a smaller font size for the section labels ("Personal discoveries" and others) on the dashboard page to leave room for the bios.
+- **Dashboard album cards:** show the bios on the album cards.
+- **Album panel bio (still broken):** bios still do not show in the album panel (the one opened by clicking an album, showing the tracklist), despite PR #547. Investigate the root cause before re-fixing.
+- Follow UI acceptance gates in `TEST_PLAN.md` and `LOCAL_UI_TESTING.md`; keep bio/similarity logic server-side.
+
 ## 3. Recommendation engine — gated
 
 - Repeat the ListenBrainz collaborative-filtering (CF) freshness capture after imported history has been recomputed. Any live capture requires owner approval.
