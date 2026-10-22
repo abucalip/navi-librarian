@@ -714,7 +714,7 @@ const artworkObserver = 'IntersectionObserver' in window
         if (load) load();
         artworkObserver.unobserve(entry.target);
       }
-    }, {rootMargin: '220px'})
+    }, {rootMargin: '400px 600px'})
   : null;
 
 function parseReleaseYear(value) {

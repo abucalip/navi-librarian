@@ -18,7 +18,9 @@ def select_album_artwork(
     if artwork_match_score(match, artist, album) < 9:
         return None
 
-    artwork = match.get("cover_xl") or match.get("cover_big") or match.get("cover_medium")
+    # Cards show covers at most ~220 CSS px wide, so the 500px image is plenty; the 1000px
+    # cover_xl is several times the bytes and made rows of covers slow to fill in.
+    artwork = match.get("cover_big") or match.get("cover_xl") or match.get("cover_medium")
     return {
         "artwork_url": artwork.replace("http://", "https://", 1) if artwork else None,
         "image_kind": "album",
@@ -44,7 +46,7 @@ def select_artist_artwork(
     if match is None:
         return None
 
-    photo = match.get("picture_xl") or match.get("picture_big") or match.get("picture_medium")
+    photo = match.get("picture_big") or match.get("picture_xl") or match.get("picture_medium")
     if not photo:
         return None
 
