@@ -58,23 +58,22 @@
       </div>
       <div class="nav-group" role="group" aria-labelledby="navGroupDiscover">
         <p id="navGroupDiscover" class="nav-group-label">Discover</p>
-        <button class="nav-overflow" data-page="recommendations" title="Recommendations"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#compass"></use></svg><span>Recommendations</span></button>
+        <button data-page="recommendations" title="Recommendations"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#compass"></use></svg><span>Recommendations</span></button>
         <button data-page="newReleases" title="New releases"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#calendar-plus"></use></svg><span>New releases</span></button>
         <button data-page="personalDiscoveries" title="Personal Discoveries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#user-round"></use></svg><span>Personal Discoveries</span></button>
         <button class="nav-overflow" data-page="classics" title="Add to your collection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#library"></use></svg><span>Add to your collection</span></button>
         <button class="nav-overflow" data-page="artistDeepDive" title="Artist Deep Dives"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#mic-vocal"></use></svg><span>Artist Deep Dives</span></button>
       </div>
     </div>
-    <!-- Phone bottom bar (under 620px): four destinations stay in the bar and the three overflow
+    <!-- Phone bottom bar (under 620px): five destinations stay in the bar and the two overflow
          destinations open from More, a disclosure like the header menu. The panel is hidden
          on wider screens, where the overflow buttons above stay in the rail. -->
-    <button id="navMoreButton" class="nav-more-toggle" type="button"
+    <button id="navMoreButton" class="nav-more-toggle" type="button" title="More"
             aria-expanded="false" aria-controls="navMorePanel">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
       <span>More</span>
     </button>
     <div id="navMorePanel" class="nav-more-panel" hidden>
-      <button type="button" data-page="recommendations" title="Recommendations">Recommendations</button>
       <button type="button" data-page="classics" title="Add to your collection">Add to your collection</button>
       <button type="button" data-page="artistDeepDive" title="Artist Deep Dives">Artist Deep Dives</button>
     </div>

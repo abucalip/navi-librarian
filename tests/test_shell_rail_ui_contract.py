@@ -124,6 +124,15 @@ class RailStructureTests(unittest.TestCase):
         self.assertIn("main { margin: 94px 14px 0;", text)
         self.assertIn(".nav-indicator { display: none; }", text)
 
+    def test_phone_bar_is_slim_and_icon_only_with_names_kept_for_assistive_tech(self):
+        block = re.search(r"@media \(max-width: 620px\) \{\n(.*?)\n\}", self.css, re.S)
+        self.assertIsNotNone(block)
+        text = block.group(1)
+        self.assertIn("nav { inset: auto 0 0 0; width: auto; min-height: 56px;", text)
+        self.assertRegex(text, r"nav button > span:not\(\.nav-count\) \{ position: absolute; width: 1px; height: 1px;[^}]*clip: rect\(0, 0, 0, 0\);")
+        self.assertNotIn("display: none", re.search(r"nav button > span:not\(\.nav-count\) \{[^}]*\}", text).group(0))
+        self.assertIn('title="More"', self.rail)
+
     def test_every_rail_item_has_a_tooltip_title_matching_its_name(self):
         for label in ["Dashboard", "Acquisitions", "Recommendations", "New releases",
                       "Personal Discoveries", "Add to your collection", "Artist Deep Dives"]:
@@ -132,11 +141,11 @@ class RailStructureTests(unittest.TestCase):
     def test_rail_items_meet_the_44px_target_floor(self):
         self.assertRegex(self.css, r"nav button \{[^}]*min-height: 44px;")
 
-    def test_phone_bar_keeps_four_destinations_and_a_more_disclosure(self):
-        # UI_BACKLOG_EXECUTION section 36: four destinations stay in the phone bar, and the other
-        # three open from More. Each overflow destination is in the rail too, for 621px and up.
-        bar_pages = ["dashboard", "acquisitions", "newReleases", "personalDiscoveries"]
-        more_pages = ["recommendations", "classics", "artistDeepDive"]
+    def test_phone_bar_keeps_five_destinations_and_a_more_disclosure(self):
+        # UI_BACKLOG_EXECUTION section 36: five destinations stay in the phone bar, and the other
+        # two open from More. Each overflow destination is in the rail too, for 621px and up.
+        bar_pages = ["dashboard", "acquisitions", "recommendations", "newReleases", "personalDiscoveries"]
+        more_pages = ["classics", "artistDeepDive"]
         for page in bar_pages:
             button = re.search(rf'<button[^>]*data-page="{page}"[^>]*>', self.rail).group(0)
             self.assertNotIn("nav-overflow", button, msg=page)
