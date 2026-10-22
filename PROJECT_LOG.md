@@ -1,3 +1,16 @@
+## 2026-10-22 — Open PR review and full-suite validation for PRs #530–#535
+
+- Reviewed all six open product PRs. PR #530 (imported-album cache filtering) has no code-review blocker identified and its exact final head `df3dd651051826f483831b5a868dd16483f75fa4` passed all required CI, including the full unit suite: syntax/acquisition-safety run 39772679218; Docker packaging/full suite/build 39772679339; container smoke 39772679292; validation-only multi-architecture image 39772679145; release workflow 39772679160 (publishing job skipped; validation-only job passed).
+- Reviewed UI stack PRs #531–#535. Main findings: all five are stacked on branches rather than `main`, starting from closed stale PR #529; required workflows filter pull requests to `main`, so there were no CI runs on their original head SHAs. Manual browser checks required by `docs/LOCAL_UI_TESTING.md` have not been performed. Do not merge these original PR heads until the stack is rebased/reconciled and final-head CI plus browser checks are complete.
+- To exercise the cumulative UI changes against current `main` without altering original PR branches, created temporary validation-only commits by overlaying the changed-file state through each PR onto current main, then closed the temporary validation PRs after testing. These commits are integration test candidates, not the original PR heads:
+  - Through #531: `53026bcbff794c04b6f901aefeb4fa939403cd7e`; all four workflows passed (syntax 39779026542; full suite/build 39779026314; smoke 39779026388; non-publishing multi-arch 39779026309; release validation 39779026400).
+  - Through #532: `c20bb6d0ac00067f2e00dab41fa899183ccf1f0a`; all four passed (syntax 39779175672; full suite/build 39779175738; smoke 39779175835; non-publishing multi-arch 39779175783; release validation 39779175705).
+  - Through #533: `da4a3e72146ec60c8c0c700f4ed5f387bf864723`; all four passed (syntax 39779276986; full suite/build 39779276674; smoke 39779276863; non-publishing multi-arch 39779276675; release validation 39779276967).
+  - Through #534: `d319d8c5cc5f661a834035dabf99a26a1431655a`; all four passed (syntax 39779388308; full suite/build 39779388280; smoke 39779388596; non-publishing multi-arch 39779388383; release validation 39779388204).
+  - Through #535: `1d803c6f1daf198d3c77741cbbb5c51eb5c490e0`; all four passed (syntax 39779671933; full suite/build 39779672016; smoke 39779672162; non-publishing multi-arch 39779671942; release validation 39779672201).
+- Release workflow publishing jobs were skipped; validation-only multi-architecture builds passed. No image was published, no deployment occurred, and no manual browser or live-runtime verification is claimed. The local checkout attempt failed because the environment could not resolve github.com; full-suite evidence above comes from GitHub Actions.
+- No product PR was merged. Next action: review/merge #530 if desired, then reconcile #531–#535 onto current main and run required checks on the actual final PR heads plus manual browser checks.
+
 ## 2026-10-22 — PR #529 reconciled; full CI suite passed on replacement PR #530
 
 - Closed stale PR #529 because its branch predated the current `main` and its `discovery/list_payload.py` version omitted PR #528's cached future-release filter. Replacement PR #530 is based on current `main` and retains both behaviors.
