@@ -106,7 +106,7 @@ class NewReleasesRowContractTests(unittest.TestCase):
         self.assertIn(".row-date-day { font: 600 var(--text-md)/1.2 var(--display); color: var(--text);", block)
 
     def test_phone_layout_gives_the_date_column_room(self):
-        self.assertIn(".ranked-row.is-dated { grid-template-columns: 56px 52px minmax(0, 1fr); }", self.css)
+        self.assertIn(".ranked-row.is-dated { grid-template-columns: 56px 64px minmax(0, 1fr); }", self.css)
         self.assertIn(".ranked-row .row-date { grid-column: 1; grid-row: 1; }", self.css)
 
 
