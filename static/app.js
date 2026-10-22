@@ -1438,7 +1438,10 @@ function addRecommendationMeta(meta, item) {
     ...(Array.isArray(item.genres) ? item.genres : []),
     ...(Array.isArray(item.genre_families) ? item.genre_families : [])
   ])];
-  if (genres.length) addTextElement(meta, 'p', 'row-meta-line', genres.join(' · '));
+  if (genres.length) {
+    const genreLine = addTextElement(meta, 'p', 'row-meta-line row-genres', genres.join(' · '));
+    genreLine.title = genres.join(' · ');
+  }
   if (item.diversity_style) {
     addTextElement(meta, 'p', 'row-meta-line', 'Style: ' + item.diversity_style.replaceAll('_', ' '));
   }
