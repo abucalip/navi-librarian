@@ -31,6 +31,7 @@ def build_cached_discovery_list_response(
     is_album_candidate: Callable[[Any], bool],
     library_snapshot: Callable[[], Mapping[str, Any]] | None = None,
     on_stale: Callable[[Mapping[str, Any]], Any] | None = None,
+    acquired: set[tuple[str, str]] | None = None,
 ) -> str:
     """Build the legacy JSON response for a cached discovery list.
 
@@ -39,6 +40,9 @@ def build_cached_discovery_list_response(
     be read, the stored items are served unfiltered and the diagnostics say so.
     ``on_stale`` (personal list only) is called with the stored row so a stale snapshot
     can start a background rebuild; the stored list is served regardless of its outcome.
+    ``acquired`` holds (artist_key, album_key) identities already imported by the app;
+    they are hidden from every list because the library snapshot lags Navidrome's rescan.
+    Non-personal lists are also re-checked against the library snapshot on read.
     """
     cached = read_list(list_name)
     if not cached:
@@ -78,6 +82,13 @@ def build_cached_discovery_list_response(
         for row in feedback
         if row["scope"] == "artist" and row["status"] == "not_for_me_artist"
     }
+    acquired = acquired or set()
+    library_owned = None
+    if list_name != "personal" and library_snapshot is not None:
+        try:
+            library_owned = _owned_predicate(library_snapshot(), music_key)
+        except Exception:
+            library_owned = None
     visible = []
     for item in source_items:
         artist_key = music_key(item.get("artist", ""))
@@ -88,6 +99,8 @@ def build_cached_discovery_list_response(
         if identity in dismissed_albums or artist_key in dismissed_artists:
             continue
         if identity in saved:
+            continue
+        if identity in acquired or (library_owned is not None and library_owned(item)):
             continue
         visible.append(item)
 

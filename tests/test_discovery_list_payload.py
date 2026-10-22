@@ -22,6 +22,32 @@ class DiscoveryListPayloadTests(unittest.TestCase):
             "message": "No saved list yet. Use discovery_refresh_list or wait for the daily background refresh.",
         })
 
+    def test_hides_imported_and_library_owned_albums_on_non_personal_lists(self):
+        rows = [
+            {"artist": "A", "album": "Imported"},
+            {"artist": "A", "album": "Owned"},
+            {"artist": "A", "album": "Keep"},
+        ]
+        read = lambda _name: {"generated_at": 1, "payload": {"items": rows}}
+        snapshot = lambda: {"albums": [{"artist": "A", "album": "Owned"}]}
+        for name in ("classics", "artist_deep_dive", "new_releases"):
+            result = json.loads(build_cached_discovery_list_response(
+                name, 10, read, [], {}, music_key, is_album_candidate, snapshot,
+                acquired={("a", "imported")},
+            ))
+            self.assertEqual([i["album"] for i in result["items"]], ["Keep"], name)
+
+    def test_acquired_hides_albums_even_when_library_snapshot_fails(self):
+        def boom():
+            raise RuntimeError("navidrome down")
+        read = lambda _name: {"generated_at": 1, "payload": {"items": [
+            {"artist": "A", "album": "Imported"}, {"artist": "A", "album": "Keep"}]}}
+        result = json.loads(build_cached_discovery_list_response(
+            "classics", 10, read, [], {}, music_key, is_album_candidate, boom,
+            acquired={("a", "imported")},
+        ))
+        self.assertEqual([i["album"] for i in result["items"]], ["Keep"])
+
     def test_filters_dismissed_saved_and_non_album_items(self):
         rows = [
             {"artist": "Artist A", "album": "Keep"},

@@ -2353,6 +2353,14 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         }, ensure_ascii=False, indent=2)
 
     from discovery.list_payload import build_cached_discovery_list_response
+    try:
+        acquired = {
+            (job["artist_key"], job["album_key"])
+            for job in _discovery_list_acquisition_jobs()
+            if job["status"] == "imported"
+        }
+    except Exception:
+        acquired = set()
     return build_cached_discovery_list_response(
         list_name,
         count,
@@ -2361,6 +2369,7 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
         saved,
         _music_key,
         _discovery_is_album_candidate, _discovery_library_snapshot,
+        acquired=acquired,
         on_stale=lambda cached: discovery_refresh.revalidate_on_read(
             "personal", cached, lambda _name: _discovery_refresh_personal(20, origin="read"), _discovery_settings_read),
     )
