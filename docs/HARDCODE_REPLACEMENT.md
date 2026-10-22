@@ -1,6 +1,6 @@
 # Plan: replace hard-coded taste with derived behavior
 
-Status: Phases 1-3 merged (PRs #561-#564); Phase 4 tooling and first evidence merged (PRs #565-#568); the owner made derived mode the default in PR #569. The fixed tables remain for the `fixed` option and the sparse-history fallback; removing them is an optional follow-up. Evidence: `PROJECT_LOG.md`. The line references below predate the refactor.
+Status: complete. Derived is the only mode; the fixed core/exploration sets, artist-name lists, adventurous tags and the mode switch are removed (PRs #561-#571). The tag-to-family grouping rules remain as vocabulary. Evidence: `PROJECT_LOG.md`. The inventory and line references below describe the original state.
 
 ## Problem
 
