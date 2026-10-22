@@ -4,6 +4,7 @@ Last updated: 2026-10-22.
 
 ## Authority and responsibilities
 
+- **Exclusive reference rule:** in all repository documentation, source comments, commit messages, PR titles/descriptions/reviews, issue discussions, and other project communications, refer to the person directing this project exclusively as **“the owner”**. Do not use their personal name, account username/handle, or another label for that person. Apply this rule to new text and to any existing text being edited; quote historical text only when necessary to preserve evidence, and avoid expanding or repeating identifying references.
 - **GitHub is the single source of truth** for code, commits, branches, PRs, documentation, and release history. Never use a local checkout as the source for authoritative changes; local environments test identifiable GitHub revisions only.
 - Start each task by checking current `main`, recent commits, open PRs, and relevant CI. Read [`PROJECT_STATUS.md`](PROJECT_STATUS.md), then [`ACTIVE_WORK.md`](ACTIVE_WORK.md), and define one concrete objective with acceptance criteria.
 - Read [`REQUIREMENTS.md`](REQUIREMENTS.md), [`TEST_PLAN.md`](TEST_PLAN.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), and [`DECISIONS.md`](DECISIONS.md) as relevant. Search root `PROJECT_LOG.md` for prior evidence. Use `python scripts/session_search.py "<task-specific concepts>"` when available; search is navigation, not proof that callers or safety cases have been inspected.
