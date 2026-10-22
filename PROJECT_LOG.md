@@ -5,7 +5,7 @@
 - **Automated verification on the exact PR head:** full unit suite and Docker build passed in workflow `39827794898`; Python syntax passed in `39827794888`; container runtime smoke passed in `39827794833`; validation-only multi-architecture image check passed in `39827794825`; release-workflow validation passed in `39827794824`. The publishing job was skipped as intended.
 - **Manual browser verification:** explicitly waived by the owner and not performed. Deep Dives artwork performance was not re-measured in a browser, so UI behavior/performance is not claimed as verified.
 - No image was published, no deployment occurred, and live runtime was not verified. Publishing/deployment remain paused.
-- Documentation closeout: `docs/PROJECT_STATUS.md` updated in `05cd398b17055cf8724c44f9fdf5fd3892a704eb`; `docs/ACTIVE_WORK.md` updated in `64fd0b6f9b29dab956ef14656dbf8a84e14b8a7c`. This log entry is the remaining closeout update.
+- Documentation closeout commits: `docs/PROJECT_STATUS.md` `05cd398b17055cf8724c44f9fdf5fd3892a704eb`; `docs/ACTIVE_WORK.md` `64fd0b6f9b29dab956ef14656dbf8a84e14b8a7c`; `PROJECT_LOG.md` `1ecf065b69384711de24cba31c71e7bd89f272a5`.
 
 ## 2026-10-22 — PR #557 merged: similar-to discovery labels
 
