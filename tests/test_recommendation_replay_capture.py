@@ -67,6 +67,17 @@ class RecommendationReplayCaptureTests(unittest.TestCase):
         self.assertEqual(restored["core_families"], original["core_families"])
         self.assertEqual(restored["library_by_title"], original["library_by_title"])
 
+    def test_taste_clusters_survive_freeze_and_thaw(self):
+        from discovery.derived_profile import ClusteredFamilies
+        original = _gathered()
+        core = ClusteredFamilies({"jazz", "rock"})
+        core.cluster_of = {"jazz": "jazz", "rock": "rock"}
+        original["core_families"] = core
+        restored = thaw_gathered_inputs(freeze_gathered_inputs(original))["core_families"]
+        self.assertEqual(restored.cluster_of, {"jazz": "jazz", "rock": "rock"})
+        plain = thaw_gathered_inputs(freeze_gathered_inputs(_gathered()))["core_families"]
+        self.assertFalse(hasattr(plain, "cluster_of"))
+
     def test_freeze_and_thaw_strip_mutable_ranking_fields_from_candidates(self):
         gathered = _gathered()
         candidate = next(iter(gathered["albums"].values()))

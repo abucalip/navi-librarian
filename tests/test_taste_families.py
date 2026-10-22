@@ -9,8 +9,7 @@ from discovery.taste_families import deep_dive_row, family_label
 class ShippedDefaultsTests(unittest.TestCase):
     def test_shipped_tables_are_loaded_and_non_empty(self):
         for name in ("CATEGORY_RULES", "RECENT_STYLE_TERMS", "PRIMARY_RECENT_PRIORITY",
-                     "CORE_FAMILIES", "EXPLORATION_FAMILIES", "REGIONAL_ARTIST_FAMILIES",
-                     "ADVENTUROUS_TAGS", "FAMILY_LABELS"):
+                     "FAMILY_LABELS"):
             self.assertTrue(getattr(tf, name), name)
 
     def test_loader_reads_a_given_path(self):
@@ -21,8 +20,14 @@ class ShippedDefaultsTests(unittest.TestCase):
 
     def test_shipped_file_is_utf8_with_non_ascii_terms(self):
         data = tf._load()
-        self.assertIn("شابصحراوي", data["regional_artist_families"])
         self.assertIn("raï", dict(map(tuple, data["category_rules"]))["north-african-middle-eastern"])
+
+    def test_taste_defining_tables_are_gone(self):
+        data = tf._load()
+        for key in ("core_families", "exploration_families", "regional_artist_families", "adventurous_tags"):
+            self.assertNotIn(key, data)
+        for name in ("CORE_FAMILIES", "EXPLORATION_FAMILIES", "REGIONAL_ARTIST_FAMILIES", "ADVENTUROUS_TAGS"):
+            self.assertFalse(hasattr(tf, name), name)
 
 
 class DeepDiveRowTests(unittest.TestCase):

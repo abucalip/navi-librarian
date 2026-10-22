@@ -51,17 +51,6 @@ def set_recommendation_diversity_settings(settings_write, value):
     })
 
 
-TASTE_PROFILE_MODE_KEY = "taste_profile_mode"
-TASTE_PROFILE_MODES = ("fixed", "derived")
-DEFAULT_TASTE_PROFILE_MODE = "derived"
-
-
-def taste_profile_mode_value(settings_read):
-    """Read the taste profile mode; absent or unknown values mean the default, "derived"; "fixed" restores the shipped tables."""
-    value = settings_read().get(TASTE_PROFILE_MODE_KEY, DEFAULT_TASTE_PROFILE_MODE)
-    return value if value in TASTE_PROFILE_MODES else DEFAULT_TASTE_PROFILE_MODE
-
-
 AUTOMATIC_REFILL_KEY = "automatic_refill_enabled"
 DEFAULT_AUTOMATIC_REFILL_ENABLED = True
 

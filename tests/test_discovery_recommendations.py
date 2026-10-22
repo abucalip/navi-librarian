@@ -65,17 +65,14 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertEqual(primary_recent_family(["Afro-jazz"], {"african": 8}), "jazz")
   self.assertIsNone(primary_recent_family([], {}))
 
- def test_diversity_style_classification_and_metadata_precedence(self):
-  self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, []), "north_african")
-  self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, []), "malian_desert_blues")
-  self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, ["jazz"]), "other")
-  self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, ["jazz"]), "other")
-  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeats"]), "afrobeats")
-  self.assertEqual(
-   classify_diversity_style({"artist": "Unknown", "regional_styles": ["afro_jazz"]}, ["Raï"]),
-   "north_african",
-  )
-  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Indie rock"]), "other")
+ def test_diversity_style_is_the_primary_derived_family(self):
+  self.assertEqual(classify_diversity_style({"artist": "Tinariwen"}, []), "other")
+  self.assertEqual(classify_diversity_style({"primary_artist": "Khaled"}, ["jazz"]), "jazz")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Afrobeats", "jazz"]), "african")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Indie rock"]), "alternative")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Thrash Metal"]), "metal")
+  self.assertEqual(classify_diversity_style({"artist": "Unknown"}, ["Hip Hop"]), "hip_hop")
+
 
 
  def test_deep_dive_ranking_weights_candidate_evidence_and_filters_candidates(self):
@@ -117,21 +114,19 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   self.assertLessEqual(sum(item.get("primary_genre_family")=="jazz" for item in diversified), 12)
   self.assertLessEqual(sum(item["anchor_artist"]=="Anchor" for item in diversified), 4)
 
- def test_artist_name_category_override_only_applies_without_provider_tags(self):
+ def test_artist_names_never_classify_a_candidate(self):
   from discovery.recommendations import classify_recommendation_category
   core = {"jazz"}
   exploration = {"african", "north-african-middle-eastern"}
   category, families = classify_recommendation_category(
    {"primary_artist": "Khaled"}, [], core, exploration,
   )
-  self.assertEqual(category, "adjacent")
-  self.assertIn("north-african-middle-eastern", families)
+  self.assertEqual((category, families), ("unclassified", set()))
   category, families = classify_recommendation_category(
    {"primary_artist": "Khaled"}, ["jazz"], core, exploration,
   )
   self.assertEqual(category, "adjacent")
-  self.assertIn("jazz", families)
-  self.assertNotIn("north-african-middle-eastern", families)
+  self.assertEqual(families, {"jazz"})
 
  def test_recommendation_candidate_classification_preserves_empty_metadata_defaults(self):
   candidate = {"primary_artist": "Unknown", "artist_mbid": "mbid-1", "discovery_score": 10.0}
@@ -176,7 +171,7 @@ class DiscoveryRecommendationRulesTests(unittest.TestCase):
   }
   groups = classify_recommendation_candidates(
    albums, {"jazz-id": ["jazz"], "rock-id": ["rock"]},
-   {"jazz", "rock"}, set(), {"jazz": 8.0, "rock": 1.0},
+   {"jazz"}, set(), {"jazz": 8.0, "rock": 1.0},
   )
   self.assertAlmostEqual(groups["adjacent"][0]["recent_profile_bonus"], 1.25)
   self.assertAlmostEqual(groups["adventurous"][0]["recent_profile_bonus"], 1.03125)

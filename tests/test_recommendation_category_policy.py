@@ -19,20 +19,18 @@ class RecommendationCategoryPolicyTests(unittest.TestCase):
         self.assertEqual(category, "unclassified")
         self.assertEqual(families, set())
 
-    def test_regional_artist_override_can_make_candidate_adjacent_without_tags(self):
+    def test_artist_names_do_not_classify_candidates_without_tags(self):
         category, families = self.classify(
-            {"primary_artist": "Tinariwen"}, [],
-            exploration={"african"},
+            {"primary_artist": "Tinariwen"}, [], exploration={"african"},
         )
-        self.assertEqual(category, "adjacent")
-        self.assertEqual(families, {"african"})
+        self.assertEqual((category, families), ("unclassified", set()))
 
-    def test_adventurous_tag_precedes_core_family_overlap(self):
+    def test_free_jazz_overlapping_a_core_family_is_not_forced_adventurous(self):
         category, families = self.classify(
             {"primary_artist": "Artist"}, ["free jazz"],
             core={"jazz"}, exploration={"jazz"},
         )
-        self.assertEqual(category, "adventurous")
+        self.assertEqual(category, "adjacent")
         self.assertEqual(families, {"jazz"})
 
     def test_two_core_family_overlaps_are_cross_genre(self):

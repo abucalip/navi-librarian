@@ -12,7 +12,6 @@ import time
 from typing import Any, Callable
 
 from discovery import candidate_supply as _supply
-from discovery import taste_families
 from discovery.batch_metadata import (
     fetch_batch_recordings,
     fetch_release_group_metadata,
@@ -533,7 +532,6 @@ def gather_recommendation_candidates(
     *,
     shortlist_target: int = SHORTLIST_TARGET_DEFAULT,
     cold_start: bool = False,
-    profile_mode: str = "fixed",
 ) -> dict[str, Any] | str:
     """Gather providers in legacy order; early errors retain their JSON contract."""
     import time
@@ -1180,30 +1178,21 @@ def gather_recommendation_candidates(
             recent_family_counts[family] += weight
             recent_family_play_counts[family] += 1
 
-    # Core interests are used to identify close recommendations.
-    # African and North African/Middle Eastern music are explicit
-    # exploration interests: they should be represented without making
-    # every unfamiliar genre automatically count as a core match.
-    core_families = set(taste_families.CORE_FAMILIES)
-    exploration_families = set(taste_families.EXPLORATION_FAMILIES)
-    profile_source = "fixed"
-    if profile_mode == "derived":
-        from discovery.derived_profile import derive_profile
-        listen_tags = []
-        for listen, weight in zip(listens, listen_weights):
-            info = listen.get("track_metadata", {}).get("additional_info", {})
-            mbids = info.get("artist_mbids")
-            mbid = info.get("artist_mbid") or (
-                mbids[0] if isinstance(mbids, list) and mbids else None
-            )
-            if mbid:
-                listen_tags.append((genre_cache.get(mbid, []), weight))
-        core_families, exploration_families, profile_source = derive_profile(
-            listen_tags, candidate_pool_tags,
+    # Core interests come from the listener's own decayed listening; exploration
+    # families are well represented in the candidate pool but outside the core.
+    from discovery.derived_profile import derive_profile
+    listen_tags = []
+    for listen, weight in zip(listens, listen_weights):
+        info = listen.get("track_metadata", {}).get("additional_info", {})
+        mbids = info.get("artist_mbids")
+        mbid = info.get("artist_mbid") or (
+            mbids[0] if isinstance(mbids, list) and mbids else None
         )
-        if profile_source != "derived":
-            # Sparse history uses the complete fixed behavior, not a hybrid.
-            profile_mode = "fixed"
+        if mbid:
+            listen_tags.append((genre_cache.get(mbid, []), weight))
+    core_families, exploration_families, profile_source = derive_profile(
+        listen_tags, candidate_pool_tags,
+    )
     profile_families = core_families | exploration_families
 
 
@@ -1277,5 +1266,5 @@ def gather_recommendation_candidates(
         "recent_family_play_counts": recent_family_play_counts,
         "core_families": core_families,
         "exploration_families": exploration_families, "profile_families": profile_families,
-        "profile_mode": profile_mode, "profile_source": profile_source,
+        "profile_source": profile_source,
     }

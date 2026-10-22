@@ -118,25 +118,14 @@ def diversify_classic_candidates(ranked: Iterable[dict[str,Any]], *, limit: int=
     return output
 
 
-def genre_families(tags: Iterable[str], derived: bool = False) -> set[str]:
+def genre_families(tags: Iterable[str]) -> set[str]:
     """Map MusicBrainz genre tags to broad recommendation families.
 
-    In derived mode, tags no shipped rule matches get a normalized family key.
+    Tags no shipped rule matches get a family from the ancestry table or a
+    normalized key, so every tag belongs to some family.
     """
-    if derived:
-        from discovery.derived_profile import derived_genre_families
-        return derived_genre_families(tags)
-    families = set()
-    for tag in tags:
-        g = tag.casefold()
-        for family, terms in _tf.CATEGORY_RULES:
-            if any(x in g for x in terms):
-                families.add(family)
-    return families
-
-
-_REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = _tf.REGIONAL_ARTIST_FAMILIES
-_ADVENTUROUS_RECOMMENDATION_TAGS = _tf.ADVENTUROUS_TAGS
+    from discovery.derived_profile import derived_genre_families
+    return derived_genre_families(tags)
 
 
 def _distinct_core_clusters(overlap: set[str], core_families: set[str]) -> int:
@@ -152,42 +141,22 @@ def classify_recommendation_category(
     exploration_families: set[str],
     *,
     music_key_fn: Callable[[Any], str] = music_key,
-    derived: bool = False,
 ) -> tuple[str, set[str]]:
     """Return the established category and family set for a recommendation candidate.
 
-    This policy is shared by selection and diagnostic projection so regional
-    overrides and adventurous-tag precedence cannot drift between the two paths.
+    This policy is shared by selection and diagnostic projection so the two paths
+    cannot drift. A candidate is adventurous when it overlaps none of the
+    listener's derived core or exploration families.
     """
     tags = list(tags)
-    families = genre_families(tags, derived)
+    families = genre_families(tags)
     families.update(candidate.get("regional_families", []))
-    artist_key = music_key_fn(
-        candidate.get("primary_artist") or candidate.get("artist", "")
-    )
-    # Provider genre tags take precedence over artist-name exceptions. Names are
-    # only a last-resort fallback when metadata is unavailable.
-    regional_family = (
-        _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES.get(artist_key)
-        if not tags and not derived else None
-    )
-    if regional_family:
-        families.add(regional_family)
 
     core_overlap = families & core_families
     exploration_overlap = families & exploration_families
-    # Derived mode defines "adventurous" relative to the profile (no overlap
-    # with core or exploration families), not by a fixed tag list.
-    adventurous_signal = not derived and any(
-        signal in tag.casefold()
-        for tag in tags
-        for signal in _ADVENTUROUS_RECOMMENDATION_TAGS
-    )
 
     if not tags and not families:
         category = "unclassified"
-    elif adventurous_signal:
-        category = "adventurous"
     elif _distinct_core_clusters(core_overlap, core_families) >= 2:
         category = "cross_genre"
     elif core_overlap or exploration_overlap:
@@ -286,7 +255,6 @@ def apply_familiarity_exploration_bonus(
     recent_artist_count: float,
     genre_tags: Iterable[str],
     exploration_families: set[str],
-    derived: bool = False,
 ) -> float:
     """Apply the established recent-familiarity and exploration score multipliers."""
     # Smoothly favor artists with a little familiarity over both extremes:
@@ -295,7 +263,7 @@ def apply_familiarity_exploration_bonus(
     count = max(0.0, float(recent_artist_count or 0))
     familiarity_factor = 0.82 + 0.42 * math.exp(-((count - 1.5) / 3.0) ** 2)
 
-    candidate_families = genre_families(genre_tags, derived)
+    candidate_families = genre_families(genre_tags)
     exploration_bonus = (
         1.10 if candidate_families & exploration_families else 1.0
     )
@@ -377,59 +345,13 @@ def apply_lastfm_popularity_bonus(
     return checked
 
 def classify_diversity_style(candidate: Mapping[str, Any], tags: Iterable[str]) -> str:
-    """Assign a regional/style slot used to diversify recommendation results."""
-    artist_key = music_key(
-        candidate.get("primary_artist") or candidate.get("artist", "")
-    )
-    tag_text = " ".join(tags).casefold()
-    # Query-derived hints and name exceptions are fallbacks only. When provider
-    # tags exist, classify from those normalized tags instead of hardcoded taste.
-    regional_style_hints = candidate.get("regional_styles", [])
-    if not tag_text:
-        for style_hint in (
-            "north_african", "afrobeats", "afro_jazz",
-            "malian_desert_blues",
-        ):
-            if style_hint in regional_style_hints:
-                return style_hint
+    """Style slot for diversification and display: the candidate's primary family.
 
-    north_african_names = {
-        "chebmami", "khaled", "chebkhaled", "faudel", "rachidtaha",
-        "idir", "souadmassi", "hamidelkasri", "takfarinas", "bouchenak",
-        "liliboniche", "orchestrenationaldebarbes", "chebsahraoui",
-        "شابصحراوي",
-    }
-    desert_blues_names = {
-        "vieuxfarkatoure", "alifarkatoure", "bombino", "tinariwen",
-        "mdoumoctar", "imarhan",
-    }
-
-    if (
-        (not tag_text and artist_key in north_african_names)
-        or any(term in tag_text for term in (
-            "raï", "rai", "chaabi", "gnawa", "amazigh",
-            "north african", "north-african", "maghreb", "algerian",
-        ))
-    ):
-        return "north_african"
-    if any(term in tag_text for term in (
-        "afrobeats", "afro-beats", "afropop", "afro-pop",
-    )):
-        return "afrobeats"
-    if any(term in tag_text for term in (
-        "afro-jazz", "afro jazz", "african jazz", "ethio-jazz",
-        "ethiojazz", "south african jazz",
-    )):
-        return "afro_jazz"
-    if (
-        (not tag_text and artist_key in desert_blues_names)
-        or any(term in tag_text for term in (
-            "desert blues", "malian blues", "malian guitar", "tuareg",
-            "assouf", "wassoulou",
-        ))
-    ):
-        return "malian_desert_blues"
-    return "other"
+    Derived from provider tags only (the first tag that maps to a family), with
+    no named artists or regions. Candidates without usable tags are "other".
+    """
+    families = deep_dive_genre_families(tags)
+    return families[0].replace("-", "_") if families else "other"
 
 def rank_and_diversify_deep_dive_candidates(
     candidates: Iterable[dict[str, Any]],
@@ -522,7 +444,6 @@ def classify_recommendation_candidates(
     recent_family_counts: Mapping[str, int],
     *,
     music_key_fn: Callable[[Any], str] = music_key,
-    derived: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
     """Enrich recommendation candidates and group them by discovery category."""
     candidates_by_category = {
@@ -533,7 +454,7 @@ def classify_recommendation_candidates(
         candidate["diversity_style"] = classify_diversity_style(candidate, tags)
         category, families = classify_recommendation_category(
             candidate, tags, core_families, exploration_families,
-            music_key_fn=music_key_fn, derived=derived,
+            music_key_fn=music_key_fn,
         )
         candidate["genres"] = tags
         candidate["genre_families"] = sorted(families)
