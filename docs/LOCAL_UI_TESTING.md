@@ -1,45 +1,24 @@
-# Local PR UI smoke testing
+# Local UI testing
 
-Last updated: 2026-10-13
+Last updated: 2026-10-22
 
-## Purpose
+## Purpose and current workflow
 
-Use the local helper to verify the real browser UI against an exact GitHub pull-request head. This is a manual smoke-test layer on top of automated CI, not a replacement for unit tests or release/deployment verification.
+Use the **current local test environment** for manual browser verification of UI-facing changes against an identified GitHub revision. This document defines the required browser checks and evidence; it is not the launcher or setup guide for that environment.
 
-## Run a PR
+**Obsolete workflow:** `~/navi-librarian-test/test-pr.sh` is retired. Do not run it, rely on its generated reports, or assume its setup, ports, directories, credentials, or isolation behavior apply to the current environment. It has been replaced by the new local test environment.
 
-The helper is installed outside the application checkout at `~/navi-librarian-test/test-pr.sh`. With GitHub CLI authenticated (`gh auth status`), run:
-
-```sh
-~/navi-librarian-test/test-pr.sh <PR-number>
-```
-
-The default app URL is `http://127.0.0.1:8089`. If that port is occupied, choose another port:
-
-```sh
-~/navi-librarian-test/test-pr.sh <PR-number> 8090
-```
-
-If the helper says it created `~/navi-librarian-test/config.env`, edit that private file only if you need optional Navidrome/discovery access, then rerun. Keep secrets out of test notes and PR comments.
-
-## Isolation and safety
-
-- The helper reads the open PR's current head SHA from GitHub and downloads that exact source archive. It does not check out, reset, clean, or push a Git branch.
-- Each PR/SHA has a separate source directory and server log under `~/navi-librarian-test/runs/`. The virtual environment should be reused when the selected Python version and dependency lock/input set have not changed. **Application data must persist per PR, not per SHA**, so changing to a new commit of the same PR does not force first-run account creation again. Different PRs must remain isolated from one another. Only an explicitly requested fresh-data test should reset setup/account state.
-- Music and download paths point to `~/navi-librarian-test/sandbox/`, not the real library or download folder.
-- Keep slskd disabled at `http://127.0.0.1:9` with an empty API key for ordinary UI checks. Do not point the app at live download paths or run destructive dismissal/acquisition checks against real data without explicit authorization.
-- Prefer a read-only Navidrome account if live library browsing is configured.
-- The helper's source is currently installed as a local utility outside the repository. Do not treat local edits to it as project changes; GitHub remains authoritative for application code and documentation. Because the helper is external to this repository, a documentation change alone does not change its behavior: verify that the installed `test-pr.sh` uses a stable per-PR app-data path before considering credential/setup persistence fixed.
+Before testing, identify the exact GitHub commit SHA under test and confirm that the environment uses that revision. Keep test data isolated from production music/download paths and keep acquisition services disabled unless the owner explicitly authorizes a safe test. Record the environment used, tested SHA, checklist results, failures, and skipped checks in the current test record. A changed application SHA requires a new check or an explicit statement that the earlier report covers only its recorded SHA.
 
 ## When to run manual UI checks
 
-Manual browser checks are a required gate for a UI-facing code change, after automated CI succeeds on the exact tested SHA. For non-UI changes, do not rerun the full browser checklist merely because the PR head changed. The remaining performance-observation and distinct error/recovery checks from the October 13 report are deferred to the **next UI-facing change**; record them against that exact application SHA. API-only refactors still require automated/API regression checks and any specifically relevant UI smoke, but do not by themselves trigger a full visual checklist.
+Manual browser checks are a required gate for a UI-facing code change, after automated CI succeeds on the exact tested SHA. For non-UI changes, do not rerun the full browser checklist merely because the PR head changed. The remaining performance-observation and distinct error/recovery checks from the October 13 report are deferred to the next UI-facing change; record them against that exact application SHA. API-only refactors still require automated/API regression checks and any specifically relevant UI smoke, but do not by themselves trigger a full visual checklist.
 
 ## Browser checklist
 
-When a UI-facing change is ready for manual verification, use the UI while the server is running, then return to Terminal and press Enter. Record each item as Pass, Fail, or Skip; skipped items are not passes.
+Use the running test environment in a browser, then record each item as Pass, Fail, or Skip; skipped items are not passes.
 
-1. App starts and first-run login/setup works.
+1. App starts and first-run login/setup works, when applicable to the test state.
 2. Dashboard layout, artwork, and primary navigation render correctly.
 3. Discovery lists load and can be refreshed without a visible error.
 4. Artist/album navigation and album details work.
@@ -47,17 +26,18 @@ When a UI-facing change is ready for manual verification, use the UI while the s
 6. Get/request changes to the expected requested state and prevents duplicate requests; do not start a real download.
 7. Acquisition cards/status render correctly for whatever safe fixture/state is available. Skip behaviors that require an unavailable test fixture rather than using live data.
 8. Error/recovery states are understandable and leave the UI usable.
-9. Performance: dashboard and discovery content load without obvious stalls; record approximate timings and any slow interaction in the notes.
-10. No unexpected browser-console or server-log errors occur during the tested flow.
+9. Verify representative desktop and narrow/mobile widths, long names, missing artwork, empty/loading/error states, and horizontal overflow where relevant.
+10. Check keyboard navigation, visible focus, and accessible control labels.
+11. Inspect browser console and network errors, plus server logs, during the tested flow.
+12. Performance: dashboard and discovery content load without obvious stalls; record approximate timings and any slow interaction in the notes.
 
 The automated regression/safety tests remain responsible for destructive filesystem guarantees such as path traversal rejection, symlink containment, no-overwrite behavior, rollback, and preservation of unrelated files. Do not use the browser smoke test as a substitute for those tests.
 
-## Report and publication
+## Test record and publication
 
-The helper writes a Markdown report to `~/navi-librarian-test/reports/PR-<number>-<sha>.md`. It records the exact tested SHA, machine/Python information, CI state it could retrieve, checklist results, notes, and failures. Review the report and choose whether to publish it as a PR comment when prompted.
+Use the current environment's supported reporting process. Include the exact application SHA, environment details sufficient to reproduce the check, each checklist result, notes, and failures. Do not publish credentials, secrets, private test data, or logs containing sensitive values.
 
-If the PR head changes after testing, rerun against the new head or state explicitly that the prior report covers only its recorded SHA. UI startup alone does not mean the entire checklist passed. Passing a local UI check does not prove that a merge, image publication, deployment, or production runtime verification occurred.
-
+A local UI check does not prove that a merge, image publication, deployment, or production runtime verification occurred.
 
 ## Completed run — PR #31
 
