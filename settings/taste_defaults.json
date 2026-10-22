@@ -1,0 +1,409 @@
+{
+ "category_rules": [
+  [
+   "jazz",
+   [
+    "jazz",
+    "bebop",
+    "hard bop",
+    "swing"
+   ]
+  ],
+  [
+   "hip-hop",
+   [
+    "hip hop",
+    "hip-hop",
+    "rap"
+   ]
+  ],
+  [
+   "alternative",
+   [
+    "alternative",
+    "indie rock",
+    "post-punk",
+    "art rock",
+    "garage rock"
+   ]
+  ],
+  [
+   "brazilian",
+   [
+    "brazilian",
+    "samba",
+    "bossa nova",
+    "mpb",
+    "tropicalia",
+    "tropicália"
+   ]
+  ],
+  [
+   "african",
+   [
+    "african",
+    "afrobeat",
+    "ethiopian",
+    "ethiopian jazz",
+    "highlife",
+    "soukous",
+    "senegalese",
+    "malian",
+    "afropop",
+    "mbalax",
+    "desert blues"
+   ]
+  ],
+  [
+   "rnb-soul",
+   [
+    "r&b",
+    "rnb",
+    "neo-soul",
+    "soul"
+   ]
+  ],
+  [
+   "electronic",
+   [
+    "electronic",
+    "electronica",
+    "electropop",
+    "downtempo",
+    "trip hop",
+    "trip-hop"
+   ]
+  ],
+  [
+   "funk",
+   [
+    "funk"
+   ]
+  ],
+  [
+   "north-african-middle-eastern",
+   [
+    "middle eastern",
+    "arabic",
+    "raï",
+    "rai",
+    "north african",
+    "north-african",
+    "maghrebi",
+    "maghreb",
+    "chaabi",
+    "gnawa",
+    "gnaoua",
+    "malouf",
+    "andalusi",
+    "andalusian",
+    "algerian",
+    "moroccan",
+    "tunisian",
+    "mawwal",
+    "tarab",
+    "maqam",
+    "levantine",
+    "khaliji",
+    "khaleeji",
+    "dabke",
+    "oud music",
+    "arab pop",
+    "arabic pop",
+    "shaabi"
+   ]
+  ]
+ ],
+ "deep_dive_rules": [
+  [
+   "jazz",
+   [
+    "jazz",
+    "bebop",
+    "swing"
+   ]
+  ],
+  [
+   "african",
+   [
+    "african",
+    "afrobeat",
+    "afrobeats",
+    "afropop",
+    "highlife",
+    "soukous",
+    "malian",
+    "tuareg",
+    "desert blues",
+    "ethiopian",
+    "mbalax",
+    "senegalese"
+   ]
+  ],
+  [
+   "alternative",
+   [
+    "alternative",
+    "indie rock",
+    "post-punk",
+    "art rock",
+    "garage rock",
+    "shoegaze"
+   ]
+  ],
+  [
+   "brazilian",
+   [
+    "brazilian",
+    "samba",
+    "bossa nova",
+    "mpb",
+    "tropicalia",
+    "tropicália"
+   ]
+  ],
+  [
+   "hip-hop",
+   [
+    "hip hop",
+    "hip-hop",
+    "rap"
+   ]
+  ],
+  [
+   "rnb-soul",
+   [
+    "r&b",
+    "rnb",
+    "neo-soul",
+    "soul"
+   ]
+  ],
+  [
+   "electronic",
+   [
+    "electronic",
+    "electronica",
+    "house",
+    "techno",
+    "trip hop",
+    "trip-hop",
+    "downtempo",
+    "idm"
+   ]
+  ],
+  [
+   "funk",
+   [
+    "funk"
+   ]
+  ],
+  [
+   "north-african-middle-eastern",
+   [
+    "arabic",
+    "raï",
+    "rai",
+    "maghreb",
+    "north african",
+    "algerian",
+    "moroccan",
+    "tunisian",
+    "gnawa",
+    "gnaoua",
+    "chaabi",
+    "middle eastern",
+    "andalusi",
+    "malouf"
+   ]
+  ],
+  [
+   "rock",
+   [
+    "rock",
+    "punk",
+    "metal",
+    "grunge"
+   ]
+  ],
+  [
+   "pop",
+   [
+    "pop"
+   ]
+  ]
+ ],
+ "recent_style_terms": {
+  "soul": [
+   "soul",
+   "r&b",
+   "rnb",
+   "neo-soul"
+  ],
+  "rock": [
+   "rock",
+   "punk",
+   "grunge",
+   "metal",
+   "shoegaze",
+   "post-punk"
+  ],
+  "bossa_nova_brazilian": [
+   "bossa nova",
+   "samba",
+   "mpb",
+   "tropicalia",
+   "tropicália",
+   "brazilian"
+  ],
+  "hip-hop": [
+   "hip hop",
+   "hip-hop",
+   "rap"
+  ],
+  "electronic": [
+   "electronic",
+   "electronica",
+   "house",
+   "techno",
+   "edm",
+   "synth-pop",
+   "synthpop",
+   "idm",
+   "trip hop",
+   "trip-hop"
+  ],
+  "african": [
+   "african",
+   "afrobeat",
+   "afrobeats",
+   "afropop",
+   "highlife",
+   "malian",
+   "tuareg",
+   "desert blues",
+   "soukous",
+   "mbalax"
+  ],
+  "north_african": [
+   "raï",
+   "rai",
+   "gnawa",
+   "chaabi",
+   "maghreb",
+   "north african",
+   "algerian",
+   "moroccan",
+   "tunisian",
+   "amazigh"
+  ],
+  "funk": [
+   "funk"
+  ],
+  "pop": [
+   "pop",
+   "dance-pop",
+   "synthpop"
+  ]
+ },
+ "recent_style_jazz_exact": [
+  "bebop",
+  "swing"
+ ],
+ "recent_style_jazz_excluded": "jazz rap",
+ "recent_style_rock_excluded": "electronic rock",
+ "primary_recent_priority": [
+  "bossa_nova_brazilian",
+  "rock",
+  "hip-hop",
+  "soul",
+  "electronic",
+  "african",
+  "north_african",
+  "funk",
+  "pop"
+ ],
+ "primary_hiphop_terms": [
+  "hip hop",
+  "hip-hop",
+  "rap"
+ ],
+ "primary_specific_jazz_terms": [
+  "acid jazz",
+  "afro-jazz",
+  "afro jazz",
+  "jazz fusion",
+  "free jazz",
+  "latin jazz",
+  "ethiopian jazz",
+  "ethio-jazz"
+ ],
+ "core_families": [
+  "alternative",
+  "brazilian",
+  "electronic",
+  "funk",
+  "hip-hop",
+  "jazz",
+  "rnb-soul",
+  "rock"
+ ],
+ "exploration_families": [
+  "african",
+  "north-african-middle-eastern"
+ ],
+ "regional_artist_families": {
+  "chebmami": "north-african-middle-eastern",
+  "vieuxfarkatoure": "african",
+  "alifarkatoure": "african",
+  "bombino": "african",
+  "tinariwen": "african",
+  "mdoumoctar": "african",
+  "imarhan": "african",
+  "khaled": "north-african-middle-eastern",
+  "chebkhaled": "north-african-middle-eastern",
+  "faudel": "north-african-middle-eastern",
+  "rachidtaha": "north-african-middle-eastern",
+  "idir": "north-african-middle-eastern",
+  "souadmassi": "north-african-middle-eastern",
+  "hamidelkasri": "north-african-middle-eastern",
+  "takfarinas": "north-african-middle-eastern",
+  "bouchenak": "north-african-middle-eastern",
+  "liliboniche": "north-african-middle-eastern",
+  "orchestrenationaldebarbes": "north-african-middle-eastern",
+  "chebsahraoui": "north-african-middle-eastern",
+  "شابصحراوي": "north-african-middle-eastern"
+ },
+ "adventurous_tags": [
+  "idm",
+  "experimental",
+  "avant-garde",
+  "avant garde",
+  "free improvisation",
+  "free jazz",
+  "drone",
+  "noise",
+  "musique concrète",
+  "musique concrete",
+  "electroacoustic",
+  "dark ambient",
+  "glitch",
+  "deconstructed club"
+ ],
+ "family_labels": {
+  "jazz": "Jazz",
+  "african": "African Music",
+  "alternative": "Alternative",
+  "brazilian": "Brazilian Music",
+  "hip-hop": "Hip-Hop",
+  "rnb-soul": "R&B / Soul",
+  "electronic": "Electronic",
+  "funk": "Funk",
+  "north-african-middle-eastern": "North African & Middle Eastern",
+  "north-african": "North African",
+  "bossa-nova-brazilian": "Brazilian / Bossa Nova",
+  "rock": "Rock",
+  "pop": "Pop",
+  "other": "Other Discoveries"
+ }
+}
