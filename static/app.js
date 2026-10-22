@@ -17,7 +17,7 @@ function isAlbumRecommendation(item) {
 
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
-const NAV_MORE_PAGES = ['recommendations', 'classics', 'artistDeepDive'];
+const NAV_MORE_PAGES = ['classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
@@ -813,6 +813,23 @@ function closeAlbumModal() {
   if (returnTo && returnTo.isConnected) returnTo.focus();
 }
 
+// The artist bio loads on its own, so a slow or missing bio never delays the tracklist. The
+// paragraph stays hidden unless the API returns a bio, and the text is set with textContent.
+function loadAlbumModalBio(card, artist) {
+  const bio = $('albumModalBio');
+  bio.textContent = '';
+  bio.hidden = true;
+  if (!artist || artist === 'Unknown artist') return;
+  const bioKey = artist.trim().toLocaleLowerCase();
+  cachedJSONRequest(artistBioRequests, bioKey, '/api/artist-bio?artist=' + encodeURIComponent(artist))
+    .then(result => {
+      if (!result || !result.bio || !activeAlbumModal || activeAlbumModal.card !== card) return;
+      bio.textContent = result.bio;
+      bio.hidden = false;
+    })
+    .catch(() => {});
+}
+
 async function openAlbumModal(card, returnFocus = card) {
   const artist = card.dataset.albumArtist || 'Unknown artist';
   const album = card.dataset.albumTitle || 'Unknown album';
@@ -827,6 +844,7 @@ async function openAlbumModal(card, returnFocus = card) {
   $('albumModalArtist').textContent = artist;
   $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
   setAlbumPlatformLinks(artist, album);
+  loadAlbumModalBio(card, artist);
   $('albumModalStatus').textContent = 'Loading artwork and tracklist…';
   setStatusState($('albumModalStatus'), 'loading');
   tracklist.replaceChildren();
@@ -1420,7 +1438,10 @@ function addRecommendationMeta(meta, item) {
     ...(Array.isArray(item.genres) ? item.genres : []),
     ...(Array.isArray(item.genre_families) ? item.genre_families : [])
   ])];
-  if (genres.length) addTextElement(meta, 'p', 'row-meta-line', genres.join(' · '));
+  if (genres.length) {
+    const genreLine = addTextElement(meta, 'p', 'row-meta-line row-genres', genres.join(' · '));
+    genreLine.title = genres.join(' · ');
+  }
   if (item.diversity_style) {
     addTextElement(meta, 'p', 'row-meta-line', 'Style: ' + item.diversity_style.replaceAll('_', ' '));
   }
