@@ -78,6 +78,40 @@ def derived_genre_families(tags: Iterable[str]) -> set[str]:
     return families
 
 
+# Core families whose listens overlap this much (weighted Jaccard) are one taste
+# cluster, so a candidate in both is not "cross-genre" (pop and rock, say).
+CLUSTER_JACCARD = 0.5
+
+
+class ClusteredFamilies(set):
+    """Core family set that also remembers which taste cluster each belongs to."""
+
+    cluster_of: dict[str, str]
+
+
+def cluster_core(core: set[str], family_sets_and_weights) -> ClusteredFamilies:
+    """Group core families whose weighted listen overlap is at least CLUSTER_JACCARD."""
+    rows = [(fs & core, w) for fs, w in family_sets_and_weights]
+    parent = {f: f for f in core}
+
+    def find(f: str) -> str:
+        while parent[f] != f:
+            parent[f] = parent[parent[f]]
+            f = parent[f]
+        return f
+
+    members = sorted(core)
+    for i, a in enumerate(members):
+        for b in members[i + 1:]:
+            both = sum(w for fs, w in rows if a in fs and b in fs)
+            either = sum(w for fs, w in rows if a in fs or b in fs)
+            if either and both / either >= CLUSTER_JACCARD:
+                parent[find(b)] = find(a)
+    result = ClusteredFamilies(core)
+    result.cluster_of = {f: find(f) for f in members}
+    return result
+
+
 def family_weights(
     tag_lists_and_weights: Iterable[tuple[Iterable[str], float]],
 ) -> Counter:
@@ -130,12 +164,16 @@ def derive_profile(
     pool_tags: Sequence[str],
 ) -> tuple[set[str], set[str], str]:
     """Return (core, exploration, source); sparse history falls back to defaults."""
-    weights = family_weights(tag_lists_and_weights)
+    family_sets = [(derived_genre_families(tags), w) for tags, w in tag_lists_and_weights]
+    weights: Counter = Counter()
+    for families, weight in family_sets:
+        for family in families:
+            weights[family] += weight
     if sum(weights.values()) < MIN_PROFILE_WEIGHT:
         return (
             set(taste_families.CORE_FAMILIES),
             set(taste_families.EXPLORATION_FAMILIES),
             "defaults_sparse_history",
         )
-    core = derive_core_families(weights)
+    core = cluster_core(derive_core_families(weights), family_sets)
     return core, derive_exploration_families(pool_tags, core), "derived"

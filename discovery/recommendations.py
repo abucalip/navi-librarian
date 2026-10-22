@@ -133,6 +133,12 @@ _REGIONAL_RECOMMENDATION_ARTIST_FAMILIES = _tf.REGIONAL_ARTIST_FAMILIES
 _ADVENTUROUS_RECOMMENDATION_TAGS = _tf.ADVENTUROUS_TAGS
 
 
+def _distinct_core_clusters(overlap: set[str], core_families: set[str]) -> int:
+    """Count overlapping core families, merging a derived profile's taste clusters."""
+    cluster_of = getattr(core_families, "cluster_of", None) or {}
+    return len({cluster_of.get(family, family) for family in overlap})
+
+
 def classify_recommendation_category(
     candidate: Mapping[str, Any],
     tags: Iterable[str],
@@ -176,7 +182,7 @@ def classify_recommendation_category(
         category = "unclassified"
     elif adventurous_signal:
         category = "adventurous"
-    elif len(core_overlap) >= 2:
+    elif _distinct_core_clusters(core_overlap, core_families) >= 2:
         category = "cross_genre"
     elif core_overlap or exploration_overlap:
         category = "adjacent"
