@@ -1,3 +1,8 @@
+## 2026-10-22 — Exclusive “the owner” reference convention
+
+- Added a permanent rule requiring all repository documentation, source comments, commit/PR text, reviews, issues, and other project communications to refer to the person directing the project exclusively as “the owner”; personal names and account usernames/handles must not be used for that person.
+- Recorded the rule in `docs/DEVELOPMENT_WORKFLOW.md`, `docs/TEST_PLAN.md`, and `handoff.md`. Documentation-only changes committed directly to `main` as required. No application code changed; no application tests or CI were run.
+
 ## 2026-10-22 — Wildcard-masked artist queries for blocked slskd searches (PR #527 merged)
 
 - PR #527 squash-merged as `e03f4b3` from head `8f51626677473aa069c81e34eaa9007f18cd6623`; compile, test-and-build, container-smoke and validate-container passed. Not published or deployed.
