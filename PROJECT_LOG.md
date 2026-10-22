@@ -1,3 +1,11 @@
+## 2026-10-22 — PR #529 reconciled; full CI suite passed on replacement PR #530
+
+- Closed stale PR #529 because its branch predated the current `main` and its `discovery/list_payload.py` version omitted PR #528's cached future-release filter. Replacement PR #530 is based on current `main` and retains both behaviors.
+- Exact tested PR #530 head: `34b926249a6e71aeab4e2243500fa91eb47e226b`; compare reported 3 commits ahead, 0 behind at review time. Changed files: `discovery/list_payload.py`, `navidrome_server.py`, `tests/test_discovery_list_payload.py`.
+- Regression coverage hides imported acquisition identities across lists, excludes library-owned items from non-personal lists, preserves the future-date filter, and keeps imported items hidden when the library snapshot fails.
+- Exact-head CI: Python syntax/acquisition safety run 39772357314 passed; Docker packaging/full unit suite/image build run 39772357012 passed (the full unit-test step succeeded); container runtime smoke run 39772356995 passed; validation-only multi-architecture image run 39772356972 passed. Release workflow run 39772357053 skipped the publishing job; its validation-only build completed successfully. No image was published.
+- PR #530 remains open and unmerged. No manual browser or live-library/runtime check was performed; not published or deployed. Next action: review final PR state and merge #530 if all gates remain green, then continue live-runtime verification of #526/#527.
+
 ## 2026-10-22 — PR #528 merged: hide future-dated New Releases
 
 - Squash merge commit on `main`: `1e55da1b7b25fe59d4f905a1c9d8985e8c8c7750`; exact tested PR head: `295148dcf817479f4098195200ada4c4173733fe`.
