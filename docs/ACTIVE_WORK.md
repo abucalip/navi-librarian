@@ -10,7 +10,7 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 ## 2. Reported bugs — owner list
 
-- After a successful acquisition, check the cache and prevent the imported album from appearing again in suggestions.
+- After a successful acquisition, prevent the imported album from appearing again in suggestions. Reconciled implementation is in open PR [#530](https://github.com/abucalip/navi-librarian/pull/530); all required CI checks, including the full unit suite, passed on its exact head `34b926249a6e71aeab4e2243500fa91eb47e226b`. Not merged or runtime-verified.
 - Mobile status/navigation bar must be narrower and show icons only, not names, so at least five icons fit.
 - The album panel must show the artist's bio.
 - Suggested-album bars must be equal in width on all pages; an album with many tags currently renders much wider than one with two or three.
