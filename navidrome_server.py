@@ -422,6 +422,17 @@ def recommend_new_music(
         build_personal_recommendation_payload,
     )
 
+    from discovery.similar_artists import build_profile_artists, similar_library_artists
+    # The artists you play most, with their genre tags, name what each pick is similar to.
+    profile_artists = build_profile_artists(listens, genre_cache, _music_key)
+
+    def similar_to(candidate):
+        return similar_library_artists(
+            genre_cache.get(candidate.get("artist_mbid"), []),
+            _music_key(candidate["primary_artist"]),
+            profile_artists,
+        )
+
     # Empty style targets let measured MMR provide soft diversity.
     diversity_style_targets = {}
     targets = {
@@ -504,6 +515,7 @@ def recommend_new_music(
             candidate,
             recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
+        result["similar_to"] = similar_to(candidate)
         result["ownership_check"] = (
             "No exact normalized album-title match found in the indexed "
             "Navidrome inventory; alternate editions may still exist."
@@ -522,6 +534,7 @@ def recommend_new_music(
             candidate,
             recent_artist_play_counts.get(_music_key(candidate["primary_artist"]), 0),
         )
+        result["similar_to"] = similar_to(candidate)
         result["ownership_note"] = (
             "A same-title album exists in Navidrome under a different "
             "artist credit. Review before treating this as new."
