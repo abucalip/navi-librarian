@@ -1,3 +1,12 @@
+## 2026-10-22 — PR #557 merged: similar-to discovery labels
+
+- Merged PR [#557](https://github.com/abucalip/navi-librarian/pull/557) by squash. Merge commit on `main`: `45cf5abe0257e70fe0d0573365259c2d0c7c2c10`; exact tested PR head: `8bd57c5a977a33f4772ffe47e3a2c35d166f89f4`.
+- Adds `discovery/similar_artists.py` and tests for similar-artist matching; the server includes `similar_to` in recommendation payloads, and Recommendations/Personal discovery rows show “Similar to: …” when related listening-profile artists are available.
+- Required workflows passed on the exact PR head: Python syntax/acquisition safety run 39807842253; container runtime smoke 39807842257; Docker packaging, full unit suite and image build 39807842282; release workflow validation 39807842267 (the `publish-release` job was skipped); validation-only multi-architecture image check 39807842351. No claim that the suite was rerun on the merge commit.
+- The owner explicitly waived manual browser verification; it was not performed. No image was published, no deployment occurred, and production runtime was not verified.
+- Also retired the old `~/navi-librarian-test/test-pr.sh` workflow in `docs/LOCAL_UI_TESTING.md`; the guide now refers to the replacement local test environment without relying on the obsolete helper.
+- Documentation closeout commits: `docs/PROJECT_STATUS.md` bfd8a25d06f7475a88f2e1bfc8c8fa10570ff653; `docs/ACTIVE_WORK.md` 8cbed8f810792d713be9cb30b843c79c484099ec; `PROJECT_LOG.md` pending this entry.
+
 ## 2026-10-22 — Retire obsolete local UI test helper instructions
 
 - Updated `docs/LOCAL_UI_TESTING.md` in commit `a8a63764036c265a30e322adccf134b5485f8f6d`: explicitly marked `~/navi-librarian-test/test-pr.sh` obsolete, removed its commands and helper-specific setup/report assumptions, and retained a current browser checklist requiring exact-SHA identification, isolated test data, disabled acquisition services unless authorized, and recording pass/fail/skip results. The document points to the replacement local test environment without inventing an unverified launcher command.
