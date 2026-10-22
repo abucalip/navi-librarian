@@ -6,6 +6,7 @@ This document defines the **verification baseline**, not a chronological record 
 
 ## Required checks for backend changes
 
+- **Project references:** all documentation, source comments, commit/PR text, reviews, and other project communications must refer to the person directing the project exclusively as “the owner”; never use their personal name or account username/handle.
 1. **Focused regressions:** run the tests covering the changed behavior and new direct-import tests for extracted logic.
 2. **Full unit suite — owner approval required:** `python -m unittest discover -s tests -v` may be run manually only with the owner's explicit approval. Without that approval, agents must not run it; run focused modules instead and report exactly which. The `test-and-build` GitHub Actions workflow runs the full unit suite as part of CI on the PR head. A few modules import siblings and need `discover -s tests -p <file>`.
 3. **Syntax and static checks:** run the repository's Python syntax/acquisition-safety workflow and applicable syntax checks.
