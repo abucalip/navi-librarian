@@ -1471,6 +1471,7 @@ function attachArtistBio(row, container, artist) {
       .then(result => {
         if (!result || !result.bio) return;
         bio.textContent = result.bio;
+        bio.title = result.bio;
         bio.hidden = false;
       })
       .catch(() => {});

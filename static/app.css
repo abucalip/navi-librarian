@@ -223,7 +223,7 @@ p { line-height: 1.55; }
 .acq-row:hover { background: var(--surface-hover); }
 .acq-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .acq-row .card-art {
-  width: 96px; height: 96px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
+  width: 64px; height: 64px; aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
   background: var(--surface-raised);
 }
 .acq-row .card-art::after { display: none; }
