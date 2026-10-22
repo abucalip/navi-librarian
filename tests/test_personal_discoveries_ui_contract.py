@@ -92,9 +92,9 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
         self.assertIn("personal: 'No personal discoveries yet.", self.js)
         self.assertIn("need Last.fm or ListenBrainz configured in Settings", self.js)
 
-    def test_artist_bio_is_gated_on_the_connection_reason_as_the_card_was(self):
+    def test_every_personal_row_shows_the_artist_bio(self):
         body = self._function_body("function buildPersonalRow(", "function attachArtistBio(")
-        self.assertIn("artistBio: /Genre tags connect this artist to your established musical interests/i.test(item.reason || ''),", body)
+        self.assertIn("artistBio: true,", body)
 
     def test_artist_bio_uses_the_existing_endpoint_cache_and_text_api(self):
         body = self._function_body("function attachArtistBio(", "// Discover music metadata lines.")

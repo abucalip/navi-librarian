@@ -1192,7 +1192,7 @@ function applyRecommendationFilters() {
     `Showing ${filtered.length} of ${allRecommendations.length} recommendations · ${basis.label}`;
 
   filtered.forEach((item, index) => {
-    const row = buildRecommendationRow(item, basis.numbered ? index + 1 : null);
+    const row = buildRecommendationRow(item, basis.numbered ? index + 1 : null, {artistBio: true});
     row.dataset.key = recommendationKey(item);
     cards.append(row);
   });
@@ -1403,6 +1403,7 @@ function releaseDateColumn(item, row) {
 function buildNewReleaseRow(item) {
   return buildRecommendationRow(item, null, {
     releaseDate: true,
+    artistBio: true,
     meta: [
       item.reason,
       item.discovery_source ? 'Source: ' + item.discovery_source.replaceAll('_', ' ') : ''
@@ -1420,9 +1421,8 @@ function buildNewReleaseRow(item) {
 function buildPersonalRow(item, index) {
   return buildRecommendationRow(item, index + 1, {
     indexed: true,
-    // Only rows whose reason says the artist connects to the listener's own genres get a bio,
-    // as the editorial card did. The bio is fetched when the row scrolls near the viewport.
-    artistBio: /Genre tags connect this artist to your established musical interests/i.test(item.reason || ''),
+    // Every row shows the artist bio, fetched when the row scrolls near the viewport.
+    artistBio: true,
     meta: [
       item.discovery_category ? item.discovery_category.replaceAll('_', ' ') : '',
       item.reason,
@@ -1472,12 +1472,35 @@ function attachArtistBio(row, container, artist) {
         if (!result || !result.bio) return;
         bio.textContent = result.bio;
         bio.hidden = false;
+        // Rows stay one height. A bio that does not fit in its two lines can be clicked open.
+        requestAnimationFrame(() => makeBioExpandable(row, bio));
       })
       .catch(() => {});
   };
   bioLoaders.set(row, loadBio);
   if (artistBioObserver) artistBioObserver.observe(row);
   else loadBio();
+}
+
+// Turns a clamped bio into a toggle that grows only its own row. Clicks and keys stop here so they
+// do not also open the album modal.
+function makeBioExpandable(row, bio) {
+  if (bio.scrollHeight <= bio.clientHeight + 1) return;
+  bio.classList.add('is-expandable');
+  bio.setAttribute('role', 'button');
+  bio.setAttribute('tabindex', '0');
+  bio.setAttribute('aria-expanded', 'false');
+  const toggle = () => {
+    const open = row.classList.toggle('is-bio-open');
+    bio.setAttribute('aria-expanded', String(open));
+  };
+  bio.addEventListener('click', event => { event.stopPropagation(); toggle(); });
+  bio.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    event.stopPropagation();
+    toggle();
+  });
 }
 
 // Discover music metadata lines. Each line appears only when the API returned the value.
