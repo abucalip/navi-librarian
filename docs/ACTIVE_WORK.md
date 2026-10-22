@@ -8,15 +8,11 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 - Verify PR [#527](https://github.com/abucalip/navi-librarian/pull/527): blocked slskd artist queries recover through masked variants, and no-match diagnostics show the attempted queries.
 - These fixes are merged and CI-verified as recorded in `docs/PROJECT_STATUS.md`, but not live-runtime-verified. Use the real service only with appropriate authorization; do not publish or deploy as part of verification.
 
-## 2. Reported bugs — owner list
+## 2. Reported bugs — status
 
-- After a successful acquisition, prevent the imported album from appearing again in suggestions. Reconciled implementation is in open PR [#530](https://github.com/abucalip/navi-librarian/pull/530); all required CI checks, including the full unit suite, passed on tested head `c52af5d8f660500074e799c77ada9ded61d73ec3`. Not merged or runtime-verified.
-- UI PR stack [#531–#535](https://github.com/abucalip/navi-librarian/pulls) addresses mobile icon-only navigation, album-panel artist bio, equal-width ranked rows, stable acquisition rendering, and artwork loading. The original heads have no CI because their PR bases are feature branches while required workflows only target `main`. Reconstructed current-main cumulative candidates passed the full unit suite and all four required workflows (recorded in `PROJECT_STATUS.md` and `PROJECT_LOG.md`), but these are not verification of the original PR heads. Rebase the stack off closed PR #529/current main, rerun required CI on the actual final heads, and complete manual browser testing before merging.
-- Mobile status/navigation bar must be narrower and show icons only, not names, so at least five icons fit.
-- The album panel must show the artist's bio.
-- Suggested-album bars must be equal in width on all pages; an album with many tags currently renders much wider than one with two or three.
-- Acquisitions page: album artwork flickers, and album bars sometimes switch positions continuously without any interaction.
-- Artwork on "Deep dives" loads too slowly.
+- Imported-album suggestion suppression is merged in PR [#530](https://github.com/abucalip/navi-librarian/pull/530) as `0b2bda011b86d2c08a0179e5df801c7891c10f9a`; it preserves the future-release filter from PR #528. Required CI, including the full unit suite, passed on tested head `c52af5d8f660500074e799c77ada9ded61d73ec3`.
+- UI fixes from original PRs #531–#535 are integrated: icon-only mobile navigation (#546), artist bio in the album panel (#547), equal-width ranked rows (#533), stable acquisition rendering (#534), and smaller/faster card artwork (#535). Required workflows passed on each final reconciled head; details are recorded in `PROJECT_LOG.md`.
+- The owner waived manual browser checks for this merge batch; they were not performed. Artwork performance was not measured, and live browser/runtime behavior is not claimed. No image publication or deployment occurred.
 
 ## 3. Recommendation engine — gated
 
