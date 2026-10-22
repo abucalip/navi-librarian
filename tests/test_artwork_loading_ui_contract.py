@@ -28,17 +28,25 @@ class RequestQueueTests(unittest.TestCase):
 class AlbumYearLoadingTests(unittest.TestCase):
     """Deep Dives fired one /api/album-year per card at once, which starved artwork requests."""
 
-    def test_year_lookups_run_one_at_a_time(self):
+    def test_year_lookups_are_sent_in_groups_through_the_batch_endpoint(self):
+        self.assertIn("const YEAR_BATCH_SIZE = 15;", JS)
+        self.assertIn("sendJSON('/api/album-years', 'POST'", JS)
+        self.assertNotIn("/api/album-year?", JS)
+
+    def test_year_requests_run_one_group_at_a_time(self):
         self.assertIn("const yearQueue = createRequestQueue(1);", JS)
 
     def test_year_lookup_waits_until_the_card_is_near_the_viewport(self):
-        card = JS[JS.index("function makeAlbumCardInteractive"):JS.index("function ensureAlbumYearBadge")]
+        card = JS[JS.index("function makeAlbumCardInteractive"):JS.index("// Album years are fetched in groups")]
         self.assertIn("albumYearObserver.observe(card)", card)
-        self.assertNotIn("cachedJSONRequest(albumYearRequests", card)
 
     def test_a_year_the_artwork_already_supplied_skips_the_lookup(self):
-        card = JS[JS.index("function makeAlbumCardInteractive"):JS.index("function ensureAlbumYearBadge")]
-        self.assertIn("card.dataset.releaseYear ? null : fetchJSONOrNull(url)", card)
+        flush = JS[JS.index("function flushAlbumYears"):JS.index("function ensureAlbumYearBadge")]
+        self.assertIn("if (!item.card.dataset.releaseYear) return true;", flush)
+
+    def test_an_unanswered_album_is_released_so_it_can_retry(self):
+        flush = JS[JS.index("function flushAlbumYears"):JS.index("function ensureAlbumYearBadge")]
+        self.assertIn("if (!years.has(item.cacheKey)) albumYearRequests.delete(item.cacheKey);", flush)
 
 
 class LaneArtworkPrefetchTests(unittest.TestCase):

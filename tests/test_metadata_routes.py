@@ -35,6 +35,7 @@ class MetadataRoutesTests(unittest.TestCase):
         self.assertEqual(actual, {
             ("/api/artist-bio", "GET"),
             ("/api/album-year", "GET"),
+            ("/api/album-years", "POST"),
             ("/api/album-details", "GET"),
             ("/api/artwork", "GET"),
         })
@@ -75,6 +76,25 @@ class MetadataRoutesTests(unittest.TestCase):
             client.get.side_effect = get
             metadata.artist_bio("Artist")
         self.assertIn("artist", metadata._artist_bio_cache)
+
+    def test_album_years_returns_one_entry_per_resolved_album(self):
+        body = metadata.AlbumYearsRequest(items=[
+            metadata.AlbumYearItem(artist=" A ", album="One"),
+            metadata.AlbumYearItem(artist="B", album="Two"),
+        ])
+        with patch.object(metadata, "_lookup_musicbrainz_album_years",
+                          return_value={("A", "One"): 1999, ("B", "Two"): None}) as lookup:
+            result = metadata.album_years(body)
+        lookup.assert_called_once_with([("A", "One"), ("B", "Two")])
+        self.assertEqual(result["years"], [
+            {"artist": "A", "album": "One", "year": 1999},
+            {"artist": "B", "album": "Two", "year": None},
+        ])
+
+    def test_album_years_rejects_oversized_requests(self):
+        from pydantic import ValidationError
+        with self.assertRaises(ValidationError):
+            metadata.AlbumYearsRequest(items=[metadata.AlbumYearItem(artist="A", album="B")] * 61)
 
     def test_album_year_prefers_musicbrainz_and_validates_input(self):
         with self.assertRaises(HTTPException) as raised:

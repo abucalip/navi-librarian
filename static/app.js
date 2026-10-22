@@ -810,27 +810,66 @@ function makeAlbumCardInteractive(card, artist, album, metadata = {}, fetchYear 
   if (year !== null) applyAlbumYear(card, year);
   else if (fetchYear && artist && album) {
     const cacheKey = String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
-    const query = new URLSearchParams({artist: String(artist), album: String(album)});
-    // The year is looked up only when the card is near the viewport, and never when the artwork
-    // response has already supplied one by the time its turn in the queue comes.
+    // The year is looked up only when the card is near the viewport, in groups with the other
+    // cards doing the same, and never when the artwork response has already supplied one.
     const loadYear = () => {
       if (card.dataset.releaseYear) return;
-      if (!albumYearRequests.has(cacheKey)) {
-        const url = '/api/album-year?' + query.toString();
-        albumYearRequests.set(cacheKey, yearQueue.run(
-          () => (card.dataset.releaseYear ? null : fetchJSONOrNull(url))
-        ).then(data => {
-          if (data === null) albumYearRequests.delete(cacheKey);
-          return data;
-        }));
-      }
-      albumYearRequests.get(cacheKey)
+      requestAlbumYear(cacheKey, String(artist), String(album), card)
         .then(data => { if (data && data.year) applyAlbumYear(card, data.year); })
         .catch(() => {});
     };
     albumYearLoaders.set(card, loadYear);
     if (albumYearObserver) albumYearObserver.observe(card);
     else loadYear();
+  }
+}
+
+// Album years are fetched in groups: one request carries up to YEAR_BATCH_SIZE albums, because the
+// catalog behind them answers one lookup a second and a page of cards used to send a request each.
+const YEAR_BATCH_SIZE = 15;
+const YEAR_BATCH_DELAY_MS = 200;
+const pendingYears = [];
+let yearFlushTimer = null;
+
+function albumYearKey(artist, album) {
+  return String(artist).trim().toLocaleLowerCase() + '::' + String(album).trim().toLocaleLowerCase();
+}
+
+function requestAlbumYear(cacheKey, artist, album, card) {
+  if (!albumYearRequests.has(cacheKey)) {
+    albumYearRequests.set(cacheKey, new Promise(resolve => {
+      pendingYears.push({cacheKey, artist, album, card, resolve});
+      if (pendingYears.length >= YEAR_BATCH_SIZE) flushAlbumYears();
+      else if (yearFlushTimer === null) yearFlushTimer = setTimeout(flushAlbumYears, YEAR_BATCH_DELAY_MS);
+    }));
+  }
+  return albumYearRequests.get(cacheKey);
+}
+
+function flushAlbumYears() {
+  clearTimeout(yearFlushTimer);
+  yearFlushTimer = null;
+  while (pendingYears.length) {
+    const group = pendingYears.splice(0, YEAR_BATCH_SIZE);
+    // A card whose artwork already supplied a year needs no lookup. The key is released so a
+    // later card for the same album can still ask.
+    const live = group.filter(item => {
+      if (!item.card.dataset.releaseYear) return true;
+      albumYearRequests.delete(item.cacheKey);
+      item.resolve(null);
+      return false;
+    });
+    if (!live.length) continue;
+    yearQueue.run(() => sendJSON('/api/album-years', 'POST', {
+      items: live.map(item => ({artist: item.artist, album: item.album}))
+    })).then(data => {
+      const years = new Map(((data && data.years) || []).map(entry => [albumYearKey(entry.artist, entry.album), entry.year]));
+      for (const item of live) {
+        // An album the request did not answer for (a failed catalog call) is released to retry.
+        if (!years.has(item.cacheKey)) albumYearRequests.delete(item.cacheKey);
+        item.resolve(years.has(item.cacheKey) ? {year: years.get(item.cacheKey)} : null);
+      }
+    });
   }
 }
 

@@ -16,8 +16,8 @@ class ArtworkCacheIsolationTests(unittest.TestCase):
 
         self.assertIn("const artworkRequests = new Map();", page)
         self.assertIn("const albumYearRequests = new Map();", page)
-        self.assertIn("albumYearRequests.set(cacheKey, yearQueue.run(", page)
-        self.assertIn("'/api/album-year?' + query.toString()", page)
+        self.assertIn("albumYearRequests.set(cacheKey, new Promise(", page)
+        self.assertIn("'/api/album-years'", page)
         self.assertIn(
             "cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?'",
             page,
