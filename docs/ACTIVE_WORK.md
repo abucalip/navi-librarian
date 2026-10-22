@@ -2,12 +2,10 @@
 
 This is the short queue of unfinished or explicitly parked work. GitHub `main` is authoritative. Check current code, open PRs, and CI before starting anything; do not infer current state from archived notes.
 
-## 1. Runtime verification — highest priority
+## 1. Runtime verification — complete
 
-- **Attempted 2026-10-22; blocked by access.** Repository review confirms PRs #526 and #527 are merged and CI-verified, but this session has no connection to the running Librarian host or slskd API. These changes are in the published v0.2.2 image but not deployed, and no live search or transfer was attempted.
-- For PR [#526](https://github.com/abucalip/navi-librarian/pull/526), verify a deliberately failed test track is re-queued alone from the same source, retry cadence/limit is respected, and the 15-minute recovery grace works. This changes the slskd queue, so use an isolated test acquisition/folder; do not create a production transfer just to test it.
-- For PR [#527](https://github.com/abucalip/navi-librarian/pull/527), compare an unmasked blocked artist query with masked variants and confirm candidates are returned where available; on no-match, confirm diagnostics list attempted queries and response counts.
-- **Next:** arrange authorized access to an isolated Librarian test instance connected to the real slskd service. Do not publish/deploy or claim runtime verification until these checks are actually run.
+- The owner confirmed that failed-track retry/recovery and masked slskd artist-query behavior have been tested and approved. These are no longer active verification tasks.
+- Keep publication and deployment decisions separate from test approval; no deployment is implied by this confirmation.
 
 ## 2. Reported bugs — status
 
