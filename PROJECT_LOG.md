@@ -318,3 +318,11 @@
 - Reviewed the final diff: server API adds `genre_row` and `genre_row_label`; the UI consumes those fields rather than maintaining duplicate classification rules. The fallback behavior change for a small set of tags is described in the PR.
 - Required workflows on the exact final head all passed: Python syntax (`39860454090`), Docker packaging/full unit suite (`39860454167`), container runtime smoke (`39860454213`), and validation-only Docker image validation (`39860454082`). Release-workflow validation (`39860454120`) passed; the publishing job was skipped. Manual browser verification was explicitly waived by the owner and was not performed.
 - PR #562 squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85`. Documentation closeout commit: `82f9be0c41455c035a1abf729d7a290483e1fdce`. No image publication, deployment, or live-runtime verification.
+
+
+## 2026-10-22 — Close approved runtime verification tasks
+
+- The owner confirmed that failed-track retry/recovery and masked slskd artist-query behavior have been tested and approved. These are removed from the active work queue; no further verification task remains for those behaviors.
+- Updated `docs/ACTIVE_WORK.md` in `22c54d99e118eb89ba9fff143c26419b78fbf8b6` and `docs/PROJECT_STATUS.md` in `6157b273155264db880dbecc78b53239465e29c5` to reflect the confirmation and remove stale outstanding-verification references.
+- The v0.2.2 image remains published and not deployed. Approval of the behavior tests does not itself authorize deployment.
+- Next eligible repository task: begin the behavior-preserving taste-family vocabulary consolidation described in `docs/HARDCODE_REPLACEMENT.md`; document current mapping differences and do not change canonical behavior without the owner's decision.
