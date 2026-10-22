@@ -1201,6 +1201,9 @@ def gather_recommendation_candidates(
         core_families, exploration_families, profile_source = derive_profile(
             listen_tags, candidate_pool_tags,
         )
+        if profile_source != "derived":
+            # Sparse history uses the complete fixed behavior, not a hybrid.
+            profile_mode = "fixed"
     profile_families = core_families | exploration_families
 
 

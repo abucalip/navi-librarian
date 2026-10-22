@@ -96,3 +96,56 @@ class ModeSettingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SparseHistoryFallbackTests(unittest.TestCase):
+    """Sparse history must use the complete fixed behavior, not a hybrid."""
+
+    def _gather(self, mode):
+        from discovery.candidate_gathering import RecommendationProviders, gather_recommendation_candidates
+        from tests.test_discovery_candidate_gathering import _Response, _TagSearchClient, _cf_item, _recording
+
+        cache = {f"mb:recording:rec-{i}": _recording("Dominant", i) for i in range(3)}
+        cache["mb:artist-genres:artist-Dominant"] = ["synthetic metal"]
+        providers = RecommendationProviders(
+            listenbrainz_recent=lambda days: [],
+            listenbrainz_username=lambda: "fixture-user",
+            music_key=lambda value: "".join(str(value).casefold().split()),
+            metadata_cache_get=lambda key, **kwargs: cache.get(key),
+            metadata_cache_set=lambda *args, **kwargs: None,
+            is_album_candidate=lambda candidate: True,
+            api_call=lambda *args, **kwargs: {},
+            items=lambda response: [],
+            http_get=lambda url, params=None, **kwargs: _Response(
+                {"payload": {"mbids": {0: [_cf_item(i) for i in range(3)]}.get(params["offset"], [])}}
+            ),
+            http_client=lambda *args, **kwargs: _TagSearchClient([200] * 20),
+            sleep=lambda _seconds: None,
+        )
+        return gather_recommendation_candidates(providers, profile_mode=mode)
+
+    def test_sparse_derived_run_reports_effective_fixed_mode(self):
+        from discovery import taste_families
+        result = self._gather("derived")
+        self.assertEqual(result["profile_mode"], "fixed")
+        self.assertEqual(result["profile_source"], "defaults_sparse_history")
+        self.assertEqual(result["core_families"], set(taste_families.CORE_FAMILIES))
+
+    def test_fixed_run_is_unchanged(self):
+        result = self._gather("fixed")
+        self.assertEqual((result["profile_mode"], result["profile_source"]), ("fixed", "fixed"))
+
+    def test_sparse_classification_and_bonus_match_fixed_behavior(self):
+        # With the effective mode "fixed", the server passes derived=False.
+        derived = self._gather("derived")["profile_mode"] == "derived"
+        self.assertFalse(derived)
+        candidate = {"primary_artist": "Tinariwen"}
+        category, families = classify_recommendation_category(
+            candidate, [], {"jazz"}, {"african"}, derived=derived)
+        self.assertEqual((category, families), ("adjacent", {"african"}))
+        category, _ = classify_recommendation_category(
+            {"artist": "x"}, ["noise"], {"jazz"}, {"african"}, derived=derived)
+        self.assertEqual(category, "adventurous")
+        boosted = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, ["afrobeat"], {"african"}, derived)
+        plain = apply_familiarity_exploration_bonus({"score": 1.0}, 1.5, ["metal"], {"african"}, derived)
+        self.assertAlmostEqual(boosted / plain, 1.10)
