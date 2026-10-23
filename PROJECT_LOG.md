@@ -1,3 +1,9 @@
+## 2026-10-23 — Re-review, CI verification, and merge PR #580
+
+- Re-reviewed final PR head `f2ca7a9822af0dac592c0e36cd81a7bcee8c25f8`. The earlier findings were addressed: `listen_artist_mbid()` now validates nested metadata as mappings and rejects malformed MBID values safely; `densest_window_listens()` normalizes non-numeric/boolean window widths to `ValueError`. Regression tests cover malformed nesting and invalid widths. The helper remains pure and is not wired into runtime.
+- All four required workflows passed on that exact head: Python syntax/acquisition safety (`40029108109`), Docker packaging/full unit suite/image build (`40029108024`; the unit-test step and image build succeeded), container runtime smoke (`40029108017`), and validation-only multi-architecture image validation (`40029108075`; publishing paused). The full unit suite ran in CI; it was not run manually, in accordance with the repository workflow.
+- Squash-merged PR #580 as `ede38e969956d1907ba25e579203c6d4b5805c3b`. The feature remains unwired; defaults unchanged. No publication, deployment, or runtime verification. Phase 3 continues with time-range profiles/window-driven tag-lane seeds and the previously deferred Deep cuts items.
+
 ## 2026-10-23 — Engine 2 Phase 2 closeout: Deep cuts band, filter check and tail deferred to Phase 3
 
 - Phase 2 is complete: lens framework and Deep cuts adapter (PRs #575, #577) and evaluation metrics (PR #578). Nothing is wired into runtime.
