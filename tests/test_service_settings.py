@@ -11,6 +11,7 @@ from settings.service import (
     get_lastfm_settings,
     get_recommendation_diversity_settings,
     recommendation_diversity_value,
+    recommendation_selection_policy_value,
     set_recommendation_diversity_settings,
     get_navidrome_settings,
     listenbrainz_username,
@@ -75,6 +76,14 @@ class ServiceSettingsTests(unittest.TestCase):
                     json.loads(get_recommendation_diversity_settings(self.read_settings)),
                     {"recommendation_diversity": 0},
                 )
+
+    def test_selection_policy_defaults_to_quota_and_ignores_unknown_values(self):
+        self.assertEqual(recommendation_selection_policy_value(lambda: {}), "quota")
+        self.assertEqual(recommendation_selection_policy_value(
+            lambda: {"recommendation_selection_policy": "family_coverage"}), "family_coverage")
+        for bad in ("QUOTA2", None, 3, ["family_coverage"]):
+            self.assertEqual(recommendation_selection_policy_value(
+                lambda bad=bad: {"recommendation_selection_policy": bad}), "quota")
 
     def test_navidrome_settings_never_return_password(self):
         result = json.loads(get_navidrome_settings(self.read_settings, Path("/music")))

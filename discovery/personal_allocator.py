@@ -46,6 +46,8 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
     selected_counts: Counter[str] = Counter()
     selected_styles: Counter[str] = Counter()
     selected_families: Counter[str] = Counter()
+    selected_genres: Counter[str] = Counter()
+    coverage_policy = request.genre_family_cap is not None
     processed: set[tuple[str, str]] = set()
     decisions: dict[str, CandidateDecision] = {}
     checked = 0
@@ -58,6 +60,12 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         "final_fallback_entered": 0,
         "final_fallback_attempts": 0,
     }
+    if coverage_policy:
+        phase_diagnostics.update({
+            "category_floor_attempts": 0,
+            "family_coverage_attempts": 0,
+            "score_fill_attempts": 0,
+        })
 
     def ranked_candidates(items):
         """Apply MMR only to ownership-clear candidates at each selection step."""
@@ -113,6 +121,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         allow_over_quota: bool = False,
         allow_over_family_cap: bool = False,
         allow_over_style_target: bool = False,
+        allow_over_genre_cap: bool = False,
     ) -> None:
         nonlocal checked
         category = candidate.category
@@ -145,8 +154,18 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                    f"The target of {style_target} recommendation for the {style} diversity slot was already filled.")
             return
 
+        if coverage_policy and not allow_over_genre_cap:
+            genre = candidate.genre_family
+            genre_cap = request.genre_family_cap if genre else request.unknown_family_cap
+            if selected_genres[genre or ""] >= genre_cap:
+                record(candidate, "genre_family_cap_reached",
+                       f"The genre family {genre or 'unknown'} already has {genre_cap} "
+                       "recommendation(s); another family is preferred.")
+                return
+
         family = candidate.recent_profile_family
-        if (not allow_over_family_cap and style not in request.diversity_style_targets
+        if (not coverage_policy and not allow_over_family_cap
+                and style not in request.diversity_style_targets
                 and family and selected_families[family] >= request.family_cap):
             record(candidate, "recent_genre_cap_reached",
                    f"The recent-listening family {family} already has a recommendation; another family is preferred.")
@@ -171,7 +190,10 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                    "Another album by this artist has already been selected.")
             return
 
-        checked += 1
+        # Ownership is precomputed, so under the coverage policy only candidates
+        # that could be selected use the check budget; owned ones are free to skip.
+        if not coverage_policy or candidate.ownership is OwnershipStatus.CLEAR:
+            checked += 1
         if candidate.ownership is OwnershipStatus.EXACT_OWNED:
             record(candidate, "already_owned",
                    "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory.")
@@ -187,6 +209,7 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
                "Passed the ownership checks and was added to the recommendations.")
         selected_counts[category] += 1
         selected_styles[style] += 1
+        selected_genres[candidate.genre_family or ""] += 1
         if style not in request.diversity_style_targets and family:
             selected_families[family] += 1
 
@@ -213,49 +236,81 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
-    # Normal category quota pass.
-    for category in ("adjacent", "cross_genre", "adventurous"):
-        for candidate in ranked_candidates(ordered_by_category[category]):
-            target = request.category_targets.get(category, 0)
-            if selected_counts[category] >= target:
-                break
-            consider_in_phase(candidate, "category_quota")
-            if len(selected) >= request.count or checked >= request.max_checks:
-                break
-        if len(selected) >= request.count or checked >= request.max_checks:
-            break
+    def done() -> bool:
+        return len(selected) >= request.count or checked >= request.max_checks
 
-    # Relax recent-family caps before category balance.
-    for category in ("adjacent", "cross_genre", "adventurous"):
-        if len(selected) >= request.count or checked >= request.max_checks:
-            break
-        for candidate in ranked_candidates(ordered_by_category[category]):
-            if selected_counts[category] >= request.category_targets.get(category, 0):
-                break
-            consider_in_phase(candidate, "family_cap_relaxation", allow_over_family_cap=True)
-            if len(selected) >= request.count or checked >= request.max_checks:
-                break
-
-    # Retry unmet category slots without exceeding their quotas.
-    if len(selected) < request.count and checked < request.max_checks:
-        for category in ("adjacent", "cross_genre", "adventurous"):
-            if selected_counts[category] >= request.category_targets.get(category, 0):
-                continue
+    if coverage_policy:
+        # Category floors keep exploration alive without fixed quotas.
+        for category, floor in request.category_floors.items():
             for candidate in ranked_candidates(ordered_by_category[category]):
-                if selected_counts[category] >= request.category_targets.get(category, 0):
+                if done() or selected_counts[category] >= floor:
                     break
-                consider_in_phase(candidate, "quota_retry")
+                consider_in_phase(candidate, "category_floor")
+
+        # Coverage: the best candidate of each not-yet-represented genre family,
+        # above a relevance floor, so extra supply can add families rather than
+        # more of the families already selected.
+        top_score = max(eligible_scores, default=0.0)
+        coverage_floor = request.coverage_floor_ratio * top_score if top_score > 0 else float("-inf")
+        by_score = sorted(candidates, key=lambda item: item.score, reverse=True)
+        for candidate in ranked_candidates(by_score):
+            if done() or len(selected) >= request.coverage_target:
+                break
+            if (candidate.ownership is OwnershipStatus.CLEAR
+                    and (not candidate.genre_family
+                         or selected_genres[candidate.genre_family]
+                         or candidate.score < coverage_floor)):
+                continue
+            consider_in_phase(candidate, "family_coverage")
+
+        for candidate in ranked_candidates(by_score):
+            if done():
+                break
+            consider_in_phase(candidate, "score_fill")
+    else:
+        # Normal category quota pass.
+        for category in ("adjacent", "cross_genre", "adventurous"):
+            for candidate in ranked_candidates(ordered_by_category[category]):
+                target = request.category_targets.get(category, 0)
+                if selected_counts[category] >= target:
+                    break
+                consider_in_phase(candidate, "category_quota")
                 if len(selected) >= request.count or checked >= request.max_checks:
                     break
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 
-    # Use unclassified candidates before relaxing all remaining policy limits.
-    if len(selected) < request.count and checked < request.max_checks:
-        for candidate in ranked_candidates(ordered_by_category["unclassified"]):
-            consider_in_phase(candidate, "unclassified_fallback", allow_over_quota=True)
+        # Relax recent-family caps before category balance.
+        for category in ("adjacent", "cross_genre", "adventurous"):
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
+            for candidate in ranked_candidates(ordered_by_category[category]):
+                if selected_counts[category] >= request.category_targets.get(category, 0):
+                    break
+                consider_in_phase(candidate, "family_cap_relaxation", allow_over_family_cap=True)
+                if len(selected) >= request.count or checked >= request.max_checks:
+                    break
+
+        # Retry unmet category slots without exceeding their quotas.
+        if len(selected) < request.count and checked < request.max_checks:
+            for category in ("adjacent", "cross_genre", "adventurous"):
+                if selected_counts[category] >= request.category_targets.get(category, 0):
+                    continue
+                for candidate in ranked_candidates(ordered_by_category[category]):
+                    if selected_counts[category] >= request.category_targets.get(category, 0):
+                        break
+                    consider_in_phase(candidate, "quota_retry")
+                    if len(selected) >= request.count or checked >= request.max_checks:
+                        break
+                if len(selected) >= request.count or checked >= request.max_checks:
+                    break
+
+        # Use unclassified candidates before relaxing all remaining policy limits.
+        if len(selected) < request.count and checked < request.max_checks:
+            for candidate in ranked_candidates(ordered_by_category["unclassified"]):
+                consider_in_phase(candidate, "unclassified_fallback", allow_over_quota=True)
+                if len(selected) >= request.count or checked >= request.max_checks:
+                    break
 
     if len(selected) < request.count and checked < request.max_checks:
         phase_diagnostics["final_fallback_entered"] = 1
@@ -281,7 +336,8 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         )
         for candidate in ranked_candidates(remaining):
             consider_in_phase(candidate, "final_fallback", allow_over_quota=True,
-                              allow_over_family_cap=True, allow_over_style_target=True)
+                              allow_over_family_cap=True, allow_over_style_target=True,
+                              allow_over_genre_cap=True)
             if len(selected) >= request.count or checked >= request.max_checks:
                 break
 

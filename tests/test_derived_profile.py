@@ -25,6 +25,20 @@ class FallbackFamilyTests(unittest.TestCase):
         self.assertEqual(dp.derived_genre_families(["black metal", "jazz"]), {"metal", "jazz"})
 
 
+class PrimaryGenreFamilyTests(unittest.TestCase):
+    def test_plurality_of_root_families_not_first_tag(self):
+        tags = ["acoustic rock", "alternative dance", "alternative rock", "boom bap"]
+        self.assertEqual(dp.primary_genre_family(tags), "rock")
+
+    def test_ties_break_alphabetically_and_untagged_is_none(self):
+        self.assertEqual(dp.primary_genre_family(["jazz", "metal"]), "jazz")
+        self.assertIsNone(dp.primary_genre_family([]))
+        self.assertIsNone(dp.primary_genre_family(["", None]))
+
+    def test_ancestry_table_groups_unrooted_tags(self):
+        self.assertEqual(dp.primary_genre_family(["boom bap"]), "hip-hop")
+
+
 class DeriveProfileTests(unittest.TestCase):
     def test_metal_listener_gets_metal_core_and_no_african_bonus(self):
         history = listens([["heavy metal"], ["thrash metal"], ["death metal"]] * 4

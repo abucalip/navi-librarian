@@ -418,6 +418,7 @@ def recommend_new_music(
         OwnershipStatus,
     )
     from discovery.personal_allocator import allocate_personal_recommendations
+    from discovery.derived_profile import primary_genre_family
     from discovery.cooldown import prepare_ranking_inputs
     from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
@@ -431,6 +432,14 @@ def recommend_new_music(
         "cross_genre": (count * 3) // 10,
     }
     targets["adventurous"] = count - sum(targets.values())
+    selection_policy = _service_settings.recommendation_selection_policy_value(
+        _discovery_settings_read
+    )
+    coverage_policy = selection_policy == "family_coverage"
+    if coverage_policy:
+        # Genre-family cap, an exploration floor and family coverage replace the
+        # fixed category quotas (see PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT).
+        targets = {}
 
     # Prepare immutable policy inputs; the adapter owns identity and ownership lookup.
     candidate_by_id = {}
@@ -452,6 +461,11 @@ def recommend_new_music(
             if same_title
             else OwnershipStatus.CLEAR
         )
+        candidate_tags = tuple(
+            str(tag)
+            for tag in genre_cache.get(candidate.get("artist_mbid"), [])
+            if tag is not None
+        )
         allocation_candidates.append(AllocationCandidate(
             candidate_id=candidate_id,
             artist_key=_artist_identity(candidate),
@@ -461,11 +475,8 @@ def recommend_new_music(
             source_order=source_order,
             diversity_style=candidate.get("diversity_style", "other"),
             recent_profile_family=candidate.get("recent_profile_family"),
-            tags=tuple(
-                str(tag)
-                for tag in genre_cache.get(candidate.get("artist_mbid"), [])
-                if tag is not None
-            ),
+            genre_family=primary_genre_family(candidate_tags),
+            tags=candidate_tags,
             ownership=ownership,
         ))
     cooled_candidates, ranking_context = prepare_ranking_inputs(
@@ -481,6 +492,12 @@ def recommend_new_music(
         diversity_penalty=diversity_setting_to_penalty(ranking_context["diversity_setting"]),
         family_cap=1,
         max_checks=60,
+        **(dict(
+            genre_family_cap=2,
+            category_floors={"adventurous": count // 5},
+            coverage_target=count,
+            coverage_floor_ratio=0.4,
+        ) if coverage_policy else {}),
     ))
     selected_counts = Counter(allocation.category_counts)
     selected_styles = Counter(
@@ -684,6 +701,13 @@ def recommend_new_music(
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
 
+        **({
+            "selection_policy": selection_policy,
+            "selected_genre_families": [
+                primary_genre_family(genre_cache.get(candidate_by_id[candidate_id].get("artist_mbid"), []))
+                for candidate_id in allocation.selected_candidate_ids
+            ],
+        } if coverage_policy else {}),
         "category_targets": targets, "allocator_checked_count": allocation.checked_count, "allocator_max_checks": 60,
         "allocator_phase_diagnostics": dict(allocation.phase_diagnostics), "allocator_decision_counts": dict(Counter(decision.status for decision in allocation.decisions)),
         "category_counts": dict(selected_counts),
