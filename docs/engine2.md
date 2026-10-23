@@ -107,7 +107,7 @@ Recent 30 days against all time (flat weights): 9/10 final overlap, 143 of 152 s
 | Genre spread | any | Family coverage policy | merged branch, tag budget |
 | Long-term taste | all time, flat weights | Profile without recency decay | profile windows, seeds |
 | Rediscovery | years ago, dormant for 12+ months | Unowned albums by or near artists once played heavily | history import, similar artists |
-| Deep cuts | all-time families | Tag-lane candidates ranked by taste fit, under a popularity ceiling | fit score, obscurity signal |
+| Deep cuts | dense month or recent window | **Owner-approved definition (2026-10-23):** window: a dense listening month (or the recent-activity window when the history is too short); source: ListenBrainz tag radio at popularity band 50 to 75% (low percent = most popular), with the 75 to 100% band and the MusicBrainz tag search as the tail; seeds from the window profile via `select_supplementary_tag_queries`; gates: batch title-marker filter on, tag count at least 2, album listeners by release MBID between about 300 and 50,000, one album per artist, at most 2 per seed, artists already known to the listener excluded. Ranked by radio tag strength; plays per listener is an optional tie-break. Thresholds are starting values. | merged popularity module, window profiles |
 | Stretch | all time minus recent | Families in all-time listening absent recently, plus genre-table neighbours | profile windows |
 | Era and region | any | Spread across decade and country | MusicBrainz area and dates |
 | Comeback | past window | New releases by artists played heavily in a past window | `new_releases.py` |
@@ -143,6 +143,8 @@ Each phase ends with a written result in `PROJECT_LOG.md`. Any live capture or h
 4. **Offline "deep cuts" prototype** on the existing captures: how many obscure, well-fitting candidates exist, and what a list of 10 looks like.
 
 Exit criteria: a measured obscure supply (count and fit) and a recommendation on whether the tag lane alone is enough or another source is needed.
+
+**Phase 1 result (complete 2026-10-23, details in `PROJECT_LOG.md`):** album listeners by release MBID are the obscurity signal (artist listeners as fallback); a window changes the tag-lane seeds completely and the resulting lists share no artists across four different months; tag/family fit is not a validated ranking signal, so it is not used; the tag lane alone is enough to supply obscure candidates when it uses the ListenBrainz tag radio (50 to 75% band, whose `percent` is inverted: low is popular) with the MusicBrainz tag search as a tail; a five-window end-to-end run takes about 35 s per window. The Deep cuts lens definition is in the lens catalog above.
 
 ### Phase 2 — lens framework
 

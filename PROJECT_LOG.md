@@ -1,3 +1,10 @@
+## 2026-10-23 — Engine 2 Phase 1 closeout; Deep cuts lens approved
+
+- The owner approved the Deep cuts lens as proposed: dense-month or recent window; ListenBrainz tag radio at the 50 to 75% popularity band as the main source, with the 75 to 100% band and the MusicBrainz tag search as the tail; title-marker filter; album listeners about 300 to 50,000; one album per artist; at most 2 per seed. The definition is recorded in `docs/engine2.md`.
+- Phase 1 outputs: merged popularity module (PR #574, unwired); measurements and prototype results in the 2026-10-23 entries above; no ranking weight, default or provider budget changed; no code beyond PR #574. Throwaway harnesses and private data files stay outside the repository.
+- Not claimed: list quality beyond aggregates and spot checks; behavior for other listeners; any publication or deployment.
+- Next action: Phase 2, the lens framework (a design of how lenses enter the allocator request and result, and how lists are partitioned, before code).
+
 ## 2026-10-23 — Engine 2: fast end-to-end Deep cuts test across five windows (50-75% radio band plus tails)
 
 Prompted by the owner: the earlier five-window runs took too long. This run was tuned to about 35 s per window (about 3 minutes for all five, sequentially). Read-only; private files outside the repository (mode 600); aggregates only; throwaway harness not committed.

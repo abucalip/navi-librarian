@@ -34,7 +34,7 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Next action
 
-The hard-coded taste replacement is complete; the derived profile is the only mode. The next priority is Engine 2 Phase 1 (`ACTIVE_WORK.md` section 2c, roadmap in [engine2.md](engine2.md)): taste-fit score for tag-lane candidates, how the tag lane is seeded, and an offline deep-cuts prototype. PR #573 is merged, but its recommendation-quality evidence remains limited to one profile and individual captures; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
+The hard-coded taste replacement is complete; the derived profile is the only mode. Engine 2 Phase 1 is complete (evidence in `PROJECT_LOG.md`, 2026-10-23; the owner approved the Deep cuts lens definition in [engine2.md](engine2.md)). The next priority is Engine 2 Phase 2, the lens framework (`ACTIVE_WORK.md` section 2c). PR #573 is merged, but its recommendation-quality evidence remains limited to one profile and individual captures; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
 
 ## Where to look
 
