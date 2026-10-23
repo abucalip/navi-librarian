@@ -63,6 +63,24 @@ class LaneTests(unittest.TestCase):
         self.run_lane(queries, radio, recs)
         self.assertEqual(self.gets, ["jazz", "rai"], "second run is served from cache")
 
+    def test_radio_tag_count_reaches_candidates_and_survives_the_cache(self):
+        queries = [(_query_for_tag("jazz"), "jazz", "profile:jazz"), (_query_for_tag("rai"), "rai", "explore:rai")]
+        radio = {"jazz": [{"recording_mbid": R1, "tag_count": 7}, {"recording_mbid": R2, "tag_count": 3}],
+                 "rai": [{"recording_mbid": R2, "tag_count": 9}, {"recording_mbid": R3}]}
+        recs = {R1: recording("A", "One", "g1"), R2: recording("B", "Two", "g2"), R3: recording("C", "Three", "g3")}
+        self.run_lane(queries, radio, recs)
+        strengths = {key[1]: album["tag_strength"] for key, album in self.albums.items()}
+        self.assertEqual(strengths, {"one": 7.0, "two": 9.0, "three": 0.0})
+        self.albums.clear()
+        self.run_lane(queries, radio, recs)
+        self.assertEqual(self.gets, ["jazz", "rai"], "second run is served from cache")
+        self.assertEqual(self.albums[("a", "one")]["tag_strength"], 7.0)
+
+    def test_old_cache_entries_of_plain_mbids_still_work(self):
+        self.cache["lb:tag-radio:jazz"] = [R1]
+        self.run_lane([(_query_for_tag("jazz"), "jazz", "profile:jazz")], {}, {R1: recording("A", "One", "g1")})
+        self.assertEqual(self.albums[("a", "one")]["tag_strength"], 0.0)
+
     def test_http_failure_marks_unavailable_and_records_failure(self):
         out = self.run_lane([(_query_for_tag("jazz"), "jazz", "profile:jazz")], {}, {}, status=502)
         self.assertEqual(out, [(0, "err")])
@@ -105,7 +123,7 @@ class LaneTests(unittest.TestCase):
             if "lb:tag-radio:slow" in self.cache:
                 break
             threading.Event().wait(0.02)
-        self.assertEqual(self.cache["lb:tag-radio:slow"], [R3], "late answer still warms the cache")
+        self.assertEqual(self.cache["lb:tag-radio:slow"], [[R3, 0]], "late answer still warms the cache")
         self.assertFalse(self.state["unavailable"])
 
 

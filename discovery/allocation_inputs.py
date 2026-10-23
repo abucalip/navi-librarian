@@ -39,21 +39,18 @@ def deep_cuts_fields(
 
     Only tag-lane candidates (those carrying a seed in ``regional_styles``) are
     eligible, so the lens draws from its approved source; others get no audience.
-    Audience is the album listener count, falling back to the artist's when the
-    album did not resolve (``mbid_popularity.resolve_popularity`` basis). A
-    ``tag_strength`` on the candidate is used when present; otherwise ties fall
-    back to lane order, which is the radio's order.
+    Audience is the album-level listener count by release MBID only: an artist's
+    count is a different measure and must not pass the album gate. A candidate
+    whose album did not resolve has no audience. ``tag_strength`` is the radio's
+    ``tag_count`` carried by the tag lane (0 when absent, then lane order breaks
+    ties).
     """
     styles = candidate.get("regional_styles") or []
     seed = str(styles[0]) if styles else None
     if seed is None or not popularity:
         return {"seed": seed}
     found = popularity.get(str(candidate.get("release_group_mbid") or ""))
-    audience = None
-    if found:
-        audience = found.get("album_listeners")
-        if audience is None:
-            audience = found.get("artist_listeners")
+    audience = found.get("album_listeners") if found else None
     strength = candidate.get("tag_strength")
     return {
         "seed": seed,

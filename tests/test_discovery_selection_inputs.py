@@ -63,11 +63,11 @@ class BuildInputsTests(unittest.TestCase):
 class DeepCutsFieldsTests(unittest.TestCase):
     lane = {"regional_styles": ["profile:post_punk", "explore:x"], "release_group_mbid": "g1"}
 
-    def test_album_listeners_then_artist_fallback(self):
+    def test_audience_is_album_level_only(self):
         pop = {"g1": {"album_listeners": 900, "artist_listeners": 5000, "basis": "album"}}
         self.assertEqual(deep_cuts_fields(self.lane, pop)["audience"], 900)
         pop = {"g1": {"album_listeners": None, "artist_listeners": 5000, "basis": "artist"}}
-        self.assertEqual(deep_cuts_fields(self.lane, pop)["audience"], 5000)
+        self.assertIsNone(deep_cuts_fields(self.lane, pop)["audience"])
         pop = {"g1": {"album_listeners": None, "artist_listeners": None, "basis": "none"}}
         self.assertIsNone(deep_cuts_fields(self.lane, pop)["audience"])
 
@@ -102,6 +102,25 @@ class DeepCutsFieldsTests(unittest.TestCase):
         self.assertEqual([c.audience for c in candidates], [900, 5_000_000, None])
         self.assertEqual(candidates[0].seed, "profile:post_punk")
         self.assertEqual(run_lens(DEEP_CUTS, candidates, 5).selected_candidate_ids, ("0",))
+
+    def test_artist_only_popularity_cannot_qualify_and_strength_orders_the_list(self):
+        from discovery.lenses import DEEP_CUTS, run_lens
+        albums = [
+            {**album("Weak", "A", mbid="1"), "regional_styles": ["profile:x"],
+             "release_group_mbid": "g1", "tag_strength": 2.0},
+            {**album("Strong", "B", mbid="2"), "regional_styles": ["profile:y"],
+             "release_group_mbid": "g2", "tag_strength": 9.0},
+            {**album("ArtistOnly", "C", mbid="3"), "regional_styles": ["profile:z"],
+             "release_group_mbid": "g3", "tag_strength": 99.0},
+        ]
+        pop = {"g1": {"album_listeners": 900, "artist_listeners": None, "basis": "album"},
+               "g2": {"album_listeners": 900, "artist_listeners": None, "basis": "album"},
+               "g3": {"album_listeners": None, "artist_listeners": 900, "basis": "artist"}}
+        _, candidates = build_allocation_inputs(
+            albums, library_by_title={}, genre_cache={k: ["x", "y"] for k in "123"},
+            music_key=key, artist_identity=lambda c: key(c["primary_artist"]), popularity=pop,
+        )
+        self.assertEqual(run_lens(DEEP_CUTS, candidates, 5).selected_candidate_ids, ("1", "0"))
 
 
 class SelectionPolicyTests(unittest.TestCase):
