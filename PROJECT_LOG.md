@@ -1,3 +1,15 @@
+## 2026-10-23 — Engine 2 Phase 3 slices 1–2: window helpers merged; live window-pool check (partial gate)
+
+- PR #579 squash-merged as `aea328c`: pure `windowed_listen_weights` (bounded window anchored to the newest listen, optional half-life, flat all-time default) and a tag-radio popularity band parameter. The default 0–100 band keeps the original request and cache key. Focused tests: 69 passed. Not wired into runtime.
+- PR #580 (above) added `window_artist_weights` and `densest_window_listens`. The dense-window choice follows the owner's direction: the history ends in 2019, so a last-N-days window is empty.
+- Offline, no provider calls by the code: the local history (about 22k rows; about 19k with valid timestamps, 2010–2019) had cached artist tags for 35 of 447 all-time artists. Batch-filling the rest through the existing ListenBrainz artist prefetch reached 447 of 447 in a scratch copy of the metadata cache. Network "No route to host" errors were retried. The source cache was not modified.
+- Seed probe (cached tags only): four non-overlapping dense 30-day windows and the all-time window each produce 6 profile seeds, and each pair shares 4–6 of them. Windows reorder seeds and swap one or two genres.
+- Live tag-radio run (owner-approved; ListenBrainz tag radio, batch recording lookups, release-group metadata; cache writes to the scratch copy only): five windows, six seeds each, 30 albums each (the 5-per-query cap). No provider failures were recorded. Album-level overlap: dense1 and all-time share 30 of 30; dense3 and dense4 share 30 of 30; other pairs share 20–25 of 35–40. The window changes the candidate pool in most pairs, but only modestly.
+- Gate status: partly met. One live run, one profile, profile seeds only (no CF or exploration pool). The Phase 3 gate needs repeat runs and an evaluation of whether the changed pools change any list.
+- Probe scripts, raw results and the scratch cache live outside the repository because they derive from the owner's private listening history. Only these aggregates are recorded here.
+- Limitation found during the run: a first attempt returned zero albums because the probe skipped the production batch-to-recording conversion. The fixed probe uses the production resolver shape; the earlier results were discarded.
+- No publication, deployment, or runtime verification. The CI status of PR #579 was not recorded in this session.
+
 ## 2026-10-23 — Re-review, CI verification, and merge PR #580
 
 - Re-reviewed final PR head `f2ca7a9822af0dac592c0e36cd81a7bcee8c25f8`. The earlier findings were addressed: `listen_artist_mbid()` now validates nested metadata as mappings and rejects malformed MBID values safely; `densest_window_listens()` normalizes non-numeric/boolean window widths to `ValueError`. Regression tests cover malformed nesting and invalid widths. The helper remains pure and is not wired into runtime.
