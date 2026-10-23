@@ -6,9 +6,9 @@ from discovery.lens_metrics import lens_evaluation, lens_list_metrics, lens_set_
 from discovery.lenses import partition_lenses
 
 
-def item(cid, artist=None, category="adjacent", score=1.0, genre=None, tags=(), audience=None, seed=None):
+def item(cid, artist=None, album=None, category="adjacent", score=1.0, genre=None, tags=(), audience=None, seed=None):
     return AllocationCandidate(
-        candidate_id=cid, artist_key=artist or cid, album_key=cid, category=category,
+        candidate_id=cid, artist_key=artist or cid, album_key=album or cid, category=category,
         score=score, genre_family=genre, tags=tags, audience=audience, seed=seed,
     )
 
@@ -52,6 +52,15 @@ class SetMetricsTests(unittest.TestCase):
         self.assertEqual(m["pairwise_overlap"]["one|two"], {"albums": 1, "artists": 2})
         self.assertEqual(m["pairwise_overlap"]["one|three"], {"albums": 0, "artists": 0})
         self.assertEqual(m["overlap_with_reference"], {"one": 1, "two": 1, "three": 1})
+
+    def test_same_album_under_different_candidate_ids_counts_once(self):
+        pool = [item("p", artist="x", album="shared"), item("q", artist="y", album="shared"),
+                item("r", artist="z", album="solo"), item("s", artist="w", album="shared")]
+        lists = [result("one", ["p", "r"]), result("two", ["q"])]
+        m = lens_set_metrics(lists, pool, reference=result("prod", ["s"]))
+        self.assertEqual(m["pairwise_overlap"]["one|two"], {"albums": 1, "artists": 0})
+        self.assertEqual((m["total_picks"], m["union_albums"]), (3, 2))
+        self.assertEqual(m["overlap_with_reference"], {"one": 1, "two": 1})
 
     def test_duplicate_lens_names_rejected(self):
         with self.assertRaises(ValueError):

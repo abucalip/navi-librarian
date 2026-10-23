@@ -66,9 +66,11 @@ def lens_set_metrics(
     """Metrics across lists: union size and pairwise overlap of albums and artists.
 
     ``reference`` (for example the production list) adds each list's overlap with it.
+    Albums are matched by ``album_key``; all results must refer to ``candidates``.
     """
     by_id = {candidate.candidate_id: candidate for candidate in candidates}
-    ids = {r.lens: set(r.selected_candidate_ids) for r in results}
+    # Albums are compared by normalized album identity, not by request-local IDs.
+    ids = {r.lens: {by_id[cid].album_key for cid in r.selected_candidate_ids} for r in results}
     artists = {r.lens: {by_id[cid].artist_key for cid in r.selected_candidate_ids} for r in results}
     if len(ids) != len(results):
         raise ValueError("results must have unique lens names")
@@ -89,7 +91,7 @@ def lens_set_metrics(
         "pairwise_overlap": pairwise,
     }
     if reference is not None:
-        ref = set(reference.selected_candidate_ids)
+        ref = {by_id[cid].album_key for cid in reference.selected_candidate_ids}
         out["overlap_with_reference"] = {lens: overlap(chosen, ref) for lens, chosen in ids.items()}
     return out
 
