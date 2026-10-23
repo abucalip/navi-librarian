@@ -13,6 +13,7 @@ from typing import Iterable, Sequence
 
 from discovery.allocation_contract import (
     MAX_CANDIDATE_CHECKS,
+    MAX_RECOMMENDATION_COUNT,
     AllocationCandidate,
     AllocationRequest,
     AllocationResult,
@@ -48,6 +49,7 @@ def select_deep_cuts(
     candidates: Iterable[AllocationCandidate],
     count: int,
     *,
+    max_checks: int = MAX_CANDIDATE_CHECKS,
     min_audience: int = DEEP_CUTS_MIN_AUDIENCE,
     max_audience: int = DEEP_CUTS_MAX_AUDIENCE,
     min_tags: int = DEEP_CUTS_MIN_TAGS,
@@ -55,8 +57,16 @@ def select_deep_cuts(
 ) -> AllocationResult:
     """Gate by audience and tag count, rank by radio tag strength, one album per
     artist and at most `max_per_seed` per seed. Candidates without an audience
-    figure are never selected: unknown is not obscure."""
+    figure are never selected: unknown is not obscure. Like the allocator, it
+    examines at most `max_checks` candidates; the rest are not considered."""
+    if type(count) is not int or not 1 <= count <= MAX_RECOMMENDATION_COUNT:
+        raise ValueError("count must be between 1 and 20")
+    if type(max_checks) is not int or not 1 <= max_checks <= MAX_CANDIDATE_CHECKS:
+        raise ValueError("max_checks must be between 1 and 60")
     pool = tuple(candidates)
+    if len({item.candidate_id for item in pool}) != len(pool):
+        raise ValueError("candidate_id values must be unique")
+    checked = 0
     ranked = sorted(pool, key=lambda item: (-item.tag_strength, item.source_order))
     selected: list[str] = []
     review: list[str] = []
@@ -71,7 +81,12 @@ def select_deep_cuts(
     for item in ranked:
         if len(selected) >= count:
             record(item, "not_considered", "The requested number of recommendations was already reached.")
-        elif item.ownership is OwnershipStatus.EXACT_OWNED:
+            continue
+        if checked >= max_checks:
+            record(item, "not_considered", f"The candidate search limit of {max_checks} checks was reached.")
+            continue
+        checked += 1
+        if item.ownership is OwnershipStatus.EXACT_OWNED:
             record(item, "already_owned", "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory.")
         elif item.ownership is OwnershipStatus.TITLE_CONFLICT:
             review.append(item.candidate_id)
@@ -100,7 +115,7 @@ def select_deep_cuts(
         ownership_review_candidate_ids=tuple(review),
         decisions=tuple(decisions.values()),
         category_counts=dict(counts),
-        checked_count=min(len(pool), MAX_CANDIDATE_CHECKS),
+        checked_count=checked,
         lens=DEEP_CUTS.name,
     )
 
@@ -115,7 +130,7 @@ def run_lens(
 ) -> AllocationResult:
     """Run one lens over a pool; the result carries the lens name."""
     if lens.kind == "deep_cuts":
-        return select_deep_cuts(candidates, count)
+        return select_deep_cuts(candidates, count, max_checks=max_checks)
     if lens.kind == "family_coverage":
         targets, options = selection_request_options("family_coverage", count)
     elif lens.kind == "quota":
@@ -138,17 +153,22 @@ def partition_lenses(
 ) -> tuple[AllocationResult, ...]:
     """Run lenses in order over one pool, each on what earlier lenses left.
 
-    An artist chosen by one lens is removed for the rest, so no artist or album
+    An artist or album title chosen by one lens is removed for the rest, so neither
     appears in two lists. Results come back in the order given.
     """
     if len({lens.name for lens in lenses}) != len(lenses):
         raise ValueError("lens names must be unique")
     taken_artists: set[str] = set()
+    taken_albums: set[str] = set()
     results: list[AllocationResult] = []
     for lens in lenses:
-        remaining = tuple(item for item in candidates if item.artist_key not in taken_artists)
+        remaining = tuple(item for item in candidates
+            if item.artist_key not in taken_artists and item.album_key not in taken_albums
+        )
         result = run_lens(lens, remaining, count, diversity_penalty=diversity_penalty)
         by_id = {item.candidate_id: item for item in remaining}
-        taken_artists.update(by_id[cid].artist_key for cid in result.selected_candidate_ids)
+        for cid in result.selected_candidate_ids:
+            taken_artists.add(by_id[cid].artist_key)
+            taken_albums.add(by_id[cid].album_key)
         results.append(result)
     return tuple(results)

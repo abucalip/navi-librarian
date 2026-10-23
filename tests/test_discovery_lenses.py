@@ -9,11 +9,11 @@ from discovery.lenses import (
 from discovery.personal_allocator import allocate_personal_recommendations
 
 
-def item(cid, artist=None, category="adjacent", score=1.0, genre=None,
+def item(cid, artist=None, album=None, category="adjacent", score=1.0, genre=None,
          audience=None, seed=None, strength=0.0, tags=("a", "b"),
          ownership=OwnershipStatus.CLEAR):
     return AllocationCandidate(
-        candidate_id=cid, artist_key=artist or cid, album_key=cid,
+        candidate_id=cid, artist_key=artist or cid, album_key=album or cid,
         category=category, score=score, genre_family=genre, audience=audience,
         seed=seed, tag_strength=strength, tags=tags, ownership=ownership,
     )
@@ -70,6 +70,31 @@ class DeepCutsTests(unittest.TestCase):
         self.assertEqual(status["a2"], "artist_already_selected")
         self.assertEqual(status["c"], "seed_cap_reached")
 
+    def test_invalid_count_and_max_checks_are_rejected_before_work(self):
+        for count in (0, 21, True):
+            with self.assertRaises(ValueError):
+                select_deep_cuts([], count)
+        for checks in (0, 61):
+            with self.assertRaises(ValueError):
+                select_deep_cuts([], 3, max_checks=checks)
+        with self.assertRaises(ValueError):
+            run_lens(DEEP_CUTS, [], 0)
+
+    def test_check_limit_bounds_examined_candidates(self):
+        pool = [item(f"x{i}", audience=10, strength=1 - i / 100) for i in range(70)]
+        pool.append(item("late", audience=1000, strength=0.0))
+        result = select_deep_cuts(pool, 5)
+        self.assertEqual(result.checked_count, 60)
+        self.assertEqual(result.selected_candidate_ids, ())
+        status = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual(status["late"], "not_considered")
+        limited = run_lens(DEEP_CUTS, [item(f"y{i}", audience=1000) for i in range(5)], 5, max_checks=2)
+        self.assertEqual((limited.checked_count, len(limited.selected_candidate_ids)), (2, 2))
+
+    def test_duplicate_candidate_ids_rejected(self):
+        with self.assertRaises(ValueError):
+            select_deep_cuts([item("a"), item("a")], 1)
+
     def test_count_bound(self):
         pool = [item(f"x{i}", audience=1000, strength=1 - i / 10) for i in range(5)]
         self.assertEqual(len(select_deep_cuts(pool, 3).selected_candidate_ids), 3)
@@ -97,6 +122,15 @@ class PartitionTests(unittest.TestCase):
             first, second = partition_lenses(pool, 1, order)
             self.assertEqual(first.selected_candidate_ids, ("only",))
             self.assertEqual(second.selected_candidate_ids, ())
+
+    def test_same_album_title_under_other_artist_is_not_repeated(self):
+        pool = [
+            item("one", artist="a", album="shared", score=9, audience=2000, strength=1),
+            item("two", artist="b", album="shared", score=8, audience=2000, strength=0.5, genre="rock"),
+        ]
+        first, second = partition_lenses(pool, 1, (DEEP_CUTS, NOW))
+        self.assertEqual(first.selected_candidate_ids, ("one",))
+        self.assertEqual(second.selected_candidate_ids, ())
 
     def test_duplicate_lens_names_rejected(self):
         with self.assertRaises(ValueError):
