@@ -1,3 +1,13 @@
+## 2026-10-24 — Engine 2 Phase 3 gate: repeated tag-radio samples, replayed through the production lane
+
+- Owner-approved live run, cheaper design than the previous repeat: 8 unique seed tags across five windows (four dense 30-day windows and all time), 6 independent tag-radio samples per tag (50–75 band, 20 recordings each), one batch resolution of 943 recordings (780 usable), then the production `run_lb_tag_queries` replayed offline for each window and repetition. 48 radio calls, no failures; no MusicBrainz tail (radio tier only).
+- The first attempt failed at batch resolution (no route to host) after its radio samples had been lost; the rerun checkpointed samples to disk and reused them. Raw output is outside the repository.
+- Every pool has 30 albums (6 seeds × the 5-per-query cap).
+- Same window, different repetitions: 1.1 shared albums on average (of 30); top-10 overlap 0.3. Radio samples are redrawn on each call.
+- Different windows, same repetition: 25 shared albums on average. This is explained by shared seed tags, not by the window: each shared tag contributes exactly 5 albums at that repetition (for example, 5 shared tags gave 25 shared albums, 6 gave 30, 4 gave 20).
+- Conclusion: a window changes the pool only through its seed set (which tags are queried). The albums contributed by a given tag are a fresh random sample each time, so run-to-run variation of a list is larger than the window-to-window difference in seed sets. The Phase 3 gate ("a window changes the candidate pool, not only ranks") is met only at the seed level; the album-level effect is dominated by radio sampling noise. A stable window list would need a fixed sample per tag (or a deterministic candidate source), which is a design decision for the owner.
+- No change to code, defaults, or runtime. No publication or deployment.
+
 ## 2026-10-24 — Re-review, CI verification, and merge PR #582
 
 - Re-reviewed exact PR head `48532b774af01e895de1a7ef41c823b07b94edd1`. Daily cache scope is passed through the radio lane and included in cache keys; the original unscoped 0–100 key and existing band-specific key remain unchanged. New tests cover same-day reuse, next-day refresh, separate lens samples, and invalid lens/day input. The feature remains unwired into runtime.
