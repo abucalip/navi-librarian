@@ -8,17 +8,23 @@ Unwired: nothing in the recommendation path calls this yet (Phase 4 wiring is a 
 decision). The caller supplies the queries, providers and shared lane state, as for the
 other tag lanes.
 """
+from datetime import date
 from typing import Any
 
 # (pop_begin, pop_end) per radio tier, in order. Low percent is the most popular recordings.
 DEEP_CUTS_RADIO_BANDS = ((50, 75), (75, 100))
 
 
-def run_deep_cuts_tag_supply(queries, *, providers, headers, albums, failures, state) -> list[tuple[int, Any]]:
+def run_deep_cuts_tag_supply(
+    queries, *, providers, headers, albums, failures, state, lens: str, day: str,
+) -> list[tuple[int, Any]]:
     """Add Deep cuts candidates from the tiers in order. Returns one (added, error_class)
     pair per query, aligned with ``queries``, from the tier that last attempted it. A query
     no tier reached (the lane cap or an unavailable provider stopped it) is
     ``(0, "not_attempted")``.
+
+    Radio answers are keyed by ``lens`` and ``day`` (ISO date): one fixed sample per tag
+    for the day, a fresh draw on the next day, and a separate draw for each lens.
 
     The tag radio needs ``providers.http_post``; without it the radio tiers are skipped
     and the MusicBrainz tail runs for every query. ``state["unavailable"]`` set by a radio
@@ -27,6 +33,10 @@ def run_deep_cuts_tag_supply(queries, *, providers, headers, albums, failures, s
     """
     from discovery.candidate_gathering import _run_tag_queries, run_radio_lane
 
+    if not lens or not isinstance(lens, str):
+        raise ValueError("lens must be a non-empty string")
+    date.fromisoformat(day)  # raises ValueError unless an ISO date
+    scope = f"{lens}:{day}"
     outcomes: list[tuple[int, Any]] = [(0, "not_attempted")] * len(queries)
     remaining = list(range(len(queries)))
     if providers.http_post is not None:
@@ -36,6 +46,7 @@ def run_deep_cuts_tag_supply(queries, *, providers, headers, albums, failures, s
             tier = run_radio_lane(
                 [queries[i] for i in remaining], providers=providers, albums=albums,
                 failures=failures, state=state, pop_begin=pop_begin, pop_end=pop_end,
+                scope=scope,
             )
             for index, outcome in zip(remaining, tier):
                 outcomes[index] = outcome

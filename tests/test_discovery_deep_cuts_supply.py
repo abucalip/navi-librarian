@@ -12,13 +12,14 @@ class Harness(unittest.TestCase):
     def setUp(self):
         self.state = {"added": 0, "seen": 0, "hits": 0, "misses": 0, "request_index": 0,
                       "unavailable": False, "exhausted_run": 0}
-        self.radio_calls, self.tail_calls = [], []
+        self.radio_calls, self.tail_calls, self.scopes = [], [], []
         self.radio_yield = {}  # (pop_begin, query) -> (added, error_class)
         self.tail_yield = {}   # query -> (added, error_class)
         self.tail_limit = len(QUERIES)  # the real tail stops early at the cap or unavailable
 
-    def radio(self, queries, *, providers, albums, failures, state, pop_begin, pop_end):
+    def radio(self, queries, *, providers, albums, failures, state, pop_begin, pop_end, scope):
         self.radio_calls.append((pop_begin, pop_end, [q for q, _f, _s in queries]))
+        self.scopes.append(scope)
         out = []
         for query, _family, _style in queries:
             added, error = self.radio_yield.get((pop_begin, query), (0, None))
@@ -46,12 +47,24 @@ class Harness(unittest.TestCase):
         with mock.patch("discovery.candidate_gathering.run_radio_lane", side_effect=self.radio), \
                 mock.patch("discovery.candidate_gathering._run_tag_queries", side_effect=self.tail):
             return run_deep_cuts_tag_supply(
-                QUERIES, providers=providers, headers={}, albums={}, failures=[], state=self.state)
+                QUERIES, providers=providers, headers={}, albums={}, failures=[], state=self.state,
+                lens="deep_cuts", day="2026-10-23")
 
 
 class DeepCutsSupplyTests(Harness):
     def test_bands_are_the_owner_approved_order(self):
         self.assertEqual(DEEP_CUTS_RADIO_BANDS, ((50, 75), (75, 100)))
+
+    def test_radio_answers_are_scoped_by_lens_and_day(self):
+        self.run_supply()
+        self.assertEqual(set(self.scopes), {"deep_cuts:2026-10-23"})
+
+    def test_lens_and_day_are_required_and_validated(self):
+        providers = SimpleNamespace(http_post=None, http_client=None)
+        for lens, day in [("", "2026-10-23"), ("deep_cuts", "2026-13-40"), ("deep_cuts", "yesterday")]:
+            with self.subTest(lens=lens, day=day), self.assertRaises(ValueError):
+                run_deep_cuts_tag_supply(QUERIES, providers=providers, headers={}, albums={},
+                                         failures=[], state=self.state, lens=lens, day=day)
 
     def test_first_band_answers_stop_later_tiers_and_tail(self):
         self.radio_yield = {(50, "q-a"): (2, None), (50, "q-b"): (1, None), (50, "q-c"): (1, None)}
