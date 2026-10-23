@@ -4,6 +4,8 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Current state
 
+- PR #578 (Engine 2 Phase 2 lens evaluation metrics) squash-merged as `3aebacbd40d80386199e0e5cb9b1b0ca94ca430d` from exact tested head `f15dbde3fe78ddb4974178b84f863de85de0fd69`. Fixed album-level overlap/union/reference metrics to use normalized `album_key`, while `total_picks` counts selected candidate IDs; regression tests cover same-album/different-ID cases across lists, reference, and within one list. All four required workflows passed on the exact head: syntax/acquisition safety (`40007720479`), Docker packaging/full unit suite/image build (`40007720478`; unit tests and image build succeeded), container runtime smoke (`40007720476`), and validation-only multi-architecture image validation (`40007720523`, publishing paused). Metrics remain pure evaluation code and are not wired into runtime. No publication, deployment, or runtime verification.
+
 - PRs #575 and #577 (Engine 2 Phase 2: lens framework, partitioning, Deep cuts selector and pool adapter) squash-merged as `85efa95b32ecd1ce42d7afd5293a60cbfcf9f391` and `513a4589387a7667569b854c37ace1bf028ab012`. Pure code, not wired into runtime; the radio `tag_count` is now kept by the tag lane. Final-head CI was not confirmed by the agent (API unreachable); confirm on `main`. Not published or deployed. Evidence: `PROJECT_LOG.md`.
 - PR #574 (MBID-keyed Last.fm popularity module and offline tests) squash-merged as `eb4cb16ec5b932b4dc21a8978149f200931b1334` from exact reviewed PR head `cc23a8005e554713f31eb0ab8594d2efa70b8d1e`. The cache now distinguishes 7-day definitive misses from 30-day positive values, and transient Last.fm failures are not cached. All four required workflows passed on the exact head, including Docker packaging/full unit suite and image build (`39954186084`); syntax/safety (`39954186109`), container smoke (`39954186218`), and validation-only multi-architecture validation (`39954186167`) also passed. The module is not wired into runtime recommendation paths. Not published or deployed; no live-runtime verification.
 
@@ -35,7 +37,7 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Next action
 
-The hard-coded taste replacement is complete; the derived profile is the only mode. Engine 2 Phase 2 is partly done (lens framework and Deep cuts adapter merged, unwired). The next action is the Phase 2 evaluation metrics per lens and across the set (`ACTIVE_WORK.md` section 2c). PR #573's recommendation-quality evidence remains limited to one profile; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
+The hard-coded taste replacement is complete; the derived profile is the only mode. Engine 2 Phase 2 is partly done (lens framework and Deep cuts adapter merged, unwired). Phase 2 evaluation metrics per lens and across the set are now merged in PR #578. The next action is Phase 3 time-range profiles and window-driven tag-lane seeds (`ACTIVE_WORK.md` section 2c). PR #573's recommendation-quality evidence remains limited to one profile; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
 
 ## Where to look
 
