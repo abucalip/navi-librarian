@@ -35,7 +35,7 @@ Goal: several complementary lists of 10 ("lenses") from one shared candidate poo
 
 First steps (Phase 1), in order:
 
-1. ~~MBID-keyed popularity~~ — measured and implemented in PR [#574](https://github.com/abucalip/navi-librarian/pull/574) (open, not wired in): album listeners by release MBID cover 166 of 203, artist listeners 203 of 203; Deezer and Discogs are weaker cross-checks. Live run of the module: 186 of 203 albums, the rest on the artist fallback. All four required checks pass on the PR head; awaiting the owner's merge decision. See `PROJECT_LOG.md` (2026-10-23).
+1. ~~MBID-keyed popularity~~ — measured and implemented in PR [#574](https://github.com/abucalip/navi-librarian/pull/574) (merged as `eb4cb16`, not wired into runtime): album listeners by release MBID cover 166 of 203, artist listeners 203 of 203; Deezer and Discogs are weaker cross-checks. Live run of the module: 186 of 203 albums, the rest on the artist fallback. Required CI passed on the merged head. Step 1 is done; using the signal in a lens or ranking is a later, separate decision. See `PROJECT_LOG.md` (2026-10-23).
 2. A taste-fit score for tag-lane candidates, evaluated offline. They currently all score 0.035 and never surface, and they are where obscure candidates come from (29 of 40 obscure, against 4 of 163 from CF).
 3. Read how the tag lane is seeded and whether a history window can drive the seeds.
 4. Offline "deep cuts" prototype on existing captures: how many obscure, well-fitting candidates exist.

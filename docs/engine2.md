@@ -137,7 +137,7 @@ Each phase ends with a written result in `PROJECT_LOG.md`. Any live capture or h
 
 ### Phase 1 — first steps (next priority)
 
-1. **MBID-keyed popularity** for the whole pool, with a bounded budget and caching; compare Last.fm artist-level, Last.fm album-level by MBID and the Deezer cross-check on the existing 203-candidate capture. Output: an obscurity signal and its coverage. **Measured 2026-10-23:** album listeners by release MBID (via batched MusicBrainz release search) 166 of 203, artist listeners by artist MBID 203 of 203; Deezer and Discogs agree less (Spearman 0.38 / 0.50 against album listeners). Implementation in PR #574; details in `PROJECT_LOG.md`.
+1. **MBID-keyed popularity** for the whole pool, with a bounded budget and caching; compare Last.fm artist-level, Last.fm album-level by MBID and the Deezer cross-check on the existing 203-candidate capture. Output: an obscurity signal and its coverage. **Measured 2026-10-23:** album listeners by release MBID (via batched MusicBrainz release search) 166 of 203, artist listeners by artist MBID 203 of 203; Deezer and Discogs agree less (Spearman 0.38 / 0.50 against album listeners). Implementation merged in PR #574 (not wired into runtime); details in `PROJECT_LOG.md`.
 2. **Tag-lane taste-fit score**, evaluated offline on existing captures: tag/family overlap with the profile, similar-artist links. Output: a ranking among tag-lane candidates that is not arbitrary.
 3. **Read how the tag lane is seeded** and whether a history window can drive the seeds.
 4. **Offline "deep cuts" prototype** on the existing captures: how many obscure, well-fitting candidates exist, and what a list of 10 looks like.

@@ -1,4 +1,4 @@
-## 2026-10-23 — Engine 2 Phase 1 step 1: MBID-keyed popularity measured (PR #574 open)
+## 2026-10-23 — Engine 2 Phase 1 step 1: MBID-keyed popularity measured (PR #574, merged)
 
 Owner-approved read-only provider calls on the 203 unowned candidates of the 8-page / 120-tag capture (artist MBIDs 143 distinct). Private results outside the repository (mode 600); aggregates only. One profile, one capture.
 
@@ -10,7 +10,7 @@ Owner-approved read-only provider calls on the 203 unowned candidates of the 8-p
 - **Discogs (consumer key and secret, master search, 60 requests a minute, 4 minutes):** `have` counts for 188 of 203.
 - **Agreement (Spearman, on candidates both sides matched):** album listeners vs artist listeners 0.62; vs Discogs 0.50; vs Deezer 0.38. Artist vs Deezer 0.38; artist vs Discogs 0.42; Deezer vs Discogs 0.30.
 - **Conclusion:** use album listeners by MBID as the obscurity signal with artist listeners by artist MBID as fallback; Deezer and Discogs are optional cross-checks only.
-- **Code:** `discovery/mbid_popularity.py` with 17 offline tests (PR #574, not wired into any runtime path; no ranking weight, default or provider budget changed). Tests run: `tests.test_discovery_mbid_popularity` plus `test_discovery_artist_genre_batch`, `test_discovery_batch_lookup`, `test_metadata_cache` (50 total, repo venv); size ratchet and legacy-import checks pass. Full suite not run by the agent; CI result for the PR head not yet recorded.
+- **Code:** `discovery/mbid_popularity.py` with 20 offline tests after the review fix (PR #574, merged as `eb4cb16`, not wired into any runtime path; no ranking weight, default or provider budget changed). Tests run: `tests.test_discovery_mbid_popularity` plus `test_discovery_artist_genre_batch`, `test_discovery_batch_lookup`, `test_metadata_cache` (50 total, repo venv); size ratchet and legacy-import checks pass. Full suite not run by the agent; CI on the merged head is recorded in the PR #574 review entry below.
 - **Module run live on the same 203 candidates (fresh cache, 307 s):** 186 albums found (92%) against 166 above, 17 candidates on artist-level fallback, none without a signal. Calls: 143 Last.fm artist, 233 Last.fm album, 19 MusicBrainz release searches, 2 ListenBrainz release-group batches. The MusicBrainz call count differs from the 57 above (different script); the cause was not investigated.
 - **Limits:** one profile; 25-candidate release-resolution sample; correlations only on mutually matched candidates; Last.fm's matched edition not verified; album and obscurity thresholds are descriptive, not tuned.
 
