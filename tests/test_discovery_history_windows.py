@@ -78,3 +78,38 @@ class DensestWindowTests(unittest.TestCase):
         from discovery.history_windows import densest_window_listens
         with self.assertRaises(ValueError):
             densest_window_listens([], 0)
+
+
+class MalformedInputTests(unittest.TestCase):
+    def test_non_mapping_nesting_yields_empty_mbid(self):
+        malformed = [
+            {"track_metadata": "not a mapping"},
+            {"track_metadata": {"additional_info": "not a mapping"}},
+            {"track_metadata": ["list"]},
+            {"track_metadata": {"additional_info": 42}},
+            "not a listen",
+            None,
+        ]
+        for item in malformed:
+            self.assertEqual(listen_artist_mbid(item), "")
+
+    def test_non_string_mbid_yields_empty(self):
+        self.assertEqual(listen_artist_mbid(listen(0, ["a1"])), "")
+        self.assertEqual(listen_artist_mbid(listen(0, {"x": 1})), "")
+
+    def test_window_weights_skip_malformed_listens(self):
+        listens = [{"track_metadata": "bad", "listened_at": NEWEST}, listen(0, "good")]
+        self.assertEqual(dict(window_artist_weights(listens)), {"good": 1.0})
+
+
+class WindowWidthValidationTests(unittest.TestCase):
+    def test_non_numeric_width_raises_value_error(self):
+        from discovery.history_windows import densest_window_listens
+        for bad in ["30", None, [30], {"days": 30}, True]:
+            with self.assertRaises(ValueError):
+                densest_window_listens([listen(0)], bad)
+
+    def test_numeric_width_still_accepted(self):
+        from discovery.history_windows import densest_window_listens
+        self.assertEqual(len(densest_window_listens([listen(0)], 30)), 1)
+        self.assertEqual(len(densest_window_listens([listen(0)], 30.5)), 1)

@@ -14,17 +14,25 @@ from typing import Any
 from discovery.recommendations import windowed_listen_weights
 
 
+def _mapping_or_empty(value: Any) -> Mapping[str, Any]:
+    return value if isinstance(value, Mapping) else {}
+
+
 def listen_artist_mbid(listen: Mapping[str, Any]) -> str:
     """Return the artist MBID a ListenBrainz-shaped listen carries, or ``""``.
 
-    Mirrors the gather path: ``artist_mbid`` first, else the first of ``artist_mbids``."""
-    additional_info = (listen.get("track_metadata") or {}).get("additional_info") or {}
+    Mirrors the gather path: ``artist_mbid`` first, else the first of ``artist_mbids``.
+    Malformed nesting (a non-mapping ``track_metadata`` or ``additional_info``) yields ``""``."""
+    additional_info = _mapping_or_empty(
+        _mapping_or_empty(_mapping_or_empty(listen).get("track_metadata")).get("additional_info"))
     artist_mbid = additional_info.get("artist_mbid")
     if not artist_mbid:
         artist_mbids = additional_info.get("artist_mbids")
         if isinstance(artist_mbids, list) and artist_mbids:
             artist_mbid = artist_mbids[0]
-    return str(artist_mbid or "")
+    if isinstance(artist_mbid, (str, int)) and str(artist_mbid):
+        return str(artist_mbid)
+    return ""
 
 
 def _listen_time(listen: Mapping[str, Any]) -> float | None:
@@ -35,6 +43,15 @@ def _listen_time(listen: Mapping[str, Any]) -> float | None:
     return value if math.isfinite(value) else None
 
 
+def _positive_days(value: Any) -> float:
+    """Return ``value`` as a positive finite number of days, or raise ``ValueError``."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("window_days must be a positive finite number")
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError("window_days must be a positive finite number")
+    return float(value)
+
+
 def densest_window_listens(
     listens: Iterable[Mapping[str, Any]],
     window_days: float,
@@ -42,9 +59,10 @@ def densest_window_listens(
     """Return the listens inside the ``window_days`` span holding the most dated listens.
 
     Undated listens are ignored. Ties go to the earliest span. Empty when nothing is dated.
+    Raises ``ValueError`` for any ``window_days`` that is not a positive finite number,
+    including non-numeric values.
     """
-    if not math.isfinite(window_days) or window_days <= 0:
-        raise ValueError("window_days must be a positive finite number")
+    window_days = _positive_days(window_days)
     width = window_days * 24 * 60 * 60
     dated = sorted(
         ((time, listen) for listen in listens if (time := _listen_time(listen)) is not None),
