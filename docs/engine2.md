@@ -144,9 +144,11 @@ Each phase ends with a written result in `PROJECT_LOG.md`. Any live capture or h
 
 Exit criteria: a measured obscure supply (count and fit) and a recommendation on whether the tag lane alone is enough or another source is needed.
 
-**Phase 1 result (complete 2026-10-23, details in `PROJECT_LOG.md`):** album listeners by release MBID are the obscurity signal (artist listeners as fallback); a window changes the tag-lane seeds completely and the resulting lists share no artists across four different months; tag/family fit is not a validated ranking signal, so it is not used; the tag lane alone is enough to supply obscure candidates when it uses the ListenBrainz tag radio (50 to 75% band, whose `percent` is inverted: low is popular) with the MusicBrainz tag search as a tail; a five-window end-to-end run takes about 35 s per window. The Deep cuts lens definition is in the lens catalog above.
+**Phase 1 result (complete 2026-10-23, details in `PROJECT_LOG.md`):** album listeners by release MBID are the obscurity signal (artist listeners are a diagnostic fallback only and do not pass the Deep cuts album gate); a window changes the tag-lane seeds completely and the resulting lists share no artists across four different months; tag/family fit is not a validated ranking signal, so it is not used; the tag lane alone is enough to supply obscure candidates when it uses the ListenBrainz tag radio (50 to 75% band, whose `percent` is inverted: low is popular) with the MusicBrainz tag search as a tail; a five-window end-to-end run takes about 35 s per window. The Deep cuts lens definition is in the lens catalog above.
 
 ### Phase 2 — lens framework
+
+Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning and the Deep cuts pool adapter merged (PRs #575, #577; unwired). Remaining: evaluation metrics.
 
 - Lens as an explicit concept in the allocator request and result; partitioning across lists (each album in one list per day).
 - Implement Now, Genre spread, Deep cuts. Tests per lens plus a partition test.
