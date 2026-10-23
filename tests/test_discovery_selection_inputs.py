@@ -2,7 +2,9 @@
 import unittest
 
 from discovery.allocation_contract import AllocationCandidate, OwnershipStatus
-from discovery.allocation_inputs import build_allocation_inputs, classify_ownership
+from discovery.allocation_inputs import (
+    build_allocation_inputs, classify_ownership, deep_cuts_fields,
+)
 from discovery.selection_policy import (
     quota_targets, selection_policy_report, selection_request_options,
 )
@@ -56,6 +58,50 @@ class BuildInputsTests(unittest.TestCase):
         self.assertEqual((second.genre_family, second.tags), (None, ()))
         self.assertEqual(second.category, "adventurous")
         self.assertEqual(second.source_order, 1)
+
+
+class DeepCutsFieldsTests(unittest.TestCase):
+    lane = {"regional_styles": ["profile:post_punk", "explore:x"], "release_group_mbid": "g1"}
+
+    def test_album_listeners_then_artist_fallback(self):
+        pop = {"g1": {"album_listeners": 900, "artist_listeners": 5000, "basis": "album"}}
+        self.assertEqual(deep_cuts_fields(self.lane, pop)["audience"], 900)
+        pop = {"g1": {"album_listeners": None, "artist_listeners": 5000, "basis": "artist"}}
+        self.assertEqual(deep_cuts_fields(self.lane, pop)["audience"], 5000)
+        pop = {"g1": {"album_listeners": None, "artist_listeners": None, "basis": "none"}}
+        self.assertIsNone(deep_cuts_fields(self.lane, pop)["audience"])
+
+    def test_seed_is_first_style_and_missing_popularity_leaves_audience_unset(self):
+        self.assertEqual(deep_cuts_fields(self.lane, None), {"seed": "profile:post_punk"})
+        self.assertEqual(deep_cuts_fields(self.lane, {}), {"seed": "profile:post_punk"})
+        self.assertIsNone(deep_cuts_fields(self.lane, {"other": {}}).get("audience"))
+
+    def test_non_lane_candidates_are_not_eligible(self):
+        pop = {"g1": {"album_listeners": 900, "artist_listeners": 900, "basis": "album"}}
+        self.assertEqual(deep_cuts_fields({"release_group_mbid": "g1"}, pop), {"seed": None})
+
+    def test_tag_strength_is_read_when_present(self):
+        pop = {"g1": {"album_listeners": 900, "artist_listeners": None, "basis": "album"}}
+        out = deep_cuts_fields({**self.lane, "tag_strength": 0.7}, pop)
+        self.assertEqual(out["tag_strength"], 0.7)
+
+    def test_build_inputs_threads_fields_into_candidates_and_the_lens(self):
+        from discovery.lenses import DEEP_CUTS, run_lens
+        albums = [
+            {**album("Deep", "A", mbid="1"), **self.lane},
+            {**album("Popular", "B", mbid="2"), "regional_styles": ["profile:x"],
+             "release_group_mbid": "g2"},
+            album("Cf", "C", mbid="3"),
+        ]
+        pop = {"g1": {"album_listeners": 900, "artist_listeners": 1, "basis": "album"},
+               "g2": {"album_listeners": 5_000_000, "artist_listeners": 1, "basis": "album"}}
+        _, candidates = build_allocation_inputs(
+            albums, library_by_title={}, genre_cache={"1": ["x", "y"], "2": ["x", "y"], "3": ["x", "y"]},
+            music_key=key, artist_identity=lambda c: key(c["primary_artist"]), popularity=pop,
+        )
+        self.assertEqual([c.audience for c in candidates], [900, 5_000_000, None])
+        self.assertEqual(candidates[0].seed, "profile:post_punk")
+        self.assertEqual(run_lens(DEEP_CUTS, candidates, 5).selected_candidate_ids, ("0",))
 
 
 class SelectionPolicyTests(unittest.TestCase):
