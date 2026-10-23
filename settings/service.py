@@ -51,6 +51,17 @@ def set_recommendation_diversity_settings(settings_write, value):
     })
 
 
+SELECTION_POLICY_KEY = "recommendation_selection_policy"
+SELECTION_POLICIES = ("quota", "family_coverage")
+DEFAULT_SELECTION_POLICY = "quota"
+
+
+def recommendation_selection_policy_value(settings_read):
+    """Read the final-list policy; absent or unknown values mean the 4/3/3 quota policy."""
+    value = settings_read().get(SELECTION_POLICY_KEY, DEFAULT_SELECTION_POLICY)
+    return value if value in SELECTION_POLICIES else DEFAULT_SELECTION_POLICY
+
+
 AUTOMATIC_REFILL_KEY = "automatic_refill_enabled"
 DEFAULT_AUTOMATIC_REFILL_ENABLED = True
 

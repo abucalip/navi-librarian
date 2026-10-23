@@ -7,11 +7,13 @@ from discovery.personal_allocator import allocate_personal_recommendations
 
 
 def item(cid, artist=None, album=None, category="adjacent", score=1.0,
-         style="other", family=None, ownership=OwnershipStatus.CLEAR, tags=()):
+         style="other", family=None, ownership=OwnershipStatus.CLEAR, tags=(),
+         genre=None):
     return AllocationCandidate(
         candidate_id=cid, artist_key=artist or cid, album_key=album or cid,
         category=category, score=score, diversity_style=style,
         recent_profile_family=family, ownership=ownership, tags=tags,
+        genre_family=genre,
     )
 
 
@@ -230,6 +232,96 @@ class PersonalAllocatorTests(unittest.TestCase):
         ))
         self.assertLessEqual(result.checked_count, 3)
         self.assertEqual(len(result.selected_candidate_ids), 3)
+
+
+def coverage_request(items, count=6, cap=2, floors=None, target=None, ratio=0.4,
+                     unknown_cap=1, max_checks=60):
+    return AllocationRequest(
+        candidates=tuple(items), count=count, category_targets={},
+        diversity_style_targets={}, max_checks=max_checks, genre_family_cap=cap,
+        unknown_family_cap=unknown_cap, category_floors=floors or {},
+        coverage_target=count if target is None else target,
+        coverage_floor_ratio=ratio,
+    )
+
+
+class FamilyCoveragePolicyTests(unittest.TestCase):
+    def test_genre_family_cap_limits_each_family_and_unknown_bucket(self):
+        items = [item(f"r{i}", score=10 - i, genre="rock") for i in range(5)]
+        items += [item(f"u{i}", score=4 - i * 0.1) for i in range(3)]
+        items += [item("j", score=1.0, genre="jazz")]
+        result = allocate_personal_recommendations(coverage_request(items, count=4, target=0))
+        self.assertEqual(result.selected_candidate_ids, ("r0", "r1", "u0", "j"))
+        decisions = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual(decisions["r2"], "genre_family_cap_reached")
+        self.assertEqual(decisions["u1"], "genre_family_cap_reached")
+
+    def test_coverage_adds_new_families_above_the_relevance_floor(self):
+        items = [item(f"r{i}", score=10 - i * 0.1, genre="rock") for i in range(4)]
+        items += [item("metal", score=9.0, genre="metal"),
+                  item("jazz", score=5.0, genre="jazz"),
+                  item("tiny", score=3.0, genre="polka")]
+        result = allocate_personal_recommendations(coverage_request(
+            items, count=4, cap=2, target=4, ratio=0.4,
+        ))
+        # r0, then the best of each unseen family above 0.4 * top score (4.0).
+        self.assertEqual(result.selected_candidate_ids, ("r0", "metal", "jazz", "r1"))
+        self.assertEqual(result.phase_diagnostics["family_coverage_attempts"], 3)
+
+    def test_wider_supply_adds_a_family_only_when_it_clears_the_floor(self):
+        base = [item(f"r{i}", score=10 - i * 0.1, genre="rock") for i in range(6)]
+        base += [item("m", score=8.0, genre="metal")]
+        wider = base + [item("late", score=6.0, genre="reggae")]
+        narrow = allocate_personal_recommendations(coverage_request(base, count=3, cap=1))
+        broad = allocate_personal_recommendations(coverage_request(wider, count=3, cap=1))
+        self.assertNotIn("late", narrow.selected_candidate_ids)
+        self.assertIn("late", broad.selected_candidate_ids)
+
+    def test_category_floor_reserves_exploration_without_a_quota(self):
+        items = [item(f"r{i}", score=10 - i, genre=f"g{i}") for i in range(5)]
+        items += [item("adv", category="adventurous", score=1.0, genre="polka")]
+        floored = allocate_personal_recommendations(coverage_request(
+            items, count=3, floors={"adventurous": 1}, target=0,
+        ))
+        plain = allocate_personal_recommendations(coverage_request(items, count=3, target=0))
+        self.assertIn("adv", floored.selected_candidate_ids)
+        self.assertNotIn("adv", plain.selected_candidate_ids)
+        self.assertEqual(dict(floored.category_counts).get("adventurous"), 1)
+
+    def test_owned_candidates_do_not_use_the_check_budget(self):
+        owned = [item(f"o{i}", score=100 - i, genre="rock", ownership=OwnershipStatus.EXACT_OWNED)
+                 for i in range(20)]
+        clear = [item(f"c{i}", score=10 - i, genre=f"g{i}") for i in range(3)]
+        result = allocate_personal_recommendations(coverage_request(
+            owned + clear, count=3, max_checks=3,
+        ))
+        self.assertEqual(result.selected_candidate_ids, ("c0", "c1", "c2"))
+        self.assertEqual(result.checked_count, 3)
+        statuses = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual(statuses["o0"], "already_owned")
+
+    def test_one_album_per_artist_and_final_fallback_fills_short_lists(self):
+        items = [item("a1", artist="a", score=5, genre="rock"),
+                 item("a2", artist="a", score=4, genre="rock"),
+                 item("b", artist="b", score=3, genre="rock"),
+                 item("c", artist="c", score=2, genre="rock")]
+        result = allocate_personal_recommendations(coverage_request(items, count=3, cap=1))
+        # Cap 1 would stop at one rock album; the relaxed fallback fills to count.
+        self.assertEqual(result.selected_candidate_ids, ("a1", "b", "c"))
+        self.assertEqual(result.phase_diagnostics["final_fallback_entered"], 1)
+
+    def test_legacy_policy_is_unchanged_when_no_genre_cap_is_set(self):
+        items = [item("x", score=3, genre="rock"), item("y", score=2, genre="rock")]
+        result = allocate_personal_recommendations(request(
+            items, count=2, targets={"adjacent": 2},
+        ))
+        self.assertEqual(result.selected_candidate_ids, ("x", "y"))
+        self.assertNotIn("family_coverage_attempts", result.phase_diagnostics)
+
+    def test_contract_rejects_invalid_coverage_settings(self):
+        for kwargs in ({"cap": 0}, {"ratio": 1.5}, {"target": 99}, {"floors": {"bogus": 1}}):
+            with self.assertRaises(ValueError, msg=str(kwargs)):
+                coverage_request([item("x")], count=3, **kwargs)
 
 
 if __name__ == "__main__":

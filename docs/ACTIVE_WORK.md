@@ -29,13 +29,29 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phases remain and nothing from it is queued. Derived is the only taste-profile mode and the fixed taste tables and mode switch are removed (PRs #561-#572). Evidence and limits are in `PROJECT_LOG.md`.
 
+## 2c. Engine 2 — next priority (draft roadmap: [engine2.md](engine2.md))
+
+Goal: several complementary lists of 10 ("lenses") from one shared candidate pool, including obscure-album lists and lists driven by different history windows. Evidence and phases are in `engine2.md`; measurements are in `PROJECT_LOG.md` (2026-10-23, two entries). Provider budget increases and live captures still need the owner's approval.
+
+First steps (Phase 1), in order:
+
+1. MBID-keyed popularity for the whole candidate pool (bounded, cached), compared against Deezer as a cross-check, evaluated on the existing 203-candidate capture.
+2. A taste-fit score for tag-lane candidates, evaluated offline. They currently all score 0.035 and never surface, and they are where obscure candidates come from (29 of 40 obscure, against 4 of 163 from CF).
+3. Read how the tag lane is seeded and whether a history window can drive the seeds.
+4. Offline "deep cuts" prototype on existing captures: how many obscure, well-fitting candidates exist.
+
+Phase 0 decisions that come first or alongside: merge the opt-in family-coverage branch, `CF_MAX_PAGES` 8 when coverage is on, a settings control, extra data sources. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
-- Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply. Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
+- **Family-coverage policy — implemented on branch `diversity/family-coverage-allocator`, awaiting owner decision** (opt-in setting; default unchanged; see `PROJECT_LOG.md` 2026-10-23). Decisions needed: merge, make it the default, raise `CF_MAX_PAGES` to 8 when it is on, and whether it needs a settings/UI control. Genre-tag lookups were raised from 60/75 to 120/135 artists on that branch (separate commit). Measurements and roadmap: [engine2.md](engine2.md).
+- Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply (the 2026-10-23 branch work shows 8 pages helps only with 120 tag lookups and the coverage policy; see `engine2.md`). Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
 - Detailed older evidence, alternatives, and evaluation criteria: [archived recommendation-engine research](archive/recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md).
 
 ## 4. Parked decisions — do not start without a new decision
+
+- **Unmerged branches kept on record (2026-10-23):** `diversity/family-coverage-allocator` (4 commits on `main` `1526e43`: genre-tag budget 120/135, opt-in `recommendation_selection_policy=family_coverage`, Engine 2 docs). It existed only locally until pushed; if it is absent from GitHub, its content is the branch commits listed in `PROJECT_STATUS.md`. Other local branches were checked: `docs/ghcr-latest-fix` has no commits that `main` lacks, and `taste-profile-evaluation` differs from its remote only by merge commits (its work was squash-merged in #565). Merge, rework or delete is the owner's decision.
 
 - **Recommendation diversity setting/UI:** paused until candidate supply supports meaningful cross-pool evaluation. See [archived diversity roadmap](archive/parked/DIVERSITY_SETTING_ROADMAP.md).
 - **Releases:** v0.2.2 image published 2026-10-22 (see `PROJECT_STATUS.md`); not deployed. Further publication or deployment requires explicit owner authorization. See [archived release preparation](archive/release/RELEASE_v0.2.md).

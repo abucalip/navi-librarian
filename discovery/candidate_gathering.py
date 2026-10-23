@@ -139,6 +139,13 @@ class RecommendationProviders:
 CF_PAGE_SIZE = 100
 # Owner-approved after batched genre lookup; four pages materially increase supply.
 CF_MAX_PAGES = 4
+# Artists whose MusicBrainz genre tags are fetched per run: the top candidate
+# artists, then recently scrobbled ones up to the total. Untagged candidates
+# score low and cannot join a genre-diverse list, so this bounds how much of the
+# pool can be classified (2026-10-23 captures: 60 left 40% of a 4-page pool
+# untagged; 120 left 14%; 220 gained nothing more).
+GENRE_LOOKUP_CANDIDATE_ARTISTS = 120
+GENRE_LOOKUP_TOTAL_ARTISTS = 135
 # Uncached MusicBrainz resolutions per run. Cached recordings cost no call.
 CF_MAX_UNCACHED_RESOLUTIONS = 100
 # Cold-start batch path: used only when no stored personal list exists yet, so the
@@ -1075,14 +1082,14 @@ def gather_recommendation_candidates(
         if artist_id and artist_id not in seen_artist_ids:
             seen_artist_ids.add(artist_id)
             artist_ids.append(artist_id)
-        if len(artist_ids) >= 60:
+        if len(artist_ids) >= GENRE_LOOKUP_CANDIDATE_ARTISTS:
             break
 
     # Add recently scrobbled artists when candidate metadata leaves spare slots.
     # recently, so the genre profile follows current listening rather than
     # only the recommendation candidate pool.
     for artist_id, _listen_count in recent_artist_mbid_counts.most_common(15):
-        if artist_id not in seen_artist_ids and len(artist_ids) < 75:
+        if artist_id not in seen_artist_ids and len(artist_ids) < GENRE_LOOKUP_TOTAL_ARTISTS:
             seen_artist_ids.add(artist_id)
             artist_ids.append(artist_id)
 

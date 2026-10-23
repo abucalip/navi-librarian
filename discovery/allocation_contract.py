@@ -46,6 +46,7 @@ class AllocationCandidate:
     source_order: int = 0
     diversity_style: str = "other"
     recent_profile_family: str | None = None
+    genre_family: str | None = None
     ownership: OwnershipStatus = OwnershipStatus.CLEAR
     tags: tuple[str, ...] = ()
 
@@ -76,6 +77,13 @@ class AllocationRequest:
     family_cap: int = 1
     max_checks: int = MAX_CANDIDATE_CHECKS
     diversity_penalty: float = 0.0
+    # Family-coverage policy. A non-None genre_family_cap selects it and replaces
+    # the category-quota passes and the recent-family cap.
+    genre_family_cap: int | None = None
+    unknown_family_cap: int = 1
+    category_floors: Mapping[str, int] = field(default_factory=dict)
+    coverage_target: int = 0
+    coverage_floor_ratio: float = 0.4
 
     def __post_init__(self) -> None:
         if not 1 <= self.count <= MAX_RECOMMENDATION_COUNT:
@@ -100,6 +108,25 @@ class AllocationRequest:
                 or not math.isfinite(self.diversity_penalty)
                 or not 0.0 <= self.diversity_penalty <= 1.0):
             raise ValueError("diversity_penalty must be finite and between 0 and 1")
+        if self.genre_family_cap is not None and (
+                type(self.genre_family_cap) is not int or self.genre_family_cap < 1):
+            raise ValueError("genre_family_cap must be a positive integer or None")
+        if type(self.unknown_family_cap) is not int or self.unknown_family_cap < 0:
+            raise ValueError("unknown_family_cap must be a non-negative integer")
+        if not set(self.category_floors).issubset(QUOTA_CATEGORIES):
+            raise ValueError("category_floors contains an unsupported category")
+        if any(type(value) is not int or value < 0 for value in self.category_floors.values()):
+            raise ValueError("category floors must be non-negative integers")
+        if type(self.coverage_target) is not int or not 0 <= self.coverage_target <= self.count:
+            raise ValueError("coverage_target must be between 0 and count")
+        if (isinstance(self.coverage_floor_ratio, bool)
+                or not isinstance(self.coverage_floor_ratio, (int, float))
+                or not math.isfinite(self.coverage_floor_ratio)
+                or not 0.0 <= self.coverage_floor_ratio <= 1.0):
+            raise ValueError("coverage_floor_ratio must be finite and between 0 and 1")
+        object.__setattr__(
+            self, "category_floors", MappingProxyType(dict(self.category_floors))
+        )
         object.__setattr__(
             self, "category_targets", MappingProxyType(dict(self.category_targets))
         )

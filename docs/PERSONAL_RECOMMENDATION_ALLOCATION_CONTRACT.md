@@ -39,3 +39,9 @@ The current nested `consider()` both applies allocation policy and performs iden
 3. The legacy adapter preserves response fields, order, ownership-review behavior, error handling, and callers.
 4. Provider I/O, cache access, library retrieval, ranking/enrichment, and response serialization remain outside the allocator.
 5. No callbacks or shared mutable state are required by the allocation function.
+
+## Family-coverage policy (opt-in)
+
+`AllocationRequest.genre_family_cap` selects a second policy; when it is `None` the quota policy above is unchanged. The policy uses `AllocationCandidate.genre_family` (computed by the caller with `primary_genre_family`), `unknown_family_cap`, `category_floors`, `coverage_target` and `coverage_floor_ratio`. Phases: category floors, family coverage (best candidate of each unseen family at or above `coverage_floor_ratio` x the top clear score), score fill, then the existing relaxed final fallback. The recent-family cap and category quotas do not apply, and owned or conflicting candidates do not consume the check budget. Tests: `FamilyCoveragePolicyTests`.
+
+The adapter pieces live outside `recommend_new_music`: `discovery/allocation_inputs.py` (ownership classification and `AllocationCandidate` construction, including `genre_family`) and `discovery/selection_policy.py` (quota targets, family-coverage request options, and the response diagnostics emitted only under the opt-in policy). Tests: `tests/test_discovery_selection_inputs.py` and the policy cases in `tests/test_recommend_new_music_characterization.py`.

@@ -137,3 +137,7 @@ python scripts/session_search.py "path traversal symlink" --scope code --json
 ```
 
 Verify all-terms and any-term matching, quoted phrase parsing, scope filtering, snippet output, and exclusion of virtual environments/oversized files. Search output is navigation only; code review must still trace callers, configuration, tests, and safety behavior.
+
+## Selection-policy evaluation (offline)
+
+Use when comparing allocator policies or lenses on frozen owner-only captures (see "Recommendation capture/replay"). Build the allocator request from a replayed capture, label candidates with `primary_genre_family`, and run each policy through the real `allocate_personal_recommendations`. Report, per capture arm: distinct genre families, largest-family count, entropy, mean pairwise tag Jaccard, mean and minimum engine score, overlap with the production list, untagged picks, adventurous count, and checked count. Required: every arm must return the requested count. Compare arms with the same tag-lookup budget; a different budget changes the pool, so state it. Replay captures do not freeze the selection-policy setting, so a family-coverage capture does not reproduce under default settings. Engine score is not a listening-quality measure; make no quality claim from these metrics. Captures and any identity-bearing output stay outside the repository. The 2026-10-23 harness was a one-off script and is not committed.

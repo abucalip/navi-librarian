@@ -4,6 +4,8 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Current state
 
+- **Unmerged branch `diversity/family-coverage-allocator` (local, 4 commits on `main` `1526e43`):** genre-tag lookups 60/75 to 120/135; opt-in `recommendation_selection_policy = family_coverage` (default `quota`, legacy path unchanged); docs. Focused tests passed locally (allocator, contract, derived profile, settings, gathering, replay, size guard); the full unit suite was not run locally and CI has not run on this branch. Live end-to-end runs: 7 families at 4 CF pages and 9 at 8 pages, at most 2 per family, against 7 with 4 rock for the quota policy. Not browser-verified, not published or deployed. Evidence: `PROJECT_LOG.md`, [engine2.md](engine2.md).
+
 - PR #563 (externalize taste-family defaults) squash-merged as `9a659f6e9da175e475aa22f86c69492f40206869` from exact head `0de6a16c6058c053f0948c6b46c74f50092b7bf9`. All four required workflows passed on that head, including a fresh Docker packaging/full-unit-suite run `39861151000`; no publication or deployment.
 - PR #564 (`taste_profile_mode=derived`, off by default) squash-merged as `508269f1177e35075330c903775f74e23c2f14af` from exact PR head `6c08e385dccb21a28dd3b1e54531cb554ef26db8`. The sparse-history fallback now reports effective mode `fixed`, with regression coverage for fixed classification and exploration bonus. All four required workflows passed on the exact PR head: Python syntax/acquisition safety (`39862938840`), Docker packaging/full unit suite/image build (`39862938736`), container runtime smoke (`39862938685`), and non-publishing multi-architecture validation (`39862938695`). A compare of the merge commit against pre-merge `main` shows only the seven derived-profile files changed; the already-merged #563 defaults are not duplicated in the net merge diff. Derived mode remains off by default pending multi-profile replay evidence and the owner's approval. No publication or deployment.
 
@@ -30,7 +32,7 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Next action
 
-The hard-coded taste replacement is complete; the derived profile is the only mode. Remaining optional work is listed in `ACTIVE_WORK.md` section 2b. Image publication or deployment of these changes needs explicit owner authorization.
+The hard-coded taste replacement is complete; the derived profile is the only mode. The next priority is Engine 2 Phase 1 (`ACTIVE_WORK.md` section 2c, roadmap in [engine2.md](engine2.md)): MBID-keyed popularity for the candidate pool, a taste-fit score for tag-lane candidates, how the tag lane is seeded, and an offline deep-cuts prototype. The opt-in family-coverage policy and the raised tag-lookup budget are committed on local branch `diversity/family-coverage-allocator` (not pushed, not merged); merging is the owner's decision. Image publication or deployment needs explicit owner authorization.
 
 ## Where to look
 

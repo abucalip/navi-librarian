@@ -77,6 +77,21 @@ def derived_genre_families(tags: Iterable[str]) -> set[str]:
     return families
 
 
+def primary_genre_family(tags: Iterable[str]) -> str | None:
+    """Most common root family across a candidate's tags, or None when untagged.
+
+    Uses fallback_family (trailing root word, then the ancestry table) so
+    "alternative rock" counts as rock. MusicBrainz tags arrive sorted by name, so
+    the first tag says nothing about relevance; ties go to the alphabetically
+    first family to stay deterministic.
+    """
+    counts = Counter(family for family in map(fallback_family, tags) if family)
+    if not counts:
+        return None
+    top = max(counts.values())
+    return min(family for family, count in counts.items() if count == top)
+
+
 # Core families whose listens overlap this much (weighted Jaccard) are one taste
 # cluster, so a candidate in both is not "cross-genre" (pop and rock, say).
 CLUSTER_JACCARD = 0.5

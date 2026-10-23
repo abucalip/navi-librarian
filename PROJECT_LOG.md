@@ -1,3 +1,34 @@
+## 2026-10-23 — PR #573 review fix: legacy-server size ratchet
+
+- The reviewer found `recommend_new_music()` at 474 lines against the 450-line exception (the Python syntax workflow failed at the size ratchet). `main` was exactly at 450, so any addition inside the function failed. The limit was not raised.
+- Fix: ownership classification and `AllocationCandidate` construction moved to `discovery/allocation_inputs.py`; quota targets, the family-coverage request options and the opt-in response diagnostics moved to `discovery/selection_policy.py`. `recommend_new_music()` is now 418 lines. Behavior is unchanged for both policies.
+- Tests added: `tests/test_discovery_selection_inputs.py` (ownership statuses, input building and genre family, quota split, policy options and report) and three server-level cases (default policy keeps quotas and the response shape; opt-in policy sets the allocator options and reports genre families; unknown value falls back to quota).
+- Run locally: the steps of the Python syntax workflow (py_compile list, size ratchet, app import boundary, dependency map) and the focused test modules touching the change. The full suite was not run locally; CI results for the updated head are recorded in the PR.
+
+## 2026-10-23 — Obscurity measurements and Engine 2 roadmap (docs only)
+
+Owner-approved read-only provider calls (Last.fm `album.getInfo` for 203 unowned candidates, `artist.getInfo` for 144 artists, about 20 Deezer lookups); private result files outside the repository (mode 600); aggregates only. One capture (8 CF pages, 120 tag lookups), one profile. No code or default changed by this entry.
+
+- **Popularity data is nearly absent from captures.** The engine looks up Last.fm popularity for about 40 candidates per run; 12 unowned candidates carried listener counts and the smallest was 9,382.
+- **Album-level Last.fm lookups mismatch** on titles with brackets, curly quotes or edition suffixes, making well-known albums look obscure. Artist-level lookups are better but mismatch on "feat." credits and non-ASCII hyphens. MBID lookups are needed.
+- **Artist listeners, 203 candidates:** median 4.2M; 33 (16%) under 200k; 22 under 50k; 17 under 10k.
+- **Obscure candidates come from the MusicBrainz tag lane:** 29 of 40 (73%), against 4 of 163 (2%) from ListenBrainz CF. All tag-lane candidates share the base score 0.035 (no taste bonus), so they never rank.
+- **Score tracks popularity:** median album listeners 2.7M for the top 20 by score, 75k for ranks 120 and below.
+- **Deezer (no key):** 15 of 20 sampled albums matched; 0 to 132 fans for albums with 1 to 554 Last.fm listeners, 54 to 348,362 for 4.0M to 5.3M. Separates extremes, noisy mid-range.
+- **Roadmap:** `docs/engine2.md` (lenses, other data sources, phases, evaluation metrics, open decisions). `ACTIVE_WORK.md` section 2c lists Phase 1 as the next priority.
+- **Limits:** one profile and one capture; album-level counts unreliable; the tag-lane seeding code was not read; Deezer/Discogs/others unverified beyond the Deezer sample; no listener-quality measurement.
+
+## 2026-10-23 — Family-coverage selection policy and genre-tag budget (branch `diversity/family-coverage-allocator`, not merged)
+
+Owner-approved live captures (read-only, slskd off, aggregates only, private captures outside the repo, mode 600). Single profile, one capture per arm; no recommendation-quality claim.
+
+- **Finding.** With the quota policy the wider CF pool barely reaches the final list: genre-tag lookups were capped at 60 (+15 recent) artists whatever the pool size, so extra candidates arrived untagged, scored low, and never ranked. Untagged unowned candidates at 4 / 8 / 12 CF pages: 40 / 97 / 128 (60 lookups), 15 / 39 / 61 (120), 15 / 13 / 15 (220). 220 gained nothing over 120.
+- **Label correction.** The first experiments labelled families by the alphabetically first tag through the rules table ("alternative rock" -> "alternative"), which inflated family counts. The final label is `primary_genre_family`: plurality of `fallback_family` (trailing root word, then the Wikidata ancestry table) across all tags.
+- **Offline (real allocator, 9 captures, count 10).** Cap 2 alone is about level with 4/3/3 on spread and higher on engine score (0.158 vs 0.14 to 0.145). The coverage phase is what uses the wider pool: with 8+ CF pages and 120 tags, coverage at floor 0.4 reached 9 families (entropy 3.12, mean score 0.147 vs 0.145 for 4/3/3, 6 families). At 4 pages the pool cannot exceed 7.
+- **Live end to end (new code, tag budget 120).** quota @4 pages: 7 families, 4 rock; family_coverage @4: 7 families, max 2 per family; family_coverage @8: 9 families, max 2. 10 recommendations and 10 artists in each, no provider failures.
+- **Change.** Commit 1: tag budget 60/75 -> 120/135 (named constants). Commit 2: opt-in `recommendation_selection_policy = family_coverage` (default `quota`, legacy path unchanged): genre-family cap 2 (unknown 1), adventurous floor `count // 5`, coverage phase above 0.4 x top score, score fill, relaxed final fallback; owned candidates do not use the 60-check budget under this policy. `CF_MAX_PAGES` left at 4.
+- **Limits.** Replay captures do not freeze the policy setting, so family_coverage captures do not reproduce under default settings. Coverage lists lean toward higher-scoring, better-known albums than the quota list in the one live comparison (the quota list had a jazz and two lesser-known picks the coverage list lacked); whether that is better or worse is not measured. No setting UI, no browser check, not published or deployed. Engine score is not a listening-quality measure.
+
 ## 2026-10-23 — CF freshness repeat, deeper CF pages, and recent-vs-all-time profile comparison (docs only)
 
 All live runs were approved by the owner; slskd off; aggregate only; harnesses were one-off scripts and are not committed; temporary data dirs deleted. No code, default, or ranking weight changed. Single samples throughout; none supports a recommendation-quality claim.
