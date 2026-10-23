@@ -1,3 +1,26 @@
+## 2026-10-23 — CF freshness repeat, deeper CF pages, and recent-vs-all-time profile comparison (docs only)
+
+All live runs were approved by the owner; slskd off; aggregate only; harnesses were one-off scripts and are not committed; temporary data dirs deleted. No code, default, or ranking weight changed. Single samples throughout; none supports a recommendation-quality claim.
+
+- **P0h repeat (CF freshness).** 4 CF pages, 3 recent-listen pages, 1 `stats/.../recordings` GET (200). CF pool 400 of 1,000; recent 30 days 100 listens / 89 distinct mapped recordings; all-time top 1,000 items / 902 with a recording MBID. CF in recent: 2 (0.5%). CF in all-time: 44 (11.0%), all of it all-time-only (X = 11.0%). All-time matches per CF page 10, 11, 13, 10 (baseline of 2026-10-21: 23, 10, 1, 3 on page 1). Decision-table outcome: **mixed; keep defaults.** The even spread across pages, against the page-1 concentration of the baseline, is consistent with ListenBrainz having recomputed CF; this was not independently verified (the baseline CF recordings were not retained).
+- **P1a repeat (deeper CF pages), `CF_MAX_PAGES` 4 / 6 / 8.** Test-only override, fresh data dir per arm, one cold and one warm run per arm, 10-minute pause between arms (the 2026-10-21 run had none).
+
+| Pages | Cold | Warm | CF recordings resolved | LB candidate albums | Final list overlap with 4-page (cold / warm) |
+| --- | --- | --- | --- | --- | --- |
+| 4 | 27.7 s | 11.4 s | 400 | 117 | n/a |
+| 6 | 38.9 s | 9.9 s | 600 | 180 | 9/10, 9/10 |
+| 8 | 34.0 s | 10.2 s | 800 | 234 | 9/10, 9/10 |
+
+  Final list 10 albums / 10 artists in every run; no ListenBrainz 429 or 502; one MusicBrainz 503 (6-page cold run). The 6-page cold run missed the +10 s threshold by 1.2 s; the 8-page cold run passed (+6.3 s). Eligible unowned albums were **not** captured, so candidate albums stand in for them. Each extra 2 pages cost 2 CF GETs and 2 recording-batch GETs, with no fallback to per-recording lookups. The 2026-10-21 cold-run failure (429s, fallback, 183.6 s) did not recur. **Decision: keep `CF_MAX_PAGES = 4`.** The larger pool changes the final list by one album; 8 pages is the candidate if more supply is wanted later.
+- **Recent 30 days vs all-time profile (full-engine responsiveness; offline replay of one live capture).** One live capture (cold, 22.1 s, 10 recommendations, 152 ranked candidates), then `recommendation.profile_comparison` building blocks with a one-off driver. History: the owner's 22,185-scrobble export (2002-10-01 to 2019-05-26; artist MBIDs on 18,023 rows; 3,031 rows carry a 1970 timestamp in the raw export, so dates came from the cleaned export, which aligns row for row). Profiles: recent 30 days (100 listens, 24 artists, 76 genre-classified listens, 8 families) vs all-time (22,285 listens, 721 artists, 18,112 with an artist MBID, 3,060 genre-classified, 8 families).
+  - All-time with **flat** weights vs recent: 9/10 final overlap (Jaccard 0.82), 5 positions changed, 143 of 152 shared candidates changed rank, maximum displacement 55; category split unchanged (4 adjacent / 3 adventurous / 3 cross-genre); 10 distinct artists in both.
+  - All-time with the **production** 14-day half-life vs recent: identical (10/10, 0 rank changes), because decay is anchored to the newest listen and the older history weighs about zero. The app today effectively ignores history older than a few weeks.
+  - Allocator: about 90 of 152 candidates are blocked by the recent-genre cap in both profiles (88 and 90); only 1 to 2 of the 10 selections come from the top 10 by score.
+  - Limits: one frozen pool and one capture; candidate generation not varied (the CF pool is built by ListenBrainz from the whole history); genre data exists only for artists already looked up in the snapshot, so the all-time family profile is partial; 11 popularity lookups had no captured data in the all-time arm and were treated as no bonus (no live request).
+  - Reading: ranking responds to listening habits; the final list barely does. Same shape as the 2026-10-18 result (PR #361 harness). No weight change is justified by this.
+- The private capture contains listening history and stays outside the repository (owner-only directory).
+- Next: optional, owner's decision. Investigate why the recent-genre cap removes about 60% of candidates in both profiles, or request approval for 8 CF pages if more candidate supply is wanted. Neither is started.
+
 ## 2026-10-23 — Genre ancestry table extended to 398 tags (PR #572)
 
 - PR #572 squash-merged as `133a510627d42fecf86241a3f4f04a189950a65c` from exact head `344b8775863ba55a13bca3951b45e9f62080ccaa`; all four required workflows passed, including the full unit suite (test-and-build run `39873873438`). CI was not re-checked on the merge commit.
