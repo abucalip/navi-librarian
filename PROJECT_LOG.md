@@ -1,3 +1,11 @@
+## 2026-10-23 — PR #573 merged: opt-in family-coverage policy
+
+- Squash-merged as `9b1dab53f2fc480fd74f4e24560ebb6dd7ed14e1` from exact tested PR head `1c67f61add223274a898aeb3061d95a1664139f8`.
+- The final review fix moved ownership classification and allocation-input construction to `discovery/allocation_inputs.py`, and quota/coverage request options and diagnostics to `discovery/selection_policy.py`; `recommend_new_music()` is 418 lines. The enforced limit was not raised.
+- Regression coverage checks ownership classification and stable allocation inputs, legacy quota targets/default response shape, opt-in family-coverage options/diagnostics, and fallback for unknown setting values.
+- Required CI passed on the exact PR head: Python syntax/acquisition safety run `39944738730`; Docker packaging, full unit suite and image build `39944738753`; container runtime smoke `39944738722`; non-publishing multi-architecture validation `39944738756`. Release workflow validation `39944738733` passed with the publishing job skipped. The full unit suite was run by CI, not locally. No browser check was performed.
+- Remaining evidence limits: one profile and individual captures; no listening-quality claim; replay captures do not freeze the selection-policy setting; the per-artist MusicBrainz fallback path was not exercised. No publication or deployment.
+
 ## 2026-10-23 — PR #573 review fix: legacy-server size ratchet
 
 - The reviewer found `recommend_new_music()` at 474 lines against the 450-line exception (the Python syntax workflow failed at the size ratchet). `main` was exactly at 450, so any addition inside the function failed. The limit was not raised.
@@ -18,7 +26,7 @@ Owner-approved read-only provider calls (Last.fm `album.getInfo` for 203 unowned
 - **Roadmap:** `docs/engine2.md` (lenses, other data sources, phases, evaluation metrics, open decisions). `ACTIVE_WORK.md` section 2c lists Phase 1 as the next priority.
 - **Limits:** one profile and one capture; album-level counts unreliable; the tag-lane seeding code was not read; Deezer/Discogs/others unverified beyond the Deezer sample; no listener-quality measurement.
 
-## 2026-10-23 — Family-coverage selection policy and genre-tag budget (branch `diversity/family-coverage-allocator`, not merged)
+## 2026-10-23 — Family-coverage selection policy and genre-tag budget (PR #573, merged)
 
 Owner-approved live captures (read-only, slskd off, aggregates only, private captures outside the repo, mode 600). Single profile, one capture per arm; no recommendation-quality claim.
 
