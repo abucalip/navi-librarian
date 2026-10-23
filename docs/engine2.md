@@ -1,6 +1,6 @@
 # Engine 2 — roadmap: diverse, multi-list recommendations
 
-Status: **draft roadmap, 2026-10-23.** GitHub `main` is authoritative; the family-coverage policy is merged in PR #573 and remains opt-in. Phase 1 and Phase 2 (lens framework and evaluation metrics) are complete; Phase 3 time-range profiles is the next step listed in `ACTIVE_WORK.md`. Evidence is aggregate-only from one profile; see [Limits](#limits-of-the-evidence).
+Status: **draft roadmap, 2026-10-23.** GitHub `main` is authoritative; the family-coverage policy is merged in PR #573 and remains opt-in. Phase 1 and Phase 2 (lens framework and evaluation metrics) are complete. Phase 3 is partly complete: the unwired Deep cuts tiered supply (PR #581) and the per-lens, per-day radio cache scope (PR #582) are merged; the window gate is met only at the seed level (see Phase 3). Evidence is aggregate-only from one profile; see [Limits](#limits-of-the-evidence).
 
 ## Goal
 
@@ -95,7 +95,7 @@ Recent 30 days against all time (flat weights): 9/10 final overlap, 143 of 152 s
 
 - One gather per refresh, many lenses. Lenses are pure functions of an immutable pool snapshot.
 - Each album appears in at most one list per day (partition), and every recommendation records its lens.
-- Lists are generated ahead of time and kept stable; rotation is a presentation choice, not a fetch strategy.
+- Lists are generated ahead of time and fixed for the day (owner decision, 2026-10-24); they change between days, not on every refresh. Rotation is a presentation choice, not a fetch strategy.
 - Popularity and taste signals are keyed by MBID wherever a provider supports it.
 - Preserve the guardrails in `RECOMMENDATION_ENGINE_IMPROVEMENTS.md`: owned-album exclusion, artist identity, duplicate suppression, bounded provider calls, private captures never in GitHub.
 
@@ -159,12 +159,12 @@ Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, 
 - Profile windows (30 days, 1 year, all time) built from the imported history, with flat or windowed weights.
 - Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses.
 - Deferred from Phase 2 (owner decision, 2026-10-23): make the tag-radio popularity band a parameter keyed in the radio cache (approved Deep cuts band 50 to 75%, tail 75 to 100%), verify the title-marker filter on both radio and MusicBrainz sources, and add the MusicBrainz tag-search tail. Defaults stay at the current 0 to 100% until the owner approves a live run.
-- Gate: show that a window changes the candidate pool, not only ranks (the 2026-10-23 comparison showed rank changes without final-list changes).
+- Gate: show that a window changes the candidate pool, not only ranks. Result (2026-10-24, six repeated radio samples per tag, five windows, replayed through the production lane): a window changes the pool only through its seed tags. Each tag contributes exactly five albums, and the albums are redrawn on every radio call (about one album shared across repetitions of the same window). Different windows share albums only where they share seed tags. The gate is therefore met at the seed level and not at the album level. Radio answers are now fixed per lens per day (PR #582), so a daily list is stable without making it fixed forever.
 
 ### Phase 4 — precompute and serve
 
 - Background gather writes a pool snapshot; all lenses run on it; finished lists are stored with timestamp and lens (the repo has `discovery/refresh.py` and a snapshot store to build on).
-- Daily generation, stable lists, rotation or "next list" in the UI. Cooldown interaction handled by partitioning.
+- Daily generation with lists fixed for the day (radio answers keyed by lens and day, PR #582), a fresh set the next day; rotation or "next list" in the UI. Cooldown interaction handled by partitioning.
 - Cache popularity and tags (genre tags already use a 90-day cache); respect MusicBrainz and Last.fm rate limits.
 
 ### Phase 5 — feedback loop
@@ -195,4 +195,6 @@ One profile; one capture per arm; single live run per configuration; harnesses a
 3. Settings or UI control for the policy, now or later?
 4. Which additional data sources to adopt (Deezer, Discogs), and credentials for Discogs if so.
 5. How many lists per day, and rotation versus tabs.
+
+   Resolved 2026-10-24 (owner): lists are fixed for the day and refreshed daily, not on every refresh.
 6. A daily acquisition cap if several lists are served.
