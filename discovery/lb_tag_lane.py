@@ -25,8 +25,23 @@ MAX_PARALLEL_TAG_CALLS = 8
 TAG_RADIO_STRAGGLER_SECONDS = 4.0
 
 
-def _tag_radio_request(providers, tag, headers) -> list[str]:
-    """One tag-radio GET. Network only, so it is safe to run on a worker thread."""
+def _radio_entries(raw) -> list[tuple[str, int]]:
+    """(recording MBID, radio tag_count) pairs from a response or a cached value.
+
+    Older cache entries are plain MBID strings and carry no count (0)."""
+    entries: dict[str, int] = {}
+    for item in raw or []:
+        if isinstance(item, str):
+            entries.setdefault(item, 0)
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            count = item[1] if type(item[1]) is int and item[1] > 0 else 0
+            entries.setdefault(str(item[0]), count)
+    return list(entries.items())
+
+
+def _tag_radio_request(providers, tag, headers) -> list[list]:
+    """One tag-radio GET, as [recording MBID, tag_count] pairs in radio order.
+    Network only, so it is safe to run on a worker thread."""
     response = providers.http_get(
         LB_TAG_RADIO_URL,
         params={"tag": tag, "operator": "OR", "pop_begin": 0, "pop_end": 100,
@@ -38,10 +53,13 @@ def _tag_radio_request(providers, tag, headers) -> list[str]:
     body = response.json()
     if not isinstance(body, list):
         raise RuntimeError("tag radio returned a non-list body")
-    return list(dict.fromkeys(
-        str(item["recording_mbid"]) for item in body
-        if isinstance(item, dict) and item.get("recording_mbid")
-    ))
+    pairs: dict[str, int] = {}
+    for item in body:
+        if isinstance(item, dict) and item.get("recording_mbid"):
+            count = item.get("tag_count")
+            pairs.setdefault(str(item["recording_mbid"]),
+                             count if type(count) is int and count > 0 else 0)
+    return [[mbid, count] for mbid, count in pairs.items()]
 
 
 class _RadioHTTPError(RuntimeError):
@@ -74,7 +92,7 @@ def _fetch_all_tag_recordings(providers, tags, headers, state):
             f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", ttl_seconds=TAG_RADIO_TTL_SECONDS)
         if cached is not None:
             state["hits"] += 1
-            results[tag] = list(cached)
+            results[tag] = _radio_entries(cached)
         else:
             state["misses"] += 1
             pending.append(tag)
@@ -100,7 +118,7 @@ def _fetch_all_tag_recordings(providers, tags, headers, state):
             for future in done:
                 tag = futures[future]
                 try:
-                    results[tag] = future.result()
+                    results[tag] = _radio_entries(future.result())
                 except Exception as exc:
                     results[tag] = exc
                     if isinstance(exc, _RadioHTTPError) and exc.status in RETRYABLE_STATUS_CODES:
@@ -124,13 +142,13 @@ def run_lb_tag_queries(
 ):
     """Add album candidates from tag radio. Same state and outcome contract as the
     MusicBrainz lane: one (added, error_class) pair per query attempted."""
-    planned: list[tuple[str, str, str, str, list[str], str | None]] = []
+    planned: list[tuple[str, str, str, str, list[tuple[str, int]], str | None]] = []
     tags = {query: tag_from_query(query) for query, _f, _s in queries}
     fetched = _fetch_all_tag_recordings(
         providers, [t for t in tags.values() if t], headers, state)
     for query, family, style in queries:
         tag = tags[query]
-        mbids: list[str] = []
+        mbids: list[tuple[str, int]] = []
         error_class = None
         if not tag:
             error_class = "invalid_query"
@@ -144,7 +162,7 @@ def run_lb_tag_queries(
                 mbids = got or []
         planned.append((query, family, style, tag, mbids, error_class))
 
-    wanted = list(dict.fromkeys(m for plan in planned for m in plan[4]))
+    wanted = list(dict.fromkeys(m for plan in planned for m, _count in plan[4]))
     try:
         recordings = resolve([{"recording_mbid": m} for m in wanted]) if wanted else {}
     except Exception as exc:
@@ -157,7 +175,7 @@ def run_lb_tag_queries(
         added = 0
         if error_class is None:
             source = "profile_tag_search" if style.startswith("profile:") else "exploration_tag_search"
-            for mbid in mbids:
+            for mbid, tag_count in mbids:
                 recording = recordings.get(mbid)
                 if not recording:
                     continue
@@ -177,6 +195,8 @@ def run_lb_tag_queries(
                     key = (providers.music_key(first["name"]), providers.music_key(title))
                     if key in albums:
                         existing = albums[key]
+                        if tag_count > existing.get("tag_strength", 0):
+                            existing["tag_strength"] = float(tag_count)
                         merge_source(existing, source)
                         families = existing.setdefault("regional_families", [])
                         if family not in families:
@@ -194,6 +214,7 @@ def run_lb_tag_queries(
                         "album": title,
                         "release_group_mbid": group.get("id"),
                         "score": 0.035,
+                        "tag_strength": float(tag_count),
                         "tracks": [],
                         "discovery_source": "listenbrainz_tag_radio",
                         "discovery_sources": [source],
