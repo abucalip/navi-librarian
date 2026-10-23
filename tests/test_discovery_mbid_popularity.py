@@ -3,6 +3,8 @@ import unittest
 
 from discovery.mbid_popularity import (
     ALBUM_CACHE_PREFIX,
+    MISS_TTL_SECONDS,
+    POPULARITY_TTL_SECONDS,
     ARTIST_CACHE_PREFIX,
     LASTFM_API_URL,
     MUSICBRAINZ_RELEASE_SEARCH_URL,
@@ -32,6 +34,23 @@ class _Cache:
 
     def set(self, key, value, **kwargs):
         self.store[key] = value
+
+
+class _TtlCache(_Cache):
+    """Honors ttl_seconds against a movable clock, like MetadataCache."""
+
+    def __init__(self):
+        super().__init__()
+        self.now, self.stamp = 0.0, {}
+
+    def get(self, key, ttl_seconds=None, **kwargs):
+        if key not in self.store or self.now - self.stamp[key] > ttl_seconds:
+            return None
+        return self.store[key]
+
+    def set(self, key, value, **kwargs):
+        self.store[key] = value
+        self.stamp[key] = self.now
 
 
 def _release(rid, group, status="Official", date="2000"):
@@ -155,6 +174,49 @@ class ResolvePopularityTests(unittest.TestCase):
         before = len(net.calls)
         _resolve(net, [_cand("g1", "a1")], cache=cache)
         self.assertEqual(len(net.calls), before)
+
+    def test_cached_miss_expires_after_seven_days_but_found_value_lasts_thirty(self):
+        cache = _TtlCache()
+        net = _Net([_release("r1", "g1"), _release("r2", "g2")], album={"r2": 50}, artist={"a1": 10})
+        _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        cache.now = MISS_TTL_SECONDS - 1
+        before = len(net.calls)
+        _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
+        self.assertEqual(len(net.calls), before)
+        cache.now = MISS_TTL_SECONDS + 1
+        out, _ = _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
+        retried = [p["mbid"] for p in net.lastfm_calls("album.getInfo")[2:]]
+        self.assertEqual(retried, ["r1"])
+        self.assertEqual(out["g2"]["album_listeners"], 50)
+        cache.now = POPULARITY_TTL_SECONDS + 1
+        before = len(net.lastfm_calls("album.getInfo"))
+        _resolve(net, [_cand("g2", "a1")], cache=cache)
+        self.assertGreater(len(net.lastfm_calls("album.getInfo")), before)
+
+    def test_transient_lastfm_failures_are_not_cached_as_misses(self):
+        for label, reply in (
+            ("service error", _Response({"error": 11, "message": "offline"})),
+            ("http 503", _Response({}, status_code=503)),
+            ("rate limit", _Response({"error": 29})),
+            ("non-object", _Response([])),
+        ):
+            with self.subTest(label):
+                def get(url, params=None, **kw):
+                    if url == LASTFM_API_URL:
+                        return reply
+                    return _Response({"count": 1, "releases": [_release("r1", "g1")]})
+                cache = _Cache()
+                out = resolve_popularity(get, [_cand("g1", "a1")], api_key="k", headers={},
+                                         cache_get=cache.get, cache_set=cache.set)
+                self.assertEqual(cache.store, {})
+                self.assertEqual(out["g1"]["basis"], "none")
+
+    def test_not_found_error_six_is_cached_as_definitive_miss(self):
+        net = _Net([_release("r1", "g1")])
+        _, cache = _resolve(net, [_cand("g1", "a1")])
+        self.assertEqual(cache.store[f"{ARTIST_CACHE_PREFIX}a1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
 
     def test_cached_values_cost_no_calls(self):
         cache = _Cache()

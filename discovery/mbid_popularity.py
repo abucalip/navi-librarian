@@ -149,7 +149,17 @@ class _Budget:
         return True
 
 
+# Last.fm error 6 is the definitive "not found" for an MBID. Every other error
+# (service offline, rate limit, temporary failure, ...) and any non-200 status
+# without that error is transient and must not be cached as a miss.
+LASTFM_NOT_FOUND = 6
+
+
 def _lastfm_stats(get, method: str, mbid: str, api_key: str, section: str, timeout: float):
+    """Return {"listeners", "playcount"}, or None for a definitive not-found.
+
+    Raises on any transient failure so the caller leaves the value uncached.
+    """
     from recommendation_run_metrics import record_provider_call
 
     record_provider_call("lastfm", method)
@@ -160,21 +170,34 @@ def _lastfm_stats(get, method: str, mbid: str, api_key: str, section: str, timeo
     )
     body = response.json()
     if not isinstance(body, dict):
-        return None
+        raise RuntimeError("Last.fm returned a non-object body")
+    if "error" in body:
+        if body["error"] == LASTFM_NOT_FOUND:
+            return None
+        raise RuntimeError(f"Last.fm error {body['error']}")
+    if response.status_code != 200:
+        raise RuntimeError(f"Last.fm returned {response.status_code}")
     block = body.get(section)
     if not isinstance(block, dict):
-        return None
+        raise RuntimeError("Last.fm body has no " + section)
     stats = block.get("stats") if section == "artist" else block
     try:
         return {"listeners": int(stats["listeners"]), "playcount": int(stats.get("playcount") or 0)}
     except (KeyError, TypeError, ValueError):
-        return None
+        raise RuntimeError("Last.fm body has no listeners")
 
 
 def _cached(cache_get, key: str):
-    """Return (hit, value). A cached miss is {"listeners": None}."""
-    value = cache_get(key, ttl_seconds=POPULARITY_TTL_SECONDS)
+    """Return (hit, value). A cached not-found is {"listeners": None}.
+
+    ``MetadataCache.get`` applies one TTL per read, so a miss is read with the
+    short TTL first and a found value with the long one.
+    """
+    value = cache_get(key, ttl_seconds=MISS_TTL_SECONDS)
     if isinstance(value, dict) and "listeners" in value:
+        return True, value
+    value = cache_get(key, ttl_seconds=POPULARITY_TTL_SECONDS)
+    if isinstance(value, dict) and value.get("listeners") is not None:
         return True, value
     return False, None
 
