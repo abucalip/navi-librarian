@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-10-23. GitHub `main` is authoritative.
+Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Current state
+
+- PR #582 (daily ListenBrainz radio cache scope for Deep cuts) squash-merged as `5018446c45c000fefcde6a4955a6bcb6e1943f77` from exact reviewed head `48532b774af01e895de1a7ef41c823b07b94edd1`. Radio answers are cached per lens and ISO day; the default unscoped cache key remains unchanged. Tests cover same-day reuse, next-day refresh, separate lens samples, and input validation. All four required workflows passed on the exact head: Python syntax/acquisition safety (`40041573624`), Docker packaging/full unit suite/image build (`40041573588`), container runtime smoke (`40041573555`), and validation-only multi-architecture image validation (`40041573534`; publishing paused). Full unit suite ran in CI, not manually. Still unwired; no live calls, publication, deployment, or runtime verification.
 
 - PR #580 (Engine 2 Phase 3 history-window helpers) squash-merged as `ede38e969956d1907ba25e579203c6d4b5805c3b` from final reviewed head `f2ca7a9822af0dac592c0e36cd81a7bcee8c25f8`. Added pure `discovery/history_windows.py` helpers for window-specific artist-MBID weights and densest-window listen selection, with regression tests for malformed metadata and invalid window widths. All four required workflows passed on the exact head: Python syntax/acquisition safety (`40029108109`), Docker packaging/full unit suite/image build (`40029108024`), container runtime smoke (`40029108017`), and validation-only multi-architecture image validation (`40029108075`; publishing paused). The full unit suite ran in CI; it was not run manually. Helpers are not wired into runtime; defaults unchanged. No publication, deployment, or runtime verification.
 
@@ -39,7 +41,7 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Next action
 
-The hard-coded taste replacement is complete; the derived profile is the only mode. Engine 2 Phase 2 is complete (lens framework, Deep cuts adapter and evaluation metrics merged in PRs #575, #577 and #578; all unwired). Phase 3 has started: PRs #579 and #580 added pure windowed-weight, window-artist-weight and densest-window helpers, and a tag-radio popularity band parameter; none are wired into runtime. A live window-pool check (five windows) changed the candidate pool in most pairs but only modestly; the Phase 3 gate is partly met (see `PROJECT_LOG.md`). The Deep cuts items deferred from Phase 2 are addressed on branch `feat/engine2-deep-cuts-tail`: tiered supply (50–75% radio, 75–100% radio, MusicBrainz tail) in `discovery/deep_cuts_supply.py`, unwired; the title-marker check is recorded in `PROJECT_LOG.md`. Next, continue Phase 3 window-driven tag-lane seeds (live runs need owner approval). PR #573's recommendation-quality evidence remains limited to one profile; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
+The hard-coded taste replacement is complete; the derived profile is the only mode. Engine 2 Phase 2 is complete (lens framework, Deep cuts adapter and evaluation metrics merged in PRs #575, #577 and #578; all unwired). Phase 3 has started: PRs #579 and #580 added pure windowed-weight, window-artist-weight and densest-window helpers, and a tag-radio popularity band parameter; none are wired into runtime. A live window-pool check (five windows) changed the candidate pool in most pairs but only modestly; the Phase 3 gate is partly met (see `PROJECT_LOG.md`). PR #581 merged the unwired Deep cuts tiered supply (50–75% radio, 75–100% radio, MusicBrainz tail) in `discovery/deep_cuts_supply.py`; PR #582 added per-lens/per-day radio cache scope, with the legacy default key preserved. The title-marker check is recorded in `PROJECT_LOG.md`. Next, continue Phase 3 window-driven tag-lane seeds (live runs need owner approval). PR #573's recommendation-quality evidence remains limited to one profile; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
 
 ## Where to look
 
