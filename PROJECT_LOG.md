@@ -1,3 +1,9 @@
+## 2026-10-24 — Re-review, CI verification, and merge PR #582
+
+- Re-reviewed exact PR head `48532b774af01e895de1a7ef41c823b07b94edd1`. Daily cache scope is passed through the radio lane and included in cache keys; the original unscoped 0–100 key and existing band-specific key remain unchanged. New tests cover same-day reuse, next-day refresh, separate lens samples, and invalid lens/day input. The feature remains unwired into runtime.
+- All four required workflows passed on the exact PR head: Python syntax/acquisition safety (`40041573624`), Docker packaging/full unit suite/image build (`40041573588`), container runtime smoke (`40041573555`), and validation-only multi-architecture image validation (`40041573534`; publishing paused). Full unit suite ran in CI; it was not run manually, consistent with the repository workflow.
+- Squash-merged PR #582 as `5018446c45c000fefcde6a4955a6bcb6e1943f77`. No live provider calls, publication, deployment, or runtime verification.
+
 ## 2026-10-24 — Daily radio scope for Deep cuts (unwired)
 
 - Radio answers can now be keyed by a scope (`lens:date`). `run_deep_cuts_tag_supply` requires `lens` and an ISO `day`, so each tag gives one fixed sample per lens per day, a fresh draw the next day, and a separate draw for each lens that shares the tag. The default key (no scope, default band) is unchanged, so existing cache entries stay valid.
