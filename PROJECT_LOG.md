@@ -1,3 +1,12 @@
+## 2026-10-23 — Engine 2 Phase 3: Deep cuts tiered supply with MusicBrainz tail (unwired)
+
+- Added `discovery/deep_cuts_supply.py`: `run_deep_cuts_tag_supply` runs the ListenBrainz tag radio at the owner-approved 50–75% band, then the 75–100% band for queries still empty, then the MusicBrainz tag search for queries still empty. A query no tier reached is marked `not_attempted`.
+- A radio tier that marks the lane unavailable (retryable HTTP failure) skips the remaining radio tiers, but not the MusicBrainz tail; the flag is cleared before the tail, which is a different provider. Regression test added (PR #581 review). Without `http_post` the radio tiers are skipped.
+- `discovery/candidate_gathering.py`: the radio branch of `_run_tag_lane` moved into `run_radio_lane(..., pop_begin, pop_end)`; default behaviour and cache keys are unchanged.
+- Focused tests: 158 passed across gathering, tag lane, replenishment, supply, lenses, title filter, packaging and the size guard. The full unit suite was not run here (CI runs it on the PR head).
+- Title-marker check (Phase 2 deferral): the radio path applies `batch_title_marker_rejection` in `synthesize_recording`; the MusicBrainz path relies on the release-group secondary types (`CF_EXCLUDED_SECONDARY_TYPES`). Known gap: an unmarked live album still passes the radio path. Minor: "unplugged" and "bootleg" are batch markers but not in the MusicBrainz title phrases.
+- Not wired into runtime; defaults unchanged. No live provider calls, publication or deployment.
+
 ## 2026-10-23 — Engine 2 Phase 3 slices 1–2: window helpers merged; live window-pool check (partial gate)
 
 - PR #579 squash-merged as `aea328c`: pure `windowed_listen_weights` (bounded window anchored to the newest listen, optional half-life, flat all-time default) and a tag-radio popularity band parameter. The default 0–100 band keeps the original request and cache key. Focused tests: 69 passed. Not wired into runtime.
