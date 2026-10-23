@@ -349,4 +349,5 @@ def allocate_personal_recommendations(request: AllocationRequest) -> AllocationR
         category_counts=dict(selected_counts),
         checked_count=checked,
         phase_diagnostics=phase_diagnostics,
+        lens=request.lens,
     )

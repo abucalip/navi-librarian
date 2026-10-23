@@ -49,6 +49,10 @@ class AllocationCandidate:
     genre_family: str | None = None
     ownership: OwnershipStatus = OwnershipStatus.CLEAR
     tags: tuple[str, ...] = ()
+    # Deep cuts inputs (discovery/lenses.py); unused by the other policies.
+    audience: int | None = None
+    seed: str | None = None
+    tag_strength: float = 0.0
 
     def __post_init__(self) -> None:
         for field_name in ("candidate_id", "artist_key"):
@@ -64,6 +68,10 @@ class AllocationCandidate:
             raise ValueError("ownership must be an OwnershipStatus")
         if not isinstance(self.tags, tuple) or any(not isinstance(tag, str) for tag in self.tags):
             raise ValueError("tags must be a tuple of strings")
+        if self.audience is not None and (type(self.audience) is not int or self.audience < 0):
+            raise ValueError("audience must be a non-negative integer or None")
+        if not math.isfinite(self.tag_strength):
+            raise ValueError("tag_strength must be finite")
 
 
 @dataclass(frozen=True)
@@ -84,8 +92,12 @@ class AllocationRequest:
     category_floors: Mapping[str, int] = field(default_factory=dict)
     coverage_target: int = 0
     coverage_floor_ratio: float = 0.4
+    # Name of the lens this request serves; recorded on the result.
+    lens: str = "now"
 
     def __post_init__(self) -> None:
+        if not self.lens.strip():
+            raise ValueError("lens must be non-empty")
         if not 1 <= self.count <= MAX_RECOMMENDATION_COUNT:
             raise ValueError("count must be between 1 and 20")
         if not isinstance(self.candidates, tuple):
@@ -162,8 +174,11 @@ class AllocationResult:
     category_counts: Mapping[str, int]
     checked_count: int
     phase_diagnostics: Mapping[str, int] = field(default_factory=dict)
+    lens: str = "now"
 
     def __post_init__(self) -> None:
+        if not self.lens.strip():
+            raise ValueError("lens must be non-empty")
         if not 1 <= self.requested_count <= MAX_RECOMMENDATION_COUNT:
             raise ValueError("requested_count must be between 1 and 20")
         if len(self.selected_candidate_ids) > self.requested_count:
