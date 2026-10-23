@@ -32,7 +32,7 @@ Last checked: 2026-10-23. GitHub `main` is authoritative.
 
 ## Next action
 
-The hard-coded taste replacement is complete; the derived profile is the only mode. The next priority is Engine 2 Phase 1 (`ACTIVE_WORK.md` section 2c, roadmap in [engine2.md](engine2.md)): MBID-keyed popularity for the candidate pool, a taste-fit score for tag-lane candidates, how the tag lane is seeded, and an offline deep-cuts prototype. PR #573 is merged, but its recommendation-quality evidence remains limited to one profile and individual captures; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
+The hard-coded taste replacement is complete; the derived profile is the only mode. The next priority is Engine 2 Phase 1 (`ACTIVE_WORK.md` section 2c, roadmap in [engine2.md](engine2.md)): MBID-keyed popularity for the candidate pool (measured; module in open PR #574), a taste-fit score for tag-lane candidates, how the tag lane is seeded, and an offline deep-cuts prototype. PR #573 is merged, but its recommendation-quality evidence remains limited to one profile and individual captures; replay captures still do not freeze the selection-policy setting. Image publication or deployment needs explicit owner authorization.
 
 ## Where to look
 

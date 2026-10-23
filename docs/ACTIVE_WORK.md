@@ -35,7 +35,7 @@ Goal: several complementary lists of 10 ("lenses") from one shared candidate poo
 
 First steps (Phase 1), in order:
 
-1. MBID-keyed popularity for the whole candidate pool (bounded, cached), compared against Deezer as a cross-check, evaluated on the existing 203-candidate capture.
+1. ~~MBID-keyed popularity~~ — measured and implemented in PR [#574](https://github.com/abucalip/navi-librarian/pull/574) (open, not wired in): album listeners by release MBID cover 166 of 203, artist listeners 203 of 203; Deezer and Discogs are weaker cross-checks. Remaining: fill the 28 release-group gaps from the ListenBrainz fallback and record CI on the PR head. See `PROJECT_LOG.md` (2026-10-23).
 2. A taste-fit score for tag-lane candidates, evaluated offline. They currently all score 0.035 and never surface, and they are where obscure candidates come from (29 of 40 obscure, against 4 of 163 from CF).
 3. Read how the tag lane is seeded and whether a history window can drive the seeds.
 4. Offline "deep cuts" prototype on existing captures: how many obscure, well-fitting candidates exist.

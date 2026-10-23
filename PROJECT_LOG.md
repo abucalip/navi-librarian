@@ -1,3 +1,18 @@
+## 2026-10-23 — Engine 2 Phase 1 step 1: MBID-keyed popularity measured (PR #574 open)
+
+Owner-approved read-only provider calls on the 203 unowned candidates of the 8-page / 120-tag capture (artist MBIDs 143 distinct). Private results outside the repository (mode 600); aggregates only. One profile, one capture.
+
+- **Last.fm artist listeners by artist MBID:** 203 of 203. Median 4.2M; 17 candidates under 10k, 23 under 50k, 32 under 200k (matches the earlier name-based run).
+- **Last.fm album listeners by release-group MBID:** 0 of 203 (error 6, not found). Last.fm's `mbid` wants a release MBID.
+- **Release MBIDs:** MusicBrainz release search used as a batch (`rgid:(a OR b ...)`, 25 groups per query, 100 releases per page, so paginated) worked; the ListenBrainz release-group batch (`inc=release`) returns one `caa_release_mbid` per group. On a 25-candidate sample Last.fm resolved 23 via the MusicBrainz release (official first, then earliest) and 19 via the ListenBrainz release.
+- **Full run (MusicBrainz search, up to 5 releases tried per group):** 57 MusicBrainz calls covered 175 of 203 groups; 228 Last.fm calls found 166 albums (82%). Median album listeners 1.2M; 32 under 10k, 41 under 50k, 45 under 200k. Tag-lane candidates: 36 of 40 matched, 31 under 50k; ListenBrainz candidates: 130 of 163 matched, 10 under 50k. Ten albums have under 50k listeners though their artist has over 1M. The 37 unmatched are mostly popular (median artist audience 5.1M; 5 under 200k). The 28 groups the paginated search did not cover were not diagnosed or filled from the ListenBrainz fallback in this run.
+- **Deezer (name search, no batch endpoint; 8 parallel threads under a 40-per-5-seconds limiter, 52 s):** album fans for 198 of 203. 46 of 163 ListenBrainz candidates show under 1,000 fans though only 4 have a small artist audience, so fan counts mislead for popular artists.
+- **Discogs (consumer key and secret, master search, 60 requests a minute, 4 minutes):** `have` counts for 188 of 203.
+- **Agreement (Spearman, on candidates both sides matched):** album listeners vs artist listeners 0.62; vs Discogs 0.50; vs Deezer 0.38. Artist vs Deezer 0.38; artist vs Discogs 0.42; Deezer vs Discogs 0.30.
+- **Conclusion:** use album listeners by MBID as the obscurity signal with artist listeners by artist MBID as fallback; Deezer and Discogs are optional cross-checks only.
+- **Code:** `discovery/mbid_popularity.py` with 17 offline tests (PR #574, not wired into any runtime path; no ranking weight, default or provider budget changed). Tests run: `tests.test_discovery_mbid_popularity` plus `test_discovery_artist_genre_batch`, `test_discovery_batch_lookup`, `test_metadata_cache` (50 total, repo venv); size ratchet and legacy-import checks pass. Full suite not run by the agent; CI result for the PR head not yet recorded.
+- **Limits:** one profile; 25-candidate release-resolution sample; correlations only on mutually matched candidates; Last.fm's matched edition not verified; album and obscurity thresholds are descriptive, not tuned.
+
 ## 2026-10-23 — PR #573 merged: opt-in family-coverage policy
 
 - Squash-merged as `9b1dab53f2fc480fd74f4e24560ebb6dd7ed14e1` from exact tested PR head `1c67f61add223274a898aeb3061d95a1664139f8`.
