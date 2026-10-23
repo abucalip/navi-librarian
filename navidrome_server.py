@@ -412,73 +412,28 @@ def recommend_new_music(
             reverse=True,
         )
 
-    from discovery.allocation_contract import (
-        AllocationCandidate,
-        AllocationRequest,
-        OwnershipStatus,
-    )
+    from discovery.allocation_contract import AllocationRequest
+    from discovery.allocation_inputs import build_allocation_inputs
     from discovery.personal_allocator import allocate_personal_recommendations
-    from discovery.derived_profile import primary_genre_family
     from discovery.cooldown import prepare_ranking_inputs
     from discovery.recommendation_payload import (
         build_personal_recommendation_payload,
     )
+    from discovery.selection_policy import selection_policy_report, selection_request_options
 
     similar_to = build_similar_to_lookup(listens, genre_cache, _music_key)
     # Empty style targets let measured MMR provide soft diversity.
     diversity_style_targets = {}
-    targets = {
-        "adjacent": (count * 4) // 10,
-        "cross_genre": (count * 3) // 10,
-    }
-    targets["adventurous"] = count - sum(targets.values())
     selection_policy = _service_settings.recommendation_selection_policy_value(
         _discovery_settings_read
     )
-    coverage_policy = selection_policy == "family_coverage"
-    if coverage_policy:
-        # Genre-family cap, an exploration floor and family coverage replace the
-        # fixed category quotas (see PERSONAL_RECOMMENDATION_ALLOCATION_CONTRACT).
-        targets = {}
+    targets, policy_options = selection_request_options(selection_policy, count)
 
     # Prepare immutable policy inputs; the adapter owns identity and ownership lookup.
-    candidate_by_id = {}
-    allocation_candidates = []
-    for source_order, candidate in enumerate(albums.values()):
-        candidate_id = str(source_order)
-        candidate_by_id[candidate_id] = candidate
-        title_key = _music_key(candidate["album"])
-        same_title = library_by_title.get(title_key, [])
-        exact_owned = any(
-            _music_key(match.get("artist", ""))
-            == _music_key(candidate["primary_artist"])
-            for match in same_title
-        )
-        ownership = (
-            OwnershipStatus.EXACT_OWNED
-            if exact_owned
-            else OwnershipStatus.TITLE_CONFLICT
-            if same_title
-            else OwnershipStatus.CLEAR
-        )
-        candidate_tags = tuple(
-            str(tag)
-            for tag in genre_cache.get(candidate.get("artist_mbid"), [])
-            if tag is not None
-        )
-        allocation_candidates.append(AllocationCandidate(
-            candidate_id=candidate_id,
-            artist_key=_artist_identity(candidate),
-            album_key=title_key,
-            category=candidate["discovery_category"],
-            score=float(candidate["discovery_score"]),
-            source_order=source_order,
-            diversity_style=candidate.get("diversity_style", "other"),
-            recent_profile_family=candidate.get("recent_profile_family"),
-            genre_family=primary_genre_family(candidate_tags),
-            tags=candidate_tags,
-            ownership=ownership,
-        ))
+    candidate_by_id, allocation_candidates = build_allocation_inputs(
+        albums.values(), library_by_title=library_by_title, genre_cache=genre_cache,
+        music_key=_music_key, artist_identity=_artist_identity,
+    )
     cooled_candidates, ranking_context = prepare_ranking_inputs(
         allocation_candidates, candidate_by_id, DISCOVERY_DB, _ranking_context_override, now_fn=time.time,
         diversity_setting_fn=lambda: _service_settings.recommendation_diversity_value(_discovery_settings_read),
@@ -492,12 +447,7 @@ def recommend_new_music(
         diversity_penalty=diversity_setting_to_penalty(ranking_context["diversity_setting"]),
         family_cap=1,
         max_checks=60,
-        **(dict(
-            genre_family_cap=2,
-            category_floors={"adventurous": count // 5},
-            coverage_target=count,
-            coverage_floor_ratio=0.4,
-        ) if coverage_policy else {}),
+        **policy_options,
     ))
     selected_counts = Counter(allocation.category_counts)
     selected_styles = Counter(
@@ -701,13 +651,7 @@ def recommend_new_music(
         "debug_candidate_category_counts": dict(candidate_category_counts),
         "debug_all_candidates": candidate_debug,
 
-        **({
-            "selection_policy": selection_policy,
-            "selected_genre_families": [
-                primary_genre_family(genre_cache.get(candidate_by_id[candidate_id].get("artist_mbid"), []))
-                for candidate_id in allocation.selected_candidate_ids
-            ],
-        } if coverage_policy else {}),
+        **selection_policy_report(selection_policy, allocation.selected_candidate_ids, cooled_candidates),
         "category_targets": targets, "allocator_checked_count": allocation.checked_count, "allocator_max_checks": 60,
         "allocator_phase_diagnostics": dict(allocation.phase_diagnostics), "allocator_decision_counts": dict(Counter(decision.status for decision in allocation.decisions)),
         "category_counts": dict(selected_counts),

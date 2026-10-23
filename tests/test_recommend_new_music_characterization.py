@@ -76,7 +76,7 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
     def _run_recommendations(
         self, library_albums, recommendations=None, *, lastfm_stats=None,
         regional_http_status=200, inventory_limit=None, listens=None,
-        genre_tags_by_artist=None, diversity_setting=0,
+        genre_tags_by_artist=None, diversity_setting=0, selection_policy=None,
     ):
         if recommendations is None:
             recommendations = [{"recording_mbid": "recording-1", "score": 10}]
@@ -121,6 +121,8 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
             patch.object(server, "_metadata_cache_set"),
             patch.object(server, "_discovery_settings_read", return_value={
                 "recommendation_diversity": diversity_setting,
+                **({"recommendation_selection_policy": selection_policy}
+                   if selection_policy else {}),
             }),
             patch(
                 "integrations.listenbrainz.popularity.fetch_release_group_popularity",
@@ -150,6 +152,42 @@ class RecommendNewMusicCharacterizationTests(unittest.TestCase):
                 request = allocate.call_args.args[0]
                 self.assertEqual(request.diversity_penalty, expected_penalty)
                 self.assertEqual(request.candidates[0].tags, ("jazz",))
+
+    def test_default_policy_keeps_category_quotas_and_response_shape(self):
+        from discovery.personal_allocator import allocate_personal_recommendations
+
+        with patch(
+            "discovery.personal_allocator.allocate_personal_recommendations",
+            wraps=allocate_personal_recommendations,
+        ) as allocate:
+            result = self._run_recommendations([])
+        request = allocate.call_args.args[0]
+        self.assertEqual(dict(request.category_targets),
+                         {"adjacent": 4, "cross_genre": 3, "adventurous": 3})
+        self.assertIsNone(request.genre_family_cap)
+        self.assertNotIn("selection_policy", result)
+        self.assertNotIn("selected_genre_families", result)
+
+    def test_family_coverage_policy_is_opt_in_and_reports_genre_families(self):
+        from discovery.personal_allocator import allocate_personal_recommendations
+
+        with patch(
+            "discovery.personal_allocator.allocate_personal_recommendations",
+            wraps=allocate_personal_recommendations,
+        ) as allocate:
+            result = self._run_recommendations([], selection_policy="family_coverage")
+        request = allocate.call_args.args[0]
+        self.assertEqual(dict(request.category_targets), {})
+        self.assertEqual(request.genre_family_cap, 2)
+        self.assertEqual(dict(request.category_floors), {"adventurous": 2})
+        self.assertEqual(request.candidates[0].genre_family, "jazz")
+        self.assertEqual(result["selection_policy"], "family_coverage")
+        self.assertEqual(result["selected_genre_families"], ["jazz"])
+        self.assertEqual(result["recommendations_returned"], 1)
+
+    def test_unknown_policy_value_falls_back_to_quota(self):
+        result = self._run_recommendations([], selection_policy="nonsense")
+        self.assertNotIn("selection_policy", result)
 
     def test_clear_inventory_returns_candidate_and_stable_response_shape(self):
         result = self._run_recommendations([])

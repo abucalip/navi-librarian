@@ -1,3 +1,10 @@
+## 2026-10-23 — PR #573 review fix: legacy-server size ratchet
+
+- The reviewer found `recommend_new_music()` at 474 lines against the 450-line exception (the Python syntax workflow failed at the size ratchet). `main` was exactly at 450, so any addition inside the function failed. The limit was not raised.
+- Fix: ownership classification and `AllocationCandidate` construction moved to `discovery/allocation_inputs.py`; quota targets, the family-coverage request options and the opt-in response diagnostics moved to `discovery/selection_policy.py`. `recommend_new_music()` is now 418 lines. Behavior is unchanged for both policies.
+- Tests added: `tests/test_discovery_selection_inputs.py` (ownership statuses, input building and genre family, quota split, policy options and report) and three server-level cases (default policy keeps quotas and the response shape; opt-in policy sets the allocator options and reports genre families; unknown value falls back to quota).
+- Run locally: the steps of the Python syntax workflow (py_compile list, size ratchet, app import boundary, dependency map) and the focused test modules touching the change. The full suite was not run locally; CI results for the updated head are recorded in the PR.
+
 ## 2026-10-23 — Obscurity measurements and Engine 2 roadmap (docs only)
 
 Owner-approved read-only provider calls (Last.fm `album.getInfo` for 203 unowned candidates, `artist.getInfo` for 144 artists, about 20 Deezer lookups); private result files outside the repository (mode 600); aggregates only. One capture (8 CF pages, 120 tag lookups), one profile. No code or default changed by this entry.
