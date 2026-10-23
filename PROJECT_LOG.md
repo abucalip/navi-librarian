@@ -546,3 +546,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - All four required workflows passed on the exact PR head: Python syntax/acquisition safety `39862938840`; Docker packaging, full unit suite and image build `39862938736`; container runtime smoke `39862938685`; validation-only multi-architecture image build `39862938695` (`push: false`). The full unit-test and Docker-build steps succeeded. These runs are associated with the PR head, not the squash merge commit.
 - The stacked branch's review diff included already-merged #563 changes, but comparison of the squash merge commit against pre-merge `main` shows only the seven derived-profile files changed; #563 defaults are not duplicated in the net merge diff. No separate branch reconciliation commit was created before merge.
 - Derived mode remains off by default. Multi-profile replay evidence is not supplied and enabling the mode requires a separate owner decision. No image publication, deployment, or runtime verification was performed.
+
+
+## 2026-10-23 — Re-review, full CI suite, and merge PR #578
+
+- Re-reviewed final PR head `f15dbde3fe78ddb4974178b84f863de85de0fd69`. The earlier album-identity correction uses normalized `album_key` for album overlap, union, and reference overlap; the latest fix calculates `total_picks` from selected candidate IDs rather than unique album keys. Regression coverage includes duplicate album identity within one list and across lists/reference.
+- All four required workflows passed on that exact head: Python syntax/acquisition safety (`40007720479`), Docker packaging/full unit suite/image build (`40007720478`; unit tests and image build succeeded), container runtime smoke (`40007720476`), and validation-only multi-architecture image validation (`40007720523`; publishing paused). The full unit suite ran in CI; no separate local run was performed.
+- Squash-merged PR #578 as `3aebacbd40d80386199e0e5cb9b1b0ca94ca430d`. The metrics are pure evaluation code, not wired into runtime; they describe list composition and do not measure listening quality. No image publication, deployment, or runtime verification.
+- Phase 2 evaluation metrics are complete. Next action: Phase 3 time-range profiles and window-driven tag-lane seeds. Any live capture or provider-budget increase still requires owner approval.
