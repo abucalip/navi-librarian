@@ -487,6 +487,15 @@ def _run_tag_lane(queries, *, providers, client, headers, albums, failures, stat
             queries, providers=providers, client=client, headers=headers,
             albums=albums, failures=failures, state=state,
         )
+    return run_radio_lane(
+        queries, providers=providers, albums=albums, failures=failures, state=state,
+    )
+
+
+def run_radio_lane(queries, *, providers, albums, failures, state, pop_begin=0, pop_end=100):
+    """Run the ListenBrainz tag-radio lane for one popularity band (percent, 0-100).
+
+    Returns one (added, error_class) pair per query, as ``run_lb_tag_queries`` does."""
     from discovery.lb_tag_lane import run_lb_tag_queries
     lb_headers = listenbrainz_headers()
 
@@ -511,6 +520,7 @@ def _run_tag_lane(queries, *, providers, client, headers, albums, failures, stat
         ),
         merge_source=merge_discovery_source, classify_error=classify_error,
         candidate_cap=SUPPLEMENTARY_CANDIDATE_CAP,
+        pop_begin=pop_begin, pop_end=pop_end,
     )
 
 
