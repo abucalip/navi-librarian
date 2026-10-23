@@ -22,7 +22,8 @@ def run_deep_cuts_tag_supply(queries, *, providers, headers, albums, failures, s
 
     The tag radio needs ``providers.http_post``; without it the radio tiers are skipped
     and the MusicBrainz tail runs for every query. ``state["unavailable"]`` set by a radio
-    tier does not stop the MusicBrainz tail, which is a different provider.
+    tier stops the later radio tiers but not the MusicBrainz tail, which is a different
+    provider.
     """
     from discovery.candidate_gathering import _run_tag_queries, run_radio_lane
 
@@ -39,6 +40,10 @@ def run_deep_cuts_tag_supply(queries, *, providers, headers, albums, failures, s
             for index, outcome in zip(remaining, tier):
                 outcomes[index] = outcome
             remaining = [index for index, (added, _error) in zip(remaining, tier) if added == 0]
+            if state["unavailable"]:
+                # A retryable radio failure: no further radio tiers, but the tail below
+                # still runs for what is left, since it is a different provider.
+                break
 
     if remaining:
         state["unavailable"] = False

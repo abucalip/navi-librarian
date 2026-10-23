@@ -83,6 +83,14 @@ class DeepCutsSupplyTests(Harness):
         self.assertEqual(out[0], (2, None))
         self.assertEqual(self.tail_calls[0][1], False, "tail starts with the radio flag cleared")
 
+    def test_retryable_first_tier_skips_the_second_radio_tier_but_runs_the_tail(self):
+        self.radio_yield = {(50, "q-a"): (0, "retryable"), (50, "q-b"): (0, "retryable")}
+        self.tail_yield = {"q-a": (1, None), "q-b": (2, None)}
+        out = self.run_supply()
+        self.assertEqual(self.radio_calls, [(50, 75, ["q-a", "q-b", "q-c"])], "no 75-100 radio call")
+        self.assertEqual(self.tail_calls[0][0], ["q-a", "q-b", "q-c"])
+        self.assertEqual(out, [(1, None), (2, None), (0, None)])
+
     def test_without_http_post_the_tail_serves_every_query(self):
         self.tail_yield = {"q-a": (1, None)}
         out = self.run_supply(http_post=None)
