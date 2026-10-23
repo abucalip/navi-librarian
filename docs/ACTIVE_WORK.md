@@ -40,7 +40,7 @@ First steps (Phase 1), in order:
 3. Read how the tag lane is seeded and whether a history window can drive the seeds.
 4. Offline "deep cuts" prototype on existing captures: how many obscure, well-fitting candidates exist.
 
-Phase 0 decisions that come first or alongside: merge the opt-in family-coverage branch, `CF_MAX_PAGES` 8 when coverage is on, a settings control, extra data sources. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
+Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_MAX_PAGES` to 8 when coverage is on, add a settings control, or add extra data sources. The family-coverage policy itself is merged in PR #573, remains opt-in, and leaves `CF_MAX_PAGES` at 4. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
 
 ## 3. Recommendation engine — gated
 
