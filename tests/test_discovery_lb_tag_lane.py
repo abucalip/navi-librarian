@@ -28,10 +28,12 @@ class LaneTests(unittest.TestCase):
         self.state = {"added": 0, "seen": 0, "hits": 0, "misses": 0, "request_index": 0,
                       "unavailable": False, "exhausted_run": 0}
         self.failures, self.albums = [], {}
+        self.params = []
 
-    def run_lane(self, queries, radio, recordings, status=200):
+    def run_lane(self, queries, radio, recordings, status=200, **band):
         def get(url, params, headers, timeout):
             self.gets.append(params["tag"])
+            self.params.append(params)
             return Resp(status, radio.get(params["tag"], []))
         providers = SimpleNamespace(
             http_get=get, music_key=str.casefold,
@@ -43,7 +45,7 @@ class LaneTests(unittest.TestCase):
                                                      for i in items if i["recording_mbid"] in recordings},
             rejection=lambda g: None if g.get("primary-type") == "Album" else "no",
             merge_source=lambda c, s: c.setdefault("discovery_sources", []).append(s),
-            classify_error=lambda e: "err", candidate_cap=60)
+            classify_error=lambda e: "err", candidate_cap=60, **band)
 
     def test_tag_round_trip(self):
         for tag in ["jazz", "ethio-jazz", 'Hip Hop "x"', "a\\b"]:
@@ -125,6 +127,28 @@ class LaneTests(unittest.TestCase):
             threading.Event().wait(0.02)
         self.assertEqual(self.cache["lb:tag-radio:slow"], [[R3, 0]], "late answer still warms the cache")
         self.assertFalse(self.state["unavailable"])
+
+    def test_default_band_sends_full_range_and_keeps_original_cache_key(self):
+        self.run_lane([(_query_for_tag("rock"), "rock", "profile:rock")], {"rock": [[R1, 3]]}, {R1: recording("A", "B", R1)})
+        self.assertEqual((self.params[0]["pop_begin"], self.params[0]["pop_end"]), (0, 100))
+        self.assertIn("lb:tag-radio:rock", self.cache)
+
+    def test_deep_cuts_band_is_sent_and_cached_separately(self):
+        queries = [(_query_for_tag("rock"), "rock", "profile:rock")]
+        radio, recordings = {"rock": [[R1, 3]]}, {R1: recording("A", "B", R1)}
+        self.run_lane(queries, radio, recordings, pop_begin=50, pop_end=75)
+        self.assertEqual((self.params[0]["pop_begin"], self.params[0]["pop_end"]), (50, 75))
+        self.assertIn("lb:tag-radio:rock:pop50-75", self.cache)
+        self.assertNotIn("lb:tag-radio:rock", self.cache)
+        # A later default-band run must not reuse the 50-75 answer.
+        self.run_lane(queries, radio, recordings)
+        self.assertEqual(self.gets, ["rock", "rock"])
+        self.assertEqual((self.params[1]["pop_begin"], self.params[1]["pop_end"]), (0, 100))
+
+    def test_invalid_band_is_rejected(self):
+        for begin, end in [(75, 50), (50, 50), (-1, 10), (0, 101)]:
+            with self.assertRaises(ValueError):
+                self.run_lane([(_query_for_tag("rock"), "rock", "profile:rock")], {}, {}, pop_begin=begin, pop_end=end)
 
 
 if __name__ == "__main__":

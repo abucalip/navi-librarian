@@ -23,6 +23,10 @@ RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 # this long before they are dropped, so one slow tag cannot hold the lane.
 MAX_PARALLEL_TAG_CALLS = 8
 TAG_RADIO_STRAGGLER_SECONDS = 4.0
+# Popularity band of the radio, in percent. Low percent is the most popular recordings, so
+# 0-100 is the whole catalogue; the owner-approved Deep cuts band is 50-75.
+TAG_RADIO_POP_BEGIN = 0
+TAG_RADIO_POP_END = 100
 
 
 def _radio_entries(raw) -> list[tuple[str, int]]:
@@ -39,12 +43,20 @@ def _radio_entries(raw) -> list[tuple[str, int]]:
     return list(entries.items())
 
 
-def _tag_radio_request(providers, tag, headers) -> list[list]:
+def _radio_cache_key(tag, pop_begin, pop_end) -> str:
+    """The default band keeps the original key, so existing cache entries stay valid."""
+    key = f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}"
+    if (pop_begin, pop_end) == (TAG_RADIO_POP_BEGIN, TAG_RADIO_POP_END):
+        return key
+    return f"{key}:pop{pop_begin}-{pop_end}"
+
+
+def _tag_radio_request(providers, tag, headers, pop_begin, pop_end) -> list[list]:
     """One tag-radio GET, as [recording MBID, tag_count] pairs in radio order.
     Network only, so it is safe to run on a worker thread."""
     response = providers.http_get(
         LB_TAG_RADIO_URL,
-        params={"tag": tag, "operator": "OR", "pop_begin": 0, "pop_end": 100,
+        params={"tag": tag, "operator": "OR", "pop_begin": pop_begin, "pop_end": pop_end,
                 "count": TAG_RADIO_COUNT},
         headers=dict(headers), timeout=40,
     )
@@ -68,15 +80,14 @@ class _RadioHTTPError(RuntimeError):
         self.status = status
 
 
-def _cache_answer(providers, tag, future) -> None:
+def _cache_answer(providers, cache_key, future) -> None:
     try:
-        providers.metadata_cache_set(
-            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", future.result())
+        providers.metadata_cache_set(cache_key, future.result())
     except Exception:
         pass
 
 
-def _fetch_all_tag_recordings(providers, tags, headers, state):
+def _fetch_all_tag_recordings(providers, tags, headers, state, pop_begin, pop_end):
     """Return {tag: mbids or Exception}. Cached tags answer immediately; the rest are
     fetched in parallel and the first answer wins: stragglers are dropped
     ``TAG_RADIO_STRAGGLER_SECONDS`` after the first response, but still cache their answer
@@ -89,7 +100,7 @@ def _fetch_all_tag_recordings(providers, tags, headers, state):
     pending: list[str] = []
     for tag in dict.fromkeys(tags):
         cached = providers.metadata_cache_get(
-            f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}", ttl_seconds=TAG_RADIO_TTL_SECONDS)
+            _radio_cache_key(tag, pop_begin, pop_end), ttl_seconds=TAG_RADIO_TTL_SECONDS)
         if cached is not None:
             state["hits"] += 1
             results[tag] = _radio_entries(cached)
@@ -103,10 +114,11 @@ def _fetch_all_tag_recordings(providers, tags, headers, state):
         futures = {}
         for tag in pending:
             record_provider_call("listenbrainz", "tag_radio")
-            future = executor.submit(_tag_radio_request, providers, tag, headers)
+            future = executor.submit(_tag_radio_request, providers, tag, headers, pop_begin, pop_end)
             # Cache on the worker thread, so a straggler that answers after the lane moved
             # on still warms the cache for the next run (one SQLite connection per call).
-            future.add_done_callback(lambda fut, tag=tag: _cache_answer(providers, tag, fut))
+            cache_key = _radio_cache_key(tag, pop_begin, pop_end)
+            future.add_done_callback(lambda fut, key=cache_key: _cache_answer(providers, key, fut))
             futures[future] = tag
         waiting = set(futures)
         deadline = None
@@ -139,13 +151,18 @@ def run_lb_tag_queries(
     merge_source: Callable[[dict[str, Any], str], Any],
     classify_error: Callable[[Exception], str],
     candidate_cap: int,
+    pop_begin: int = TAG_RADIO_POP_BEGIN,
+    pop_end: int = TAG_RADIO_POP_END,
 ):
     """Add album candidates from tag radio. Same state and outcome contract as the
-    MusicBrainz lane: one (added, error_class) pair per query attempted."""
+    MusicBrainz lane: one (added, error_class) pair per query attempted. ``pop_begin``
+    and ``pop_end`` set the radio popularity band (percent, 0-100)."""
+    if not (0 <= pop_begin < pop_end <= 100):
+        raise ValueError("tag radio popularity band must satisfy 0 <= begin < end <= 100")
     planned: list[tuple[str, str, str, str, list[tuple[str, int]], str | None]] = []
     tags = {query: tag_from_query(query) for query, _f, _s in queries}
     fetched = _fetch_all_tag_recordings(
-        providers, [t for t in tags.values() if t], headers, state)
+        providers, [t for t in tags.values() if t], headers, state, pop_begin, pop_end)
     for query, family, style in queries:
         tag = tags[query]
         mbids: list[tuple[str, int]] = []
