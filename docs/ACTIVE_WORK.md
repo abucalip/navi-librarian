@@ -32,6 +32,7 @@ The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phase
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
+- **Family-coverage policy — implemented on branch `diversity/family-coverage-allocator`, awaiting owner decision** (opt-in setting; default unchanged; see `PROJECT_LOG.md` 2026-10-23). Decisions needed: merge, make it the default, raise `CF_MAX_PAGES` to 8 when it is on, and whether it needs a settings/UI control.
 - Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply. Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
 - Detailed older evidence, alternatives, and evaluation criteria: [archived recommendation-engine research](archive/recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md).
 
