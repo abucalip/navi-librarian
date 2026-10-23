@@ -1,6 +1,6 @@
 # Engine 2 — roadmap: diverse, multi-list recommendations
 
-Status: **draft roadmap, 2026-10-23.** Nothing here is approved except what `ACTIVE_WORK.md` lists as the next steps. GitHub `main` is authoritative; the family-coverage policy described below exists only on branch `diversity/family-coverage-allocator` and is not merged. Evidence is aggregate-only from one profile; see [Limits](#limits-of-the-evidence).
+Status: **draft roadmap, 2026-10-23.** GitHub `main` is authoritative; the family-coverage policy is merged in PR #573 and remains opt-in. Phase 1 and Phase 2 (lens framework and evaluation metrics) are complete; Phase 3 time-range profiles is the next step listed in `ACTIVE_WORK.md`. Evidence is aggregate-only from one profile; see [Limits](#limits-of-the-evidence).
 
 ## Goal
 
@@ -148,7 +148,7 @@ Exit criteria: a measured obscure supply (count and fit) and a recommendation on
 
 ### Phase 2 — lens framework
 
-Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning and the Deep cuts pool adapter merged (PRs #575, #577; unwired). Remaining: evaluation metrics.
+Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, Deep cuts pool adapter, and evaluation metrics merged (PRs #575, #577, #578; unwired).
 
 - Lens as an explicit concept in the allocator request and result; partitioning across lists (each album in one list per day).
 - Implement Now, Genre spread, Deep cuts. Tests per lens plus a partition test.
