@@ -1,0 +1,51 @@
+import unittest
+
+from discovery.history_windows import listen_artist_mbid, window_artist_weights
+
+DAY = 24 * 60 * 60
+NEWEST = 1_000_000 * DAY
+
+
+def listen(days_before_newest, artist_mbid="a1", **extra):
+    info = {"artist_mbid": artist_mbid} if artist_mbid else {}
+    info.update(extra)
+    return {"listened_at": NEWEST - days_before_newest * DAY,
+            "track_metadata": {"artist_name": "x", "additional_info": info}}
+
+
+class ListenArtistMbidTests(unittest.TestCase):
+    def test_prefers_artist_mbid_then_first_of_list(self):
+        self.assertEqual(listen_artist_mbid(listen(0, "a1")), "a1")
+        self.assertEqual(listen_artist_mbid(listen(0, None, artist_mbids=["b2", "c3"])), "b2")
+
+    def test_missing_mbid_is_empty(self):
+        self.assertEqual(listen_artist_mbid(listen(0, None)), "")
+        self.assertEqual(listen_artist_mbid({"track_metadata": {}}), "")
+
+
+class WindowArtistWeightsTests(unittest.TestCase):
+    def test_bounded_window_keeps_only_recent_artists(self):
+        listens = [listen(0, "recent"), listen(29, "recent"), listen(90, "old")]
+        weights = window_artist_weights(listens, window_days=30)
+        self.assertEqual(dict(weights), {"recent": 2.0})
+
+    def test_all_time_flat_counts_every_listen(self):
+        listens = [listen(0, "a"), listen(400, "a"), listen(3, "b")]
+        self.assertEqual(dict(window_artist_weights(listens)), {"a": 2.0, "b": 1.0})
+
+    def test_decay_within_window_weights_listens(self):
+        listens = [listen(0, "a"), listen(14, "a")]
+        weights = window_artist_weights(listens, window_days=365, half_life_days=14)
+        self.assertAlmostEqual(weights["a"], 1.5)
+
+    def test_listens_without_mbid_are_skipped(self):
+        self.assertEqual(dict(window_artist_weights([listen(0, None)])), {})
+
+    def test_undated_listen_is_excluded_from_bounded_window(self):
+        undated = {"track_metadata": {"additional_info": {"artist_mbid": "u"}}}
+        self.assertEqual(dict(window_artist_weights([undated], window_days=30)), {})
+        self.assertEqual(dict(window_artist_weights([undated])), {"u": 1.0})
+
+
+if __name__ == "__main__":
+    unittest.main()
