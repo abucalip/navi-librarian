@@ -62,6 +62,11 @@ class SetMetricsTests(unittest.TestCase):
         self.assertEqual((m["total_picks"], m["union_albums"]), (3, 2))
         self.assertEqual(m["overlap_with_reference"], {"one": 1, "two": 1})
 
+    def test_repeated_album_identity_within_one_list_still_counts_each_pick(self):
+        pool = [item("p", artist="x", album="shared"), item("q", artist="y", album="shared")]
+        m = lens_set_metrics([result("one", ["p", "q"])], pool)
+        self.assertEqual((m["total_picks"], m["union_albums"]), (2, 1))
+
     def test_duplicate_lens_names_rejected(self):
         with self.assertRaises(ValueError):
             lens_set_metrics([result("x", "a"), result("x", "b")], POOL)

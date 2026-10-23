@@ -85,7 +85,7 @@ def lens_set_metrics(
     }
     out: dict[str, Any] = {
         "lists": len(results),
-        "total_picks": sum(len(v) for v in ids.values()),
+        "total_picks": sum(len(r.selected_candidate_ids) for r in results),
         "union_albums": len(set().union(*ids.values())) if ids else 0,
         "union_artists": len(set().union(*artists.values())) if artists else 0,
         "pairwise_overlap": pairwise,
