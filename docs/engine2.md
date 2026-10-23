@@ -158,6 +158,7 @@ Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, 
 
 - Profile windows (30 days, 1 year, all time) built from the imported history, with flat or windowed weights.
 - Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses.
+- Deferred from Phase 2 (owner decision, 2026-10-23): make the tag-radio popularity band a parameter keyed in the radio cache (approved Deep cuts band 50 to 75%, tail 75 to 100%), verify the title-marker filter on both radio and MusicBrainz sources, and add the MusicBrainz tag-search tail. Defaults stay at the current 0 to 100% until the owner approves a live run.
 - Gate: show that a window changes the candidate pool, not only ranks (the 2026-10-23 comparison showed rank changes without final-list changes).
 
 ### Phase 4 — precompute and serve
