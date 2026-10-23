@@ -49,3 +49,32 @@ class WindowArtistWeightsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DensestWindowTests(unittest.TestCase):
+    def test_picks_the_span_with_most_listens_not_the_newest(self):
+        from discovery.history_windows import densest_window_listens
+        # Old burst of three in 10 days, then two far later.
+        listens = [
+            {"listened_at": 100 * DAY}, {"listened_at": 105 * DAY}, {"listened_at": 110 * DAY},
+            {"listened_at": 900 * DAY}, {"listened_at": 905 * DAY},
+        ]
+        chosen = densest_window_listens(listens, 30)
+        self.assertEqual([item["listened_at"] for item in chosen], [100 * DAY, 105 * DAY, 110 * DAY])
+
+    def test_ties_go_to_the_earliest_span(self):
+        from discovery.history_windows import densest_window_listens
+        listens = [{"listened_at": DAY}, {"listened_at": 2 * DAY},
+                   {"listened_at": 500 * DAY}, {"listened_at": 501 * DAY}]
+        chosen = densest_window_listens(listens, 30)
+        self.assertEqual([item["listened_at"] for item in chosen], [DAY, 2 * DAY])
+
+    def test_undated_listens_are_ignored(self):
+        from discovery.history_windows import densest_window_listens
+        self.assertEqual(densest_window_listens([{"track": 1}, {"listened_at": "bad"}], 30), [])
+        self.assertEqual(densest_window_listens([{}], 30), [])
+
+    def test_rejects_invalid_width(self):
+        from discovery.history_windows import densest_window_listens
+        with self.assertRaises(ValueError):
+            densest_window_listens([], 0)
