@@ -11,6 +11,15 @@
 - The MusicBrainz tail is deterministic per query and is not scoped.
 - Focused tests: 123 passed (new `tests/test_discovery_daily_radio_scope.py`, plus updated Deep cuts, tag-lane, gathering, lens and size-guard tests). The full suite is left to CI.
 - Not wired into runtime; no live calls in this change; defaults unchanged.
+## 2026-10-23 — Engine 2 Phase 3 gate: repeat live run of the Deep cuts tiered supply (gate not met)
+
+- Owner-approved live run: `run_deep_cuts_tag_supply` (radio 50–75, radio 75–100, MusicBrainz tail) over five history windows (four dense 30-day windows and all time), twice. Each run started from a fresh copy of the metadata cache, so tag radio and MusicBrainz calls were live. Raw output stays outside the repository.
+- Within a run, the windows' album pools overlap heavily: 20–25 shared of 30–40 (run 1) and 10–30 shared of 30–45 (run 2). These overlaps are inflated by the run's shared cache: all windows reuse the same tags (4–6 of 6 seeds are shared), and a repeated tag returns its cached answer. The same-window timings in run 2 (0.0–4.3 s after the first windows) are cache hits, not provider latency.
+- Across runs, the same window shares almost nothing: 0–2 of about 30 albums, and 0–2 of the top 10. The seeds were identical, so the tag radio answers differed between runs. A single-tag repeat to isolate sampling from drift was attempted but the network dropped (no route to host) before it could run.
+- Consequence: the 2026-10-23 entry above that says a window "changes the candidate pool in most pairs" is not supported once run-to-run variation is counted. Lists built from one window's radio sample do not differ from another window's by more than the sample noise can explain. The Phase 3 gate (a window changes the candidate pool, not only ranks) is not met by this evidence.
+- Operational findings: tag-radio stragglers were dropped after the 4 s window (1 in run 1, 5 in run 2, first window only). The MusicBrainz tail ran once (run 2, first window: 5 albums). One MusicBrainz search failed with no route to host (run 1, first window). One radio query per run in the first window ended in a connection error, leaving 5 of 6 queries filled.
+- No change to code, defaults, or runtime. No publication or deployment.
+- Next action (needs owner decision): either measure window effects with repeated radio samples per tag (more live calls, owner approval), or treat window-driven seeds as unproven and stop Phase 3 at the seed level.
 
 ## 2026-10-23 — Engine 2 Phase 3: Deep cuts tiered supply with MusicBrainz tail (unwired)
 
