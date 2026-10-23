@@ -43,12 +43,14 @@ def _radio_entries(raw) -> list[tuple[str, int]]:
     return list(entries.items())
 
 
-def _radio_cache_key(tag, pop_begin, pop_end) -> str:
-    """The default band keeps the original key, so existing cache entries stay valid."""
+def _radio_cache_key(tag, pop_begin, pop_end, scope=None) -> str:
+    """The default band and no scope keep the original key, so existing cache entries stay valid.
+
+    ``scope`` (for example "lens:date") gives each lens and day its own sample of a tag."""
     key = f"{TAG_RADIO_CACHE_PREFIX}{tag.casefold()}"
-    if (pop_begin, pop_end) == (TAG_RADIO_POP_BEGIN, TAG_RADIO_POP_END):
-        return key
-    return f"{key}:pop{pop_begin}-{pop_end}"
+    if (pop_begin, pop_end) != (TAG_RADIO_POP_BEGIN, TAG_RADIO_POP_END):
+        key = f"{key}:pop{pop_begin}-{pop_end}"
+    return f"{key}:{scope}" if scope else key
 
 
 def _tag_radio_request(providers, tag, headers, pop_begin, pop_end) -> list[list]:
@@ -87,7 +89,7 @@ def _cache_answer(providers, cache_key, future) -> None:
         pass
 
 
-def _fetch_all_tag_recordings(providers, tags, headers, state, pop_begin, pop_end):
+def _fetch_all_tag_recordings(providers, tags, headers, state, pop_begin, pop_end, scope=None):
     """Return {tag: mbids or Exception}. Cached tags answer immediately; the rest are
     fetched in parallel and the first answer wins: stragglers are dropped
     ``TAG_RADIO_STRAGGLER_SECONDS`` after the first response, but still cache their answer
@@ -100,7 +102,7 @@ def _fetch_all_tag_recordings(providers, tags, headers, state, pop_begin, pop_en
     pending: list[str] = []
     for tag in dict.fromkeys(tags):
         cached = providers.metadata_cache_get(
-            _radio_cache_key(tag, pop_begin, pop_end), ttl_seconds=TAG_RADIO_TTL_SECONDS)
+            _radio_cache_key(tag, pop_begin, pop_end, scope), ttl_seconds=TAG_RADIO_TTL_SECONDS)
         if cached is not None:
             state["hits"] += 1
             results[tag] = _radio_entries(cached)
@@ -117,7 +119,7 @@ def _fetch_all_tag_recordings(providers, tags, headers, state, pop_begin, pop_en
             future = executor.submit(_tag_radio_request, providers, tag, headers, pop_begin, pop_end)
             # Cache on the worker thread, so a straggler that answers after the lane moved
             # on still warms the cache for the next run (one SQLite connection per call).
-            cache_key = _radio_cache_key(tag, pop_begin, pop_end)
+            cache_key = _radio_cache_key(tag, pop_begin, pop_end, scope)
             future.add_done_callback(lambda fut, key=cache_key: _cache_answer(providers, key, fut))
             futures[future] = tag
         waiting = set(futures)
@@ -153,16 +155,18 @@ def run_lb_tag_queries(
     candidate_cap: int,
     pop_begin: int = TAG_RADIO_POP_BEGIN,
     pop_end: int = TAG_RADIO_POP_END,
+    scope: str | None = None,
 ):
     """Add album candidates from tag radio. Same state and outcome contract as the
     MusicBrainz lane: one (added, error_class) pair per query attempted. ``pop_begin``
-    and ``pop_end`` set the radio popularity band (percent, 0-100)."""
+    and ``pop_end`` set the radio popularity band (percent, 0-100). ``scope`` keys the
+    radio answers, so callers that need their own sample of a tag pass their own scope."""
     if not (0 <= pop_begin < pop_end <= 100):
         raise ValueError("tag radio popularity band must satisfy 0 <= begin < end <= 100")
     planned: list[tuple[str, str, str, str, list[tuple[str, int]], str | None]] = []
     tags = {query: tag_from_query(query) for query, _f, _s in queries}
     fetched = _fetch_all_tag_recordings(
-        providers, [t for t in tags.values() if t], headers, state, pop_begin, pop_end)
+        providers, [t for t in tags.values() if t], headers, state, pop_begin, pop_end, scope)
     for query, family, style in queries:
         tag = tags[query]
         mbids: list[tuple[str, int]] = []

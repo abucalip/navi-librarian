@@ -1,3 +1,11 @@
+## 2026-10-24 — Daily radio scope for Deep cuts (unwired)
+
+- Radio answers can now be keyed by a scope (`lens:date`). `run_deep_cuts_tag_supply` requires `lens` and an ISO `day`, so each tag gives one fixed sample per lens per day, a fresh draw the next day, and a separate draw for each lens that shares the tag. The default key (no scope, default band) is unchanged, so existing cache entries stay valid.
+- Old daily entries are not deleted; they expire with the existing 30-day TTL.
+- The MusicBrainz tail is deterministic per query and is not scoped.
+- Focused tests: 123 passed (new `tests/test_discovery_daily_radio_scope.py`, plus updated Deep cuts, tag-lane, gathering, lens and size-guard tests). The full suite is left to CI.
+- Not wired into runtime; no live calls in this change; defaults unchanged.
+
 ## 2026-10-23 — Engine 2 Phase 3: Deep cuts tiered supply with MusicBrainz tail (unwired)
 
 - Added `discovery/deep_cuts_supply.py`: `run_deep_cuts_tag_supply` runs the ListenBrainz tag radio at the owner-approved 50–75% band, then the 75–100% band for queries still empty, then the MusicBrainz tag search for queries still empty. A query no tier reached is marked `not_attempted`.
