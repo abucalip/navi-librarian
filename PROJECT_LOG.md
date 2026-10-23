@@ -431,6 +431,14 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - PR #562 squash-merged as `650a72718bfcd40a63ce67c5f869e71fd3a18d85`. Documentation closeout commit: `82f9be0c41455c035a1abf729d7a290483e1fdce`. No image publication, deployment, or live-runtime verification.
 
 
+
+## 2026-10-23 — Review, test, and merge PR #574
+
+- Re-reviewed the reconciled PR head `cc23a8005e554713f31eb0ab8594d2efa70b8d1e`. The cache correction now reads misses with the 7-day TTL first and only falls back to the 30-day TTL for positive values; Last.fm error 6 is treated as definitive not-found, while other errors, non-200 responses, malformed payloads, and exceptions remain uncached. Regression tests cover miss expiry, positive-value expiry, and transient failures.
+- All four required workflows passed on that exact PR head: Python syntax/acquisition safety (`39954186109`), Docker packaging/full unit suite/image build (`39954186084`), container runtime smoke (`39954186218`), and validation-only multi-architecture image validation (`39954186167`, publishing paused). The full unit suite therefore ran in CI on the exact reviewed revision; no separate local full-suite run was performed.
+- Squash-merged PR #574 as `eb4cb16ec5b932b4dc21a8978149f200931b1334`. The module remains unwired into runtime recommendation paths. No publication, deployment, or runtime behavior verification was performed.
+- Review caveat: cache and provider behavior is covered offline with stubs; live provider behavior was measured in the prior capture but not re-run as part of this PR review.
+
 ## 2026-10-22 — Close approved runtime verification tasks
 
 - The owner confirmed that failed-track retry/recovery and masked slskd artist-query behavior have been tested and approved. These are removed from the active work queue; no further verification task remains for those behaviors.
