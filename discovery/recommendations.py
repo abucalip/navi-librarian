@@ -255,6 +255,55 @@ def decayed_listen_weights(
     ]
 
 
+def windowed_listen_weights(
+    listens: Iterable[Mapping[str, Any]],
+    *,
+    window_days: float | None = None,
+    half_life_days: float | None = None,
+) -> list[float]:
+    """Return per-listen weights for one history window, anchored to the newest dated listen.
+
+    ``window_days`` keeps only listens within that many days of the newest one; the
+    rest get 0.0. Undated listens fall outside any bounded window. ``None`` keeps all
+    of history. ``half_life_days`` decays weights within the window; ``None`` gives
+    every kept listen a flat 1.0. Both ``None`` gives the all-time flat profile.
+    """
+    if window_days is not None and (not math.isfinite(window_days) or window_days <= 0):
+        raise ValueError("window_days must be a positive finite number or None")
+    if half_life_days is not None and (not math.isfinite(half_life_days) or half_life_days <= 0):
+        raise ValueError("half_life_days must be a positive finite number or None")
+
+    records = list(listens)
+    timestamps: list[float | None] = []
+    for listen in records:
+        try:
+            value = float(listen.get("listened_at"))
+            timestamps.append(value if math.isfinite(value) else None)
+        except (TypeError, ValueError, AttributeError):
+            timestamps.append(None)
+
+    dated = [value for value in timestamps if value is not None]
+    if not dated:
+        return [1.0 if window_days is None else 0.0] * len(records)
+    reference = max(dated)
+    window_seconds = None if window_days is None else window_days * 24 * 60 * 60
+    half_life_seconds = None if half_life_days is None else half_life_days * 24 * 60 * 60
+
+    weights: list[float] = []
+    for timestamp in timestamps:
+        if timestamp is None:
+            weights.append(1.0 if window_seconds is None else 0.0)
+            continue
+        age = max(0.0, reference - timestamp)
+        if window_seconds is not None and age > window_seconds:
+            weights.append(0.0)
+        elif half_life_seconds is None:
+            weights.append(1.0)
+        else:
+            weights.append(0.5 ** (age / half_life_seconds))
+    return weights
+
+
 def apply_familiarity_exploration_bonus(
     candidate: dict[str, Any],
     recent_artist_count: float,
