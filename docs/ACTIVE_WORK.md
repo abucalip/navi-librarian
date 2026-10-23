@@ -29,11 +29,24 @@ This is the short queue of unfinished or explicitly parked work. GitHub `main` i
 
 The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phases remain and nothing from it is queued. Derived is the only taste-profile mode and the fixed taste tables and mode switch are removed (PRs #561-#572). Evidence and limits are in `PROJECT_LOG.md`.
 
+## 2c. Engine 2 — next priority (draft roadmap: [engine2.md](engine2.md))
+
+Goal: several complementary lists of 10 ("lenses") from one shared candidate pool, including obscure-album lists and lists driven by different history windows. Evidence and phases are in `engine2.md`; measurements are in `PROJECT_LOG.md` (2026-10-23, two entries). Provider budget increases and live captures still need the owner's approval.
+
+First steps (Phase 1), in order:
+
+1. MBID-keyed popularity for the whole candidate pool (bounded, cached), compared against Deezer as a cross-check, evaluated on the existing 203-candidate capture.
+2. A taste-fit score for tag-lane candidates, evaluated offline. They currently all score 0.035 and never surface, and they are where obscure candidates come from (29 of 40 obscure, against 4 of 163 from CF).
+3. Read how the tag lane is seeded and whether a history window can drive the seeds.
+4. Offline "deep cuts" prototype on existing captures: how many obscure, well-fitting candidates exist.
+
+Phase 0 decisions that come first or alongside: merge the opt-in family-coverage branch, `CF_MAX_PAGES` 8 when coverage is on, a settings control, extra data sources. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
-- **Family-coverage policy — implemented on branch `diversity/family-coverage-allocator`, awaiting owner decision** (opt-in setting; default unchanged; see `PROJECT_LOG.md` 2026-10-23). Decisions needed: merge, make it the default, raise `CF_MAX_PAGES` to 8 when it is on, and whether it needs a settings/UI control.
-- Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply. Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
+- **Family-coverage policy — implemented on branch `diversity/family-coverage-allocator`, awaiting owner decision** (opt-in setting; default unchanged; see `PROJECT_LOG.md` 2026-10-23). Decisions needed: merge, make it the default, raise `CF_MAX_PAGES` to 8 when it is on, and whether it needs a settings/UI control. Genre-tag lookups were raised from 60/75 to 120/135 artists on that branch (separate commit). Measurements and roadmap: [engine2.md](engine2.md).
+- Open and optional, not started: examine why the recent-genre cap removes about 60% of candidates in both profiles; 8 CF pages only if the owner wants more candidate supply (the 2026-10-23 branch work shows 8 pages helps only with 120 tag lookups and the coverage policy; see `engine2.md`). Any live capture or higher provider budget needs owner approval. Do not change ranking weights without evidence and approval.
 - Detailed older evidence, alternatives, and evaluation criteria: [archived recommendation-engine research](archive/recommendations/RECOMMENDATION_ENGINE_IMPROVEMENTS_HISTORY.md).
 
 ## 4. Parked decisions — do not start without a new decision

@@ -1,3 +1,16 @@
+## 2026-10-23 — Obscurity measurements and Engine 2 roadmap (docs only)
+
+Owner-approved read-only provider calls (Last.fm `album.getInfo` for 203 unowned candidates, `artist.getInfo` for 144 artists, about 20 Deezer lookups); private result files outside the repository (mode 600); aggregates only. One capture (8 CF pages, 120 tag lookups), one profile. No code or default changed by this entry.
+
+- **Popularity data is nearly absent from captures.** The engine looks up Last.fm popularity for about 40 candidates per run; 12 unowned candidates carried listener counts and the smallest was 9,382.
+- **Album-level Last.fm lookups mismatch** on titles with brackets, curly quotes or edition suffixes, making well-known albums look obscure. Artist-level lookups are better but mismatch on "feat." credits and non-ASCII hyphens. MBID lookups are needed.
+- **Artist listeners, 203 candidates:** median 4.2M; 33 (16%) under 200k; 22 under 50k; 17 under 10k.
+- **Obscure candidates come from the MusicBrainz tag lane:** 29 of 40 (73%), against 4 of 163 (2%) from ListenBrainz CF. All tag-lane candidates share the base score 0.035 (no taste bonus), so they never rank.
+- **Score tracks popularity:** median album listeners 2.7M for the top 20 by score, 75k for ranks 120 and below.
+- **Deezer (no key):** 15 of 20 sampled albums matched; 0 to 132 fans for albums with 1 to 554 Last.fm listeners, 54 to 348,362 for 4.0M to 5.3M. Separates extremes, noisy mid-range.
+- **Roadmap:** `docs/engine2.md` (lenses, other data sources, phases, evaluation metrics, open decisions). `ACTIVE_WORK.md` section 2c lists Phase 1 as the next priority.
+- **Limits:** one profile and one capture; album-level counts unreliable; the tag-lane seeding code was not read; Deezer/Discogs/others unverified beyond the Deezer sample; no listener-quality measurement.
+
 ## 2026-10-23 — Family-coverage selection policy and genre-tag budget (branch `diversity/family-coverage-allocator`, not merged)
 
 Owner-approved live captures (read-only, slskd off, aggregates only, private captures outside the repo, mode 600). Single profile, one capture per arm; no recommendation-quality claim.
