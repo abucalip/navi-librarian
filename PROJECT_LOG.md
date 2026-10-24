@@ -1,3 +1,10 @@
+## 2026-10-24 — Deeper lens history (PR #597); correction to the live-run entry; PR #596 review fixes
+
+- Correction: the live-run entry below says the history was capped at 100 listens by the ListenBrainz page limit. That was wrong. A `min_ts` query returns the oldest page after the bound in ascending order, and the client paged backwards from there and stopped, so the one-year read kept only the oldest two days of the year. `recent_listens` (Discover, `days=30`) has the same behaviour and is not changed; it needs an owner decision.
+- PR #597 (`feat/engine2-dynamic-history`): dynamic 365-day walk back from now, to a 13-year floor, until 2000 usable listens (starting value). Windows alternate between ListenBrainz and Last.fm, a failing source is answered by the other, duplicates counted once, windows at the 5,000-listen page cap flagged. Tests: `tests/test_discovery_history_fetch.py` (14). Live: 6,866 listens over 13 windows; all three lenses built; the 2014 window reached.
+- PR #596 review (`d6261439`): malformed cache entries no longer make an unchecked read fail; two regression tests. Browser check on that head: pass at 1280 and 390 px.
+- Not merged, both PRs open. No publication or deployment.
+
 ## 2026-10-24 — Daily picks dismissal filtering (PR #596)
 
 - Re-reviewed PR [#596](https://github.com/abucalip/navi-librarian/pull/596) after the robustness fix. The unchecked-cache response now drops malformed non-mapping entries safely and handles a non-list `albums` field; regression tests cover both-checks-unavailable and malformed-cache cases.

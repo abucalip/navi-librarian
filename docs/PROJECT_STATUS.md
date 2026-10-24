@@ -57,7 +57,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; this is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
+Review and merge PR #596 (dismissal filter, rank numbering, Daily picks name, malformed-cache fix) and PR #597 (dynamic deeper history split between ListenBrainz and Last.fm) on their exact heads once CI passes. Owner to confirm the 2000-listen starting threshold, to set `LASTFM_USERNAME`, and to decide whether the Discover path's `recent_listens` paging bug should be fixed. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
 
 ## Where to look
 
