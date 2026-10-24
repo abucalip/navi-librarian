@@ -5,7 +5,7 @@ allocator never queries the library or receives callbacks.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Callable, Container, Iterable, Mapping
 
 from discovery.allocation_contract import AllocationCandidate, OwnershipStatus
 from discovery.derived_profile import primary_genre_family
@@ -67,10 +67,20 @@ def build_allocation_inputs(
     music_key: Callable[[Any], str],
     artist_identity: Callable[[Mapping[str, Any]], str],
     popularity: Mapping[str, Mapping[str, Any]] | None = None,
+    known_artist_mbids: Container[str] = (),
 ) -> tuple[dict[str, Mapping[str, Any]], list[AllocationCandidate]]:
     """Map enriched candidates to allocation candidates, keyed by stable ID.
 
-    ``popularity`` ({release_group_mbid: popularity}) fills the Deep cuts inputs."""
+    ``popularity`` ({release_group_mbid: popularity}) fills the Deep cuts inputs.
+    An artist is known when any library album carries the same normalized artist name, or
+    when the candidate's artist MBID is in ``known_artist_mbids`` (for example the artists
+    in the listening history)."""
+    library_artist_keys = {
+        key
+        for matches in library_by_title.values()
+        for match in matches
+        if (key := music_key(match.get("artist", "")))
+    }
     candidate_by_id: dict[str, Mapping[str, Any]] = {}
     allocation_candidates: list[AllocationCandidate] = []
     for source_order, candidate in enumerate(albums):
@@ -94,6 +104,10 @@ def build_allocation_inputs(
             genre_family=primary_genre_family(tags),
             tags=tags,
             ownership=ownership,
+            artist_known=bool(
+                (candidate.get("artist_mbid") and candidate["artist_mbid"] in known_artist_mbids)
+                or music_key(candidate["primary_artist"]) in library_artist_keys
+            ),
             **deep_cuts_fields(candidate, popularity),
         ))
     return candidate_by_id, allocation_candidates

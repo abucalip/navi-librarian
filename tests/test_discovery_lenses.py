@@ -12,11 +12,11 @@ from discovery.personal_allocator import allocate_personal_recommendations
 
 def item(cid, artist=None, album=None, category="adjacent", score=1.0, genre=None,
          audience=None, seed=None, strength=0.0, tags=("a", "b"),
-         ownership=OwnershipStatus.CLEAR):
+         ownership=OwnershipStatus.CLEAR, known=False):
     return AllocationCandidate(
         candidate_id=cid, artist_key=artist or cid, album_key=album or cid,
         category=category, score=score, genre_family=genre, audience=audience,
-        seed=seed, tag_strength=strength, tags=tags, ownership=ownership,
+        seed=seed, tag_strength=strength, tags=tags, ownership=ownership, artist_known=known,
     )
 
 
@@ -167,3 +167,32 @@ class RepeatedTracksLensTests(unittest.TestCase):
         self.assertEqual([r.lens for r in results], ["deep_cuts", "repeated_tracks"])
         picked = [cid for r in results for cid in r.selected_candidate_ids]
         self.assertEqual(sorted(picked), ["a", "b"])
+
+
+class KnownArtistAndTagMinimumTests(unittest.TestCase):
+    def test_known_artists_are_never_selected_by_either_deep_cuts_lens(self):
+        pool = [item("known", audience=5000, known=True), item("fresh", audience=5000)]
+        for lens in (DEEP_CUTS, REPEATED_TRACKS):
+            result = run_lens(lens, pool, 5)
+            status = {d.candidate_id: d.status for d in result.decisions}
+            self.assertEqual(result.selected_candidate_ids, ("fresh",))
+            self.assertEqual(status["known"], "artist_already_known")
+
+    def test_known_artist_does_not_use_up_a_seed_or_artist_slot(self):
+        pool = [item("k1", artist="x", audience=5000, seed="s", strength=0.9, known=True),
+                item("k2", audience=5000, seed="s", strength=0.8, known=True),
+                item("a", audience=5000, seed="s", strength=0.2),
+                item("b", audience=5000, seed="s", strength=0.1)]
+        self.assertEqual(select_deep_cuts(pool, 5).selected_candidate_ids, ("a", "b"))
+
+    def test_repeated_tracks_accepts_one_tag_but_deep_cuts_needs_two(self):
+        pool = [item("thin", audience=5000, tags=("a",)), item("none", audience=5000, tags=())]
+        self.assertEqual(run_lens(DEEP_CUTS, pool, 5).selected_candidate_ids, ())
+        result = run_lens(REPEATED_TRACKS, pool, 5)
+        self.assertEqual(result.selected_candidate_ids, ("thin",))
+        self.assertEqual({d.candidate_id: d.status for d in result.decisions}["none"], "too_few_tags")
+
+    def test_artist_known_must_be_a_bool(self):
+        with self.assertRaises(ValueError):
+            AllocationCandidate(candidate_id="a", artist_key="a", album_key="a", category="adjacent",
+                                score=1.0, artist_known=1)

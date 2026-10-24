@@ -53,6 +53,8 @@ class AllocationCandidate:
     audience: int | None = None
     seed: str | None = None
     tag_strength: float = 0.0
+    # True when the listener already knows the artist (library or listening history).
+    artist_known: bool = False
 
     def __post_init__(self) -> None:
         for field_name in ("candidate_id", "artist_key"):
@@ -72,6 +74,8 @@ class AllocationCandidate:
             raise ValueError("audience must be a non-negative integer or None")
         if not math.isfinite(self.tag_strength):
             raise ValueError("tag_strength must be finite")
+        if type(self.artist_known) is not bool:
+            raise ValueError("artist_known must be a bool")
 
 
 @dataclass(frozen=True)

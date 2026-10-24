@@ -60,6 +60,27 @@ class BuildInputsTests(unittest.TestCase):
         self.assertEqual(second.source_order, 1)
 
 
+class KnownArtistTests(unittest.TestCase):
+    def build(self, library, known_mbids=()):
+        _, candidates = build_allocation_inputs(
+            [album("New One", "Library Artist", mbid="m1"), album("Other", "History Artist", mbid="m2"),
+             album("Third", "Stranger", mbid="m3")],
+            library_by_title=library, genre_cache={}, music_key=key,
+            artist_identity=lambda c: c["artist_mbid"], known_artist_mbids=known_mbids)
+        return [c.artist_known for c in candidates]
+
+    def test_library_artist_and_history_mbid_are_known(self):
+        library = {"oldalbum": [{"artist": "library artist", "name": "Old Album"}]}
+        self.assertEqual(self.build(library, {"m2"}), [True, True, False])
+
+    def test_nothing_known_by_default(self):
+        self.assertEqual(self.build({}), [False, False, False])
+
+    def test_library_artist_with_other_albums_is_known_even_without_a_title_match(self):
+        library = {"x": [{"artist": "Stranger"}]}
+        self.assertEqual(self.build(library), [False, False, True])
+
+
 class DeepCutsFieldsTests(unittest.TestCase):
     lane = {"regional_styles": ["profile:post_punk", "explore:x"], "release_group_mbid": "g1"}
 
