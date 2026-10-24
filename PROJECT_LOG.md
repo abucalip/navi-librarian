@@ -1,3 +1,8 @@
+## 2026-10-24 — Phase 4 closeout: what is left
+
+- Built and merged: Phase 4 slices 1 to 4 (PRs #590 to #595), the dismissal read filter and Daily picks rename (#596), the dynamic history walk with its Last.fm error fix (#597), and the ListenBrainz recent-listens paging fix (#598).
+- Left: the owner's decision on `engine2_lens_lists_enabled`; the Last.fm account Settings control (parked); browser checks for keyboard, focus, actions, reduced motion and screen readers; empty artwork on lens rows; a quality measurement of the lists; Phase 5. No publication or deployment in this entry.
+
 ## 2026-10-24 — Deeper lens history (PR #597); correction to the live-run entry; PR #596 review fixes
 
 - Correction: the live-run entry below says the history was capped at 100 listens by the ListenBrainz page limit. That was wrong. A `min_ts` query returns the oldest page after the bound in ascending order, and the client paged backwards from there and stopped, so the one-year read kept only the oldest two days of the year. `recent_listens` (Discover, `days=30`) has the same behaviour and is not changed; it needs an owner decision.

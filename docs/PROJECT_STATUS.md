@@ -61,7 +61,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Confirm the 2000-listen starting threshold and set `LASTFM_USERNAME` if Last.fm should supply alternate lens-history windows. Owner to confirm the 2000-listen starting threshold and set `LASTFM_USERNAME` if Last.fm should supply the alternate lens-history windows. Parked for later: a Settings control for the Last.fm account. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
+Phase 4 is built and merged; its lists stay off by default. Next, in order: (1) the owner decides whether to turn `engine2_lens_lists_enabled` on for daily use; (2) run the browser checks not yet done (keyboard and focus, Get, Save and dismiss, reduced motion, screen readers) on the merged `main` head; (3) investigate the empty album artwork on lens rows; (4) parked for later: the Last.fm account Settings control. Phase 5 (feedback loop) is not started. Not published or deployed.
 
 ## Where to look
 
