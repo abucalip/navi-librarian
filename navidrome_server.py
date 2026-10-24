@@ -1164,6 +1164,10 @@ def _discovery_refresh_other(list_name):
 _CLASSICS_REFRESH_LOCK = __import__("threading").Lock()
 _DEEP_DIVE_REFRESH_LOCK = __import__("threading").Lock()
 _NEW_RELEASES_REFRESH_LOCK = __import__("threading").Lock()
+_LENS_LISTS_REFRESH_LOCK = __import__("threading").Lock()
+# Listening history read for the lens lists (Phase 4 slice 3). Obsessions and Repeated tracks
+# need more than the 30-day default; the page bound of the shared client still applies.
+LENS_HISTORY_DAYS = 365
 
 
 _DISCOVERY_SETTINGS_DEFAULTS = {
@@ -2276,9 +2280,14 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
     from personal results; For Me entries are marked acquired when found in
     the current Navidrome album inventory.
     """
+    if list_name in _discovery_lens_names():
+        if not 1 <= count <= 150:
+            return json.dumps({"error": "count must be between 1 and 150"})
+        return _discovery_lens_list_response(list_name, count)
     if list_name not in {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}:
         return json.dumps({
-            "error": "list_name must be personal, classics, artist_deep_dive, new_releases, or for_me."
+            "error": "list_name must be personal, classics, artist_deep_dive, new_releases, for_me, "
+                     "or a lens (repeated_tracks, deep_cuts, obsessions)."
         })
     if not 1 <= count <= 150:
         return json.dumps({"error": "count must be between 1 and 150"})
@@ -2350,7 +2359,93 @@ def discovery_get_list(list_name: str = "personal", count: int = 30) -> str:
 
 
 def _discovery_refresh_all():
-    return discovery_refresh.refresh_all(_discovery_refresh_personal, _discovery_refresh_other)
+    return discovery_refresh.refresh_all(
+        _discovery_refresh_personal, _discovery_refresh_other, _discovery_refresh_lens_lists,
+    )
+
+
+def _discovery_lens_names():
+    from discovery.lens_lists import LENS_LIST_ORDER
+    return tuple(lens.name for lens in LENS_LIST_ORDER)
+
+
+def _discovery_owned_predicate_or_none():
+    """Ownership check against the current library, or None when the library cannot be read."""
+    from discovery.list_payload import owned_predicate
+    try:
+        return owned_predicate(_discovery_library_snapshot(), _music_key)
+    except Exception:
+        return None
+
+
+def _discovery_lens_list_response(lens_name, count):
+    from discovery.lens_storage import lens_storage_name
+    from discovery.list_payload import build_lens_list_response
+    return build_lens_list_response(
+        lens_name,
+        count,
+        _discovery_read_list(lens_storage_name(lens_name)),
+        _discovery_owned_predicate_or_none(),
+    )
+
+
+def _discovery_build_lens_lists():
+    """Gather and build the lens lists for today (Engine 2, Phase 4, slice 3).
+
+    Returns ``{"status": "disabled"}`` before any provider call when the setting is off.
+    """
+    import httpx
+    import time
+    from datetime import datetime
+    from discovery.candidate_gathering import RecommendationProviders
+    from discovery.lens_lists import build_lens_lists, history_artist_mbids, usable_listens
+    from discovery.lens_pool_gatherer import gather_lens_pools
+    from discovery.lens_storage import lens_day
+    from discovery.library_snapshot import fetch_album_inventory
+
+    if not _service_settings.engine2_lens_lists_enabled_value(_discovery_settings_read):
+        return {"status": "disabled"}
+    day = lens_day(datetime.now())
+    providers = RecommendationProviders(
+        listenbrainz_recent=_listenbrainz_recent, listenbrainz_username=_listenbrainz_username,
+        music_key=_music_key, metadata_cache_get=_metadata_cache_get, metadata_cache_set=_metadata_cache_set,
+        is_album_candidate=_discovery_is_album_candidate, api_call=api_call, items=items,
+        http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep, http_post=httpx.post,
+        feedback_rows=_discovery_feedback_rows,
+    )
+    listens = _listenbrainz_recent(days=LENS_HISTORY_DAYS)
+    gathered = gather_lens_pools(
+        listens, day=day, providers=providers,
+        headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+        lastfm_api_key=str(_discovery_settings_read().get("lastfm_api_key") or ""),
+        settings_read=_discovery_settings_read,
+    )
+    if gathered["status"] != "gathered":
+        return {"status": "disabled"}
+
+    library_by_title = {}
+    for album in fetch_album_inventory(api_call, items):
+        title_key = _music_key(album.get("name", ""))
+        if title_key:
+            library_by_title.setdefault(title_key, []).append(album)
+    usable = usable_listens(listen for listen in listens if isinstance(listen, dict))
+    lists = build_lens_lists(
+        gathered["pools"], day=day, popularity=gathered["popularity"],
+        artist_tags=gathered["artist_tags"], fallback_tags=gathered["fallback_tags"],
+        library_by_title=library_by_title, known_artist_mbids=history_artist_mbids(usable),
+        seeds=gathered["seeds"],
+    )
+    return {"status": "built", "day": day, "lists": lists}
+
+
+def _discovery_refresh_lens_lists():
+    return discovery_refresh.refresh_lens_lists(
+        _discovery_build_lens_lists,
+        _discovery_read_list,
+        _discovery_write_list,
+        _LENS_LISTS_REFRESH_LOCK,
+        is_excluded=_discovery_owned_predicate_or_none(),
+    )
 
 
 def discovery_refresh_list(list_name: str = "personal", count: int = 10) -> str:

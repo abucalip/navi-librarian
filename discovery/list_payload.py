@@ -5,10 +5,11 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from discovery.lens_storage import serve_lens_list
 from discovery.snapshot import serve_snapshot
 
 
-def _owned_predicate(
+def owned_predicate(
     snapshot: Mapping[str, Any],
     music_key: Callable[[Any], str],
 ) -> Callable[[Mapping[str, Any]], bool]:
@@ -67,7 +68,7 @@ def build_cached_discovery_list_response(
     read_filter = None
     if list_name == "personal" and library_snapshot is not None:
         try:
-            owned = _owned_predicate(library_snapshot(), music_key)
+            owned = owned_predicate(library_snapshot(), music_key)
         except Exception:
             read_filter = {"ownership_checked": False}
         else:
@@ -89,7 +90,7 @@ def build_cached_discovery_list_response(
     library_owned = None
     if list_name != "personal" and library_snapshot is not None:
         try:
-            library_owned = _owned_predicate(library_snapshot(), music_key)
+            library_owned = owned_predicate(library_snapshot(), music_key)
         except Exception:
             library_owned = None
     visible = []
@@ -142,3 +143,44 @@ def build_cached_discovery_list_response(
         if key in payload:
             result[key] = payload[key]
     return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+def build_lens_list_response(
+    lens_name: str,
+    count: int,
+    cached: Mapping[str, Any] | None,
+    is_owned: Callable[[Mapping[str, Any]], bool] | None,
+) -> str:
+    """Build the JSON response for one stored lens list (Engine 2, Phase 4, slice 3).
+
+    ``is_owned`` (None when the library could not be read) removes owned albums at read
+    time; the stored order and ranks are kept. The response reports whether ownership was
+    checked and aggregate counts only.
+    """
+    if not cached:
+        return json.dumps({
+            "list": lens_name,
+            "generated_at": None,
+            "items": [],
+            "message": "No saved list yet. The daily lens refresh has not stored one.",
+        }, ensure_ascii=False, indent=2)
+
+    payload = cached["payload"]
+    stored = payload.get("albums") if isinstance(payload.get("albums"), list) else []
+    if is_owned is None:
+        served, read_filter = dict(payload), {"ownership_checked": False}
+    else:
+        served, counts = serve_lens_list(payload, is_owned)
+        read_filter = {"ownership_checked": True, **counts}
+    albums = served.get("albums", [])
+    return json.dumps({
+        "list": lens_name,
+        "label": payload.get("label"),
+        "day": payload.get("day"),
+        "generated_at": cached["generated_at"],
+        "total_before_filter": len(stored),
+        "count": min(count, len(albums)),
+        "items": albums[:count],
+        "seed_tags": payload.get("seed_tags", []),
+        "read_filter": read_filter,
+    }, ensure_ascii=False, indent=2)
