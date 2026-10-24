@@ -105,10 +105,13 @@ Recent 30 days against all time (flat weights): 9/10 final overlap, 143 of 152 s
 | --- | --- | --- | --- |
 | Now | last 30 days | Today's behaviour: close to the current profile | existing |
 | Genre spread | any | Family coverage policy | merged branch, tag budget |
-| Long-term taste | all time, flat weights | Profile without recency decay | profile windows, seeds |
+| Long-term taste | all time, flat weights | Profile without recency decay. Measured 2026-10-24: its seed tags overlap Rediscovery's by 5 of 6, so it adds little next to it. | profile windows, seeds |
 | Rediscovery | years ago, dormant for 12+ months | Unowned albums by or near artists once played heavily | history import, similar artists |
 | Deep cuts | dense month or recent window | **Owner-approved definition (2026-10-23):** window: a dense listening month (or the recent-activity window when the history is too short); source: ListenBrainz tag radio at popularity band 50 to 75% (low percent = most popular), with the 75 to 100% band and the MusicBrainz tag search as the tail; seeds from the window profile via `select_supplementary_tag_queries`; gates: batch title-marker filter on, tag count at least 2, album listeners by release MBID between about 300 and 50,000, one album per artist, at most 2 per seed, artists already known to the listener excluded. Ranked by radio tag strength; plays per listener is an optional tie-break. Thresholds are starting values. | merged popularity module, window profiles |
-| Stretch | all time minus recent | Families in all-time listening absent recently, plus genre-table neighbours | profile windows |
+| Stretch | all time minus recent | Families in all-time listening absent recently, plus genre-table neighbours. Not built: on the measured history it gives the same artists as Rediscovery. | profile windows |
+| Repeated tracks (candidate) | all time | Artists whose repeated tracks lie outside the dominant tags (`repeated_track_artist_weights`, PR #583). Measured seed tags (raï, folk, traditional pop, desert blues, jazz fusion, folk rock) share none with Now, Long-term or Rediscovery. Lens not defined. | merged helpers, owner decision |
+| Obsessions (candidate) | all time | Artists with most listens inside one short span (`burst_artist_weights`). Seed tags are broad (rock, rock and roll, blues rock), so obscurity needs the Deep cuts gates. Lens not defined. | merged helpers, owner decision |
+| New artists (candidate) | since a cutoff | Artists first heard since a date (`new_artist_weights`). Four of six seed tags overlap Now, so it is redundant with Now on the measured history. Lens not defined. | merged helpers, owner decision |
 | Era and region | any | Spread across decade and country | MusicBrainz area and dates |
 | Comeback | past window | New releases by artists played heavily in a past window | `new_releases.py` |
 
@@ -157,7 +160,7 @@ Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, 
 ### Phase 3 — time-range profiles
 
 - Profile windows (30 days, 1 year, all time) built from the imported history, with flat or windowed weights.
-- Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses. Time-window lists are skipped for now (owner decision, 2026-10-24): they would set the genre mix only, not the albums, so the window work stops at the seed level.
+- Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses. Time-window lists were skipped on 2026-10-24 and reopened by the owner the same day, at the seed level: they set the genre mix, not the albums. The history profiles are merged in PR #583 (unwired); which of them become lenses is an owner decision.
 - Deferred from Phase 2 (owner decision, 2026-10-23): make the tag-radio popularity band a parameter keyed in the radio cache (approved Deep cuts band 50 to 75%, tail 75 to 100%), verify the title-marker filter on both radio and MusicBrainz sources, and add the MusicBrainz tag-search tail. Defaults stay at the current 0 to 100% until the owner approves a live run.
 - Gate: show that a window changes the candidate pool, not only ranks. Result (2026-10-24, six repeated radio samples per tag, five windows, replayed through the production lane): a window changes the pool only through its seed tags. Each tag contributes exactly five albums, and the albums are redrawn on every radio call (about one album shared across repetitions of the same window). Different windows share albums only where they share seed tags. The gate is therefore met at the seed level and not at the album level. Radio answers are now fixed per lens per day (PR #582), so a daily list is stable without making it fixed forever.
 

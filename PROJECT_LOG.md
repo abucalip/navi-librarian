@@ -1,3 +1,12 @@
+## 2026-10-24 — Engine 2 Phase 3: history profiles through the real seed selection
+
+- Offline check, no provider calls: the merged-branch profile helpers (PR #583) and the existing `select_supplementary_tag_queries` over one listener's full ListenBrainz history (40,798 listens, 36,231 with an artist MBID through the `mbid_mapping` fallback) and cached genre tags for 504 of 599 artists. Aggregates only; the data and harness stay outside the repository.
+- Profiles and the six seed tags each produced: Now (30 days): jazz, pop, rock, alternative rock, hip hop, indie rock. Long-term: progressive rock, metal, progressive metal, rock, art rock, acoustic rock. Rediscovery (dormant 365 days): metal, progressive metal, progressive rock, acoustic rock, death metal, rock. Repeated tracks outside the dominant tags (54 artists): raï, folk, traditional pop, desert blues, jazz fusion, folk rock. Obsessions (67 artists): rock, rock and roll, blues rock, progressive rock, blues, alternative rock. New since 2018 (88 artists): jazz, hip hop, pop, raï, rock, r&b.
+- Shared seed tags (of 6): Long-term and Rediscovery 5; Now and New since 2018 4; Obsessions 2 with each of Now, Long-term and Rediscovery; Repeated tracks 0 with Now, Long-term, Rediscovery and Obsessions, and 1 with New since 2018.
+- Reading: the repeated-track profile is the only clearly separate one; New since 2018 is largely redundant with Now; Long-term and Rediscovery are near-duplicates; Obsessions gives broad, popular tags, so obscurity would rest on the Deep cuts gates. As earlier, a profile changes the seed tags, not which albums a tag returns.
+- Limits: one listener; 95 of 599 artists have no genre tags and add nothing to the seeds; thresholds (5 plays, 20 listens, 70% in 30 days) are untuned; seed tags only, no albums were fetched; no quality judgment. Nothing is wired into runtime.
+- Next: the owner decides which profiles become lenses and their gates.
+
 ## 2026-10-24 — Engine 2 Phase 3: title-marker check, size of the known radio-path gap
 
 - The title-marker check itself was done and logged on 2026-10-23: the radio path applies `batch_title_marker_rejection`, the MusicBrainz path uses release-group secondary types, and an unmarked live or compilation album still passes the radio path. The Christmas album noted in the first 2026-10-24 live-run entry is not a filter failure, since "Christmas" was never a marker. This entry measures how often the known gap lets an excluded type through.
