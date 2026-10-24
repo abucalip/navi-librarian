@@ -178,6 +178,28 @@ class KnownArtistAndTagMinimumTests(unittest.TestCase):
             self.assertEqual(result.selected_candidate_ids, ("fresh",))
             self.assertEqual(status["known"], "artist_already_known")
 
+    def test_known_artists_do_not_count_against_the_check_limit(self):
+        known = [item(f"k{i}", audience=5000, strength=0.9 - i / 100, known=True) for i in range(5)]
+        fresh = [item("a", audience=5000, strength=0.1), item("b", audience=5000, strength=0.05)]
+        result = select_deep_cuts(known + fresh, 2, max_checks=2)
+        status = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual(result.selected_candidate_ids, ("a", "b"))
+        self.assertEqual({status[f"k{i}"] for i in range(5)}, {"artist_already_known"})
+        self.assertEqual(result.checked_count, 2)
+
+    def test_known_artists_beyond_the_limit_are_still_reported_as_known(self):
+        pool = [item("a", audience=5000, strength=0.9), item("b", audience=5000, strength=0.8),
+                item("k", audience=5000, strength=0.1, known=True)]
+        result = select_deep_cuts(pool, 5, max_checks=2)
+        self.assertEqual({d.candidate_id: d.status for d in result.decisions}["k"], "artist_already_known")
+
+    def test_owned_albums_by_known_artists_still_count_as_checks(self):
+        pool = [item("owned", audience=5000, strength=0.9, known=True, ownership=OwnershipStatus.EXACT_OWNED),
+                item("late", audience=5000, strength=0.1)]
+        result = select_deep_cuts(pool, 5, max_checks=1)
+        status = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual((status["owned"], status["late"]), ("already_owned", "not_considered"))
+
     def test_known_artist_does_not_use_up_a_seed_or_artist_slot(self):
         pool = [item("k1", artist="x", audience=5000, seed="s", strength=0.9, known=True),
                 item("k2", audience=5000, seed="s", strength=0.8, known=True),

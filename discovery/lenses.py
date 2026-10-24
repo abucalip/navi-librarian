@@ -64,9 +64,10 @@ def select_deep_cuts(
 ) -> AllocationResult:
     """Gate by audience and tag count, rank by radio tag strength, one album per
     artist and at most `max_per_seed` per seed. Artists the listener already knows are
-    never selected. Candidates without an audience
-    figure are never selected: unknown is not obscure. Like the allocator, it
-    examines at most `max_checks` candidates; the rest are not considered."""
+    never selected, and rejecting them is free: they do not count against `max_checks`.
+    Candidates without an audience figure are never selected: unknown is not obscure.
+    Like the allocator, it examines at most `max_checks` other candidates; the rest are
+    not considered."""
     if type(count) is not int or not 1 <= count <= MAX_RECOMMENDATION_COUNT:
         raise ValueError("count must be between 1 and 20")
     if type(max_checks) is not int or not 1 <= max_checks <= MAX_CANDIDATE_CHECKS:
@@ -90,6 +91,10 @@ def select_deep_cuts(
         if len(selected) >= count:
             record(item, "not_considered", "The requested number of recommendations was already reached.")
             continue
+        if item.artist_known and item.ownership is OwnershipStatus.CLEAR:
+            record(item, "artist_already_known",
+                   "The listener already knows this artist (library or listening history).")
+            continue
         if checked >= max_checks:
             record(item, "not_considered", f"The candidate search limit of {max_checks} checks was reached.")
             continue
@@ -99,9 +104,6 @@ def select_deep_cuts(
         elif item.ownership is OwnershipStatus.TITLE_CONFLICT:
             review.append(item.candidate_id)
             record(item, "held_for_ownership_review", "The album title exists in Navidrome under a different artist credit; manual review is recommended.")
-        elif item.artist_known:
-            record(item, "artist_already_known",
-                   "The listener already knows this artist (library or listening history).")
         elif item.audience is None:
             record(item, "audience_unknown", "No listener count is available, so the album cannot be called obscure.")
         elif not min_audience <= item.audience <= max_audience:
