@@ -88,7 +88,7 @@ class LensListsUiContractTests(unittest.TestCase):
     def test_rows_reuse_the_shared_discover_row_and_add_only_seed_and_listeners(self):
         start = self.js.index("function buildLensRow(")
         body = self.js[start:self.js.index("async function loadLensList(", start)]
-        self.assertIn("return buildRecommendationRow(item, item.rank, {", body)
+        self.assertIn("const row = buildRecommendationRow(item, item.rank, {", body)
         self.assertIn("'Seed tag: ' + item.seed_tag", body)
         self.assertIn("' listeners'", body)
         self.assertIn("listName: 'lens_lists',", body)
