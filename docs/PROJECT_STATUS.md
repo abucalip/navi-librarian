@@ -67,7 +67,9 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Phase 4 is closed. The owner decided that `engine2_lens_lists_enabled` stays on, that the deferred browser checks (Get, screen readers, reduced motion) stay deferred, and that no quality measurement is needed. The setting still has no Settings control. Phase 5 (feedback loop) is not started. Not published or deployed.
+Phase 4 is closed. The owner decided that `engine2_lens_lists_enabled` stays on, that the deferred browser checks (Get, screen readers, reduced motion) stay deferred, and that no quality measurement is needed. The setting still has no Settings control.
+
+Phase 5 (feedback loop) is underway: the per-lens save and dismissal summary is served read-only (PRs #600 and #601). Decided 2026-10-24: the comparison uses lens-tagged saves and dismissals only; Get/download attribution is deferred because the acquisition store keeps lens metadata only on failure statuses (see `engine2.md`, Phase 5). Next action: the owner decides whether to start the acquisition-attribution change as its own safety-reviewed PR, and whether to show the summary in the UI. Not published or deployed.
 
 ## Where to look
 
