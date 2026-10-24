@@ -42,6 +42,24 @@ class SupplementaryTagQueryTests(unittest.TestCase):
         self.assertEqual(by_tag["café jazz"][2], "profile:cafe_jazz")
         self.assertEqual(by_tag["音楽"][2], "profile:other")
 
+    def test_distinct_tags_never_share_a_style_key(self):
+        result = select_supplementary_tag_queries(
+            {"a": 4, "b": 3, "c": 2, "d": 1},
+            {"a": ["raï"], "b": ["rai"], "c": ["hip hop"], "d": ["hip-hop"]}, [],
+            profile_limit=4)
+        styles = [item[2] for item in result]
+        self.assertEqual(len(set(styles)), 4)
+        self.assertEqual(styles[0], "profile:rai")
+        self.assertEqual(styles[1], "profile:rai_2")
+        self.assertEqual(styles[2], "profile:hip_hop")
+        self.assertEqual(styles[3], "profile:hip_hop_2")
+        self.assertEqual(len({item[0] for item in result}), 4)
+
+    def test_profile_and_exploration_styles_stay_separate(self):
+        result = select_supplementary_tag_queries(
+            {"a": 1}, {"a": ["raï"]}, ["rai"], profile_limit=1, exploration_limit=1)
+        self.assertEqual([item[2] for item in result], ["profile:rai", "explore:rai"])
+
     def test_query_escaping_and_invalid_tags(self):
         result = select_supplementary_tag_queries(
             {"a": 1}, {"a": ['bossa nova', 'bad\nvalue', "x" * 65]}, []
