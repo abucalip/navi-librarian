@@ -669,3 +669,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - All four required workflows passed on the exact final PR head: Python syntax/acquisition safety (`40089767320`), Docker packaging/full unit suite/image build (`40089767317`; `Run unit tests` and `Build Docker image` both succeeded), container runtime smoke (`40089767356`), and validation-only multi-architecture image validation (`40089767293`, non-publishing). No separate manual full-suite run was performed; repository workflow says CI runs the full suite and agents do not run it manually. No manual UI check was applicable.
 - Squash-merged PR #584 as `82e06c6321107d3803761b65cab9a985bb686e42`. No publication, deployment, or runtime verification; image publication remains paused.
 - Next action: owner decision on the proposed repeated-tracks lens gates before any runtime wiring; keep this lens unwired until that decision.
+
+
+## 2026-10-24 — Re-review, full CI suite, and merge PR #585
+
+- Re-reviewed the updated PR head `34ec1a962a809cac86f735dfcf32422dc92f8646`. The prior same-name artist concern is addressed by comparing MusicBrainz IDs when both candidate and library artist IDs are available, with a name fallback when either identity is unresolved. Regression tests cover distinct same-name MBIDs, shared library identity, missing IDs, unresolved same-name library records, and history-MBID matching. Known artists are rejected before consuming seed/artist slots. Repeated tracks accepts one tag while Deep cuts retains the two-tag minimum. No runtime wiring was added.
+- All four required workflows passed on that exact head: Python syntax/acquisition safety (`40092120752`), Docker packaging/full unit suite/image build (`40092120821`; `Run unit tests` and `Build Docker image` succeeded), container runtime smoke (`40092120755`), and validation-only multi-architecture image validation (`40092120772`, non-publishing). CI ran the full unit suite on the exact reviewed head. No separate agent-run full suite was performed, per repository workflow rules.
+- Squash-merged PR #585 as `2706dda68c594a6d683cd6c6bc00feb2d9869d00`. The new lens remains unwired; no provider calls, publication, deployment, or runtime verification were performed.
+- Next action remains owner decision on the proposed Repeated tracks selection gates before any runtime wiring.
