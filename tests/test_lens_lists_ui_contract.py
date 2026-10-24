@@ -54,6 +54,21 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertNotIn('data-page="lensLists" title="Daily lists">Daily lists</button>', self.html)
         self.assertIn("const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];", self.js)
 
+    def test_icon_sprite_is_well_formed_xml(self):
+        # A string search cannot catch a malformed sprite: one bad attribute stops the whole file
+        # from parsing, so every icon breaks. Parse it.
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.icons)
+        ids = [node.get("id") for node in root.iter() if node.tag.endswith("symbol")]
+        self.assertIn("list-music", ids)
+        self.assertIn("library", ids)
+
+    def test_the_album_modal_image_is_not_in_the_markup_without_a_source(self):
+        # The detector's broken-image rule: no <img> may ship without a src.
+        import re
+        self.assertIsNone(re.search(r"<img(?![^>]*\bsrc=)[^>]*>", self.html))
+        self.assertIn("const albumArtworkImage = document.createElement('img');", self.js)
+
     def test_nav_icon_is_defined_in_the_sprite(self):
         self.assertIn('href="/static/icons.svg#list-music"', self.html)
         self.assertIn('<symbol id="list-music"', self.icons)
