@@ -196,6 +196,8 @@ class RecommendationsUIContractTests(unittest.TestCase):
         """The reorder moved nodes; app.js still looks them up by id."""
         template_ids = set(re.findall(r'id="([^"]+)"', self.html))
         template_ids |= set(re.findall(r'id="([^"]+)"', LOGIN_HTML.read_text(encoding="utf-8")))
+        # Elements the script creates itself (albumModalArtwork) carry their id from app.js.
+        template_ids |= set(re.findall(r"\.id = '([^']+)'", self.js))
         referenced = set(re.findall(r"\$\('([A-Za-z0-9_\-]+)'\)", self.js))
         self.assertEqual(sorted(referenced - template_ids), [])
 

@@ -66,7 +66,7 @@ class LensListsUiContractTests(unittest.TestCase):
         start = self.js.index("async function loadLensList(")
         body = self.js[start:self.js.index("document.querySelectorAll('[data-lens]')", start)]
         self.assertIn("data.message || label + ' has no albums today.'", body)
-        self.assertIn("setStatusState(status, classifyStatus(message));", body)
+        self.assertIn("setStatusState(status, items.length ? 'progress' : 'empty');", body)
 
     def test_rows_reuse_the_shared_discover_row_and_add_only_seed_and_listeners(self):
         start = self.js.index("function buildLensRow(")
@@ -82,6 +82,22 @@ class LensListsUiContractTests(unittest.TestCase):
         body = self.js[start:self.js.index("document.querySelectorAll('[data-lens]')", start)]
         self.assertNotIn("innerHTML", body)
         self.assertNotIn("insertAdjacentHTML", body)
+
+    def test_dismissing_a_lens_row_reloads_the_lens_not_a_discover_view(self):
+        start = self.js.index("async function commitDismiss(")
+        body = self.js[start:self.js.index("function undoDismiss(", start)]
+        self.assertIn("if (entry.listName === 'lens_lists') await loadLensList(activeLens);", body)
+        self.assertIn("if (entry.listName === 'lens_lists') {", body)
+
+    def test_the_selected_lens_has_a_visible_mark_besides_aria_pressed(self):
+        css = (ROOT / "static" / "app.css").read_text(encoding="utf-8")
+        self.assertIn('.controls button[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -3px var(--accent); }', css)
+
+    def test_disabled_state_is_neutral_copy_without_the_config_key(self):
+        start = self.js.index("async function loadLensList(")
+        body = self.js[start:self.js.index("document.querySelectorAll('[data-lens]')", start)]
+        self.assertIn("'Daily lists are turned off in Settings.'", body)
+        self.assertNotIn("engine2_lens_lists_enabled", body)
 
 
 if __name__ == "__main__":

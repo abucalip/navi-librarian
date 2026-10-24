@@ -1093,6 +1093,13 @@ document.addEventListener('keydown', event => {
   }
 });
 $('albumModalClose').addEventListener('click', closeAlbumModal);
+// The artwork image is created here rather than written into the markup, so the page never ships
+// an <img> without a source. It stays hidden until openAlbumModal sets a URL.
+const albumArtworkImage = document.createElement('img');
+albumArtworkImage.id = 'albumModalArtwork';
+albumArtworkImage.alt = 'Album artwork';
+albumArtworkImage.hidden = true;
+$('albumModalGet').before(albumArtworkImage);
 // An artwork URL that fails to load hides the image instead of showing a broken-image glyph.
 $('albumModalArtwork').addEventListener('error', () => { $('albumModalArtwork').hidden = true; });
 $('albumModalBackdrop').addEventListener('click', event => {
@@ -1578,11 +1585,13 @@ async function loadLensList(name) {
     if (requestId !== lensRequestId) return;
     const items = Array.isArray(data.items) ? data.items : [];
     target.replaceChildren(...items.map(buildLensRow));
+    // Off is a neutral empty state with plain copy; the config key stays out of the UI.
     const message = items.length
       ? pluralize(items.length, 'album', 'albums') + ' · ' + label + ' · Fixed for today, rebuilt each morning'
+      : data.disabled ? 'Daily lists are turned off in Settings.'
       : data.message || label + ' has no albums today.';
     status.textContent = message;
-    setStatusState(status, classifyStatus(message));
+    setStatusState(status, items.length ? 'progress' : 'empty');
   } catch (error) {
     if (requestId !== lensRequestId) return;
     target.replaceChildren();
@@ -2209,10 +2218,18 @@ async function commitDismiss() {
   try {
     await sendJSON('/api/discovery/feedback', 'POST',
       {action: entry.action, artist: entry.artist, album: entry.album, metadata: entry.metadata});
-    await loadDiscovery(entry.listName);
+    // Lens rows are not in discoveryViews; they reload the lens that is on screen.
+    if (entry.listName === 'lens_lists') await loadLensList(activeLens);
+    else await loadDiscovery(entry.listName);
   } catch (error) {
     if (entry.row) entry.row.classList.remove('is-dismissing');
-    discoveryStatus(entry.listName, error.message);
+    if (entry.listName === 'lens_lists') {
+      const status = $('lensListsStatus');
+      status.textContent = error.message;
+      setStatusState(status, 'error');
+    } else {
+      discoveryStatus(entry.listName, error.message);
+    }
   }
 }
 
