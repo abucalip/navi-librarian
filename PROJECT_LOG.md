@@ -1,3 +1,11 @@
+## 2026-10-24 — Engine 2 Phase 4: owner decisions on the slice 2 review
+
+- The owner approved: the setting name `engine2_lens_lists_enabled`; about three MusicBrainz release searches per lens (25 release groups per query) in place of the planned one; the per-run history-artist genre prefetch (cached 90 days) and the one-time MusicBrainz genre vocabulary load (about 25 requests when its cache is empty); the missing attribution trailers on the PR #591 feature-branch commit (the squash-merge body carries them).
+- Day boundary decided: the day rolls over at 4am local time. Slice 3 must derive the lens-list `day` (and the radio scope) from the local time minus four hours; slice 2 currently takes `day` from the caller.
+- Still open: how often the Navidrome library artists are refreshed for the known-artist check (the 10-minute snapshot cache stays for now).
+- Documentation only; no code, tests, provider calls, publication or deployment.
+- Next: slice 3, storage and serving, in a new session.
+
 ## 2026-10-24 — PR #591: Engine 2 Phase 4 slice 2, the pool gatherer
 
 - PR #591 squash-merged as `cca42e3cfde534571d319206eff8ab4fa0c461ff` from exact head `3a7ab611c5cdca432a4ebf3769f1e756de719cb5`. All four required workflows succeeded on that head: Python syntax check (`40104361233`), Docker packaging (`40104361217`; `test-and-build`, including `Run unit tests` and `Build Docker image`, passed in CI), container runtime smoke (`40104361193`), and validation-only image validation (`40104361177`, publishing paused). Unwired; no publication or deployment.

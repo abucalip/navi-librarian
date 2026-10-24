@@ -175,6 +175,7 @@ Owner decisions (2026-10-24):
 - Provider budget approved as proposed: a scheduled daily refresh costs about 25 s per lens, roughly 6 radio calls, 1 batch recording POST, 1 MusicBrainz release search and 40 to 60 Last.fm album lookups per lens, plus one ListenBrainz artist batch and the cached Last.fm fallback tags for artists with fewer than two genre tags.
 - One list per lens per day, 10 albums, fixed for the day (radio answers are keyed by lens and day, PR #582). No "next list" or rotation.
 - Lens lists keep their cooldown apart: they neither write to nor read from the existing recommendation history and cooldown.
+- Approved on review of PR #591 (slice 2), 2026-10-24: the setting name `engine2_lens_lists_enabled`; about 3 MusicBrainz release searches per lens (25 release groups per query) instead of the 1 in the plan; the per-run history-artist genre prefetch (cached 90 days) and the one-time MusicBrainz genre vocabulary load (about 25 requests when its cache is empty); the missing attribution trailers on the feature-branch commit. The day boundary is 4am local time: a list's `day` is the local date after subtracting 4 hours, to be applied in slice 3.
 - Approved on review of PR #590 (slice 1): lens order Repeated tracks, then Deep cuts, then Obsessions (scarcest supply first); Deep cuts seeds from the densest 30-day window with flat weights, or all recent activity when the history is shorter, after dropping listens stamped before 1971 (`lens_seed_queries` in `discovery/lens_lists.py`); artists the listener already knows do not count against the selection's 60-candidate check limit.
 
 Slices:
@@ -185,8 +186,8 @@ Slices:
 
 Open questions for the first session of this phase:
 - Where the history artist MBIDs come from at runtime (the imported-history store versus ListenBrainz listens). Settled by slice 1 (`discovery/lens_lists.py`, `history_artist_mbids`): a listen without an artist MBID adds no known artist; its artist is still excluded when the library holds an album under the same normalized name.
-- The day boundary for "per day" (local or UTC) and the setting name.
-- How often the Navidrome library artists are refreshed for the known-artist check (the library snapshot has a 10-minute cache).
+- ~~The day boundary for "per day" (local or UTC) and the setting name.~~ Settled by the owner (2026-10-24): the day rolls over at 4am local time; the setting is `engine2_lens_lists_enabled`.
+- How often the Navidrome library artists are refreshed for the known-artist check (the library snapshot has a 10-minute cache). Still open; the 10-minute cache stays until the owner decides.
 - UI label wording, and whether a lens list shows its seed tags.
 
 Starting notes (facts from Phase 3, all aggregates):
