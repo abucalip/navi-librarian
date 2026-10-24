@@ -331,8 +331,9 @@ class LensServiceDisabledPathTests(unittest.TestCase):
                                                "generated_at": 1.0},
             _discovery_write_list=lambda name, payload: writes.append(name),
         )
-        with mock.patch("discovery.lens_pool_gatherer.gather_lens_pools",
-                        return_value={"status": "errored"}):
+        with mock.patch("discovery.lens_service._fetch_history", return_value=[]), \
+                mock.patch("discovery.lens_pool_gatherer.gather_lens_pools",
+                           return_value={"status": "errored"}):
             result = lens_service.refresh(librarian)
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["reason"], "gather_status_errored")
