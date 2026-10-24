@@ -130,3 +130,11 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The owner identified these as early-development legacy functions and requested removal if safe. Current-source inspection found no internal callers; they were exposed only as MCP tools. `restart_server` kills/relaunches a process on hardcoded port 8000, and `apply_server_patch` rewrites the running service's source file. Their risk outweighs the value of preserving these two legacy operations.
 
 **Consequence:** Regression tests pin the registry at 25 unique tools and verify both retired functions are absent from the service module and registry. This does not retire MCP or authorize removal of other MCP capabilities. Reintroducing either tool requires a new explicit owner decision and security review.
+
+## D-016 — `navidrome_server.py` takes no new code; new code goes in new modules
+
+**Decision:** `navidrome_server.py` must not receive any additions: no new functions, constants, imports, routes or other lines. Every new feature is written in a new, directly importable module under `discovery/`, `settings/`, `integrations/` or another existing package, with its own tests. The server may only shrink (moving or deleting code) or keep existing call sites that cannot be avoided, and a change that must touch it has to remove or move lines, not add them.
+
+**Reason:** The server is the compatibility boundary (D-001) and already exceeds the size ceiling checked by `scripts/check_server_size.py`. Growing it makes the decoupling work (D-002 to D-015) harder to finish.
+
+**Consequence:** PR #592 (Engine 2 Phase 4 slice 3, merged as `0a8f9090fbb218f6508b33d9e72ebedbcdc64fd1`) added the lens build and read adapters to `navidrome_server.py`. That is a violation of this rule. Moving those adapters into a new module is a required follow-up before any further lens wiring (slice 4). The size guard does not yet enforce this rule; enforcing it (a ceiling at the current line count) is a separate, owner-approved change.

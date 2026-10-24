@@ -1,3 +1,11 @@
+## 2026-10-24 — Engine 2 Phase 4 slice 3 merged; server module rule
+
+- PR #592 (storage and serving for the daily lens lists) squash-merged as `0a8f9090fbb218f6508b33d9e72ebedbcdc64fd1` from exact head `09fb6e8d907d49fdefad4925a6b91c2e394abe5d`. All four required workflows passed on that head. Feature stays off by default (`engine2_lens_lists_enabled`); no live provider run, publication or deployment.
+- Owner rule recorded as D-016 (`docs/DECISIONS.md`) and in `docs/DEVELOPMENT_WORKFLOW.md`: `navidrome_server.py` takes no additions; new code goes in new modules.
+- Debt: PR #592 added the lens build and read adapters to `navidrome_server.py` before the rule existed. They must move to a new module before slice 4. The size guard does not enforce the rule yet.
+- Docs updated: `docs/engine2.md` (slice 3 status and debt), `docs/ACTIVE_WORK.md`, `docs/PROJECT_STATUS.md`.
+- Next: move the adapters out of `navidrome_server.py`, then slice 4 (UI).
+
 ## 2026-10-24 — Engine 2 Phase 4: owner decisions on the slice 2 review
 
 - The owner approved: the setting name `engine2_lens_lists_enabled`; about three MusicBrainz release searches per lens (25 release groups per query) in place of the planned one; the per-run history-artist genre prefetch (cached 90 days) and the one-time MusicBrainz genre vocabulary load (about 25 requests when its cache is empty); the missing attribution trailers on the PR #591 feature-branch commit (the squash-merge body carries them).
