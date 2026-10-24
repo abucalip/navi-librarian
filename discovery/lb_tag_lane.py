@@ -156,11 +156,16 @@ def run_lb_tag_queries(
     pop_begin: int = TAG_RADIO_POP_BEGIN,
     pop_end: int = TAG_RADIO_POP_END,
     scope: str | None = None,
+    per_query: int = CANDIDATES_PER_QUERY,
 ):
     """Add album candidates from tag radio. Same state and outcome contract as the
     MusicBrainz lane: one (added, error_class) pair per query attempted. ``pop_begin``
     and ``pop_end`` set the radio popularity band (percent, 0-100). ``scope`` keys the
-    radio answers, so callers that need their own sample of a tag pass their own scope."""
+    radio answers, so callers that need their own sample of a tag pass their own scope.
+    ``per_query`` caps the albums kept per query (the radio returns more recordings than the
+    default keeps, so a larger value costs no extra provider calls)."""
+    if type(per_query) is not int or per_query < 1:
+        raise ValueError("per_query must be a positive integer")
     if not (0 <= pop_begin < pop_end <= 100):
         raise ValueError("tag radio popularity band must satisfy 0 <= begin < end <= 100")
     planned: list[tuple[str, str, str, str, list[tuple[str, int]], str | None]] = []
@@ -244,7 +249,7 @@ def run_lb_tag_queries(
                     }
                     state["added"] += 1
                     added += 1
-                if added >= CANDIDATES_PER_QUERY or state["added"] >= candidate_cap:
+                if added >= per_query or state["added"] >= candidate_cap:
                     break
         outcomes.append((added, error_class))
     return outcomes

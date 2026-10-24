@@ -65,6 +65,22 @@ class LaneTests(unittest.TestCase):
         self.run_lane(queries, radio, recs)
         self.assertEqual(self.gets, ["jazz", "rai"], "second run is served from cache")
 
+    def test_per_query_caps_the_albums_kept_per_query(self):
+        queries = [(_query_for_tag("jazz"), "jazz", "profile:jazz")]
+        ids = [f"r{i}" for i in range(8)]
+        radio = {"jazz": [{"recording_mbid": i} for i in ids]}
+        recs = {i: recording(f"Artist{n}", f"Album{n}", f"g{n}") for n, i in enumerate(ids)}
+        self.assertEqual(self.run_lane(queries, radio, recs), [(5, None)], "default keeps 5")
+        self.albums.clear(); self.cache.clear(); self.state["added"] = 0
+        self.assertEqual(self.run_lane(queries, radio, recs, per_query=8), [(8, None)])
+        self.albums.clear(); self.cache.clear(); self.state["added"] = 0
+        self.assertEqual(self.run_lane(queries, radio, recs, per_query=2), [(2, None)])
+
+    def test_per_query_must_be_a_positive_integer(self):
+        for bad in (0, -1, 2.5, True, None):
+            with self.assertRaises(ValueError):
+                self.run_lane([(_query_for_tag("jazz"), "jazz", "profile:jazz")], {}, {}, per_query=bad)
+
     def test_radio_tag_count_reaches_candidates_and_survives_the_cache(self):
         queries = [(_query_for_tag("jazz"), "jazz", "profile:jazz"), (_query_for_tag("rai"), "rai", "explore:rai")]
         radio = {"jazz": [{"recording_mbid": R1, "tag_count": 7}, {"recording_mbid": R2, "tag_count": 3}],

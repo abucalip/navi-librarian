@@ -13,6 +13,9 @@ from typing import Any
 
 # (pop_begin, pop_end) per radio tier, in order. Low percent is the most popular recordings.
 DEEP_CUTS_RADIO_BANDS = ((50, 75), (75, 100))
+# Albums kept per seed tag from the radio, which returns 20 recordings per call. Measured
+# 2026-10-24: 10 filled the lenses best; 15 exceeds the 60 candidates the selection checks.
+DEEP_CUTS_ALBUMS_PER_QUERY = 10
 
 
 def run_deep_cuts_tag_supply(
@@ -46,7 +49,7 @@ def run_deep_cuts_tag_supply(
             tier = run_radio_lane(
                 [queries[i] for i in remaining], providers=providers, albums=albums,
                 failures=failures, state=state, pop_begin=pop_begin, pop_end=pop_end,
-                scope=scope,
+                scope=scope, per_query=DEEP_CUTS_ALBUMS_PER_QUERY,
             )
             for index, outcome in zip(remaining, tier):
                 outcomes[index] = outcome

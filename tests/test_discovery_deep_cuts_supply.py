@@ -3,7 +3,9 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest import mock
 
-from discovery.deep_cuts_supply import DEEP_CUTS_RADIO_BANDS, run_deep_cuts_tag_supply
+from discovery.deep_cuts_supply import (
+    DEEP_CUTS_ALBUMS_PER_QUERY, DEEP_CUTS_RADIO_BANDS, run_deep_cuts_tag_supply,
+)
 
 QUERIES = [("q-a", "fa", "profile:a"), ("q-b", "fb", "explore:b"), ("q-c", "fc", "explore:c")]
 
@@ -12,14 +14,15 @@ class Harness(unittest.TestCase):
     def setUp(self):
         self.state = {"added": 0, "seen": 0, "hits": 0, "misses": 0, "request_index": 0,
                       "unavailable": False, "exhausted_run": 0}
-        self.radio_calls, self.tail_calls, self.scopes = [], [], []
+        self.radio_calls, self.tail_calls, self.scopes, self.per_query = [], [], [], []
         self.radio_yield = {}  # (pop_begin, query) -> (added, error_class)
         self.tail_yield = {}   # query -> (added, error_class)
         self.tail_limit = len(QUERIES)  # the real tail stops early at the cap or unavailable
 
-    def radio(self, queries, *, providers, albums, failures, state, pop_begin, pop_end, scope):
+    def radio(self, queries, *, providers, albums, failures, state, pop_begin, pop_end, scope, per_query):
         self.radio_calls.append((pop_begin, pop_end, [q for q, _f, _s in queries]))
         self.scopes.append(scope)
+        self.per_query.append(per_query)
         out = []
         for query, _family, _style in queries:
             added, error = self.radio_yield.get((pop_begin, query), (0, None))
@@ -58,6 +61,12 @@ class DeepCutsSupplyTests(Harness):
     def test_radio_answers_are_scoped_by_lens_and_day(self):
         self.run_supply()
         self.assertEqual(set(self.scopes), {"deep_cuts:2026-10-23"})
+
+    def test_radio_tiers_keep_ten_albums_per_seed(self):
+        self.run_supply()
+        self.assertEqual(len(self.per_query), len(DEEP_CUTS_RADIO_BANDS), "every radio tier ran")
+        self.assertEqual(set(self.per_query), {DEEP_CUTS_ALBUMS_PER_QUERY})
+        self.assertEqual(DEEP_CUTS_ALBUMS_PER_QUERY, 10)
 
     def test_lens_and_day_are_required_and_validated(self):
         providers = SimpleNamespace(http_post=None, http_client=None)
