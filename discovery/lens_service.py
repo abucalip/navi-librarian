@@ -11,14 +11,17 @@ while the setting is off. See docs/engine2.md (Phase 4).
 """
 from __future__ import annotations
 
+import functools
 import json
 import logging
+import os
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime
 from typing import Any
 
+from discovery import history_fetch
 from discovery import refresh as discovery_refresh
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
@@ -29,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Listening history read for the lens lists. Obsessions and Repeated tracks need more than the
 # 30-day default; the page bound of the ListenBrainz client still applies.
-LENS_HISTORY_DAYS = 365
 DAILY_CHECK_SECONDS = 3600
 MUSICBRAINZ_USER_AGENT = "NavidromeLibrarian/1.0 (personal music discovery)"
 _REFRESH_LOCK = threading.Lock()
@@ -65,6 +67,38 @@ def list_response(librarian: Any, lens_name: str, count: int) -> str:
     return build_lens_list_response(lens_name, count, cached, _owned_or_none(librarian))
 
 
+def _lastfm_username(settings_read: Callable[[], Mapping[str, Any]]) -> str:
+    """The Last.fm account to read scrobbles from: the setting, else the LASTFM_USERNAME variable."""
+    return str(settings_read().get("lastfm_username") or os.environ.get("LASTFM_USERNAME") or "").strip()
+
+
+def _fetch_history(librarian: Any, settings_read: Callable[[], Mapping[str, Any]], lastfm_api_key: str) -> list[dict[str, Any]]:
+    """Listening history for the lens lists, split between ListenBrainz and Last.fm.
+
+    Both services hold the same listens, so windows alternate between them (see
+    discovery.history_fetch). Last.fm is used only when both its key and account are configured.
+    """
+    import httpx
+    from integrations.listenbrainz.client import request_headers as listenbrainz_headers
+
+    sources = [("listenbrainz", functools.partial(
+        history_fetch.listenbrainz_window, librarian._listenbrainz_username(),
+        get=httpx.get, headers=listenbrainz_headers(),
+    ))]
+    lastfm_user = _lastfm_username(settings_read)
+    if lastfm_api_key and lastfm_user:
+        sources.append(("lastfm", functools.partial(
+            history_fetch.lastfm_window, lastfm_user, lastfm_api_key, get=httpx.get,
+        )))
+    result = history_fetch.fetch_lens_history(sources, now=time.time())
+    # Aggregate counts only: no listen, artist or album is logged.
+    logger.info(
+        "Lens history: %d listens in %d windows (%d unanswered), stopped: %s",
+        len(result["listens"]), len(result["windows"]), result["unanswered"], result["stopped"],
+    )
+    return result["listens"]
+
+
 def build(librarian: Any) -> dict[str, Any]:
     """Gather and build today's lens lists.
 
@@ -92,7 +126,7 @@ def build(librarian: Any) -> dict[str, Any]:
         http_get=httpx.get, http_client=httpx.Client, sleep=time.sleep, http_post=httpx.post,
         feedback_rows=librarian._discovery_feedback_rows,
     )
-    listens = librarian._listenbrainz_recent(days=LENS_HISTORY_DAYS)
+    listens = _fetch_history(librarian, settings_read, str(settings_read().get("lastfm_api_key") or ""))
     gathered = gather_lens_pools(
         listens, day=day, providers=providers,
         headers={"User-Agent": MUSICBRAINZ_USER_AGENT},
