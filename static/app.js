@@ -17,7 +17,7 @@ function isAlbumRecommendation(item) {
 
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
-const NAV_MORE_PAGES = ['classics', 'artistDeepDive'];
+const NAV_MORE_PAGES = ['lensLists', 'classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
@@ -62,6 +62,7 @@ function initializePage(name) {
   if (name === 'recommendations') $('loadRecommendations').click();
   else if (name === 'newReleases') loadDiscovery('new_releases');
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
+  else if (name === 'lensLists') loadLensList(activeLens);
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
   else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
@@ -1530,6 +1531,68 @@ function buildNewReleaseRow(item) {
     onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)
   });
 }
+
+// Daily lens lists (Engine 2, Phase 4 slice 4). Each lens has one stored list for the day, served
+// by /api/discovery/<lens>. While engine2_lens_lists_enabled is off the server answers with
+// `disabled` and a message; that is shown in the status line, not as an error. The lens seed tag
+// and listener count are the only extra lines, so each album shows why it was picked.
+const LENS_LISTS = {
+  repeated_tracks: 'Repeated tracks',
+  deep_cuts: 'Deep cuts',
+  obsessions: 'Obsessions'
+};
+let activeLens = 'repeated_tracks';
+let lensRequestId = 0;
+
+function setActiveLens(name) {
+  activeLens = name;
+  document.querySelectorAll('[data-lens]').forEach(button =>
+    button.setAttribute('aria-pressed', String(button.dataset.lens === name)));
+}
+
+function buildLensRow(item) {
+  const listeners = Number(item.album_listeners);
+  return buildRecommendationRow(item, item.rank, {
+    indexed: true,
+    meta: [
+      item.seed_tag ? 'Seed tag: ' + item.seed_tag : '',
+      Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''
+    ],
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row),
+    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'lens_lists', row)
+  });
+}
+
+async function loadLensList(name) {
+  setActiveLens(name);
+  const requestId = ++lensRequestId;
+  const label = LENS_LISTS[name];
+  const status = $('lensListsStatus');
+  const target = $('lensListsCards');
+  status.textContent = 'Loading ' + label + '…';
+  setStatusState(status, 'loading');
+  target.replaceChildren(...skeletonRows(6));
+  try {
+    const data = await requestJSON(`/api/discovery/${name}?count=10&nonce=${Date.now()}`);
+    // A slower response for a lens the user has already left must not overwrite the current one.
+    if (requestId !== lensRequestId) return;
+    const items = Array.isArray(data.items) ? data.items : [];
+    target.replaceChildren(...items.map(buildLensRow));
+    const message = items.length
+      ? pluralize(items.length, 'album', 'albums') + ' · ' + label + ' · Fixed for today, rebuilt each morning'
+      : data.message || label + ' has no albums today.';
+    status.textContent = message;
+    setStatusState(status, classifyStatus(message));
+  } catch (error) {
+    if (requestId !== lensRequestId) return;
+    target.replaceChildren();
+    status.textContent = label + ' could not be loaded: ' + error.message;
+    setStatusState(status, 'error');
+  }
+}
+
+document.querySelectorAll('[data-lens]').forEach(button =>
+  button.addEventListener('click', () => loadLensList(button.dataset.lens)));
 
 // Personal Discoveries rows (DESIGN_SYSTEM.md sections 8 and 9.4). The server returns these in its
 // selection order, which balances categories and diversity styles; it is not a discovery_score

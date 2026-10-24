@@ -57,15 +57,16 @@ class RailStructureTests(unittest.TestCase):
 
     def test_every_rail_icon_names_a_symbol_that_exists(self):
         refs = re.findall(r'<use href="/static/icons\.svg#([\w-]+)">', self.rail)
-        self.assertEqual(len(refs), 7)
+        # Eight rail icons: Daily lists (Engine 2, Phase 4 slice 4) adds one.
+        self.assertEqual(len(refs), 8)
         for name in refs:
             self.assertIn(f'<symbol id="{name}"', self.icons, msg=name)
 
     def test_rail_icons_are_decorative(self):
         icons = re.findall(r'<svg class="icon"[^>]*>', self.rail)
-        # Seven sprite icons plus the inline More disclosure icon on the phone bottom bar
+        # Eight sprite icons plus the inline More disclosure icon on the phone bottom bar
         # (UI_BACKLOG_EXECUTION section 36). The count of sprite references above is unchanged.
-        self.assertEqual(len(icons), 8)
+        self.assertEqual(len(icons), 9)
         for tag in icons:
             self.assertIn('aria-hidden="true"', tag)
             self.assertIn('focusable="false"', tag)
