@@ -1,3 +1,10 @@
+## 2026-10-24 — Re-review, full CI suite, and merge PR #594
+
+- Reviewed exact PR head `b79ff64cf65e51bfa38e8203b722961ff0be077c`. The manual `all` discovery refresh now starts a lens-list build through `discovery/lens_service.py:start_refresh` in a daemon thread; other list refreshes do not trigger it. The refresh shares the daily loop's lock, and the existing setting gate means the feature remains inert while `engine2_lens_lists_enabled` is off. Regression tests cover the `all` trigger, non-`all` behavior, and execution on a separate thread. No blocker found in the changed code.
+- All required workflows passed on the exact PR head: Python syntax/acquisition safety (`40106635627`), Docker packaging/full unit suite/image build (`40106635948`, including successful `Run unit tests` and `Build Docker image` steps), container runtime smoke (`40106635598`), and validation-only multi-architecture image validation (`40106635703`, non-publishing). Release workflow validation (`40106635611`) succeeded; its `publish-release` job was skipped. Per repository workflow policy, the full unit suite ran in CI, not manually.
+- Squash-merged PR #594 as `5299ac03f04c8718a64adc1c557c09b367f7d266`; GitHub confirms the PR is closed and merged. Updated `docs/PROJECT_STATUS.md` to record the merge and set the next action to define the bounded Phase 4 slice 4 (UI) scope.
+- Lens lists remain behind the default-off setting. No live provider run, publication, deployment, browser check, or runtime verification was performed.
+
 ## 2026-10-24 — PR #593 merged; manual lens trigger in the app layer
 
 - PR #593 (move the lens adapters out of `navidrome_server.py`) squash-merged as `8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`. Its review fixes: the read path checks `engine2_lens_lists_enabled` before any store or library access, with regression tests for the disabled path (service and route) and the enabled path.
