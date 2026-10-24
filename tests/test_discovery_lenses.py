@@ -4,7 +4,8 @@ from discovery.allocation_contract import (
     AllocationCandidate, AllocationRequest, OwnershipStatus,
 )
 from discovery.lenses import (
-    DEEP_CUTS, GENRE_SPREAD, NOW, partition_lenses, run_lens, select_deep_cuts,
+    DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, NOW, REPEATED_TRACKS,
+    partition_lenses, run_lens, select_deep_cuts,
 )
 from discovery.personal_allocator import allocate_personal_recommendations
 
@@ -146,3 +147,23 @@ class PartitionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RepeatedTracksLensTests(unittest.TestCase):
+    def test_uses_the_deep_cuts_gates_and_reports_its_own_name(self):
+        pool = [item("ok", audience=5000, strength=0.9), item("low", audience=10)]
+        result = run_lens(REPEATED_TRACKS, pool, 5)
+        self.assertEqual(result.selected_candidate_ids, ("ok",))
+        self.assertEqual(result.lens, "repeated_tracks")
+        self.assertEqual(run_lens(DEEP_CUTS, pool, 5).lens, "deep_cuts")
+
+    def test_is_registered_but_not_in_the_default_order(self):
+        self.assertIs(LENSES["repeated_tracks"], REPEATED_TRACKS)
+        self.assertNotIn(REPEATED_TRACKS, DEFAULT_LENS_ORDER)
+
+    def test_partitions_with_other_lenses_without_sharing_artists(self):
+        pool = [item("a", audience=5000, seed="s1"), item("b", audience=6000, seed="s2")]
+        results = partition_lenses(pool, 1, (DEEP_CUTS, REPEATED_TRACKS))
+        self.assertEqual([r.lens for r in results], ["deep_cuts", "repeated_tracks"])
+        picked = [cid for r in results for cid in r.selected_candidate_ids]
+        self.assertEqual(sorted(picked), ["a", "b"])

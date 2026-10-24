@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -66,17 +67,29 @@ def select_supplementary_tag_queries(
 
     selected: list[tuple[str, str, str]] = []
     selected_keys: set[str] = set()
+    used_styles: set[str] = set()
 
     def append(tag: str, source: str) -> None:
         key = tag.casefold()
         if key in selected_keys:
             return
         selected_keys.add(key)
-        slug = re.sub(r"[^a-z0-9]+", "_", tag.casefold()).strip("_") or "other"
+        # Accents fold to their base letter ("raï" -> "rai"); other non-ASCII characters drop out.
+        folded = "".join(
+            ch for ch in unicodedata.normalize("NFKD", tag.casefold()) if not unicodedata.combining(ch))
+        slug = re.sub(r"[^a-z0-9]+", "_", folded).strip("_") or "other"
         from discovery.recommendations import genre_families
         families = sorted(genre_families([tag]))
         family = families[0] if families else "other"
-        selected.append((_query_for_tag(tag), family, f"{source}:{slug}"))
+        # The style is the seed label downstream (per-seed caps), so distinct tags that fold
+        # to the same slug ("raï" and "rai", "hip hop" and "hip-hop") must not share one.
+        style = f"{source}:{slug}"
+        suffix = 2
+        while style in used_styles:
+            style = f"{source}:{slug}_{suffix}"
+            suffix += 1
+        used_styles.add(style)
+        selected.append((_query_for_tag(tag), family, style))
 
     for key, _weight in sorted(weights.items(), key=lambda item: (-item[1], item[0]))[:profile_limit]:
         append(display_tags[key], "profile")
