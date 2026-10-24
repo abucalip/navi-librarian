@@ -64,7 +64,7 @@ class FetchWalkTests(unittest.TestCase):
             now=NOW, min_usable=1, step_days=365, max_days=365,
         )
         self.assertEqual([call[0] for call in calls], ["listenbrainz", "lastfm"])
-        self.assertEqual(result["windows"][0], {"source": "lastfm", "count": 1})
+        self.assertEqual(result["windows"][0], {"source": "lastfm", "count": 1, "truncated": False})
         self.assertEqual(result["unanswered"], 0)
 
     def test_a_window_no_source_answers_is_counted_and_the_walk_goes_on(self):
@@ -93,6 +93,17 @@ class FetchWalkTests(unittest.TestCase):
             now=NOW, min_usable=100, step_days=365, max_days=2 * 365,
         )
         self.assertEqual(len(result["listens"]), 1)
+
+    def test_a_window_at_the_page_cap_is_flagged_as_possibly_truncated(self):
+        full = [_listen(NOW - 10 - i) for i in range(history_fetch.WINDOW_LISTEN_CAP)]
+        calls = []
+        result = history_fetch.fetch_lens_history(
+            [_reader("listenbrainz", full, calls)], now=NOW, min_usable=10**9, step_days=365, max_days=365,
+        )
+        self.assertTrue(result["windows"][0]["truncated"])
+
+    def test_the_default_threshold_reaches_past_the_most_recent_year(self):
+        self.assertGreater(history_fetch.LENS_MIN_USABLE_LISTENS, 571)
 
     def test_no_sources_means_no_listens(self):
         result = history_fetch.fetch_lens_history([], now=NOW)

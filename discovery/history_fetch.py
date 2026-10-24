@@ -19,14 +19,18 @@ from discovery.lens_lists import usable_listens
 
 DAY_SECONDS = 86400
 LENS_HISTORY_STEP_DAYS = 365
-# Starting value, not a measured threshold: enough listens for the repeated-track and
-# burst gates to have something to work with. The owner confirms or changes it.
-LENS_MIN_USABLE_LISTENS = 500
+# Starting value, not a measured threshold. At 500 the walk stopped inside the most recent year
+# (571 listens), which left Repeated tracks with no seeds; 2000 reaches back to 2014 on the
+# measured history. The owner confirms or changes it.
+LENS_MIN_USABLE_LISTENS = 2000
 # Floor of the walk: 13 years back, which reaches 2013 from 2026 (the test history has 2014 data).
 LENS_HISTORY_MAX_DAYS = 13 * 365
 LISTENBRAINZ_PAGE = 100
 LASTFM_PAGE = 200
 MAX_PAGES_PER_WINDOW = 50
+# A window that returns this many listens may have been cut by MAX_PAGES_PER_WINDOW (50 pages of
+# 100 ListenBrainz listens). It is flagged so the cut is visible in the diagnostics.
+WINDOW_LISTEN_CAP = LISTENBRAINZ_PAGE * MAX_PAGES_PER_WINDOW
 PAUSE_SECONDS = 0.25
 
 WindowReader = Callable[[int, int], list[dict[str, Any]]]
@@ -177,7 +181,7 @@ def fetch_lens_history(
                     seen.add(key)
                     listens.append(listen)
                     added += 1
-            windows.append({"source": name, "count": added})
+            windows.append({"source": name, "count": added, "truncated": len(found) >= WINDOW_LISTEN_CAP})
         index += 1
         end = start
         if len(usable_listens(listens)) >= min_usable:
