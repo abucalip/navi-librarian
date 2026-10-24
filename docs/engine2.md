@@ -183,7 +183,7 @@ Slices:
 4. **UI.** Choose a lens list and show its label. Wording and placement are open (see below).
 
 Open questions for the first session of this phase:
-- Where the history artist MBIDs come from at runtime (the imported-history store versus ListenBrainz listens), and how listens without an artist MBID are handled.
+- Where the history artist MBIDs come from at runtime (the imported-history store versus ListenBrainz listens). Settled by slice 1 (`discovery/lens_lists.py`, `history_artist_mbids`): a listen without an artist MBID adds no known artist; its artist is still excluded when the library holds an album under the same normalized name.
 - The day boundary for "per day" (local or UTC) and the setting name.
 - How often the Navidrome library artists are refreshed for the known-artist check (the library snapshot has a 10-minute cache).
 - UI label wording, and whether a lens list shows its seed tags.

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from discovery.allocation_contract import (
     MAX_CANDIDATE_CHECKS,
@@ -170,11 +170,29 @@ def partition_lenses(
     """
     if len({lens.name for lens in lenses}) != len(lenses):
         raise ValueError("lens names must be unique")
+    return partition_lens_pools(
+        {lens.name: candidates for lens in lenses}, count, lenses,
+        diversity_penalty=diversity_penalty)
+
+
+def partition_lens_pools(
+    pools: Mapping[str, Sequence[AllocationCandidate]],
+    count: int,
+    lenses: Sequence[Lens],
+    *,
+    diversity_penalty: float = 0.0,
+) -> tuple[AllocationResult, ...]:
+    """Like ``partition_lenses``, but each lens draws from its own pool ({lens name:
+    candidates}; a missing name is an empty pool), as the lenses whose supply is gathered
+    per lens do. Artist and album keys must be normalized the same way in every pool, since
+    what one lens selects is removed from the pools of the lenses after it."""
+    if len({lens.name for lens in lenses}) != len(lenses):
+        raise ValueError("lens names must be unique")
     taken_artists: set[str] = set()
     taken_albums: set[str] = set()
     results: list[AllocationResult] = []
     for lens in lenses:
-        remaining = tuple(item for item in candidates
+        remaining = tuple(item for item in pools.get(lens.name, ())
             if item.artist_key not in taken_artists and item.album_key not in taken_albums
         )
         result = run_lens(lens, remaining, count, diversity_penalty=diversity_penalty)
