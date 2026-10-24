@@ -36,6 +36,14 @@ PAUSE_SECONDS = 0.25
 WindowReader = Callable[[int, int], list[dict[str, Any]]]
 
 
+class LastFmResponseError(RuntimeError):
+    """A Last.fm reply that is an API error or does not have the expected shape.
+
+    Last.fm sends errors (an unknown user, a bad key) with HTTP 200, so the status code alone
+    does not show a failed read. Raising lets the walk answer the window from the other source.
+    """
+
+
 def _key(listen: Mapping[str, Any]) -> tuple:
     metadata = listen.get("track_metadata") if isinstance(listen.get("track_metadata"), Mapping) else {}
     return (
@@ -110,9 +118,20 @@ def lastfm_window(
             timeout=30,
         )
         response.raise_for_status()
-        recent = response.json().get("recenttracks", {})
+        body = response.json()
+        if not isinstance(body, dict) or "error" in body:
+            raise LastFmResponseError("Last.fm returned an API error")
+        recent = body.get("recenttracks")
+        if not isinstance(recent, dict):
+            raise LastFmResponseError("Last.fm response has no recenttracks object")
+        tracks = recent.get("track", [])
+        # Last.fm sends a single track as an object rather than a one-item list.
+        if isinstance(tracks, dict):
+            tracks = [tracks]
+        if not isinstance(tracks, list):
+            raise LastFmResponseError("Last.fm track list has an unexpected shape")
         total_pages = int(recent.get("@attr", {}).get("totalPages", 1) or 1)
-        for item in recent.get("track", []):
+        for item in tracks:
             stamp = (item.get("date") or {}).get("uts")
             if stamp is None:
                 continue

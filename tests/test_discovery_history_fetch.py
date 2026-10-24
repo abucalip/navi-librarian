@@ -2,6 +2,7 @@
 
 No network: the window readers and the HTTP getter are fakes.
 """
+import functools
 import unittest
 
 from discovery import history_fetch
@@ -150,6 +151,54 @@ class ListenBrainzWindowTests(unittest.TestCase):
 
         history_fetch.listenbrainz_window("user", 450, 1000, get=get, headers={}, pause=lambda _s: None)
         self.assertEqual(len(calls), 1)
+
+
+class LastFmErrorTests(unittest.TestCase):
+    def test_an_api_error_in_a_200_reply_raises_instead_of_reading_as_empty(self):
+        def get(url, params, **_kwargs):
+            return _Response({"error": 6, "message": "User not found"})
+
+        with self.assertRaises(history_fetch.LastFmResponseError):
+            history_fetch.lastfm_window("nobody", "key", 0, 10, get=get, pause=lambda _s: None)
+
+    def test_a_reply_without_a_recenttracks_object_raises(self):
+        def get(url, params, **_kwargs):
+            return _Response({"unexpected": True})
+
+        with self.assertRaises(history_fetch.LastFmResponseError):
+            history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None)
+
+    def test_a_single_track_returned_as_an_object_is_read(self):
+        def get(url, params, **_kwargs):
+            return _Response({"recenttracks": {"@attr": {"totalPages": "1"}, "track": {
+                "name": "Only", "artist": {"#text": "Band"}, "date": {"uts": "5"}}}})
+
+        listens = history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None)
+        self.assertEqual([item["listened_at"] for item in listens], [5])
+
+    def test_a_valid_empty_window_is_not_an_error(self):
+        def get(url, params, **_kwargs):
+            return _Response({"recenttracks": {"@attr": {"totalPages": "1"}, "track": []}})
+
+        self.assertEqual(history_fetch.lastfm_window("user", "key", 0, 10, get=get, pause=lambda _s: None), [])
+
+    def test_a_last_fm_error_window_is_answered_by_listenbrainz(self):
+        def lastfm_get(url, params, **_kwargs):
+            return _Response({"error": 10, "message": "Invalid API key"})
+
+        listens = [_listen(NOW - 10)]
+        calls = []
+        result = history_fetch.fetch_lens_history(
+            [
+                ("lastfm", functools.partial(history_fetch.lastfm_window, "user", "bad-key",
+                                             get=lastfm_get, pause=lambda _s: None)),
+                _reader("listenbrainz", listens, calls),
+            ],
+            now=NOW, min_usable=1, step_days=365, max_days=365,
+        )
+        self.assertEqual(result["windows"][0], {"source": "listenbrainz", "count": 1, "truncated": False})
+        self.assertEqual(len(result["listens"]), 1)
+        self.assertEqual(result["unanswered"], 0)
 
 
 class LastFmWindowTests(unittest.TestCase):
