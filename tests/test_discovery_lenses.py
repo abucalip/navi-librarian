@@ -185,12 +185,14 @@ class KnownArtistAndTagMinimumTests(unittest.TestCase):
                 item("b", audience=5000, seed="s", strength=0.1)]
         self.assertEqual(select_deep_cuts(pool, 5).selected_candidate_ids, ("a", "b"))
 
-    def test_repeated_tracks_accepts_one_tag_but_deep_cuts_needs_two(self):
-        pool = [item("thin", audience=5000, tags=("a",)), item("none", audience=5000, tags=())]
-        self.assertEqual(run_lens(DEEP_CUTS, pool, 5).selected_candidate_ids, ())
-        result = run_lens(REPEATED_TRACKS, pool, 5)
-        self.assertEqual(result.selected_candidate_ids, ("thin",))
-        self.assertEqual({d.candidate_id: d.status for d in result.decisions}["none"], "too_few_tags")
+    def test_both_deep_cuts_lenses_need_two_tags(self):
+        pool = [item("thin", audience=5000, tags=("a",)), item("none", audience=5000, tags=()),
+                item("ok", audience=5000, tags=("a", "b"))]
+        for lens in (DEEP_CUTS, REPEATED_TRACKS):
+            result = run_lens(lens, pool, 5)
+            status = {d.candidate_id: d.status for d in result.decisions}
+            self.assertEqual(result.selected_candidate_ids, ("ok",))
+            self.assertEqual((status["thin"], status["none"]), ("too_few_tags", "too_few_tags"))
 
     def test_artist_known_must_be_a_bool(self):
         with self.assertRaises(ValueError):
