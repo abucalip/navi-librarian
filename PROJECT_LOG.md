@@ -1,3 +1,22 @@
+## 2026-10-24 — Phase 4 live run, browser checks, and Last.fm username control
+
+- **Last.fm username control (PR #599, branch `feat/lastfm-username-setting`, head `2fad9b2`):** the Settings Last.fm panel has a username field, saved with the API key; blank clears the stored value so `LASTFM_USERNAME` applies again; invalid usernames are refused before any write. `navidrome_server.py` keeps 2457 lines (adapter signature only). Focused tests: `tests.test_service_settings`, `tests.test_settings_ui_contract`, `tests.test_settings_routes`, `tests.test_discovery_history_fetch`, `tests.test_lens_lists_ui_contract`, `tests.test_discovery_lens_pool_gatherer` (95 tests, pass). CI green on `2fad9b2`: compile `40118706314`, test-and-build `40118706315`, container-smoke `40118706301`, validate-container `40118706294`, validate-release-workflow `40118706303` (publish skipped).
+- **Merge not done:** `gh pr merge 599 --squash` was refused by the permission check ("Merge Without Review"). The PR is open and clean; the merge is for the owner or a permitted action.
+- **Setting:** `engine2_lens_lists_enabled` is `true` in the owner's `local-test/data` and in the isolated run copy. The code default stays `false`. The setting has no Settings control; it was written to `discovery_settings` directly.
+- **Live run (isolated copy, port 8092, scratch data directory, throwaway account, slskd disabled, Navidrome and providers live):** a manual "all" refresh stored Repeated tracks 8, Deep cuts 10, Obsessions 9. A reload kept the Last.fm username.
+- **Artwork (`/api/artwork`, 27 albums):** 26 with an image, no provider errors or retry flags. The one miss, "(sic)monic" by "Somnambulist", is a name mismatch: Deezer lists the artist as "Sicmonic", and that query returns the cover. The earlier "empty artwork on every row" note did not reproduce; its cause is unknown.
+- **Browser (desktop 1280 px, phone 390 px):** 0 console errors, 0 failed responses, no horizontal overflow. Keyboard: 14 focus stops reached the row actions, each with a visible 2 px outline. Save worked; Not for me removed one album server-side (8 to 7, `dismissed: 1`). Not run: Get (it starts an acquisition request), screen-reader output, and a reduced-motion check beyond loading the page.
+- **Note:** the browser run used Chrome through Playwright from a scratch virtualenv outside the repository. Port 8091 was already held by another uvicorn process (started 2026-10-22); it was not touched.
+- No publication or deployment.
+
+## 2026-10-24 — Lens artwork investigation (Phase 4 item 3): no code defect found
+
+- Path traced: lens rows call `buildRecommendationRow` → `attachArtwork` with the stored `artist` and `album` (`static/app.js`), then `/api/artwork` (`app/api/metadata.py`), which runs a Deezer album search with an artist-photo fallback. Lens rows use the same loader as the other rows; no lens-specific skip was found.
+- Handler check (local, no list data): `album_artwork(artist='Miles Davis', album='Kind of Blue')` returns a Deezer cover; a nonsense name returns `artwork_url: None` with no `retryable` flag. Deezer's album search answered from this environment.
+- Failure handling: a provider exception sets `retryable` and is not cached, so an outage cannot leave a row blank for five minutes.
+- Conclusion: the empty rows are most likely "no Deezer match with score 9 or more, and no exact artist photo" for these albums. This is not confirmed: the local database has no lens rows (the live run used an isolated copy), and no lens album names were available to query. Confirming needs the artist and album pairs from one stored lens list, run through the handler.
+- No code or test change. Nothing published or deployed.
+
 ## 2026-10-24 — Phase 4 closeout: what is left
 
 - Built and merged: Phase 4 slices 1 to 4 (PRs #590 to #595), the dismissal read filter and Daily picks rename (#596), the dynamic history walk with its Last.fm error fix (#597), and the ListenBrainz recent-listens paging fix (#598).
