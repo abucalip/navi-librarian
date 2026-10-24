@@ -1,3 +1,11 @@
+## 2026-10-24 — Lens storage test isolation fix (PR #604)
+
+- **Merged:** PR #604, squash commit `102a2d9e842d9887b15c7ce7fe266a63c5c0d056`, from CI-green head `6b0db0b5feabec357dbf864caab632e8173fd90f`.
+- **Cause:** the routes test called `POST /api/discovery/all/refresh`, which starts a real lens refresh thread; that thread could still hold the module-level refresh lock when the lens storage tests ran, so they reported `already_running`.
+- **Change:** the routes test patches `lens_service.start_refresh` and asserts the call. No production code changed.
+- **Verification:** the lock was free before the routes tests and held after them; the lens test modules passed together in three consecutive runs. CI passed on the head: compile, container smoke, full unit suite and image build, validate-container.
+- **Not done:** no publication, deployment or runtime verification.
+
 ## 2026-10-24 — Engine 2 Phase 5 closed (PRs #600 to #603)
 
 - **Merged:** PR #600 (`bb6cb97`), #601 (`f60268b`), #602 (`46d8cb2`), #603 (`b1454b8`), each squash-merged from a CI-green head.
