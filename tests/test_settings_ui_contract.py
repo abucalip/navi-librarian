@@ -93,6 +93,11 @@ class SettingsSecretContractTests(unittest.TestCase):
                 self.assertNotIn(" value=", match.group(0))
                 self.assertIn('type="password"', match.group(0))
 
+    def test_lastfm_username_is_a_plain_field_loaded_and_saved_with_the_key(self):
+        self.assertRegex(self.html, r'<input id="lastfmUsername" type="text"')
+        self.assertIn("$('lastfmUsername').value = data.username || '';", self.js)
+        self.assertIn("username: $('lastfmUsername').value.trim()", self.js)
+
     def test_secret_fields_are_cleared_after_load_and_save(self):
         self.assertIn("$('navidromePassword').value = '';", self.js)
         self.assertIn("if ($('slskdApiKey').value) payload.api_key = $('slskdApiKey').value;", self.js)

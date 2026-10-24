@@ -171,6 +171,33 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(len(self.writes), before + 1)
         self.assertNotIn("new-key", json.dumps(result))
 
+    def test_lastfm_username_saves_clears_and_preserves(self):
+        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "", "listener_fm"))
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["username"], "listener_fm")
+        self.assertEqual(self.state["lastfm_username"], "listener_fm")
+        self.assertEqual(self.state["lastfm_api_key"], "lastfm-secret")
+        self.assertEqual(json.loads(get_lastfm_settings(self.read_settings))["username"], "listener_fm")
+
+        # An absent username (None) leaves the stored value alone.
+        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
+        self.assertEqual(self.state["lastfm_username"], "listener_fm")
+
+        # A blank username clears it, so the LASTFM_USERNAME variable applies again.
+        result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "", "  "))
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.state["lastfm_username"], "")
+        self.assertEqual(json.loads(get_lastfm_settings(self.read_settings))["username"], "")
+
+    def test_lastfm_username_rejects_invalid_input_without_writing(self):
+        for bad in ("has space", "bad/slash", "x" * 65):
+            with self.subTest(username=bad):
+                before = len(self.writes)
+                result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "new-key", bad))
+                self.assertFalse(result["ok"])
+                self.assertEqual(len(self.writes), before)
+                self.assertEqual(self.state["lastfm_api_key"], "lastfm-secret")
+
     def test_listenbrainz_username_validation_and_save(self):
         self.assertEqual(listenbrainz_username(self.read_settings), "listener")
         self.state["listenbrainz_username"] = ""

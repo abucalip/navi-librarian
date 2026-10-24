@@ -2653,6 +2653,7 @@ $('saveNavidrome').addEventListener('click', async () => {
 async function loadLastfmSettings() {
   try {
     const data = await requestJSON('/api/settings/lastfm');
+    $('lastfmUsername').value = data.username || '';
     $('lastfmApiKey').value = '';
     $('lastfmStatus').textContent = data.api_key_configured ? 'API key configured.' : 'API key not configured (optional).';
     setStatusState($('lastfmStatus'), classifyStatus($('lastfmStatus').textContent));
@@ -2660,7 +2661,10 @@ async function loadLastfmSettings() {
 }
 $('saveLastfm').addEventListener('click', async () => {
   try {
-    const result = await sendJSON('/api/settings/lastfm', 'PUT', {api_key: $('lastfmApiKey').value});
+    const result = await sendJSON('/api/settings/lastfm', 'PUT', {
+      api_key: $('lastfmApiKey').value,
+      username: $('lastfmUsername').value.trim()
+    });
     $('lastfmApiKey').value = '';
     $('lastfmStatus').textContent = result.message || 'Settings saved.';
     setStatusState($('lastfmStatus'), 'success');
