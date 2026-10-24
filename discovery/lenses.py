@@ -35,7 +35,6 @@ class Lens:
     name: str
     label: str
     kind: str  # "quota", "family_coverage" or "deep_cuts"
-    min_tags: int = DEEP_CUTS_MIN_TAGS  # deep_cuts kind only
 
 
 NOW = Lens("now", "Now", "quota")
@@ -43,9 +42,7 @@ GENRE_SPREAD = Lens("genre_spread", "Genre spread", "family_coverage")
 DEEP_CUTS = Lens("deep_cuts", "Deep cuts", "deep_cuts")
 # Same selection gates as Deep cuts; the difference is the seed source (repeated tracks
 # outside the dominant tags, see discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
-# One artist tag is enough here: the niche genres it seeds (desert blues, raï) often carry
-# a single tag, and the other gates still apply.
-REPEATED_TRACKS = Lens("repeated_tracks", "Repeated tracks", "deep_cuts", min_tags=1)
+REPEATED_TRACKS = Lens("repeated_tracks", "Repeated tracks", "deep_cuts")
 LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS, REPEATED_TRACKS)}
 # Scarcest supply first, so the broader lenses do not take its few candidates.
 DEFAULT_LENS_ORDER = (DEEP_CUTS, NOW, GENRE_SPREAD)
@@ -142,7 +139,7 @@ def run_lens(
     """Run one lens over a pool; the result carries the lens name."""
     if lens.kind == "deep_cuts":
         return select_deep_cuts(
-            candidates, count, max_checks=max_checks, lens_name=lens.name, min_tags=lens.min_tags)
+            candidates, count, max_checks=max_checks, lens_name=lens.name)
     if lens.kind == "family_coverage":
         targets, options = selection_request_options("family_coverage", count)
     elif lens.kind == "quota":
