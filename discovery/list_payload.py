@@ -202,7 +202,13 @@ def build_lens_list_response(
         served, counts = serve_lens_list(payload, is_owned or (lambda _item: False), is_dismissed)
         read_filter = {"ownership_checked": is_owned is not None, **counts}
     # Ranks count what the listener sees: a dismissed or owned album leaves no gap at the top.
-    albums = [{**album, "rank": position} for position, album in enumerate(served.get("albums", []), start=1)]
+    # Entries that are not albums are dropped here, as filter_snapshot drops them when checks run,
+    # so an unchecked read of a malformed cache entry still serves a valid response.
+    stored_albums = served.get("albums")
+    if not isinstance(stored_albums, list):
+        stored_albums = []
+    usable = [album for album in stored_albums if isinstance(album, Mapping)]
+    albums = [{**album, "rank": position} for position, album in enumerate(usable, start=1)]
     return json.dumps({
         "list": lens_name,
         "label": payload.get("label"),

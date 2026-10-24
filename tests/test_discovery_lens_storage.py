@@ -153,6 +153,21 @@ class LensDismissalTests(unittest.TestCase):
         body = json.loads(build_lens_list_response("deep_cuts", 10, cached, _owned(), is_dismissed))
         self.assertEqual([(item["rank"], item["album"]) for item in body["items"]], [(1, "Y")])
 
+    def test_both_checks_unavailable_serves_a_valid_response_for_malformed_entries(self):
+        # Ownership and feedback both unreadable: nothing is filtered, but a malformed cache entry
+        # must not turn the read into an error. Non-album entries are dropped; ranks stay 1..n.
+        cached = {"payload": _payload(["not-an-album", _album(2, "A", "X"), None, _album(4, "B", "Y")]),
+                  "generated_at": 1.0}
+        body = json.loads(build_lens_list_response("deep_cuts", 10, cached, None, None))
+        self.assertEqual([(item["rank"], item["album"]) for item in body["items"]], [(1, "X"), (2, "Y")])
+        self.assertEqual(body["read_filter"], {"ownership_checked": False})
+
+    def test_a_cache_entry_with_a_non_list_albums_field_serves_no_items(self):
+        cached = {"payload": {"lens": "deep_cuts", "label": "Deep cuts", "day": "2026-10-24",
+                              "albums": "corrupt"}, "generated_at": 1.0}
+        body = json.loads(build_lens_list_response("deep_cuts", 10, cached, None, None))
+        self.assertEqual(body["items"], [])
+
     def test_dismissed_predicate_matches_album_and_artist_feedback_like_discover(self):
         from discovery.list_payload import dismissed_predicate
 
