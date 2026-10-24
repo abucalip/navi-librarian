@@ -43,7 +43,10 @@ DEEP_CUTS = Lens("deep_cuts", "Deep cuts", "deep_cuts")
 # Same selection gates as Deep cuts; the difference is the seed source (repeated tracks
 # outside the dominant tags, see discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
 REPEATED_TRACKS = Lens("repeated_tracks", "Repeated tracks", "deep_cuts")
-LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS, REPEATED_TRACKS)}
+# Same gates again; seeds come from artists the listener was obsessed with for a short span
+# (discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
+OBSESSIONS = Lens("obsessions", "Obsessions", "deep_cuts")
+LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS, REPEATED_TRACKS, OBSESSIONS)}
 # Scarcest supply first, so the broader lenses do not take its few candidates.
 DEFAULT_LENS_ORDER = (DEEP_CUTS, NOW, GENRE_SPREAD)
 

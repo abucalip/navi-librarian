@@ -11,6 +11,7 @@ from typing import Any
 
 from discovery.history_windows import (
     artists_with_tags,
+    burst_artist_weights,
     dominant_tags,
     repeated_track_artist_weights,
     window_artist_weights,
@@ -44,6 +45,26 @@ def repeated_track_seed_queries(
         exclude_artists=artists_with_tags(artist_tags, dominant),
         only_artists={artist for artist, tags in artist_tags.items() if tags},
     )
+    return select_supplementary_tag_queries(
+        weights, artist_tags, [], profile_limit=limit, exploration_limit=0,
+    )
+
+
+def obsession_seed_queries(
+    listens: Iterable[Mapping[str, Any]],
+    artist_tags: Mapping[str, Sequence[Any]],
+    *,
+    min_listens: int = 20,
+    span_days: float = 30,
+    min_share: float = 0.7,
+    limit: int = MAX_PROFILE_QUERIES,
+) -> list[tuple[str, str, str]]:
+    """Tag queries from the artists the listener was obsessed with: at least ``min_listens``
+    dated listens, ``min_share`` or more of them inside one ``span_days`` span.
+
+    Artists without tags add nothing. Returns an empty list when no artist qualifies."""
+    weights = burst_artist_weights(
+        listens, min_listens=min_listens, span_days=span_days, min_share=min_share)
     return select_supplementary_tag_queries(
         weights, artist_tags, [], profile_limit=limit, exploration_limit=0,
     )
