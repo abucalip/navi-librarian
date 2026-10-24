@@ -14,6 +14,7 @@ from threading import Lock
 from typing import Any
 
 from discovery import snapshot as discovery_snapshot
+from discovery.lens_storage import lens_replacement_decision, lens_storage_name
 from settings import service as service_settings
 
 STALE_MAX_AGE_SECONDS = 24 * 60 * 60
@@ -276,18 +277,83 @@ def refresh_other(
 def refresh_all(
     refresh_personal_callback: Callable[[int], Any],
     refresh_other_callback: Callable[[str], Any],
+    refresh_lens_lists_callback: Callable[[], Any] | None = None,
 ) -> list[Any]:
     """Refresh all discovery lists in the legacy, deterministic order.
 
     Callbacks keep provider access, list locks, and persistence in their existing
-    owners while this orchestration remains directly testable.
+    owners while this orchestration remains directly testable. The lens lists (Engine 2,
+    Phase 4) run last and only when a callback is given.
     """
-    return [
+    results = [
         refresh_personal_callback(20),
         refresh_other_callback("classics"),
         refresh_other_callback("artist_deep_dive"),
         refresh_other_callback("new_releases"),
     ]
+    if refresh_lens_lists_callback is not None:
+        results.append(refresh_lens_lists_callback())
+    return results
+
+
+def _stored_payload(cached: Mapping[str, Any] | None) -> Any:
+    return cached.get("payload") if isinstance(cached, Mapping) else None
+
+
+def refresh_lens_lists(
+    build: Callable[[], Mapping[str, Any]],
+    read_list: Callable[[str], Mapping[str, Any] | None],
+    write_list: Callable[[str, Any], None],
+    lock: Lock,
+    *,
+    excluded_provider: Callable[[], Callable[[Mapping[str, Any]], bool] | None] | None = None,
+    clock: Callable[[], float] = time.time,
+) -> dict[str, Any]:
+    """Build the daily lens lists once and store each one the snapshot policy accepts.
+
+    ``build`` returns ``{"status": "disabled"}`` when the setting is off, ``{"status":
+    "failed", "reason": code}`` when gathering did not finish, or ``{"status": "built",
+    "day": ISO day, "lists": {lens name: payload}}``. Nothing is read or written unless the
+    build is "built": ``excluded_provider`` (the library ownership check, which may read the
+    library) and the stored lists are only touched on that path. A build that raises writes
+    nothing. Each lens is compared with its stored list and replaced only when accepted, so
+    a failed or partial lens keeps the previous day's list. Outcomes carry only lens names,
+    booleans and reason codes.
+    """
+    if not lock.acquire(blocking=False):
+        return {"ok": False, "status": "already_running", "list": "lens_lists"}
+    try:
+        built = build()
+        status = built.get("status")
+        if status == "disabled":
+            return {"ok": True, "status": "disabled", "list": "lens_lists"}
+        if status != "built":
+            return {
+                "ok": False, "status": "failed", "list": "lens_lists",
+                "reason": str(built.get("reason") or "unknown")[:40],
+            }
+        is_excluded = excluded_provider() if excluded_provider is not None else None
+        decisions: dict[str, dict[str, Any]] = {}
+        for lens_name, candidate in built["lists"].items():
+            name = lens_storage_name(lens_name)
+            replace, reason = lens_replacement_decision(
+                _stored_payload(read_list(name)), candidate, is_excluded=is_excluded,
+            )
+            if replace:
+                write_list(name, candidate)
+            decisions[lens_name] = {"replaced": replace, "reason": reason}
+        return {
+            "ok": True,
+            "status": "built",
+            "list": "lens_lists",
+            "day": built["day"],
+            "generated_at": clock(),
+            "lists": decisions,
+        }
+    except Exception as exc:
+        return {"ok": False, "list": "lens_lists", "error_type": type(exc).__name__}
+    finally:
+        lock.release()
 
 
 _revalidate_lock = threading.Lock()
