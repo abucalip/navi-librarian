@@ -168,7 +168,7 @@ Status 2026-10-24: **complete.** History profiles (PRs #579, #580, #583), the Re
 
 ### Phase 4 — precompute and serve
 
-Status 2026-10-24: **plan approved by the owner; slices 1 to 3 merged (PRs #590, #591 and #592; unwired from the recommendation path); slice 4 not started.** Work in new sessions, one PR per slice, everything behind a setting that defaults to off.
+Status 2026-10-24: **plan approved by the owner; slices 1 to 3 merged (PRs #590, #591 and #592; unwired from the recommendation path); the adapters moved out of the server (PR #593) and the manual "all" refresh trigger merged (PR #594); slice 4 not started.** Work in new sessions, one PR per slice, everything behind a setting that defaults to off.
 
 Owner decisions (2026-10-24):
 - Lenses to ship first: Deep cuts, Repeated tracks and Obsessions. The existing personal list (Now and Genre spread behaviour) is not changed by this phase.
