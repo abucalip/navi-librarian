@@ -645,3 +645,10 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - All four required workflows passed on that exact head: Python syntax/acquisition safety (`40007720479`), Docker packaging/full unit suite/image build (`40007720478`; unit tests and image build succeeded), container runtime smoke (`40007720476`), and validation-only multi-architecture image validation (`40007720523`; publishing paused). The full unit suite ran in CI; no separate local run was performed.
 - Squash-merged PR #578 as `3aebacbd40d80386199e0e5cb9b1b0ca94ca430d`. The metrics are pure evaluation code, not wired into runtime; they describe list composition and do not measure listening quality. No image publication, deployment, or runtime verification.
 - Phase 2 evaluation metrics are complete. Next action: Phase 3 time-range profiles and window-driven tag-lane seeds. Any live capture or provider-budget increase still requires owner approval.
+
+## 2026-10-24 — PR #583: Engine 2 Phase 3 history profiles
+
+- PR #583 squash-merged from exact reviewed head `e4635b5b06e7dc04c6c6a9c3613c6bef531f2a69` as merge commit `09a958dfb39411f5b31f4ca9a79899e27221e6ef`.
+- Added pure, unwired helpers for repeated-track artist weights, dominant-tag selection, tag-filtered artists, listening bursts, newly heard artists, dormant artists, and ListenBrainz artist-MBID mapping fallback. No runtime wiring, publication, or deployment.
+- All four required workflows passed on the exact PR head: syntax/acquisition safety (`40087423103`), Docker packaging/full unit suite/image build (`40087423092`), container runtime smoke (`40087423107`), and non-publishing multi-architecture image validation (`40087423108`). Focused tests were reported as 35 tests plus a filtered 551-test subset; not rerun locally. The PR notes one existing unrelated test-collection error in `tests/test_service_settings.py::test_listenbrainz_connection` when running locally; CI's full suite passed.
+- Post-merge container smoke workflow is running; publishing/deployment and runtime verification are not complete.
