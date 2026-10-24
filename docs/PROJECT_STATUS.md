@@ -4,6 +4,8 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Current state
 
+- PR [#596](https://github.com/abucalip/navi-librarian/pull/596) (Daily picks dismissal filtering and malformed-cache robustness) squash-merged as `3e2e8bc2c3e3882596fc1a398706e1b9f3f72f5e` from exact final head `d62614393244c4ee33726d9401704c339edd5440`. Regression tests cover malformed cached entries when ownership/feedback checks are unavailable. All four required workflows passed on that exact head: Python syntax (`40111186933`), Docker packaging/full unit suite/image build (`40111186947`), container runtime smoke (`40111186946`), and validation-only multi-architecture image validation (`40111186939`). Manual browser testing was waived by the owner and not performed. Not published or deployed; no runtime verification.
+
 - PR #595 (Engine 2 Phase 4 slice 4, Daily lists UI) squash-merged as `9ac74da768e93b592ac070814b69a6a7ffa4f964` from exact head `01ca4428c7c07dda111086ea4942124f2ef24172`. All required PR-head CI passed: Python syntax (`40108409642`), Docker packaging/full unit suite/image build (`40108409602`), container runtime smoke (`40108409585`), and validation-only multi-architecture image validation (`40108409651`). Release workflow validation (`40108409597`) passed with `publish-release` skipped. The owner waived manual browser testing; none was performed. Daily lists UI is merged, but `engine2_lens_lists_enabled` remains default-off; no live provider run, publication, deployment, or runtime verification. Follow-up: browser verification when practical, then continue the Phase 4 roadmap.
 
 - Module rule (owner decision, 2026-10-24, D-016 in `docs/DECISIONS.md`): `navidrome_server.py` takes no additions; new code goes in new modules. PR #593 moved lens adapters into `discovery/lens_service.py` (`8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`); PR #594 adds the app-layer manual `all` refresh trigger, merged as `5299ac03f04c8718a64adc1c557c09b367f7d266` from exact head `b79ff64cf65e51bfa38e8203b722961ff0be077c`. The trigger runs in a daemon thread and shares the refresh lock with the daily loop; other list refreshes do not trigger it. Lens lists remain behind `engine2_lens_lists_enabled` (default off) and are not part of the recommendation path. Required CI, including the full unit suite, passed on the exact PR head. No provider call, publication, deployment, browser check, or runtime verification.
@@ -55,7 +57,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Review and merge PR #596 (dismissals filter the lens lists at read time; ranks restart at 01; Daily picks name) after CI passes on its exact head. Then decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; that is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
+Decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; this is a provider-budget change and needs owner approval. Then decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; that is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
 
 ## Where to look
 
