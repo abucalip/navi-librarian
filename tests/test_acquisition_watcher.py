@@ -179,6 +179,19 @@ class AcquisitionWatcherStartupTests(unittest.TestCase):
         self.assertTrue(self.threads[0].started)
         self.assertTrue(self.threads[0].daemon)
 
+    def test_persists_request_metadata_and_defaults_to_empty(self):
+        self.assertTrue(start_import_watcher(
+            "Artist", "Album", self.candidate, self.settings, {"lens": "obsessions"},
+            services=self.services,
+        ))
+        self.assertEqual(self.saved[0][0][3]["metadata"], {"lens": "obsessions"})
+        self.assertEqual(self.status[0][3]["metadata"], {"lens": "obsessions"})
+        self.active.clear()
+        self.threads.clear()
+        self.saved.clear()
+        self.assertTrue(self.start())
+        self.assertEqual(self.saved[0][0][3]["metadata"], {})
+
     def test_dismissed_job_does_not_reserve_or_start(self):
         self.services["is_dismissed"] = lambda *_: True
         self.assertFalse(self.start())

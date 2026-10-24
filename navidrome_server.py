@@ -1866,11 +1866,11 @@ def _discovery_watch_and_import_album(artist, album, candidate, settings):
         },
     )
 
-def _discovery_start_import_watcher(artist, album, candidate, settings):
+def _discovery_start_import_watcher(artist, album, candidate, settings, request_metadata=None):
     """Compatibility adapter for dependency-injected watcher startup."""
     from acquisition.watcher_startup import start_import_watcher
     start_import_watcher(
-        artist, album, candidate, settings,
+        artist, album, candidate, settings, request_metadata,
         services={
             "music_key": _music_key,
             "transition_lock": _DISCOVERY_IMPORT_TRANSITION_LOCK,
@@ -2067,7 +2067,7 @@ def _discovery_acquire_album_impl(
                     candidate, clear_candidates[clear_candidates.index(candidate) + 1:10]
                 )
                 _discovery_start_import_watcher(
-                    artist, album, candidate_for_monitor, settings
+                    artist, album, candidate_for_monitor, settings, metadata
                 )
                 return json.dumps({
                     "ok": True, "status": "queued_unconfirmed",
@@ -2133,7 +2133,7 @@ def _discovery_acquire_album_impl(
                 uncertain = candidate
                 break
             _discovery_start_import_watcher(
-                artist, album, candidate_for_monitor, settings
+                artist, album, candidate_for_monitor, settings, metadata
             )
             return json.dumps({
                 "ok": True, "status": "queued",
@@ -2152,7 +2152,7 @@ def _discovery_acquire_album_impl(
                 uncertain, clear_candidates[clear_candidates.index(uncertain) + 1:10]
             )
             _discovery_start_import_watcher(
-                artist, album, candidate_for_monitor, settings
+                artist, album, candidate_for_monitor, settings, metadata
             )
             return json.dumps({
                 "ok": True, "status": "queued_unconfirmed",

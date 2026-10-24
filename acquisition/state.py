@@ -24,7 +24,9 @@ def save_job(artist, album, status, details=None, *, candidate=None, settings=No
         raise ValueError("artist and album are required")
     details = details or {}
     with sqlite3.connect(db_path, timeout=10) as db:
-        if not details.get("quality_summary"):
+        # A write that omits "metadata" keeps the request metadata already stored (for example
+        # the lens of a Get); a write that includes it, even {}, replaces it.
+        if not details.get("quality_summary") or "metadata" not in details:
             previous = db.execute(
                 "SELECT details_json FROM discovery_acquisitions "
                 "WHERE artist_key=? AND album_key=?",
@@ -36,8 +38,10 @@ def save_job(artist, album, status, details=None, *, candidate=None, settings=No
                 except (ValueError, TypeError):
                     previous_details = {}
                 previous_quality = previous_details.get("quality_summary")
-                if previous_quality:
+                if previous_quality and not details.get("quality_summary"):
                     details = {**details, "quality_summary": previous_quality}
+                if "metadata" not in details and isinstance(previous_details.get("metadata"), dict):
+                    details = {**details, "metadata": previous_details["metadata"]}
         db.execute(
             "INSERT INTO discovery_acquisitions "
             "(artist_key, album_key, artist, album, status, details_json, candidate_json, "

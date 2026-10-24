@@ -3,8 +3,13 @@ from __future__ import annotations
 import hashlib
 import threading
 
-def start_import_watcher(artist, album, candidate, settings, *, services):
-    """Reserve, persist, and start one watcher without importing app/MCP runtime."""
+def start_import_watcher(artist, album, candidate, settings, request_metadata=None, *, services):
+    """Reserve, persist, and start one watcher without importing app/MCP runtime.
+
+    ``request_metadata`` is the album metadata of the request that started the import (for
+    example the lens of a Get). It is always stored, as {} when absent, so an earlier request's
+    metadata cannot carry over to this one.
+    """
     music_key = services["music_key"]
     identity = (music_key(artist), music_key(album))
     settings = settings or {}
@@ -14,6 +19,7 @@ def start_import_watcher(artist, album, candidate, settings, *, services):
         "file_count": len(candidate.get("files") or []),
         "quality_summary": list(candidate.get("quality_summary") or []),
         "downloads_path": settings.get("slskd_downloads_path"),
+        "metadata": dict(request_metadata) if isinstance(request_metadata, dict) else {},
     }
     safe_settings = {key: value for key, value in settings.items()
                      if key not in {"slskd_api_key", "api_key"}}
