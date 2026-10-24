@@ -57,7 +57,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; this is a provider-budget change and needs owner approval. Then decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; that is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
+Decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; this is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
 
 ## Where to look
 
