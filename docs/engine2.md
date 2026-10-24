@@ -168,7 +168,7 @@ Status 2026-10-24: **complete.** History profiles (PRs #579, #580, #583), the Re
 
 ### Phase 4 — precompute and serve
 
-Status 2026-10-24: **plan approved by the owner; not started.** Work in a new session, one PR per slice, everything behind a setting that defaults to off.
+Status 2026-10-24: **plan approved by the owner; slice 1 merged (PR #590); slices 2 to 4 not started.** Work in new sessions, one PR per slice, everything behind a setting that defaults to off.
 
 Owner decisions (2026-10-24):
 - Lenses to ship first: Deep cuts, Repeated tracks and Obsessions. The existing personal list (Now and Genre spread behaviour) is not changed by this phase.
@@ -178,7 +178,7 @@ Owner decisions (2026-10-24):
 - Approved on review of PR #590 (slice 1): lens order Repeated tracks, then Deep cuts, then Obsessions (scarcest supply first); Deep cuts seeds from the densest 30-day window with flat weights, or all recent activity when the history is shorter, after dropping listens stamped before 1971 (`lens_seed_queries` in `discovery/lens_lists.py`); artists the listener already knows do not count against the selection's 60-candidate check limit.
 
 Slices:
-1. **Pure list builder.** One function from the gathered pool, the listening history and the library to one finished list per lens. It applies each lens's seeds (`repeated_track_seed_queries`, `obsession_seed_queries`, the Deep cuts seeds), the fallback tag merge (`fallback_artist_tags`), the known-artist inputs (`known_artist_mbids` from the history, `library_artist_mbids` from Navidrome) and `partition_lenses`, so an artist appears in at most one list per day. No provider calls; tested with recorded fixtures.
+1. **Pure list builder (done, PR #590, unwired).** `discovery/lens_lists.py`: `build_lens_lists(pools, day=..., ...)` returns one payload per lens (albums with rank, seed, listeners and tags; seed tags; pool size; decision counts by status), in the order Repeated tracks, Deep cuts, Obsessions, with helpers `lens_seed_queries`, `history_artist_mbids` and `merge_artist_tags`; `partition_lens_pools` in `lenses.py` partitions separately gathered pools. One function from the gathered pool, the listening history and the library to one finished list per lens. It applies each lens's seeds (`repeated_track_seed_queries`, `obsession_seed_queries`, the Deep cuts seeds), the fallback tag merge (`fallback_artist_tags`), the known-artist inputs (`known_artist_mbids` from the history, `library_artist_mbids` from Navidrome) and `partition_lenses`, so an artist appears in at most one list per day. No provider calls; tested with recorded fixtures.
 2. **Pool gatherer.** Per lens: `run_deep_cuts_tag_supply` (lens name and day as the radio scope), release search and album listeners, artist genres, fallback tags. Needs the fixes under "Starting notes". Bounded calls, cached, rate limits respected.
 3. **Storage and serving.** Lists stored as `lens:<name>` in `discovery_lists` with timestamp and day; generated once a day from `refresh_all`; `discovery_get_list` accepts the lens names and keeps filtering owned albums at read time. A failed or partial build leaves the previous day's list in place (the snapshot policy in `discovery/snapshot.py`).
 4. **UI.** Choose a lens list and show its label. Wording and placement are open (see below).
