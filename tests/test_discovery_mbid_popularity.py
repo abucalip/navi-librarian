@@ -8,7 +8,9 @@ from discovery.mbid_popularity import (
     ARTIST_CACHE_PREFIX,
     LASTFM_API_URL,
     MUSICBRAINZ_RELEASE_SEARCH_URL,
+    RELEASE_SEARCH_ATTEMPTS,
     RELEASE_SEARCH_GROUPS,
+    RELEASE_SEARCH_RETRY_SECONDS,
     fetch_release_mbids,
     fetch_representative_releases,
     order_releases,
@@ -253,6 +255,59 @@ class ResolvePopularityTests(unittest.TestCase):
     def test_candidates_without_release_group_are_omitted(self):
         out, _ = _resolve(_Net(), [{"artist_mbid": "a1"}])
         self.assertEqual(out, {})
+
+    def test_album_only_mode_makes_no_artist_lookups(self):
+        net = _Net(releases=[_release("r1", "g1")], album={"r1": 900}, artist={"a1": 5})
+        out, _ = _resolve(net, [_cand("g1", "a1")], with_artist_listeners=False)
+        self.assertEqual(out["g1"]["album_listeners"], 900)
+        self.assertIsNone(out["g1"]["artist_listeners"])
+        self.assertEqual(net.lastfm_calls("artist.getInfo"), [])
+
+
+class ReleaseSearchRetryTests(unittest.TestCase):
+    """A rate-limited, 5xx or dropped release-search page is tried again after a pause."""
+
+    class _Scripted:
+        """Answers each release search with the next scripted status, then the releases.
+        A ``None`` status drops the connection."""
+
+        def __init__(self, statuses, releases=()):
+            self.statuses, self.releases, self.calls = list(statuses), list(releases), 0
+
+        def __call__(self, url, params=None, headers=None, timeout=None):
+            self.calls += 1
+            status = self.statuses.pop(0) if self.statuses else 200
+            if status is None:
+                raise ConnectionError("dropped")
+            if status != 200:
+                return _Response({}, status)
+            page = self.releases[params["offset"]:params["offset"] + params["limit"]]
+            return _Response({"count": len(self.releases), "releases": page})
+
+    def test_rate_limited_then_unavailable_search_is_retried_with_a_pause(self):
+        net = self._Scripted([503, 429], [_release("r", "g1")])
+        slept = []
+        out = fetch_release_mbids(net, ["g1"], headers={}, sleep=slept.append)
+        self.assertEqual(out, {"g1": ["r"]})
+        self.assertEqual(net.calls, 3)
+        self.assertEqual(slept.count(RELEASE_SEARCH_RETRY_SECONDS), 2)
+
+    def test_dropped_connection_is_retried(self):
+        net = self._Scripted([None], [_release("r", "g1")])
+        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}), {"g1": ["r"]})
+        self.assertEqual(net.calls, 2)
+
+    def test_retries_stop_at_the_attempt_limit(self):
+        net = self._Scripted([503] * 10, [_release("r", "g1")])
+        slept = []
+        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}, sleep=slept.append), {})
+        self.assertEqual(net.calls, RELEASE_SEARCH_ATTEMPTS)
+        self.assertEqual(slept.count(RELEASE_SEARCH_RETRY_SECONDS), RELEASE_SEARCH_ATTEMPTS - 1)
+
+    def test_client_error_is_not_retried(self):
+        net = self._Scripted([404], [_release("r", "g1")])
+        self.assertEqual(fetch_release_mbids(net, ["g1"], headers={}), {})
+        self.assertEqual(net.calls, 1)
 
 
 if __name__ == "__main__":
