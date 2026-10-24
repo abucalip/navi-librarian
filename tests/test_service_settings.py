@@ -6,6 +6,7 @@ from pathlib import Path
 
 from settings.service import (
     automatic_refill_enabled_value,
+    engine2_lens_lists_enabled_value,
     get_automatic_refill_settings,
     set_automatic_refill_settings,
     get_lastfm_settings,
@@ -337,6 +338,15 @@ class ServiceSettingsTests(unittest.TestCase):
                 result = json.loads(set_automatic_refill_settings(writes.append, invalid))
                 self.assertFalse(result["ok"])
         self.assertEqual(writes, [])
+
+    def test_engine2_lens_lists_setting_defaults_off_and_accepts_only_true_booleans(self):
+        self.assertFalse(engine2_lens_lists_enabled_value(lambda: {}))
+        for corrupt in ("true", 1, 0, None, []):
+            with self.subTest(corrupt=corrupt):
+                self.assertFalse(engine2_lens_lists_enabled_value(
+                    lambda c=corrupt: {"engine2_lens_lists_enabled": c}))
+        self.assertTrue(engine2_lens_lists_enabled_value(
+            lambda: {"engine2_lens_lists_enabled": True}))
 
 
 if __name__ == "__main__":

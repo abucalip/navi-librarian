@@ -30,6 +30,12 @@ MISS_TTL_SECONDS = 7 * 24 * 60 * 60
 RELEASE_SEARCH_GROUPS = 25
 RELEASE_SEARCH_PAGE = 100
 MAX_RELEASE_SEARCH_PAGES = 6
+# A release-search page that is rate-limited, failed with a 5xx or dropped is tried again after a
+# pause, up to this many tries (measured 2026-10-24: a search right after a long run of paced calls
+# returned nothing, and the third try succeeded after about 16 s).
+RELEASE_SEARCH_ATTEMPTS = 3
+RELEASE_SEARCH_RETRY_SECONDS = 8.0
+RELEASE_SEARCH_RETRY_STATUSES = (429, 500, 502, 503, 504)
 # Release MBIDs tried on Last.fm per release group (measured: 23 of 25 on the first
 # try, 24 of 25 within five, 1.1 tries on average).
 MAX_RELEASE_TRIES = 5
@@ -49,6 +55,44 @@ def order_releases(releases: list[tuple[str, str | None, str]]) -> list[str]:
     return [mbid for mbid, _status, _date in ranked]
 
 
+def _release_search_body(
+    get: Callable[..., Any], query: str, offset: int, *,
+    headers: Mapping[str, str], timeout: float, sleep: Callable[[float], Any] | None,
+) -> dict | None:
+    """One release-search page as a body dict, or None when it failed for good.
+
+    A rate limit, a server error or a dropped connection is tried again after a pause
+    (``RELEASE_SEARCH_RETRY_SECONDS``), up to ``RELEASE_SEARCH_ATTEMPTS`` tries. Without
+    ``sleep`` the retries are immediate. Never raises."""
+    from recommendation_run_metrics import record_provider_call
+
+    for attempt in range(RELEASE_SEARCH_ATTEMPTS):
+        try:
+            record_provider_call("musicbrainz", "release_search_batch")
+            response = get(
+                MUSICBRAINZ_RELEASE_SEARCH_URL,
+                params={"query": query, "limit": RELEASE_SEARCH_PAGE, "offset": offset, "fmt": "json"},
+                headers=dict(headers),
+                timeout=timeout,
+            )
+        except Exception:
+            response = None
+        if sleep is not None:
+            sleep(MUSICBRAINZ_SPACING_SECONDS)
+        if response is not None:
+            if response.status_code == 200:
+                try:
+                    body = response.json()
+                except Exception:
+                    return None
+                return body if isinstance(body, dict) else None
+            if response.status_code not in RELEASE_SEARCH_RETRY_STATUSES:
+                return None
+        if attempt < RELEASE_SEARCH_ATTEMPTS - 1 and sleep is not None:
+            sleep(RELEASE_SEARCH_RETRY_SECONDS)
+    return None
+
+
 def fetch_release_mbids(
     get: Callable[..., Any],
     release_group_mbids: list[str],
@@ -59,31 +103,23 @@ def fetch_release_mbids(
 ) -> dict[str, list[str]]:
     """Return {release_group_mbid: ordered release MBIDs} from batched MusicBrainz searches.
 
-    A failed page is skipped, so the group may be missing or partial; callers fall
-    back to ``fetch_representative_releases``. Never raises.
+    A page that fails for good is skipped, so the group may be missing or partial; callers fall
+    back to ``fetch_representative_releases``. Rate-limited, 5xx and dropped pages are retried
+    with a pause first (see ``_release_search_body``). Never raises.
     """
-    from recommendation_run_metrics import record_provider_call
-
     found: dict[str, list[tuple[str, str | None, str]]] = {}
     for chunk in _chunks(list(dict.fromkeys(m for m in release_group_mbids if m)), RELEASE_SEARCH_GROUPS):
         wanted = set(chunk)
         query = "rgid:(" + " OR ".join(chunk) + ")"
         for page in range(MAX_RELEASE_SEARCH_PAGES):
+            body = _release_search_body(
+                get, query, page * RELEASE_SEARCH_PAGE,
+                headers=headers, timeout=timeout, sleep=sleep,
+            )
+            if body is None:
+                break
             try:
-                record_provider_call("musicbrainz", "release_search_batch")
-                response = get(
-                    MUSICBRAINZ_RELEASE_SEARCH_URL,
-                    params={"query": query, "limit": RELEASE_SEARCH_PAGE,
-                            "offset": page * RELEASE_SEARCH_PAGE, "fmt": "json"},
-                    headers=dict(headers),
-                    timeout=timeout,
-                )
-                if sleep is not None:
-                    sleep(MUSICBRAINZ_SPACING_SECONDS)
-                if response.status_code != 200:
-                    break
-                body = response.json()
-                releases = body.get("releases") if isinstance(body, dict) else None
+                releases = body.get("releases")
                 if not isinstance(releases, list):
                     break
                 for release in releases:
@@ -217,6 +253,7 @@ def resolve_popularity(
     sleep: Callable[[float], Any] | None = None,
     max_lastfm_calls: int = DEFAULT_MAX_LASTFM_CALLS,
     timeout: float = 30,
+    with_artist_listeners: bool = True,
 ) -> dict[str, dict[str, Any]]:
     """Return {release_group_mbid: popularity} for candidates with MBIDs.
 
@@ -225,6 +262,7 @@ def resolve_popularity(
     ``basis``: "album", "artist" (album unresolved, artist listeners usable as a
     fallback) or "none". Last.fm requests stop at ``max_lastfm_calls``; cached values
     cost nothing. Never raises. A candidate without a release-group MBID is omitted.
+    ``with_artist_listeners=False`` skips the artist.getInfo calls (album listeners only).
     """
     budget = _Budget(max_lastfm_calls)
     result: dict[str, dict[str, Any]] = {}
@@ -245,7 +283,8 @@ def resolve_popularity(
 
     # Artist level (one call per distinct artist).
     artist_listeners: dict[str, int | None] = {}
-    for artist in dict.fromkeys(artist_of.values()):
+    artists = dict.fromkeys(artist_of.values()) if with_artist_listeners else {}
+    for artist in artists:
         hit, value = _cached(cache_get, f"{ARTIST_CACHE_PREFIX}{artist}")
         if not hit:
             stats, answered = lastfm("artist.getInfo", artist, "artist")

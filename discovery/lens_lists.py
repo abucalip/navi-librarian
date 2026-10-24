@@ -51,6 +51,12 @@ def _dated_sanely(listen: Mapping[str, Any]) -> bool:
     return not math.isfinite(stamp) or stamp >= _EARLIEST_LISTEN
 
 
+def usable_listens(listens: Iterable[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    """The listens the profiles are built from: the dated ones from 1971 on, and undated
+    ones. Apply this before any profile or known-artist set is built from the history."""
+    return [listen for listen in listens if _dated_sanely(listen)]
+
+
 def history_artist_mbids(listens: Iterable[Mapping[str, Any]]) -> set[str]:
     """Artist MBIDs in the listening history, for ``known_artist_mbids``. Listens without
     an artist MBID add nothing; those artists are still caught by a library name match."""
@@ -69,7 +75,7 @@ def lens_seed_queries(
     cuts takes the profile tags of the densest ``DEEP_CUTS_WINDOW_DAYS`` window, with flat
     weights. Listens stamped before 1971 are dropped first. Pure; the queries go to
     ``run_deep_cuts_tag_supply``, one lens at a time."""
-    records = [listen for listen in listens if _dated_sanely(listen)]
+    records = usable_listens(listens)
     window = densest_window_listens(records, DEEP_CUTS_WINDOW_DAYS)
     return {
         REPEATED_TRACKS.name: repeated_track_seed_queries(records, artist_tags, limit=limit),

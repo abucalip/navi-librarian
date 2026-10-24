@@ -72,6 +72,19 @@ def automatic_refill_enabled_value(settings_read):
     return value if type(value) is bool else DEFAULT_AUTOMATIC_REFILL_ENABLED
 
 
+ENGINE2_LENS_LISTS_KEY = "engine2_lens_lists_enabled"
+DEFAULT_ENGINE2_LENS_LISTS_ENABLED = False
+
+
+def engine2_lens_lists_enabled_value(settings_read):
+    """Read the daily lens-list switch (Engine 2, Phase 4); absent or non-boolean values mean off.
+
+    Nothing in the recommendation or web routes reads it yet; the gatherer checks it before any
+    provider call."""
+    value = settings_read().get(ENGINE2_LENS_LISTS_KEY, DEFAULT_ENGINE2_LENS_LISTS_ENABLED)
+    return value if type(value) is bool else DEFAULT_ENGINE2_LENS_LISTS_ENABLED
+
+
 def get_automatic_refill_settings(settings_read):
     """Return the stable public refill payload."""
     return json.dumps({AUTOMATIC_REFILL_KEY: automatic_refill_enabled_value(settings_read)})
