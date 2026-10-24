@@ -22,7 +22,7 @@ from typing import Any
 from discovery import refresh as discovery_refresh
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
-from discovery.list_payload import build_lens_list_response, owned_predicate
+from discovery.list_payload import build_lens_list_response, dismissed_predicate, owned_predicate
 from settings import service as settings_service
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,19 @@ def _owned_or_none(librarian: Any) -> Callable[[Any], bool] | None:
         return None
 
 
+def _dismissed_or_none(librarian: Any) -> Callable[[Any], bool] | None:
+    """"Not for me" check against the listener's feedback, or None when it cannot be read."""
+    try:
+        return dismissed_predicate(librarian._discovery_feedback_rows(), librarian._music_key)
+    except Exception:
+        return None
+
+
 def list_response(librarian: Any, lens_name: str, count: int) -> str:
-    """The JSON response for one stored lens list, with owned albums removed at read time.
+    """The JSON response for one stored lens list.
+
+    Owned albums and "Not for me" albums and artists are removed at read time, so a dismissal
+    takes effect on the next read rather than the next daily build.
 
     While ``engine2_lens_lists_enabled`` is off this answers with an empty, disabled response
     and reads neither the store nor the library.
@@ -62,7 +73,9 @@ def list_response(librarian: Any, lens_name: str, count: int) -> str:
             "message": "Lens lists are off. Set engine2_lens_lists_enabled to turn them on.",
         }, ensure_ascii=False, indent=2)
     cached = librarian._discovery_read_list(lens_storage_name(lens_name))
-    return build_lens_list_response(lens_name, count, cached, _owned_or_none(librarian))
+    return build_lens_list_response(
+        lens_name, count, cached, _owned_or_none(librarian), _dismissed_or_none(librarian),
+    )
 
 
 def build(librarian: Any) -> dict[str, Any]:

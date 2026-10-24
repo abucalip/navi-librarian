@@ -1592,7 +1592,7 @@ async function loadLensList(name) {
     // Off is a neutral empty state with plain copy; the config key stays out of the UI.
     const message = items.length
       ? pluralize(items.length, 'album', 'albums') + ' · ' + label + ' · Fixed for today, rebuilt each morning'
-      : data.disabled ? 'Daily lists are turned off in Settings.'
+      : data.disabled ? 'Daily picks are turned off in Settings.'
       : data.message || label + ' has no albums today.';
     status.textContent = message;
     setStatusState(status, items.length ? 'progress' : 'empty');
