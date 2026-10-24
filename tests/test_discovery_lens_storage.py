@@ -278,6 +278,32 @@ class LensServiceDisabledPathTests(unittest.TestCase):
         self.assertEqual(writes, [])
 
 
+class LensReadGatingTests(unittest.TestCase):
+    def test_read_while_off_touches_neither_store_nor_library(self):
+        from app.api import discovery
+
+        for lens in ("deep_cuts", "repeated_tracks", "obsessions"):
+            with self.subTest(lens=lens):
+                body = json.loads(lens_service.list_response(_librarian(), lens, 5))
+                self.assertTrue(body["disabled"])
+                self.assertEqual(body["items"], [])
+                self.assertIsNone(body["generated_at"])
+                route_body = discovery.discovery_list(lens, 5, librarian=_librarian())
+                self.assertEqual(route_body["items"], [])
+                self.assertTrue(route_body["disabled"])
+
+    def test_read_while_on_serves_the_stored_list(self):
+        cached = {"payload": _payload([_album(1, "A", "X")]), "generated_at": 1.0}
+        librarian = _librarian(
+            _discovery_settings_read=lambda: {"engine2_lens_lists_enabled": True},
+            _discovery_read_list=lambda name: cached,
+            _discovery_library_snapshot=lambda: {"albums": []},
+            _music_key=lambda value: str(value).strip().lower(),
+        )
+        body = json.loads(lens_service.list_response(librarian, "deep_cuts", 5))
+        self.assertEqual([item["album"] for item in body["items"]], ["X"])
+
+
 class LensRouteDispatchTests(unittest.TestCase):
     def test_lens_names_go_to_the_lens_service_and_not_the_server_list(self):
         from unittest import mock

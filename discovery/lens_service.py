@@ -11,6 +11,7 @@ while the setting is off. See docs/engine2.md (Phase 4).
 """
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -47,7 +48,19 @@ def _owned_or_none(librarian: Any) -> Callable[[Any], bool] | None:
 
 
 def list_response(librarian: Any, lens_name: str, count: int) -> str:
-    """The JSON response for one stored lens list, with owned albums removed at read time."""
+    """The JSON response for one stored lens list, with owned albums removed at read time.
+
+    While ``engine2_lens_lists_enabled`` is off this answers with an empty, disabled response
+    and reads neither the store nor the library.
+    """
+    if not settings_service.engine2_lens_lists_enabled_value(librarian._discovery_settings_read):
+        return json.dumps({
+            "list": lens_name,
+            "generated_at": None,
+            "items": [],
+            "disabled": True,
+            "message": "Lens lists are off. Set engine2_lens_lists_enabled to turn them on.",
+        }, ensure_ascii=False, indent=2)
     cached = librarian._discovery_read_list(lens_storage_name(lens_name))
     return build_lens_list_response(lens_name, count, cached, _owned_or_none(librarian))
 
