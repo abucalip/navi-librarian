@@ -157,7 +157,7 @@ Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, 
 ### Phase 3 — time-range profiles
 
 - Profile windows (30 days, 1 year, all time) built from the imported history, with flat or windowed weights.
-- Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses.
+- Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses. Time-window lists are skipped for now (owner decision, 2026-10-24): they would set the genre mix only, not the albums, so the window work stops at the seed level.
 - Deferred from Phase 2 (owner decision, 2026-10-23): make the tag-radio popularity band a parameter keyed in the radio cache (approved Deep cuts band 50 to 75%, tail 75 to 100%), verify the title-marker filter on both radio and MusicBrainz sources, and add the MusicBrainz tag-search tail. Defaults stay at the current 0 to 100% until the owner approves a live run.
 - Gate: show that a window changes the candidate pool, not only ranks. Result (2026-10-24, six repeated radio samples per tag, five windows, replayed through the production lane): a window changes the pool only through its seed tags. Each tag contributes exactly five albums, and the albums are redrawn on every radio call (about one album shared across repetitions of the same window). Different windows share albums only where they share seed tags. The gate is therefore met at the seed level and not at the album level. Radio answers are now fixed per lens per day (PR #582), so a daily list is stable without making it fixed forever.
 
