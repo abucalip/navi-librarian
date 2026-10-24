@@ -1,3 +1,11 @@
+## 2026-10-24 — PR #595 merged; Engine 2 Phase 4 Daily lists UI
+
+- Re-reviewed exact PR head `01ca4428c7c07dda111086ea4942124f2ef24172`. The SVG sprite now has valid attribute spacing, and `tests/test_lens_lists_ui_contract.py` parses the sprite as XML. The Daily lists UI uses the shared recommendation row, ignores stale lens responses, reports disabled/empty states as status text, and routes dismiss feedback back to the active lens.
+- The diff also removes the ranked-row hover stripe and creates the album artwork image in JavaScript rather than shipping an `<img>` without a source; contract tests explicitly cover these choices.
+- All required workflows passed on the exact head: Python syntax (`40108409642`), Docker packaging/full unit suite/image build (`40108409602`, including `Run unit tests`), container runtime smoke (`40108409585`), and validation-only multi-architecture image validation (`40108409651`, publishing paused). Release workflow validation (`40108409597`) passed with the `publish-release` job skipped.
+- Squash-merged PR #595 as `9ac74da768e93b592ac070814b69a6a7ffa4f964`. The owner waived manual browser testing; no browser check was performed. No live provider run, publication, deployment, or runtime verification. `engine2_lens_lists_enabled` remains off by default.
+- Next: perform the waived browser checks against a pinned deployed/test environment when appropriate; otherwise continue the planned Engine 2 Phase 4 follow-up.
+
 ## 2026-10-24 — Re-review, full CI suite, and merge PR #594
 
 - Reviewed exact PR head `b79ff64cf65e51bfa38e8203b722961ff0be077c`. The manual `all` discovery refresh now starts a lens-list build through `discovery/lens_service.py:start_refresh` in a daemon thread; other list refreshes do not trigger it. The refresh shares the daily loop's lock, and the existing setting gate means the feature remains inert while `engine2_lens_lists_enabled` is off. Regression tests cover the `all` trigger, non-`all` behavior, and execution on a separate thread. No blocker found in the changed code.
