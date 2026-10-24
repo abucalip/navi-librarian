@@ -31,7 +31,7 @@ The plan in [HARDCODE_REPLACEMENT.md](HARDCODE_REPLACEMENT.md) is over; no phase
 
 ## 2c. Engine 2 — next priority (draft roadmap: [engine2.md](engine2.md))
 
-**Phase 4 status (2026-10-24):** built and merged (slices 1 to 4, PRs #590 to #598). Left: the owner's decision to enable `engine2_lens_lists_enabled` for daily use; a Last.fm account Settings control (parked); browser checks not yet run for keyboard and focus, Get, Save and dismiss, reduced motion and screen readers; empty artwork on lens rows; a quality measurement of the lists; Phase 5 feedback loop is closed (PRs #600 to #603; see `engine2.md`). Play/download attribution and a UI display were dropped by the owner. Publication and deployment are separate decisions.
+**Phase 4 status (2026-10-24):** built and merged (slices 1 to 4, PRs #590 to #598); PR #605 makes `engine2_lens_lists_enabled` default to on, with explicit `False` still supported. The owner approved enabling daily lens lists and deferred remaining browser checks (keyboard/focus, Get, Save/dismiss, reduced motion and screen readers). A Last.fm account Settings control remains parked; empty artwork and quality measurement are not active follow-ups. Phase 5 feedback loop is closed (PRs #600 to #603; see `engine2.md`). Play/download attribution and a UI display were dropped by the owner. Publication and deployment are separate decisions.
 
 Goal: several complementary lists of 10 ("lenses") from one shared candidate pool, including obscure-album lists and lists driven by different history windows. Evidence and phases are in `engine2.md`; measurements are in `PROJECT_LOG.md` (2026-10-23, two entries). Provider budget increases and live captures still need the owner's approval.
 
