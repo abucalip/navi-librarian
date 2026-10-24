@@ -47,6 +47,16 @@ class AcquisitionStateStoreTests(unittest.TestCase):
         self.assertEqual(jobs[0]["candidate"]["username"], "peer")
         self.assertEqual(jobs[0]["settings"]["quality"], ["flac"])
 
+    def test_write_without_metadata_keeps_request_metadata_and_metadata_replaces_it(self):
+        lens = {"lens": "deep_cuts"}
+        save_job("Artist", "Album", "downloading", {"metadata": lens}, services=self.services)
+        self.now[0] = 200.0
+        save_job("Artist", "Album", "monitor_error", {"message": "restart"}, services=self.services)
+        self.assertEqual(list_jobs(services=self.services)[0]["details"]["metadata"], lens)
+        self.now[0] = 300.0
+        save_job("Artist", "Album", "no_matches", {"metadata": {}}, services=self.services)
+        self.assertEqual(list_jobs(services=self.services)[0]["details"]["metadata"], {})
+
     def test_empty_candidate_and_settings_do_not_erase_existing_values(self):
         save_job("Artist", "Album", "downloading", {"quality_summary": ["mp3_320"]},
                  candidate={"username": "peer"}, settings={"downloads": "/safe"},
