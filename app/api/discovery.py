@@ -41,6 +41,15 @@ def recommendations(count: int = 10, librarian=Depends(get_librarian)):
         )
 
 
+# Registered before the {list_name} route below, which would otherwise match this path.
+@router.get("/api/discovery/lens-feedback")
+def lens_feedback(librarian=Depends(get_librarian)):
+    try:
+        return lens_service.feedback_summary(librarian)
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read lens feedback.")
+
+
 @router.get("/api/discovery/{list_name}")
 def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librarian)):
     allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
