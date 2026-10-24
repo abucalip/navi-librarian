@@ -1,3 +1,12 @@
+## 2026-10-24 — Engine 2 Phase 5 closed (PRs #600 to #603)
+
+- **Merged:** PR #600 (`bb6cb97`), #601 (`f60268b`), #602 (`46d8cb2`), #603 (`b1454b8`), each squash-merged from a CI-green head.
+- **Delivered:** lens-tagged albums and per-lens saves/dismissals; a read-only `GET /api/discovery/lens-feedback`; acquisition request metadata kept on success statuses; per-lens acquisition request and status counts.
+- **Closed by owner decision:** play/download attribution dropped; no UI display of the summary. The read API is the only consumer.
+- **Limits:** counts are current stored state, not history; pre-#602 jobs are not attributed; no quality claim.
+- **Known issue (not fixed here):** `tests/test_discovery_lens_storage.py` fails in some unittest orderings with `already_running` from the refresh lock. CI's full suite passes; the issue predates Phase 5.
+- **Not done:** no publication, deployment or runtime verification.
+
 ## 2026-10-24 — Engine 2 Phase 5 feedback read API (PR #601)
 
 - **Merged:** PR [#601](https://github.com/abucalip/navi-librarian/pull/601), squash commit `f60268b17d2e28f47e08fbcbc57f3667ec5d6694`, from reviewed head `171efc4a7a074c093ccb6da4cc92964abd4bd44c`.

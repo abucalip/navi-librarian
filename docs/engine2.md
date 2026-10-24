@@ -228,12 +228,19 @@ Starting notes (facts from Phase 3, all aggregates):
 
 ### Phase 5 — feedback loop
 
-Status 2026-10-24: **underway**. PR [#600](https://github.com/abucalip/navi-librarian/pull/600) merged as `bb6cb97062fece9236f964802f9ef705c99809ea`: lens-list albums now carry the lens name, and `discovery/lens_feedback.py` provides a pure summary of current album-scope saves and dismissals per lens. PR [#601](https://github.com/abucalip/navi-librarian/pull/601) merged as `f60268b17d2e28f47e08fbcbc57f3667ec5d6694`: read-only `GET /api/discovery/lens-feedback` serves the summary and avoids feedback reads when the feature setting is off. UI consumption and Get/play/download attribution remain unimplemented.
+Status 2026-10-24: **closed** on the owner's instruction, with the remaining items dropped rather than deferred.
 
-Decision (2026-10-24): the per-lens comparison includes lens-tagged saves/dismissals and acquisition status counts. PR #602 preserves request metadata through successful acquisition states; PR #603 adds a read-only per-lens acquisition summary. Counts are lower bounds because legacy rows may lack attribution, and the database stores current job state rather than request history. Play/download event attribution remains unresolved; define an identity/event contract before adding those metrics. No quality claim is justified by save/dismiss or acquisition counts alone.
+Delivered:
+- PR [#600](https://github.com/abucalip/navi-librarian/pull/600) (`bb6cb97062fece9236f964802f9ef705c99809ea`): lens-list albums carry the lens name; `discovery/lens_feedback.py` summarises current album-scope saves and dismissals per lens.
+- PR [#601](https://github.com/abucalip/navi-librarian/pull/601) (`f60268b17d2e28f47e08fbcbc57f3667ec5d6694`): read-only `GET /api/discovery/lens-feedback`; disabled while `engine2_lens_lists_enabled` is off.
+- PR [#602](https://github.com/abucalip/navi-librarian/pull/602) (`46d8cb20c50bb89858cb62d727651e18da15ad17`): acquisition jobs keep the request metadata, so a Get from a lens list is attributed on success statuses too.
+- PR [#603](https://github.com/abucalip/navi-librarian/pull/603) (`b1454b8697016bd2217ffbf15e50c03f074d3d08`): the summary also counts acquisition requests and statuses per lens.
 
-- Store the lens on every recommendation; use existing recommendation feedback (saves, downloads, plays) to compare lenses.
-- Only then consider reweighting or retiring lenses. No quality claim before this data exists.
+Decisions that close the phase:
+- Play and download attribution is not pursued (owner, 2026-10-24).
+- The per-lens summary is not displayed in the UI (owner, 2026-10-24). The read API remains the only consumer.
+- Counts are current stored state, not history. Jobs stored before PR #602 are not attributed, so acquisition counts are lower bounds.
+- No quality claim is made from save, dismissal or acquisition counts. Reweighting or retiring a lens would need a separate, evidence-based decision.
 
 ## Evaluation metrics
 

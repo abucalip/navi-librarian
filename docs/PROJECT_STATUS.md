@@ -71,9 +71,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Phase 4 is closed. The owner decided that `engine2_lens_lists_enabled` stays on, that the deferred browser checks (Get, screen readers, reduced motion) stay deferred, and that no quality measurement is needed. The setting still has no Settings control.
-
-Phase 5 (feedback loop) is underway. The per-lens summary is served read-only and now covers lens-tagged saves, dismissals and acquisition requests (PRs #600 to #603; see `engine2.md`, Phase 5). Lower bounds: jobs stored before PR #602 are not attributed. Play and download events are not attributed to a lens. Next action: the owner decides (1) whether to show the per-lens summary in the UI, which needs a browser check, and (2) the identity and event contract for play/download attribution before adding those metrics. No quality claim is made from these counts. Not published or deployed.
+Engine 2 Phase 5 (feedback loop) is closed (PRs #600 to #603). The owner dropped play and download attribution and the UI display; the per-lens summary remains a read-only API. No quality claim is made from these counts. The owner has not yet chosen the next engine priority. Not published or deployed.
 
 ## Where to look
 
