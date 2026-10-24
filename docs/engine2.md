@@ -159,6 +159,8 @@ Status 2026-10-23: lens field, Now/Genre spread/Deep cuts lenses, partitioning, 
 
 ### Phase 3 — time-range profiles
 
+Status 2026-10-24: **complete.** History profiles (PRs #579, #580, #583), the Repeated tracks and Obsessions lenses with the known-artist exclusion (#584, #585, #587), the Deep cuts tiered supply, band parameter and MusicBrainz tail (#580, #581), day-keyed radio answers (#582), the Last.fm fallback tag source (#588) and 10 albums per seed (#589) are merged and unwired. The window gate is met at seed level only. Tier fall-through was measured and left unchanged. The radio-path secondary-type fix was skipped by the owner.
+
 - Profile windows (30 days, 1 year, all time) built from the imported history, with flat or windowed weights.
 - Window-driven seeds for the tag lane and similar-artist queries; Long-term taste, Rediscovery and Stretch lenses. Time-window lists were skipped on 2026-10-24 and reopened by the owner the same day, at the seed level: they set the genre mix, not the albums. The history profiles are merged in PR #583 (unwired); which of them become lenses is an owner decision.
 - Deferred from Phase 2 (owner decision, 2026-10-23): make the tag-radio popularity band a parameter keyed in the radio cache (approved Deep cuts band 50 to 75%, tail 75 to 100%), verify the title-marker filter on both radio and MusicBrainz sources, and add the MusicBrainz tag-search tail. Defaults stay at the current 0 to 100% until the owner approves a live run.
