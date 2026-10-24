@@ -145,8 +145,9 @@ class RailStructureTests(unittest.TestCase):
     def test_phone_bar_keeps_five_destinations_and_a_more_disclosure(self):
         # UI_BACKLOG_EXECUTION section 36: five destinations stay in the phone bar, and the other
         # two open from More. Each overflow destination is in the rail too, for 621px and up.
-        bar_pages = ["dashboard", "acquisitions", "recommendations", "newReleases", "personalDiscoveries"]
-        more_pages = ["classics", "artistDeepDive"]
+        # Daily lists took the bar slot New releases held (Discover keeps three bar destinations).
+        bar_pages = ["dashboard", "acquisitions", "recommendations", "personalDiscoveries", "lensLists"]
+        more_pages = ["newReleases", "classics", "artistDeepDive"]
         for page in bar_pages:
             button = re.search(rf'<button[^>]*data-page="{page}"[^>]*>', self.rail).group(0)
             self.assertNotIn("nav-overflow", button, msg=page)

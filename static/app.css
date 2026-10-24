@@ -560,12 +560,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   background: var(--surface); border-bottom: 1px solid var(--edge);
   --row-art: 136px;
 }
-.ranked-row::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
-  transform: scaleY(0); transition: transform var(--dur) var(--ease-out);
-}
 .ranked-row:hover { background: var(--surface-hover); }
-.ranked-row:hover::before { transform: scaleY(1); }
 .ranked-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .rank-numeral {
   justify-self: end; font: 600 var(--num-row)/1 var(--display); letter-spacing: -.01em; color: var(--chart-red-text);
@@ -664,7 +659,6 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   .ranked-row.is-skeleton .rank-numeral { width: 28px; height: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ranked-row::before { transition: none; }
   .ranked-row.is-skeleton { animation: none; }
 }
 

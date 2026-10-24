@@ -17,7 +17,7 @@ function isAlbumRecommendation(item) {
 
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
-const NAV_MORE_PAGES = ['lensLists', 'classics', 'artistDeepDive'];
+const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
@@ -1565,6 +1565,7 @@ function buildLensRow(item) {
       item.seed_tag ? 'Seed tag: ' + item.seed_tag : '',
       Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''
     ],
+    listName: 'lens_lists',
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row),
     onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'lens_lists', row)
   });
@@ -1811,6 +1812,8 @@ const discoveryViews = {
   classics: ['classicsCards','classicsStatus'],
   artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus'],
   new_releases: ['newReleasesCards','newReleasesStatus'],
+  // Lens rows: status for dismiss and Save errors. Lens lists reload through loadLensList.
+  lens_lists: ['lensListsCards','lensListsStatus'],
   saved: ['savedCards','savedStatus']
 };
 

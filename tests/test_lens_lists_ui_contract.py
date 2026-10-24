@@ -36,14 +36,13 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn("LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS)", (
             ROOT / "discovery" / "lens_lists.py").read_text(encoding="utf-8"))
 
-    def test_nav_entry_is_reachable_on_desktop_and_in_the_phone_more_panel(self):
-        self.assertIn('class="nav-overflow" data-page="lensLists"', self.html)
-        self.assertIn('<button type="button" data-page="lensLists" title="Daily lists">', self.html)
-        self.assertIn("const NAV_MORE_PAGES = ['lensLists', 'classics', 'artistDeepDive'];", self.js)
-
-    def test_phone_bar_keeps_its_five_in_bar_destinations(self):
-        in_bar = self.html[self.html.index('<nav'):self.html.index('id="navMoreButton"')]
-        self.assertNotIn('data-page="lensLists"', in_bar.split('class="nav-overflow"')[0])
+    def test_daily_lists_is_on_the_phone_bar_and_new_releases_moved_to_more(self):
+        # Daily lists is a daily-use list, so it takes a bar slot; New releases moves to More.
+        self.assertIn('<button data-page="lensLists" title="Daily lists">', self.html)
+        self.assertIn('<button class="nav-overflow" data-page="newReleases"', self.html)
+        self.assertIn('<button type="button" data-page="newReleases" title="New releases">', self.html)
+        self.assertNotIn('data-page="lensLists" title="Daily lists">Daily lists</button>', self.html)
+        self.assertIn("const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];", self.js)
 
     def test_nav_icon_is_defined_in_the_sprite(self):
         self.assertIn('href="/static/icons.svg#list-music"', self.html)
@@ -68,14 +67,21 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn("data.message || label + ' has no albums today.'", body)
         self.assertIn("setStatusState(status, items.length ? 'progress' : 'empty');", body)
 
+    def test_lens_rows_offer_save_and_route_its_errors_to_the_lens_status(self):
+        self.assertIn("lens_lists: ['lensListsCards','lensListsStatus'],", self.js)
+
+    def test_ranked_rows_have_no_hover_stripe(self):
+        css = (ROOT / "static" / "app.css").read_text(encoding="utf-8")
+        self.assertNotIn(".ranked-row::before", css)
+        self.assertNotIn(".ranked-row:hover::before", css)
+
     def test_rows_reuse_the_shared_discover_row_and_add_only_seed_and_listeners(self):
         start = self.js.index("function buildLensRow(")
         body = self.js[start:self.js.index("async function loadLensList(", start)]
         self.assertIn("return buildRecommendationRow(item, item.rank, {", body)
         self.assertIn("'Seed tag: ' + item.seed_tag", body)
         self.assertIn("' listeners'", body)
-        # Lens lists have no save list, so the row must not be given one.
-        self.assertNotIn("listName", body)
+        self.assertIn("listName: 'lens_lists',", body)
 
     def test_lens_text_is_never_written_as_html(self):
         start = self.js.index("const LENS_LISTS = {")
