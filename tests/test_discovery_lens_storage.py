@@ -7,7 +7,7 @@ import threading
 import unittest
 from datetime import datetime
 
-from discovery import lens_storage
+from discovery import lens_service, lens_storage
 from discovery.list_payload import build_lens_list_response
 from discovery.refresh import refresh_all, refresh_lens_lists
 
@@ -221,12 +221,30 @@ class RefreshLensGatingTests(unittest.TestCase):
                                   "reason": "gather_status_error"})
 
 
-class LensServerDisabledPathTests(unittest.TestCase):
+def _librarian(**overrides):
+    """A stand-in librarian whose every helper fails the test if the disabled path reaches it."""
+    from types import SimpleNamespace
+
+    def forbidden(name):
+        def call(*args, **kwargs):
+            raise AssertionError(name + " must not run while the setting is off")
+        return call
+
+    names = ("_discovery_library_snapshot", "_listenbrainz_recent", "_listenbrainz_username",
+             "_discovery_read_list", "_discovery_write_list", "api_call", "items", "_music_key",
+             "_discovery_is_album_candidate", "_metadata_cache_get", "_metadata_cache_set",
+             "_discovery_feedback_rows")
+    attributes = {name: forbidden(name) for name in names}
+    attributes["_discovery_settings_read"] = lambda: {}
+    attributes.update(overrides)
+    return SimpleNamespace(**attributes)
+
+
+class LensServiceDisabledPathTests(unittest.TestCase):
     """The default-off setting must not reach the library, providers or the store."""
 
     def test_disabled_setting_touches_no_library_provider_or_store(self):
         from unittest import mock
-        import navidrome_server as server
 
         touched = []
 
@@ -236,35 +254,68 @@ class LensServerDisabledPathTests(unittest.TestCase):
                 raise AssertionError(name + " must not run while the setting is off")
             return call
 
-        with mock.patch.object(server, "_discovery_settings_read", return_value={}), \
-                mock.patch.object(server, "_discovery_library_snapshot", side_effect=forbidden("library")), \
-                mock.patch.object(server, "_listenbrainz_recent", side_effect=forbidden("listenbrainz")), \
-                mock.patch.object(server, "_discovery_read_list", side_effect=forbidden("store_read")), \
-                mock.patch.object(server, "_discovery_write_list", side_effect=forbidden("store_write")), \
-                mock.patch("discovery.lens_pool_gatherer.gather_lens_pools", side_effect=forbidden("gather")):
-            result = server._discovery_refresh_lens_lists()
+        with mock.patch("discovery.lens_pool_gatherer.gather_lens_pools", side_effect=forbidden("gather")):
+            result = lens_service.refresh(_librarian())
         self.assertEqual(result["status"], "disabled")
         self.assertEqual(touched, [])
 
     def test_gather_that_does_not_finish_is_reported_as_failure_and_stores_nothing(self):
         from unittest import mock
-        import navidrome_server as server
 
         writes = []
-        with mock.patch.object(server, "_discovery_settings_read",
-                               return_value={"engine2_lens_lists_enabled": True}), \
-                mock.patch.object(server, "_listenbrainz_recent", return_value=[]), \
-                mock.patch.object(server, "_discovery_read_list",
-                                  return_value={"payload": _payload([_album(1, "A", "X")]),
-                                                "generated_at": 1.0}), \
-                mock.patch.object(server, "_discovery_write_list",
-                                  side_effect=lambda name, payload: writes.append(name)), \
-                mock.patch("discovery.lens_pool_gatherer.gather_lens_pools",
-                           return_value={"status": "errored"}):
-            result = server._discovery_refresh_lens_lists()
+        librarian = _librarian(
+            _discovery_settings_read=lambda: {"engine2_lens_lists_enabled": True},
+            _listenbrainz_recent=lambda **kwargs: [],
+            _discovery_read_list=lambda name: {"payload": _payload([_album(1, "A", "X")]),
+                                               "generated_at": 1.0},
+            _discovery_write_list=lambda name, payload: writes.append(name),
+        )
+        with mock.patch("discovery.lens_pool_gatherer.gather_lens_pools",
+                        return_value={"status": "errored"}):
+            result = lens_service.refresh(librarian)
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["reason"], "gather_status_errored")
         self.assertEqual(writes, [])
+
+
+class LensReadGatingTests(unittest.TestCase):
+    def test_read_while_off_touches_neither_store_nor_library(self):
+        from app.api import discovery
+
+        for lens in ("deep_cuts", "repeated_tracks", "obsessions"):
+            with self.subTest(lens=lens):
+                body = json.loads(lens_service.list_response(_librarian(), lens, 5))
+                self.assertTrue(body["disabled"])
+                self.assertEqual(body["items"], [])
+                self.assertIsNone(body["generated_at"])
+                route_body = discovery.discovery_list(lens, 5, librarian=_librarian())
+                self.assertEqual(route_body["items"], [])
+                self.assertTrue(route_body["disabled"])
+
+    def test_read_while_on_serves_the_stored_list(self):
+        cached = {"payload": _payload([_album(1, "A", "X")]), "generated_at": 1.0}
+        librarian = _librarian(
+            _discovery_settings_read=lambda: {"engine2_lens_lists_enabled": True},
+            _discovery_read_list=lambda name: cached,
+            _discovery_library_snapshot=lambda: {"albums": []},
+            _music_key=lambda value: str(value).strip().lower(),
+        )
+        body = json.loads(lens_service.list_response(librarian, "deep_cuts", 5))
+        self.assertEqual([item["album"] for item in body["items"]], ["X"])
+
+
+class LensRouteDispatchTests(unittest.TestCase):
+    def test_lens_names_go_to_the_lens_service_and_not_the_server_list(self):
+        from unittest import mock
+        from unittest.mock import Mock
+        from app.api import discovery
+
+        librarian = Mock()
+        with mock.patch("discovery.lens_service.list_response", return_value='{"list": "deep_cuts"}') as served:
+            body = discovery.discovery_list("deep_cuts", 5, librarian=librarian)
+        served.assert_called_once_with(librarian, "deep_cuts", 5)
+        self.assertEqual(body, {"list": "deep_cuts"})
+        librarian.discovery_get_list.assert_not_called()
 
 
 class RefreshAllLensHookTests(unittest.TestCase):
