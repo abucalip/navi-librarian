@@ -61,7 +61,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Phase 4 is built and merged; its lists stay off by default. Next, in order: (1) the owner decides whether to turn `engine2_lens_lists_enabled` on for daily use; (2) run the browser checks not yet done (keyboard and focus, Get, Save and dismiss, reduced motion, screen readers) on the merged `main` head; (3) investigate the empty album artwork on lens rows; (4) parked for later: the Last.fm account Settings control. Phase 5 (feedback loop) is not started. Not published or deployed.
+Phase 4 is built and merged; its lists stay off by default. Next, in order: (1) the owner decides whether to turn `engine2_lens_lists_enabled` on for daily use; (2) run the browser checks not yet done (keyboard and focus, Get, Save and dismiss, reduced motion, screen readers) on the merged `main` head; (3) investigate the empty album artwork on lens rows; (4) measure whether the lists are good for listeners, since no quality measurement exists yet; (5) parked for later: the Last.fm account Settings control. Phase 5 (feedback loop) is not started. Not published or deployed.
 
 ## Where to look
 
