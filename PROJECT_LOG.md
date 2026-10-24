@@ -1,3 +1,11 @@
+## 2026-10-24 — Engine 2 Phase 3: MusicBrainz tail of the Deep cuts supply, measured alone
+
+- The tail was added in PR #581 and is covered by unit tests (including radio unavailable and no `http_post`). This entry adds a live measurement of the tail on its own: owner-approved, read-only, throwaway harness outside the repository, aggregates only. Same five seed tags as the entry above, `run_deep_cuts_tag_supply` with `http_post` unset so the radio tiers are skipped and the MusicBrainz tag search serves every query, then the fast album-listener path (one MusicBrainz release search, Last.fm album lookups on four threads).
+- Supply: 20 albums in 26 s (post-rock lost to a `No route to host` error; the other four tags returned 5 each), against 74 s for the radio tiers in the previous entry. Album listeners were found for 20 of 20 in 3.4 s (median 1,360): 13 inside the 300 to 50,000 gate, 5 under 300 (as low as 19), 2 over 50,000. The radio-led run had median 810 and 14 of 25 in the gate.
+- Overlap: 12 of the 20 tail albums also appeared in the earlier radio-led run's 25. The harness recorded neither the radio band nor whether the tail served each album there, so the cause is unknown. A possible explanation, not tested, is that the MusicBrainz tag search returns the same top results each time, while radio answers are redrawn daily (PR #582); the tail would then give a nearly fixed list.
+- Limits: one listener, five hand-picked tags, one run each, a flaky network (one tag lost), album-listener gates only, no quality judgment. Nothing is wired into runtime; no publication or deployment.
+- Next (not started): repeat the tail on two days or two runs to test whether it is stable; record the radio band per candidate.
+
 ## 2026-10-24 — Engine 2 Phase 3: live run of the Deep cuts tiered supply, with batch lookups
 
 - Owner-approved live run of `run_deep_cuts_tag_supply` (radio 50–75%, then 75–100%, then the MusicBrainz tail) with real providers, five seed tags (post-rock, shoegaze, doom metal, jazz fusion, krautrock), lens `deep_cuts`, today's scope. ListenBrainz calls carried the configured token and `User-Agent`; Last.fm used the configured key; MusicBrainz was unauthenticated. Read-only; throwaway harness outside the repository; aggregates only.
