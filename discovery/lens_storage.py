@@ -5,7 +5,7 @@ Pure: no I/O, no clock, no provider call. Each lens list is stored under ``lens:
 and the read path drops owned albums at read time. The day boundary is 4am local time: a
 build made before 4am belongs to the previous day. Lens lists never touch the personal list,
 the recommendation history or the cooldown. Gated by ``engine2_lens_lists_enabled`` (default
-off); see docs/engine2.md (Phase 4, slice 3).
+on); see docs/engine2.md (Phase 4, slice 3).
 """
 from __future__ import annotations
 

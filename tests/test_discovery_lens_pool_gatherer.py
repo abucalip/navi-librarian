@@ -128,16 +128,13 @@ class _Harness(unittest.TestCase):
 
 
 class SettingGateTests(_Harness):
-    def test_off_by_default_and_for_non_boolean_values_without_any_call(self):
-        for settings in ({}, {"engine2_lens_lists_enabled": "true"}, {"engine2_lens_lists_enabled": 1},
-                         {"engine2_lens_lists_enabled": False}):
-            with self.subTest(settings=settings):
-                self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1")]}
-                out = self.gather([_listen(1_700_000_000, "a1")], settings=settings)
-                self.assertEqual(out, {"status": "disabled", "day": DAY})
-                self.assertEqual(self.net.calls, [])
-                self.assertEqual(self.supply_calls, [])
-                self.assertEqual(self.cache.store, {})
+    def test_off_when_false_without_any_call(self):
+        self.pools = {DEEP_CUTS.name: [_album(1, "a1", "g1")]}
+        out = self.gather([_listen(1_700_000_000, "a1")], settings={"engine2_lens_lists_enabled": False})
+        self.assertEqual(out, {"status": "disabled", "day": DAY})
+        self.assertEqual(self.net.calls, [])
+        self.assertEqual(self.supply_calls, [])
+        self.assertEqual(self.cache.store, {})
 
     def test_bad_day_is_refused_before_any_work(self):
         for day in ("2026-02-30", "20261024", "yesterday", 20261024, None):

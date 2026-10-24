@@ -366,14 +366,14 @@ class ServiceSettingsTests(unittest.TestCase):
                 self.assertFalse(result["ok"])
         self.assertEqual(writes, [])
 
-    def test_engine2_lens_lists_setting_defaults_off_and_accepts_only_true_booleans(self):
-        self.assertFalse(engine2_lens_lists_enabled_value(lambda: {}))
+    def test_engine2_lens_lists_setting_defaults_on_and_accepts_only_true_booleans(self):
+        self.assertTrue(engine2_lens_lists_enabled_value(lambda: {}))
         for corrupt in ("true", 1, 0, None, []):
             with self.subTest(corrupt=corrupt):
-                self.assertFalse(engine2_lens_lists_enabled_value(
+                self.assertTrue(engine2_lens_lists_enabled_value(
                     lambda c=corrupt: {"engine2_lens_lists_enabled": c}))
-        self.assertTrue(engine2_lens_lists_enabled_value(
-            lambda: {"engine2_lens_lists_enabled": True}))
+        self.assertFalse(engine2_lens_lists_enabled_value(
+            lambda: {"engine2_lens_lists_enabled": False}))
 
 
 if __name__ == "__main__":

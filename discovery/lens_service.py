@@ -6,7 +6,7 @@ the same adapter pattern the discovery routes use. The pure policy stays in
 ``discovery.lens_storage``, ``discovery.refresh.refresh_lens_lists`` and
 ``discovery.list_payload.build_lens_list_response``; this module only connects them to the
 providers, the library and the store, and starts the daily refresh. Behind
-``engine2_lens_lists_enabled`` (default off): nothing here reads the library or calls a provider
+``engine2_lens_lists_enabled`` (default on): nothing here reads the library or calls a provider
 while the setting is off. See docs/engine2.md (Phase 4).
 """
 from __future__ import annotations

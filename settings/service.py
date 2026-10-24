@@ -73,11 +73,11 @@ def automatic_refill_enabled_value(settings_read):
 
 
 ENGINE2_LENS_LISTS_KEY = "engine2_lens_lists_enabled"
-DEFAULT_ENGINE2_LENS_LISTS_ENABLED = False
+DEFAULT_ENGINE2_LENS_LISTS_ENABLED = True
 
 
 def engine2_lens_lists_enabled_value(settings_read):
-    """Read the daily lens-list switch (Engine 2, Phase 4); absent or non-boolean values mean off.
+    """Read the daily lens-list switch (Engine 2, Phase 4); absent or non-boolean values mean on.
 
     Nothing in the recommendation or web routes reads it yet; the gatherer checks it before any
     provider call."""

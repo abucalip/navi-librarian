@@ -6,7 +6,7 @@ and Last.fm album.getInfo), the artist genre tags (one ListenBrainz artist batch
 and the fallback tags for pool artists with fewer than two genre tags. Its output is the input of
 ``discovery.lens_lists.build_lens_lists``.
 
-Gated by ``engine2_lens_lists_enabled`` (default off): when the setting is off the function returns
+Gated by ``engine2_lens_lists_enabled`` (default on): when the setting is off the function returns
 before any provider call. Unwired: nothing calls it yet, and it does not read or write the
 recommendation history, the cooldown or the personal list. Providers and caches are injected, so
 tests use fixtures and make no network call. A failing provider leaves the pool or its tags short;
