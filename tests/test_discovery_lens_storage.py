@@ -296,13 +296,13 @@ def _librarian(**overrides):
              "_discovery_is_album_candidate", "_metadata_cache_get", "_metadata_cache_set",
              "_discovery_feedback_rows")
     attributes = {name: forbidden(name) for name in names}
-    attributes["_discovery_settings_read"] = lambda: {}
+    attributes["_discovery_settings_read"] = lambda: {"engine2_lens_lists_enabled": False}
     attributes.update(overrides)
     return SimpleNamespace(**attributes)
 
 
 class LensServiceDisabledPathTests(unittest.TestCase):
-    """The default-off setting must not reach the library, providers or the store."""
+    """The switched-off setting must not reach the library, providers or the store."""
 
     def test_disabled_setting_touches_no_library_provider_or_store(self):
         from unittest import mock
