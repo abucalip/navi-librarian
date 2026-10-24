@@ -1,3 +1,11 @@
+## 2026-10-24 — Published image v0.2.3
+
+- Owner explicitly authorized publication after PR #605 merged. Annotated tag `v0.2.3` was pushed at `7883fe93a0559ca46381e6ef8bd91eaab556ca31`, the then-current `main` head (`docs: record lens lists default-on decision`). All four required workflows had passed on that exact commit.
+- Release workflow "Publish Docker release" run [40127930984](https://github.com/abucalip/navi-librarian/actions/runs/40127930984) succeeded (`publish-release`; the validation job was skipped for a tag push). It enforced tag == current `main`, ran the container smoke test, and built `linux/amd64` and `linux/arm64` with provenance and SBOM.
+- **Published:** `ghcr.io/abucalip/navi-librarian:v0.2.3` and `ghcr.io/abucalip/navi-librarian:sha-7883fe93a0559ca46381e6ef8bd91eaab556ca31`; package version digest `sha256:814f91237de4e969307f6c085513a580d127a61c62b9fb90627988222403e148` (from the GitHub Packages API). `latest` was not moved.
+- **Contents:** daily lens lists (Daily picks) on by default (PR #605), plus the Engine 2 Phase 4 and Phase 5 work and the other changes merged since v0.2.2. The v0.2.2 image remains the rollback reference.
+- **Not verified:** per-platform manifests were not inspected, the image was not pulled or run, and no GitHub Release was created. Not deployed; no live-runtime verification. Daily picks browser checks (keyboard/focus, Get, Save/dismiss, reduced motion, screen readers) remain deferred by the owner.
+
 ## 2026-10-24 — Lens storage test isolation fix (PR #604)
 
 - **Merged:** PR #604, squash commit `102a2d9e842d9887b15c7ce7fe266a63c5c0d056`, from CI-green head `6b0db0b5feabec357dbf864caab632e8173fd90f`.
