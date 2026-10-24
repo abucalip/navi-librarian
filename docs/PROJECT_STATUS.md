@@ -73,7 +73,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 Phase 4 is closed. The owner decided that `engine2_lens_lists_enabled` stays on, that the deferred browser checks (Get, screen readers, reduced motion) stay deferred, and that no quality measurement is needed. The setting still has no Settings control.
 
-Phase 5 (feedback loop) is underway: the per-lens save and dismissal summary is served read-only (PRs #600 and #601). Decided 2026-10-24: the comparison uses lens-tagged saves and dismissals only; Get/download attribution is deferred because the acquisition store keeps lens metadata only on failure statuses (see `engine2.md`, Phase 5). Next action: the owner decides whether to start the acquisition-attribution change as its own safety-reviewed PR, and whether to show the summary in the UI. Not published or deployed.
+Phase 5 (feedback loop) is underway. The per-lens summary is served read-only and now covers lens-tagged saves, dismissals and acquisition requests (PRs #600 to #603; see `engine2.md`, Phase 5). Lower bounds: jobs stored before PR #602 are not attributed. Play and download events are not attributed to a lens. Next action: the owner decides (1) whether to show the per-lens summary in the UI, which needs a browser check, and (2) the identity and event contract for play/download attribution before adding those metrics. No quality claim is made from these counts. Not published or deployed.
 
 ## Where to look
 
