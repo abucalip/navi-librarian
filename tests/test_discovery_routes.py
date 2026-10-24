@@ -20,6 +20,7 @@ class DiscoveryRoutesTests(unittest.TestCase):
         }
         self.assertEqual(actual, {
             ("/api/recommendations", "GET"),
+            ("/api/discovery/lens-feedback", "GET"),
             ("/api/discovery/{list_name}", "GET"),
             ("/api/discovery/{list_name}/refresh", "POST"),
             ("/api/discovery/feedback", "POST"),
