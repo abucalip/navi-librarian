@@ -8,6 +8,12 @@
 - Tail follow-up: the owner confirmed on 2026-10-24 that the MusicBrainz tail runs daily, so no separate repeat-run test of the tail is planned. The code revert of the tag minimum is PR #586.
 - Next: revert the tag minimum for Repeated tracks, write the Obsessions definition, explore the no-tag candidates, and rerun the lens live with the radio path working (needs owner approval).
 
+## 2026-10-24 — PR #587: Obsessions lens and seed builder
+
+- Reviewed the complete five-file diff at `fedd943ee214354ab75b6e880bdde1851860113e`; no blocking correctness or compatibility issues found. `obsession_seed_queries` reuses `burst_artist_weights` and the established supplementary-tag query shape. Tests cover burst qualification, thresholds/limit, empty and untagged inputs, and invalid arguments. `OBSESSIONS` reuses the Deep cuts selection gates, including known-artist exclusion, is registered under its own name, and remains outside `DEFAULT_LENS_ORDER` so default partitions/runtime behavior are unchanged.
+- All four required CI workflows passed on the exact PR head: syntax (`40094978423`), Docker packaging/full unit suite/image build (`40094978481`; `Run unit tests` and `Build Docker image` succeeded), container runtime smoke (`40094978473`), and validation-only multi-architecture image validation (`40094978442`, publishing paused). No separate agent-run full suite per workflow policy.
+- Squash-merged PR #587 as `a97cdc0363cb324f9005aa21fa3c691843eadf17`. The Obsessions definition is still a draft pending owner approval; the lens is not in the default order and is not wired into runtime. No publication, deployment, or runtime verification.
+
 ## 2026-10-24 — Engine 2 Phase 3: history profiles through the real seed selection
 
 - Offline check, no provider calls: the merged-branch profile helpers (PR #583) and the existing `select_supplementary_tag_queries` over one listener's full ListenBrainz history (40,798 listens, 36,231 with an artist MBID through the `mbid_mapping` fallback) and cached genre tags for 504 of 599 artists. Aggregates only; the data and harness stay outside the repository.
