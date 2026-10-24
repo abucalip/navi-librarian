@@ -1,7 +1,7 @@
 """Regression tests for the extracted discovery API router."""
 import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
 
@@ -65,10 +65,14 @@ class DiscoveryRoutesTests(unittest.TestCase):
 
     def test_refresh_defaults_and_validates_count(self):
         self.librarian.discovery_refresh_list.return_value = '{"ok": true}'
-        self.assertEqual(
-            discovery.refresh_discovery_list("all", librarian=self.librarian),
-            {"ok": True},
-        )
+        # "all" also starts the lens refresh thread; stub it so no real thread holds the shared
+        # lens refresh lock after this test returns.
+        with patch("discovery.lens_service.start_refresh") as start_refresh:
+            self.assertEqual(
+                discovery.refresh_discovery_list("all", librarian=self.librarian),
+                {"ok": True},
+            )
+        start_refresh.assert_called_once_with(self.librarian)
         self.librarian.discovery_refresh_list.assert_called_once_with(list_name="all", count=20)
         for payload in (
             {"count": "bad"},
