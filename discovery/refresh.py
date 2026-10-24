@@ -306,23 +306,33 @@ def refresh_lens_lists(
     write_list: Callable[[str, Any], None],
     lock: Lock,
     *,
-    is_excluded: Callable[[Mapping[str, Any]], bool] | None = None,
+    excluded_provider: Callable[[], Callable[[Mapping[str, Any]], bool] | None] | None = None,
     clock: Callable[[], float] = time.time,
 ) -> dict[str, Any]:
     """Build the daily lens lists once and store each one the snapshot policy accepts.
 
-    ``build`` returns ``{"status": "disabled"}`` when the setting is off, otherwise
-    ``{"status": "built", "day": ISO day, "lists": {lens name: payload}}``. A build that
-    raises writes nothing. Each lens is compared with its stored list and replaced only
-    when accepted, so a failed or partial lens keeps the previous day's list. Outcomes
-    carry only lens names, booleans and reason codes.
+    ``build`` returns ``{"status": "disabled"}`` when the setting is off, ``{"status":
+    "failed", "reason": code}`` when gathering did not finish, or ``{"status": "built",
+    "day": ISO day, "lists": {lens name: payload}}``. Nothing is read or written unless the
+    build is "built": ``excluded_provider`` (the library ownership check, which may read the
+    library) and the stored lists are only touched on that path. A build that raises writes
+    nothing. Each lens is compared with its stored list and replaced only when accepted, so
+    a failed or partial lens keeps the previous day's list. Outcomes carry only lens names,
+    booleans and reason codes.
     """
     if not lock.acquire(blocking=False):
         return {"ok": False, "status": "already_running", "list": "lens_lists"}
     try:
         built = build()
-        if built.get("status") != "built":
+        status = built.get("status")
+        if status == "disabled":
             return {"ok": True, "status": "disabled", "list": "lens_lists"}
+        if status != "built":
+            return {
+                "ok": False, "status": "failed", "list": "lens_lists",
+                "reason": str(built.get("reason") or "unknown")[:40],
+            }
+        is_excluded = excluded_provider() if excluded_provider is not None else None
         decisions: dict[str, dict[str, Any]] = {}
         for lens_name, candidate in built["lists"].items():
             name = lens_storage_name(lens_name)

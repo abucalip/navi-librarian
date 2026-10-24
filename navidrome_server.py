@@ -2420,8 +2420,8 @@ def _discovery_build_lens_lists():
         lastfm_api_key=str(_discovery_settings_read().get("lastfm_api_key") or ""),
         settings_read=_discovery_settings_read,
     )
-    if gathered["status"] != "gathered":
-        return {"status": "disabled"}
+    if gathered.get("status") != "gathered":
+        return {"status": "failed", "reason": "gather_status_" + str(gathered.get("status"))[:20]}
 
     library_by_title = {}
     for album in fetch_album_inventory(api_call, items):
@@ -2444,7 +2444,7 @@ def _discovery_refresh_lens_lists():
         _discovery_read_list,
         _discovery_write_list,
         _LENS_LISTS_REFRESH_LOCK,
-        is_excluded=_discovery_owned_predicate_or_none(),
+        excluded_provider=_discovery_owned_predicate_or_none,
     )
 
 

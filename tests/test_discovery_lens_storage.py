@@ -195,6 +195,78 @@ class RefreshLensListsTests(unittest.TestCase):
         self.assertEqual(result["status"], "already_running")
 
 
+class RefreshLensGatingTests(unittest.TestCase):
+    def test_disabled_build_never_evaluates_the_ownership_provider(self):
+        def provider():
+            raise AssertionError("ownership provider must not run while disabled")
+
+        result = refresh_lens_lists(lambda: {"status": "disabled"},
+                                    lambda name: self.fail("store must not be read"),
+                                    lambda name, payload: self.fail("store must not be written"),
+                                    threading.Lock(), excluded_provider=provider)
+        self.assertEqual(result["status"], "disabled")
+
+    def test_failed_gather_keeps_stored_lists_and_reports_failure_not_disabled(self):
+        previous = _payload([_album(1, "A", "X")])
+        writes = []
+        result = refresh_lens_lists(
+            lambda: {"status": "failed", "reason": "gather_status_error"},
+            lambda name: {"payload": previous, "generated_at": 1.0},
+            lambda name, payload: writes.append(name),
+            threading.Lock(),
+            excluded_provider=lambda: self.fail("ownership must not run after a failed gather"),
+        )
+        self.assertEqual(writes, [])
+        self.assertEqual(result, {"ok": False, "status": "failed", "list": "lens_lists",
+                                  "reason": "gather_status_error"})
+
+
+class LensServerDisabledPathTests(unittest.TestCase):
+    """The default-off setting must not reach the library, providers or the store."""
+
+    def test_disabled_setting_touches_no_library_provider_or_store(self):
+        from unittest import mock
+        import navidrome_server as server
+
+        touched = []
+
+        def forbidden(name):
+            def call(*args, **kwargs):
+                touched.append(name)
+                raise AssertionError(name + " must not run while the setting is off")
+            return call
+
+        with mock.patch.object(server, "_discovery_settings_read", return_value={}), \
+                mock.patch.object(server, "_discovery_library_snapshot", side_effect=forbidden("library")), \
+                mock.patch.object(server, "_listenbrainz_recent", side_effect=forbidden("listenbrainz")), \
+                mock.patch.object(server, "_discovery_read_list", side_effect=forbidden("store_read")), \
+                mock.patch.object(server, "_discovery_write_list", side_effect=forbidden("store_write")), \
+                mock.patch("discovery.lens_pool_gatherer.gather_lens_pools", side_effect=forbidden("gather")):
+            result = server._discovery_refresh_lens_lists()
+        self.assertEqual(result["status"], "disabled")
+        self.assertEqual(touched, [])
+
+    def test_gather_that_does_not_finish_is_reported_as_failure_and_stores_nothing(self):
+        from unittest import mock
+        import navidrome_server as server
+
+        writes = []
+        with mock.patch.object(server, "_discovery_settings_read",
+                               return_value={"engine2_lens_lists_enabled": True}), \
+                mock.patch.object(server, "_listenbrainz_recent", return_value=[]), \
+                mock.patch.object(server, "_discovery_read_list",
+                                  return_value={"payload": _payload([_album(1, "A", "X")]),
+                                                "generated_at": 1.0}), \
+                mock.patch.object(server, "_discovery_write_list",
+                                  side_effect=lambda name, payload: writes.append(name)), \
+                mock.patch("discovery.lens_pool_gatherer.gather_lens_pools",
+                           return_value={"status": "errored"}):
+            result = server._discovery_refresh_lens_lists()
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["reason"], "gather_status_errored")
+        self.assertEqual(writes, [])
+
+
 class RefreshAllLensHookTests(unittest.TestCase):
     def test_lens_callback_runs_last_and_is_optional(self):
         calls = []
