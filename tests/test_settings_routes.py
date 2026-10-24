@@ -77,6 +77,29 @@ class SettingsRoutesTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 400)
         self.assertEqual(raised.exception.detail, "invalid")
 
+    def test_set_lastfm_returns_400_with_message_for_invalid_username(self):
+        self.librarian.discovery_set_lastfm_settings.return_value = (
+            '{"ok": false, "error": "Enter a valid Last.fm username (letters, numbers, hyphen or underscore)."}'
+        )
+        with self.assertRaises(HTTPException) as raised:
+            settings.set_lastfm_settings({"api_key": "", "username": "bad user"}, librarian=self.librarian)
+        self.assertEqual(raised.exception.status_code, 400)
+        self.assertEqual(
+            raised.exception.detail,
+            "Enter a valid Last.fm username (letters, numbers, hyphen or underscore).",
+        )
+
+    def test_set_lastfm_returns_saved_username_and_forwards_it(self):
+        self.librarian.discovery_set_lastfm_settings.return_value = '{"ok": true, "username": "listener_fm"}'
+        result = settings.set_lastfm_settings({"api_key": "", "username": "listener_fm"}, librarian=self.librarian)
+        self.assertEqual(result, {"ok": True, "username": "listener_fm"})
+        self.librarian.discovery_set_lastfm_settings.assert_called_once_with(api_key="", username="listener_fm")
+
+    def test_set_lastfm_without_username_leaves_it_unchanged(self):
+        self.librarian.discovery_set_lastfm_settings.return_value = '{"ok": true}'
+        settings.set_lastfm_settings({"api_key": "k"}, librarian=self.librarian)
+        self.librarian.discovery_set_lastfm_settings.assert_called_once_with(api_key="k", username=None)
+
     def test_set_listenbrainz_forwards_token_to_the_librarian(self):
         self.librarian.discovery_set_listenbrainz_settings.return_value = '{"ok": true}'
         settings.set_listenbrainz_settings({"username": "u", "token": "tok"}, librarian=self.librarian)

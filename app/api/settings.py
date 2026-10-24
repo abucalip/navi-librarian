@@ -129,10 +129,15 @@ def get_lastfm_settings(librarian=Depends(get_librarian)):
 def set_lastfm_settings(payload: dict, librarian=Depends(get_librarian)):
     try:
         username = payload.get("username")
-        return parse_result(librarian.discovery_set_lastfm_settings(
+        result = parse_result(librarian.discovery_set_lastfm_settings(
             api_key=str(payload.get("api_key") or ""),
             username=None if username is None else str(username),
         ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid Last.fm settings."))
+        return result
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=502, detail="Could not save Last.fm settings.")
 
