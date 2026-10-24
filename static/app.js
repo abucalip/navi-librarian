@@ -1557,9 +1557,10 @@ function setActiveLens(name) {
     button.setAttribute('aria-pressed', String(button.dataset.lens === name)));
 }
 
+// Each row is a list item, so assistive tech announces the list and each row's position in it.
 function buildLensRow(item) {
   const listeners = Number(item.album_listeners);
-  return buildRecommendationRow(item, item.rank, {
+  const row = buildRecommendationRow(item, item.rank, {
     indexed: true,
     meta: [
       item.seed_tag ? 'Seed tag: ' + item.seed_tag : '',
@@ -1569,6 +1570,8 @@ function buildLensRow(item) {
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row),
     onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'lens_lists', row)
   });
+  row.setAttribute('role', 'listitem');
+  return row;
 }
 
 async function loadLensList(name) {

@@ -27,6 +27,16 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn('id="lensListsStatus" class="status-line" aria-live="polite"', self.html)
         self.assertIn('id="lensListsCards" class="ranked-list"', self.html)
 
+    def test_lens_rows_are_a_list_of_list_items(self):
+        # Position in the list is announced through the list semantics, so the rank is not lost.
+        self.assertIn('id="lensListsCards" class="ranked-list" role="list"', self.html)
+        self.assertIn("row.setAttribute('role', 'listitem');", self.js)
+
+    def test_lens_buttons_use_title_case(self):
+        self.assertIn('aria-pressed="true">Repeated Tracks</button>', self.html)
+        self.assertIn('aria-pressed="false">Deep Cuts</button>', self.html)
+        self.assertIn('aria-pressed="false">Obsessions</button>', self.html)
+
     def test_one_lens_button_per_stored_lens_with_pressed_state(self):
         for lens in ("repeated_tracks", "deep_cuts", "obsessions"):
             self.assertIn(f'data-lens="{lens}"', self.html)
