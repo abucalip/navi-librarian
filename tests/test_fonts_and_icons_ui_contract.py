@@ -13,7 +13,8 @@ FONTS = STATIC / "fonts"
 TEMPLATES = ROOT / "app" / "templates"
 FONT_BUDGET_BYTES = 150 * 1024
 ICON_NAMES = [
-    "layout-dashboard", "compass", "calendar-plus", "user-round", "library", "mic-vocal",
+    # list-music: the Daily lists nav item (Engine 2, Phase 4 slice 4), added with its rail entry.
+    "layout-dashboard", "compass", "calendar-plus", "user-round", "list-music", "library", "mic-vocal",
     "download", "settings", "log-out", "search", "chevron-left", "chevron-right", "x", "trash-2",
     "bookmark", "bookmark-check",
 ]

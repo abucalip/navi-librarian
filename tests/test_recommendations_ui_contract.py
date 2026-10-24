@@ -196,6 +196,8 @@ class RecommendationsUIContractTests(unittest.TestCase):
         """The reorder moved nodes; app.js still looks them up by id."""
         template_ids = set(re.findall(r'id="([^"]+)"', self.html))
         template_ids |= set(re.findall(r'id="([^"]+)"', LOGIN_HTML.read_text(encoding="utf-8")))
+        # Elements the script creates itself (albumModalArtwork) carry their id from app.js.
+        template_ids |= set(re.findall(r"\.id = '([^']+)'", self.js))
         referenced = set(re.findall(r"\$\('([A-Za-z0-9_\-]+)'\)", self.js))
         self.assertEqual(sorted(referenced - template_ids), [])
 
@@ -258,8 +260,10 @@ class RankedRowContractTests(unittest.TestCase):
     def test_failed_generation_is_reported_in_the_count_line(self):
         self.assertIn("'Recommendations could not be loaded: ' + error.message", self.js)
 
-    def test_row_motion_is_transform_only(self):
-        self.assertIn("transform: scaleY(0); transition: transform var(--dur) var(--ease-out);", self.css)
+    def test_row_hover_is_a_background_change_without_a_side_stripe(self):
+        # The hover-revealed left stripe was removed (Daily lists review); hover is background only.
+        self.assertNotIn("transform: scaleY(0)", self.css)
+        self.assertIn(".ranked-row:hover { background: var(--surface-hover); }", self.css)
 
 
 if __name__ == "__main__":

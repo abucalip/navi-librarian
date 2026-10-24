@@ -17,7 +17,7 @@ function isAlbumRecommendation(item) {
 
 let activePage = 'dashboard';
 // Destinations behind the phone bottom bar's More control (under 620px); see index.html.
-const NAV_MORE_PAGES = ['classics', 'artistDeepDive'];
+const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];
 
 function showPage(name) {
   activePage = name;
@@ -62,6 +62,7 @@ function initializePage(name) {
   if (name === 'recommendations') $('loadRecommendations').click();
   else if (name === 'newReleases') loadDiscovery('new_releases');
   else if (name === 'personalDiscoveries') loadDiscovery('personal');
+  else if (name === 'lensLists') loadLensList(activeLens);
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
   else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
@@ -1092,6 +1093,13 @@ document.addEventListener('keydown', event => {
   }
 });
 $('albumModalClose').addEventListener('click', closeAlbumModal);
+// The artwork image is created here rather than written into the markup, so the page never ships
+// an <img> without a source. It stays hidden until openAlbumModal sets a URL.
+const albumArtworkImage = document.createElement('img');
+albumArtworkImage.id = 'albumModalArtwork';
+albumArtworkImage.alt = 'Album artwork';
+albumArtworkImage.hidden = true;
+$('albumModalGet').before(albumArtworkImage);
 // An artwork URL that fails to load hides the image instead of showing a broken-image glyph.
 $('albumModalArtwork').addEventListener('error', () => { $('albumModalArtwork').hidden = true; });
 $('albumModalBackdrop').addEventListener('click', event => {
@@ -1531,6 +1539,74 @@ function buildNewReleaseRow(item) {
   });
 }
 
+// Daily lens lists (Engine 2, Phase 4 slice 4). Each lens has one stored list for the day, served
+// by /api/discovery/<lens>. While engine2_lens_lists_enabled is off the server answers with
+// `disabled` and a message; that is shown in the status line, not as an error. The lens seed tag
+// and listener count are the only extra lines, so each album shows why it was picked.
+const LENS_LISTS = {
+  repeated_tracks: 'Repeated tracks',
+  deep_cuts: 'Deep cuts',
+  obsessions: 'Obsessions'
+};
+let activeLens = 'repeated_tracks';
+let lensRequestId = 0;
+
+function setActiveLens(name) {
+  activeLens = name;
+  document.querySelectorAll('[data-lens]').forEach(button =>
+    button.setAttribute('aria-pressed', String(button.dataset.lens === name)));
+}
+
+// Each row is a list item, so assistive tech announces the list and each row's position in it.
+function buildLensRow(item) {
+  const listeners = Number(item.album_listeners);
+  const row = buildRecommendationRow(item, item.rank, {
+    indexed: true,
+    meta: [
+      item.seed_tag ? 'Seed tag: ' + item.seed_tag : '',
+      Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''
+    ],
+    listName: 'lens_lists',
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row),
+    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'lens_lists', row)
+  });
+  row.setAttribute('role', 'listitem');
+  return row;
+}
+
+async function loadLensList(name) {
+  setActiveLens(name);
+  const requestId = ++lensRequestId;
+  const label = LENS_LISTS[name];
+  const status = $('lensListsStatus');
+  const target = $('lensListsCards');
+  status.textContent = 'Loading ' + label + '…';
+  setStatusState(status, 'loading');
+  target.replaceChildren(...skeletonRows(6));
+  try {
+    const data = await requestJSON(`/api/discovery/${name}?count=10&nonce=${Date.now()}`);
+    // A slower response for a lens the user has already left must not overwrite the current one.
+    if (requestId !== lensRequestId) return;
+    const items = Array.isArray(data.items) ? data.items : [];
+    target.replaceChildren(...items.map(buildLensRow));
+    // Off is a neutral empty state with plain copy; the config key stays out of the UI.
+    const message = items.length
+      ? pluralize(items.length, 'album', 'albums') + ' · ' + label + ' · Fixed for today, rebuilt each morning'
+      : data.disabled ? 'Daily lists are turned off in Settings.'
+      : data.message || label + ' has no albums today.';
+    status.textContent = message;
+    setStatusState(status, items.length ? 'progress' : 'empty');
+  } catch (error) {
+    if (requestId !== lensRequestId) return;
+    target.replaceChildren();
+    status.textContent = label + ' could not be loaded: ' + error.message;
+    setStatusState(status, 'error');
+  }
+}
+
+document.querySelectorAll('[data-lens]').forEach(button =>
+  button.addEventListener('click', () => loadLensList(button.dataset.lens)));
+
 // Personal Discoveries rows (DESIGN_SYSTEM.md sections 8 and 9.4). The server returns these in its
 // selection order, which balances categories and diversity styles; it is not a discovery_score
 // order, so rows show a muted position and no red rank numeral. The status line names that basis.
@@ -1739,6 +1815,8 @@ const discoveryViews = {
   classics: ['classicsCards','classicsStatus'],
   artist_deep_dive: ['artistDeepDiveCards','artistDeepDiveStatus'],
   new_releases: ['newReleasesCards','newReleasesStatus'],
+  // Lens rows: status for dismiss and Save errors. Lens lists reload through loadLensList.
+  lens_lists: ['lensListsCards','lensListsStatus'],
   saved: ['savedCards','savedStatus']
 };
 
@@ -2146,10 +2224,18 @@ async function commitDismiss() {
   try {
     await sendJSON('/api/discovery/feedback', 'POST',
       {action: entry.action, artist: entry.artist, album: entry.album, metadata: entry.metadata});
-    await loadDiscovery(entry.listName);
+    // Lens rows are not in discoveryViews; they reload the lens that is on screen.
+    if (entry.listName === 'lens_lists') await loadLensList(activeLens);
+    else await loadDiscovery(entry.listName);
   } catch (error) {
     if (entry.row) entry.row.classList.remove('is-dismissing');
-    discoveryStatus(entry.listName, error.message);
+    if (entry.listName === 'lens_lists') {
+      const status = $('lensListsStatus');
+      status.textContent = error.message;
+      setStatusState(status, 'error');
+    } else {
+      discoveryStatus(entry.listName, error.message);
+    }
   }
 }
 
