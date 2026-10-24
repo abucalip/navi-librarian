@@ -63,9 +63,11 @@ def recent_listens(
 
     from recommendation_run_metrics import record_provider_call
 
+    # Pages run newest first with max_ts only. A min_ts bound makes the API return the oldest
+    # page after the bound, so the window is kept by filtering each page instead.
     with make_client(timeout=30, follow_redirects=True) as client:
         for _ in range(page_limit):
-            params = {"min_ts": min_ts, "count": page_size}
+            params = {"count": page_size}
             if max_ts is not None:
                 params["max_ts"] = max_ts
             response = client.get(
@@ -77,7 +79,7 @@ def recent_listens(
             page = response.json().get("payload", {}).get("listens", [])
             if not page:
                 break
-            listens.extend(page)
+            listens.extend(item for item in page if int(item.get("listened_at", 0)) > min_ts)
             if len(page) < page_size:
                 break
             oldest = min(int(item.get("listened_at", 0)) for item in page)

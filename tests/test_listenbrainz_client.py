@@ -82,15 +82,28 @@ class ListenBrainzClientTests(unittest.TestCase):
         self.assertEqual(len(client.requests), 2)
         first_url, first_params, first_headers = client.requests[0]
         self.assertEqual(first_url, "https://api.listenbrainz.org/1/user/test-user/listens")
-        self.assertEqual(first_params, {"min_ts": 1_699_395_300, "count": 100})
+        # No min_ts: the API would return the oldest page after the bound (see the docstring).
+        self.assertEqual(first_params, {"count": 100})
         self.assertEqual(first_headers["User-Agent"], USER_AGENT)
         self.assertEqual(client.requests[1][1], {
-            "min_ts": 1_699_395_300,
             "count": 100,
             "max_ts": 1_699_999_900,
         })
         self.assertEqual(pauses, [0.2])
         self.assertTrue(all(response.raised for response in client.responses))
+
+    def test_listens_older_than_the_window_are_dropped_and_paging_stops(self):
+        page = [{"listened_at": 1_700_000_000}, {"listened_at": 1_699_395_300}, {"listened_at": 1_699_000_000}]
+        client = FakeClient([page])
+        result = recent_listens(
+            "test-user",
+            days=7,
+            client_factory=lambda **kwargs: client,
+            clock=lambda: 1_700_000_100,
+            sleep=lambda _seconds: self.fail("sleep should not be called"),
+        )
+        self.assertEqual(result, [{"listened_at": 1_700_000_000}])
+        self.assertEqual(len(client.requests), 1)
 
     def test_stops_on_empty_page(self):
         client = FakeClient([[]])
