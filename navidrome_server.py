@@ -1276,10 +1276,10 @@ def discovery_get_lastfm_settings() -> str:
     return _service_get_lastfm_settings(_discovery_settings_read)
 
 
-def discovery_set_lastfm_settings(api_key: str = "") -> str:
-    """Save a Last.fm API key; a blank key preserves the saved key."""
+def discovery_set_lastfm_settings(api_key: str = "", username: str | None = None) -> str:
+    """Save a Last.fm API key and username; a blank key preserves the saved key."""
     return _service_set_lastfm_settings(
-        _discovery_settings_read, _discovery_settings_write, api_key
+        _discovery_settings_read, _discovery_settings_write, api_key, username
     )
 
 

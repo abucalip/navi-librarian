@@ -178,17 +178,32 @@ def set_navidrome_settings(
 def get_lastfm_settings(settings_read):
     """Return Last.fm configuration status without exposing its API key."""
     settings = settings_read()
-    return json.dumps({"api_key_configured": bool(settings.get("lastfm_api_key"))})
+    return json.dumps({
+        "api_key_configured": bool(settings.get("lastfm_api_key")),
+        "username": str(settings.get("lastfm_username") or ""),
+    })
 
 
-def set_lastfm_settings(settings_read, settings_write, api_key=""):
-    """Save a Last.fm API key; blank input preserves the stored key."""
+def set_lastfm_settings(settings_read, settings_write, api_key="", username=None):
+    """Save a Last.fm API key and, when given, its username.
+
+    A blank key preserves the stored key. A blank username clears the stored one, so the
+    LASTFM_USERNAME variable applies again; ``None`` leaves the stored username unchanged. An
+    invalid username is refused before anything is written."""
+    values = {}
+    if username is not None:
+        value = str(username or "").strip()
+        if value and not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", value):
+            return json.dumps({"ok": False, "error": "Enter a valid Last.fm username (letters, numbers, hyphen or underscore)."})
+        values["lastfm_username"] = value
     current = settings_read()
     key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
-    settings_write({"lastfm_api_key": key})
+    values["lastfm_api_key"] = key
+    settings_write(values)
     return json.dumps({
         "ok": True,
         "api_key_configured": bool(key),
+        "username": str(values.get("lastfm_username", current.get("lastfm_username") or "")),
         "message": "Last.fm settings saved; the API key is never returned.",
     })
 

@@ -263,6 +263,8 @@
     <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabLastfm" hidden>
       <h3>Last.fm API</h3>
       <p class="muted">Optional. Used to enrich recommendations with album popularity and artist tags. Obtain an API key from Last.fm's API page.</p>
+      <label>Username <input id="lastfmUsername" type="text" autocomplete="off"></label>
+      <p class="muted">Your Last.fm username is used to read your listening history for Daily picks. Leave it blank to use the LASTFM_USERNAME setting.</p>
       <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
       <p id="lastfmStatus" class="status-line" aria-live="polite"></p>
       <p><button id="saveLastfm" class="btn-primary">Save settings</button> <button id="testLastfm">Test connection</button></p>
