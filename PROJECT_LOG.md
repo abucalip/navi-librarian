@@ -1,3 +1,11 @@
+## 2026-10-24 — Daily picks dismissal filtering (PR #596)
+
+- Re-reviewed PR [#596](https://github.com/abucalip/navi-librarian/pull/596) after the robustness fix. The unchecked-cache response now drops malformed non-mapping entries safely and handles a non-list `albums` field; regression tests cover both-checks-unavailable and malformed-cache cases.
+- Final PR head: `d62614393244c4ee33726d9401704c339edd5440`. Required workflows passed on that exact head: Python syntax (`40111186933`), Docker packaging/full unit suite/image build (`40111186947`), container runtime smoke (`40111186946`), and validation-only multi-architecture image validation (`40111186939`). Release workflow run `40111186943` reported success; publication/deployment status is not inferred from this.
+- Manual UI/browser testing was explicitly waived by the owner and was not performed. Squash-merged as `3e2e8bc2c3e3882596fc1a398706e1b9f3f72f5e`. No deployment or runtime verification claimed.
+
+---
+
 ## 2026-10-24 — Daily picks: live run, browser check, dismissals (PR #596)
 
 - Opened PR #596 (`feat/daily-picks-dismissals`): lens lists drop "Not for me" albums and artists at read time (`discovery/list_payload.py` `dismissed_predicate`, `discovery/lens_storage.py` `serve_lens_list`), and the read filter counts them as `dismissed`. Ranks restart at 01 after a removal (follow-up commit `f3f88bdb`). The page and copy are renamed "Daily picks". Focused tests: the lens storage tests (33), list payload, lens list, pool, lens, and metric tests, and all UI contract tests; full suite left to CI. Open; not merged.
