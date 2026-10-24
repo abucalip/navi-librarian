@@ -201,7 +201,8 @@ def build_lens_list_response(
     else:
         served, counts = serve_lens_list(payload, is_owned or (lambda _item: False), is_dismissed)
         read_filter = {"ownership_checked": is_owned is not None, **counts}
-    albums = served.get("albums", [])
+    # Ranks count what the listener sees: a dismissed or owned album leaves no gap at the top.
+    albums = [{**album, "rank": position} for position, album in enumerate(served.get("albums", []), start=1)]
     return json.dumps({
         "list": lens_name,
         "label": payload.get("label"),

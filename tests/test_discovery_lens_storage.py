@@ -147,6 +147,12 @@ class LensDismissalTests(unittest.TestCase):
         self.assertNotIn("dismissed", body["read_filter"])
         self.assertEqual(body["count"], 1)
 
+    def test_ranks_restart_at_one_when_the_first_album_is_dismissed(self):
+        cached = {"payload": _payload([_album(1, "A", "X"), _album(2, "B", "Y")]), "generated_at": 1.0}
+        is_dismissed = lambda item: item["album"] == "X"  # noqa: E731
+        body = json.loads(build_lens_list_response("deep_cuts", 10, cached, _owned(), is_dismissed))
+        self.assertEqual([(item["rank"], item["album"]) for item in body["items"]], [(1, "Y")])
+
     def test_dismissed_predicate_matches_album_and_artist_feedback_like_discover(self):
         from discovery.list_payload import dismissed_predicate
 
