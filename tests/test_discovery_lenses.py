@@ -4,7 +4,7 @@ from discovery.allocation_contract import (
     AllocationCandidate, AllocationRequest, OwnershipStatus,
 )
 from discovery.lenses import (
-    DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, NOW, REPEATED_TRACKS,
+    DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, NOW, OBSESSIONS, REPEATED_TRACKS,
     partition_lenses, run_lens, select_deep_cuts,
 )
 from discovery.personal_allocator import allocate_personal_recommendations
@@ -193,6 +193,15 @@ class KnownArtistAndTagMinimumTests(unittest.TestCase):
             status = {d.candidate_id: d.status for d in result.decisions}
             self.assertEqual(result.selected_candidate_ids, ("ok",))
             self.assertEqual((status["thin"], status["none"]), ("too_few_tags", "too_few_tags"))
+
+    def test_obsessions_uses_the_deep_cuts_gates_under_its_own_name(self):
+        pool = [item("ok", audience=5000, strength=0.9), item("low", audience=10),
+                item("known", audience=5000, known=True)]
+        result = run_lens(OBSESSIONS, pool, 5)
+        self.assertEqual(result.selected_candidate_ids, ("ok",))
+        self.assertEqual(result.lens, "obsessions")
+        self.assertIs(LENSES["obsessions"], OBSESSIONS)
+        self.assertNotIn(OBSESSIONS, DEFAULT_LENS_ORDER)
 
     def test_artist_known_must_be_a_bool(self):
         with self.assertRaises(ValueError):
