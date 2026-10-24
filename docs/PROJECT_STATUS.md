@@ -14,7 +14,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 - Module rule (owner decision, 2026-10-24, D-016 in `docs/DECISIONS.md`): `navidrome_server.py` takes no additions; new code goes in new modules. PR #593 moved lens adapters into `discovery/lens_service.py` (`8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`); PR #594 adds the app-layer manual `all` refresh trigger, merged as `5299ac03f04c8718a64adc1c557c09b367f7d266` from exact head `b79ff64cf65e51bfa38e8203b722961ff0be077c`. The trigger runs in a daemon thread and shares the refresh lock with the daily loop; other list refreshes do not trigger it. Lens lists remain behind `engine2_lens_lists_enabled` (default off) and are not part of the recommendation path. Required CI, including the full unit suite, passed on the exact PR head. No provider call, publication, deployment, browser check, or runtime verification.
 
-- Engine 2 Phase 4 live run (2026-10-24, isolated copy): all three lenses built; artwork found for 26 of 27 albums; browser checks at 1280 and 390 px pass with no console or network errors; Last.fm username control in PR #599 (not yet merged). See `engine2.md`, Phase 4, and root `PROJECT_LOG.md`.
+- Engine 2 Phase 4 live run (2026-10-24, isolated copy): all three lenses built; artwork found for 26 of 27 albums; browser checks at 1280 and 390 px pass with no console or network errors; Last.fm username control merged in PR #599 (`ee58553`). See `engine2.md`, Phase 4, and root `PROJECT_LOG.md`.
 
 - Engine 2 Phase 4 (2026-10-24, documentation only): the owner approved the PR #591 review items (setting name `engine2_lens_lists_enabled`, about 3 release searches per lens, the genre prefetch and vocabulary load) and set the day boundary at 4am local time, to be applied in slice 3. Open: the library refresh rate for the known-artist check.
 
@@ -63,7 +63,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Phase 4 is built; the lens setting `engine2_lens_lists_enabled` is on in the owner's local test data (the code default stays off). Next, in order: (1) squash-merge PR #599 (Last.fm username control; CI green on `2fad9b2`; the merge was refused by the permission check); (2) the owner decides whether the setting stays on for daily use, and whether it needs a Settings control, since it currently has none; (3) Get, screen-reader and reduced-motion checks in the browser (see `engine2.md`, Phase 4); (4) measure whether the lists are good for listeners; (5) Phase 5 (feedback loop) is not started. Not published or deployed.
+Phase 4 is built; the lens setting `engine2_lens_lists_enabled` is on in the owner's local test data (the code default stays off). Next, in order: (1) the owner decides whether the setting stays on for daily use, and whether it needs a Settings control, since it currently has none; (2) browser checks still open: Get (needs a safe fixture, since it starts an acquisition request), screen-reader output and reduced motion (see `engine2.md`, Phase 4); (3) measure whether the lists are good for listeners; (4) Phase 5 (feedback loop) is not started. Not published or deployed.
 
 ## Where to look
 
