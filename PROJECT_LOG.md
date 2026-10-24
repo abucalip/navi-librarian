@@ -1,3 +1,11 @@
+## 2026-10-24 — Daily picks: live run, browser check, dismissals (PR #596)
+
+- Opened PR #596 (`feat/daily-picks-dismissals`): lens lists drop "Not for me" albums and artists at read time (`discovery/list_payload.py` `dismissed_predicate`, `discovery/lens_storage.py` `serve_lens_list`), and the read filter counts them as `dismissed`. Ranks restart at 01 after a removal (follow-up commit `f3f88bdb`). The page and copy are renamed "Daily picks". Focused tests: the lens storage tests (33), list payload, lens list, pool, lens, and metric tests, and all UI contract tests; full suite left to CI. Open; not merged.
+- Live run on an isolated copy of the local data directory, port 8192, with live providers. The owner's running instances (other ports) were not used or changed. One lens build selected 10 Deep cuts albums from a pool of 60. Repeated tracks and Obsessions stored nothing: the ListenBrainz history fetch returned 100 listens for the 365-day window, too few to produce seeds. Details and aggregates in `docs/engine2.md`, Phase 4.
+- Browser check (Chrome via Playwright, scratch virtualenv, not in the repository) at 1280 px and 390 px: navigation, the Daily picks page, toggle state, list semantics, and rows rendered; no console or page errors, no failed responses, no horizontal overflow. Not covered: keyboard and focus, the action controls in the browser, reduced motion, screen readers. Lens artwork was empty and was not investigated.
+- Owner decisions recorded: 10-minute library cache stays; no daily acquisition cap; the name Daily picks.
+- No publication, deployment, or merge of PR #596 in this entry.
+
 ## 2026-10-24 — PR #595 merged; Engine 2 Phase 4 Daily lists UI
 
 - Re-reviewed exact PR head `01ca4428c7c07dda111086ea4942124f2ef24172`. The SVG sprite now has valid attribute spacing, and `tests/test_lens_lists_ui_contract.py` parses the sprite as XML. The Daily lists UI uses the shared recommendation row, ignores stale lens responses, reports disabled/empty states as status text, and routes dismiss feedback back to the active lens.

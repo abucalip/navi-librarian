@@ -55,7 +55,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Define the bounded Engine 2 Phase 4 slice 4 (UI) scope before implementation. The lens lists are stored and served through the API but are not yet exposed in the UI. Decide label wording and placement, and whether to show seed tags; then hand off implementation to the frontend owner/agent. Keep `engine2_lens_lists_enabled` default-off. No live provider run, publication, deployment, browser verification, or runtime verification has been performed.
+Review and merge PR #596 (dismissals filter the lens lists at read time; ranks restart at 01; Daily picks name) after CI passes on its exact head. Then decide whether to fetch deeper ListenBrainz history so Repeated tracks and Obsessions get seeds; that is a provider-budget change and needs owner approval. Keep `engine2_lens_lists_enabled` default-off. Not published or deployed. Artwork on lens rows is empty and is not yet investigated.
 
 ## Where to look
 
