@@ -99,7 +99,8 @@ class RecordedFixtureTests(unittest.TestCase):
                           "pool_size": 8, "skipped_entries": 0, "checked": 8})
         self.assertEqual(payload["seed_tags"], ["seed r0"])
         self.assertEqual(payload["albums"][0], {
-            "rank": 1, "artist": "Artist r0", "primary_artist": "Artist r0", "album": "Album r0",
+            "rank": 1, "lens": "repeated_tracks",
+            "artist": "Artist r0", "primary_artist": "Artist r0", "album": "Album r0",
             "artist_mbid": "mbid-r0", "release_group_mbid": "group-r0", "seed": "profile:seed_r0",
             "seed_tag": "seed r0", "album_listeners": 1_000, "tag_strength": 20.0,
             "tags": TWO_TAGS,

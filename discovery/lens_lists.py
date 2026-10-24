@@ -195,6 +195,8 @@ def build_lens_lists(
             album, item = by_lens[lens.name][cid], chosen[cid]
             albums.append({
                 "rank": rank,
+                # Stored on every album so a save or dismissal from the list carries its lens.
+                "lens": lens.name,
                 "artist": str(album.get("artist") or album["primary_artist"]),
                 "primary_artist": str(album["primary_artist"]),
                 "album": str(album["album"]),
