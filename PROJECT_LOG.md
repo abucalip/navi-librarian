@@ -1,3 +1,9 @@
+## 2026-10-24 — Engine 2 Phase 3: Obsessions definition approved
+
+- The owner approved the Obsessions lens definition after PR #587 merged: seeds from artists with at least 20 listens, 70% or more of them inside one 30-day span; the broad seed tags are kept as they come (no dominant-tag or generic-tag filter); the Deep cuts gates apply (album listeners 300 to 50,000, at least 2 artist tags, one album per artist, at most 2 per seed, owned albums and known artists excluded). The approval reached `main` as a separate docs commit because it was made after the PR's squash merge; the draft wording in `docs/engine2.md`, `ACTIVE_WORK.md` and `PROJECT_STATUS.md` is replaced.
+- The lens remains unwired and outside the default lens order. No code, provider calls, publication or deployment.
+- Open: a tag source or an exception for artists with no genre tags; a live run of Repeated tracks and Obsessions with the radio path working (needs owner approval).
+
 ## 2026-10-24 — Engine 2 Phase 3: Repeated tracks lens, live runs and owner decisions
 
 - Owner-approved, read-only live runs of the Repeated tracks lens on one listener's history, with throwaway harnesses and data outside the repository; aggregates only. Seeds: the six tags in the lens catalog. Supply: `run_deep_cuts_tag_supply` with lens `repeated_tracks`; album listeners by one MusicBrainz release search plus four parallel Last.fm lookups; genres by one ListenBrainz artist batch.
