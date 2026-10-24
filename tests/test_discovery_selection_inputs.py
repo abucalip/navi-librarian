@@ -60,6 +60,56 @@ class BuildInputsTests(unittest.TestCase):
         self.assertEqual(second.source_order, 1)
 
 
+class KnownArtistTests(unittest.TestCase):
+    def build(self, library, candidates, known_mbids=(), library_mbids=None):
+        _, built = build_allocation_inputs(
+            [album(title, artist, mbid=mbid) for title, artist, mbid in candidates],
+            library_by_title=library, genre_cache={}, music_key=key,
+            artist_identity=lambda c: c["artist_mbid"] or c["primary_artist"],
+            known_artist_mbids=known_mbids, library_artist_mbids=library_mbids)
+        return [c.artist_known for c in built]
+
+    def test_library_artist_and_history_mbid_are_known(self):
+        library = {"oldalbum": [{"artist": "library artist", "name": "Old Album"}]}
+        candidates = [("New One", "Library Artist", "m1"), ("Other", "History Artist", "m2"),
+                      ("Third", "Stranger", "m3")]
+        self.assertEqual(self.build(library, candidates, {"m2"}), [True, True, False])
+
+    def test_nothing_known_by_default(self):
+        candidates = [("A", "One", "m1"), ("B", "Two", None)]
+        self.assertEqual(self.build({}, candidates), [False, False])
+
+    def test_library_artist_with_other_albums_is_known_even_without_a_title_match(self):
+        library = {"x": [{"artist": "Stranger"}]}
+        self.assertEqual(self.build(library, [("Third", "Stranger", "m3")]), [True])
+
+    def test_same_name_different_mbid_is_not_the_same_artist(self):
+        library = {"x": [{"artist": "John Williams", "artistId": "n1"}]}
+        mbids = {"n1": "mbid-guitarist"}
+        candidates = [("Film Music", "John Williams", "mbid-composer"),
+                      ("Spanish Guitar", "John Williams", "mbid-guitarist"),
+                      ("No Id", "John Williams", None)]
+        self.assertEqual(self.build(library, candidates, library_mbids=mbids), [False, True, True])
+
+    def test_name_decides_when_the_library_artist_has_no_mbid(self):
+        library = {"x": [{"artist": "John Williams", "artistId": "n1"}]}
+        candidate = [("Film Music", "John Williams", "mbid-composer")]
+        self.assertEqual(self.build(library, candidate, library_mbids={}), [True])
+        self.assertEqual(self.build(library, candidate, library_mbids={"n1": ""}), [True])
+
+    def test_one_unresolved_library_namesake_keeps_the_name_match(self):
+        library = {"x": [{"artist": "John Williams", "artistId": "n1"}],
+                   "y": [{"artist": "John Williams", "artistId": "n2"}]}
+        candidate = [("Film Music", "John Williams", "mbid-composer")]
+        self.assertEqual(self.build(library, candidate, library_mbids={"n1": "mbid-guitarist"}), [True])
+        self.assertEqual(self.build(
+            library, candidate, library_mbids={"n1": "mbid-guitarist", "n2": "mbid-bassist"}), [False])
+
+    def test_history_mbids_match_by_mbid_only(self):
+        candidates = [("Film Music", "John Williams", "mbid-composer")]
+        self.assertEqual(self.build({}, candidates, known_mbids={"mbid-guitarist"}), [False])
+
+
 class DeepCutsFieldsTests(unittest.TestCase):
     lane = {"regional_styles": ["profile:post_punk", "explore:x"], "release_group_mbid": "g1"}
 
