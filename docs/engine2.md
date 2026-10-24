@@ -206,7 +206,7 @@ Lists built from that history: Repeated tracks 8 albums on the first build and 1
 
 Browser check on the stored lists: PR #597 head `f94795c6`, desktop 1280 px and phone 390 px, all three lenses, no console or page errors, no failed responses, no horizontal overflow. PR #596 final head `d6261439`, same checks: pass. Still not checked: keyboard and focus, the Get, Save and dismiss controls in the browser, reduced motion, screen readers.
 
-Open: the 2000 threshold is a starting value for the owner to confirm; the 2013 to 2014 window is capped at 5,000 listens (flagged); the `recent_listens` paging bug above; empty album artwork on lens rows; and the Last.fm account setting, which the owner needs to set (`LASTFM_USERNAME`).
+Open: the 2000 threshold is a starting value for the owner to confirm; the 2013 to 2014 window is capped at 5,000 listens (flagged); empty album artwork on lens rows; and the Last.fm account, which is set through `LASTFM_USERNAME` until a Settings control exists (parked). The `recent_listens` paging bug is fixed in PR #598.
 
 Starting notes (facts from Phase 3, all aggregates):
 - Everything listed above exists on `main` and is unwired: `discovery/lenses.py` (lens registry, `run_lens`, `partition_lenses`; the new lenses are outside `DEFAULT_LENS_ORDER`), `discovery/profile_seeds.py`, `discovery/history_windows.py`, `discovery/deep_cuts_supply.py` (10 albums per seed in the radio tiers), `discovery/artist_tag_fallback.py`, `discovery/allocation_inputs.py` (`artist_known`), `discovery/mbid_popularity.py`.
