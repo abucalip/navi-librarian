@@ -1,3 +1,9 @@
+## 2026-10-24 — Engine 2 Phase 4 plan approved
+
+- The owner approved the Phase 4 plan (precompute and serve the lens lists) with these decisions: the first lenses are Deep cuts, Repeated tracks and Obsessions; the daily provider budget is approved (about 25 s and roughly 6 radio calls, 1 batch POST, 1 release search and 40 to 60 Last.fm lookups per lens); one list of 10 per lens per day, no "next list"; lens lists keep their cooldown apart from the existing recommendation history and cooldown; everything sits behind a setting that defaults to off.
+- The plan, its four slices (pure list builder, pool gatherer, storage and serving, UI), the open questions and the starting notes for the next session are in `docs/engine2.md`, Phase 4. No code was written; nothing is wired into runtime; no publication or deployment.
+- Next: slice 1, the pure list builder, in a new session.
+
 ## 2026-10-24 — Engine 2 Phase 3 closeout: tier fall-through, albums per seed, merges
 
 - Merges: PR #588 (Last.fm fallback genre tags, `discovery/artist_tag_fallback.py`) merged as `c2c346da406df79803405824929b99cf55bff332` from head `d0778412367e21a4652425c2c9bf74ce601c2966`, on which all four required workflows (compile, test-and-build, container-smoke, validate-container) were successful before the merge; PR #589 (10 albums per seed in the Deep cuts radio tiers) merged as `972912f`. This corrects the entry above, which was written before the #588 merge and says it was unmerged and that the merge was blocked. Both are unwired; no publication or deployment.

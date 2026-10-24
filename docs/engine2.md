@@ -168,9 +168,34 @@ Status 2026-10-24: **complete.** History profiles (PRs #579, #580, #583), the Re
 
 ### Phase 4 — precompute and serve
 
-- Background gather writes a pool snapshot; all lenses run on it; finished lists are stored with timestamp and lens (the repo has `discovery/refresh.py` and a snapshot store to build on).
-- Daily generation with lists fixed for the day (radio answers keyed by lens and day, PR #582), a fresh set the next day; rotation or "next list" in the UI. Cooldown interaction handled by partitioning.
-- Cache popularity and tags (genre tags already use a 90-day cache); respect MusicBrainz and Last.fm rate limits.
+Status 2026-10-24: **plan approved by the owner; not started.** Work in a new session, one PR per slice, everything behind a setting that defaults to off.
+
+Owner decisions (2026-10-24):
+- Lenses to ship first: Deep cuts, Repeated tracks and Obsessions. The existing personal list (Now and Genre spread behaviour) is not changed by this phase.
+- Provider budget approved as proposed: a scheduled daily refresh costs about 25 s per lens, roughly 6 radio calls, 1 batch recording POST, 1 MusicBrainz release search and 40 to 60 Last.fm album lookups per lens, plus one ListenBrainz artist batch and the cached Last.fm fallback tags for artists with fewer than two genre tags.
+- One list per lens per day, 10 albums, fixed for the day (radio answers are keyed by lens and day, PR #582). No "next list" or rotation.
+- Lens lists keep their cooldown apart: they neither write to nor read from the existing recommendation history and cooldown.
+
+Slices:
+1. **Pure list builder.** One function from the gathered pool, the listening history and the library to one finished list per lens. It applies each lens's seeds (`repeated_track_seed_queries`, `obsession_seed_queries`, the Deep cuts seeds), the fallback tag merge (`fallback_artist_tags`), the known-artist inputs (`known_artist_mbids` from the history, `library_artist_mbids` from Navidrome) and `partition_lenses`, so an artist appears in at most one list per day. No provider calls; tested with recorded fixtures.
+2. **Pool gatherer.** Per lens: `run_deep_cuts_tag_supply` (lens name and day as the radio scope), release search and album listeners, artist genres, fallback tags. Needs the fixes under "Starting notes". Bounded calls, cached, rate limits respected.
+3. **Storage and serving.** Lists stored as `lens:<name>` in `discovery_lists` with timestamp and day; generated once a day from `refresh_all`; `discovery_get_list` accepts the lens names and keeps filtering owned albums at read time. A failed or partial build leaves the previous day's list in place (the snapshot policy in `discovery/snapshot.py`).
+4. **UI.** Choose a lens list and show its label. Wording and placement are open (see below).
+
+Open questions for the first session of this phase:
+- Where the history artist MBIDs come from at runtime (the imported-history store versus ListenBrainz listens), and how listens without an artist MBID are handled.
+- The day boundary for "per day" (local or UTC) and the setting name.
+- How often the Navidrome library artists are refreshed for the known-artist check (the library snapshot has a 10-minute cache).
+- UI label wording, and whether a lens list shows its seed tags.
+
+Starting notes (facts from Phase 3, all aggregates):
+- Everything listed above exists on `main` and is unwired: `discovery/lenses.py` (lens registry, `run_lens`, `partition_lenses`; the new lenses are outside `DEFAULT_LENS_ORDER`), `discovery/profile_seeds.py`, `discovery/history_windows.py`, `discovery/deep_cuts_supply.py` (10 albums per seed in the radio tiers), `discovery/artist_tag_fallback.py`, `discovery/allocation_inputs.py` (`artist_known`), `discovery/mbid_popularity.py`.
+- ListenBrainz listens keep the artist MBID in `track_metadata.mbid_mapping.artist_mbids` for most history; `listen_artist_mbid` reads it as a fallback. A Last.fm export can contain listens stamped 1970 (timestamp 0); they must be dropped before building profiles.
+- `fetch_release_mbids` swallows rate-limit and 503 errors, so a release search right after a long run of paced MusicBrainz calls can return nothing and the caller skips the Last.fm lookups. Retry with a pause (it succeeded on the third try after about 16 s).
+- Navidrome `getArtists` returns a MusicBrainz ID for only part of the library (311 of 730 in the measured library); albums carry `artistId`. The known-artist match uses MBIDs where both sides have one and the normalized name otherwise.
+- The selection checks at most 60 candidates, so a pool over 60 albums per lens is wasted; 6 seeds at 10 albums each is the measured sweet spot. Tier fall-through to the 75 to 100% band was measured and adds little.
+- The radio is redrawn on every uncached call, so run-to-run variation of about 2 selected albums is noise. Provider connections drop often; retry before concluding anything.
+- Workflow reminders: the agent never runs the full unit suite (CI does); focused tests only. Merge only after the four required workflows pass on the exact head; the owner has allowed `gh pr merge`. Record each merge in `PROJECT_LOG.md` and `PROJECT_STATUS.md`. Refer to the person directing the project only as "the owner".
 
 ### Phase 5 — feedback loop
 
