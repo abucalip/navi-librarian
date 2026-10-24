@@ -33,6 +33,15 @@ class SupplementaryTagQueryTests(unittest.TestCase):
         self.assertEqual(result[1][2], "profile:soul")
         self.assertEqual(result[2][2], "explore:afrobeat")
 
+    def test_style_slug_folds_accents_but_the_query_keeps_the_tag(self):
+        result = select_supplementary_tag_queries(
+            {"a": 1}, {"a": ["raï", "café jazz", "音楽"]}, [], profile_limit=3)
+        by_tag = {item[0].split("tag:", 1)[1].strip('"'): item for item in result}
+        self.assertEqual(by_tag["raï"][2], "profile:rai")
+        self.assertEqual(by_tag["raï"][0], "primarytype:album AND tag:raï")
+        self.assertEqual(by_tag["café jazz"][2], "profile:cafe_jazz")
+        self.assertEqual(by_tag["音楽"][2], "profile:other")
+
     def test_query_escaping_and_invalid_tags(self):
         result = select_supplementary_tag_queries(
             {"a": 1}, {"a": ['bossa nova', 'bad\nvalue', "x" * 65]}, []

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -72,7 +73,10 @@ def select_supplementary_tag_queries(
         if key in selected_keys:
             return
         selected_keys.add(key)
-        slug = re.sub(r"[^a-z0-9]+", "_", tag.casefold()).strip("_") or "other"
+        # Accents fold to their base letter ("raï" -> "rai"); other non-ASCII characters drop out.
+        folded = "".join(
+            ch for ch in unicodedata.normalize("NFKD", tag.casefold()) if not unicodedata.combining(ch))
+        slug = re.sub(r"[^a-z0-9]+", "_", folded).strip("_") or "other"
         from discovery.recommendations import genre_families
         families = sorted(genre_families([tag]))
         family = families[0] if families else "other"
