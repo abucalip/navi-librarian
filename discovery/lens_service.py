@@ -23,7 +23,7 @@ from typing import Any
 
 from discovery import history_fetch
 from discovery import refresh as discovery_refresh
-from discovery.lens_feedback import lens_feedback_summary
+from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summary
 from discovery.lens_lists import LENS_LIST_ORDER, build_lens_lists, history_artist_mbids, usable_listens
 from discovery.lens_storage import lens_day, lens_storage_name
 from discovery.list_payload import build_lens_list_response, dismissed_predicate, owned_predicate
@@ -82,14 +82,21 @@ def list_response(librarian: Any, lens_name: str, count: int) -> str:
 
 
 def feedback_summary(librarian: Any) -> dict[str, Any]:
-    """Saves and dismissals per lens (Engine 2, Phase 5). Reads only ``discovery_feedback``.
+    """Saves, dismissals and acquisition requests per lens (Engine 2, Phase 5).
+
+    Reads ``discovery_feedback`` and the acquisition jobs; acquisitions are lower bounds (see
+    ``discovery.lens_feedback.lens_acquisition_summary``).
 
     Answers ``disabled`` and reads nothing while ``engine2_lens_lists_enabled`` is off.
     """
     if not settings_service.engine2_lens_lists_enabled_value(librarian._discovery_settings_read):
         return {"disabled": True, "lenses": {}}
-    rows = librarian._discovery_feedback_rows()
-    return {"disabled": False, "lenses": lens_feedback_summary(rows, lens_names())}
+    names = lens_names()
+    lenses = lens_feedback_summary(librarian._discovery_feedback_rows(), names)
+    acquisitions = lens_acquisition_summary(librarian._discovery_list_acquisition_jobs(), names)
+    for name in names:
+        lenses[name]["acquisitions"] = acquisitions[name]
+    return {"disabled": False, "lenses": lenses}
 
 
 def _lastfm_username(settings_read: Callable[[], Mapping[str, Any]]) -> str:

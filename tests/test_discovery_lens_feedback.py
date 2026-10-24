@@ -1,7 +1,7 @@
 """Per-lens feedback comparison (Engine 2, Phase 5): counts, rates and scope filtering."""
 import unittest
 
-from discovery.lens_feedback import lens_feedback_summary
+from discovery.lens_feedback import lens_acquisition_summary, lens_feedback_summary
 
 LENSES = ("repeated_tracks", "deep_cuts", "obsessions")
 
@@ -52,6 +52,23 @@ class LensFeedbackSummaryTests(unittest.TestCase):
         summary = lens_feedback_summary([], LENSES)
         self.assertEqual(list(summary), list(LENSES))
         self.assertTrue(all(entry["save_rate"] is None for entry in summary.values()))
+
+
+class LensAcquisitionSummaryTests(unittest.TestCase):
+    def test_counts_only_jobs_whose_request_metadata_names_a_lens(self):
+        jobs = [
+            {"status": "downloading", "details": {"metadata": {"lens": "obsessions"}}},
+            {"status": "imported", "details": {"metadata": {"lens": "obsessions"}}},
+            {"status": "imported", "details": {"metadata": {}}},
+            {"status": "imported", "details": {"metadata": {"lens": "not_a_lens"}}},
+            {"status": "imported", "details": {"metadata": "lens"}},
+            {"status": "imported", "details": "not a mapping"},
+            "not a job",
+        ]
+        summary = lens_acquisition_summary(jobs, LENSES)
+        self.assertEqual(summary["obsessions"],
+                         {"requests": 2, "by_status": {"downloading": 1, "imported": 1}})
+        self.assertEqual(summary["deep_cuts"], {"requests": 0, "by_status": {}})
 
 
 if __name__ == "__main__":

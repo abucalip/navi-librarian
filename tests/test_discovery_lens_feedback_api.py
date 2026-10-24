@@ -27,6 +27,13 @@ class FakeLibrarian:
         self.feedback_reads += 1
         return self.rows
 
+    def _discovery_list_acquisition_jobs(self):
+        return [
+            {"status": "no_matches", "details": {"metadata": {"lens": "deep_cuts"}}},
+            {"status": "imported", "details": {"metadata": {"lens": "deep_cuts"}}},
+            {"status": "queued", "details": {}},
+        ]
+
 
 class LensFeedbackServiceTests(unittest.TestCase):
     def test_disabled_setting_answers_without_reading_feedback(self):
@@ -37,9 +44,13 @@ class LensFeedbackServiceTests(unittest.TestCase):
     def test_enabled_setting_counts_each_lens(self):
         summary = lens_service.feedback_summary(FakeLibrarian(enabled=True))
         self.assertFalse(summary["disabled"])
-        self.assertEqual(summary["lenses"]["deep_cuts"],
+        self.assertEqual({k: v for k, v in summary["lenses"]["deep_cuts"].items() if k != "acquisitions"},
                          {"saved": 1, "dismissed": 1, "actions": 2, "save_rate": 0.5})
         self.assertEqual(summary["lenses"]["obsessions"]["actions"], 0)
+        self.assertEqual(summary["lenses"]["deep_cuts"]["acquisitions"],
+                         {"requests": 2, "by_status": {"no_matches": 1, "imported": 1}})
+        self.assertEqual(summary["lenses"]["obsessions"]["acquisitions"],
+                         {"requests": 0, "by_status": {}})
 
 
 class LensFeedbackRouteTests(unittest.TestCase):

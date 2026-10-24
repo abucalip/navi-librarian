@@ -55,3 +55,28 @@ def lens_feedback_summary(
             "save_rate": round(count["saved"] / actions, 3) if actions else None,
         }
     return summary
+
+
+def lens_acquisition_summary(
+    jobs: Iterable[Mapping[str, Any]], lens_names: Iterable[str],
+) -> dict[str, dict[str, Any]]:
+    """Return ``{lens: {"requests", "by_status"}}`` for acquisition jobs made from a lens list.
+
+    A job counts for a lens when its stored request metadata (``details.metadata``) names it.
+    Jobs stored before request attribution (PR #602) carry no metadata on success statuses and
+    are not counted, so these are lower bounds, not totals.
+    """
+    summary: dict[str, dict[str, Any]] = {name: {"requests": 0, "by_status": {}} for name in lens_names}
+    for job in jobs:
+        if not isinstance(job, Mapping):
+            continue
+        details = job.get("details")
+        metadata = details.get("metadata") if isinstance(details, Mapping) else None
+        lens = _lens_of({"metadata": metadata})
+        if lens not in summary:
+            continue
+        entry = summary[lens]
+        entry["requests"] += 1
+        status = str(job.get("status") or "unknown")
+        entry["by_status"][status] = entry["by_status"].get(status, 0) + 1
+    return summary
