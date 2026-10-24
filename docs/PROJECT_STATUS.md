@@ -63,7 +63,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Next action
 
-Phase 4 is built; the lens setting `engine2_lens_lists_enabled` is on in the owner's local test data (the code default stays off). Next, in order: (1) the owner decides whether the setting stays on for daily use, and whether it needs a Settings control, since it currently has none; (2) browser checks still open: Get (needs a safe fixture, since it starts an acquisition request), screen-reader output and reduced motion (see `engine2.md`, Phase 4); (3) measure whether the lists are good for listeners; (4) Phase 5 (feedback loop) is not started. Not published or deployed.
+Phase 4 is closed. The owner decided that `engine2_lens_lists_enabled` stays on, that the deferred browser checks (Get, screen readers, reduced motion) stay deferred, and that no quality measurement is needed. The setting still has no Settings control. Phase 5 (feedback loop) is not started. Not published or deployed.
 
 ## Where to look
 
