@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from discovery.allocation_contract import (
     MAX_CANDIDATE_CHECKS,
@@ -64,9 +64,10 @@ def select_deep_cuts(
 ) -> AllocationResult:
     """Gate by audience and tag count, rank by radio tag strength, one album per
     artist and at most `max_per_seed` per seed. Artists the listener already knows are
-    never selected. Candidates without an audience
-    figure are never selected: unknown is not obscure. Like the allocator, it
-    examines at most `max_checks` candidates; the rest are not considered."""
+    never selected, and rejecting them is free: they do not count against `max_checks`.
+    Candidates without an audience figure are never selected: unknown is not obscure.
+    Like the allocator, it examines at most `max_checks` other candidates; the rest are
+    not considered."""
     if type(count) is not int or not 1 <= count <= MAX_RECOMMENDATION_COUNT:
         raise ValueError("count must be between 1 and 20")
     if type(max_checks) is not int or not 1 <= max_checks <= MAX_CANDIDATE_CHECKS:
@@ -90,6 +91,10 @@ def select_deep_cuts(
         if len(selected) >= count:
             record(item, "not_considered", "The requested number of recommendations was already reached.")
             continue
+        if item.artist_known and item.ownership is OwnershipStatus.CLEAR:
+            record(item, "artist_already_known",
+                   "The listener already knows this artist (library or listening history).")
+            continue
         if checked >= max_checks:
             record(item, "not_considered", f"The candidate search limit of {max_checks} checks was reached.")
             continue
@@ -99,9 +104,6 @@ def select_deep_cuts(
         elif item.ownership is OwnershipStatus.TITLE_CONFLICT:
             review.append(item.candidate_id)
             record(item, "held_for_ownership_review", "The album title exists in Navidrome under a different artist credit; manual review is recommended.")
-        elif item.artist_known:
-            record(item, "artist_already_known",
-                   "The listener already knows this artist (library or listening history).")
         elif item.audience is None:
             record(item, "audience_unknown", "No listener count is available, so the album cannot be called obscure.")
         elif not min_audience <= item.audience <= max_audience:
@@ -170,11 +172,29 @@ def partition_lenses(
     """
     if len({lens.name for lens in lenses}) != len(lenses):
         raise ValueError("lens names must be unique")
+    return partition_lens_pools(
+        {lens.name: candidates for lens in lenses}, count, lenses,
+        diversity_penalty=diversity_penalty)
+
+
+def partition_lens_pools(
+    pools: Mapping[str, Sequence[AllocationCandidate]],
+    count: int,
+    lenses: Sequence[Lens],
+    *,
+    diversity_penalty: float = 0.0,
+) -> tuple[AllocationResult, ...]:
+    """Like ``partition_lenses``, but each lens draws from its own pool ({lens name:
+    candidates}; a missing name is an empty pool), as the lenses whose supply is gathered
+    per lens do. Artist and album keys must be normalized the same way in every pool, since
+    what one lens selects is removed from the pools of the lenses after it."""
+    if len({lens.name for lens in lenses}) != len(lenses):
+        raise ValueError("lens names must be unique")
     taken_artists: set[str] = set()
     taken_albums: set[str] = set()
     results: list[AllocationResult] = []
     for lens in lenses:
-        remaining = tuple(item for item in candidates
+        remaining = tuple(item for item in pools.get(lens.name, ())
             if item.artist_key not in taken_artists and item.album_key not in taken_albums
         )
         result = run_lens(lens, remaining, count, diversity_penalty=diversity_penalty)

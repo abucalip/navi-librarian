@@ -5,7 +5,7 @@ from discovery.allocation_contract import (
 )
 from discovery.lenses import (
     DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, NOW, OBSESSIONS, REPEATED_TRACKS,
-    partition_lenses, run_lens, select_deep_cuts,
+    partition_lens_pools, partition_lenses, run_lens, select_deep_cuts,
 )
 from discovery.personal_allocator import allocate_personal_recommendations
 
@@ -178,6 +178,28 @@ class KnownArtistAndTagMinimumTests(unittest.TestCase):
             self.assertEqual(result.selected_candidate_ids, ("fresh",))
             self.assertEqual(status["known"], "artist_already_known")
 
+    def test_known_artists_do_not_count_against_the_check_limit(self):
+        known = [item(f"k{i}", audience=5000, strength=0.9 - i / 100, known=True) for i in range(5)]
+        fresh = [item("a", audience=5000, strength=0.1), item("b", audience=5000, strength=0.05)]
+        result = select_deep_cuts(known + fresh, 2, max_checks=2)
+        status = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual(result.selected_candidate_ids, ("a", "b"))
+        self.assertEqual({status[f"k{i}"] for i in range(5)}, {"artist_already_known"})
+        self.assertEqual(result.checked_count, 2)
+
+    def test_known_artists_beyond_the_limit_are_still_reported_as_known(self):
+        pool = [item("a", audience=5000, strength=0.9), item("b", audience=5000, strength=0.8),
+                item("k", audience=5000, strength=0.1, known=True)]
+        result = select_deep_cuts(pool, 5, max_checks=2)
+        self.assertEqual({d.candidate_id: d.status for d in result.decisions}["k"], "artist_already_known")
+
+    def test_owned_albums_by_known_artists_still_count_as_checks(self):
+        pool = [item("owned", audience=5000, strength=0.9, known=True, ownership=OwnershipStatus.EXACT_OWNED),
+                item("late", audience=5000, strength=0.1)]
+        result = select_deep_cuts(pool, 5, max_checks=1)
+        status = {d.candidate_id: d.status for d in result.decisions}
+        self.assertEqual((status["owned"], status["late"]), ("already_owned", "not_considered"))
+
     def test_known_artist_does_not_use_up_a_seed_or_artist_slot(self):
         pool = [item("k1", artist="x", audience=5000, seed="s", strength=0.9, known=True),
                 item("k2", audience=5000, seed="s", strength=0.8, known=True),
@@ -207,3 +229,28 @@ class KnownArtistAndTagMinimumTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             AllocationCandidate(candidate_id="a", artist_key="a", album_key="a", category="adjacent",
                                 score=1.0, artist_known=1)
+
+
+class PartitionLensPoolsTests(unittest.TestCase):
+    def test_each_lens_draws_from_its_own_pool(self):
+        pools = {"repeated_tracks": [item("r", audience=5000)],
+                 "obsessions": [item("o", audience=5000)]}
+        results = partition_lens_pools(pools, 5, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS))
+        self.assertEqual([r.lens for r in results], ["repeated_tracks", "deep_cuts", "obsessions"])
+        self.assertEqual([r.selected_candidate_ids for r in results], [("r",), (), ("o",)])
+
+    def test_a_selection_is_removed_from_the_later_pools(self):
+        pools = {"repeated_tracks": [item("0", artist="x", audience=5000)],
+                 "deep_cuts": [item("0", artist="x", album="other", audience=5000),
+                               item("1", artist="y", album="shared", audience=5000)],
+                 "obsessions": [item("0", artist="z", album="shared", audience=5000)]}
+        first, second, third = partition_lens_pools(
+            pools, 5, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS))
+        self.assertEqual(first.selected_candidate_ids, ("0",))
+        self.assertEqual(second.selected_candidate_ids, ("1",))
+        self.assertEqual([d.candidate_id for d in second.decisions], ["1"])
+        self.assertEqual(third.selected_candidate_ids, ())
+
+    def test_duplicate_lens_names_rejected(self):
+        with self.assertRaises(ValueError):
+            partition_lens_pools({}, 1, (DEEP_CUTS, DEEP_CUTS))
