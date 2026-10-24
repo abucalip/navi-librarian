@@ -1,3 +1,11 @@
+## 2026-10-24 — Engine 2 Phase 5 feedback read API (PR #601)
+
+- **Merged:** PR [#601](https://github.com/abucalip/navi-librarian/pull/601), squash commit `f60268b17d2e28f47e08fbcbc57f3667ec5d6694`, from reviewed head `171efc4a7a074c093ccb6da4cc92964abd4bd44c`.
+- **Changes:** Added read-only `GET /api/discovery/lens-feedback` and `lens_service.feedback_summary()`, reusing the Phase 5 summary helper from PR #600. The route is registered before `/api/discovery/{list_name}` so the catch-all cannot shadow it. When `engine2_lens_lists_enabled` is off, the service returns `{"disabled": true, "lenses": {}}` without reading feedback rows; enabled mode reports current per-lens save/dismiss counts and save rate.
+- **Review/regressions:** Reviewed all four changed files, route ordering, service setting gate, existing API contracts, and error path. Regression coverage verifies disabled mode performs no feedback read, enabled mode counts correctly, the route resolves rather than hitting the list catch-all, and the route inventory is updated.
+- **Verification:** All required CI workflows passed on exact PR head: Python syntax/acquisition-safety (`40122515028`), Docker packaging including the full unit suite and image build (`40122515044`), container runtime smoke (`40122514974`), and non-publishing multi-architecture validation (`40122514971`). Release-workflow validation succeeded (`40122514987`) with publishing skipped. PR author reports 33 focused tests passed; no separate local full-suite run was performed. Backend-only; no browser test required.
+- **Limits/status:** Read-only API only; no UI, provider call, publication, deployment, or independent runtime verification. Counts reflect current feedback state rather than historical event totals. No quality claim is made. Next action: determine whether and how to consume the summary in the UI, while keeping any quality evaluation separate from raw counts.
+
 ## 2026-10-24 — Engine 2 Phase 5 groundwork (PR #600)
 
 - **Merged:** PR [#600](https://github.com/abucalip/navi-librarian/pull/600), squash commit `bb6cb97062fece9236f964802f9ef705c99809ea`, from reviewed head `2a9b856d0f23b4edbe87fa8a89a088f86cedd22e`.
