@@ -1,3 +1,11 @@
+## 2026-10-24 — PR #593 merged; manual lens trigger in the app layer
+
+- PR #593 (move the lens adapters out of `navidrome_server.py`) squash-merged as `8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`. Its review fixes: the read path checks `engine2_lens_lists_enabled` before any store or library access, with regression tests for the disabled path (service and route) and the enabled path.
+- Owner decisions: the daily loop's hourly retries while a lens list is missing or not from today are acceptable; the manual trigger goes in the app layer.
+- Manual trigger: `POST /api/discovery/all/refresh` also starts a background lens build (`discovery/lens_service.py:start_refresh`), which returns at once and shares the daily loop's lock. Other list refreshes do not start it. Tests cover the trigger, the other refreshes, and background execution.
+- `navidrome_server.py` is unchanged by this work (zero diff against its pre-PR-592 content, D-016).
+- Next: define the bounded slice 4 (UI) scope before implementation.
+
 ## 2026-10-24 — Engine 2 Phase 4 slice 3 merged; server module rule
 
 - PR #592 (storage and serving for the daily lens lists) squash-merged as `0a8f9090fbb218f6508b33d9e72ebedbcdc64fd1` from exact head `09fb6e8d907d49fdefad4925a6b91c2e394abe5d`. All four required workflows passed on that head. Feature stays off by default (`engine2_lens_lists_enabled`); no live provider run, publication or deployment.

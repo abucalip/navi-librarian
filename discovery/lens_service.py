@@ -151,6 +151,19 @@ def _daily_loop(librarian: Any) -> None:
         time.sleep(DAILY_CHECK_SECONDS)
 
 
+def start_refresh(librarian: Any) -> threading.Thread:
+    """Run one lens refresh in the background, for a manual trigger from the app layer.
+
+    Returns at once. The refresh takes the same lock as the daily loop, so the two never overlap;
+    while the setting is off it returns "disabled" without touching the library or the store.
+    """
+    thread = threading.Thread(
+        target=refresh, args=(librarian,), name="navidrome-lens-lists-manual", daemon=True,
+    )
+    thread.start()
+    return thread
+
+
 def start_daily_refresh(librarian: Any) -> threading.Thread:
     """Start the background loop that rebuilds the lens lists once per local day."""
     thread = threading.Thread(

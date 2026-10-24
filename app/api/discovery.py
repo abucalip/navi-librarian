@@ -79,9 +79,14 @@ def refresh_discovery_list(list_name: str, payload: dict | None = None, libraria
     if not 1 <= count <= 20:
         raise HTTPException(status_code=400, detail="count must be between 1 and 20")
     try:
-        return parse_result(
+        result = parse_result(
             librarian.discovery_refresh_list(list_name=list_name, count=count)
         )
+        if list_name == "all":
+            # Lens lists are built in the app layer (lens_service), so the manual "all" refresh
+            # starts them too. It returns at once; the setting decides whether anything runs.
+            lens_service.start_refresh(librarian)
+        return result
     except Exception:
         raise HTTPException(status_code=502, detail="Could not refresh the discovery list.")
 

@@ -318,6 +318,41 @@ class LensRouteDispatchTests(unittest.TestCase):
         librarian.discovery_get_list.assert_not_called()
 
 
+class ManualLensRefreshTests(unittest.TestCase):
+    def test_all_refresh_also_starts_the_lens_refresh_in_the_app_layer(self):
+        from unittest import mock
+        from unittest.mock import Mock
+        from app.api import discovery
+
+        librarian = Mock()
+        librarian.discovery_refresh_list.return_value = '{"ok": true}'
+        with mock.patch("discovery.lens_service.start_refresh") as started:
+            body = discovery.refresh_discovery_list("all", librarian=librarian)
+        started.assert_called_once_with(librarian)
+        self.assertEqual(body, {"ok": True})
+
+    def test_other_refreshes_do_not_start_the_lens_refresh(self):
+        from unittest import mock
+        from unittest.mock import Mock
+        from app.api import discovery
+
+        librarian = Mock()
+        librarian.discovery_refresh_list.return_value = '{"ok": true}'
+        with mock.patch("discovery.lens_service.start_refresh") as started:
+            discovery.refresh_discovery_list("classics", librarian=librarian)
+        started.assert_not_called()
+
+    def test_start_refresh_returns_at_once_and_refresh_is_not_run_on_the_caller_thread(self):
+        from unittest import mock
+
+        ran = threading.Event()
+        with mock.patch("discovery.lens_service.refresh", side_effect=lambda librarian: ran.set()):
+            thread = lens_service.start_refresh(_librarian())
+            thread.join(5)
+        self.assertTrue(ran.is_set())
+        self.assertNotEqual(thread.ident, threading.get_ident())
+
+
 class RefreshAllLensHookTests(unittest.TestCase):
     def test_lens_callback_runs_last_and_is_optional(self):
         calls = []
