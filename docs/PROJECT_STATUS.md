@@ -4,7 +4,7 @@ Last checked: 2026-10-24. GitHub `main` is authoritative.
 
 ## Current state
 
-- Module rule (owner decision, 2026-10-24, D-016 in `docs/DECISIONS.md`): `navidrome_server.py` takes no additions; new code goes in new modules. The PR #592 lens adapters have moved out of `navidrome_server.py` into `discovery/lens_service.py` (PR pending), so the next action is slice 4 (UI). The lens lists stay unwired from the recommendation path until the owner decides on the UI and any scheduler change. Documentation only; no code, provider call, publication or deployment.
+- Module rule (owner decision, 2026-10-24, D-016 in `docs/DECISIONS.md`): `navidrome_server.py` takes no additions; new code goes in new modules. PR #593 moved the lens adapters into `discovery/lens_service.py` and is merged as `8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`. The API read path now checks `engine2_lens_lists_enabled` before store/library access; regression tests cover the disabled service and route paths. Lens lists remain behind the default-off setting and are not part of the recommendation path. Next action: define the bounded Phase 4 slice 4 (UI) scope before implementation. No provider call, publication, deployment, or runtime verification.
 
 - Engine 2 Phase 4 (2026-10-24, documentation only): the owner approved the PR #591 review items (setting name `engine2_lens_lists_enabled`, about 3 release searches per lens, the genre prefetch and vocabulary load) and set the day boundary at 4am local time, to be applied in slice 3. Open: the library refresh rate for the known-artist check.
 
