@@ -1,6 +1,10 @@
 import unittest
 
-from discovery.history_windows import listen_artist_mbid, window_artist_weights
+from discovery.history_windows import (
+    artists_with_tags, burst_artist_weights, dominant_tags, dormant_artist_weights,
+    listen_artist_mbid, new_artist_weights, repeated_track_artist_weights,
+    window_artist_weights,
+)
 
 DAY = 24 * 60 * 60
 NEWEST = 1_000_000 * DAY
@@ -113,3 +117,149 @@ class WindowWidthValidationTests(unittest.TestCase):
         from discovery.history_windows import densest_window_listens
         self.assertEqual(len(densest_window_listens([listen(0)], 30)), 1)
         self.assertEqual(len(densest_window_listens([listen(0)], 30.5)), 1)
+
+
+class IdleArtistProfileTests(unittest.TestCase):
+    def setUp(self):
+        self.listens = [
+            listen(0, "now"), listen(10, "now"),
+            listen(100, "mid"), listen(120, "mid"), listen(130, "mid"),
+            listen(500, "old"), listen(520, "old"),
+            listen(900, "once"),
+            listen(0, None), listen(600, None),
+        ]
+
+    def test_dormant_keeps_artists_silent_for_the_whole_period(self):
+        self.assertEqual(dict(dormant_artist_weights(self.listens)), {"old": 2, "once": 1})
+
+    def test_dormant_min_listens_means_heavily_played(self):
+        self.assertEqual(dict(dormant_artist_weights(self.listens, min_listens=2)), {"old": 2})
+
+    def test_boundary_listen_inside_the_period_counts_as_active(self):
+        listens = [listen(0, "a"), listen(365, "b"), listen(366, "c")]
+        self.assertEqual(dict(dormant_artist_weights(listens)), {"c": 1})
+
+    def test_undated_and_empty_input_give_nothing(self):
+        undated = [{"track_metadata": {"additional_info": {"artist_mbid": "a"}}}]
+        self.assertEqual(dormant_artist_weights(undated), {})
+        self.assertEqual(dormant_artist_weights([]), {})
+
+    def test_invalid_arguments_are_rejected(self):
+        for bad in (0, -1, float("nan"), True, "30"):
+            with self.assertRaises(ValueError):
+                dormant_artist_weights(self.listens, dormant_days=bad)
+        for bad in (0, -1, True, 1.5):
+            with self.assertRaises(ValueError):
+                dormant_artist_weights(self.listens, min_listens=bad)
+
+
+def track_listen(days_before_newest, artist_mbid, track):
+    item = listen(days_before_newest, artist_mbid)
+    item["track_metadata"]["track_name"] = track
+    return item
+
+
+class MbidMappingFallbackTests(unittest.TestCase):
+    def test_falls_back_to_mbid_mapping(self):
+        mapped = {"listened_at": 1, "track_metadata": {"additional_info": {},
+                  "mbid_mapping": {"artist_mbids": ["m1", "m2"]}}}
+        self.assertEqual(listen_artist_mbid(mapped), "m1")
+
+    def test_additional_info_wins_over_mapping(self):
+        item = listen(0, "a1")
+        item["track_metadata"]["mbid_mapping"] = {"artist_mbids": ["m1"]}
+        self.assertEqual(listen_artist_mbid(item), "a1")
+
+    def test_malformed_mapping_is_empty(self):
+        for mapping in (None, "x", {"artist_mbids": "m1"}, {"artist_mbids": []}):
+            item = {"track_metadata": {"mbid_mapping": mapping}}
+            self.assertEqual(listen_artist_mbid(item), "")
+
+
+class TagHelperTests(unittest.TestCase):
+    TAGS = {"a": ["metal", "rock"], "b": ["metal"], "c": ["jazz"], "d": []}
+
+    def test_dominant_tags_come_from_the_heaviest_artists(self):
+        weights = {"a": 10, "b": 5, "c": 1, "d": 1}
+        self.assertEqual(dominant_tags(weights, self.TAGS, top_artists=2, count=1), {"metal"})
+        self.assertEqual(dominant_tags(weights, self.TAGS, top_artists=3, count=3),
+                         {"metal", "rock", "jazz"})
+        self.assertEqual(dominant_tags(weights, self.TAGS, top_artists=1, count=5), {"metal", "rock"})
+
+    def test_artists_with_tags(self):
+        self.assertEqual(artists_with_tags(self.TAGS, {"jazz", "rock"}), {"a", "c"})
+        self.assertEqual(artists_with_tags(self.TAGS, set()), set())
+
+    def test_invalid_counts_are_rejected(self):
+        for bad in (0, -1, True, 1.5):
+            with self.assertRaises(ValueError):
+                dominant_tags({}, {}, count=bad)
+            with self.assertRaises(ValueError):
+                dominant_tags({}, {}, top_artists=bad)
+
+
+class RepeatedTrackTests(unittest.TestCase):
+    def setUp(self):
+        self.listens = (
+            [track_listen(i, "a", "Loop") for i in range(5)]
+            + [track_listen(i, "a", " loop ") for i in range(5, 6)]
+            + [track_listen(i, "b", "Once") for i in range(2)]
+            + [track_listen(i, "c", "Song") for i in range(6)]
+            + [track_listen(0, None, "No artist"), listen(0, "a")]
+        )
+
+    def test_only_tracks_at_or_above_the_threshold_count(self):
+        self.assertEqual(dict(repeated_track_artist_weights(self.listens)), {"a": 6, "c": 6})
+        self.assertEqual(dict(repeated_track_artist_weights(self.listens, min_track_plays=2)),
+                         {"a": 6, "b": 2, "c": 6})
+
+    def test_exclude_and_only_artists(self):
+        self.assertEqual(dict(repeated_track_artist_weights(self.listens, exclude_artists={"a"})), {"c": 6})
+        self.assertEqual(dict(repeated_track_artist_weights(self.listens, only_artists={"a"})), {"a": 6})
+        self.assertEqual(dict(repeated_track_artist_weights(self.listens, only_artists=[])), {})
+
+    def test_invalid_threshold_is_rejected(self):
+        for bad in (0, -1, True, 2.5):
+            with self.assertRaises(ValueError):
+                repeated_track_artist_weights(self.listens, min_track_plays=bad)
+
+
+class BurstTests(unittest.TestCase):
+    def test_artist_with_most_listens_in_one_span_is_an_obsession(self):
+        burst = [listen(i, "burst") for i in range(20)]
+        steady = [listen(i * 40, "steady") for i in range(20)]
+        mixed = [listen(i, "mixed") for i in range(10)] + [listen(300 + i * 40, "mixed") for i in range(10)]
+        weights = burst_artist_weights(burst + steady + mixed)
+        self.assertEqual(dict(weights), {"burst": 20})
+        self.assertEqual(dict(burst_artist_weights(burst + steady + mixed, min_share=0.5)),
+                         {"burst": 20, "mixed": 20})
+
+    def test_thresholds(self):
+        few = [listen(i, "few") for i in range(5)]
+        self.assertEqual(dict(burst_artist_weights(few)), {})
+        self.assertEqual(dict(burst_artist_weights(few, min_listens=5)), {"few": 5})
+        self.assertEqual(dict(burst_artist_weights(few, min_listens=5, span_days=2, min_share=0.5)), {"few": 5})
+        self.assertEqual(dict(burst_artist_weights(few, min_listens=5, span_days=2, min_share=1)), {})
+
+    def test_invalid_arguments_are_rejected(self):
+        with self.assertRaises(ValueError):
+            burst_artist_weights([], min_listens=0)
+        for bad in (0, 1.5, -0.1, True, float("nan")):
+            with self.assertRaises(ValueError):
+                burst_artist_weights([], min_share=bad)
+        with self.assertRaises(ValueError):
+            burst_artist_weights([], span_days=0)
+
+
+class NewArtistTests(unittest.TestCase):
+    def test_first_heard_at_or_after_the_cutoff(self):
+        listens = [listen(100, "old"), listen(0, "old"), listen(50, "new"), listen(10, "new"), listen(50, None)]
+        cutoff = NEWEST - 60 * DAY
+        self.assertEqual(dict(new_artist_weights(listens, first_heard_since=cutoff)), {"new": 2})
+        self.assertEqual(dict(new_artist_weights(listens, first_heard_since=NEWEST - 50 * DAY)), {"new": 2})
+        self.assertEqual(dict(new_artist_weights(listens, first_heard_since=NEWEST - 49 * DAY)), {})
+
+    def test_invalid_cutoff_is_rejected(self):
+        for bad in (None, "2018", True, float("inf")):
+            with self.assertRaises(ValueError):
+                new_artist_weights([], first_heard_since=bad)
