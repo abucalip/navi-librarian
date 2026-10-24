@@ -145,17 +145,46 @@ def build_cached_discovery_list_response(
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
+def dismissed_predicate(
+    feedback: list[dict[str, Any]],
+    music_key: Callable[[Any], str],
+) -> Callable[[Mapping[str, Any]], bool]:
+    """Return a check for albums and artists the listener marked "Not for me".
+
+    Same rules as the Discover path: an album dismissal matches its artist and album keys, and
+    an artist dismissal matches every album by that artist.
+    """
+    dismissed_albums = {
+        (row["artist_key"], row["album_key"])
+        for row in feedback
+        if row["scope"] == "album" and row["status"] == "not_for_me"
+    }
+    dismissed_artists = {
+        row["artist_key"]
+        for row in feedback
+        if row["scope"] == "artist" and row["status"] == "not_for_me_artist"
+    }
+
+    def is_dismissed(item: Mapping[str, Any]) -> bool:
+        artist_key = music_key(item.get("artist", ""))
+        return (artist_key, music_key(item.get("album", ""))) in dismissed_albums or artist_key in dismissed_artists
+
+    return is_dismissed
+
+
 def build_lens_list_response(
     lens_name: str,
     count: int,
     cached: Mapping[str, Any] | None,
     is_owned: Callable[[Mapping[str, Any]], bool] | None,
+    is_dismissed: Callable[[Mapping[str, Any]], bool] | None = None,
 ) -> str:
-    """Build the JSON response for one stored lens list (Engine 2, Phase 4, slice 3).
+    """Build the JSON response for one stored lens list (Engine 2, Phase 4, slices 3 and 5).
 
-    ``is_owned`` (None when the library could not be read) removes owned albums at read
-    time; the stored order and ranks are kept. The response reports whether ownership was
-    checked and aggregate counts only.
+    ``is_owned`` (None when the library could not be read) removes owned albums at read time;
+    ``is_dismissed`` (None when the feedback could not be read) removes "Not for me" albums the
+    same way. The stored order and ranks are kept. The response reports which checks ran and
+    aggregate counts only.
     """
     if not cached:
         return json.dumps({
@@ -167,11 +196,11 @@ def build_lens_list_response(
 
     payload = cached["payload"]
     stored = payload.get("albums") if isinstance(payload.get("albums"), list) else []
-    if is_owned is None:
+    if is_owned is None and is_dismissed is None:
         served, read_filter = dict(payload), {"ownership_checked": False}
     else:
-        served, counts = serve_lens_list(payload, is_owned)
-        read_filter = {"ownership_checked": True, **counts}
+        served, counts = serve_lens_list(payload, is_owned or (lambda _item: False), is_dismissed)
+        read_filter = {"ownership_checked": is_owned is not None, **counts}
     albums = served.get("albums", [])
     return json.dumps({
         "list": lens_name,

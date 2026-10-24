@@ -67,15 +67,29 @@ def lens_replacement_decision(
 def serve_lens_list(
     payload: Mapping[str, Any],
     is_excluded: Callable[[Mapping[str, Any]], bool],
+    is_dismissed: Callable[[Mapping[str, Any]], bool] | None = None,
 ) -> tuple[dict[str, Any], dict[str, int]]:
     """Return a copy of a stored lens payload without the albums ``is_excluded`` matches.
 
-    Kept albums keep their stored ``rank``. Counts are aggregate only.
+    ``is_dismissed`` (the listener's "Not for me" feedback) is applied first and counted under
+    ``dismissed``; the owned, duplicate and unidentified counts come from the rest. Kept albums
+    keep their stored ``rank``. Counts are aggregate only.
     """
     albums = payload.get("albums")
     if not isinstance(albums, list):
-        return dict(payload), {"kept": 0, "owned": 0, "duplicate": 0, "unidentified": 0}
-    kept, counts = discovery_snapshot.filter_snapshot(albums, is_excluded)
+        return dict(payload), {"kept": 0, "owned": 0, "duplicate": 0, "unidentified": 0, "dismissed": 0}
+    dismissed = 0
+    remaining = albums
+    if is_dismissed is not None:
+        remaining = []
+        for album in albums:
+            if isinstance(album, Mapping) and is_dismissed(album):
+                dismissed += 1
+            else:
+                remaining.append(album)
+    kept, counts = discovery_snapshot.filter_snapshot(remaining, is_excluded)
+    if is_dismissed is not None:
+        counts["dismissed"] = dismissed
     served = dict(payload)
     served["albums"] = kept
     return served, counts

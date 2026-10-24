@@ -122,6 +122,46 @@ class LensResponseTests(unittest.TestCase):
         self.assertEqual(body["count"], 1)
 
 
+class LensDismissalTests(unittest.TestCase):
+    """"Not for me" removes albums from a lens list at read time, like owned albums."""
+
+    def test_dismissed_album_is_dropped_and_counted_separately(self):
+        payload = _payload([_album(1, "A", "X"), _album(2, "B", "Y"), _album(3, "C", "Z")])
+        is_dismissed = lambda item: (item["artist"], item["album"]) == ("B", "Y")  # noqa: E731
+        served, counts = lens_storage.serve_lens_list(payload, _owned(), is_dismissed)
+        self.assertEqual([item["rank"] for item in served["albums"]], [1, 3])
+        self.assertEqual(counts["dismissed"], 1)
+        self.assertEqual(counts["owned"], 0)
+
+    def test_response_reports_dismissal_check_only_when_it_ran(self):
+        cached = {"payload": _payload([_album(1, "A", "X"), _album(2, "B", "Y")]), "generated_at": 1.0}
+        is_dismissed = lambda item: item["album"] == "Y"  # noqa: E731
+        body = json.loads(build_lens_list_response("deep_cuts", 10, cached, _owned(), is_dismissed))
+        self.assertEqual([item["album"] for item in body["items"]], ["X"])
+        self.assertEqual(body["read_filter"]["dismissed"], 1)
+        self.assertTrue(body["read_filter"]["ownership_checked"])
+
+    def test_unreadable_feedback_serves_the_list_without_claiming_a_dismissal_check(self):
+        cached = {"payload": _payload([_album(1, "A", "X")]), "generated_at": 1.0}
+        body = json.loads(build_lens_list_response("deep_cuts", 10, cached, _owned(), None))
+        self.assertNotIn("dismissed", body["read_filter"])
+        self.assertEqual(body["count"], 1)
+
+    def test_dismissed_predicate_matches_album_and_artist_feedback_like_discover(self):
+        from discovery.list_payload import dismissed_predicate
+
+        feedback = [
+            {"scope": "album", "status": "not_for_me", "artist_key": "b", "album_key": "y"},
+            {"scope": "artist", "status": "not_for_me_artist", "artist_key": "c", "album_key": ""},
+            {"scope": "album", "status": "saved", "artist_key": "d", "album_key": "w"},
+        ]
+        is_dismissed = dismissed_predicate(feedback, lambda text: str(text).strip().lower())
+        self.assertTrue(is_dismissed({"artist": "B", "album": "Y"}))
+        self.assertTrue(is_dismissed({"artist": "C", "album": "Anything"}))
+        self.assertFalse(is_dismissed({"artist": "D", "album": "W"}))
+        self.assertFalse(is_dismissed({"artist": "B", "album": "Other"}))
+
+
 class RefreshLensListsTests(unittest.TestCase):
     def _store(self, initial=None):
         store = dict(initial or {})

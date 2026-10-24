@@ -48,10 +48,10 @@ class LensListsUiContractTests(unittest.TestCase):
 
     def test_daily_lists_is_on_the_phone_bar_and_new_releases_moved_to_more(self):
         # Daily lists is a daily-use list, so it takes a bar slot; New releases moves to More.
-        self.assertIn('<button data-page="lensLists" title="Daily lists">', self.html)
+        self.assertIn('<button data-page="lensLists" title="Daily picks">', self.html)
         self.assertIn('<button class="nav-overflow" data-page="newReleases"', self.html)
         self.assertIn('<button type="button" data-page="newReleases" title="New releases">', self.html)
-        self.assertNotIn('data-page="lensLists" title="Daily lists">Daily lists</button>', self.html)
+        self.assertNotIn('data-page="lensLists" title="Daily picks">Daily picks</button>', self.html)
         self.assertIn("const NAV_MORE_PAGES = ['newReleases', 'classics', 'artistDeepDive'];", self.js)
 
     def test_icon_sprite_is_well_formed_xml(self):
@@ -127,7 +127,7 @@ class LensListsUiContractTests(unittest.TestCase):
     def test_disabled_state_is_neutral_copy_without_the_config_key(self):
         start = self.js.index("async function loadLensList(")
         body = self.js[start:self.js.index("document.querySelectorAll('[data-lens]')", start)]
-        self.assertIn("'Daily lists are turned off in Settings.'", body)
+        self.assertIn("'Daily picks are turned off in Settings.'", body)
         self.assertNotIn("engine2_lens_lists_enabled", body)
 
 
