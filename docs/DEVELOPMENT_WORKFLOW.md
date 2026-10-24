@@ -23,7 +23,7 @@ Last updated: 2026-10-24.
 8. **Documentation-only owner rule:** documentation-only changes are committed directly to `main`, not through a PR. Review links, current state, and the complete documentation diff before committing.
 9. After merge, refresh `main`, PRs, and CI before dependent work. Record exact branch/PR/SHA, tests and CI, limitations, merge state, and next action in project documentation.
 
-- **Server module rule (owner decision, D-016):** `navidrome_server.py` takes no additions. New code goes in new modules with direct-import tests; a change that touches the server must remove or move lines, not add them. PR #592 added adapters to the server; moving them out is a required follow-up before slice 4.
+- **Server module rule (owner decision, D-016):** `navidrome_server.py` takes no additions. New code goes in new modules with direct-import tests; a change that touches the server must remove or move lines, not add them. PR #592 added adapters to the server; they were moved to `discovery/lens_service.py` afterwards.
 
 ## Testing and safety
 

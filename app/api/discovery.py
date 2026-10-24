@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
+from discovery import lens_service
 from discovery.taste_families import deep_dive_row
 
 router = APIRouter()
@@ -43,14 +44,18 @@ def recommendations(count: int = 10, librarian=Depends(get_librarian)):
 @router.get("/api/discovery/{list_name}")
 def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librarian)):
     allowed = {"personal", "for_me", "classics", "artist_deep_dive", "new_releases"}
-    if list_name not in allowed:
+    is_lens = list_name in lens_service.lens_names()
+    if list_name not in allowed and not is_lens:
         raise HTTPException(status_code=404, detail="Unknown discovery list.")
     if not 1 <= count <= 150:
         raise HTTPException(status_code=400, detail="count must be between 1 and 150")
     try:
-        data = parse_result(
-            librarian.discovery_get_list(list_name=list_name, count=count)
-        )
+        if is_lens:
+            data = parse_result(lens_service.list_response(librarian, list_name, count))
+        else:
+            data = parse_result(
+                librarian.discovery_get_list(list_name=list_name, count=count)
+            )
     except Exception:
         raise HTTPException(status_code=502, detail="Could not retrieve the discovery list.")
     if list_name == "artist_deep_dive" and isinstance(data, dict):
