@@ -1,3 +1,11 @@
+## 2026-10-24 — Engine 2 Phase 3: title-marker check, size of the known radio-path gap
+
+- The title-marker check itself was done and logged on 2026-10-23: the radio path applies `batch_title_marker_rejection`, the MusicBrainz path uses release-group secondary types, and an unmarked live or compilation album still passes the radio path. The Christmas album noted in the first 2026-10-24 live-run entry is not a filter failure, since "Christmas" was never a marker. This entry measures how often the known gap lets an excluded type through.
+- Owner-approved, read-only, throwaway harness outside the repository, aggregates only. A radio-led Deep cuts pool from the same five seed tags (krautrock returned nothing after a connection error) gave 20 albums. One MusicBrainz release-group search per 25 groups, unauthenticated with the app `User-Agent` (two connection retries), returned secondary types for all 20.
+- Result: 18 of 20 had no secondary type; 1 was a Soundtrack and 1 a Compilation (a discography), 2 of 20 (10%). Neither title carried a batch marker, so both passed the radio-path title filter and would have been excluded on the MusicBrainz path.
+- Limits: one run, one listener, five hand-picked tags, a small pool; the 10% is an observation, not an estimate. The radio band that supplied each album was not recorded.
+- Possible fix, not started and needing an owner decision: a bounded secondary-type check on radio candidates before the Deep cuts gates, about one MusicBrainz call per 25 albums, applying the existing excluded secondary types. Nothing is wired into runtime; no publication or deployment.
+
 ## 2026-10-24 — Engine 2 Phase 3: MusicBrainz tail of the Deep cuts supply, measured alone
 
 - The tail was added in PR #581 and is covered by unit tests (including radio unavailable and no `http_post`). This entry adds a live measurement of the tail on its own: owner-approved, read-only, throwaway harness outside the repository, aggregates only. Same five seed tags as the entry above, `run_deep_cuts_tag_supply` with `http_post` unset so the radio tiers are skipped and the MusicBrainz tag search serves every query, then the fast album-listener path (one MusicBrainz release search, Last.fm album lookups on four threads).
