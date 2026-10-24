@@ -686,3 +686,11 @@ All live runs were approved by the owner; slskd off; aggregate only; harnesses w
 - All four required workflows passed on that exact head: Python syntax/acquisition safety (`40092120752`), Docker packaging/full unit suite/image build (`40092120821`; `Run unit tests` and `Build Docker image` succeeded), container runtime smoke (`40092120755`), and validation-only multi-architecture image validation (`40092120772`, non-publishing). CI ran the full unit suite on the exact reviewed head. No separate agent-run full suite was performed, per repository workflow rules.
 - Squash-merged PR #585 as `2706dda68c594a6d683cd6c6bc00feb2d9869d00`. The new lens remains unwired; no provider calls, publication, deployment, or runtime verification were performed.
 - Next action remains owner decision on the proposed Repeated tracks selection gates before any runtime wiring.
+
+
+## 2026-10-24 — Re-review, full CI suite, and merge PR #586
+
+- Re-reviewed PR #586 at exact head `3007590f0214c94b3694ad6a4ff8da089fb11f80`. The diff cleanly removes `Lens.min_tags`, restores Repeated tracks to the shared Deep cuts two-tag minimum, and updates the regression test to cover zero, one, and two tags for both lenses. The known-artist exclusion from PR #585 is untouched; the repeated-tracks lens remains outside `DEFAULT_LENS_ORDER`, so no runtime/default recommendation behavior changes.
+- All four required workflows passed on that exact head: Python syntax/acquisition safety (`40093298924`), Docker packaging/full unit suite/image build (`40093299008`; unit tests and image build succeeded), container runtime smoke (`40093299033`), and validation-only multi-architecture image validation (`40093299077`, non-publishing). CI ran the full unit suite on the exact reviewed head. No separate agent-run full suite was performed, per repository workflow rules.
+- Squash-merged PR #586 as `f53a2cf2d3c1a1ce65703ded66c421ae2434d274`. No provider calls, publication, deployment, or runtime verification were performed.
+- Next action: write the owner-approved Obsessions lens definition; separately explore another tag source or an exception for artists with no genre tags. Any new live run still requires owner approval.
