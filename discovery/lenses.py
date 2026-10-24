@@ -40,7 +40,10 @@ class Lens:
 NOW = Lens("now", "Now", "quota")
 GENRE_SPREAD = Lens("genre_spread", "Genre spread", "family_coverage")
 DEEP_CUTS = Lens("deep_cuts", "Deep cuts", "deep_cuts")
-LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS)}
+# Same selection gates as Deep cuts; the difference is the seed source (repeated tracks
+# outside the dominant tags, see discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
+REPEATED_TRACKS = Lens("repeated_tracks", "Repeated tracks", "deep_cuts")
+LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS, REPEATED_TRACKS)}
 # Scarcest supply first, so the broader lenses do not take its few candidates.
 DEFAULT_LENS_ORDER = (DEEP_CUTS, NOW, GENRE_SPREAD)
 
@@ -54,6 +57,7 @@ def select_deep_cuts(
     max_audience: int = DEEP_CUTS_MAX_AUDIENCE,
     min_tags: int = DEEP_CUTS_MIN_TAGS,
     max_per_seed: int = DEEP_CUTS_MAX_PER_SEED,
+    lens_name: str = DEEP_CUTS.name,
 ) -> AllocationResult:
     """Gate by audience and tag count, rank by radio tag strength, one album per
     artist and at most `max_per_seed` per seed. Candidates without an audience
@@ -116,7 +120,7 @@ def select_deep_cuts(
         decisions=tuple(decisions.values()),
         category_counts=dict(counts),
         checked_count=checked,
-        lens=DEEP_CUTS.name,
+        lens=lens_name,
     )
 
 
@@ -130,7 +134,7 @@ def run_lens(
 ) -> AllocationResult:
     """Run one lens over a pool; the result carries the lens name."""
     if lens.kind == "deep_cuts":
-        return select_deep_cuts(candidates, count, max_checks=max_checks)
+        return select_deep_cuts(candidates, count, max_checks=max_checks, lens_name=lens.name)
     if lens.kind == "family_coverage":
         targets, options = selection_request_options("family_coverage", count)
     elif lens.kind == "quota":
