@@ -228,6 +228,8 @@ Starting notes (facts from Phase 3, all aggregates):
 
 ### Phase 5 — feedback loop
 
+Status 2026-10-24: **underway**. PR [#600](https://github.com/abucalip/navi-librarian/pull/600) merged as `bb6cb97062fece9236f964802f9ef705c99809ea`: lens-list albums now carry the lens name, and `discovery/lens_feedback.py` provides a pure summary of current album-scope saves and dismissals per lens. The summary is not yet wired to an API or UI; Get/play/download attribution remains unimplemented.
+
 - Store the lens on every recommendation; use existing recommendation feedback (saves, downloads, plays) to compare lenses.
 - Only then consider reweighting or retiring lenses. No quality claim before this data exists.
 
