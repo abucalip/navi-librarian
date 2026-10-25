@@ -45,7 +45,8 @@ class FetchRegistry:
     """Process-wide table of in-flight provider calls. All state changes take one lock."""
 
     def __init__(self):
-        self._lock = threading.Lock()
+        # Reentrant so a start callback may report completion without deadlocking.
+        self._lock = threading.RLock()
         self._inflight: dict[str, SharedFetch] = {}
 
     def join(
@@ -63,12 +64,16 @@ class FetchRegistry:
         """
         with self._lock:
             work = self._inflight.get(key)
-            if work is None:
+            is_new = work is None
+            if is_new:
                 work = SharedFetch(key, deadline_at)
                 self._inflight[key] = work
-                start(work)
+            # Register this consumer before the worker can run, so a call that finishes at once
+            # still notifies it.
             work.refs += 1
             work._waiters.append((token, inbox))
+            if is_new:
+                start(work)
             return work
 
     def leave(self, work: SharedFetch) -> None:
@@ -157,7 +162,10 @@ class ExternalSearch:
             state = exc.state
         except Exception:
             state = "failed"
-        if state == "done" and not work.cancelled.is_set():
+        if self._clock() > work.deadline_at:
+            # A late answer is a timeout: the request has already moved on, so it is not cached.
+            state, records = "timeout", []
+        elif state == "done" and not work.cancelled.is_set():
             write_cached(self._cache_write, part.key, records, time.time())
         self._registry.finish(work, state, records, int((self._clock() - started) * 1000))
 

@@ -8,7 +8,7 @@ import unittest
 from discovery.search.events import search_events
 from discovery.search.index import IndexView, STATE_FRESH, build_owned_data
 from discovery.search.providers import ProviderError, artist_candidate
-from discovery.search.runner import ExternalSearch, FetchRegistry, Part, RunState
+from discovery.search.runner import ExternalSearch, FetchRegistry, Part, RunState, SharedFetch
 
 
 def owned_ash():
@@ -203,6 +203,38 @@ class CacheAndSharingTests(unittest.TestCase):
         again = registry.join("k", time.monotonic() + 9, lambda w: started.append(w), queue.Queue(), 7)
         self.assertIsNot(again, work)
         self.assertEqual(len(started), 1)
+
+    def test_consumer_is_notified_when_the_call_finishes_during_startup(self):
+        registry = FetchRegistry()
+        inbox = queue.Queue()
+        work = registry.join(
+            "k", time.monotonic() + 9,
+            lambda w: registry.finish(w, "done", MB_ASH, 0),
+            inbox, 4,
+        )
+        self.assertEqual(inbox.get_nowait(), (4, work))
+        self.assertEqual(work.state, "done")
+
+    def test_consumer_is_notified_when_a_thread_finishes_before_join_returns(self):
+        registry = FetchRegistry()
+        inbox = queue.Queue()
+        registry.join(
+            "k", time.monotonic() + 9,
+            lambda w: threading.Thread(target=registry.finish, args=(w, "done", MB_ASH, 0)).start(),
+            inbox, 5,
+        )
+        token, work = inbox.get(timeout=2)
+        self.assertEqual((token, work.state), (5, "done"))
+
+    def test_result_that_arrives_after_the_deadline_is_a_timeout_and_never_cached(self):
+        store = Store()
+        search = make_search([], store=store)
+        work = SharedFetch("search:musicbrainz:0:ash:artist:depth50", time.monotonic() + 0.05)
+        late = part("musicbrainz", lambda remaining, cancelled: (time.sleep(0.2), MB_ASH)[1])
+        search._run(late, work)
+        self.assertEqual(work.state, "timeout")
+        self.assertEqual(work.records, [])
+        self.assertEqual(store.data, {})
 
     def test_consumer_waiting_on_a_call_is_woken_when_it_finishes(self):
         registry = FetchRegistry()
