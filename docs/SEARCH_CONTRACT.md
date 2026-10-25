@@ -600,12 +600,13 @@ This section records what P1 built and every decision the contract left open. Se
 | Topic | Decision |
 |---|---|
 | Key derivation (section 4.1) | Keys come from display names only: NFKD, diacritics removed, casefold, punctuation to single spaces, and a leading "The" dropped. An artist key is that name key. An album key is `artist_key/album_key`. A song key is `artist_key/title_key`. Results that share a key carry their Navidrome `id` to tell them apart. |
-| Owned MBIDs and artwork | `mbid`, `release_group_mbid` and `artwork_url` are `null` in P1. Navidrome data has no MBID in the snapshot, and no owned cover-art route exists yet. |
+| Owned MBIDs | `mbid` and `release_group_mbid` are `null` in P1, because the snapshot carries no MBID. |
+| Owned artwork | `artwork_url` is `/api/owned/artwork/{id}`. The app signs a Navidrome `getCoverArt` request on the server, so the Navidrome credential never reaches the browser (owner decision, 2026-10-25). Artists use their ID, albums their ID, and songs their album's ID. `size` is 64 to 1000, default 300. Only image responses are passed through; a Subsonic error body, a non-image type or a body over 5 MB returns `404`. Responses carry `Cache-Control: private, max-age=3600`. |
 | `snapshot_at` (section 3.2) | The UTC time the index build completed, not the snapshot's own `generated_at`. |
 | Navidrome generation (section 5.2) | Settings store counter `navidrome_generation`. It increments whenever the Navidrome URL, user or password changes; a blank password that keeps the saved one does not increment it. The owned index is keyed by it. A changed generation drops the index at once. |
 | Library snapshot key (section 5.2) | The owned index reads the library snapshot under `library_snapshot:navidrome{generation}`. The recommendation path still uses the unscoped `library_snapshot` key (see 11.4). |
 | Album `artist_id` | The snapshot now keeps each album's `artistId`, so an artist page lists exactly that artist's albums. Snapshot cache entries without this field are refetched. |
-| Sanity check (section 4.1) | Implemented at the proposed 10% drop. Owner confirmation of the threshold is still open (11.4). |
+| Sanity check (section 4.1) | 10% drop limit, approved by the owner on 2026-10-25. |
 | Retry backoff | After a failed build, the index waits 30 s before the next automatic build. A generation change clears the wait. A forced refresh bypasses the TTL, but not the wait. |
 | Index refresh | Each owned request triggers a non-blocking refresh once the index is older than 10 min. There is no manual refresh route in P1. |
 | Song inventory | `search3` with an empty query, 500 per page. A walk that reaches the 200,000-song safety cap raises; it never returns a partial list. |
@@ -628,7 +629,5 @@ This section records what P1 built and every decision the contract left open. Se
 ### 11.4 Open items
 
 1. **P1 UI.** The top-bar search box and the library page are not built. They need the UI acceptance gates in `docs/TEST_PLAN.md` and a browser check under `docs/LOCAL_UI_TESTING.md`.
-2. **Recommendation snapshot generation.** The recommendation path still reads the unscoped `library_snapshot`. After a credential change it can serve the previous server's inventory for up to 10 min. The fix is the same key scoping, and it touches existing recommendation code, so it needs its own change.
-3. **Sanity threshold.** The 10% drop limit needs the owner's confirmation.
-4. **Manual refresh route.** Section 4.1 mentions a manual refresh path. P1 has the internal `force` argument but no route.
-5. **Owned artwork.** Needs a decision on serving Navidrome cover art through the app (the cover-art URL carries the Navidrome credential, so it cannot go to the browser unchanged).
+2. **Recommendation snapshot generation (accepted, deferred).** The recommendation path still reads the unscoped `library_snapshot`. After a credential change it can serve the previous server's inventory for up to 10 min. The owner accepted this as a deferred follow-up on 2026-10-25. The fix is the same key scoping, and it touches existing recommendation code, so it needs its own change.
+3. **Manual refresh route.** Section 4.1 mentions a manual refresh path. P1 has the internal `force` argument but no route.

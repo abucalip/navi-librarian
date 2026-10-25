@@ -12,7 +12,7 @@ This document describes current architectural responsibilities at a useful level
 - `app/api/` contains HTTP route adapters. Routes validate requests, invoke domain/service logic, and shape HTTP responses; they should not duplicate domain policy.
 - `app/security/` owns authentication/security helpers. Keep persisted secret loading, configuration predicates, sessions, cookies, and route/middleware behavior behind their existing contracts.
 - `app/services/` owns reusable application/domain services. Provider access and persistence should remain explicit dependencies rather than hidden app initialization.
-- `app/api/search.py` and `app/api/library.py` are the global search, artist page and library browsing adapters. They call `discovery/search/` and hold no matching or ranking logic.
+- `app/api/search.py`, `app/api/library.py` and `app/api/owned_artwork.py` are the global search, artist page, library browsing and owned cover-art adapters. They call `discovery/search/` and `integrations/navidrome/client.py`, and hold no matching or ranking logic.
 
 ### Global search (`discovery/search/`)
 

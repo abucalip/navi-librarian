@@ -30,6 +30,7 @@ from app.security.auth import (
 from app.api.acquisitions import router as acquisitions_router
 from app.api.discovery import router as discovery_router
 from app.api.library import router as library_router
+from app.api.owned_artwork import router as owned_artwork_router
 from app.api.search import router as search_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
@@ -178,6 +179,7 @@ app.include_router(acquisitions_router)
 app.include_router(discovery_router)
 app.include_router(search_router)
 app.include_router(library_router)
+app.include_router(owned_artwork_router)
 app.include_router(metadata_router)
 app.include_router(dashboard_router)
 

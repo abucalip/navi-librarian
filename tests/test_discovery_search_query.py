@@ -181,3 +181,21 @@ class ArtistPageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArtworkUrlTests(unittest.TestCase):
+    def test_owned_results_point_at_the_app_artwork_route(self):
+        data = sample_data()
+        artist = search_owned(data, "radiohead", ["artist"], limit=5)["artist"][0]
+        self.assertEqual(artist["artwork_url"], "/api/owned/artwork/ar5")
+        album = search_owned(data, "kid a", ["album"], limit=5)["album"][0]
+        self.assertEqual(album["artwork_url"], "/api/owned/artwork/al1")
+
+    def test_song_artwork_uses_its_album_id(self):
+        data = sample_data()
+        song = search_owned(data, "karma", ["song"], limit=5)["song"][0]
+        self.assertEqual(song["artwork_url"], "/api/owned/artwork/alx")
+
+    def test_library_items_carry_artwork_urls(self):
+        items, _, _ = library_page(sample_data(), query="", sort="name", offset=0, limit=60)
+        self.assertTrue(all(item["artwork_url"] == f"/api/owned/artwork/{item['id']}" for item in items))

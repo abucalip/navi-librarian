@@ -145,5 +145,5 @@ Record decisions here when they constrain future implementation. Add new entries
 
 **Reason:** Owned results must not wait on the network (SEARCH_CONTRACT section 2), and the library is large enough (12,097 songs) that a request-time scan would be too slow. A counter, rather than a hash of the password, keeps credential-derived values out of keys, logs and responses.
 
-**Consequence:** The recommendation path still reads the unscoped library snapshot, so the generation rule covers search only until the follow-up in SEARCH_CONTRACT section 11.4. Index state is per process; a restart rebuilds it from the snapshot.
+**Consequence:** The recommendation path still reads the unscoped library snapshot, so the generation rule covers search only. The owner accepted that gap as a deferred follow-up (SEARCH_CONTRACT section 11.4). Index state is per process; a restart rebuilds it from the snapshot.
 

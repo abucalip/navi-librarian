@@ -9,6 +9,7 @@ from typing import Any
 
 from discovery.search.index import OwnedData
 
+ARTWORK_PATH = "/api/owned/artwork/"
 SEARCH_TYPES = ("artist", "album", "song", "genre")
 OWNED_TYPES = ("artist", "album", "song")
 SOURCE_NAME = "navidrome"
@@ -18,6 +19,11 @@ LIBRARY_SORTS = ("name", "album_count")
 
 class CursorError(ValueError):
     """Raised for a library cursor that is malformed or does not match its query."""
+
+
+def artwork_url(cover_id: str | None) -> str | None:
+    """Return the app route that serves this item's Navidrome cover, or None without an ID."""
+    return f"{ARTWORK_PATH}{cover_id}" if cover_id else None
 
 
 def _tier(key: str, query: str) -> int | None:
@@ -41,7 +47,7 @@ def _artist_result(entry: dict[str, Any]) -> dict[str, Any]:
         "mbid": None,
         "album_count": entry["album_count"],
         "sources": [SOURCE_NAME],
-        "artwork_url": None,
+        "artwork_url": artwork_url(entry["id"]),
     }
 
 
@@ -58,7 +64,7 @@ def _album_result(entry: dict[str, Any]) -> dict[str, Any]:
         "year": entry["year"],
         "release_group_mbid": None,
         "sources": [SOURCE_NAME],
-        "artwork_url": None,
+        "artwork_url": artwork_url(entry["id"]),
     }
 
 
@@ -74,7 +80,7 @@ def _song_result(entry: dict[str, Any]) -> dict[str, Any]:
         "duration": entry["duration"],
         "track_number": entry["track_number"],
         "sources": [SOURCE_NAME],
-        "artwork_url": None,
+        "artwork_url": artwork_url(entry["album_id"] or None),
     }
 
 
@@ -131,7 +137,7 @@ def library_page(
             "key": a["key"],
             "name": a["name"],
             "album_count": a["album_count"],
-            "artwork_url": None,
+            "artwork_url": artwork_url(a["id"]),
         }
         for a in page
     ]

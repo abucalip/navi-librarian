@@ -1,3 +1,10 @@
+## 2026-10-25 — Global search P1: artwork and approvals (PR #609)
+
+- **Owner decisions:** the 10% sanity threshold is approved; the recommendation snapshot's unscoped key is accepted as a deferred follow-up; owned artwork must be served.
+- **Change:** `GET /api/owned/artwork/{id}` (`app/api/owned_artwork.py`) returns Navidrome cover art through a signed `getCoverArt` request made on the server. `integrations/navidrome/client.py` gained `cover_art()`, and its request signing is shared with `api_call`. Owned results carry `artwork_url` pointing at this route.
+- **Tests run (focused):** `test_navidrome_cover_art.py` (7), `test_api_owned_artwork.py` (5), `test_navidrome_client.py`, `test_discovery_search_query.py` (20), plus the earlier P1 modules. The stub end-to-end check returned 200 `image/jpeg` with `Cache-Control: private, max-age=3600`.
+- **Not verified:** browser rendering of artwork (no UI yet); behavior against a real Navidrome cover endpoint.
+
 ## 2026-10-25 — Global search P1 backend (PR #609)
 
 - **Scope:** `docs/SEARCH_CONTRACT.md` P1 backend, approved by the owner on 2026-10-25 against `main` `ddb58a8` (PR #608). Adds the owned index (`discovery/search/`), `GET /api/search` (SSE, owned results only), `GET /api/artists/{key}` (JSON and SSE, owned sections), and `GET /api/library/artists`, with routes in `app/api/search.py` and `app/api/library.py`. Supporting changes: album `artist_id` in the library snapshot; a `navidrome_generation` counter in settings, bumped on any Navidrome URL, user or password change.

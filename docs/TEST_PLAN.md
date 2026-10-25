@@ -95,6 +95,9 @@ Run these focused modules for changes to the owned search index, routes and sett
 python -m unittest discover -s tests -p 'test_discovery_search_*.py' -v
 python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
 python -m unittest discover -s tests -p 'test_navidrome_generation.py' -v
+python -m unittest discover -s tests -p 'test_navidrome_cover_art.py' -v
+python -m unittest discover -s tests -p 'test_api_owned_artwork.py' -v
+python -m unittest discover -s tests -p 'test_navidrome_client.py' -v
 python -m unittest discover -s tests -p 'test_discovery_library_snapshot.py' -v
 ```
 
