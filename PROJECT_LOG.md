@@ -1,3 +1,10 @@
+## 2026-10-26 — Global search P2, slice E (branch `search-p2e`, stacked on `search-p2d`)
+
+- **Approved:** permanent storage of MusicBrainz identities; a background pass after each owned-index build; artists and albums.
+- **Built:** `discovery/identity.py` (the resolve pass and a single-flight job); batched release-to-release-group and album-title lookups (`providers.py`); store prefix read and batch write (`store.py`); the snapshot keeps each album's release MBID; owned entries carry MBIDs; owned matches use MBIDs when both sides have one; the artist page uses the stored MBID.
+- **Verification:** focused modules pass (218). Guards pass. The release-to-group batch was checked live with three library IDs. Not run: the full suite (CI), a live identity pass over the whole library.
+- **Contract:** section 12.9.
+
 ## 2026-10-26 — Global search P2, slice D (branch `search-p2d`)
 
 - **Probe:** Navidrome serves `musicBrainzId` on 43% of artists (314 of 733) and 49% of albums (858 of 1745). Not a majority. Artist MBIDs need one `getArtist` call each. Album MBIDs are release IDs, not release-group IDs.
