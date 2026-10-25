@@ -696,7 +696,7 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 
 - **`missing_albums` on the artist page.** The owned artist's MBID is the first MusicBrainz artist whose normalized name matches exactly. Its studio albums come from one release-group browse (limit 100, no secondary types such as live or compilation). Albums the library owns are removed by key and year, and duplicates are merged. Items are sorted by ListenBrainz listen count (`popularity`), most first, then by year. The list is capped at 50. `sources` lists `musicbrainz`, plus `listenbrainz` when a count was found.
 - **`bio`.** The existing bio service (`app/api/metadata.py`, `artist_bio`) is called from the route adapter and injected into the discovery layer, so discovery does not import the app. The section's `source` is `wikidata`, the service's primary identity source.
-- **Deadline.** `bio` and `missing_albums` run on separate threads under the 3.0 s deadline. One that has not finished is `deadline`; one that failed is `source_failed`. Either makes the page `partial`. A late answer is not cached.
+- **Deadline.** `bio` and `missing_albums` run on separate threads under the 3.0 s deadline. One that has not finished is `deadline`; one that failed is `source_failed`. Either makes the page `partial`. A late answer is not cached. The ListenBrainz popularity lookup receives a `can_cache` check and uses the 5 s request budget (section 12.2 item 6); its cache writes happen only while the check is true.
 - **ListenBrainz** supplies release-group popularity (`POST /1/popularity/release-group`, the existing batch client). It is available on the artist page and not used by search, which has no text-search endpoint on ListenBrainz.
 
 ### 12.4 Slice B deviations

@@ -148,15 +148,22 @@ def artist_network_for(librarian):
 
     from app.api.metadata import artist_bio
     from integrations.listenbrainz.client import request_headers
+    from discovery.search.providers import REQUEST_TIMEOUT
     from integrations.listenbrainz.popularity import fetch_release_group_popularity
 
-    def popularity(mbids):
+    def popularity(mbids, can_cache):
+        def cache_set(key, value):
+            # A response that arrives after the artist-page deadline is not cached.
+            if can_cache():
+                librarian._metadata_cache_set(key, value)
+
         return fetch_release_group_popularity(
             httpx.post,
             librarian._metadata_cache_get,
-            librarian._metadata_cache_set,
+            cache_set,
             mbids,
             headers=request_headers(),
+            timeout=REQUEST_TIMEOUT,
         )
 
     def bio(name):

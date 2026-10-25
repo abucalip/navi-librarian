@@ -42,7 +42,7 @@ def network(musicbrainz=None, popularity=None, bio=None, store=None, deadline=3.
     store = store or Store()
     return ArtistNetwork(
         musicbrainz=musicbrainz or FakeMusicBrainz(),
-        popularity=popularity or (lambda mbids: {}),
+        popularity=popularity or (lambda mbids, can_cache: {}),
         bio=bio or (lambda name: None),
         cache_read=store.read,
         cache_write=store.write,
@@ -96,7 +96,7 @@ class MissingAlbumsTests(unittest.TestCase):
     def test_owned_and_duplicate_albums_are_removed_and_the_rest_ordered_by_listens(self):
         net = network(
             FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS),
-            popularity=lambda mbids: {"rg-3": {"playcount": 900, "listeners": 50},
+            popularity=lambda mbids, can_cache: {"rg-3": {"playcount": 900, "listeners": 50},
                                       "rg-2": {"playcount": 100, "listeners": 80}},
         )
         items = self.run_missing(net)
@@ -109,7 +109,7 @@ class MissingAlbumsTests(unittest.TestCase):
         # rg-2 has more users (listeners) but fewer listens (playcount); the listen count decides.
         net = network(
             FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS),
-            popularity=lambda mbids: {"rg-2": {"playcount": 100, "listeners": 500},
+            popularity=lambda mbids, can_cache: {"rg-2": {"playcount": 100, "listeners": 500},
                                       "rg-3": {"playcount": 900, "listeners": 40}},
         )
         items = self.run_missing(net)
@@ -118,7 +118,7 @@ class MissingAlbumsTests(unittest.TestCase):
         self.assertEqual(items[1]["popularity"], 100)
 
     def test_listenbrainz_failure_keeps_the_albums_without_popularity(self):
-        def broken(mbids):
+        def broken(mbids, can_cache):
             raise RuntimeError("listenbrainz down")
 
         net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=broken)
@@ -177,6 +177,37 @@ class NetworkSectionTests(unittest.TestCase):
         self.assertEqual(sections["bio"]["reason"], "deadline")
         self.assertFalse(sections["bio"]["complete"])
         self.assertTrue(sections["missing_albums"]["complete"])
+
+
+class PopularityDeadlineTests(unittest.TestCase):
+    def test_popularity_response_after_the_deadline_is_not_cached(self):
+        cached = {}
+
+        def slow_popularity(mbids, can_cache):
+            time.sleep(0.5)
+            if can_cache():
+                cached["rg-3"] = {"playcount": 900, "listeners": 50}
+            return {"rg-3": {"playcount": 900, "listeners": 50}}
+
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=slow_popularity, deadline=0.2)
+        sections = network_sections(net, "Radiohead", radiohead_owned())
+        self.assertEqual(sections["missing_albums"]["reason"], "deadline")
+        self.assertEqual(cached, {})
+
+    def test_popularity_response_in_time_is_cached(self):
+        cached = {}
+        checks = []
+
+        def quick_popularity(mbids, can_cache):
+            checks.append(can_cache())
+            if checks[-1]:
+                cached["rg-3"] = {"playcount": 900, "listeners": 50}
+            return cached
+
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=quick_popularity)
+        network_sections(net, "Radiohead", radiohead_owned())
+        self.assertEqual(checks, [True])
+        self.assertIn("rg-3", cached)
 
 
 class LateResultTests(unittest.TestCase):

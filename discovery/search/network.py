@@ -100,7 +100,7 @@ def artist_network(
     *,
     cache_read: Callable[[str], Any],
     cache_write: Callable[[str, Any], None],
-    popularity: Callable[[list[str]], Mapping[str, Mapping[str, Any]]],
+    popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]],
     bio: Callable[[str], str | None],
     http_get: Callable[..., Any] | None = None,
     limiter: SourceLimiter | None = None,

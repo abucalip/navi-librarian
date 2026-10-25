@@ -31,7 +31,9 @@ class ArtistNetwork:
     """The network side of the artist page. Built per request; the limiter is shared."""
 
     musicbrainz: MusicBrainzSearch
-    popularity: Callable[[list[str]], Mapping[str, Mapping[str, Any]]]
+    # Called with the release-group MBIDs and a ``can_cache`` check. The callable must not write
+    # its results to a cache unless ``can_cache()`` is true at the moment of writing.
+    popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]]
     bio: Callable[[str], str | None]
     cache_read: Callable[[str], Any]
     cache_write: Callable[[str, Any], None]
@@ -98,8 +100,14 @@ def missing_albums(
             continue
         unique.append(album)
 
+    def can_cache() -> bool:
+        return remaining() > 0 and not cancelled.is_set()
+
     try:
-        stats = network.popularity([a["release_group_mbid"] for a in unique if a["release_group_mbid"]])
+        stats = network.popularity(
+            [a["release_group_mbid"] for a in unique if a["release_group_mbid"]],
+            can_cache,
+        )
     except Exception:
         # Popularity only orders the list and labels its source; without it the list is still valid.
         stats = {}
