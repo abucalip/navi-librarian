@@ -195,7 +195,7 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 | ListenBrainz popularity (release-group) | `POST /1/popularity/release-group` | Already in use (`integrations/listenbrainz/popularity.py`) | Album popularity, chunked. |
 | ListenBrainz recording and release-group metadata | `POST /1/metadata/recording/` (up to 100 MBIDs), `GET /1/metadata/release_group/` (up to 50 used; measured limit 80, fails at 81) | Already in use (`discovery/batch_metadata.py`), measured in the repo | Track and album metadata. |
 | ListenBrainz metadata (artist, POST) | `POST /1/metadata/artist/` | **Live 405**: use GET | Not usable. |
-| MusicBrainz search | `GET /ws/2/artist?query=arid:X OR arid:Y ...` | **Live 200**, 3 of 3 artists returned in one call | Batch identity resolution for many artists per call. The maximum number of OR terms per call is **to verify**; the repo measured its own limits for other endpoints. |
+| MusicBrainz search | `GET /ws/2/artist?query=arid:X OR arid:Y ...` | **Live 200** up to 150 terms; **HTTP 414** from 160 terms (see below) | Batch identity resolution. Use **100 terms per call**, paging results with `limit=100` and `offset`. |
 | MusicBrainz lookup by ID | `GET /ws/2/artist/{mbid}` | Single ID only | Fallback. |
 | Last.fm | None found | Single-artist `artist.getInfo` and similar methods only | Requests are coalesced and cached. Third-party sources only; the official docs were not readable. |
 | Discogs | None found | One release or artist per call | Requests are coalesced and cached. Third-party sources only; the official docs were not readable. |
@@ -204,10 +204,30 @@ Notes from the live checks:
 - MusicBrainz rate limits are returned as headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`). The search endpoint limit was 400 per window and the lookup endpoint 1,900, so the search batch is the cheaper path. The public site also returned HTTP 503 "web server is currently busy" under global load. The app must treat that as retryable with backoff, not as a missing result.
 - ListenBrainz `lb-radio/artist` takes one seed per call (section 9, above). It has no batch form.
 
+### MusicBrainz OR-search size (checked 2026-10-25)
+
+The limit is the **URL length**, not the term count. Results were complete (every requested MBID returned) at every size tested:
+
+| Terms | Request URL length | Result |
+|---|---|---|
+| 5 | about 300 chars | 200, complete |
+| 10 | about 530 chars | 200, complete |
+| 25 | about 1,230 chars | 200, complete |
+| 50 | about 2,410 chars | 200, complete |
+| 75 | about 3,580 chars | 200, complete |
+| 100 | about 4,760 chars | 200, complete |
+| 150 | about 6,850 chars | 200, complete (paged with `offset`) |
+| 160 | about 7,580 chars | **HTTP 414 URI Too Long** |
+| 175 to 225 | 8,280 to 10,630 chars | 414 |
+| 250 and 300 | 11,800 to 14,170 chars | 414 and 431 Request Header Fields Too Large |
+
+**Decision: 100 terms per call.** It stays about 1,800 characters under the first failure, and it is a round number that matches `limit=100`. Results over 100 are paged with `offset`. If the largest accepted URL length changes on the server, this margin absorbs it.
+
+Also observed: MusicBrainz returned HTTP 503 ("web server is currently busy") several times across these probes, and it cleared after backing off. Backoff and retry are required for every MusicBrainz call.
+
 ### Open
 
-1. **MusicBrainz OR-search size.** Find the largest number of MBIDs per search call that still returns complete results, and keep a safety margin, as the repo does for release-group lookups.
-2. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
+1. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
 
 ## 10. Phasing
 
