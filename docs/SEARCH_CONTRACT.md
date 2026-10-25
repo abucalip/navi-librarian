@@ -173,14 +173,14 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 ### Verified
 
 - **Navidrome `search3` with an empty query and paging works.** A read-only probe of the owner's server returned 12,097 unique songs in 25 pages (`songCount=500`), about 1.8 s total. Songs, and whole-library song checks, can use this path.
-- **Library counts.** `getArtists` returns **733** artists, against the 734 the owner reported. The difference is probably one artist outside the index (for example, Various Artists) and should be checked before the artist index is sized. Songs: 12,097. Albums: 1,744 (owner-supplied; not probed).
+- **Library counts.** Navidrome is the source of truth: `getArtists` returns **733** artists, and the owner confirmed the count is whatever Navidrome returns. Songs: 12,097. Albums: 1,744 (owner-supplied; not probed).
 - **MusicBrainz rate limit and identification** ([MusicBrainz rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)). The official page sets an average of 1 request per second per source IP (300 requests/second global, anonymous agents about 50/second). Exceeding the limit returns HTTP 503 and every request is declined until the rate drops. Each request needs a User-Agent that identifies the app and a contact. The page does not address caching. It says high-volume commercial use should replicate the database locally, and it asks clients not to poll for metadata changes.
 
 ### Partly verified
 
 - **Discogs rate limits.** Secondary sources report 60 requests/minute authenticated and 25/minute unauthenticated ([Discogs-MCP PR #69](https://github.com/WOIII-me/Discogs-MCP/pull/69), [Sonovault](https://sonovault.now/resources/discogs-api-rate-limits)). Responses over the limit return 429.
 - **Discogs caching and attribution (owner-confirmed).** The owner confirmed the attribution wording "Data provided by Discogs" is correct. The six-hour cache cap applies to public apps only; this app is private and single-owner, so the standard TTLs in section 6 apply. The official terms page was still not readable by the agent, so the owner's reading is the basis for this.
-- **ListenBrainz similar artists.** The core docs page has no artist-similarity route. A search snippet of the ListenBrainz docs lists `/1/lb-radio/artist/{seed_artist_mbid}` as returning similar artists with listen counts and recording MBIDs. The Labs `similar-artists/json` route is undocumented, and sources disagree on whether its parameter is `artist_mbid` or `artist_mbids`. The plan uses the documented route. The response shape must be checked against a live call before implementation.
+- **ListenBrainz similar artists (live check, 2026-10-25).** `GET https://api.listenbrainz.org/1/lb-radio/artist/{seed_artist_mbid}` with `mode=easy&max_similar_artists=5&max_recordings_per_artist=1&pop_begin=0&pop_end=100` returned HTTP 200 with a JSON object keyed by artist MBID. Each value is a list of `{recording_mbid, similar_artist_mbid, similar_artist_name, total_listen_count}`. The seed artist is included in the result, so it must be filtered out. The response has **no similarity score**; ranking must use the order of the results or a score computed from the other sources. `max_similar_artists=5` returned six entries, so the parameter is not an exact cap. The response carries rate-limit headers, `X-RateLimit-Limit: 30` and `X-RateLimit-Reset-In`. This is one request per seed artist; no batch form was seen. The Labs `similar-artists/json` route is undocumented and is not used.
 
 ### Decided
 
@@ -188,10 +188,8 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 ### Open
 
-1. **Artist count**: 733 from the live server versus 734 reported. Confirm which artist is missing before sizing the artist index.
-2. **Live check of the ListenBrainz `lb-radio` response** before P3.
-3. **Batch endpoints per provider.** Batch requests were not verified for any provider. Before P2, confirm each one: MusicBrainz (lookup by many MBIDs, or Lucene `OR` search), ListenBrainz (any batch POST for metadata or similarity), Last.fm (no batch method known), Discogs (no batch method known). Where none exists, requests are coalesced and cached.
-4. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
+1. **Batch endpoints per provider.** Batch requests were not verified for any provider. Before P2, confirm each one: MusicBrainz (lookup by many MBIDs, or Lucene `OR` search), ListenBrainz (any batch POST for metadata or similarity), Last.fm (no batch method known), Discogs (no batch method known). Where none exists, requests are coalesced and cached.
+2. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
 
 ## 10. Phasing
 
