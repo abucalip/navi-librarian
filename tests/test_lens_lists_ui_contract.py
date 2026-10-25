@@ -36,14 +36,15 @@ class LensListsUiContractTests(unittest.TestCase):
         self.assertIn('aria-pressed="true">Repeated Tracks</button>', self.html)
         self.assertIn('aria-pressed="false">Deep Cuts</button>', self.html)
         self.assertIn('aria-pressed="false">Obsessions</button>', self.html)
+        self.assertIn('aria-pressed="false">Current Tastes</button>', self.html)
 
     def test_one_lens_button_per_stored_lens_with_pressed_state(self):
-        for lens in ("repeated_tracks", "deep_cuts", "obsessions"):
+        for lens in ("repeated_tracks", "deep_cuts", "obsessions", "current_tastes"):
             self.assertIn(f'data-lens="{lens}"', self.html)
         self.assertIn('role="group" aria-label="Lens"', self.html)
         self.assertIn('data-lens="repeated_tracks" aria-pressed="true"', self.html)
         # The server lens names must match the list the page offers.
-        self.assertIn("LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS)", (
+        self.assertIn("LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)", (
             ROOT / "discovery" / "lens_lists.py").read_text(encoding="utf-8"))
 
     def test_daily_lists_is_on_the_phone_bar_and_new_releases_moved_to_more(self):

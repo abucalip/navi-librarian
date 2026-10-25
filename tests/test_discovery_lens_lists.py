@@ -7,7 +7,7 @@ from discovery.lens_lists import (
     LENS_LIST_ORDER, LENS_LIST_SIZE, build_lens_lists, history_artist_mbids, lens_seed_queries,
     merge_artist_tags,
 )
-from discovery.lenses import DEEP_CUTS, NOW, OBSESSIONS, REPEATED_TRACKS, Lens
+from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS, Lens
 from discovery.tag_queries import tag_from_query
 
 DAY = "2026-01-15"
@@ -71,8 +71,8 @@ class RecordedFixtureTests(unittest.TestCase):
         pools, popularity, tags, library = self.fixture()
         lists = build(pools, popularity=popularity, tags=tags, library=library,
                       known_artist_mbids={"mbid-o0"})
-        self.assertEqual(list(lists), ["repeated_tracks", "deep_cuts", "obsessions"])
-        self.assertEqual([lists[n]["label"] for n in lists], ["Repeated tracks", "Deep cuts", "Obsessions"])
+        self.assertEqual(list(lists), ["repeated_tracks", "deep_cuts", "obsessions", "current_tastes"])
+        self.assertEqual([lists[n]["label"] for n in lists], ["Repeated tracks", "Deep cuts", "Obsessions", "Current tastes"])
         # Seed cap of 2: seed_r0 holds r0, r3 (owned), r6; seed_r1 holds r1 (too few
         # listeners), r4, r7; seed_r2 holds r2, r5.
         self.assertEqual(picked(lists, "repeated_tracks"),
@@ -161,7 +161,7 @@ class PartitionTests(unittest.TestCase):
         self.assertEqual(picked(reordered, "repeated_tracks"), [])
 
     def test_default_order_is_scarcest_supply_first(self):
-        self.assertEqual(LENS_LIST_ORDER, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS))
+        self.assertEqual(LENS_LIST_ORDER, (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES))
 
 
 class KnownArtistTests(unittest.TestCase):
@@ -261,7 +261,7 @@ class InvalidArgumentTests(unittest.TestCase):
         for count in (0, 21, True, 2.0):
             with self.assertRaises(ValueError):
                 self.call(count=count)
-        self.assertEqual(len(self.call(count=20)), 3)
+        self.assertEqual(len(self.call(count=20)), 4)
 
     def test_day(self):
         for day in ("2026-13-01", "20260115", "2026-1-15", "", 20260115, None):
@@ -269,7 +269,7 @@ class InvalidArgumentTests(unittest.TestCase):
                 self.call(day=day)
 
     def test_lenses(self):
-        for lenses in ((NOW,), (DEEP_CUTS, DEEP_CUTS), (Lens("deep_cuts", "Copy", "deep_cuts"),)):
+        for lenses in ((Lens("now", "Now", "quota"),), (DEEP_CUTS, DEEP_CUTS), (Lens("deep_cuts", "Copy", "deep_cuts"),)):
             with self.assertRaises(ValueError):
                 self.call(lenses=lenses)
         self.assertEqual(self.call(lenses=()), {})
@@ -317,7 +317,7 @@ class SeedTests(unittest.TestCase):
 
     def test_no_history_gives_no_seeds(self):
         self.assertEqual(lens_seed_queries([], self.TAGS),
-                         {"repeated_tracks": [], "deep_cuts": [], "obsessions": []})
+                         {"repeated_tracks": [], "deep_cuts": [], "obsessions": [], "current_tastes": []})
 
     def test_history_artist_mbids(self):
         listens = [listen("a", 0), listen("b", 1), {"listened_at": 5, "track_metadata": {}}]

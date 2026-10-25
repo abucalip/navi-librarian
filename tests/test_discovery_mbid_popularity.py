@@ -146,7 +146,7 @@ class ResolvePopularityTests(unittest.TestCase):
     def test_album_found_by_release_mbid(self):
         net = _Net([_release("r1", "g1")], album={"r1": 1200}, artist={"a1": 5000})
         out, cache = _resolve(net, [_cand("g1", "a1")])
-        self.assertEqual(out["g1"], {"album_listeners": 1200, "artist_listeners": 5000, "basis": "album"})
+        self.assertEqual(out["g1"], {"album_listeners": 1200, "release_year": 2000, "artist_listeners": 5000, "basis": "album"})
         self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"]["listeners"], 1200)
         self.assertEqual(cache.store[f"{ARTIST_CACHE_PREFIX}a1"]["listeners"], 5000)
 
@@ -172,7 +172,7 @@ class ResolvePopularityTests(unittest.TestCase):
     def test_album_miss_is_cached_and_not_retried(self):
         net = _Net([_release("r1", "g1")], artist={"a1": 10})
         out, cache = _resolve(net, [_cand("g1", "a1")])
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
         before = len(net.calls)
         _resolve(net, [_cand("g1", "a1")], cache=cache)
         self.assertEqual(len(net.calls), before)
@@ -181,7 +181,7 @@ class ResolvePopularityTests(unittest.TestCase):
         cache = _TtlCache()
         net = _Net([_release("r1", "g1"), _release("r2", "g2")], album={"r2": 50}, artist={"a1": 10})
         _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
         cache.now = MISS_TTL_SECONDS - 1
         before = len(net.calls)
         _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
@@ -218,7 +218,7 @@ class ResolvePopularityTests(unittest.TestCase):
         net = _Net([_release("r1", "g1")])
         _, cache = _resolve(net, [_cand("g1", "a1")])
         self.assertEqual(cache.store[f"{ARTIST_CACHE_PREFIX}a1"], {"listeners": None})
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
 
     def test_cached_values_cost_no_calls(self):
         cache = _Cache()

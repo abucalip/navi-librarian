@@ -1546,7 +1546,8 @@ function buildNewReleaseRow(item) {
 const LENS_LISTS = {
   repeated_tracks: 'Repeated tracks',
   deep_cuts: 'Deep cuts',
-  obsessions: 'Obsessions'
+  obsessions: 'Obsessions',
+  current_tastes: 'Current tastes'
 };
 let activeLens = 'repeated_tracks';
 let lensRequestId = 0;

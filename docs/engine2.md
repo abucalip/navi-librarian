@@ -103,7 +103,7 @@ Recent 30 days against all time (flat weights): 9/10 final overlap, 143 of 152 s
 
 | Lens | Window | What it does | Needs |
 | --- | --- | --- | --- |
-| Now | last 30 days | Today's behaviour: close to the current profile | existing |
+| Current tastes (replaces Now) | last 30 days, widening to 90 and 365 when thin | The window's tags minus the tags it under-represents (a tag's share of the month's listen weight below its share of all history; exact tag match), up to twelve seeds: the rarest kept tag (smallest share of all history) of each of the heaviest window artists first, then the heaviest tags, the Deep cuts gates with no audience floor for unknown counts and a 500,000 ceiling. Window weights are widened by similar artists (Last.fm `artist.getSimilar`, discount 0.5) and collaborators (MusicBrainz artist relations of music-making types, discount 0.25), and their genres seed the radio. Known artists are not excluded; owned albums are. Regional spine and era match rank the candidates (`ranking_boost`), fed by MusicBrainz artist areas and first years and release dates from the release search. New provider calls, capped at 30 per kind per run and cached 90 days. Daily list, last in the order. Starting values, not measured. | merged helpers, popularity module, Last.fm and MusicBrainz artist calls |
 | Genre spread | any | Family coverage policy | merged branch, tag budget |
 | Long-term taste | all time, flat weights | Profile without recency decay. Measured 2026-10-24: its seed tags overlap Rediscovery's by 5 of 6, so it adds little next to it. | profile windows, seeds |
 | Rediscovery | years ago, dormant for 12+ months | Unowned albums by or near artists once played heavily | history import, similar artists |

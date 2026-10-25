@@ -53,6 +53,8 @@ class AllocationCandidate:
     audience: int | None = None
     seed: str | None = None
     tag_strength: float = 0.0
+    # Added to tag_strength when a lens ranks its candidates (Current tastes: regional and era).
+    ranking_boost: float = 0.0
     # True when the listener already knows the artist (library or listening history).
     artist_known: bool = False
 

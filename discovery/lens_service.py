@@ -179,6 +179,7 @@ def build(librarian: Any) -> dict[str, Any]:
         artist_tags=gathered["artist_tags"], fallback_tags=gathered["fallback_tags"],
         library_by_title=library_by_title, known_artist_mbids=history_artist_mbids(usable),
         seeds=gathered["seeds"],
+        artist_profiles=gathered["artist_profiles"], current_context=gathered["current_context"],
     )
     return {"status": "built", "day": day, "lists": lists}
 
