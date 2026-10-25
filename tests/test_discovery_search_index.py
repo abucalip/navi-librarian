@@ -283,6 +283,36 @@ class OwnedIndexLifecycleTests(unittest.TestCase):
         self.assertEqual(loaders.library_calls, 1)
 
 
+class VariousArtistsTests(unittest.TestCase):
+    def test_various_artists_credits_never_become_artist_entries(self):
+        from discovery.search.index import build_owned_data
+        data = build_owned_data(
+            generation=1, built_at=0,
+            artists=[
+                {"id": "v1", "name": "Various Artists", "album_count": 9},
+                {"id": "v2", "name": "various  artist", "album_count": 1},
+                {"id": "v3", "name": "V.A.", "album_count": 1},
+                {"id": "ar1", "name": "Various Arts Collective", "album_count": 2},
+                {"id": "ar2", "name": "Radiohead", "album_count": 3},
+            ],
+            albums=[{"id": "al1", "artist": "Various Artists", "artist_id": "v1", "album": "Hits"}],
+            songs=[],
+        )
+        self.assertEqual([a["name"] for a in data.artists], ["Various Arts Collective", "Radiohead"])
+        self.assertEqual(data.albums[0]["name"], "Hits")
+
+    def test_various_artists_is_not_an_artist_in_search_or_the_library_list(self):
+        from discovery.search.index import build_owned_data
+        from discovery.search.query import library_page, search_owned
+        data = build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "v1", "name": "Various Artists", "album_count": 9}],
+            albums=[], songs=[],
+        )
+        self.assertEqual(search_owned(data, "various", ["artist"], limit=10)["artist"], [])
+        self.assertEqual(library_page(data, query="", sort="name", offset=0, limit=60)[2], 0)
+
+
 class ArtistGenreTests(unittest.TestCase):
     def build(self, albums):
         from discovery.search.index import build_owned_data

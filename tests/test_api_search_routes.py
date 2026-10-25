@@ -223,6 +223,18 @@ class SearchRouteTests(unittest.TestCase):
         self.assertEqual(resolved.status_code, 200)
         self.assertEqual(resolved.json()["sections"]["artist"]["artist"]["id"], "ar2")
 
+    def test_artist_route_failure_is_502_with_only_code_and_message(self):
+        from unittest import mock
+        with mock.patch.object(search_routes, "artist_page", side_effect=RuntimeError("boom")):
+            response = self.client.get("/api/artists/radiohead")
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.json(), {"code": "artist_failed", "message": "Owned index read failed."})
+
+    def test_various_artists_is_unknown_to_the_artist_route(self):
+        response = self.client.get("/api/artists/various-artists")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], "unknown_artist")
+
     def test_mbid_never_selects_the_owned_artist(self):
         response = self.client.get("/api/artists/ash", params={"mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711"})
         self.assertEqual(response.status_code, 409)

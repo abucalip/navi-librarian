@@ -651,3 +651,15 @@ Approved by the owner on 2026-10-25, with these decisions: the source is the Nav
 - **Display.** The search result shows "Name (genre)" when a genre exists. Without one, the name stands alone and the album count on the detail line tells same-name artists apart.
 - **No new provider call.** The genre comes from the album records the library snapshot already fetches. The snapshot keeps each album's `genre`. Cache entries without the field are refetched.
 - **Not in scope.** Album artwork on owned-album items is still a separate proposal, not approved.
+
+### 11.7 P1 completion check (2026-10-25)
+
+Checked against the P1 test rows in section 8.1 and the phase scope in section 10.
+
+- **Closed in this change:** "Various Artists" never becomes an artist result (section 4.2). The rule is the existing `is_various_artists`, so search, the library list and the artist route all exclude it. The 502 body of the artist route is tested as `code` and `message` only.
+- **Deviations, recorded:**
+  - The artwork route lives in `app/api/owned_artwork.py`, not in the module layout in section 8.
+  - Results show "N matches in your library". The "Not in your library" group waits for the network sources in P2.
+- **Not done, deferred:** recording the index build time against the section 2.1 target. It needs a run against the owner's Navidrome server, so it moves to P5 with the latency measurements.
+- **Status:** P1 is complete except for the build-time record above.
+

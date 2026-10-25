@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from discovery.recommendations import is_various_artists
 from discovery.search.normalize import normalize_key
 
 SONG_PAGE_SIZE = 500
@@ -174,9 +175,11 @@ def build_owned_data(
     songs: Iterable[Mapping[str, Any]],
 ) -> OwnedData:
     """Assemble a normalized index from raw snapshot and song records. Pure."""
+    # "Various Artists" is a compilation credit, not an artist, so it never becomes an artist result
+    # (SEARCH_CONTRACT section 4.2).
     artist_entries = tuple(
         entry for entry in (_artist_entry(a) for a in artists)
-        if entry["id"] and entry["name"]
+        if entry["id"] and entry["name"] and not is_various_artists(entry["name"])
     )
     artist_keys = {entry["id"]: entry["key"] for entry in artist_entries}
     album_entries = tuple(
