@@ -230,7 +230,7 @@
 <section id="library" class="page hidden" aria-labelledby="libraryHeading">
   <div class="panel">
     <h2 id="libraryHeading">Library</h2>
-    <p>Artists in your Navidrome library. Select an artist to see their albums.</p>
+    <p id="libraryIntro">Artists in your Navidrome library. Select an artist to see their albums.</p>
     <div id="libraryListView">
       <div class="library-controls">
         <div class="library-control">
@@ -251,8 +251,12 @@
     </div>
     <div id="libraryDetailView" hidden>
       <button type="button" id="libraryBack">Back to library</button>
-      <h3 id="artistDetailHeading" tabindex="-1"></h3>
-      <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
+      <div class="artist-hero">
+        <div class="artist-hero-text">
+          <h3 id="artistDetailHeading" tabindex="-1"></h3>
+          <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
+        </div>
+      </div>
       <ul id="artistAlbums" class="library-album-list"></ul>
     </div>
   </div>

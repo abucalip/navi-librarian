@@ -3150,7 +3150,7 @@ function openArtistFromSearch(item) {
   closeGlobalSearch();
   $('globalSearchInput').value = '';
   navigateTo('library');
-  openArtistDetail(item.id, item.key, null);
+  openArtistDetail(item.id, item.key, null, item.artwork_url);
 }
 
 // ---- Library list ----
@@ -3225,19 +3225,25 @@ function buildLibraryRow(artist) {
   addTextElement(text, 'span', 'library-artist-name', artist.name);
   addTextElement(text, 'span', 'library-artist-count', pluralize(artist.album_count, 'album', 'albums'));
   button.append(text);
-  button.addEventListener('click', () => openArtistDetail(artist.id, artist.key, button));
+  button.addEventListener('click', () => openArtistDetail(artist.id, artist.key, button, artist.artwork_url));
   row.append(button);
   return row;
 }
 
 // ---- Artist view ----
 
-async function openArtistDetail(id, key, returnFocus) {
+async function openArtistDetail(id, key, returnFocus, artworkUrl) {
   const view = libraryView;
   view.detailReturn = returnFocus;
   const seq = ++view.detailSeq;
   $('libraryListView').hidden = true;
   $('libraryDetailView').hidden = false;
+  // The artist view is the reading path, so the page intro steps aside while it is open.
+  $('libraryIntro').hidden = true;
+  // The artwork comes from the row or result that was clicked, so the artist API needs no new field.
+  const hero = document.querySelector('.artist-hero');
+  hero.querySelector('.artist-hero-art')?.remove();
+  hero.prepend(buildArtwork(artworkUrl, 'artist-hero-art'));
   const heading = $('artistDetailHeading');
   const status = $('artistDetailStatus');
   const albums = $('artistAlbums');
@@ -3287,6 +3293,7 @@ function closeArtistDetail() {
   libraryView.detailSeq += 1;
   $('libraryDetailView').hidden = true;
   $('libraryListView').hidden = false;
+  $('libraryIntro').hidden = false;
   const back = libraryView.detailReturn;
   if (back && back.isConnected) back.focus();
   else $('libraryHeading').focus();

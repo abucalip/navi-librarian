@@ -92,6 +92,17 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("'/api/artists/' + encodeURIComponent(key) + '?' + params", self.new_js)
         self.assertIn("const params = new URLSearchParams({id});", self.new_js)
 
+    def test_artist_view_leads_with_artwork_and_steps_the_intro_aside(self):
+        self.assertIn('<p id="libraryIntro">', self.html)
+        self.assertIn('<div class="artist-hero">', self.html)
+        self.assertIn("$('libraryIntro').hidden = true;", self.new_js)
+        self.assertIn("$('libraryIntro').hidden = false;", self.new_js)
+        # The hero art comes from the row or result that was clicked, not from a new API field.
+        self.assertIn("openArtistDetail(artist.id, artist.key, button, artist.artwork_url)", self.new_js)
+        self.assertIn("openArtistDetail(item.id, item.key, null, item.artwork_url)", self.new_js)
+        self.assertIn("hero.prepend(buildArtwork(artworkUrl, 'artist-hero-art'));", self.new_js)
+        self.assertIn("#artistDetailHeading { margin: 0 0 9px; font: 600 var(--text-2xl)/1.05 var(--display);", self.css)
+
     def test_index_states_are_never_shown_as_an_empty_library(self):
         self.assertIn("if (data.index_state === 'building' || data.index_state === 'unavailable') {", self.new_js)
         self.assertIn("'Your library is still being indexed. Try again in a moment.'", self.new_js)

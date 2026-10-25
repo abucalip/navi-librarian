@@ -1,3 +1,10 @@
+## 2026-10-25 — Search UI layout pass (branch `search-ui`)
+
+- **Scope:** step 4 of the critique (`/impeccable layout`): the artist view's hierarchy and artwork.
+- **Changes:** the artist view leads with an artwork hero (160 px, 128 px on phones) from the clicked row's `artwork_url`, so the artist API gains no field. The artist name takes page-title styling (the `.panel h2` treatment, with its chart-red rule) and stays an `h3`, so heading order is unchanged. The Library intro is hidden while the artist view is open and returns with the list.
+- **Verification:** the jsdom harness passes 53 checks, including the hero image source and the intro toggle. Chromium at 1280 px and 390 px: the hero and albums render, no horizontal overflow, and the intro is hidden. All 29 `*ui_contract*` modules pass.
+- **Not verified:** album art (needs the contract proposal in 11.6), long artist names beyond the checked case, Safari, and screen readers. The hero art is blank in screenshots because the stub returns an invalid JPEG.
+
 ## 2026-10-25 — Search UI polish pass (branch `search-ui`)
 
 - **Scope:** step 3 of the critique (`/impeccable polish`): streamed results, running count, and no flicker between queries.
