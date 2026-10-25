@@ -1,3 +1,11 @@
+## 2026-10-25 — Global search P2, slice A (branch `search-p2`)
+
+- **Built:** external text search for not-owned artists and albums from MusicBrainz (artist and release-group search, 503 backoff and retry) and Last.fm (artist and album search, only when a key is saved). New modules: `discovery/search/limiter.py` (per-source pacing; a call that cannot start within the deadline is `rate_limited`), `cache.py` (depth-50 provider entries, 24 h, 1 h for definitive empty answers), `providers.py`, `merge.py` (owned suppression, dedupe by MBID then key plus year, ranking), `runner.py` (3.0 s deadline, shared calls with reference counting, cancellation when the last consumer leaves, complete-only caching) and `network.py` (wiring). `GET /api/search` streams `source` and `result` events when `scope=all`; `scope=owned` touches no provider and no cache.
+- **Settings:** `lastfm_generation` counter, incremented when the saved Last.fm key changes (`settings/service.py`).
+- **Verification:** focused tests `test_discovery_search_providers.py`, `_merge.py`, `_runner.py`, and the existing search route, event, index, query and normalize tests (119 passed). Settings tests pass except three collection errors that also occur on `main`. `check_server_size` and `check_app_legacy_imports` pass. An end-to-end run through the real wiring with a fake HTTP layer showed owned suppression, source states and a repeat search served from cache with no provider call. Not run: the full unit suite (CI runs it), real provider calls, browser checks.
+- **Not in this slice (P2 slice B):** ListenBrainz (reported `not_in_this_build` for now), the artist page `bio` and `missing_albums` sections, and the "Not in your library" UI group.
+- **Deviations, recorded in `docs/SEARCH_CONTRACT.md` section 11.9.**
+
 ## 2026-10-25 — Global search P1 closed (docs)
 
 - **Closed:** P1 of `docs/SEARCH_CONTRACT.md`, with PRs #609 (backend), #610 (UI, checklist waived), #611 (artist genre) and #612 (Various Artists and 502 gaps) merged.

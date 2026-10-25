@@ -235,7 +235,7 @@ Invariants, each covered by an automated test in the phase that introduces it. I
 5. A provider failure or timeout emits a `source` event with `failed` or `timeout`. It does not end the stream, and it does not discard results already emitted.
 6. A provider that is timed out or cancelled emits no further `result` events. Results that arrive after cancellation are dropped on the server.
 7. Shared provider work is reference-counted by its active consumers (streams). A client disconnect removes that client's reference. Provider work is cancelled only when its last consumer disconnects. A disconnect is detected on write, and no further events are written to that client.
-8. Identical concurrent queries share one set of provider calls (request coalescing). The coalescing key is source, config generation, normalized query, types and depth, the same as the provider cache key in section 5.2. Every consumer receives the same events from the shared work. A consumer that joins later receives the events already emitted, followed by the rest. A late joiner does not get a new deadline: the shared work keeps the deadline of its first consumer, and the late joiner's `done` reports that same `deadline_hit`.
+8. Identical concurrent queries share one set of provider calls (request coalescing). The coalescing key is source, config generation, normalized query, types and depth, the same as the provider cache key in section 5.2. Every consumer receives the same events from the shared work. A consumer that joins later receives the events already emitted, followed by the rest. The shared work runs until the latest deadline among its active consumers, so an earlier consumer's timeout does not cancel work that a later consumer can still use. Each consumer stops waiting at its own deadline, and its `done` reports its own `deadline_hit`.
 9. Work that is cancelled, or that hits the deadline, is never written to the cache as a complete result. Only complete results from a finished call are cached.
 10. The first event on any stream, whether search or artist page, is `capabilities`.
 
@@ -667,4 +667,30 @@ Checked against the P1 test rows in section 8.1 and the phase scope in section 1
 
 1. **Index build time (P5).** Measure a full owned-index build against the owner's Navidrome server, and record the result against the section 2.1 target in `PROJECT_LOG.md`. Test the build on the real library size (12,097 songs, 733 artists, 1,744 albums). A stub run does not count. Owner: run the measurement or authorize it.
 2. **Manual refresh route (proposal, not approved).** Section 4.1 describes a manual refresh, but P1 has only the internal `force` argument. Proposed endpoint: `POST /api/library/refresh`, behind the login middleware. It starts an owned-index build with `force` and returns `202` with `{"index_state": "building" | "fresh" | "stale" | "unavailable"}`. If a build is already running, it joins that build rather than starting another. It has no request body. Nothing here is built until the owner approves the endpoint.
+
+## 12. P2 implementation record
+
+P2 is delivered in slices. This section records slice A; slice B is listed at the end.
+
+### 12.1 Slice A (branch `search-p2`)
+
+- **Sources:** MusicBrainz (artist search, release-group search restricted to albums, depth 50, 503 retried after 1 s and 2 s) and Last.fm (`artist.search`, `album.search`). Last.fm is `source_disabled` until a key is saved. Both run only for `scope=all` and only for the `artist` and `album` types.
+- **Pacing and deadline:** one limiter per process (MusicBrainz 1 call/s, Last.fm 5 calls/s). The deadline is 3.0 s from request receipt. Unfinished sources are reported `timeout` and set `deadline_hit`.
+- **Sharing and cache:** calls are keyed by the cache key in section 5.2. Identical concurrent searches share one call, which runs until the latest deadline among its consumers (invariant 8). A call is cancelled only when its last consumer leaves. Only complete results that arrive before the call's deadline are cached.
+- **Generation:** `lastfm_generation` in the settings store. MusicBrainz uses generation `0`.
+
+### 12.2 Deviations (slice A)
+
+1. **Null `album_count` and `genre` on provider artist results.** Section 3.8 types these as int and string. Search sources do not report them, so they are null rather than invented.
+2. **Duplicates across sources are dropped, not merged.** Results are emitted as they arrive, so a second source's match for an entity already shown is dropped, and the first result lists only the sources known then. Merging `sources` after emission would need a change to the event model.
+3. **Owned matching is by key, not MBID.** Owned MBIDs are null (section 11.2), so a provider match is owned when its normalized key matches, and for albums when the year also matches or one side has no year.
+4. **Homonyms.** Two artists with different known MBIDs stay separate even with the same name. Without MBIDs, the same key collapses them, as section 3.8 requires for key plus year.
+5. **Source `count`** is the number of provider records before dedupe.
+6. **HTTP request budget is fixed at 5 s, not the search deadline.** A request in flight cannot have its timeout extended when a later consumer joins a shared call. Consumers stop waiting at their own deadlines; a request that returns after the call's final deadline is a timeout and is not cached. A request started near a deadline can therefore run up to 5 s after its consumers leave, then is discarded.
+
+### 12.3 Slice B (not started)
+
+- ListenBrainz: release-group and artist popularity (batch), used in `missing_albums`. Search reports it `not_in_this_build` until then.
+- Artist page `bio` (reuse of the bio route's logic, which currently lives inline in `app/api/metadata.py` and needs extracting first) and `missing_albums` (MusicBrainz identity for the owned artist, then release-group browse).
+- "Not in your library" results group in the UI.
 

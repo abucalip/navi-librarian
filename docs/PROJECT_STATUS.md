@@ -78,7 +78,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P1 is closed. Next: the owner chooses the next phase (P2 adds the network sources behind the contract's deadline runner) or a priority elsewhere. The owner has not yet chosen the next engine priority. Not published or deployed.
+Global search P2 slice A is on branch `search-p2` (MusicBrainz and Last.fm behind the deadline runner, with source events and caching). Next: open and verify the PR on its exact head, then P2 slice B (ListenBrainz, artist-page `bio` and `missing_albums`, and the "Not in your library" group) as `docs/SEARCH_CONTRACT.md` section 12.3. Not published or deployed.
 
 ## Where to look
 

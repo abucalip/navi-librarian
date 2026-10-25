@@ -15,6 +15,7 @@ from discovery.library_snapshot import build_library_snapshot
 from discovery.search.artist_page import artist_page, json_sections, section_events
 from discovery.search.events import search_events, sse
 from discovery.search.index import OwnedIndex, fetch_song_inventory
+from discovery.search.network import external_search
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
 from settings.service import navidrome_generation
@@ -113,6 +114,14 @@ def search(
 
     view = owned_view(librarian)
     started = time.monotonic()
+    # scope=owned never reads or writes the provider cache and makes no network call (section 8.1).
+    external = None
+    if scope == "all":
+        external = external_search(
+            settings_read=librarian._discovery_settings_read,
+            cache_read=librarian._discovery_read_list,
+            cache_write=librarian._discovery_write_list,
+        )
 
     def stream():
         for name, payload in search_events(
@@ -121,6 +130,8 @@ def search(
             types=requested_types,
             limit=max_per_type,
             elapsed_ms=lambda: _elapsed_ms(started),
+            external=external,
+            started=started,
         ):
             yield sse(name, payload)
 

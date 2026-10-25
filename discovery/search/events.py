@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterator, Sequence
+import time
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any
 
 from discovery.search.index import (
@@ -12,6 +13,7 @@ from discovery.search.index import (
     IndexView,
 )
 from discovery.search.query import OWNED_TYPES, SEARCH_TYPES, search_owned
+from discovery.search.runner import RunState
 
 SOURCE_ORDER = ("navidrome", "musicbrainz", "lastfm", "listenbrainz", "discogs")
 NOT_IN_BUILD = "not_in_this_build"
@@ -45,7 +47,10 @@ def owned_type_available(view: IndexView) -> bool:
     return view.state in (STATE_FRESH, STATE_STALE)
 
 
-def search_capabilities(view: IndexView) -> dict[str, Any]:
+def search_capabilities(
+    view: IndexView,
+    sources: Mapping[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     owned_ok = owned_type_available(view)
     types = {}
     for kind in OWNED_TYPES:
@@ -53,7 +58,7 @@ def search_capabilities(view: IndexView) -> dict[str, Any]:
     types["genre"] = availability(False, NOT_IN_BUILD)
     return {
         "types": types,
-        "sources": source_capabilities(),
+        "sources": dict(sources) if sources is not None else source_capabilities(),
         "owned_index": owned_index_capability(view),
     }
 
@@ -70,15 +75,21 @@ def search_events(
     types: Sequence[str],
     limit: int,
     elapsed_ms: Callable[[], int],
+    external: Any | None = None,
+    started: float | None = None,
 ) -> Iterator[tuple[str, dict[str, Any]]]:
     """Yield ``(event, payload)`` pairs for one search, in contract order.
 
-    ``capabilities`` comes first, owned ``result`` events come next, and exactly one
+    ``capabilities`` comes first, owned ``result`` events come next, then the network
+    sources' ``source`` and ``result`` events when ``external`` is given. Exactly one
     ``done`` ends a normal stream. A failure while reading the index yields one
     ``error`` event and nothing after it (invariant 4).
     """
     ordered = [t for t in SEARCH_TYPES if t in types]
-    yield "capabilities", search_capabilities(view)
+    run = RunState()
+    yield "capabilities", search_capabilities(
+        view, external.source_capabilities() if external is not None else None
+    )
     try:
         if owned_type_available(view):
             owned_requested = [t for t in ordered if t in OWNED_TYPES]
@@ -86,11 +97,20 @@ def search_events(
             for kind in owned_requested:
                 for result in found.get(kind, []):
                     yield "result", result
+        if external is not None:
+            yield from external.stream(
+                query=query,
+                types=ordered,
+                limit=limit,
+                owned=view.data if owned_type_available(view) else None,
+                started=time.monotonic() if started is None else started,
+                run=run,
+            )
     except Exception:
         yield "error", {"code": "stream_failed", "message": "Owned index read failed."}
         return
     yield "done", {
         "elapsed_ms": elapsed_ms(),
-        "deadline_hit": False,
-        "partial": search_partial(view, ordered),
+        "deadline_hit": run.deadline_hit,
+        "partial": search_partial(view, ordered) or run.deadline_hit or run.degraded,
     }
