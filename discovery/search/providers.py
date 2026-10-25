@@ -28,6 +28,11 @@ MB_HEADERS = {
 MB_RETRY_DELAYS = (1.0, 2.0)
 # MusicBrainz browse calls accept up to 100 results per page.
 BROWSE_LIMIT = 100
+# Batched identity lookup (section 9): up to 100 names and about 1800 characters of query per call.
+# The URL length limit, not the name count, is what decides the batch size.
+IDENTITY_BATCH_NAMES = 100
+IDENTITY_BATCH_CHARS = 1800
+IDENTITY_MAX_PAGES = 5
 # Each HTTP request has this fixed budget. It is not derived from the search deadline, because a
 # shared call can gain later consumers (and so a later deadline) after its request has started.
 # Consumers stop waiting at their own deadlines; a request in flight is discarded when it returns.
@@ -185,6 +190,40 @@ class MusicBrainzSearch:
         return [c for c in candidates if _usable(c) and c["artist"]]
 
 
+    def artist_identities(self, names: list[str], *, remaining, cancelled) -> dict[str, str]:
+        """MBIDs for many artist names, found with OR queries of up to 100 names each.
+
+        Returns ``{normalized key: MBID}`` for exact key matches only. The first match in
+        MusicBrainz's own ranking wins. A name whose match is not on the first
+        ``IDENTITY_MAX_PAGES`` pages stays unresolved. Each page is one request.
+        """
+        wanted: dict[str, str] = {}
+        for name in names:
+            key = normalize_key(name)
+            if key and key not in wanted:
+                wanted[key] = name
+        found: dict[str, str] = {}
+        for batch in _identity_batches(wanted):
+            keys = {normalize_key(name) for name in batch}
+            query = " OR ".join(f"artist:{lucene_phrase(name)}" for name in batch)
+            for page in range(IDENTITY_MAX_PAGES):
+                payload = self._request(
+                    "/artist",
+                    {"query": query, "limit": IDENTITY_BATCH_NAMES, "offset": page * IDENTITY_BATCH_NAMES},
+                    remaining=remaining,
+                    cancelled=cancelled,
+                )
+                for item in _as_list(payload.get("artists")):
+                    if not isinstance(item, dict) or not item.get("id"):
+                        continue
+                    key = normalize_key(item.get("name"))
+                    if key in keys and key not in found:
+                        found[key] = item["id"]
+                fetched = (page + 1) * IDENTITY_BATCH_NAMES
+                if keys.issubset(found) or fetched >= int(payload.get("count") or 0):
+                    break
+        return found
+
     def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Studio albums of one artist (primary type album, no secondary types such as live or compilation)."""
         payload = self._request(
@@ -205,6 +244,21 @@ class MusicBrainzSearch:
                 item.get("id"),
             ))
         return [c for c in candidates if _usable(c) and c["artist"]]
+
+
+def _identity_batches(wanted: dict[str, str]):
+    """Yield lists of names, each under the name and character limits."""
+    batch: list[str] = []
+    size = 0
+    for name in wanted.values():
+        term = len(f"artist:{lucene_phrase(name)} OR ")
+        if batch and (len(batch) >= IDENTITY_BATCH_NAMES or size + term > IDENTITY_BATCH_CHARS):
+            yield batch
+            batch, size = [], 0
+        batch.append(name)
+        size += term
+    if batch:
+        yield batch
 
 
 class LastFmSearch:
@@ -266,3 +320,14 @@ class LastFmSearch:
             if isinstance(item, dict)
         ]
         return [c for c in candidates if _usable(c) and c["artist"]]
+
+    def top_albums(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Last.fm's top albums for one artist. Used on the artist page, not in search."""
+        payload = self._call("artist.getTopAlbums", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
+        albums = _as_list((payload.get("topalbums") or {}).get("album"))
+        candidates = [
+            album_candidate(self.source, str(item.get("name") or "").strip(), artist_name, None, None)
+            for item in albums
+            if isinstance(item, dict)
+        ]
+        return [c for c in candidates if _usable(c)]

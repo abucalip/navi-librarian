@@ -44,6 +44,28 @@ def read_list(database_path: str | PathLike[str], name: str) -> dict[str, Any] |
 
 
 
+def delete_prefix_except(
+    database_path: str | PathLike[str],
+    prefix: str,
+    keep_prefix: str,
+) -> int:
+    """Delete cached lists whose name starts with ``prefix`` but not with ``keep_prefix``.
+
+    Prefixes are compared as plain text, not LIKE patterns, so names with ``%`` or ``_`` are
+    matched exactly. ``keep_prefix`` must start with ``prefix``. Returns the number of rows removed.
+    """
+    if not keep_prefix.startswith(prefix):
+        raise ValueError("keep_prefix must start with prefix")
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_schema(db)
+        cursor = db.execute(
+            "DELETE FROM discovery_lists "
+            "WHERE substr(name, 1, ?) = ? AND substr(name, 1, ?) <> ?",
+            (len(prefix), prefix, len(keep_prefix), keep_prefix),
+        )
+        return cursor.rowcount
+
+
 _RECOMMENDATION_HISTORY_RETENTION_SECONDS = 30 * 24 * 60 * 60
 _RECOMMENDATION_HISTORY_MAX_ROWS = 2000
 

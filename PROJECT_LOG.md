@@ -1,3 +1,10 @@
+## 2026-10-26 — Global search P2, slice D (branch `search-p2d`)
+
+- **Probe:** Navidrome serves `musicBrainzId` on 43% of artists (314 of 733) and 49% of albums (858 of 1745). Not a majority. Artist MBIDs need one `getArtist` call each. Album MBIDs are release IDs, not release-group IDs.
+- **Built:** artist-page identity from Navidrome's tag when present. Last.fm top albums on the artist page, merged with MusicBrainz. Batched MusicBrainz identity lookup (built, not called yet). Background prefix delete of old-generation cache entries.
+- **Verification:** focused modules pass (192). Guards pass. Not run: the full suite (CI), live Last.fm and MusicBrainz calls, the artist route against a live server.
+- **Contract:** section 12.8.
+
 ## 2026-10-25 — Search panel shows two sections only (branch `search-p2c`)
 
 - **Owner direction:** the search panel shows only "In your library" and "Not in your library". Provider names, per-provider status and popularity do not appear in it.

@@ -115,7 +115,7 @@ def artist_page(
         },
     }
     if network is not None:
-        sections.update(network_sections(network, artist["name"], view.data))
+        sections.update(network_sections(network, artist["name"], artist["id"], view.data))
     return _finish(ArtistPage("ok", capabilities, sections), view)
 
 

@@ -725,8 +725,29 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 These need an owner decision or a change in another phase. They are not done in this slice.
 
 1. **ListenBrainz in search: not needed, and not built (resolved 2026-10-25).** ListenBrainz has no text search. Its uses in section 5.1 are popularity, metadata, radio and similar artists, none of which search needs. Search reports it `not_in_this_build`. Its only use is popularity on the artist page's `missing_albums`.
-2. **Batched MusicBrainz identity lookup (section 8.1, 100-term batching).** The app has no flow that resolves several artists at once yet. Build this with the flow that needs it.
+2. **Batched identity lookup (section 8.1, 100-term batching): built, not yet called.** See section 12.8.
 3. **Owned MBID matching (section 8.1).** Owned albums and artists have no MBIDs (section 11.2). The test cannot be written until the owned snapshot carries MBIDs.
-4. **Background deletion of old-generation cache entries (section 5.2).** Old entries are unreachable but not deleted. This needs a prefix-delete operation on the discovery store.
-5. **Last.fm on the artist page (section 12.5).** It is reported `not_in_this_build` there.
+4. **Background deletion of old-generation cache entries (section 5.2): done** in slice D (section 12.8).
+5. **Last.fm on the artist page: done** in slice D (section 12.8).
+
+### 12.8 Slice D (branch `search-p2d`)
+
+**Navidrome MBIDs (probe, 2026-10-26).** A read-only probe of the owner's server, reporting counts only:
+
+| Item | With MBID | Total | Share |
+|---|---|---|---|
+| Artists (`getArtist` `musicBrainzId`) | 314 | 733 | 43% |
+| Albums (`getAlbumList2` `musicBrainzId`) | 858 | 1745 | 49% |
+
+Most files are not tagged, so the premise of a majority does not hold. Two facts shape the design:
+- Artist MBIDs are not in the artist index or in album artist references. Each one needs a `getArtist` call, so they are read per artist page, not library-wide.
+- The album `musicBrainzId` is the **release** MBID. Provider albums are release groups, so the two cannot be matched by ID. Albums keep key-and-year matching.
+
+**What slice D builds:**
+- **Artist page identity.** The artist's Navidrome MBID is read with one `getArtist` call and used when present. Otherwise the exact-name MusicBrainz lookup is used.
+- **Last.fm on the artist page.** `artist.getTopAlbums` adds albums to `missing_albums`. An album from both sources is one item with both sources listed. Last.fm works when MusicBrainz has no identity for the artist. A Last.fm failure is ignored: the MusicBrainz list still answers. Ordering is unchanged (ListenBrainz listen counts).
+- **Batched MusicBrainz identity.** `artist_identities(names)` resolves many names with OR queries. Each batch is at most 100 names and about 1800 characters of query. It pages up to 5 pages per batch, and each page is one request. Only exact key matches count. The first match in MusicBrainz's ranking wins. **This is built and tested but not called yet.** A library-wide job would need about 420 unresolved artists, so about 5 batches. Whether to run it, and when, is an owner decision.
+- **Old-generation cache cleanup.** `discovery/store.py` `delete_prefix_except` removes entries under a prefix except the current generation's. It compares prefixes as plain text, so `%` and `_` in names are safe. The search path schedules this once per source and generation per process, on a background thread. Failures are retried on a later request.
+
+**Still open:** the library-wide identity job (see above); owned MBID matching for provider results (the owned index has no MBIDs).
 

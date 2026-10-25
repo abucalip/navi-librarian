@@ -77,7 +77,7 @@ def never_cancelled():
 class MissingAlbumsTests(unittest.TestCase):
     def run_missing(self, net, owned=None):
         return missing_albums(
-            net, "Radiohead", OwnedKeys(owned or radiohead_owned()),
+            net, "Radiohead", None, OwnedKeys(owned or radiohead_owned()),
             remaining=lambda: 10.0, cancelled=never_cancelled(),
         )
 
@@ -86,7 +86,7 @@ class MissingAlbumsTests(unittest.TestCase):
             artist_candidate("musicbrainz", "Radiohead Tribute", "mb-x"),
             artist_candidate("musicbrainz", "Radiohead", "mb-rh"),
         ]))
-        mbid = resolve_identity(net, "Radiohead", remaining=lambda: 10.0, cancelled=never_cancelled())
+        mbid = resolve_identity(net, "Radiohead", None, remaining=lambda: 10.0, cancelled=never_cancelled())
         self.assertEqual(mbid, "mb-rh")
 
     def test_no_identity_is_a_valid_empty_list(self):
@@ -139,20 +139,20 @@ class NetworkSectionTests(unittest.TestCase):
             FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS),
             bio=lambda name: "English rock band.",
         )
-        sections = network_sections(net, "Radiohead", radiohead_owned())
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
         self.assertEqual(sections["bio"]["bio"], {"text": "English rock band.", "source": "wikidata"})
         self.assertTrue(sections["bio"]["complete"])
         self.assertTrue(sections["missing_albums"]["complete"])
         self.assertEqual(len(sections["missing_albums"]["items"]), 2)
 
     def test_empty_bio_is_a_valid_empty_result(self):
-        sections = network_sections(network(), "Radiohead", radiohead_owned())
+        sections = network_sections(network(), "Radiohead", None, radiohead_owned())
         self.assertEqual(sections["bio"], {"section": "bio", "available": True, "complete": True,
                                            "reason": None, "bio": None})
 
     def test_musicbrainz_failure_is_source_failed_and_bio_still_answers(self):
         net = network(FakeMusicBrainz(fail="failed"), bio=lambda name: "Bio.")
-        sections = network_sections(net, "Radiohead", radiohead_owned())
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
         self.assertEqual(sections["missing_albums"]["reason"], "source_failed")
         self.assertFalse(sections["missing_albums"]["available"])
         self.assertEqual(sections["missing_albums"]["items"], [])
@@ -162,7 +162,7 @@ class NetworkSectionTests(unittest.TestCase):
         def broken(name):
             raise RuntimeError("wikidata down")
 
-        sections = network_sections(network(bio=broken), "Radiohead", radiohead_owned())
+        sections = network_sections(network(bio=broken), "Radiohead", None, radiohead_owned())
         self.assertEqual(sections["bio"]["reason"], "source_failed")
         self.assertEqual(sections["bio"]["bio"], None)
 
@@ -172,7 +172,7 @@ class NetworkSectionTests(unittest.TestCase):
             return {}
 
         net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=slow_popularity, deadline=0.3)
-        sections = network_sections(net, "Radiohead", radiohead_owned())
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
         missing = sections["missing_albums"]
         self.assertTrue(missing["available"])
         self.assertFalse(missing["complete"])
@@ -187,7 +187,7 @@ class NetworkSectionTests(unittest.TestCase):
             return "late"
 
         started = time.monotonic()
-        sections = network_sections(network(bio=slow, deadline=0.2), "Radiohead", radiohead_owned())
+        sections = network_sections(network(bio=slow, deadline=0.2), "Radiohead", None, radiohead_owned())
         self.assertLess(time.monotonic() - started, 0.9)
         self.assertEqual(sections["bio"]["reason"], "deadline")
         self.assertFalse(sections["bio"]["complete"])
@@ -205,7 +205,7 @@ class PopularityDeadlineTests(unittest.TestCase):
             return {"rg-3": {"playcount": 900, "listeners": 50}}
 
         net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=slow_popularity, deadline=0.2)
-        sections = network_sections(net, "Radiohead", radiohead_owned())
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
         self.assertEqual(sections["missing_albums"]["reason"], "deadline")
         self.assertEqual(cached, {})
 
@@ -220,7 +220,7 @@ class PopularityDeadlineTests(unittest.TestCase):
             return cached
 
         net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=quick_popularity)
-        network_sections(net, "Radiohead", radiohead_owned())
+        network_sections(net, "Radiohead", None, radiohead_owned())
         self.assertEqual(checks, [True])
         self.assertIn("rg-3", cached)
 
@@ -229,8 +229,84 @@ class LateResultTests(unittest.TestCase):
     def test_identity_answer_that_arrives_after_the_deadline_is_not_cached(self):
         store = Store()
         net = network(FakeMusicBrainz(artists=RADIOHEAD), store=store)
-        resolve_identity(net, "Radiohead", remaining=lambda: 0.0, cancelled=never_cancelled())
+        resolve_identity(net, "Radiohead", None, remaining=lambda: 0.0, cancelled=never_cancelled())
         self.assertEqual(store.data, {})
+
+
+class FakeLastFm:
+    def __init__(self, albums=(), fail=False):
+        self._albums = list(albums)
+        self._fail = fail
+
+    def top_albums(self, name, *, remaining, cancelled):
+        if self._fail:
+            raise ProviderError("failed")
+        return self._albums
+
+
+class NavidromeIdentityTests(unittest.TestCase):
+    def test_navidrome_tag_is_used_without_a_musicbrainz_name_search(self):
+        class MustNotSearch(FakeMusicBrainz):
+            def artists(self, query, *, remaining, cancelled):
+                raise AssertionError("name search should not run when the library tags the MBID")
+
+        net = network(MustNotSearch(albums=ALBUMS))
+        net.navidrome_mbid = lambda artist_id: "mb-tagged"
+        mbid = resolve_identity(net, "Radiohead", "ar1", remaining=lambda: 10.0, cancelled=never_cancelled())
+        self.assertEqual(mbid, "mb-tagged")
+
+    def test_failed_tag_read_falls_back_to_the_name_lookup(self):
+        net = network(FakeMusicBrainz(artists=RADIOHEAD))
+
+        def broken(artist_id):
+            raise RuntimeError("navidrome down")
+
+        net.navidrome_mbid = broken
+        self.assertEqual(
+            resolve_identity(net, "Radiohead", "ar1", remaining=lambda: 10.0, cancelled=never_cancelled()),
+            "mb-rh",
+        )
+
+
+class LastFmAlbumsTests(unittest.TestCase):
+    def run_missing(self, net):
+        return missing_albums(net, "Radiohead", None, OwnedKeys(radiohead_owned()),
+                              remaining=lambda: 10.0, cancelled=never_cancelled())
+
+    def test_lastfm_album_matching_a_musicbrainz_album_is_one_item_with_both_sources(self):
+        lastfm = [album_candidate("lastfm", "The Bends", "Radiohead", None, None)]
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS))
+        net.lastfm = FakeLastFm(albums=lastfm)
+        items = {i["name"]: i for i in self.run_missing(net)}
+        self.assertEqual(sorted(items), ["Pablo Honey", "The Bends"])
+        self.assertEqual(items["The Bends"]["sources"], ["musicbrainz", "lastfm"])
+
+    def test_lastfm_only_album_is_listed_with_lastfm_as_its_source(self):
+        lastfm = [album_candidate("lastfm", "Hail to the Thief", "Radiohead", None, None)]
+        net = network(FakeMusicBrainz(artists=[], albums=[]))
+        net.lastfm = FakeLastFm(albums=lastfm)
+        [item] = self.run_missing(net)
+        self.assertEqual(item["name"], "Hail to the Thief")
+        self.assertEqual(item["sources"], ["lastfm"])
+
+    def test_lastfm_album_the_library_owns_is_removed(self):
+        lastfm = [album_candidate("lastfm", "OK Computer", "Radiohead", None, None)]
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=[]))
+        net.lastfm = FakeLastFm(albums=lastfm)
+        self.assertEqual(self.run_missing(net), [])
+
+    def test_lastfm_failure_is_ignored_and_the_musicbrainz_list_still_answers(self):
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS))
+        net.lastfm = FakeLastFm(fail=True)
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
+        self.assertTrue(sections["missing_albums"]["complete"])
+        self.assertEqual(len(sections["missing_albums"]["items"]), 2)
+
+    def test_lastfm_alone_answers_when_the_artist_has_no_musicbrainz_identity(self):
+        lastfm = [album_candidate("lastfm", "Hail to the Thief", "Radiohead", None, None)]
+        net = network(FakeMusicBrainz(artists=[]))
+        net.lastfm = FakeLastFm(albums=lastfm)
+        self.assertEqual([i["name"] for i in self.run_missing(net)], ["Hail to the Thief"])
 
 
 class ArtistPageNetworkTests(unittest.TestCase):

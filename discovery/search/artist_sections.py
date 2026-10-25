@@ -1,8 +1,11 @@
 """Network sections of the artist page: ``bio`` and ``missing_albums`` (contract sections 3.3 and 3.8).
 
-The owned artist has no MBID (section 11.2), so its MusicBrainz identity is found by exact
-name match. Each network section runs on its own thread under one artist-page deadline. A
-section that has not finished by then is reported ``deadline``; a failed one ``source_failed``.
+Identity: the owned artist's MusicBrainz MBID comes from Navidrome when the library tags it
+(``getArtist``), and otherwise from an exact name match. Albums come from MusicBrainz and
+Last.fm, deduplicated; the list is ordered by ListenBrainz listen counts.
+
+Each network section runs on its own thread under one artist-page deadline. A section that has
+not finished by then is reported ``deadline``; a failed one ``source_failed``.
 """
 
 from __future__ import annotations
@@ -19,7 +22,7 @@ from discovery.search.cache import provider_cache_key, read_cached, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import normalize_key
-from discovery.search.providers import MusicBrainzSearch
+from discovery.search.providers import LastFmSearch, MusicBrainzSearch
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
 
 MISSING_ALBUMS_LIMIT = 50
@@ -37,6 +40,11 @@ class ArtistNetwork:
     bio: Callable[[str], str | None]
     cache_read: Callable[[str], Any]
     cache_write: Callable[[str, Any], None]
+    # Navidrome's MBID for an artist ID, or None when the library does not tag it.
+    navidrome_mbid: Callable[[str], str | None] | None = None
+    # Last.fm, when a key is saved. ``lastfm_generation`` keys its cache entries (section 5.2).
+    lastfm: LastFmSearch | None = None
+    lastfm_generation: int = 0
     sources: Mapping[str, dict[str, Any]] = field(default_factory=dict)
     clock: Callable[[], float] = time.monotonic
     deadline_seconds: float = SEARCH_DEADLINE_SECONDS
@@ -53,12 +61,26 @@ def _cached_records(network: ArtistNetwork, key: str, fetch, remaining, cancelle
     return records
 
 
-def resolve_identity(network: ArtistNetwork, name: str, *, remaining, cancelled) -> str | None:
-    """MusicBrainz MBID of the artist with this exact normalized name, or None.
+def resolve_identity(
+    network: ArtistNetwork,
+    name: str,
+    artist_id: str | None,
+    *,
+    remaining,
+    cancelled,
+) -> str | None:
+    """The artist's MBID: Navidrome's tag when present, else the first exact-name MusicBrainz match.
 
-    The first exact match in MusicBrainz's own ranking is taken. The lookup shares the search
-    cache entry for the same name.
+    The name lookup shares the search cache entry for the same name.
     """
+    if network.navidrome_mbid is not None and artist_id:
+        try:
+            tagged = network.navidrome_mbid(artist_id)
+        except Exception:
+            tagged = None  # A failed tag read falls back to the name lookup.
+        if tagged:
+            return tagged
+
     key = normalize_key(name)
     records = _cached_records(
         network,
@@ -73,37 +95,61 @@ def resolve_identity(network: ArtistNetwork, name: str, *, remaining, cancelled)
     return None
 
 
+def _lastfm_albums(network: ArtistNetwork, name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+    """Last.fm's top albums for the artist. Best effort: a failure contributes no albums."""
+    if network.lastfm is None:
+        return []
+    try:
+        return _cached_records(
+            network,
+            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "albums"),
+            lambda remaining, cancelled: network.lastfm.top_albums(name, remaining=remaining, cancelled=cancelled),
+            remaining,
+            cancelled,
+        )
+    except Exception:
+        return []
+
+
 def missing_albums(
     network: ArtistNetwork,
     name: str,
+    artist_id: str | None,
     owned: OwnedKeys,
     *,
     remaining,
     cancelled,
     progress: dict | None = None,
 ) -> list[dict[str, Any]]:
-    """Albums MusicBrainz lists for this artist that the library does not own, most listened first.
+    """Albums MusicBrainz or Last.fm lists for this artist that the library does not own.
 
-    ``progress`` receives ``items`` as soon as the album list is known, before popularity is
-    looked up, so a caller that runs out of time can still return a partial list.
+    Most listened first. ``progress`` receives ``items`` as soon as the album list is known,
+    before popularity is looked up, so a caller that runs out of time can still return a
+    partial list.
     """
-    mbid = resolve_identity(network, name, remaining=remaining, cancelled=cancelled)
-    if mbid is None:
-        return []
-    albums = _cached_records(
-        network,
-        provider_cache_key("musicbrainz", 0, f"artist-mbid:{mbid}", "albums"),
-        lambda remaining, cancelled: network.musicbrainz.albums_by_artist(
-            mbid, remaining=remaining, cancelled=cancelled
-        ),
-        remaining,
-        cancelled,
-    )
+    mbid = resolve_identity(network, name, artist_id, remaining=remaining, cancelled=cancelled)
+    mb_albums: list[dict[str, Any]] = []
+    if mbid is not None:
+        mb_albums = _cached_records(
+            network,
+            provider_cache_key("musicbrainz", 0, f"artist-mbid:{mbid}", "albums"),
+            lambda remaining, cancelled: network.musicbrainz.albums_by_artist(
+                mbid, remaining=remaining, cancelled=cancelled
+            ),
+            remaining,
+            cancelled,
+        )
+    lastfm_albums = _lastfm_albums(network, name, remaining=remaining, cancelled=cancelled)
+
     unique: list[dict[str, Any]] = []
-    for album in albums:
-        if owned.owns(album) or any(same_entity(album, seen) for seen in unique):
+    for album in [*mb_albums, *lastfm_albums]:
+        if owned.owns(album):
             continue
-        unique.append(album)
+        match = next((seen for seen in unique if same_entity(album, seen)), None)
+        if match is None:
+            unique.append({**album, "sources": [album["source"]]})
+        elif album["source"] not in match["sources"]:
+            match["sources"].append(album["source"])
 
     if progress is not None:
         progress["items"] = _shape_items(unique, {})
@@ -119,7 +165,6 @@ def missing_albums(
     except Exception:
         # Popularity only orders the list and labels its source; without it the list is still valid.
         stats = {}
-
     return _shape_items(unique, stats)
 
 
@@ -130,7 +175,7 @@ def _shape_items(albums: list[dict[str, Any]], stats: Mapping[str, Mapping[str, 
         mbid_album = album["release_group_mbid"]
         # "playcount" is the total listen count; "listeners" is the number of users.
         listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
-        sources = [album["source"]] + (["listenbrainz"] if listens is not None else [])
+        sources = list(album["sources"]) + (["listenbrainz"] if listens is not None else [])
         items.append({
             "name": album["name"],
             "year": album["year"],
@@ -162,6 +207,7 @@ def _incomplete(name: str, reason: str, payload_key: str) -> dict[str, Any]:
 def network_sections(
     network: ArtistNetwork,
     name: str,
+    artist_id: str | None,
     owned_data: OwnedData | None,
 ) -> dict[str, dict[str, Any]]:
     """Run ``bio`` and ``missing_albums`` under one deadline. Returns the two section objects."""
@@ -181,7 +227,10 @@ def network_sections(
     progress: dict[str, Any] = {}
 
     def missing_job() -> dict[str, Any]:
-        items = missing_albums(network, name, owned, remaining=remaining, cancelled=cancelled, progress=progress)
+        items = missing_albums(
+            network, name, artist_id, owned,
+            remaining=remaining, cancelled=cancelled, progress=progress,
+        )
         return _available("missing_albums", "items", items)
 
     jobs = {"bio": ("bio", bio_job), "missing_albums": ("items", missing_job)}

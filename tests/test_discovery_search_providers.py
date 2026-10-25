@@ -178,6 +178,93 @@ class MusicBrainzBrowseTests(unittest.TestCase):
         self.assertEqual(params["limit"], 100)
 
 
+class BatchedIdentityTests(unittest.TestCase):
+    def client(self, responder):
+        calls = []
+
+        def get(url, params=None, headers=None, timeout=None):
+            calls.append(params)
+            return FakeResponse(200, responder(params))
+
+        client = MusicBrainzSearch(get=get, limiter=open_limiter(), pause=lambda _: None)
+        return client, calls
+
+    def test_batches_split_at_one_hundred_names(self):
+        from discovery.search.providers import _identity_batches
+
+        names = {f"a{i}": f"a{i}" for i in range(250)}  # short names, so only the 100-name cap applies
+        self.assertEqual([len(batch) for batch in _identity_batches(names)], [100, 100, 50])
+
+    def test_batches_also_split_when_the_query_would_exceed_the_length_budget(self):
+        from discovery.search.providers import _identity_batches
+
+        names = {f"n{i}": "X" * 60 + str(i) for i in range(60)}
+        batches = list(_identity_batches(names))
+        self.assertGreater(len(batches), 1)
+        for batch in batches:
+            self.assertLessEqual(sum(len(f"artist:\"{name}\" OR ") for name in batch), 1800)
+
+    def test_one_query_resolves_several_names_by_exact_key(self):
+        def responder(params):
+            return {"count": 3, "artists": [
+                {"id": "mb-ash", "name": "Ash"},
+                {"id": "mb-ash-tribute", "name": "Ash Tribute"},
+                {"id": "mb-rh", "name": "Radiohead"},
+            ]}
+
+        client, calls = self.client(responder)
+        found = client.artist_identities(["Ash", "Radiohead", "Nobody"], remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual(found, {"ash": "mb-ash", "radiohead": "mb-rh"})
+        self.assertEqual(len(calls), 1)
+        self.assertIn('artist:"Ash" OR artist:"Radiohead" OR artist:"Nobody"', calls[0]["query"])
+
+    def test_first_exact_match_in_musicbrainz_ranking_wins(self):
+        def responder(params):
+            return {"count": 2, "artists": [{"id": "mb-first", "name": "Ash"}, {"id": "mb-second", "name": "ash"}]}
+
+        client, _ = self.client(responder)
+        self.assertEqual(client.artist_identities(["Ash"], remaining=plenty, cancelled=never_cancelled()), {"ash": "mb-first"})
+
+    def test_paging_continues_only_while_names_are_unresolved_and_results_remain(self):
+        def responder(params):
+            offset = params["offset"]
+            if offset == 0:
+                return {"count": 250, "artists": [{"id": f"mb-{i}", "name": f"Other {i}"} for i in range(100)]}
+            return {"count": 250, "artists": [{"id": "mb-ash", "name": "Ash"}]}
+
+        client, calls = self.client(responder)
+        found = client.artist_identities(["Ash"], remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual(found, {"ash": "mb-ash"})
+        self.assertEqual([c["offset"] for c in calls], [0, 100])
+
+    def test_paging_stops_at_the_reported_count(self):
+        def responder(params):
+            return {"count": 40, "artists": []}
+
+        client, calls = self.client(responder)
+        self.assertEqual(client.artist_identities(["Ash"], remaining=plenty, cancelled=never_cancelled()), {})
+        self.assertEqual(len(calls), 1)
+
+    def test_names_are_quoted_as_phrases(self):
+        from discovery.search.providers import _identity_batches
+
+        [batch] = list(_identity_batches({"x": 'Say "Hi"'}))
+        self.assertEqual(batch, ['Say "Hi"'])
+
+
+class LastFmTopAlbumsTests(unittest.TestCase):
+    def test_top_albums_are_read_as_candidates_under_the_requested_artist(self):
+        get = ScriptedGet(FakeResponse(200, {"topalbums": {"album": [
+            {"name": "The Bends"}, {"name": ""}, {"name": "OK Computer"},
+        ]}}))
+        client = LastFmSearch(get=get, limiter=open_limiter(), api_key="k")
+        albums = client.top_albums("Radiohead", remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual([a["name"] for a in albums], ["The Bends", "OK Computer"])
+        self.assertEqual(albums[0]["artist"], "Radiohead")
+        _, params = get.requests[0]
+        self.assertEqual(params["method"], "artist.getTopAlbums")
+
+
 class CacheTests(unittest.TestCase):
     def test_non_empty_entries_live_a_day_and_empty_answers_an_hour(self):
         store = {}
