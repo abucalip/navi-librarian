@@ -3017,6 +3017,32 @@ function closeGlobalSearch({focusInput = false} = {}) {
   if (focusInput) $('globalSearchInput').focus();
 }
 
+// The status line is quiet while results stream in, so a screen reader hears the final count once,
+// not one announcement per result. It becomes polite again when the stream ends.
+function setSearchStatusLive(live) {
+  $('globalSearchStatus').setAttribute('aria-live', live ? 'polite' : 'off');
+}
+
+// Each result lands in its type group as it arrives. Groups are created on first use and kept in
+// SEARCH_GROUPS order, so a late type never lands above an earlier one.
+function searchGroupList(type) {
+  const groupsEl = $('globalSearchGroups');
+  const existing = Array.from(groupsEl.children).find(child => child.dataset.searchType === type);
+  if (existing) return existing.querySelector('ul');
+  const rank = SEARCH_GROUPS.findIndex(([kind]) => kind === type);
+  const section = document.createElement('section');
+  section.className = 'search-group';
+  section.dataset.searchType = type;
+  addTextElement(section, 'p', 'search-group-heading', SEARCH_GROUPS[rank][1]);
+  const list = document.createElement('ul');
+  list.className = 'search-group-list';
+  section.append(list);
+  const after = Array.from(groupsEl.children).find(child =>
+    SEARCH_GROUPS.findIndex(([kind]) => kind === child.dataset.searchType) > rank);
+  groupsEl.insertBefore(section, after || null);
+  return list;
+}
+
 function startGlobalSearch(rawQuery) {
   const query = rawQuery.trim();
   clearTimeout(globalSearchTimer);
@@ -3031,11 +3057,13 @@ function startGlobalSearch(rawQuery) {
   }
   const status = $('globalSearchStatus');
   const groupsEl = $('globalSearchGroups');
-  const groups = {artist: [], album: [], song: []};
+  let shown = 0;
   let capabilities = null;
   const isCurrent = () => seq === globalSearchSeq;
-  groupsEl.replaceChildren();
+  // The previous results stay on screen until this stream's first event, so the list does not
+  // blank between keystrokes.
   setGlobalSearchOpen(true);
+  setSearchStatusLive(false);
   setStatus(status, 'Searching…', 'loading');
 
   const source = new EventSource('/api/search?' + new URLSearchParams({q: query, limit: '10'}));
@@ -3046,56 +3074,50 @@ function startGlobalSearch(rawQuery) {
   };
 
   source.addEventListener('capabilities', event => {
-    if (isCurrent()) capabilities = JSON.parse(event.data);
+    if (!isCurrent()) return;
+    capabilities = JSON.parse(event.data);
+    groupsEl.replaceChildren();
   });
   source.addEventListener('result', event => {
     if (!isCurrent()) return;
     const item = JSON.parse(event.data);
-    if (groups[item.type]) groups[item.type].push(item);
+    if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;
+    searchGroupList(item.type).append(buildSearchItem(item));
+    shown += 1;
+    setStatus(status, 'Searching… ' + pluralize(shown, 'match', 'matches') + ' so far', 'loading');
   });
   source.addEventListener('done', () => {
     finish();
-    if (isCurrent()) renderGlobalSearch(query, groups, capabilities);
+    if (isCurrent()) {
+      setSearchStatusLive(true);
+      renderGlobalSearchSummary(query, shown, capabilities);
+    }
   });
   source.addEventListener('error', event => {
     finish();
     if (!isCurrent()) return;
-    // A server "error" event carries data; a dropped connection does not.
+    // Results already shown stay on screen. A server "error" event carries data; a dropped connection does not.
+    setSearchStatusLive(true);
     const message = event.data
-      ? 'Search stopped before it finished. Try again.'
+      ? 'Search stopped before it finished. Showing ' + pluralize(shown, 'match', 'matches') + '. Try again.'
       : 'Search is unavailable right now. Try again.';
     setStatus(status, message, 'error');
   });
 }
 
-function renderGlobalSearch(query, groups, capabilities) {
+function renderGlobalSearchSummary(query, shown, capabilities) {
   const status = $('globalSearchStatus');
-  const groupsEl = $('globalSearchGroups');
-  groupsEl.replaceChildren();
   const index = capabilities && capabilities.owned_index;
   if (index && !index.available) {
     const message = INDEX_REASON_MESSAGES[index.reason] || 'Your library is not available right now.';
     setStatus(status, message, index.reason === 'index_building' ? 'loading' : 'error');
     return;
   }
-  const total = SEARCH_GROUPS.reduce((count, [type]) => count + groups[type].length, 0);
-  if (!total) {
+  if (!shown) {
     setStatus(status, 'No matches in your library for “' + query + '”.', 'empty');
     return;
   }
-  setStatus(status, pluralize(total, 'match', 'matches') + ' in your library', 'progress');
-  for (const [type, label] of SEARCH_GROUPS) {
-    if (!groups[type].length) continue;
-    const section = document.createElement('section');
-    section.className = 'search-group';
-    // A paragraph, not a heading: the page has no h2 above these groups, so h3 would skip a level.
-    addTextElement(section, 'p', 'search-group-heading', label);
-    const list = document.createElement('ul');
-    list.className = 'search-group-list';
-    for (const item of groups[type]) list.append(buildSearchItem(item));
-    section.append(list);
-    groupsEl.append(section);
-  }
+  setStatus(status, pluralize(shown, 'match', 'matches') + ' in your library', 'progress');
 }
 
 function searchItemDetail(item) {

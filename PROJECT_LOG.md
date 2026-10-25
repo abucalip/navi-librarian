@@ -1,3 +1,10 @@
+## 2026-10-25 — Search UI polish pass (branch `search-ui`)
+
+- **Scope:** step 3 of the critique (`/impeccable polish`): streamed results, running count, and no flicker between queries.
+- **Changes:** each result is placed in its type group as it arrives, and groups stay in Artists, Albums, Songs order. The status shows "Searching… N matches so far", with `aria-live` off while streaming and polite at the end. Previous results stay until the new stream's first event. A server error keeps the results already shown.
+- **Verification:** the jsdom harness passes 50 checks, including results before `done`, the running count, group order, the partial results on error, and the live-region state. Chromium: keyboard, focus, hover and copy checks pass with no errors; the phone heading and status are visible. All 29 `*ui_contract*` modules pass. The stub responds too fast to observe streaming in a real browser, so the streaming behaviour is verified in jsdom only.
+- **Not verified:** streaming against a slow real Navidrome, screen-reader output, Safari.
+
 ## 2026-10-25 — Search UI clarify pass (branch `search-ui`)
 
 - **Scope:** step 2 of the critique (`/impeccable clarify`): dead album and song rows and the copy that promised them.

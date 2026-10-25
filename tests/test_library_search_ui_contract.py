@@ -69,6 +69,20 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("const isCurrent = () => seq === globalSearchSeq;", self.new_js)
         self.assertIn("const finish = () => {", self.new_js)
 
+    def test_results_stream_into_their_groups_with_a_running_count(self):
+        self.assertIn("searchGroupList(item.type).append(buildSearchItem(item));", self.new_js)
+        self.assertIn("'Searching… ' + pluralize(shown, 'match', 'matches') + ' so far'", self.new_js)
+        self.assertIn("setSearchStatusLive(false);", self.new_js)
+        self.assertIn("setSearchStatusLive(true);", self.new_js)
+        self.assertIn("if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;", self.new_js)
+
+    def test_previous_results_are_cleared_only_when_the_new_stream_responds(self):
+        capabilities_block = self.new_js[self.new_js.index("source.addEventListener('capabilities'"):]
+        capabilities_block = capabilities_block[:capabilities_block.index("});")]
+        self.assertIn("groupsEl.replaceChildren();", capabilities_block)
+        start_block = self.new_js[self.new_js.index("function startGlobalSearch("):self.new_js.index("source.addEventListener('capabilities'")]
+        self.assertNotIn("replaceChildren", start_block)
+
     def test_new_script_never_writes_html_from_data(self):
         self.assertNotIn("innerHTML", self.new_js)
         self.assertNotIn("insertAdjacentHTML", self.new_js)
@@ -97,7 +111,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("if (!$('globalSearch').contains(event.target)) closeGlobalSearch();", self.new_js)
 
     def test_group_headings_are_paragraphs_so_the_heading_order_has_no_gap(self):
-        self.assertIn("addTextElement(section, 'p', 'search-group-heading', label);", self.new_js)
+        self.assertIn("addTextElement(section, 'p', 'search-group-heading', SEARCH_GROUPS[rank][1]);", self.new_js)
         self.assertNotIn("'h3', 'search-group-heading'", self.new_js)
 
     def test_a_failed_append_retries_the_append_not_a_reset(self):
