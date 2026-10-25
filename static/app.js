@@ -2977,7 +2977,7 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, retry: false, detailSeq: 0, detailReturn: null};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null};
 let libraryFilterTimer = 0;
 
 function setStatus(el, message, kind) {
@@ -3155,11 +3155,11 @@ function openArtistFromSearch(item) {
 
 // ---- Library list ----
 
-function showLibraryListMore(visible, label, retry) {
+function showLibraryListMore(visible, label, resetOnRetry) {
   const more = $('libraryMore');
   more.hidden = !visible;
   more.textContent = label;
-  libraryView.retry = retry;
+  libraryView.resetOnRetry = resetOnRetry;
 }
 
 async function loadLibrary({reset = true} = {}) {
@@ -3336,5 +3336,5 @@ $('librarySort').addEventListener('change', () => {
   libraryView.sort = $('librarySort').value;
   loadLibrary({reset: true});
 });
-$('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.retry}));
+$('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 $('libraryBack').addEventListener('click', closeArtistDetail);

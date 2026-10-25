@@ -127,7 +127,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_a_failed_append_retries_the_append_not_a_reset(self):
         self.assertIn("showLibraryListMore(true, 'Try again', reset);", self.new_js)
-        self.assertIn("loadLibrary({reset: libraryView.retry})", self.new_js)
+        self.assertIn("loadLibrary({reset: libraryView.resetOnRetry})", self.new_js)
 
     def test_styles_hide_panels_that_use_the_hidden_attribute_and_stack_search_on_phones(self):
         self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryMore[hidden] { display: none; }", self.css)
