@@ -185,6 +185,7 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 ### Decided
 
 - **Discogs authentication:** personal access token, stored in settings or `DISCOGS_TOKEN` (section 3.5).
+- **No local MusicBrainz replication.** The public API, with the 100-term batches and backoff in section 9, is the plan. Reopen only if measured search timings show it is the bottleneck. A smaller import of artists, release-groups and tags is the first option to consider at that point.
 
 ### Batch endpoints (checked 2026-10-25)
 
@@ -227,7 +228,7 @@ Also observed: MusicBrainz returned HTTP 503 ("web server is currently busy") se
 
 ### Open
 
-1. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
+No open items remain in this section. Reopen the MusicBrainz replication question only if measured search timings show the public service is the bottleneck (see Decided).
 
 ## 10. Phasing
 
