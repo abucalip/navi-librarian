@@ -117,6 +117,17 @@ def navidrome_generation(settings_read):
         return 0
 
 
+LASTFM_GENERATION_KEY = "lastfm_generation"
+
+
+def lastfm_generation(settings_read):
+    """Return the non-secret counter that changes whenever the saved Last.fm key changes."""
+    try:
+        return int(settings_read().get(LASTFM_GENERATION_KEY) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
     settings = settings_read()
@@ -221,6 +232,9 @@ def set_lastfm_settings(settings_read, settings_write, api_key="", username=None
     current = settings_read()
     key = str(api_key or "").strip() or str(current.get("lastfm_api_key") or "")
     values["lastfm_api_key"] = key
+    if key != str(current.get("lastfm_api_key") or ""):
+        # A new key makes every cached Last.fm search unreachable (contract section 5.2).
+        values[LASTFM_GENERATION_KEY] = lastfm_generation(settings_read) + 1
     settings_write(values)
     return json.dumps({
         "ok": True,

@@ -28,8 +28,33 @@ def library_lists():
 
 
 class FakeLibrarian:
+    def __init__(self):
+        self.store = {}
+
     def _discovery_settings_read(self):
         return {"navidrome_generation": 1}
+
+    def _discovery_read_list(self, name):
+        return self.store.get(name)
+
+    def _discovery_write_list(self, name, payload):
+        self.store[name] = payload
+
+
+class NoNetworkSearch:
+    """Stands in for the provider side so route tests never reach a real provider."""
+
+    calls = []
+
+    def __init__(self, **kwargs):
+        NoNetworkSearch.calls.append(kwargs)
+
+    def source_capabilities(self):
+        return {name: {"available": name == "navidrome" or name == "musicbrainz", "reason": None}
+                for name in ("navidrome", "musicbrainz", "lastfm", "listenbrainz", "discogs")}
+
+    def stream(self, **kwargs):
+        return iter(())
 
 
 class FakeLoaders:
@@ -68,6 +93,9 @@ class SearchRouteTests(unittest.TestCase):
         self.app.dependency_overrides[get_librarian] = lambda: FakeLibrarian()
         self.client = TestClient(self.app)
         self.previous_index = search_routes._owned_index
+        self.previous_external = search_routes.external_search
+        search_routes.external_search = NoNetworkSearch
+        NoNetworkSearch.calls = []
         self.release = threading.Event()
         self.loaders = FakeLoaders()
         self.set_index(self.loaders)
@@ -75,6 +103,7 @@ class SearchRouteTests(unittest.TestCase):
     def tearDown(self):
         self.release.set()
         search_routes._owned_index = self.previous_index
+        search_routes.external_search = self.previous_external
 
     def building_index(self):
         """An index whose first build never finishes until teardown, so it stays building."""
@@ -101,6 +130,17 @@ class SearchRouteTests(unittest.TestCase):
         return self.client.get("/api/search", params=params, headers={"Accept": accept})
 
     # --- /api/search validation (400 before streaming) -------------------------
+
+    def test_owned_scope_never_builds_the_network_side(self):
+        response = self.search({"q": "ash", "scope": "owned"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(NoNetworkSearch.calls, [])
+        self.assertNotIn("source", [name for name, _ in parse_sse(response.text)])
+
+    def test_all_scope_builds_the_network_side_with_the_provider_cache(self):
+        self.search({"q": "ash"})
+        self.assertEqual(len(NoNetworkSearch.calls), 1)
+        self.assertIn("cache_read", NoNetworkSearch.calls[0])
 
     def test_bad_parameters_are_400_before_any_stream_starts(self):
         for params in (

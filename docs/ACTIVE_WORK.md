@@ -55,6 +55,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - "Not in your library" results group, waiting for the P2 network sources.
   - Recommendation snapshot generation key, accepted as a deferred follow-up.
   - Safari, VoiceOver and keyboard-only checks in a real browser.
+- **P2 (network sources) in progress:** slice A (MusicBrainz and Last.fm search behind the deadline runner, branch `search-p2`) is recorded in `SEARCH_CONTRACT.md` section 12. Slice B (ListenBrainz, artist-page `bio` and `missing_albums`, "Not in your library" group) is not started.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated

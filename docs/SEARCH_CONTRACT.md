@@ -668,3 +668,28 @@ Checked against the P1 test rows in section 8.1 and the phase scope in section 1
 1. **Index build time (P5).** Measure a full owned-index build against the owner's Navidrome server, and record the result against the section 2.1 target in `PROJECT_LOG.md`. Test the build on the real library size (12,097 songs, 733 artists, 1,744 albums). A stub run does not count. Owner: run the measurement or authorize it.
 2. **Manual refresh route (proposal, not approved).** Section 4.1 describes a manual refresh, but P1 has only the internal `force` argument. Proposed endpoint: `POST /api/library/refresh`, behind the login middleware. It starts an owned-index build with `force` and returns `202` with `{"index_state": "building" | "fresh" | "stale" | "unavailable"}`. If a build is already running, it joins that build rather than starting another. It has no request body. Nothing here is built until the owner approves the endpoint.
 
+## 12. P2 implementation record
+
+P2 is delivered in slices. This section records slice A; slice B is listed at the end.
+
+### 12.1 Slice A (branch `search-p2`)
+
+- **Sources:** MusicBrainz (artist search, release-group search restricted to albums, depth 50, 503 retried after 1 s and 2 s) and Last.fm (`artist.search`, `album.search`). Last.fm is `source_disabled` until a key is saved. Both run only for `scope=all` and only for the `artist` and `album` types.
+- **Pacing and deadline:** one limiter per process (MusicBrainz 1 call/s, Last.fm 5 calls/s). The deadline is 3.0 s from request receipt. Unfinished sources are reported `timeout` and set `deadline_hit`.
+- **Sharing and cache:** calls are keyed by the cache key in section 5.2. Identical concurrent searches share one call. A call is cancelled only when its last consumer leaves. Only complete results are cached.
+- **Generation:** `lastfm_generation` in the settings store. MusicBrainz uses generation `0`.
+
+### 12.2 Deviations (slice A)
+
+1. **Null `album_count` and `genre` on provider artist results.** Section 3.8 types these as int and string. Search sources do not report them, so they are null rather than invented.
+2. **Duplicates across sources are dropped, not merged.** Results are emitted as they arrive, so a second source's match for an entity already shown is dropped, and the first result lists only the sources known then. Merging `sources` after emission would need a change to the event model.
+3. **Owned matching is by key, not MBID.** Owned MBIDs are null (section 11.2), so a provider match is owned when its normalized key matches, and for albums when the year also matches or one side has no year.
+4. **Homonyms.** Two artists with different known MBIDs stay separate even with the same name. Without MBIDs, the same key collapses them, as section 3.8 requires for key plus year.
+5. **Source `count`** is the number of provider records before dedupe.
+
+### 12.3 Slice B (not started)
+
+- ListenBrainz: release-group and artist popularity (batch), used in `missing_albums`. Search reports it `not_in_this_build` until then.
+- Artist page `bio` (reuse of the bio route's logic, which currently lives inline in `app/api/metadata.py` and needs extracting first) and `missing_albums` (MusicBrainz identity for the owned artist, then release-group browse).
+- "Not in your library" results group in the UI.
+
