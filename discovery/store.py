@@ -45,6 +45,13 @@ def read_list(database_path: str | PathLike[str], name: str) -> dict[str, Any] |
 
 
 
+def delete_list(database_path: str | PathLike[str], name: str) -> int:
+    """Delete one cached list. Returns the number of rows removed (0 or 1)."""
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_schema(db)
+        return db.execute("DELETE FROM discovery_lists WHERE name = ?", (name,)).rowcount
+
+
 def read_prefix(database_path: str | PathLike[str], prefix: str) -> dict[str, Any]:
     """Return every cached list whose name starts with ``prefix``, keyed by full name.
 

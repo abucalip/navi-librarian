@@ -125,6 +125,21 @@ class ResolveIdentitiesTests(unittest.TestCase):
         run(library(), store, mb, tags={"ar1": "a", "ar2": "b"})
         self.assertNotIn(f"{identity_prefix(1)}artist:ar3", store.data)
 
+    def test_a_transport_error_in_one_batch_skips_only_that_batch(self):
+        class FlakyMusicBrainz(FakeMusicBrainz):
+            def artist_identities(self, names, *, remaining, cancelled):
+                self.artist_calls.append(list(names))
+                if len(self.artist_calls) == 1:
+                    raise TimeoutError("read timed out")  # what a timed-out request raises
+                return {"radiohead": "mb-rh"}
+
+        store, mb = Store(), FlakyMusicBrainz()
+        counts = run(library(), store, mb, tags={"ar1": "a", "ar2": "b"})
+        # The timeout leaves no record behind; the pass still reaches the album step.
+        self.assertNotIn(f"{identity_prefix(1)}artist:ar3", store.data)
+        self.assertGreater(len(mb.album_calls), 0)
+        self.assertIsInstance(counts, dict)
+
     def test_albums_use_the_release_mbid_then_the_title_lookup_and_compilations_are_skipped(self):
         store = Store()
         mb = FakeMusicBrainz(

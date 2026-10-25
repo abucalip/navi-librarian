@@ -16,20 +16,43 @@ The job is injected with its providers and store, so it has no network or databa
 from __future__ import annotations
 
 import threading
+import re
 from collections.abc import Callable, Mapping
 from typing import Any
 
 from discovery.recommendations import is_various_artists
 from discovery.search.index import OwnedData
-from discovery.search.providers import ProviderError
 
 UNRESOLVED = "unresolved"
 NAME_CHUNK = 100
 ALBUM_CHUNK = 100
 
 
+IDENTITY_NAMESPACE = "identity:navidrome"
+MBID_PATTERN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+KINDS = ("artist", "album")
+
+
 def identity_prefix(generation: Any) -> str:
     return f"identity:navidrome{generation}:"
+
+
+def identity_name(generation: Any, kind: str, item_id: str) -> str:
+    return f"{identity_prefix(generation)}{kind}:{item_id}"
+
+
+def record_for(kind: str, mbid: str | None, source: str) -> dict[str, Any]:
+    """A stored record for one item. ``mbid`` is the artist MBID, or the release-group MBID for an album."""
+    return _record(kind, mbid, source)
+
+
+def purge_stale_identities(delete_except: Callable[[str, str], int], generation: Any) -> int:
+    """Delete identity records of every other Navidrome generation (section 5.2 cleanup).
+
+    Records of the current generation are kept. ``delete_except(prefix, keep_prefix)`` is the
+    store's prefix delete.
+    """
+    return delete_except(IDENTITY_NAMESPACE, identity_prefix(generation))
 
 
 def load_identities(read_prefix: Callable[[str], Mapping[str, Any]], generation: Any) -> dict[str, dict[str, Any]]:
@@ -111,7 +134,7 @@ def resolve_identities(
             found = musicbrainz.artist_identities(
                 [a["name"] for a in chunk], remaining=remaining, cancelled=cancelled,
             )
-        except ProviderError:
+        except Exception:
             continue  # This chunk is retried on the next run.
         records = {
             f"artist:{a['id']}": _record("artist", found.get(a["key"]), "musicbrainz" if a["key"] in found else UNRESOLVED)
@@ -130,7 +153,7 @@ def resolve_identities(
             groups = musicbrainz.release_groups_for_releases(
                 [al["release_mbid"] for al in with_release], remaining=remaining, cancelled=cancelled,
             )
-        except ProviderError:
+        except Exception:
             return counts  # Nothing from this run is lost; the album step waits for the next run.
         for start in range(0, len(with_release), ALBUM_CHUNK):
             chunk = with_release[start:start + ALBUM_CHUNK]
@@ -153,7 +176,7 @@ def resolve_identities(
                 [(al["artist"], al["name"], al["year"]) for al in lookups],
                 remaining=remaining, cancelled=cancelled,
             )
-        except ProviderError:
+        except Exception:
             continue
         records = {}
         for al in lookups:
