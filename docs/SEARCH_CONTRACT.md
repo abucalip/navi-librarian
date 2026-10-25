@@ -186,9 +186,27 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 - **Discogs authentication:** personal access token, stored in settings or `DISCOGS_TOKEN` (section 3.5).
 
+### Batch endpoints (checked 2026-10-25)
+
+| Provider | Batch form | Status | Used for |
+|---|---|---|---|
+| ListenBrainz metadata | `GET /1/metadata/artist/?artist_mbids=a,b,c&inc=tag` | **Live 200**, 6 artists, list response with `artist_mbid`, `name`, `tag`, `area`, `rels`, `type` | Artist tags and identity for many artists per call. |
+| ListenBrainz popularity | `POST /1/popularity/artist` with `{"artist_mbids": [...]}` | **Live 200**, 6 artists | Artist popularity for many artists per call. |
+| ListenBrainz popularity (release-group) | `POST /1/popularity/release-group` | Already in use (`integrations/listenbrainz/popularity.py`) | Album popularity, chunked. |
+| ListenBrainz recording and release-group metadata | `POST /1/metadata/recording/` (up to 100 MBIDs), `GET /1/metadata/release_group/` (up to 50 used; measured limit 80, fails at 81) | Already in use (`discovery/batch_metadata.py`), measured in the repo | Track and album metadata. |
+| ListenBrainz metadata (artist, POST) | `POST /1/metadata/artist/` | **Live 405**: use GET | Not usable. |
+| MusicBrainz search | `GET /ws/2/artist?query=arid:X OR arid:Y ...` | **Live 200**, 3 of 3 artists returned in one call | Batch identity resolution for many artists per call. The maximum number of OR terms per call is **to verify**; the repo measured its own limits for other endpoints. |
+| MusicBrainz lookup by ID | `GET /ws/2/artist/{mbid}` | Single ID only | Fallback. |
+| Last.fm | None found | Single-artist `artist.getInfo` and similar methods only | Requests are coalesced and cached. Third-party sources only; the official docs were not readable. |
+| Discogs | None found | One release or artist per call | Requests are coalesced and cached. Third-party sources only; the official docs were not readable. |
+
+Notes from the live checks:
+- MusicBrainz rate limits are returned as headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`). The search endpoint limit was 400 per window and the lookup endpoint 1,900, so the search batch is the cheaper path. The public site also returned HTTP 503 "web server is currently busy" under global load. The app must treat that as retryable with backoff, not as a missing result.
+- ListenBrainz `lb-radio/artist` takes one seed per call (section 9, above). It has no batch form.
+
 ### Open
 
-1. **Batch endpoints per provider.** Batch requests were not verified for any provider. Before P2, confirm each one: MusicBrainz (lookup by many MBIDs, or Lucene `OR` search), ListenBrainz (any batch POST for metadata or similarity), Last.fm (no batch method known), Discogs (no batch method known). Where none exists, requests are coalesced and cached.
+1. **MusicBrainz OR-search size.** Find the largest number of MBIDs per search call that still returns complete results, and keep a safety margin, as the repo does for release-group lookups.
 2. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
 
 ## 10. Phasing
