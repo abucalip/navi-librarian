@@ -44,12 +44,17 @@ Goal: several complementary lists of 10 ("lenses") from one shared candidate poo
 
 Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_MAX_PAGES` to 8 when coverage is on, add a settings control, or add extra data sources. The family-coverage policy itself is merged in PR #573, remains opt-in, and leaves `CF_MAX_PAGES` at 4. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
 
-## 2d. Global search and library browsing — P1 in review
+## 2d. Global search and library browsing — P1 closed
 
-- Contract: [SEARCH_CONTRACT.md](SEARCH_CONTRACT.md), approved by the owner on 2026-10-25. Section 11 is the P1 record.
-- **P1 backend:** merged in PR [#609](https://github.com/abucalip/navi-librarian/pull/609) (squash `52b0010`). Owned search, the library artists route, the artist page's owned sections, and owned artwork through `/api/owned/artwork/{id}`. No network sources.
-- **P1 UI:** merged in PR [#610](https://github.com/abucalip/navi-librarian/pull/610) (squash `f26ad96`) after the owner waived the manual checklist. Critique steps 1 to 4 and the final polish pass are in the PR. Artist genre disambiguator (contract 11.6) is built on branch `artist-genre`, with the source and no-genre fallback decided by the owner.
-- **Decided 2026-10-25:** the 10% sanity threshold is approved; owned artwork is served through `/api/owned/artwork/{id}`. The recommendation snapshot's generation key is accepted as a deferred follow-up. Open: the manual refresh route (contract 11.4).
+- Contract: [SEARCH_CONTRACT.md](SEARCH_CONTRACT.md), approved by the owner on 2026-10-25. Section 11 is the P1 record; section 11.7 is the completion check; section 11.8 lists the follow-ups.
+- **Merged:** P1 backend in PR [#609](https://github.com/abucalip/navi-librarian/pull/609) (squash `52b0010`); P1 UI in PR [#610](https://github.com/abucalip/navi-librarian/pull/610) (squash `f26ad96`, manual checklist waived); artist genre in PR [#611](https://github.com/abucalip/navi-librarian/pull/611) (squash `cf517fc`); the Various Artists and 502 gaps in PR [#612](https://github.com/abucalip/navi-librarian/pull/612) (squash `bf67e68`).
+- **Carried forward, not P1 work:**
+  - Index build time on the owner's server, recorded against section 2.1 (P5).
+  - Manual refresh route, proposed in 11.8 and not approved.
+  - Album artwork on owned-album items, proposed in 11.6 and not approved.
+  - "Not in your library" results group, waiting for the P2 network sources.
+  - Recommendation snapshot generation key, accepted as a deferred follow-up.
+  - Safari, VoiceOver and keyboard-only checks in a real browser.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated

@@ -1,3 +1,9 @@
+## 2026-10-25 — Global search P1 closed (docs)
+
+- **Closed:** P1 of `docs/SEARCH_CONTRACT.md`, with PRs #609 (backend), #610 (UI, checklist waived), #611 (artist genre) and #612 (Various Artists and 502 gaps) merged.
+- **Carried forward:** build-time record (P5), the manual refresh route and album artwork (both proposals, not approved), the "Not in your library" group (P2), the recommendation snapshot gap, and real-browser checks in Safari, VoiceOver and keyboard-only use.
+- **Next:** the owner chooses the next phase.
+
 ## 2026-10-25 — P1 follow-ups recorded (main)
 
 - **Recorded in `docs/SEARCH_CONTRACT.md` section 11.8:** build-time measurement on the owner's server (P5), and a proposed `POST /api/library/refresh` route that is not approved and not built.
