@@ -24,7 +24,12 @@ class LibrarySearchUIContractTests(unittest.TestCase):
     def test_top_bar_search_is_a_labelled_search_landmark_with_a_results_region(self):
         self.assertIn('<form id="globalSearch" class="global-search" role="search"', self.html)
         self.assertIn('<label for="globalSearchInput" class="sr-only">Search your library</label>', self.html)
-        self.assertIn('aria-controls="globalSearchResults" aria-expanded="false"', self.html)
+        # A searchbox has no listbox behind it here, so no combobox ARIA may be claimed.
+        search_input = self.html[self.html.index('<input id="globalSearchInput"'):]
+        search_input = search_input[:search_input.index(">")]
+        self.assertNotIn("aria-expanded", search_input)
+        self.assertNotIn("aria-controls", search_input)
+        self.assertNotIn("aria-autocomplete", search_input)
         self.assertIn('<div id="globalSearchResults" class="search-results" role="region"', self.html)
         self.assertIn('id="globalSearchStatus" class="status-line" aria-live="polite"', self.html)
 
@@ -61,9 +66,26 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("'Your library is still being indexed. Try again in a moment.'", self.new_js)
         self.assertIn("'Your library could not be indexed right now.'", self.new_js)
 
-    def test_escape_and_outside_click_close_the_results_panel(self):
-        self.assertIn("if (event.key === 'Escape') {", self.new_js)
+    def test_escape_is_handled_on_the_form_so_it_works_from_results_too(self):
+        self.assertIn("$('globalSearch').addEventListener('keydown'", self.new_js)
+        self.assertIn("if (event.key === 'Escape' && !$('globalSearchResults').hidden) {", self.new_js)
+        self.assertNotIn("$('globalSearchInput').addEventListener('keydown'", self.new_js)
+
+    def test_focus_leaving_the_form_closes_it_but_a_null_target_does_not(self):
+        # Safari does not focus buttons on click; a null relatedTarget must not close the panel first.
+        self.assertIn("$('globalSearch').addEventListener('focusout'", self.new_js)
+        self.assertIn("if (next && !$('globalSearch').contains(next)) closeGlobalSearch();", self.new_js)
+
+    def test_outside_click_closes_the_results_panel(self):
         self.assertIn("if (!$('globalSearch').contains(event.target)) closeGlobalSearch();", self.new_js)
+
+    def test_group_headings_are_paragraphs_so_the_heading_order_has_no_gap(self):
+        self.assertIn("addTextElement(section, 'p', 'search-group-heading', label);", self.new_js)
+        self.assertNotIn("'h3', 'search-group-heading'", self.new_js)
+
+    def test_a_failed_append_retries_the_append_not_a_reset(self):
+        self.assertIn("showLibraryListMore(true, 'Try again', reset);", self.new_js)
+        self.assertIn("loadLibrary({reset: libraryView.retry})", self.new_js)
 
     def test_styles_hide_panels_that_use_the_hidden_attribute_and_stack_search_on_phones(self):
         self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryMore[hidden] { display: none; }", self.css)

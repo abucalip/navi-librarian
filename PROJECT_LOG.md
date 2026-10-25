@@ -1,3 +1,10 @@
+## 2026-10-25 — Search UI harden pass (branch `search-ui`)
+
+- **Scope:** step 1 of the critique (`/impeccable harden`): search keyboard and ARIA, heading order, and load-more retry.
+- **Changes:** the searchbox has no combobox ARIA; Escape is handled on the form; focus leaving the form to a real outside element closes it, while a null target does not (Safari click path); group headings are `<p>` instead of `<h3>`; a failed append retries the append instead of resetting the list.
+- **Verification:** the jsdom harness passes 43 checks, including Escape from a result, the focus-out rules, and the append-failure retry. Headless Chromium: Escape from a result and Tab out close the panel, a mouse click still opens the artist, the console is clean, and overflow is 0 at both widths. `tests/test_library_search_ui_contract.py` (13) and all 29 `*ui_contract*` modules pass. The detector no longer reports the search heading skip; its one remaining finding is the pre-existing settings-tabs warning.
+- **Not verified:** Safari and VoiceOver. The null-target focus rule is written for Safari's click behaviour but was not tested in Safari.
+
 ## 2026-10-25 — Global search P1 UI (branch `search-ui`)
 
 - **Merged before this work:** PR #609 (squash `52b0010`), after the owner approved it. The review finding on SVG artwork was fixed in `62fd363` (raster allowlist plus nosniff), and CI passed on that head.

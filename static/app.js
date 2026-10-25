@@ -3004,7 +3004,6 @@ function buildArtwork(url, className) {
 
 function setGlobalSearchOpen(open) {
   $('globalSearchResults').hidden = !open;
-  $('globalSearchInput').setAttribute('aria-expanded', String(open));
 }
 
 function closeGlobalSearch({focusInput = false} = {}) {
@@ -3089,7 +3088,8 @@ function renderGlobalSearch(query, groups, capabilities) {
     if (!groups[type].length) continue;
     const section = document.createElement('section');
     section.className = 'search-group';
-    addTextElement(section, 'h3', 'search-group-heading', label);
+    // A paragraph, not a heading: the page has no h2 above these groups, so h3 would skip a level.
+    addTextElement(section, 'p', 'search-group-heading', label);
     const list = document.createElement('ul');
     list.className = 'search-group-list';
     for (const item of groups[type]) list.append(buildSearchItem(item));
@@ -3187,7 +3187,8 @@ async function loadLibrary({reset = true} = {}) {
     if (seq !== view.seq) return;
     $('libraryMore').disabled = false;
     setStatus(status, 'Your library could not be loaded. Try again.', 'error');
-    showLibraryListMore(true, 'Try again', true);
+    // A failed append retries the append, so the rows already loaded stay in place.
+    showLibraryListMore(true, 'Try again', reset);
   }
 }
 
@@ -3279,11 +3280,18 @@ $('globalSearchInput').addEventListener('input', () => {
   clearTimeout(globalSearchTimer);
   globalSearchTimer = setTimeout(() => startGlobalSearch($('globalSearchInput').value), SEARCH_DEBOUNCE_MS);
 });
-$('globalSearchInput').addEventListener('keydown', event => {
-  if (event.key === 'Escape') {
+// Escape works from the input and from any result, because keydown bubbles to the form.
+$('globalSearch').addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('globalSearchResults').hidden) {
     event.preventDefault();
     closeGlobalSearch({focusInput: true});
   }
+});
+// Close when focus moves to a real element outside the form. Safari does not focus buttons on
+// click, so a null relatedTarget must not close the panel before the click lands.
+$('globalSearch').addEventListener('focusout', event => {
+  const next = event.relatedTarget;
+  if (next && !$('globalSearch').contains(next)) closeGlobalSearch();
 });
 document.addEventListener('click', event => {
   if (!$('globalSearch').contains(event.target)) closeGlobalSearch();
