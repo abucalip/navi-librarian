@@ -81,7 +81,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 is merged except for the items in `docs/SEARCH_CONTRACT.md` section 12.10. Next: run the first identity pass against the owner's library and record its counts, timing and a sample check. Then browser verification of the search panel and the artist page. Not published or deployed.
+Global search P2 is complete (`docs/SEARCH_CONTRACT.md` section 12.11). Slice F (`search-p2f`) adds the first identity pass results, the cleanup of old identity records, and the correction path, and needs its PR merged. Next: review and merge slice F, then P3 (similar artists) when the owner starts it. Not published or deployed.
 
 ## Where to look
 

@@ -792,12 +792,41 @@ Owner approvals (2026-10-26): permanent storage of identities, a background pass
 - ListenBrainz in search. The owner's direction (2026-10-25): search does not need it. Section 10's wording "MusicBrainz, Last.fm and ListenBrainz for not-owned artists and albums" is superseded for search. ListenBrainz is used only for popularity on the artist page.
 - Provider artist results report `album_count: null` and `genre: null` (section 12.2).
 
-**Remaining in P2:**
-1. **First identity pass on the owner's library.** The job is built and runs after each index build. Nothing has run it against the real library yet. Record the counts, the number of MusicBrainz requests and the time taken, and check a sample of matches by hand.
-2. **Browser verification** of the search panel and the artist page's `bio`, `missing_albums` and Last.fm sections. Not done for slices B to E.
-3. **Identity records under old Navidrome generations** are not deleted. Only search keys are purged (section 12.8). This needs the same prefix delete with the identity prefix.
-4. **A correction path for stored identities.** An unresolved or wrong record stays until someone deletes it, and there is no tool for that. Adding one needs approval if it is an endpoint (section 11.8 rule).
-5. **Known deviations, kept on purpose:** the artist page is computed before its sections are streamed (section 12.4); the 5 s request budget is independent of the deadline (section 12.2 item 6).
+**Remaining in P2:** none that block merging. The items below were completed in slice F (section 12.11).
+
+1. First identity pass on the owner's library: done, results in section 12.11.
+2. Browser verification: waived by the owner.
+3. Cleanup of identity records from old generations: done.
+4. Correction path for stored identities: done.
 
 **Not P2:** `similar` (P3), Discogs and genre (P4), latency measurement and `TEST_PLAN.md` entries (P5).
+
+### 12.11 Slice F (branch `search-p2f`)
+
+**First identity pass on the owner's library (2026-10-26).** Run through the app's own functions against the owner's Navidrome server, with a read-only snapshot of the library. The run resumed from 323 identities stored by an earlier pass that timed out.
+
+| Measure | Result |
+|---|---|
+| Library | 732 artists, 1745 albums (generation 0) |
+| Records written this run | 409 artists, 1745 albums (including 744 unresolved) |
+| Artists with a stored MBID | 609 of 732 (83%) |
+| Albums with a stored release-group MBID | 1114 of 1745 (64%) |
+| MusicBrainz requests | 103 (artist 30, release 22, release-group 51) |
+| Navidrome requests | 409 `getArtist`, 25 `search3` pages |
+| Time | 195 s |
+| Second pass | no calls, no writes |
+
+Sample check (names and MBIDs read by hand): artist matches were correct in every case shown. Unresolved examples: names in non-Latin scripts with a Latin variant in brackets, and names with parentheses. Album matches were correct where shown. Unresolved examples: titles that differ from MusicBrainz's, such as "Taha/Khaled/Faudel" and "1, 2, 3 Soleils: En Concert [1999] Disc 1".
+
+**Bugs found by the first run and fixed in this slice:**
+- A MusicBrainz request timeout escaped the identity job and aborted the whole pass. A failed request now skips only its batch.
+- The background pass used the 5 s search timeout. It now uses 30 s.
+
+**Cleanup.** Each pass deletes identity records of other Navidrome generations, and does nothing if its generation is no longer current.
+
+**Correction path.** `PUT /api/identities/{kind}/{id}` stores the owner's MBID as a manual record (`null` marks "no MBID"). `DELETE /api/identities/{kind}/{id}` removes the record, so the next pass resolves the item again. The MBID must be a lowercase UUID. The item must exist in the current index. The index is refreshed for the current generation only. These routes sit behind the login middleware.
+
+**Limits.**
+- Unresolved records are not retried. The 744 unresolved items stay unresolved until corrected or deleted through the endpoint above.
+- A name match can still be wrong. The first exact match in MusicBrainz's ranking is taken.
 
