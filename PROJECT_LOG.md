@@ -1,4 +1,4 @@
-## 2026-10-25 — Global search P1 backend (branch `search-p1`)
+## 2026-10-25 — Global search P1 backend (PR #609)
 
 - **Scope:** `docs/SEARCH_CONTRACT.md` P1 backend, approved by the owner on 2026-10-25 against `main` `ddb58a8` (PR #608). Adds the owned index (`discovery/search/`), `GET /api/search` (SSE, owned results only), `GET /api/artists/{key}` (JSON and SSE, owned sections), and `GET /api/library/artists`, with routes in `app/api/search.py` and `app/api/library.py`. Supporting changes: album `artist_id` in the library snapshot; a `navidrome_generation` counter in settings, bumped on any Navidrome URL, user or password change.
 - **Decisions:** recorded in `docs/SEARCH_CONTRACT.md` section 11 and `docs/DECISIONS.md` D-017.

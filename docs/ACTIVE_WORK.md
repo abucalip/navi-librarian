@@ -47,7 +47,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
 ## 2d. Global search and library browsing — P1 in review
 
 - Contract: [SEARCH_CONTRACT.md](SEARCH_CONTRACT.md), approved by the owner on 2026-10-25. Section 11 is the P1 record.
-- **P1 backend:** implemented on branch `search-p1` from `main` (`ddb58a8`). Owned search, the library artists route, and the artist page's owned sections. No network sources. Pending: CI on the exact PR head, owner review, and merge.
+- **P1 backend:** implemented in PR [#609](https://github.com/abucalip/navi-librarian/pull/609) (branch `search-p1`) from `main` (`ddb58a8`). Owned search, the library artists route, and the artist page's owned sections. No network sources. Pending: CI on the exact PR head, owner review, and merge.
 - **Remaining P1 work:** the top-bar search box and the library page (browser UI, with the UI gates in `TEST_PLAN.md`). Not started.
 - **Open decisions (contract 11.4):** the 10% sanity threshold; the recommendation snapshot's generation key; the manual refresh route; owned artwork.
 - Not published or deployed.

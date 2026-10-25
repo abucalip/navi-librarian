@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). The P1 backend is implemented on branch `search-p1` (see section 11 for the implementation record and open items). The P1 browser UI (top-bar search box and library page) is not part of that change. P2 to P5 are not started.
+Status: **approved by the owner** (2026-10-25). The P1 backend is implemented in PR #609 (branch `search-p1`) (see section 11 for the implementation record and open items). The P1 browser UI (top-bar search box and library page) is not part of that change. P2 to P5 are not started.
 
 ## 1. Owner decisions (recorded)
 
