@@ -26,8 +26,10 @@ MB_HEADERS = {
 }
 # Pause before each retry after a MusicBrainz 503 (section 9: backoff and retry are required).
 MB_RETRY_DELAYS = (1.0, 2.0)
-MIN_TIMEOUT = 0.5
-MAX_TIMEOUT = 5.0
+# Each HTTP request has this fixed budget. It is not derived from the search deadline, because a
+# shared call can gain later consumers (and so a later deadline) after its request has started.
+# Consumers stop waiting at their own deadlines; a request in flight is discarded when it returns.
+REQUEST_TIMEOUT = 5.0
 
 
 class ProviderError(Exception):
@@ -135,7 +137,7 @@ class MusicBrainzSearch:
                 f"{MB_BASE}{path}",
                 params={**params, "fmt": "json"},
                 headers=MB_HEADERS,
-                timeout=min(MAX_TIMEOUT, max(MIN_TIMEOUT, remaining())),
+                timeout=REQUEST_TIMEOUT,
             )
             if response.status_code == 503:
                 continue
@@ -206,7 +208,7 @@ class LastFmSearch:
             LASTFM_BASE,
             params={"method": method, "api_key": self._api_key, "format": "json", "limit": DEPTH, **params},
             headers={"User-Agent": MB_HEADERS["User-Agent"]},
-            timeout=min(MAX_TIMEOUT, max(MIN_TIMEOUT, remaining())),
+            timeout=REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         payload = response.json()

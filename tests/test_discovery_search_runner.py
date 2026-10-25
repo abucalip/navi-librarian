@@ -265,6 +265,60 @@ class CacheAndSharingTests(unittest.TestCase):
         self.assertEqual(second_results, ["Ash"])
         self.assertIn("search:musicbrainz:0:ash:artist:depth50", store.data)
 
+    def test_later_consumer_benefits_from_a_request_that_started_under_an_earlier_deadline(self):
+        """A real MusicBrainz client against a fake HTTP layer that honors the timeout it is given."""
+        registry = FetchRegistry()
+        store = Store()
+        requested_timeouts = []
+
+        class SlowButValid:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"artists": [{"id": "mb-1", "name": "Ash"}]}
+
+        def honoring_get(url, params=None, headers=None, timeout=None):
+            requested_timeouts.append(timeout)
+            time.sleep(0.6)
+            if timeout < 0.6:
+                raise TimeoutError("request timed out")
+            return SlowButValid()
+
+        from discovery.search.limiter import SourceLimiter
+        from discovery.search.providers import MusicBrainzSearch
+
+        client = MusicBrainzSearch(get=honoring_get, limiter=SourceLimiter({}), pause=lambda _: None)
+        parts = [Part("musicbrainz", "artist", "search:musicbrainz:0:ash:artist:depth50",
+                      lambda remaining, cancelled: client.artists("ash", remaining=remaining, cancelled=cancelled))]
+
+        def searcher(deadline):
+            return ExternalSearch(
+                parts_for=lambda q, t: parts, sources={}, registry=registry,
+                cache_read=store.read, cache_write=store.write, deadline_seconds=deadline,
+            )
+
+        first_run = RunState()
+        first_events = []
+        first_started = time.monotonic()
+        first_thread = threading.Thread(target=lambda: first_events.extend(searcher(0.3).stream(
+            query="ash", types=["artist"], limit=10, owned=None, started=first_started, run=first_run,
+        )))
+        first_thread.start()
+        time.sleep(0.1)
+        second_run = RunState()
+        second_events = list(searcher(1.5).stream(
+            query="ash", types=["artist"], limit=10, owned=None,
+            started=time.monotonic(), run=second_run,
+        ))
+        first_thread.join(5)
+
+        self.assertEqual(requested_timeouts, [5.0])
+        self.assertEqual([p["name"] for name, p in second_events if name == "result"], ["Ash"])
+        self.assertFalse(second_run.degraded)
+
     def test_result_that_arrives_after_the_deadline_is_a_timeout_and_never_cached(self):
         store = Store()
         search = make_search([], store=store)

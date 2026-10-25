@@ -686,6 +686,7 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 3. **Owned matching is by key, not MBID.** Owned MBIDs are null (section 11.2), so a provider match is owned when its normalized key matches, and for albums when the year also matches or one side has no year.
 4. **Homonyms.** Two artists with different known MBIDs stay separate even with the same name. Without MBIDs, the same key collapses them, as section 3.8 requires for key plus year.
 5. **Source `count`** is the number of provider records before dedupe.
+6. **HTTP request budget is fixed at 5 s, not the search deadline.** A request in flight cannot have its timeout extended when a later consumer joins a shared call. Consumers stop waiting at their own deadlines; a request that returns after the call's final deadline is a timeout and is not cached. A request started near a deadline can therefore run up to 5 s after its consumers leave, then is discarded.
 
 ### 12.3 Slice B (not started)
 
