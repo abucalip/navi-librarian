@@ -1,3 +1,10 @@
+## 2026-10-25 — Search UI clarify pass (branch `search-ui`)
+
+- **Scope:** step 2 of the critique (`/impeccable clarify`): dead album and song rows and the copy that promised them.
+- **Changes:** album and song rows are plain rows with no hover state. Only artist buttons highlight. The placeholder is "Search your library", and the library intro is "Select an artist to see their albums." The header tagline rules are scoped to `.header-tools > p`, because the bare `header p` rule right-aligned and, on phones, hid the search status and group headings.
+- **Verification:** the jsdom harness passes 43 checks. Chromium: album rows have a transparent hover background, artist buttons keep theirs, the new copy renders, and there are no page errors. Phone width: the group heading and status are visible and the tagline stays hidden. All 29 `*ui_contract*` modules pass, including the new copy and tagline tests.
+- **Not verified:** Safari, VoiceOver, and a real Navidrome library.
+
 ## 2026-10-25 — Search UI harden pass (branch `search-ui`)
 
 - **Scope:** step 1 of the critique (`/impeccable harden`): search keyboard and ARIA, heading order, and load-more retry.

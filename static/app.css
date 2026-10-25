@@ -55,7 +55,7 @@ header h1::before {
   content: ""; display: block; flex: 0 0 42px; width: 42px; height: 42px;
   background: center / contain no-repeat url("/assets/cassette.png");
 }
-header p { margin: 0; color: var(--text-muted); font-size: var(--text-xs); letter-spacing: .025em; text-align: right; }
+.header-tools > p { margin: 0; color: var(--text-muted); font-size: var(--text-xs); letter-spacing: .025em; text-align: right; }
 .header-tools { display: flex; align-items: center; gap: 20px; min-width: 0; }
 .header-menu { position: relative; flex: 0 0 auto; }
 .header-menu-toggle {
@@ -501,7 +501,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* The active-download count sits on the icon's corner when the label is hidden. */
 @media (max-width: 900px) { nav button .nav-count { position: absolute; top: 5px; right: 5px; margin-left: 0; font-size: var(--text-xs); } }
 @media (max-width: 620px) {
-  header { min-height: 70px; padding: 12px 15px; flex-wrap: wrap; row-gap: 10px; } header .global-search { order: 3; flex: 1 0 100%; margin-left: 0; } header h1 { font-size: var(--text-xl); } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
+  header { min-height: 70px; padding: 12px 15px; flex-wrap: wrap; row-gap: 10px; } header .global-search { order: 3; flex: 1 0 100%; margin-left: 0; } header h1 { font-size: var(--text-xl); } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } .header-tools > p { display: none; }
   /* Bottom tab bar. Icons only (names stay visually hidden for assistive tech), 44px+ targets, scrolls sideways when the tabs do not fit. */
   nav { inset: auto 0 0 0; width: auto; min-height: 56px; flex-direction: row; align-items: stretch; gap: 0; padding: 0 4px env(safe-area-inset-bottom, 0px); overflow-x: auto; overflow-y: hidden; border-right: 0; border-top: 1px solid var(--edge); border-bottom: 0; }
   main > nav::before { display: none; }
@@ -688,7 +688,8 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .search-group-list, .library-list, .library-album-list { list-style: none; margin: 0; padding: 0; }
 .search-group-list { display: grid; gap: 2px; }
 .search-item-content, .library-artist { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 8px; text-align: left; background: transparent; border-color: transparent; border-radius: 4px; }
-.search-item-content:hover, .library-artist:hover { background: var(--surface-hover); }
+/* Only buttons respond to hover. Album and song rows are listed for reference and do not open in P1. */
+button.search-item-content:hover, .library-artist:hover { background: var(--surface-hover); }
 .search-item-art, .library-art { flex: 0 0 40px; width: 40px; height: 40px; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
 .library-art { flex-basis: 48px; width: 48px; height: 48px; }
 .search-item-art img, .library-art img { display: block; width: 100%; height: 100%; object-fit: cover; }

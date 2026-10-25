@@ -33,6 +33,23 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('<div id="globalSearchResults" class="search-results" role="region"', self.html)
         self.assertIn('id="globalSearchStatus" class="status-line" aria-live="polite"', self.html)
 
+    def test_copy_does_not_promise_albums_or_songs_that_do_not_open(self):
+        self.assertIn('placeholder="Search your library"', self.html)
+        self.assertNotIn("albums and songs", self.html)
+        self.assertIn("Select an artist to see their albums.", self.html)
+
+    def test_header_tagline_rules_do_not_reach_the_search_dropdown_paragraphs(self):
+        # The dropdown's status and group headings are paragraphs inside the header, so the
+        # tagline rules must not match them (they would right-align and hide them on phones).
+        self.assertNotIn("\nheader p {", self.css)
+        self.assertNotIn(" header p {", self.css)
+        self.assertIn(".header-tools > p { margin: 0;", self.css)
+        self.assertIn(".header-tools > p { display: none; }", self.css)
+
+    def test_only_buttons_show_the_result_hover_state(self):
+        self.assertIn("button.search-item-content:hover", self.css)
+        self.assertNotIn(" .search-item-content:hover", self.css.replace("button.search-item-content:hover", ""))
+
     def test_library_is_reachable_from_the_header_menu_and_has_labelled_controls(self):
         self.assertIn('<button type="button" data-page="library">Library</button>', self.html)
         self.assertIn('<section id="library" class="page hidden" aria-labelledby="libraryHeading">', self.html)
