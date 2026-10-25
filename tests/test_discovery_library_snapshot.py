@@ -32,7 +32,7 @@ class DiscoveryLibrarySnapshotTests(unittest.TestCase):
                 ]}}
             if params["offset"] == 0:
                 return {"albumList2": {"album": [
-                    {"id": "al1", "artist": "Artist", "artistId": "ar1", "name": "One", "songCount": "9", "year": 1999, "coverArt": "c1", "genre": "Rock"},
+                    {"id": "al1", "artist": "Artist", "artistId": "ar1", "name": "One", "songCount": "9", "year": 1999, "coverArt": "c1", "genre": "Rock", "musicBrainzId": "rel-1"},
                     {"id": "al1", "artist": "Artist", "name": "Duplicate", "songCount": 1},
                     {"id": "al2", "artist": "Other", "name": "Two", "songCount": 4},
                 ]}}
@@ -45,8 +45,8 @@ class DiscoveryLibrarySnapshotTests(unittest.TestCase):
 
         self.assertEqual(result["artists"], [{"id": "ar1", "name": "Artist", "album_count": 2}])
         self.assertEqual(result["albums"], [
-            {"id": "al1", "artist": "Artist", "artist_id": "ar1", "genre": "Rock", "album": "One", "year": 1999, "song_count": 9, "coverArt": "c1"},
-            {"id": "al2", "artist": "Other", "artist_id": None, "genre": None, "album": "Two", "year": None, "song_count": 4, "coverArt": None},
+            {"id": "al1", "artist": "Artist", "artist_id": "ar1", "genre": "Rock", "album": "One", "year": 1999, "song_count": 9, "coverArt": "c1", "release_mbid": "rel-1"},
+            {"id": "al2", "artist": "Other", "artist_id": None, "genre": None, "album": "Two", "year": None, "song_count": 4, "coverArt": None, "release_mbid": None},
         ])
         self.assertEqual([method for method, _ in self.calls], ["getArtists", "getAlbumList2", "getAlbumList2"])
         self.assertEqual(self.calls[1][1], {"type": "alphabeticalByName", "size": 3, "offset": 0})
@@ -65,7 +65,7 @@ class DiscoveryLibrarySnapshotTests(unittest.TestCase):
         self.assertIn("getArtists", calls)
 
     def test_uses_fresh_cache_when_album_schema_is_current(self):
-        payload = {"artists": [], "albums": [{"song_count": 12, "artist_id": "ar1", "genre": "Rock"}]}
+        payload = {"artists": [], "albums": [{"song_count": 12, "artist_id": "ar1", "genre": "Rock", "release_mbid": None}]}
         self.cache["library_snapshot"] = {"payload": payload, "generated_at": 950}
         result = build_library_snapshot(
             lambda *_a, **_k: self.fail("API should not be called"),

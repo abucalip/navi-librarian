@@ -112,3 +112,32 @@ class RankingAndShapeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StoredMbidOwnershipTests(unittest.TestCase):
+    def owned_with_mbids(self):
+        return OwnedKeys(build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "ar1", "name": "Ash", "album_count": 1, "mbid": None}],
+            albums=[{"id": "al1", "artist": "Ash", "artist_id": "ar1", "album": "1977", "year": 1977, "song_count": 1}],
+            songs=[],
+            identities={
+                "artist:ar1": {"mbid": "mb-ash"},
+                "album:al1": {"release_group_mbid": "rg-1977"},
+            },
+        ))
+
+    def test_artist_with_a_different_known_mbid_is_not_the_owned_artist(self):
+        keys = self.owned_with_mbids()
+        self.assertTrue(keys.owns(artist_candidate("musicbrainz", "Ash", "mb-ash")))
+        self.assertFalse(keys.owns(artist_candidate("musicbrainz", "Ash", "mb-other")))
+
+    def test_album_matches_by_release_group_mbid(self):
+        keys = self.owned_with_mbids()
+        self.assertTrue(keys.owns(album_candidate("musicbrainz", "1977", "Ash", 1977, "rg-1977")))
+        self.assertFalse(keys.owns(album_candidate("musicbrainz", "1977", "Ash", 1977, "rg-other")))
+
+    def test_candidate_without_mbid_still_matches_by_name(self):
+        keys = self.owned_with_mbids()
+        self.assertTrue(keys.owns(artist_candidate("lastfm", "Ash", None)))
+        self.assertTrue(keys.owns(album_candidate("lastfm", "1977", "Ash", None, None)))

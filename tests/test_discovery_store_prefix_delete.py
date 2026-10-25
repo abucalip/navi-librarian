@@ -65,5 +65,35 @@ class PrefixDeleteTests(unittest.TestCase):
         self.assertEqual(calls, [("search:lastfm:", "search:lastfm:4:")])
 
 
+class PrefixReadAndBatchWriteTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self.tmp.name) / "discovery.sqlite3"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_read_prefix_returns_only_matching_lists_and_skips_malformed_json(self):
+        store.write_list(self.db, "identity:navidrome1:artist:ar1", {"mbid": "a"})
+        store.write_list(self.db, "identity:navidrome1:album:al1", {"release_group_mbid": "b"})
+        store.write_list(self.db, "identity:navidrome2:artist:ar1", {"mbid": "c"})
+        found = store.read_prefix(self.db, "identity:navidrome1:")
+        self.assertEqual(sorted(found), ["identity:navidrome1:album:al1", "identity:navidrome1:artist:ar1"])
+
+    def test_write_many_stores_every_list_and_overwrites_existing_ones(self):
+        store.write_list(self.db, "identity:navidrome1:artist:ar1", {"mbid": "old"})
+        store.write_many(self.db, {
+            "identity:navidrome1:artist:ar1": {"mbid": "new"},
+            "identity:navidrome1:artist:ar2": {"mbid": "b"},
+        })
+        found = store.read_prefix(self.db, "identity:navidrome1:")
+        self.assertEqual(found["identity:navidrome1:artist:ar1"], {"mbid": "new"})
+        self.assertEqual(found["identity:navidrome1:artist:ar2"], {"mbid": "b"})
+
+    def test_write_many_with_nothing_to_write_is_a_no_op(self):
+        store.write_many(self.db, {})
+        self.assertEqual(store.read_prefix(self.db, ""), {})
+
+
 if __name__ == "__main__":
     unittest.main()
