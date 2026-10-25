@@ -80,7 +80,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 slice A is on branch `search-p2` (MusicBrainz and Last.fm behind the deadline runner, with source events and caching). Next: open and verify the PR on its exact head, then P2 slice B (ListenBrainz, artist-page `bio` and `missing_albums`, and the "Not in your library" group) as `docs/SEARCH_CONTRACT.md` section 12.3. Not published or deployed.
+Global search P2 slice A is merged (PR #613). Slice B is on branch `search-p2b`: the artist page's `bio` and `missing_albums` sections, with ListenBrainz popularity (`docs/SEARCH_CONTRACT.md` section 12.3). Next: open and verify its PR on the exact head, then the "Not in your library" UI group (section 12.5). Not published or deployed.
 
 ## Where to look
 
