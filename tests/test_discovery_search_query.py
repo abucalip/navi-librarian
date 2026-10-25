@@ -199,3 +199,18 @@ class ArtworkUrlTests(unittest.TestCase):
     def test_library_items_carry_artwork_urls(self):
         items, _, _ = library_page(sample_data(), query="", sort="name", offset=0, limit=60)
         self.assertTrue(all(item["artwork_url"] == f"/api/owned/artwork/{item['id']}" for item in items))
+
+
+class ArtistGenreResultTests(unittest.TestCase):
+    def test_artist_results_carry_the_genre_or_null(self):
+        data = build_owned_data(
+            generation="g", built_at=0,
+            artists=[{"id": "ar1", "name": "Ash", "album_count": 1},
+                     {"id": "ar2", "name": "Ash", "album_count": 2}],
+            albums=[{"id": "al1", "artist": "Ash", "artist_id": "ar1", "album": "1977", "genre": "Rock"}],
+            songs=[],
+        )
+        found = {a["id"]: a for a in search_owned(data, "ash", ["artist"], limit=5)["artist"]}
+        self.assertEqual(found["ar1"]["genre"], "Rock")
+        self.assertIsNone(found["ar2"]["genre"])
+

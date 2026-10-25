@@ -283,5 +283,34 @@ class OwnedIndexLifecycleTests(unittest.TestCase):
         self.assertEqual(loaders.library_calls, 1)
 
 
+class ArtistGenreTests(unittest.TestCase):
+    def build(self, albums):
+        from discovery.search.index import build_owned_data
+        return build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "ar1", "name": "Ash", "album_count": len(albums)}],
+            albums=[{"id": f"al{i}", "artist": "Ash", "artist_id": "ar1", "album": f"A{i}", "genre": g}
+                    for i, g in enumerate(albums)],
+            songs=[],
+        )
+
+    def test_most_common_album_genre_wins_and_keeps_the_first_spelling(self):
+        data = self.build(["Rock", "rock", "Pop"])
+        self.assertEqual(data.artists[0]["genre"], "Rock")
+
+    def test_ties_go_to_the_alphabetically_first_genre(self):
+        data = self.build(["Pop", "Jazz"])
+        self.assertEqual(data.artists[0]["genre"], "Jazz")
+
+    def test_blank_genres_are_ignored_and_no_genre_is_none(self):
+        self.assertEqual(self.build(["", None, "  "]).artists[0]["genre"], None)
+        self.assertEqual(self.build(["Rock", ""]).artists[0]["genre"], "Rock")
+
+    def test_albums_keep_their_own_genre(self):
+        data = self.build(["Rock"])
+        self.assertEqual(data.albums[0]["genre"], "Rock")
+        self.assertIsNone(self.build([None]).albums[0]["genre"])
+
+
 if __name__ == "__main__":
     unittest.main()

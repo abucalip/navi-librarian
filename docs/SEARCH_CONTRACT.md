@@ -263,6 +263,7 @@ These are the contract targets for backend implementation and API contract tests
 | `sources` | yes | array of strings | Non-empty for owned results (`["navidrome"]` at least). `[]` is not allowed. |
 | `artwork_url` | yes | string or null | |
 | `album_count` | artist only | int | |
+| `genre` | artist only | string or null | Most common album genre (section 11.6). Null when no album has one. |
 | `artist` | album only | string | Display name of the album's artist. |
 | `artist_key` | album only | string | Normalized key (section 4.1). |
 | `year` | album only | int or null | Four-digit year. `null` when unknown. |
@@ -642,12 +643,11 @@ This section records what P1 built and every decision the contract left open. Se
 - **Verification:** `tests/test_library_search_ui_contract.py` checks structure and rendering rules in source. A DOM harness in jsdom drove the page script against stub API and stream responses, covering the flows above, and passed. Headless Chromium at 1280 px and 390 px rendered the header, search results, library, and artist view, with no console errors and no horizontal overflow. Those checks were run by the agent. The owner's manual browser checklist is still required.
 - **Not verified:** keyboard-only pass on a real browser, reduced-motion behavior, screen-reader output, and behavior against a real Navidrome library.
 
-### 11.6 Proposed contract addition (not approved)
+### 11.6 Contract addition: artist genre (approved 2026-10-25)
 
-Raised by the 2026-10-25 critique of the P1 UI. Nothing here is implemented. Each field needs the owner's approval before any code uses it.
+Approved by the owner on 2026-10-25, with these decisions: the source is the Navidrome album genre tag, and an artist with no genre falls back to the album count. The title changed from the first proposal, which asked for a free-text detail line.
 
-1. **Artist disambiguator for search results.** Two artists can share a name, and the current result shows only `album_count`. Proposed: an optional `detail` string on artist `result` events, for example the first owned album's name and year, or null. Source: the owned index already holds the albums per artist, so no new Navidrome call is needed.
-2. **Owned album artwork.** The owned-album items on the artist page have no artwork. Proposed: `artwork_url` on each `owned_albums` item, using the existing `/api/owned/artwork/{id}` route with the album's id. This adds no provider call.
-
-Both additions are backward compatible, since unknown fields are ignored by clients (section 3.8).
-
+- **Field.** Artist `result` events gain `genre`: a string or null. It is the most common album genre of that artist, counting ignores case, the first spelling seen is kept, and ties go to the alphabetically first genre. Null when no album of the artist has a genre.
+- **Display.** The search result shows "Name (genre)" when a genre exists. Without one, the name stands alone and the album count on the detail line tells same-name artists apart.
+- **No new provider call.** The genre comes from the album records the library snapshot already fetches. The snapshot keeps each album's `genre`. Cache entries without the field are refetched.
+- **Not in scope.** Album artwork on owned-album items is still a separate proposal, not approved.

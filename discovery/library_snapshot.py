@@ -81,6 +81,7 @@ def build_library_snapshot(
             or (
                 "song_count" in cached["payload"]["albums"][0]
                 and "artist_id" in cached["payload"]["albums"][0]
+                and "genre" in cached["payload"]["albums"][0]
             )
         )
     ):
@@ -107,6 +108,7 @@ def build_library_snapshot(
             "id": album.get("id"),
             "artist": album.get("artist", ""),
             "artist_id": album.get("artistId"),
+            "genre": album.get("genre"),
             "album": album.get("name", ""),
             "year": album.get("year"),
             "song_count": int(album.get("songCount") or 0),

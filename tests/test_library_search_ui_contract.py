@@ -69,6 +69,10 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("const isCurrent = () => seq === globalSearchSeq;", self.new_js)
         self.assertIn("const finish = () => {", self.new_js)
 
+    def test_artist_results_show_their_genre_after_the_name_when_there_is_one(self):
+        self.assertIn("return item.type === 'artist' && item.genre ? item.name + ' (' + item.genre + ')' : item.name;", self.new_js)
+        self.assertIn("addTextElement(text, 'span', 'search-item-name', searchItemName(item));", self.new_js)
+
     def test_results_stream_into_their_groups_with_a_running_count(self):
         self.assertIn("searchGroupList(item.type).append(buildSearchItem(item));", self.new_js)
         self.assertIn("'Searching… ' + pluralize(shown, 'match', 'matches') + ' so far'", self.new_js)
