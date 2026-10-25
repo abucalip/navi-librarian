@@ -720,9 +720,9 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 - **Partial album list.** When the artist page's deadline falls after the album list is known and before popularity arrives, `missing_albums` returns `available: true, complete: false, reason: deadline` with the albums it has (section 8.1, P2 row).
 - **Last.fm generation.** A test shows that a new key bumps `lastfm_generation` and a repeated or blank key does not.
 
-### 12.7 Still open after slice C
+### 12.7 Open items after slice C (resolved by slices D and E)
 
-These need an owner decision or a change in another phase. They are not done in this slice.
+Each item below is now resolved, as marked. Section 12.10 lists what remains in P2.
 
 1. **ListenBrainz in search: not needed, and not built (resolved 2026-10-25).** ListenBrainz has no text search. Its uses in section 5.1 are popularity, metadata, radio and similar artists, none of which search needs. Search reports it `not_in_this_build`. Its only use is popularity on the artist page's `missing_albums`.
 2. **Batched identity lookup (section 8.1, 100-term batching): called by the identity job** (section 12.9).
@@ -751,7 +751,7 @@ Most files are not tagged, so the premise of a majority does not hold. Two facts
 
 **Still open:** the library-wide identity job (see above); owned MBID matching for provider results (the owned index has no MBIDs).
 
-### 12.9 Slice E (branch `search-p2e`, stacked on `search-p2d`)
+### 12.9 Slice E (merged in PR #618, squash `a37f804`)
 
 Owner approvals (2026-10-26): permanent storage of identities, a background pass after each owned-index build and for new items, and scope limited to artists and albums.
 
@@ -778,4 +778,26 @@ Owner approvals (2026-10-26): permanent storage of identities, a background pass
 - A name can match the wrong artist when the name is unique in the library but ambiguous in MusicBrainz. The first exact match is taken.
 - An unresolved item stays unresolved until its record is removed. There is no correction tool yet.
 - Identity records under old Navidrome generations are not deleted. Only `search:` cache entries are purged (section 12.8).
+
+### 12.10 P2 status after slice E (2026-10-26)
+
+**Built and merged (PRs #613 to #618):**
+- Provider search (MusicBrainz, Last.fm) behind the 3.0 s deadline runner, with `source` events, dedupe, shared calls, cancellation and complete-only caching (slice A).
+- Artist page `bio` and `missing_albums`, with ListenBrainz listen-count ordering, under the deadline (slice B).
+- The "Not in your library" group, with the search panel showing two sections only (slice C, direction of 2026-10-25).
+- Navidrome MBID on the artist page, Last.fm top albums on the artist page, old-generation cache cleanup for search keys (slice D).
+- Stored MusicBrainz identities for artists and albums, resolved in batches after each index build, with owned matches by MBID (slice E).
+
+**Decided, not built:**
+- ListenBrainz in search. The owner's direction (2026-10-25): search does not need it. Section 10's wording "MusicBrainz, Last.fm and ListenBrainz for not-owned artists and albums" is superseded for search. ListenBrainz is used only for popularity on the artist page.
+- Provider artist results report `album_count: null` and `genre: null` (section 12.2).
+
+**Remaining in P2:**
+1. **First identity pass on the owner's library.** The job is built and runs after each index build. Nothing has run it against the real library yet. Record the counts, the number of MusicBrainz requests and the time taken, and check a sample of matches by hand.
+2. **Browser verification** of the search panel and the artist page's `bio`, `missing_albums` and Last.fm sections. Not done for slices B to E.
+3. **Identity records under old Navidrome generations** are not deleted. Only search keys are purged (section 12.8). This needs the same prefix delete with the identity prefix.
+4. **A correction path for stored identities.** An unresolved or wrong record stays until someone deletes it, and there is no tool for that. Adding one needs approval if it is an endpoint (section 11.8 rule).
+5. **Known deviations, kept on purpose:** the artist page is computed before its sections are streamed (section 12.4); the 5 s request budget is independent of the deadline (section 12.2 item 6).
+
+**Not P2:** `similar` (P3), Discogs and genre (P4), latency measurement and `TEST_PLAN.md` entries (P5).
 
