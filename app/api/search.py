@@ -15,7 +15,7 @@ from discovery.library_snapshot import build_library_snapshot
 from discovery.search.artist_page import artist_page, json_sections, section_events
 from discovery.search.events import search_events, sse
 from discovery.search.index import OwnedIndex, fetch_song_inventory
-from discovery.search.network import external_search
+from discovery.search.network import artist_network, external_search
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
 from settings.service import navidrome_generation
@@ -142,6 +142,41 @@ def search(
     )
 
 
+def artist_network_for(librarian):
+    """Route adapter: ListenBrainz popularity and the existing bio service feed the artist page."""
+    import httpx
+
+    from app.api.metadata import artist_bio
+    from integrations.listenbrainz.client import request_headers
+    from discovery.search.providers import REQUEST_TIMEOUT
+    from integrations.listenbrainz.popularity import fetch_release_group_popularity
+
+    def popularity(mbids, can_cache):
+        def cache_set(key, value):
+            # A response that arrives after the artist-page deadline is not cached.
+            if can_cache():
+                librarian._metadata_cache_set(key, value)
+
+        return fetch_release_group_popularity(
+            httpx.post,
+            librarian._metadata_cache_get,
+            cache_set,
+            mbids,
+            headers=request_headers(),
+            timeout=REQUEST_TIMEOUT,
+        )
+
+    def bio(name):
+        return artist_bio(artist=name)["bio"]
+
+    return artist_network(
+        cache_read=librarian._discovery_read_list,
+        cache_write=librarian._discovery_write_list,
+        popularity=popularity,
+        bio=bio,
+    )
+
+
 @router.get("/api/artists/{key}")
 def artist(
     key: str,
@@ -153,7 +188,12 @@ def artist(
     """Artist page. ``mbid`` is accepted for provider lookups; it never selects the owned artist."""
     started = time.monotonic()
     try:
-        page = artist_page(owned_view(librarian), normalize_key(key), id)
+        page = artist_page(
+            owned_view(librarian),
+            normalize_key(key),
+            id,
+            network=artist_network_for(librarian),
+        )
     except Exception:
         return JSONResponse(
             status_code=502,

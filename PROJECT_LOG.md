@@ -1,3 +1,10 @@
+## 2026-10-25 — Global search P2, slice B (branch `search-p2b`)
+
+- **Built:** the artist page's `bio` and `missing_albums` sections, run on separate threads under the 3.0 s deadline. `missing_albums` resolves the owned artist's MusicBrainz identity by exact name, browses its studio albums, drops owned and duplicate albums, and orders by ListenBrainz listen count (`discovery/search/artist_sections.py`, `providers.py` browse, `network.py` `artist_network`). `bio` reuses the existing bio service through a route adapter (`app/api/search.py`).
+- **Contract:** section 8.0 rule (agents never run the full unit suite); section 12.3 to 12.5 record slice B, its deviations and what is still open.
+- **Verification:** focused modules only (164 passed, including the new artist-section and browse tests). Guard scripts pass. Not run: the full unit suite (CI runs it), live provider calls, the artist route against the real `navidrome_server`.
+- **Still open:** the "Not in your library" UI group; Last.fm on the artist page.
+
 ## 2026-10-25 — Global search P2, slice A (branch `search-p2`)
 
 - **Built:** external text search for not-owned artists and albums from MusicBrainz (artist and release-group search, 503 backoff and retry) and Last.fm (artist and album search, only when a key is saved). New modules: `discovery/search/limiter.py` (per-source pacing; a call that cannot start within the deadline is `rate_limited`), `cache.py` (depth-50 provider entries, 24 h, 1 h for definitive empty answers), `providers.py`, `merge.py` (owned suppression, dedupe by MBID then key plus year, ranking), `runner.py` (3.0 s deadline, shared calls with reference counting, cancellation when the last consumer leaves, complete-only caching) and `network.py` (wiring). `GET /api/search` streams `source` and `result` events when `scope=all`; `scope=owned` touches no provider and no cache.

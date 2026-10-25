@@ -95,6 +95,8 @@ class SearchRouteTests(unittest.TestCase):
         self.previous_index = search_routes._owned_index
         self.previous_external = search_routes.external_search
         search_routes.external_search = NoNetworkSearch
+        self.previous_artist_network = search_routes.artist_network_for
+        search_routes.artist_network_for = lambda librarian: None  # no network sections in these tests
         NoNetworkSearch.calls = []
         self.release = threading.Event()
         self.loaders = FakeLoaders()
@@ -104,6 +106,7 @@ class SearchRouteTests(unittest.TestCase):
         self.release.set()
         search_routes._owned_index = self.previous_index
         search_routes.external_search = self.previous_external
+        search_routes.artist_network_for = self.previous_artist_network
 
     def building_index(self):
         """An index whose first build never finishes until teardown, so it stays building."""

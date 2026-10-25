@@ -12,6 +12,7 @@ from discovery.search.events import (
     owned_type_available,
     source_capabilities,
 )
+from discovery.search.artist_sections import ArtistNetwork, network_sections
 from discovery.search.index import IndexView
 from discovery.search.query import find_artist, owned_albums
 
@@ -30,17 +31,22 @@ class ArtistPage:
     partial: bool = False
 
 
-def artist_capabilities(view: IndexView) -> dict[str, Any]:
+def artist_capabilities(view: IndexView, network: ArtistNetwork | None = None) -> dict[str, Any]:
     owned_ok = owned_type_available(view)
     sections = {
         "artist": availability(owned_ok, view.reason),
         "owned_albums": availability(owned_ok, view.reason),
     }
     for name in _NETWORK_SECTIONS:
-        sections[name] = availability(False, NOT_IN_BUILD)
+        if network is None:
+            sections[name] = availability(False, NOT_IN_BUILD)
+        elif name == "similar":
+            sections[name] = availability(False, NOT_IN_BUILD)
+        else:
+            sections[name] = availability(True)
     return {
         "sections": sections,
-        "sources": source_capabilities(),
+        "sources": dict(network.sources) if network is not None else source_capabilities(),
         "owned_index": owned_index_capability(view),
     }
 
@@ -63,15 +69,23 @@ def _unavailable(name: str, reason: str | None) -> dict[str, Any]:
     return section
 
 
-def artist_page(view: IndexView, key: str, artist_id: str | None) -> ArtistPage:
+def artist_page(
+    view: IndexView,
+    key: str,
+    artist_id: str | None,
+    network: ArtistNetwork | None = None,
+) -> ArtistPage:
     """Build every section for one artist key, or report why the key cannot be served."""
-    capabilities = artist_capabilities(view)
+    capabilities = artist_capabilities(view, network)
     if not owned_type_available(view):
         # Owned sections cannot be served yet. The response is still 200, never 404.
         sections = {
             "artist": _unavailable("artist", view.reason),
             "owned_albums": _unavailable("owned_albums", view.reason),
         }
+        for name in _NETWORK_SECTIONS:
+            if network is not None:
+                sections[name] = _unavailable(name, view.reason)
         return _finish(ArtistPage("ok", capabilities, sections), view)
 
     status, artist, candidates = find_artist(view.data, key, artist_id)
@@ -100,6 +114,8 @@ def artist_page(view: IndexView, key: str, artist_id: str | None) -> ArtistPage:
             "items": owned_albums(view.data, artist["id"]),
         },
     }
+    if network is not None:
+        sections.update(network_sections(network, artist["name"], view.data))
     return _finish(ArtistPage("ok", capabilities, sections), view)
 
 
@@ -110,7 +126,10 @@ def _finish(page: ArtistPage, view: IndexView) -> ArtistPage:
             page.sections[name] = _unavailable(name, NOT_IN_BUILD)
     ordered = {name: page.sections[name] for name in SECTION_ORDER}
     page.sections = ordered
-    page.partial = not owned_type_available(view)
+    # Contract section 3.8: a section that ended early or failed makes the page partial.
+    page.partial = not owned_type_available(view) or any(
+        section["reason"] in ("deadline", "source_failed") for section in ordered.values()
+    )
     return page
 
 

@@ -26,6 +26,8 @@ MB_HEADERS = {
 }
 # Pause before each retry after a MusicBrainz 503 (section 9: backoff and retry are required).
 MB_RETRY_DELAYS = (1.0, 2.0)
+# MusicBrainz browse calls accept up to 100 results per page.
+BROWSE_LIMIT = 100
 # Each HTTP request has this fixed budget. It is not derived from the search deadline, because a
 # shared call can gain later consumers (and so a later deadline) after its request has started.
 # Consumers stop waiting at their own deadlines; a request in flight is discarded when it returns.
@@ -172,6 +174,28 @@ class MusicBrainzSearch:
         candidates = []
         for item in _as_list(payload.get("release-groups")):
             if not isinstance(item, dict) or not item.get("id"):
+                continue
+            candidates.append(album_candidate(
+                self.source,
+                str(item.get("title") or "").strip(),
+                _credit_name(item.get("artist-credit")),
+                _year(item.get("first-release-date")),
+                item.get("id"),
+            ))
+        return [c for c in candidates if _usable(c) and c["artist"]]
+
+
+    def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Studio albums of one artist (primary type album, no secondary types such as live or compilation)."""
+        payload = self._request(
+            "/release-group",
+            {"artist": artist_mbid, "type": "album", "limit": BROWSE_LIMIT},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        candidates = []
+        for item in _as_list(payload.get("release-groups")):
+            if not isinstance(item, dict) or not item.get("id") or item.get("secondary-types"):
                 continue
             candidates.append(album_candidate(
                 self.source,

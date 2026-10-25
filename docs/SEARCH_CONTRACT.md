@@ -520,6 +520,10 @@ Each suggestion lists its `reasons`. ListenBrainz gives no similarity score, so 
 - `navidrome_server.py`: no additions (D-016).
 - Browser: top-bar search box with an accessible label; results grouped by type under "In your library" and "Not in your library"; streaming updates announced politely (`aria-live`); source status shown per provider. Logic stays server-side. Frontend work in a phase depends only on capabilities that phase delivers (section 3.6).
 
+### 8.0 Test runs (rule)
+
+Agents never run the full unit suite (`python -m unittest discover -s tests`), in any phase. The owner runs it independently, and CI runs it on the PR head. Agents run only the focused test modules for the code they changed, plus the guard scripts, and report exactly which modules ran and which checks were skipped.
+
 ### 8.1 Tests required in each phase
 
 Correctness tests land in the same PR as the code they cover.
@@ -688,9 +692,23 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 5. **Source `count`** is the number of provider records before dedupe.
 6. **HTTP request budget is fixed at 5 s, not the search deadline.** A request in flight cannot have its timeout extended when a later consumer joins a shared call. Consumers stop waiting at their own deadlines; a request that returns after the call's final deadline is a timeout and is not cached. A request started near a deadline can therefore run up to 5 s after its consumers leave, then is discarded.
 
-### 12.3 Slice B (not started)
+### 12.3 Slice B (branch `search-p2b`)
 
-- ListenBrainz: release-group and artist popularity (batch), used in `missing_albums`. Search reports it `not_in_this_build` until then.
-- Artist page `bio` (reuse of the bio route's logic, which currently lives inline in `app/api/metadata.py` and needs extracting first) and `missing_albums` (MusicBrainz identity for the owned artist, then release-group browse).
-- "Not in your library" results group in the UI.
+- **`missing_albums` on the artist page.** The owned artist's MBID is the first MusicBrainz artist whose normalized name matches exactly. Its studio albums come from one release-group browse (limit 100, no secondary types such as live or compilation). Albums the library owns are removed by key and year, and duplicates are merged. Items are sorted by ListenBrainz listen count (`popularity`), most first, then by year. The list is capped at 50. `sources` lists `musicbrainz`, plus `listenbrainz` when a count was found.
+- **`bio`.** The existing bio service (`app/api/metadata.py`, `artist_bio`) is called from the route adapter and injected into the discovery layer, so discovery does not import the app. The section's `source` is `wikidata`, the service's primary identity source.
+- **Deadline.** `bio` and `missing_albums` run on separate threads under the 3.0 s deadline. One that has not finished is `deadline`; one that failed is `source_failed`. Either makes the page `partial`. A late answer is not cached. The ListenBrainz popularity lookup receives a `can_cache` check and uses the 5 s request budget (section 12.2 item 6); its cache writes happen only while the check is true.
+- **ListenBrainz** supplies release-group popularity (`POST /1/popularity/release-group`, the existing batch client). It is available on the artist page and not used by search, which has no text-search endpoint on ListenBrainz.
+
+### 12.4 Slice B deviations
+
+1. **`popularity` is the ListenBrainz listen count**, an integer, not the 0 to 1 score in the section 3.8 example.
+2. **Identity is the first exact-name match**, not a confidence-checked match. Two artists with the same name can resolve to the wrong one.
+3. **Provider caches use the 24 h TTL** from section 6, not the 30-day TTL for MBID lookups. The identity lookup shares the search cache entry for the same name.
+4. **The artist page is computed before its stream starts** and then emitted section by section. Sections are not streamed as each one finishes.
+
+### 12.5 Still open after slice B
+
+- The "Not in your library" group in the search UI. The backend still returns provider results as `result` events with `owned: false`.
+- Last.fm on the artist page (`lastfm` is reported `not_in_this_build` there).
+- Cached entries for an old credential generation are not deleted in the background (section 5.2).
 

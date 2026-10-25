@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from discovery.search.artist_sections import ArtistNetwork
 from discovery.search.cache import provider_cache_key
 from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
@@ -91,5 +92,42 @@ def external_search(
         registry=registry or REGISTRY,
         cache_read=cache_read,
         cache_write=cache_write,
+        clock=clock,
+    )
+
+
+def artist_network(
+    *,
+    cache_read: Callable[[str], Any],
+    cache_write: Callable[[str, Any], None],
+    popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]],
+    bio: Callable[[str], str | None],
+    http_get: Callable[..., Any] | None = None,
+    limiter: SourceLimiter | None = None,
+    clock: Callable[[], float] = time.monotonic,
+) -> ArtistNetwork:
+    """Build the network side of one artist page: MusicBrainz identity and albums, ListenBrainz popularity, bio.
+
+    ``popularity`` and ``bio`` are injected by the route adapter, which owns the app-level
+    cache and bio service; the discovery layer does not import them.
+    """
+    get = http_get or httpx.get
+    rate_limiter = limiter or LIMITER
+    musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
+    sources = {
+        "navidrome": availability(True),
+        "musicbrainz": availability(True),
+        # The artist page uses Last.fm for nothing yet, so it is not in this build here.
+        "lastfm": availability(False, NOT_IN_BUILD),
+        "listenbrainz": availability(True),
+        "discogs": availability(False, NOT_IN_BUILD),
+    }
+    return ArtistNetwork(
+        musicbrainz=musicbrainz,
+        popularity=popularity,
+        bio=bio,
+        cache_read=cache_read,
+        cache_write=cache_write,
+        sources=sources,
         clock=clock,
     )
