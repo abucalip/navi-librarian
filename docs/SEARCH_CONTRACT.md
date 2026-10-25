@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **revised after the third PR #608 review; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
+Status: **revised after the fourth PR #608 review; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
 
 ## 1. Owner decisions (recorded)
 
@@ -191,10 +191,12 @@ These are the contract targets for backend implementation and API contract tests
 
 **`capabilities` event** (always first, exactly once per stream):
 
+Example while the owned index is still building (owned types are therefore unavailable):
+
 ```json
-{"types": {"artist": {"available": true, "reason": null},
-           "album": {"available": true, "reason": null},
-           "song": {"available": true, "reason": null},
+{"types": {"artist": {"available": false, "reason": "index_building"},
+           "album": {"available": false, "reason": "index_building"},
+           "song": {"available": false, "reason": "index_building"},
            "genre": {"available": false, "reason": "not_in_this_build"}},
  "sources": {"navidrome": {"available": true, "reason": null},
              "musicbrainz": {"available": false, "reason": "not_in_this_build"},
@@ -204,26 +206,73 @@ These are the contract targets for backend implementation and API contract tests
  "owned_index": {"available": false, "reason": "index_building", "state": "building"}}
 ```
 
-- `types`, `sources` and `owned_index` are all required.
-- `owned_index.state` is required and is one of `fresh`, `stale`, `building`, `unavailable`. When `state` is `fresh` or `stale`, `available` is `true` and `reason` is `null`.
-- A type can be `available: true` only when the owned index (for owned types) or a source (for external types) can serve it in this stream. Otherwise its `reason` says why.
-
-**`section` event** (artist page stream; one per section, each emitted once when that section is final):
+Example once the owned index is fresh (the Discogs token is set, so Discogs participates):
 
 ```json
-{"section": "missing_albums", "available": true, "complete": false, "reason": null,
- "items": [{"name": "...", "year": 2021, "release_group_mbid": "…"}]}
+{"types": {"artist": {"available": true, "reason": null},
+           "album": {"available": true, "reason": null},
+           "song": {"available": true, "reason": null},
+           "genre": {"available": false, "reason": "not_in_this_build"}},
+ "sources": {"navidrome": {"available": true, "reason": null},
+             "musicbrainz": {"available": false, "reason": "not_in_this_build"},
+             "lastfm": {"available": false, "reason": "not_in_this_build"},
+             "listenbrainz": {"available": false, "reason": "not_in_this_build"},
+             "discogs": {"available": true, "reason": null}},
+ "owned_index": {"available": true, "reason": null, "state": "fresh"}}
 ```
+
+- `types`, `sources` and `owned_index` are all required.
+- `owned_index.state` is required and is one of `fresh`, `stale`, `building`, `unavailable`. When `state` is `fresh` or `stale`, `available` is `true` and `reason` is `null`. Otherwise `available` is `false` and `reason` is `index_building` or `index_unavailable`.
+- An **owned type** (`artist`, `album`, `song`) can be `available: true` only when `owned_index.available` is `true`. Otherwise its `reason` is the owned index's reason (`index_building` or `index_unavailable`).
+- An **external type** (`genre`) can be `available: true` only when at least one source that serves it is available. Otherwise its `reason` says why.
+
+**`section` event** (artist page stream; one per section, each emitted once when that section is final).
+
+Every `section` event has the common fields below. The section's payload is one of two shapes, selected by `section`:
 
 | Field | Required | Type | Rule |
 |---|---|---|---|
-| `section` | yes | string | `artist`, `owned_albums`, `missing_albums`, `similar`, or `bio`. |
+| `section` | yes | string | `artist`, `bio`, `owned_albums`, `missing_albums`, or `similar`. |
 | `available` | yes | bool | |
-| `complete` | yes | bool | `false` when the section ended early (deadline or source failure) with partial items. |
-| `reason` | yes | string or null | `null` when available and complete. Otherwise one of `not_in_this_build`, `source_disabled`, `source_failed`, `deadline`. |
-| `items` | yes | array | Always an array. `[]` when `available` is `false`. Never `null`. A section with `available: true` and `items: []` is a valid empty result. |
+| `complete` | yes | bool | `false` when the section ended early (deadline or source failure). |
+| `reason` | yes | string or null | `null` when `available` is true and `complete` is true. Otherwise one of `not_in_this_build`, `source_disabled`, `source_failed`, `deadline`. When `available` is true and `complete` is false, `reason` is `deadline` or `source_failed`. |
 
-**Failure representation.** A section whose source fails before any item arrives is emitted as `{"available": false, "complete": false, "reason": "source_failed", "items": []}`. A section that hits the deadline with some items keeps those items, with `available: true, complete: false, reason: "deadline"`. A section is never emitted twice; a later result for the same section is dropped.
+**Payload shape by section:**
+
+| Section | Payload field | Type | Notes |
+|---|---|---|---|
+| `artist` | `artist` | object or null | Required, object when available: `{"name": string, "mbid": string or null, "owned": bool, "album_count": int}`. `null` when `available` is false. Not an item list. |
+| `bio` | `bio` | object or null | Required. `{"text": string, "source": string}` when a bio exists. `null` when available and complete with no bio (a valid empty result), or when unavailable. Not an item list. |
+| `owned_albums`, `missing_albums`, `similar` | `items` | array | Required. Always an array, never `null`. `[]` when unavailable. An available section with `items: []` is a valid empty result. |
+
+The `items` field is not present on `artist` or `bio` events, and the `artist` and `bio` fields are not present on list-section events.
+
+Examples:
+
+```json
+{"section": "artist", "available": true, "complete": true, "reason": null,
+ "artist": {"name": "Radiohead", "mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711", "owned": true, "album_count": 9}}
+```
+
+```json
+{"section": "bio", "available": true, "complete": true, "reason": null,
+ "bio": {"text": "English rock band formed in Abingdon in 1985.", "source": "wikidata"}}
+```
+
+```json
+{"section": "bio", "available": true, "complete": true, "reason": null, "bio": null}
+```
+
+```json
+{"section": "missing_albums", "available": true, "complete": false, "reason": "deadline",
+ "items": [{"name": "...", "year": 2021, "release_group_mbid": "…"}]}
+```
+
+```json
+{"section": "similar", "available": false, "complete": false, "reason": "source_failed", "items": []}
+```
+
+**Failure representation.** A section whose source fails before any data arrives is emitted as unavailable: `available: false, complete: false, reason: "source_failed"`, with `artist: null` or `bio: null` or `items: []` as its payload shape requires. A list section that hits the deadline with some items keeps those items, with `available: true, complete: false, reason: "deadline"`. A section is never emitted twice; a later result for the same section is dropped.
 
 **`done` event** (terminal, normal completion):
 
@@ -345,7 +394,7 @@ Correctness tests land in the same PR as the code they cover.
 | Phase | Required automated tests |
 |---|---|
 | P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale`, `building` and `unavailable` states; first build failure with no last-known-good index reports `index_unavailable` in an HTTP 200 stream or response, never a `503` and never an empty library; `scope=owned` with no index emits a `done` with `partial: true` and makes no provider calls; owned identity and ownership matching, including false matches (same name, different MBID; Various Artists); `capabilities` event first; owned results before any provider event; library artist list paging and `index_state`. |
-| P2 | Provider isolation (one failing provider does not affect others); entity-lookup and genre entries are unreachable after a generation change; the artist-page `section` and `done` payloads match section 3.8 for complete, partial, deadline and source-failed sections; schema tests for `capabilities` and `section` against section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 3 to 10 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
+| P2 | Provider isolation (one failing provider does not affect others); entity-lookup and genre entries are unreachable after a generation change; schema tests for `capabilities` against both examples in section 3.8 (owned types unavailable with `index_building`, and fresh with owned types available); schema tests for `section` events covering each payload shape: `artist` object (available, unavailable with `artist: null`), `bio` object (with text), `bio: null` (valid empty), and list sections with `items` (available, empty, partial with `reason: "deadline"`, and source-failed with `items: []`); the `items` field absent on `artist` and `bio` events; the `done` payload matches section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 3 to 10 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
 | P3 | Seed artist exclusion from `lb-radio`; owned candidates moved to the owned list; ranking with no ListenBrainz score; precompute failure keeps the previous entry; `similar` section availability; artist-page stream begins with `capabilities`. |
 | P4 | Discogs token handling (never in responses, logs or cache keys); first token set, token replacement (non-empty to different non-empty), and clear each bump `config_generation`, and old-generation entries are never read from the query, entity-lookup, genre or similar-artist layers; environment-sourced `DISCOGS_TOKEN`: a process start with the variable set bumps the generation, a stored setting takes precedence over the variable, and clearing the stored setting falls back to the variable with a generation bump; a `capabilities` payload for each state (`not_in_this_build`, `source_disabled`, available); the `capabilities` payload never contains a credential value; attribution text present on every Discogs-sourced item; genre matching; `disabled` state without a token. |
 | P5 | Latency measurements against section 2.1 targets, with results recorded in `PROJECT_LOG.md`; `TEST_PLAN.md` entries for each phase. |
@@ -389,7 +438,7 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 ### Open
 
-No open items in this section. The third re-review items are addressed in sections 3.8 (event payload schemas), 5.2 (generation in every source-scoped key, and environment-sourced credentials) and 8.1 (regression tests). Re-review is requested before P1 starts.
+No open items in this section. The fourth re-review items are addressed in section 3.8 (consistent `capabilities` examples, the `reason` rule for partial sections, and the `artist` and `bio` payload shapes) and in section 8.1 (schema tests). Re-review is requested before P1 starts.
 
 ## 10. Phasing
 
