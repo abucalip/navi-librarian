@@ -166,6 +166,21 @@ class NetworkSectionTests(unittest.TestCase):
         self.assertEqual(sections["bio"]["reason"], "source_failed")
         self.assertEqual(sections["bio"]["bio"], None)
 
+    def test_missing_albums_that_runs_out_of_time_keeps_the_albums_it_has(self):
+        def slow_popularity(mbids, can_cache):
+            time.sleep(1.0)
+            return {}
+
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=slow_popularity, deadline=0.3)
+        sections = network_sections(net, "Radiohead", radiohead_owned())
+        missing = sections["missing_albums"]
+        self.assertTrue(missing["available"])
+        self.assertFalse(missing["complete"])
+        self.assertEqual(missing["reason"], "deadline")
+        # Without popularity the list falls back to year order.
+        self.assertEqual([i["name"] for i in missing["items"]], ["Pablo Honey", "The Bends"])
+        self.assertTrue(all(i["popularity"] is None for i in missing["items"]))
+
     def test_a_section_that_misses_the_deadline_is_reported_deadline(self):
         def slow(name):
             time.sleep(1.0)

@@ -305,7 +305,7 @@ Example in the P1 build, while the owned index is still building. Owned types ar
  "owned_index": {"available": false, "reason": "index_building", "state": "building"}}
 ```
 
-Example in the P2 build, once the owned index is fresh. MusicBrainz, Last.fm and ListenBrainz are available; Discogs and genre are not yet in this build:
+Example in the P2 build, once the owned index is fresh. MusicBrainz and Last.fm are available. ListenBrainz is not a search source and is `not_in_this_build` here (section 12.7). Discogs and genre are not yet in this build:
 
 ```json
 {"types": {"artist": {"available": true, "reason": null},
@@ -315,7 +315,7 @@ Example in the P2 build, once the owned index is fresh. MusicBrainz, Last.fm and
  "sources": {"navidrome": {"available": true, "reason": null},
              "musicbrainz": {"available": true, "reason": null},
              "lastfm": {"available": true, "reason": null},
-             "listenbrainz": {"available": true, "reason": null},
+             "listenbrainz": {"available": false, "reason": "not_in_this_build"},
              "discogs": {"available": false, "reason": "not_in_this_build"}},
  "owned_index": {"available": true, "reason": null, "state": "fresh"}}
 ```
@@ -518,7 +518,7 @@ Each suggestion lists its `reasons`. ListenBrainz gives no similarity score, so 
 - Routes: `app/api/search.py` (search, artists, genres) and `app/api/library.py` (library artists). Thin adapters only; they are registered in `app/main.py`.
 - Logic: `discovery/search/` (index, cache, query normalization, merge and ranking, deadline runner, SSE event assembly) and `integrations/<source>/` clients for Discogs and any new calls. Direct-import tests for each.
 - `navidrome_server.py`: no additions (D-016).
-- Browser: top-bar search box with an accessible label; results grouped by type under "In your library" and "Not in your library"; streaming updates announced politely (`aria-live`); source status shown per provider. Logic stays server-side. Frontend work in a phase depends only on capabilities that phase delivers (section 3.6).
+- Browser: top-bar search box with an accessible label; results in two sections only, "In your library" and "Not in your library"; streaming updates announced politely (`aria-live`). No provider names, provider status or popularity are shown in the search panel (owner direction, 2026-10-25). Logic stays server-side. Frontend work in a phase depends only on capabilities that phase delivers (section 3.6).
 
 ### 8.0 Test runs (rule)
 
@@ -531,7 +531,7 @@ Correctness tests land in the same PR as the code they cover.
 | Phase | Required automated tests |
 |---|---|
 | P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale`, `building` and `unavailable` states; first build failure with no last-known-good index reports `index_unavailable` in an HTTP 200 stream or response, never a `503` and never an empty library; `scope=owned` with no index emits a `done` with `partial: true` and makes no provider calls; Navidrome generation change drops the index to `building` and skips the 10% sanity check on the first rebuild, with a test that the previous server's data is never served; owned-only identity: Various Artists excluded, and same-name artists with different Navidrome IDs kept as separate results (MBID-based ownership matching against provider results is tested in P2); SSE invariants 1 to 4 and 10 (section 3.7); schema tests for `capabilities` (the P1 example in section 3.8), `result` (owned results only, required fields), `done` (including `partial` false for a P1 stream with `genre` not in this build), and `error` (`code` and `message` present, no credential in `message`); no `source` events in P1; artist-page `artist` and `owned_albums` sections with the JSON form and the stream form matching the same schema; library artist list paging and `index_state`; index build time recorded against the section 2.1 target; artist-page JSON form with exactly `capabilities`, `sections` and `done`, checked against the example in section 3.3; `artist` section schema (available, and `artist: null` when unavailable); `owned_albums` item schema and sort order; `404` for an unknown key and `409 ambiguous_artist` with `candidates` when two artists share a key, selected by `?id=`; artist-page answers while the index is building (`200` with `index_building`, never `404`); `error` bodies on `404`, `409` and `502` containing only `code`, `message` and, on `409`, `candidates`. |
-| P2 | Provider isolation (one failing provider does not affect others); entity-lookup entries are unreachable after a generation change (genre results and genre cache entries are P4 tests); schema tests for `capabilities` against the P2 build (MusicBrainz, Last.fm and ListenBrainz available; Discogs `not_in_this_build`) and for `source` events (`pending` with `count` and `ms` null; terminal states with ints); schema tests for `section` events covering each payload shape: `bio` object (with text), `bio: null` (valid empty), and list sections with `items` (available, empty, partial with `reason: "deadline"`, and source-failed with `items: []`); the `items` field absent on `artist` and `bio` events; the `done` payload matches section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 5 to 9 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
+| P2 | Provider isolation (one failing provider does not affect others); entity-lookup entries are unreachable after a generation change (genre results and genre cache entries are P4 tests); schema tests for `capabilities` against the P2 build (MusicBrainz and Last.fm available; ListenBrainz and Discogs `not_in_this_build` for search) and for `source` events (`pending` with `count` and `ms` null; terminal states with ints); schema tests for `section` events covering each payload shape: `bio` object (with text), `bio: null` (valid empty), and list sections with `items` (available, empty, partial with `reason: "deadline"`, and source-failed with `items: []`); the `items` field absent on `artist` and `bio` events; the `done` payload matches section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 5 to 9 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
 | P3 | Seed artist exclusion from `lb-radio`; owned candidates moved to the owned list; ranking with no ListenBrainz score; precompute failure keeps the previous entry; `similar` section availability. |
 | P4 | Discogs token handling (never in responses, logs or cache keys); first token set, token replacement (non-empty to different non-empty), and clear each bump `config_generation`, and old-generation entries are never read from the query, entity-lookup, genre or similar-artist layers; environment-sourced `DISCOGS_TOKEN`: a process start with the variable set bumps the generation, a stored setting takes precedence over the variable, and clearing the stored setting falls back to the variable with a generation bump; a `capabilities` payload for each state (`not_in_this_build`, `source_disabled`, available); the `capabilities` payload never contains a credential value; attribution text present on every Discogs-sourced item; genre matching; `disabled` state without a token. |
 | P5 | Latency measurements against section 2.1 targets, with results recorded in `PROJECT_LOG.md`; `TEST_PLAN.md` entries for each phase. |
@@ -711,4 +711,22 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 - The "Not in your library" group in the search UI. The backend still returns provider results as `result` events with `owned: false`.
 - Last.fm on the artist page (`lastfm` is reported `not_in_this_build` there).
 - Cached entries for an old credential generation are not deleted in the background (section 5.2).
+
+### 12.6 Slice C (branch `search-p2c`)
+
+- **"Not in your library" group.** Results with `owned: false` go to their own section below the owned groups. Owned results keep their groups and their count. The summary reads "N matches in your library · M not in your library".
+- **No source status in the panel.** The `source` events still reach the stream for clients, but the panel does not show them (owner direction, 2026-10-25).
+- **Artists not in the library do not open the artist view**, because their IDs are MBIDs, not Navidrome IDs.
+- **Partial album list.** When the artist page's deadline falls after the album list is known and before popularity arrives, `missing_albums` returns `available: true, complete: false, reason: deadline` with the albums it has (section 8.1, P2 row).
+- **Last.fm generation.** A test shows that a new key bumps `lastfm_generation` and a repeated or blank key does not.
+
+### 12.7 Still open after slice C
+
+These need an owner decision or a change in another phase. They are not done in this slice.
+
+1. **ListenBrainz in search: not needed, and not built (resolved 2026-10-25).** ListenBrainz has no text search. Its uses in section 5.1 are popularity, metadata, radio and similar artists, none of which search needs. Search reports it `not_in_this_build`. Its only use is popularity on the artist page's `missing_albums`.
+2. **Batched MusicBrainz identity lookup (section 8.1, 100-term batching).** The app has no flow that resolves several artists at once yet. Build this with the flow that needs it.
+3. **Owned MBID matching (section 8.1).** Owned albums and artists have no MBIDs (section 11.2). The test cannot be written until the owned snapshot carries MBIDs.
+4. **Background deletion of old-generation cache entries (section 5.2).** Old entries are unreachable but not deleted. This needs a prefix-delete operation on the discovery store.
+5. **Last.fm on the artist page (section 12.5).** It is reported `not_in_this_build` there.
 

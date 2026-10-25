@@ -1,3 +1,16 @@
+## 2026-10-25 — Search panel shows two sections only (branch `search-p2c`)
+
+- **Owner direction:** the search panel shows only "In your library" and "Not in your library". Provider names, per-provider status and popularity do not appear in it.
+- **Done:** the per-provider status lines added in slice C are removed from the UI. The `source` events still reach the stream. The contract (section 8 and 12.6) is updated to match.
+- **Resolved:** ListenBrainz is not a search source. Search reports it `not_in_this_build`. Its only use is popularity on the artist page's `missing_albums`, which orders the album list.
+
+## 2026-10-25 — Global search P2, slice C (branch `search-p2c`)
+
+- **Fixed:** the search UI showed provider results as "in your library". Results now split into "Not in your library", and each provider's state shows on its own line. The summary counts owned and external results separately. Artists not in the library do not open the artist view.
+- **Fixed:** an artist page whose album list is known before the deadline keeps that list when popularity is late.
+- **Tests:** UI contract assertions for the split, source status and owned-only artist click; the Last.fm generation test. Focused modules pass (171), guards pass, `static/app.js` parses. Not run: the full suite (CI), a browser check of the UI.
+- **Deferred with reasons:** `SEARCH_CONTRACT.md` section 12.7.
+
 ## 2026-10-25 — Global search P2, slice B (branch `search-p2b`)
 
 - **Merge:** PR [#614](https://github.com/abucalip/navi-librarian/pull/614) squash-merged as `f2da69505bce733f62980881fd993ed02e722914` from reviewed head `1da2c0ba710d7abe0a82f3f3a846d9c31a5c7976`. No publication, deployment, or runtime verification.

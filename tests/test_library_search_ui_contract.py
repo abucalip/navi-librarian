@@ -75,7 +75,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_results_stream_into_their_groups_with_a_running_count(self):
         self.assertIn("searchGroupList(item.type).append(buildSearchItem(item));", self.new_js)
-        self.assertIn("'Searching… ' + pluralize(shown, 'match', 'matches') + ' so far'", self.new_js)
+        self.assertIn("'Searching… ' + pluralize(shown + external, 'match', 'matches') + ' so far'", self.new_js)
         self.assertIn("setSearchStatusLive(false);", self.new_js)
         self.assertIn("setSearchStatusLive(true);", self.new_js)
         self.assertIn("if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;", self.new_js)
@@ -86,6 +86,26 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("groupsEl.replaceChildren();", capabilities_block)
         start_block = self.new_js[self.new_js.index("function startGlobalSearch("):self.new_js.index("source.addEventListener('capabilities'")]
         self.assertNotIn("replaceChildren", start_block)
+
+    def test_results_not_in_the_library_have_their_own_group_and_are_not_counted_as_owned(self):
+        self.assertIn('<section id="globalSearchExternal" class="search-group"', self.html)
+        self.assertIn('<p id="globalSearchExternalHeading" class="search-group-heading">Not in your library</p>', self.html)
+        self.assertIn("if (item.owned) {", self.new_js)
+        self.assertIn("pluralize(external, 'match', 'matches') + ' not in your library'", self.new_js)
+        self.assertNotIn("in your library' + ' not", self.new_js)
+
+    def test_search_panel_shows_two_sections_and_no_provider_names_or_status(self):
+        # Direction from the owner: while typing, the panel shows only "In your library" and
+        # "Not in your library". Provider names, provider status and popularity never appear.
+        self.assertNotIn("globalSearchSources", self.html)
+        self.assertNotIn("source.addEventListener('source'", self.new_js)
+        self.assertNotIn("renderSourceStatus", self.new_js)
+        self.assertNotIn("Some sources did not finish", self.new_js)
+        for provider in ("MusicBrainz", "Last.fm", "ListenBrainz", "Discogs"):
+            self.assertNotIn(provider, self.new_js[self.new_js.index("function searchItemName"):self.new_js.index("// ---- Library list ----")])
+
+    def test_only_owned_artists_open_the_artist_view(self):
+        self.assertIn("const opens = item.type === 'artist' && item.owned;", self.new_js)
 
     def test_new_script_never_writes_html_from_data(self):
         self.assertNotIn("innerHTML", self.new_js)

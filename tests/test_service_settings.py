@@ -171,6 +171,22 @@ class ServiceSettingsTests(unittest.TestCase):
         self.assertEqual(len(self.writes), before + 1)
         self.assertNotIn("new-key", json.dumps(result))
 
+    def test_a_new_lastfm_key_bumps_the_search_generation_and_the_same_key_does_not(self):
+        from settings.service import lastfm_generation
+
+        self.assertEqual(lastfm_generation(self.read_settings), 0)
+        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
+        self.assertEqual(lastfm_generation(self.read_settings), 1)
+        self.assertEqual(self.state["lastfm_generation"], 1)
+
+        # Saving the same key again, or a blank key that keeps the stored one, changes nothing.
+        set_lastfm_settings(self.read_settings, self.write_settings, "new-key")
+        set_lastfm_settings(self.read_settings, self.write_settings, "   ")
+        self.assertEqual(lastfm_generation(self.read_settings), 1)
+
+        set_lastfm_settings(self.read_settings, self.write_settings, "another-key")
+        self.assertEqual(lastfm_generation(self.read_settings), 2)
+
     def test_lastfm_username_saves_clears_and_preserves(self):
         result = json.loads(set_lastfm_settings(self.read_settings, self.write_settings, "", "listener_fm"))
         self.assertTrue(result["ok"])
