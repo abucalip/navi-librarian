@@ -46,6 +46,7 @@ def _artist_result(entry: dict[str, Any]) -> dict[str, Any]:
         "name": entry["name"],
         "mbid": None,
         "album_count": entry["album_count"],
+        "genre": entry["genre"],
         "sources": [SOURCE_NAME],
         "artwork_url": artwork_url(entry["id"]),
     }

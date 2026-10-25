@@ -3120,6 +3120,12 @@ function renderGlobalSearchSummary(query, shown, capabilities) {
   setStatus(status, pluralize(shown, 'match', 'matches') + ' in your library', 'progress');
 }
 
+// Artists with a genre show it after the name, so two artists with the same name can be told apart.
+// Without one, the album count on the detail line does that job.
+function searchItemName(item) {
+  return item.type === 'artist' && item.genre ? item.name + ' (' + item.genre + ')' : item.name;
+}
+
 function searchItemDetail(item) {
   if (item.type === 'artist') return pluralize(item.album_count, 'album', 'albums');
   if (item.type === 'album') return [item.artist, item.year].filter(Boolean).join(' · ');
@@ -3139,7 +3145,7 @@ function buildSearchItem(item) {
   content.append(buildArtwork(item.artwork_url, 'search-item-art'));
   const text = document.createElement('span');
   text.className = 'search-item-text';
-  addTextElement(text, 'span', 'search-item-name', item.name);
+  addTextElement(text, 'span', 'search-item-name', searchItemName(item));
   addTextElement(text, 'span', 'search-item-detail', searchItemDetail(item));
   content.append(text);
   row.append(content);

@@ -105,6 +105,26 @@ def _year(value: Any) -> int | None:
     return year if 1000 <= year <= 9999 else None
 
 
+def _artist_genre(albums: Iterable[Mapping[str, Any]]) -> str | None:
+    """The genre most albums of an artist carry, or None when no album has one.
+
+    Counts ignore case, and the first spelling seen is shown. Ties go to the alphabetically first genre.
+    """
+    counts: dict[str, int] = {}
+    spelling: dict[str, str] = {}
+    for album in albums:
+        genre = str(album.get("genre") or "").strip()
+        if not genre:
+            continue
+        folded = genre.casefold()
+        counts[folded] = counts.get(folded, 0) + 1
+        spelling.setdefault(folded, genre)
+    if not counts:
+        return None
+    best = sorted(counts, key=lambda genre: (-counts[genre], genre))[0]
+    return spelling[best]
+
+
 def _album_entry(album: Mapping[str, Any], artist_keys: Mapping[str, str]) -> dict[str, Any]:
     artist_name = str(album.get("artist") or "").strip()
     artist_id = str(album.get("artist_id") or "")
@@ -120,6 +140,7 @@ def _album_entry(album: Mapping[str, Any], artist_keys: Mapping[str, str]) -> di
         "name_key": normalize_key(name),
         "key": f"{artist_key}/{normalize_key(name)}",
         "year": _year(year),
+        "genre": str(album.get("genre") or "").strip() or None,
         "song_count": int(album.get("song_count") or 0),
     }
 
@@ -166,6 +187,8 @@ def build_owned_data(
     by_artist: dict[str, list[dict[str, Any]]] = {}
     for album in album_entries:
         by_artist.setdefault(album["artist_id"], []).append(album)
+    for artist in artist_entries:
+        artist["genre"] = _artist_genre(by_artist.get(artist["id"], ()))
     return OwnedData(
         generation=generation,
         built_at=built_at,

@@ -1,3 +1,10 @@
+## 2026-10-25 — Artist genre on search results (branch `artist-genre`)
+
+- **Owner decisions:** the disambiguator is "Artist (genre)". The source is the Navidrome album genre tag. An artist with no genre falls back to the album count.
+- **Change:** the library snapshot keeps each album's `genre`, and the owned index gives each artist the most common album genre. Artist search results carry `genre` (string or null). The UI shows "Name (genre)" when a genre exists. Contract section 11.6 and section 3.8.
+- **Verification:** focused backend modules pass (search, routes, snapshot, artwork, Navidrome client and generation, legacy boundary, size guard). All 29 UI contract modules pass. The jsdom harness passes 55 checks, including "Ash (Rock)" and a name alone without a genre. Live stub run: the artist with genre-tagged albums returns `"genre": "Rock"`; the artist with none returns `null`.
+- **Not verified:** the genre field on a real Navidrome server (the owner's server was not queried; the tag is assumed from the Subsonic album record), and browser rendering of the new name.
+
 ## 2026-10-25 — Search UI layout pass (branch `search-ui`)
 
 - **Scope:** step 4 of the critique (`/impeccable layout`): the artist view's hierarchy and artwork.
