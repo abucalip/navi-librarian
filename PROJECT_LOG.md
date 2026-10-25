@@ -1,3 +1,9 @@
+## 2026-10-25 — P1 gaps closed (branch `p1-gaps`)
+
+- **Closed:** "Various Artists" never becomes an artist result. The index reuses `is_various_artists` (section 4.2), so search, the library list and the artist route all exclude it. The artist route's 502 body is tested to contain only `code` and `message`.
+- **Verification:** the index, query, route, snapshot, normalize and events modules pass, including the new tests. Boundary, app-start and guard checks pass, and `navidrome_server` is still not loaded by the search code. All 29 UI contract modules pass.
+- **Recorded in section 11.7:** the artwork route's file location and the grouping deviation. Build-time recording moves to P5 (it needs the owner's Navidrome server).
+
 ## 2026-10-25 — Artist genre on search results (branch `artist-genre`)
 
 - **Owner decisions:** the disambiguator is "Artist (genre)". The source is the Navidrome album genre tag. An artist with no genre falls back to the album count.
