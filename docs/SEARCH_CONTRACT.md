@@ -17,7 +17,7 @@ Status: **approved by the owner; finalized; pending review before implementation
 
 ## 2. Constraints that shape the design
 
-- **Rate limits decide the spine.** MusicBrainz allows about 1 request/second, and Discogs about 60 requests/minute authenticated (**to verify** against current terms). Inside a 4-second window MusicBrainz can answer only about 3 uncached requests. So MusicBrainz is used for identity resolution of the top few candidates only, and its answers are cached for a long time. Bulk discovery depends on Last.fm, ListenBrainz and Discogs, and on the cache.
+- **Rate limits decide the spine.** MusicBrainz allows an average of 1 request/second per source IP, with a 503 when exceeded. Discogs is reported at 60 requests/minute authenticated and 25/minute unauthenticated (secondary sources only; see section 9). Inside a 4-second window MusicBrainz can answer only about 3 uncached requests. So MusicBrainz is used for identity resolution of the top few candidates only, and its answers are cached for a long time. Bulk discovery depends on Last.fm, ListenBrainz and Discogs, and on the cache.
 - **Owned results never wait on the network.** They come from the in-process index built from `discovery/library_snapshot.py`.
 - **The whole song library fits in memory.** At 12,000 songs and 1,744 albums, an in-memory song index is small. It is rebuilt with the library snapshot, not queried per keystroke.
 - **Deadline, not per-source timeouts alone.** Each search has one server-side deadline of **3.0 s** (1 s headroom for network and rendering). Sources still running at the deadline are cancelled and reported as `timeout`.
@@ -113,7 +113,7 @@ The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a pass
 
 ## 4. Search and matching
 
-- **Owned index**: built from the library snapshot, refreshed on its 10-minute TTL. Keys use `_music_key`. Songs are indexed in memory (12,000 songs). They are loaded from Navidrome's paged `search3` (song paging, **to verify** that an empty query with paging returns the full song list) or per-album `getAlbum` calls for the 1,744 albums, whichever measures faster. The index is built on refresh and kept in memory; no per-query Navidrome calls for songs.
+- **Owned index**: built from the library snapshot, refreshed on its 10-minute TTL. Keys use `_music_key`. Songs are indexed in memory. They are loaded with paged `search3` using an empty `query`, `songCount=500` and increasing `songOffset`. A live read-only probe on 2026-10-25 returned all 12,097 songs unique in 25 pages, about 1.8 s total, so per-album `getAlbum` calls are not needed. The index is built on refresh and kept in memory; no per-query Navidrome calls for songs.
 - **Identity**: MBID first, then normalized name plus year. Reuse `_discovery_is_various_artists` and exact artist-credit matching (DISC-05). "Various Artists" never becomes an artist result.
 - **Dedupe**: entities are merged across sources by MBID, then by key plus year. Each result lists every source that contributed.
 - **Ranking**: exact and prefix matches first, then owned before unowned for equal match quality, then the source count. The ranking is simple and documented, and it is changed only with evidence.
@@ -126,7 +126,7 @@ The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a pass
 | Last.fm | Fast text search, `getSimilar`, top albums, popularity | Documented per-second cap | Primary for bulk candidates. |
 | ListenBrainz | Release-group popularity, tag radio, similarity | Per-minute header-driven | Popularity already implemented in `integrations/listenbrainz/popularity.py`. |
 | MusicBrainz | MBIDs, release-groups, tags | About 1 req/s | Identity for the top candidates only; long cache. |
-| Discogs | Styles and genres, release variants | About 60 req/min authenticated | New integration; token in settings. |
+| Discogs | Styles and genres, release variants | 60 req/min authenticated, 25/min unauthenticated (secondary sources) | New integration. Credentials: `DISCOGS_CONSUMER_KEY`/`SECRET` already appear in `config.env`; see section 9 on the auth method. |
 | Deezer | Artwork, tracklists | Existing | Already integrated. |
 | Wikidata | Bios, genre hierarchy | Existing | Already integrated. |
 
@@ -137,7 +137,7 @@ Each source has its own token bucket and concurrency cap in one limiter module. 
 | Data | Key | TTL |
 |---|---|---|
 | Owned index | snapshot | 10 min (existing) |
-| Text search results per source | source + normalized query + types | 24 h |
+| Text search results per source | source + normalized query + types | 24 h (Discogs: 6 h, see section 9) |
 | Negative search results | same | 1 h |
 | MBID entity lookups | source + MBID | 30 days |
 | Similar artists | artist key or MBID | 7 days; precomputed daily for library artists |
@@ -150,7 +150,7 @@ Storage uses the existing persistent list store (`_discovery_read_list` / `_disc
 
 Rank fusion across:
 1. Last.fm `artist.getSimilar`.
-2. ListenBrainz similarity (**to verify** endpoint availability).
+2. ListenBrainz similar artists: the documented route is `/1/lb-radio/artist/{seed_artist_mbid}` (section 9). The Labs `similar-artists` route is undocumented and is not used.
 3. Shared tags (MusicBrainz, plus Discogs styles), via `discovery/similar_artists.py`.
 4. Owner listening: candidates the owner plays get a boost; owned candidates are moved to the owned list.
 
@@ -163,12 +163,29 @@ Each suggestion lists its `reasons`. The library's artists are precomputed daily
 - `navidrome_server.py`: no additions (D-016).
 - Browser: top-bar search box with an accessible label; results grouped by type under "In your library" and "Not in your library"; streaming updates announced politely (`aria-live`); source status shown per provider. Logic stays server-side.
 
-## 9. Open items before P1
+## 9. Verification results and open items
 
-1. **Review** of this document (the current step).
-2. **Artist count.** Song and album counts are known (12,000 and 1,744). The artist count is still needed for the library page's paging and the artist-index size.
-3. **Discogs terms** for caching search results and artist data. Confirm before P2, since the cache TTLs in section 6 depend on it.
-4. **Verification of the "to verify" items** before implementation: MusicBrainz and Discogs rate limits, ListenBrainz similarity endpoints, and Navidrome paged `search3` for the full song list.
+Checked on 2026-10-25. Live results are authoritative; secondary sources are marked as such.
+
+### Verified
+
+- **Navidrome `search3` with an empty query and paging works.** A read-only probe of the owner's server returned 12,097 unique songs in 25 pages (`songCount=500`), about 1.8 s total. Songs, and whole-library song checks, can use this path.
+- **Library counts.** `getArtists` returns **733** artists, against the 734 the owner reported. The difference is probably one artist outside the index (for example, Various Artists) and should be checked before the artist index is sized. Songs: 12,097. Albums: 1,744 (owner-supplied; not probed).
+- **MusicBrainz rate limit and identification** ([MusicBrainz rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)). The official page sets an average of 1 request per second per source IP (300 requests/second global, anonymous agents about 50/second). Exceeding the limit returns HTTP 503 and every request is declined until the rate drops. Each request needs a User-Agent that identifies the app and a contact. The page does not address caching. It says high-volume commercial use should replicate the database locally, and it asks clients not to poll for metadata changes.
+
+### Partly verified
+
+- **Discogs rate limits.** Secondary sources report 60 requests/minute authenticated and 25/minute unauthenticated ([Discogs-MCP PR #69](https://github.com/WOIII-me/Discogs-MCP/pull/69), [Sonovault](https://sonovault.now/resources/discogs-api-rate-limits)). Responses over the limit return 429.
+- **Discogs caching.** Secondary sources state a **six-hour** maximum cache age and require the notice "Data provided by Discogs" next to any Discogs-sourced data. I could not read the official [API Terms of Use](https://support.discogs.com/hc/en-us/articles/360009334593-API-Terms-of-Use); the server returned HTTP 403. The terms, as quoted, forbid displaying API content more than six hours behind discogs.com, and caching it for longer than needed. **Until the official text is read, the Discogs cache TTL is six hours, not the 7 days in section 6.** Attribution is added to every Discogs-sourced item.
+- **ListenBrainz similar artists.** The core docs page has no artist-similarity route. A search snippet of the ListenBrainz docs lists `/1/lb-radio/artist/{seed_artist_mbid}` as returning similar artists with listen counts and recording MBIDs. The Labs `similar-artists/json` route is undocumented, and sources disagree on whether its parameter is `artist_mbid` or `artist_mbids`. The plan uses the documented route. The response shape must be checked against a live call before implementation.
+
+### Open
+
+1. **Read the Discogs terms in a browser**, and confirm the caching clause, the attribution wording, and the rate limits. If the six-hour cap holds, the Discogs cache TTL in section 6 changes to six hours.
+2. **Discogs authentication method.** `config.env` holds `DISCOGS_CONSUMER_KEY`, `DISCOGS_CONSUMER_SECRET`, and OAuth request, authorize and access URLs. That is the OAuth 1.0a consumer flow, not a personal token. Section 3.5 currently says "token." The owner should choose: OAuth (per-user, as the config suggests) or a personal access token, which is simpler for a single-owner app (**to verify** that it is available for this account).
+3. **Artist count**: 733 from the live server versus 734 reported. Confirm which artist is missing before sizing the artist index.
+4. **Live check of the ListenBrainz `lb-radio` response** before P3.
+5. **Look for a MusicBrainz local-replication decision.** At the current scale, rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
 
 ## 10. Phasing
 
