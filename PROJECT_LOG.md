@@ -1,3 +1,7 @@
+## 2026-10-25 — P1 follow-ups recorded (main)
+
+- **Recorded in `docs/SEARCH_CONTRACT.md` section 11.8:** build-time measurement on the owner's server (P5), and a proposed `POST /api/library/refresh` route that is not approved and not built.
+
 ## 2026-10-25 — P1 gaps closed (branch `p1-gaps`)
 
 - **Closed:** "Various Artists" never becomes an artist result. The index reuses `is_various_artists` (section 4.2), so search, the library list and the artist route all exclude it. The artist route's 502 body is tested to contain only `code` and `message`.

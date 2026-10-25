@@ -660,6 +660,11 @@ Checked against the P1 test rows in section 8.1 and the phase scope in section 1
 - **Deviations, recorded:**
   - The artwork route lives in `app/api/owned_artwork.py`, not in the module layout in section 8.
   - Results show "N matches in your library". The "Not in your library" group waits for the network sources in P2.
-- **Not done, deferred:** recording the index build time against the section 2.1 target. It needs a run against the owner's Navidrome server, so it moves to P5 with the latency measurements.
+- **Not done, deferred to P5:** recording the index build time against the section 2.1 target. It needs a run against the owner's Navidrome server, with the latency measurements (see 11.8).
 - **Status:** P1 is complete except for the build-time record above.
+
+### 11.8 Open follow-ups for P1 (2026-10-25)
+
+1. **Index build time (P5).** Measure a full owned-index build against the owner's Navidrome server, and record the result against the section 2.1 target in `PROJECT_LOG.md`. Test the build on the real library size (12,097 songs, 733 artists, 1,744 albums). A stub run does not count. Owner: run the measurement or authorize it.
+2. **Manual refresh route (proposal, not approved).** Section 4.1 describes a manual refresh, but P1 has only the internal `force` argument. Proposed endpoint: `POST /api/library/refresh`, behind the login middleware. It starts an owned-index build with `force` and returns `202` with `{"index_state": "building" | "fresh" | "stale" | "unavailable"}`. If a build is already running, it joins that build rather than starting another. It has no request body. Nothing here is built until the owner approves the endpoint.
 
