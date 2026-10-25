@@ -142,11 +142,41 @@ class RepresentativeReleaseTests(unittest.TestCase):
         self.assertEqual(fetch_representative_releases(net, ["g1", "g2"], headers={}), {"g1": "rel1"})
 
 
+class ReleaseYearCacheTests(unittest.TestCase):
+    def test_legacy_cache_hit_without_a_year_is_enriched_and_rewritten(self):
+        net = _Net([_release("r1", "g1", date="1999")])
+        cache = _Cache()
+        cache.set(f"{ALBUM_CACHE_PREFIX}g1", {"listeners": 1200})
+        out, cache = _resolve(net, [_cand("g1", "a1")], cache=cache)
+        self.assertEqual(out["g1"]["release_year"], 1999)
+        self.assertEqual(out["g1"]["album_listeners"], 1200)
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": 1200, "release_year": 1999})
+        self.assertEqual(net.lastfm_calls("album.getInfo"), [])
+
+    def test_cache_hit_with_a_year_costs_no_release_search(self):
+        net = _Net([])
+        cache = _Cache()
+        cache.set(f"{ALBUM_CACHE_PREFIX}g1", {"listeners": 1200, "release_year": 1985})
+        out, _cache = _resolve(net, [_cand("g1", "a1")], cache=cache)
+        self.assertEqual(out["g1"]["release_year"], 1985)
+        self.assertEqual([u for u, _p in net.calls if u == MUSICBRAINZ_RELEASE_SEARCH_URL], [])
+
+    def test_legacy_group_with_no_date_is_not_searched_again_on_the_next_run(self):
+        net = _Net([])
+        cache = _Cache()
+        cache.set(f"{ALBUM_CACHE_PREFIX}g1", {"listeners": 1200})
+        _out, cache = _resolve(net, [_cand("g1", "a1")], cache=cache)
+        self.assertIsNone(cache.store[f"{ALBUM_CACHE_PREFIX}g1"]["release_year"])
+        again = _Net([])
+        _resolve(again, [_cand("g1", "a1")], cache=cache)
+        self.assertEqual([u for u, _p in again.calls if u == MUSICBRAINZ_RELEASE_SEARCH_URL], [])
+
+
 class ResolvePopularityTests(unittest.TestCase):
     def test_album_found_by_release_mbid(self):
         net = _Net([_release("r1", "g1")], album={"r1": 1200}, artist={"a1": 5000})
         out, cache = _resolve(net, [_cand("g1", "a1")])
-        self.assertEqual(out["g1"], {"album_listeners": 1200, "artist_listeners": 5000, "basis": "album"})
+        self.assertEqual(out["g1"], {"album_listeners": 1200, "release_year": 2000, "artist_listeners": 5000, "basis": "album"})
         self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"]["listeners"], 1200)
         self.assertEqual(cache.store[f"{ARTIST_CACHE_PREFIX}a1"]["listeners"], 5000)
 
@@ -172,7 +202,7 @@ class ResolvePopularityTests(unittest.TestCase):
     def test_album_miss_is_cached_and_not_retried(self):
         net = _Net([_release("r1", "g1")], artist={"a1": 10})
         out, cache = _resolve(net, [_cand("g1", "a1")])
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
         before = len(net.calls)
         _resolve(net, [_cand("g1", "a1")], cache=cache)
         self.assertEqual(len(net.calls), before)
@@ -181,7 +211,7 @@ class ResolvePopularityTests(unittest.TestCase):
         cache = _TtlCache()
         net = _Net([_release("r1", "g1"), _release("r2", "g2")], album={"r2": 50}, artist={"a1": 10})
         _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
         cache.now = MISS_TTL_SECONDS - 1
         before = len(net.calls)
         _resolve(net, [_cand("g1", "a1"), _cand("g2", "a1")], cache=cache)
@@ -218,11 +248,11 @@ class ResolvePopularityTests(unittest.TestCase):
         net = _Net([_release("r1", "g1")])
         _, cache = _resolve(net, [_cand("g1", "a1")])
         self.assertEqual(cache.store[f"{ARTIST_CACHE_PREFIX}a1"], {"listeners": None})
-        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None})
+        self.assertEqual(cache.store[f"{ALBUM_CACHE_PREFIX}g1"], {"listeners": None, "release_year": 2000})
 
     def test_cached_values_cost_no_calls(self):
         cache = _Cache()
-        cache.set(f"{ALBUM_CACHE_PREFIX}g1", {"listeners": 5, "playcount": 1})
+        cache.set(f"{ALBUM_CACHE_PREFIX}g1", {"listeners": 5, "playcount": 1, "release_year": 2000})
         cache.set(f"{ARTIST_CACHE_PREFIX}a1", {"listeners": 9, "playcount": 1})
         net = _Net()
         out, _ = _resolve(net, [_cand("g1", "a1")], cache=cache)

@@ -12,6 +12,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from collections.abc import Container, Iterable, Mapping, Sequence
+from dataclasses import replace
 from datetime import date
 from typing import Any
 
@@ -22,7 +23,8 @@ from discovery.history_windows import (
     listen_artist_mbid,
     window_artist_weights,
 )
-from discovery.lenses import DEEP_CUTS, LENSES, OBSESSIONS, REPEATED_TRACKS, Lens, partition_lens_pools
+from discovery.current_tastes import current_tastes_plan, ranking_boost
+from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, LENSES, OBSESSIONS, REPEATED_TRACKS, Lens, partition_lens_pools
 from discovery.profile_seeds import obsession_seed_queries, repeated_track_seed_queries
 from discovery.recommendations import artist_identity, music_key
 from discovery.tag_queries import MAX_PROFILE_QUERIES, select_supplementary_tag_queries, tag_from_query
@@ -31,8 +33,9 @@ from discovery.tag_queries import MAX_PROFILE_QUERIES, select_supplementary_tag_
 # lens has (partitioning removes an artist from the lenses after the one that picked it).
 # Measured 2026-10-24 on one history: Repeated tracks seeds niche tags and filled 8 of 10
 # without the fallback tags; Obsessions seeds broad tags and filled 10 of 10 either way;
-# Deep cuts seeds the dense-month window, which sits between the two.
-LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS)
+# Deep cuts seeds the dense-month window, which sits between the two. Current tastes is
+# last: its genres are the broadest of the four, and it replaces Now.
+LENS_LIST_ORDER = (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)
 LENS_LIST_SIZE = 10
 # Deep cuts window: the densest month of the history. When the history is shorter than
 # that, the densest window is the whole recent activity, as the lens definition asks.
@@ -68,13 +71,16 @@ def lens_seed_queries(
     artist_tags: Mapping[str, Sequence[Any]],
     *,
     limit: int = MAX_PROFILE_QUERIES,
+    similar: Mapping[str, Sequence[str]] | None = None,
+    collaborators: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, list[tuple[str, str, str]]]:
     """Seed queries for each lens in ``LENS_LIST_ORDER``, derived from the listening history.
 
     Repeated tracks and Obsessions use their seed builders with the approved defaults; Deep
     cuts takes the profile tags of the densest ``DEEP_CUTS_WINDOW_DAYS`` window, with flat
-    weights. Listens stamped before 1971 are dropped first. Pure; the queries go to
-    ``run_deep_cuts_tag_supply``, one lens at a time."""
+    weights; Current tastes takes the recent window minus the tags it under-represents
+    (``current_tastes_plan``). Listens stamped before 1971 are dropped first. Pure; the queries
+    go to ``run_deep_cuts_tag_supply``, one lens at a time."""
     records = usable_listens(listens)
     window = densest_window_listens(records, DEEP_CUTS_WINDOW_DAYS)
     return {
@@ -83,6 +89,8 @@ def lens_seed_queries(
             window_artist_weights(window), artist_tags, [],
             profile_limit=limit, exploration_limit=0),
         OBSESSIONS.name: obsession_seed_queries(records, artist_tags, limit=limit),
+        CURRENT_TASTES.name: current_tastes_plan(
+            records, artist_tags, similar=similar, collaborators=collaborators)["queries"],
     }
 
 
@@ -143,6 +151,28 @@ def _validate(lenses: Sequence[Lens], pools: Mapping[str, Any], day: Any, count:
         raise ValueError(f"pools name lenses that are not built: {sorted(unknown)}")
 
 
+def _with_current_boosts(
+    candidates: Sequence[Any],
+    albums: Mapping[str, Mapping[str, Any]],
+    popularity: Mapping[str, Mapping[str, Any]],
+    artist_profiles: Mapping[str, Mapping[str, Any]],
+    context: Mapping[str, Any],
+) -> list[Any]:
+    """Candidates with the Current tastes ranking boost: the spine area of the artist and the
+    decade of the release (its earliest year, from the popularity lookup)."""
+    boosted = []
+    for item in candidates:
+        album = albums[item.candidate_id]
+        profile = artist_profiles.get(str(album.get("artist_mbid") or "")) or {}
+        release = popularity.get(str(album.get("release_group_mbid") or "")) or {}
+        boost = ranking_boost(
+            artist_area=profile.get("area"), release_year=release.get("release_year"),
+            spine_area=context.get("spine_area"), decades=context.get("decades") or {},
+        )
+        boosted.append(replace(item, ranking_boost=boost))
+    return boosted
+
+
 def build_lens_lists(
     pools: Mapping[str, Iterable[Mapping[str, Any]]],
     *,
@@ -156,6 +186,8 @@ def build_lens_lists(
     seeds: Mapping[str, Sequence[tuple[str, str, str]]] | None = None,
     lenses: Sequence[Lens] = LENS_LIST_ORDER,
     count: int = LENS_LIST_SIZE,
+    artist_profiles: Mapping[str, Mapping[str, Any]] | None = None,
+    current_context: Mapping[str, Any] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Build one list of ``count`` albums per lens for ``day``, in ``lenses`` order.
 
@@ -183,6 +215,9 @@ def build_lens_lists(
             music_key=music_key, artist_identity=artist_identity, popularity=popularity,
             known_artist_mbids=known_artist_mbids, library_artist_mbids=library_artist_mbids,
         )
+        if lens is CURRENT_TASTES and current_context is not None:
+            candidates[lens.name] = _with_current_boosts(
+                candidates[lens.name], by_lens[lens.name], popularity, artist_profiles or {}, current_context)
     results = partition_lens_pools(candidates, count, lenses)
 
     lists: dict[str, dict[str, Any]] = {}

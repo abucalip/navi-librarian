@@ -4,7 +4,7 @@ from discovery.allocation_contract import (
     AllocationCandidate, AllocationRequest, OwnershipStatus,
 )
 from discovery.lenses import (
-    DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, NOW, OBSESSIONS, REPEATED_TRACKS,
+    CURRENT_TASTES, DEEP_CUTS, DEFAULT_LENS_ORDER, GENRE_SPREAD, LENSES, OBSESSIONS, REPEATED_TRACKS,
     partition_lens_pools, partition_lenses, run_lens, select_deep_cuts,
 )
 from discovery.personal_allocator import allocate_personal_recommendations
@@ -112,14 +112,14 @@ class PartitionTests(unittest.TestCase):
 
     def test_no_artist_or_candidate_appears_in_two_lists(self):
         results = partition_lenses(self.pool(), 3)
-        self.assertEqual([r.lens for r in results], ["deep_cuts", "now", "genre_spread"])
+        self.assertEqual([r.lens for r in results], ["deep_cuts", "current_tastes", "genre_spread"])
         chosen = [cid for r in results for cid in r.selected_candidate_ids]
         self.assertEqual(len(chosen), len(set(chosen)))
         self.assertTrue(all(len(r.selected_candidate_ids) == 3 for r in results))
 
     def test_earlier_lens_takes_a_shared_candidate(self):
         pool = [item("only", score=9, audience=2000, strength=1, genre="rock")]
-        for order in ((DEEP_CUTS, NOW), (NOW, DEEP_CUTS)):
+        for order in ((DEEP_CUTS, CURRENT_TASTES), (CURRENT_TASTES, DEEP_CUTS)):
             first, second = partition_lenses(pool, 1, order)
             self.assertEqual(first.selected_candidate_ids, ("only",))
             self.assertEqual(second.selected_candidate_ids, ())
@@ -129,19 +129,19 @@ class PartitionTests(unittest.TestCase):
             item("one", artist="a", album="shared", score=9, audience=2000, strength=1),
             item("two", artist="b", album="shared", score=8, audience=2000, strength=0.5, genre="rock"),
         ]
-        first, second = partition_lenses(pool, 1, (DEEP_CUTS, NOW))
+        first, second = partition_lenses(pool, 1, (DEEP_CUTS, CURRENT_TASTES))
         self.assertEqual(first.selected_candidate_ids, ("one",))
         self.assertEqual(second.selected_candidate_ids, ())
 
     def test_duplicate_lens_names_rejected(self):
         with self.assertRaises(ValueError):
-            partition_lenses([], 1, (NOW, NOW))
+            partition_lenses([], 1, (CURRENT_TASTES, CURRENT_TASTES))
 
     def test_pool_is_not_mutated_and_results_name_their_lens(self):
         pool = tuple(self.pool())
         before = list(pool)
         self.assertEqual(run_lens(GENRE_SPREAD, pool, 3).lens, "genre_spread")
-        self.assertEqual(run_lens(NOW, pool, 3).lens, "now")
+        self.assertEqual(run_lens(CURRENT_TASTES, pool, 3).lens, "current_tastes")
         self.assertEqual(list(pool), before)
 
 

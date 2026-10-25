@@ -80,7 +80,7 @@ class EvaluationTests(unittest.TestCase):
                  for i in range(9)]
         results = partition_lenses(pool, 3)
         report = lens_evaluation(results, pool)
-        self.assertEqual([m["lens"] for m in report["lists"]], ["deep_cuts", "now", "genre_spread"])
+        self.assertEqual([m["lens"] for m in report["lists"]], ["deep_cuts", "current_tastes", "genre_spread"])
         self.assertTrue(all(v == {"albums": 0, "artists": 0} for v in report["set"]["pairwise_overlap"].values()))
         self.assertEqual(report["set"]["union_albums"], report["set"]["total_picks"])
         json.dumps(report)

@@ -35,20 +35,33 @@ class Lens:
     name: str
     label: str
     kind: str  # "quota", "family_coverage" or "deep_cuts"
+    # Audience gates for the "deep_cuts" kind; the defaults are the Deep cuts starting values.
+    min_audience: int = DEEP_CUTS_MIN_AUDIENCE
+    max_audience: int = DEEP_CUTS_MAX_AUDIENCE
+    # False lets a candidate with no listener count pass the audience gate.
+    require_audience: bool = True
+    # False lets an artist the listener already knows be selected; owned albums stay excluded.
+    exclude_known_artists: bool = True
 
 
-NOW = Lens("now", "Now", "quota")
 GENRE_SPREAD = Lens("genre_spread", "Genre spread", "family_coverage")
 DEEP_CUTS = Lens("deep_cuts", "Deep cuts", "deep_cuts")
+# Replaces Now. Recent-window tastes in the genres the whole history does not dominate
+# (discovery/current_tastes.py). Not a deep-cuts ceiling: the listener's current genres are
+# often well known, so the ceiling is higher. Starting values, not measured.
+CURRENT_TASTES = Lens("current_tastes", "Current tastes", "deep_cuts",
+                      min_audience=0, max_audience=500_000, require_audience=False,
+                      exclude_known_artists=False)
 # Same selection gates as Deep cuts; the difference is the seed source (repeated tracks
 # outside the dominant tags, see discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
 REPEATED_TRACKS = Lens("repeated_tracks", "Repeated tracks", "deep_cuts")
 # Same gates again; seeds come from artists the listener was obsessed with for a short span
 # (discovery/profile_seeds.py). Not in DEFAULT_LENS_ORDER.
 OBSESSIONS = Lens("obsessions", "Obsessions", "deep_cuts")
-LENSES = {lens.name: lens for lens in (NOW, GENRE_SPREAD, DEEP_CUTS, REPEATED_TRACKS, OBSESSIONS)}
+LENSES = {lens.name: lens for lens in (
+    GENRE_SPREAD, DEEP_CUTS, CURRENT_TASTES, REPEATED_TRACKS, OBSESSIONS)}
 # Scarcest supply first, so the broader lenses do not take its few candidates.
-DEFAULT_LENS_ORDER = (DEEP_CUTS, NOW, GENRE_SPREAD)
+DEFAULT_LENS_ORDER = (DEEP_CUTS, CURRENT_TASTES, GENRE_SPREAD)
 
 
 def select_deep_cuts(
@@ -61,6 +74,8 @@ def select_deep_cuts(
     min_tags: int = DEEP_CUTS_MIN_TAGS,
     max_per_seed: int = DEEP_CUTS_MAX_PER_SEED,
     lens_name: str = DEEP_CUTS.name,
+    require_audience: bool = True,
+    exclude_known_artists: bool = True,
 ) -> AllocationResult:
     """Gate by audience and tag count, rank by radio tag strength, one album per
     artist and at most `max_per_seed` per seed. Artists the listener already knows are
@@ -76,7 +91,7 @@ def select_deep_cuts(
     if len({item.candidate_id for item in pool}) != len(pool):
         raise ValueError("candidate_id values must be unique")
     checked = 0
-    ranked = sorted(pool, key=lambda item: (-item.tag_strength, item.source_order))
+    ranked = sorted(pool, key=lambda item: (-(item.tag_strength + item.ranking_boost), item.source_order))
     selected: list[str] = []
     review: list[str] = []
     decisions: dict[str, CandidateDecision] = {}
@@ -91,7 +106,7 @@ def select_deep_cuts(
         if len(selected) >= count:
             record(item, "not_considered", "The requested number of recommendations was already reached.")
             continue
-        if item.artist_known and item.ownership is OwnershipStatus.CLEAR:
+        if exclude_known_artists and item.artist_known and item.ownership is OwnershipStatus.CLEAR:
             record(item, "artist_already_known",
                    "The listener already knows this artist (library or listening history).")
             continue
@@ -104,9 +119,9 @@ def select_deep_cuts(
         elif item.ownership is OwnershipStatus.TITLE_CONFLICT:
             review.append(item.candidate_id)
             record(item, "held_for_ownership_review", "The album title exists in Navidrome under a different artist credit; manual review is recommended.")
-        elif item.audience is None:
+        elif item.audience is None and require_audience:
             record(item, "audience_unknown", "No listener count is available, so the album cannot be called obscure.")
-        elif not min_audience <= item.audience <= max_audience:
+        elif item.audience is not None and not min_audience <= item.audience <= max_audience:
             record(item, "audience_out_of_range",
                    f"The audience of {item.audience} is outside {min_audience} to {max_audience}.")
         elif len(item.tags) < min_tags:
@@ -144,7 +159,10 @@ def run_lens(
     """Run one lens over a pool; the result carries the lens name."""
     if lens.kind == "deep_cuts":
         return select_deep_cuts(
-            candidates, count, max_checks=max_checks, lens_name=lens.name)
+            candidates, count, max_checks=max_checks, lens_name=lens.name,
+            min_audience=lens.min_audience, max_audience=lens.max_audience,
+            require_audience=lens.require_audience,
+            exclude_known_artists=lens.exclude_known_artists)
     if lens.kind == "family_coverage":
         targets, options = selection_request_options("family_coverage", count)
     elif lens.kind == "quota":

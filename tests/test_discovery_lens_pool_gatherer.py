@@ -9,8 +9,10 @@ from unittest import mock
 from discovery import lens_pool_gatherer as gatherer
 from discovery.batch_metadata import LISTENBRAINZ_ARTIST_URL
 from discovery.lens_lists import LENS_LIST_SIZE, build_lens_lists
-from discovery.lenses import DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
+from discovery.lenses import CURRENT_TASTES, DEEP_CUTS, OBSESSIONS, REPEATED_TRACKS
 from discovery.mbid_popularity import LASTFM_API_URL, MUSICBRAINZ_RELEASE_SEARCH_URL
+from discovery.artist_links import MUSICBRAINZ_ARTIST_URL
+from discovery.artist_profiles import MUSICBRAINZ_ARTIST_SEARCH_URL
 from discovery.artist_tag_fallback import MUSICBRAINZ_GENRE_URL
 from discovery.recommendations import music_key
 
@@ -46,6 +48,10 @@ class _Net:
             releases = [{"id": f"rel-{g}", "status": "Official", "date": "2001",
                          "release-group": {"id": g}} for g in groups]
             return _Response({"count": len(releases), "releases": releases})
+        if url == MUSICBRAINZ_ARTIST_SEARCH_URL:
+            return _Response({"artists": []})
+        if url.startswith(MUSICBRAINZ_ARTIST_URL):
+            return _Response({"relations": []})
         if url == MUSICBRAINZ_GENRE_URL:
             return _Response({"genres": [{"name": n} for n in self.vocabulary],
                               "genre-count": len(self.vocabulary)})
@@ -59,6 +65,8 @@ class _Net:
             listeners = self.album.get(params["mbid"])
             return _Response({"album": {"listeners": str(listeners), "playcount": "1"}}
                              if listeners else {"error": 6})
+        if params["method"] == "artist.getSimilar":
+            return _Response({"similarartists": {"artist": []}})
         if params["method"] == "artist.gettoptags":
             tags = self.toptags.get(params["mbid"], [])
             return _Response({"toptags": {"tag": [{"name": n, "count": c} for n, c in tags]}})
@@ -117,7 +125,7 @@ class _Harness(unittest.TestCase):
 
     def seeds(self, listens, artist_tags, **_kwargs):
         self.seed_listens.append(list(listens))
-        return {lens.name: list(SEEDS) for lens in (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS)}
+        return {lens.name: list(SEEDS) for lens in (REPEATED_TRACKS, DEEP_CUTS, OBSESSIONS, CURRENT_TASTES)}
 
     def gather(self, listens=(), *, settings=ON, day=DAY):
         with mock.patch.object(gatherer, "run_deep_cuts_tag_supply", side_effect=self.supply), \

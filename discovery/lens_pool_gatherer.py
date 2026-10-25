@@ -16,9 +16,13 @@ from collections.abc import Callable, Iterable, Mapping
 from datetime import date
 from typing import Any
 
+from discovery.artist_links import fetch_collaborators, fetch_similar_artists
+from discovery.artist_profiles import fetch_artist_profiles
 from discovery.artist_tag_fallback import fallback_artist_tags, load_genre_vocabulary
 from discovery.batch_metadata import ARTIST_GENRE_CACHE_PREFIX, ARTIST_GENRE_TTL_SECONDS, prefetch_artist_genres
+from discovery.current_tastes import current_tastes_context, recent_window
 from discovery.deep_cuts_supply import run_deep_cuts_tag_supply
+from discovery.history_windows import listen_artist_mbid
 from discovery.lens_lists import LENS_LIST_ORDER, history_artist_mbids, lens_seed_queries, usable_listens
 from discovery.mbid_popularity import resolve_popularity
 from settings.service import engine2_lens_lists_enabled_value
@@ -86,8 +90,19 @@ def gather_lens_pools(
     cache_get, cache_set = providers.metadata_cache_get, providers.metadata_cache_set
     usable = usable_listens(listen for listen in listens if isinstance(listen, Mapping))
     history = sorted(history_artist_mbids(usable))
-    prefetch_artist_genres(get, history, headers=headers, cache_get=cache_get, cache_set=cache_set)
-    seeds = lens_seed_queries(usable, _genres_from_cache(providers, history))
+    # Current tastes links: similar artists (Last.fm) and collaborators (MusicBrainz) of the window
+    # artists. Their genres are needed too, or the links have no tags to seed from.
+    window, _days = recent_window(usable)
+    window_mbids = sorted({listen_artist_mbid(listen) for listen in window} - {""})
+    similar = fetch_similar_artists(
+        get, window_mbids, api_key=lastfm_api_key, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+    collaborators = fetch_collaborators(
+        get, window_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+    linked = {m for values in (*similar.values(), *collaborators.values()) for m in values}
+    genre_mbids = sorted(set(history) | linked)
+    prefetch_artist_genres(get, genre_mbids, headers=headers, cache_get=cache_get, cache_set=cache_set)
+    seeds = lens_seed_queries(
+        usable, _genres_from_cache(providers, genre_mbids), similar=similar, collaborators=collaborators)
 
     pools: dict[str, list[dict[str, Any]]] = {}
     popularity: dict[str, Any] = {}
@@ -142,6 +157,17 @@ def gather_lens_pools(
             "failures": len(failures),
         }
 
+    # Areas and first years for the regional spine and era match: the window artists (the spine
+    # is set by the window) and the pool artists (their releases are ranked by it).
+    wanted = set(window_mbids) | {
+        str(album["artist_mbid"]) for pool in pools.values() for album in pool if album.get("artist_mbid")}
+    profiles = fetch_artist_profiles(
+        get, sorted(wanted - {""}), headers=headers, cache_get=cache_get, cache_set=cache_set, sleep=sleep)
+    # The history and linked artists' genres belong in the returned tag map too, not only the pool's.
+    artist_tags.update(_genres_from_cache(providers, genre_mbids))
+    areas = {mbid: profile["area"] for mbid, profile in profiles.items() if profile.get("area")}
+    years = {mbid: profile["begin_year"] for mbid, profile in profiles.items() if profile.get("begin_year")}
+
     return {
         "status": "gathered",
         "day": day,
@@ -150,5 +176,8 @@ def gather_lens_pools(
         "popularity": popularity,
         "artist_tags": artist_tags,
         "fallback_tags": fallback_tags,
+        "artist_profiles": profiles,
+        "current_context": current_tastes_context(usable, areas, years),
+        "artist_links": {"similar": similar, "collaborators": collaborators},
         "lenses": reports,
     }
