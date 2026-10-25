@@ -1,6 +1,6 @@
 # Architecture overview
 
-Last reviewed: 2026-10-16 (AST test inventory added)
+Last reviewed: 2026-10-25 (global search P1 backend added)
 
 This document describes current architectural responsibilities at a useful level. It is not a chronological extraction log; see root `PROJECT_LOG.md` for PR-by-PR history and verification evidence. Confirm all details against current GitHub `main` and source before changing a boundary.
 
@@ -12,6 +12,13 @@ This document describes current architectural responsibilities at a useful level
 - `app/api/` contains HTTP route adapters. Routes validate requests, invoke domain/service logic, and shape HTTP responses; they should not duplicate domain policy.
 - `app/security/` owns authentication/security helpers. Keep persisted secret loading, configuration predicates, sessions, cookies, and route/middleware behavior behind their existing contracts.
 - `app/services/` owns reusable application/domain services. Provider access and persistence should remain explicit dependencies rather than hidden app initialization.
+- `app/api/search.py`, `app/api/library.py` and `app/api/owned_artwork.py` are the global search, artist page, library browsing and owned cover-art adapters. They call `discovery/search/` and `integrations/navidrome/client.py`, and hold no matching or ranking logic.
+
+### Global search (`discovery/search/`)
+
+- `normalize.py` owns name keys and query normalization; `index.py` owns the in-process owned index, its single-flight background build, last-known-good state, and song paging; `query.py` owns matching, ranking, library pages, cursors and artist lookup; `events.py` owns capabilities, SSE framing and the search stream; `artist_page.py` owns artist sections.
+- The index is keyed by the Navidrome credential generation (`navidrome_generation` in settings). Requests read the last completed build and never wait for one. Provider sources are not wired yet (contract P2).
+- Contract: `docs/SEARCH_CONTRACT.md`, section 11 for the P1 record.
 
 ### Legacy server and domain helpers
 

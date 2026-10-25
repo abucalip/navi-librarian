@@ -102,6 +102,21 @@ def set_automatic_refill_settings(settings_write, value):
     })
 
 
+NAVIDROME_GENERATION_KEY = "navidrome_generation"
+
+
+def navidrome_generation(settings_read):
+    """Return the non-secret counter that changes whenever Navidrome credentials or URL change.
+
+    Owned search state is keyed by this counter, so a changed server never serves data
+    from the previous one (contract section 4.1). The counter is never a credential.
+    """
+    try:
+        return int(settings_read().get(NAVIDROME_GENERATION_KEY) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
     settings = settings_read()
@@ -158,6 +173,13 @@ def set_navidrome_settings(
     if not saved_password:
         return json.dumps({"ok": False, "error": "Enter a Navidrome password."})
     values = {"navidrome_url": url, "navidrome_user": user, "navidrome_password": saved_password}
+    previous = (
+        str(current.get("navidrome_url") or "").strip().rstrip("/"),
+        str(current.get("navidrome_user") or "").strip(),
+        str(current.get("navidrome_password") or ""),
+    )
+    if previous != (url, user, saved_password):
+        values[NAVIDROME_GENERATION_KEY] = navidrome_generation(settings_read) + 1
     next_music_dir = get_music_dir()
     if music_library_path is not None:
         music_path = str(Path(music_library_path).expanduser())

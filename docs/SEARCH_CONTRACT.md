@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **revised after the final review (Opus, medium effort) of PR #608; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
+Status: **approved by the owner** (2026-10-25). The P1 backend is implemented in PR #609 (branch `search-p1`) (see section 11 for the implementation record and open items). The P1 browser UI (top-bar search box and library page) is not part of that change. P2 to P5 are not started.
 
 ## 1. Owner decisions (recorded)
 
@@ -583,3 +583,51 @@ Fixes for the third review are in the sections listed below. They have not yet b
 - **P5**: consolidated integration and performance: latency measurement against section 2.1, and `TEST_PLAN.md` entries.
 
 Each phase is a separate branch and PR from current `main`, with CI verified on the exact head before merging, and with the tests in section 8.1. Nothing in this plan is published or deployed.
+
+## 11. P1 implementation record
+
+This section records what P1 built and every decision the contract left open. Sections 3 to 9 are unchanged except where noted here.
+
+### 11.1 Built in P1 (backend only)
+
+- Routes: `GET /api/search` (SSE only), `GET /api/artists/{key}` (JSON or SSE, chosen by `Accept`), `GET /api/library/artists`. Adapters in `app/api/search.py` and `app/api/library.py`, registered in `app/main.py`. All three sit behind the existing login middleware.
+- Logic in `discovery/search/`: `normalize.py` (keys and query normalization), `index.py` (owned index lifecycle and song paging), `query.py` (matching, ranking, library pages, cursors, artist lookup), `events.py` (capabilities, SSE framing, search stream), `artist_page.py` (artist sections).
+- Supporting changes: the Navidrome credential generation counter in `settings/service.py`; album `artist_id` in `discovery/library_snapshot.py`.
+- `navidrome_server.py` is unchanged (D-016).
+
+### 11.2 Decisions made in P1
+
+| Topic | Decision |
+|---|---|
+| Key derivation (section 4.1) | Keys come from display names only: NFKD, diacritics removed, casefold, punctuation to single spaces, and a leading "The" dropped. An artist key is that name key. An album key is `artist_key/album_key`. A song key is `artist_key/title_key`. Results that share a key carry their Navidrome `id` to tell them apart. |
+| Owned MBIDs | `mbid` and `release_group_mbid` are `null` in P1, because the snapshot carries no MBID. |
+| Owned artwork | `artwork_url` is `/api/owned/artwork/{id}`. The app signs a Navidrome `getCoverArt` request on the server, so the Navidrome credential never reaches the browser (owner decision, 2026-10-25). Artists use their ID, albums their ID, and songs their album's ID. `size` is 64 to 1000, default 300. Only `image/jpeg`, `image/png`, `image/webp` and `image/gif` are passed through. SVG and every other type are refused, as are Subsonic error bodies and bodies over 5 MB, and each returns `404`. Responses carry `Cache-Control: private, max-age=3600` and `X-Content-Type-Options: nosniff`. |
+| `snapshot_at` (section 3.2) | The UTC time the index build completed, not the snapshot's own `generated_at`. |
+| Navidrome generation (section 5.2) | Settings store counter `navidrome_generation`. It increments whenever the Navidrome URL, user or password changes; a blank password that keeps the saved one does not increment it. The owned index is keyed by it. A changed generation drops the index at once. |
+| Library snapshot key (section 5.2) | The owned index reads the library snapshot under `library_snapshot:navidrome{generation}`. The recommendation path still uses the unscoped `library_snapshot` key (see 11.4). |
+| Album `artist_id` | The snapshot now keeps each album's `artistId`, so an artist page lists exactly that artist's albums. Snapshot cache entries without this field are refetched. |
+| Sanity check (section 4.1) | 10% drop limit, approved by the owner on 2026-10-25. |
+| Retry backoff | After a failed build, the index waits 30 s before the next automatic build. A generation change clears the wait. A forced refresh bypasses the TTL, but not the wait. |
+| Index refresh | Each owned request triggers a non-blocking refresh once the index is older than 10 min. There is no manual refresh route in P1. |
+| Song inventory | `search3` with an empty query, 500 per page. A walk that reaches the 200,000-song safety cap raises; it never returns a partial list. |
+| `stale` and `partial` | `stale` is served normally. It does not set `partial`, because section 3.8 lists only `index_*` reasons. |
+| `scope` | Accepted. In P1 `owned` and `all` give the same result, because no network source exists yet. |
+| `deadline_hit` | Always `false` in P1. The deadline runner arrives with P2. |
+| `mbid` on the artist route | Accepted and ignored. It only selects provider lookups, and none exist in P1. |
+| Library cursor | Opaque base64url JSON holding the offset, the query and the sort. A cursor for another query or sort returns 400. |
+| Search matching | Exact, then prefix, then contains, on the normalized key. Ties sort by name, then `id`. Genre matches nothing (`not_in_this_build`). |
+| Errors | `400` for bad search or library parameters, and for a malformed or mismatched cursor. `404` and `409` follow section 3.3. A failure while reading the index in an artist request returns `502` with `code: "artist_failed"`. A search read failure after streaming starts emits `error` with `code: "stream_failed"`. |
+
+### 11.3 Verification in P1
+
+- Focused unit modules: `tests/test_discovery_search_*.py`, `tests/test_api_search_routes.py`, `tests/test_navidrome_generation.py`, and the updated `tests/test_discovery_library_snapshot.py`. The full unit suite was not run by the agent (owner rule); CI runs it on the PR head.
+- Existing modules that touch the changed code, also run focused: `test_service_settings.py`, `test_settings_routes.py`, `test_app_legacy_import_boundary.py`, `test_auth_routes_integration.py`, `test_api_discovery_injection.py`, and `test_server_size_guard.py`.
+- Guards: `scripts/check_server_size.py` and `scripts/check_app_legacy_imports.py` pass. `navidrome_server.py` is 2,457 lines, under the 2,650 ceiling and smaller than before the PR.
+- End to end, against a throwaway Subsonic stub on localhost with a real app account: library paging reports `fresh`, search streams `capabilities`, owned `result` events and one `done`, and the ambiguous key returns `409` while `?id=` resolves it. This was a local check outside the repository, not a CI test.
+- Not verified: browser behavior, latency against section 2.1 (measured in P5), and behavior against the owner's real Navidrome server.
+
+### 11.4 Open items
+
+1. **P1 UI.** The top-bar search box and the library page are not built. They need the UI acceptance gates in `docs/TEST_PLAN.md` and a browser check under `docs/LOCAL_UI_TESTING.md`.
+2. **Recommendation snapshot generation (accepted, deferred).** The recommendation path still reads the unscoped `library_snapshot`. After a credential change it can serve the previous server's inventory for up to 10 min. The owner accepted this as a deferred follow-up on 2026-10-25. The fix is the same key scoping, and it touches existing recommendation code, so it needs its own change.
+3. **Manual refresh route.** Section 4.1 mentions a manual refresh path. P1 has the internal `force` argument but no route.

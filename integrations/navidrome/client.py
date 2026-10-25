@@ -6,18 +6,19 @@ import secrets
 import httpx
 
 
-def api_call(method, config_provider, *, client_factory=None, salt_factory=None, **params):
-    """Call Navidrome using token authentication and validate its response.
+MAX_COVER_BYTES = 5 * 1024 * 1024
+# Raster formats only. SVG can carry script, and anything not listed is refused
+# rather than passed to the browser from this origin.
+RASTER_IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/webp", "image/gif"})
 
-    Dependencies are supplied by the caller so the legacy server can retain its
-    configured settings while this transport boundary remains directly testable.
-    """
+
+class CoverArtUnavailable(LookupError):
+    """Navidrome has no image for the requested ID, or returned something that is not an image."""
+
+
+def _signed_request(config_provider, params, salt_factory):
+    """Return ``(base_url, query)`` with Subsonic token authentication for one call."""
     base_url, username, password = config_provider()
-    if client_factory is None:
-        client_factory = httpx.Client
-    if salt_factory is None:
-        salt_factory = lambda: secrets.token_hex(12)
-
     salt = salt_factory()
     token = hashlib.md5((password + salt).encode("utf-8")).hexdigest()
     query = {
@@ -29,7 +30,21 @@ def api_call(method, config_provider, *, client_factory=None, salt_factory=None,
         "f": "json",
         **params,
     }
+    return base_url, query
 
+
+def api_call(method, config_provider, *, client_factory=None, salt_factory=None, **params):
+    """Call Navidrome using token authentication and validate its response.
+
+    Dependencies are supplied by the caller so the legacy server can retain its
+    configured settings while this transport boundary remains directly testable.
+    """
+    if client_factory is None:
+        client_factory = httpx.Client
+    if salt_factory is None:
+        salt_factory = lambda: secrets.token_hex(12)
+
+    base_url, query = _signed_request(config_provider, params, salt_factory)
     with client_factory(timeout=30, follow_redirects=False) as client:
         response = client.get(
             f"{base_url}/rest/{method}.view",
@@ -47,6 +62,34 @@ def api_call(method, config_provider, *, client_factory=None, salt_factory=None,
         )
 
     return root
+
+
+def cover_art(config_provider, cover_id, *, size, client_factory=None, salt_factory=None):
+    """Fetch one cover image as ``(content_type, bytes)`` using the signed ``getCoverArt`` call.
+
+    Only supported raster images are returned. A Subsonic error body, an SVG or other
+    type not in ``RASTER_IMAGE_TYPES``, or an oversized body raises ``CoverArtUnavailable``.
+    """
+    if client_factory is None:
+        client_factory = httpx.Client
+    if salt_factory is None:
+        salt_factory = lambda: secrets.token_hex(12)
+
+    base_url, query = _signed_request(
+        config_provider, {"id": cover_id, "size": size}, salt_factory,
+    )
+    with client_factory(timeout=30, follow_redirects=False) as client:
+        response = client.get(f"{base_url}/rest/getCoverArt.view", params=query)
+    if response.status_code == 404:
+        raise CoverArtUnavailable("Navidrome has no cover art for this ID.")
+    response.raise_for_status()
+    content_type = str(response.headers.get("content-type", "")).split(";")[0].strip().lower()
+    if content_type not in RASTER_IMAGE_TYPES:
+        raise CoverArtUnavailable("Navidrome did not return a supported raster image.")
+    body = response.content
+    if len(body) > MAX_COVER_BYTES:
+        raise CoverArtUnavailable("Cover art is larger than the allowed size.")
+    return content_type, body
 
 
 def items(value):
