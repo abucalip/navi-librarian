@@ -172,19 +172,29 @@ def _is_compilation(album: Mapping[str, Any]) -> bool:
 
 
 class IdentityJob:
-    """Runs one identity pass at a time, on a background thread. A pass requested while one runs is skipped."""
+    """Runs one identity pass at a time, on a background thread.
+
+    A pass requested while one is running is not dropped: it is queued, and runs once the current
+    pass finishes. Only the latest queued request is kept, since each pass reads the library it is given.
+    """
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._running = False
+        self._queued: tuple[Callable[[], Mapping[str, int]], Callable[[], None]] | None = None
 
     def start(self, run: Callable[[], Mapping[str, int]], on_changed: Callable[[], None]) -> bool:
+        """Start a pass now, or queue it behind the running one. Returns True when started now."""
         with self._lock:
             if self._running:
+                self._queued = (run, on_changed)
                 return False
             self._running = True
+        threading.Thread(target=self._work, args=(run, on_changed), daemon=True).start()
+        return True
 
-        def work() -> None:
+    def _work(self, run: Callable[[], Mapping[str, int]], on_changed: Callable[[], None]) -> None:
+        while True:
             try:
                 counts = run()
                 if counts.get("artists") or counts.get("albums"):
@@ -192,9 +202,9 @@ class IdentityJob:
             except Exception:
                 # Identities are an enrichment. A failed pass changes nothing and is retried on the next build.
                 pass
-            finally:
-                with self._lock:
+            with self._lock:
+                if self._queued is None:
                     self._running = False
-
-        threading.Thread(target=work, daemon=True).start()
-        return True
+                    return
+                run, on_changed = self._queued
+                self._queued = None

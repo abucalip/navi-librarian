@@ -79,7 +79,8 @@ def owned_index_for(librarian) -> OwnedIndex:
                 # New identities change owned results, so rebuild once when a pass stored any.
                 _identity_job.start(
                     lambda: _identity_pass(librarian, data),
-                    on_changed=lambda: _owned_index and _owned_index.ensure(data.generation, force=True),
+                    # refresh() does nothing when this pass's generation is no longer current.
+                    on_changed=lambda: _owned_index and _owned_index.refresh(data.generation),
                 )
 
             _owned_index = OwnedIndex(

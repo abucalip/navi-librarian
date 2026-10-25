@@ -157,7 +157,7 @@ class ResolveIdentitiesTests(unittest.TestCase):
 
 
 class IdentityJobTests(unittest.TestCase):
-    def test_a_second_pass_while_one_runs_is_skipped(self):
+    def test_a_pass_requested_while_one_runs_is_queued_and_runs_after_it(self):
         job = IdentityJob()
         release = threading.Event()
         started = []
@@ -165,14 +165,14 @@ class IdentityJobTests(unittest.TestCase):
         def slow():
             started.append(1)
             release.wait(2)
-            return {"artists": 1, "albums": 0}
+            return {"artists": 0, "albums": 0}
 
         self.assertTrue(job.start(slow, on_changed=lambda: None))
         time.sleep(0.05)
         self.assertFalse(job.start(slow, on_changed=lambda: None))
         release.set()
-        time.sleep(0.1)
-        self.assertEqual(len(started), 1)
+        time.sleep(0.2)
+        self.assertEqual(len(started), 2)
 
     def test_on_changed_runs_only_when_something_was_stored(self):
         changed = []
@@ -205,6 +205,47 @@ class StoredMbidsInIndexTests(unittest.TestCase):
         )
         self.assertEqual(data.artists[0]["mbid"], "mb-ash")
         self.assertEqual(data.albums[0]["release_group_mbid"], "rg-1977")
+
+
+class GenerationRaceTests(unittest.TestCase):
+    def test_a_late_identity_callback_cannot_roll_the_index_back_to_an_old_generation(self):
+        from discovery.search.index import STATE_FRESH, OwnedIndex
+
+        index = OwnedIndex(
+            load_library=lambda: ([{"id": "ar1", "name": "Ash", "album_count": 1}], []),
+            load_songs=lambda: [],
+            background=False,
+        )
+        index.ensure(1)
+        release = threading.Event()
+        job = IdentityJob()
+        # The pass started under generation 1 and finishes after the Navidrome generation has changed.
+        job.start(
+            lambda: (release.wait(2), {"artists": 1, "albums": 0})[1],
+            on_changed=lambda: index.refresh(1),
+        )
+        time.sleep(0.05)
+        index.ensure(2)
+        self.assertEqual(index.view().data.generation, 2)
+
+        release.set()
+        time.sleep(0.2)
+        view = index.view()
+        self.assertEqual(view.data.generation, 2)
+        self.assertEqual(view.state, STATE_FRESH)
+
+    def test_refresh_for_the_current_generation_rebuilds_it(self):
+        from discovery.search.index import OwnedIndex
+
+        builds = []
+        index = OwnedIndex(
+            load_library=lambda: (builds.append(1) or [{"id": "ar1", "name": "Ash", "album_count": 1}], []),
+            load_songs=lambda: [],
+            background=False,
+        )
+        index.ensure(1)
+        index.refresh(1)
+        self.assertEqual(len(builds), 2)
 
 
 if __name__ == "__main__":

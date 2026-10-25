@@ -294,6 +294,19 @@ class OwnedIndex:
         if generation_to_build is not None:
             self._spawn(generation_to_build)
 
+    def refresh(self, generation: Any) -> None:
+        """Rebuild now, but only if ``generation`` is still the current one.
+
+        A caller that holds an older generation does nothing, so a late callback can never move
+        the index back to a server that is no longer configured.
+        """
+        with self._lock:
+            if generation != self._generation or self._building:
+                return
+            self._building = True
+            generation_to_build = self._generation
+        self._spawn(generation_to_build)
+
     def _spawn(self, generation: Any) -> None:
         """Start one build. Called without the lock held."""
         if self._background:
