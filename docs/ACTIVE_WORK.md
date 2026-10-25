@@ -48,7 +48,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
 
 - Contract: [SEARCH_CONTRACT.md](SEARCH_CONTRACT.md), approved by the owner on 2026-10-25. Section 11 is the P1 record.
 - **P1 backend:** merged in PR [#609](https://github.com/abucalip/navi-librarian/pull/609) (squash `52b0010`). Owned search, the library artists route, the artist page's owned sections, and owned artwork through `/api/owned/artwork/{id}`. No network sources.
-- **P1 UI:** built on branch `search-ui` (top-bar search and library page; contract section 11.5). Awaiting the owner's manual browser checklist on the exact tested SHA, then the PR and merge.
+- **P1 UI:** merged in PR [#610](https://github.com/abucalip/navi-librarian/pull/610) (squash `f26ad96`) after the owner waived the manual checklist. Critique steps 1 to 4 and the final polish pass are in the PR. Open: the artist-result disambiguator (contract 11.6), which needs the owner's decision on the no-genre case.
 - **Decided 2026-10-25:** the 10% sanity threshold is approved; owned artwork is served through `/api/owned/artwork/{id}`. The recommendation snapshot's generation key is accepted as a deferred follow-up. Open: the manual refresh route (contract 11.4).
 - Not published or deployed.
 
