@@ -101,7 +101,7 @@ def artist_page(
             "artist": {
                 "id": artist["id"],
                 "name": artist["name"],
-                "mbid": None,
+                "mbid": artist.get("mbid"),
                 "owned": True,
                 "album_count": artist["album_count"],
             },
@@ -115,7 +115,9 @@ def artist_page(
         },
     }
     if network is not None:
-        sections.update(network_sections(network, artist["name"], artist["id"], view.data))
+        sections.update(network_sections(
+            network, artist["name"], artist["id"], view.data, known_mbid=artist.get("mbid"),
+        ))
     return _finish(ArtistPage("ok", capabilities, sections), view)
 
 

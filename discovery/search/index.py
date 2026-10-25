@@ -94,6 +94,7 @@ def _artist_entry(artist: Mapping[str, Any]) -> dict[str, Any]:
         "name": name,
         "key": normalize_key(name),
         "album_count": int(artist.get("album_count") or 0),
+        "mbid": None,
     }
 
 
@@ -143,6 +144,8 @@ def _album_entry(album: Mapping[str, Any], artist_keys: Mapping[str, str]) -> di
         "year": _year(year),
         "genre": str(album.get("genre") or "").strip() or None,
         "song_count": int(album.get("song_count") or 0),
+        "release_mbid": str(album.get("release_mbid") or "").strip() or None,
+        "release_group_mbid": None,
     }
 
 
@@ -173,8 +176,14 @@ def build_owned_data(
     artists: Iterable[Mapping[str, Any]],
     albums: Iterable[Mapping[str, Any]],
     songs: Iterable[Mapping[str, Any]],
+    identities: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> OwnedData:
-    """Assemble a normalized index from raw snapshot and song records. Pure."""
+    """Assemble a normalized index from raw snapshot and song records. Pure.
+
+    ``identities`` maps ``artist:{id}`` to ``{"mbid": ...}`` and ``album:{id}`` to
+    ``{"release_group_mbid": ...}``, as stored by the identity job. Unknown IDs keep null MBIDs.
+    """
+    identities = identities or {}
     # "Various Artists" is a compilation credit, not an artist, so it never becomes an artist result
     # (SEARCH_CONTRACT section 4.2).
     artist_entries = tuple(
@@ -192,6 +201,11 @@ def build_owned_data(
         by_artist.setdefault(album["artist_id"], []).append(album)
     for artist in artist_entries:
         artist["genre"] = _artist_genre(by_artist.get(artist["id"], ()))
+        artist["mbid"] = (identities.get(f"artist:{artist['id']}") or {}).get("mbid") or None
+    for album in album_entries:
+        album["release_group_mbid"] = (
+            (identities.get(f"album:{album['id']}") or {}).get("release_group_mbid") or None
+        )
     return OwnedData(
         generation=generation,
         built_at=built_at,
@@ -231,12 +245,16 @@ class OwnedIndex:
         *,
         load_library: Callable[[], tuple[list[dict[str, Any]], list[dict[str, Any]]]],
         load_songs: Callable[[], list[dict[str, Any]]],
+        load_identities: Callable[[Any], Mapping[str, Mapping[str, Any]]] | None = None,
+        after_build: Callable[[OwnedData], None] | None = None,
         now: Callable[[], float] = time.time,
         ttl_seconds: float = INDEX_TTL_SECONDS,
         background: bool = True,
     ):
         self._load_library = load_library
         self._load_songs = load_songs
+        self._load_identities = load_identities
+        self._after_build = after_build
         self._now = now
         self._ttl = ttl_seconds
         self._background = background
@@ -306,17 +324,25 @@ class OwnedIndex:
                 self._state = STATE_FRESH
         if next_generation is not None:
             self._spawn(next_generation)
+        elif data is not None and self._after_build is not None:
+            try:
+                self._after_build(data)
+            except Exception:
+                # Identity resolution is an enrichment. A failure there never affects the index.
+                pass
 
     def _build(self, generation: Any) -> OwnedData:
         """Build one index. Raises when the sanity check rejects it."""
         artists, albums = self._load_library()
         songs = self._load_songs()
+        identities = self._load_identities(generation) if self._load_identities else None
         built = build_owned_data(
             generation=generation,
             built_at=self._now(),
             artists=artists,
             albums=albums,
             songs=songs,
+            identities=identities,
         )
         with self._lock:
             previous = self._data

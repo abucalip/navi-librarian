@@ -68,11 +68,15 @@ def resolve_identity(
     *,
     remaining,
     cancelled,
+    known_mbid: str | None = None,
 ) -> str | None:
-    """The artist's MBID: Navidrome's tag when present, else the first exact-name MusicBrainz match.
+    """The artist's MBID: the stored identity when known, else Navidrome's tag, else the first
+    exact-name MusicBrainz match.
 
     The name lookup shares the search cache entry for the same name.
     """
+    if known_mbid:
+        return known_mbid
     if network.navidrome_mbid is not None and artist_id:
         try:
             tagged = network.navidrome_mbid(artist_id)
@@ -120,6 +124,7 @@ def missing_albums(
     remaining,
     cancelled,
     progress: dict | None = None,
+    known_mbid: str | None = None,
 ) -> list[dict[str, Any]]:
     """Albums MusicBrainz or Last.fm lists for this artist that the library does not own.
 
@@ -127,7 +132,9 @@ def missing_albums(
     before popularity is looked up, so a caller that runs out of time can still return a
     partial list.
     """
-    mbid = resolve_identity(network, name, artist_id, remaining=remaining, cancelled=cancelled)
+    mbid = resolve_identity(
+        network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+    )
     mb_albums: list[dict[str, Any]] = []
     if mbid is not None:
         mb_albums = _cached_records(
@@ -209,6 +216,7 @@ def network_sections(
     name: str,
     artist_id: str | None,
     owned_data: OwnedData | None,
+    known_mbid: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Run ``bio`` and ``missing_albums`` under one deadline. Returns the two section objects."""
     owned = OwnedKeys(owned_data)
@@ -229,7 +237,7 @@ def network_sections(
     def missing_job() -> dict[str, Any]:
         items = missing_albums(
             network, name, artist_id, owned,
-            remaining=remaining, cancelled=cancelled, progress=progress,
+            remaining=remaining, cancelled=cancelled, progress=progress, known_mbid=known_mbid,
         )
         return _available("missing_albums", "items", items)
 

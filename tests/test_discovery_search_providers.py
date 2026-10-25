@@ -252,6 +252,58 @@ class BatchedIdentityTests(unittest.TestCase):
         self.assertEqual(batch, ['Say "Hi"'])
 
 
+class StoredIdentityBatchTests(unittest.TestCase):
+    RID = "11111111-1111-1111-1111-111111111111"
+
+    def client(self, responder):
+        calls = []
+
+        def get(url, params=None, headers=None, timeout=None):
+            calls.append((url.rsplit("/", 1)[-1], params))
+            return FakeResponse(200, responder(url, params))
+
+        return MusicBrainzSearch(get=get, limiter=open_limiter(), pause=lambda _: None), calls
+
+    def test_release_ids_map_to_release_groups_and_malformed_ids_are_never_sent(self):
+        def responder(url, params):
+            return {"count": 1, "releases": [{"id": self.RID, "release-group": {"id": "rg-1"}}]}
+
+        client, calls = self.client(responder)
+        found = client.release_groups_for_releases([self.RID, 'x" OR artist:*'], remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual(found, {self.RID: "rg-1"})
+        query = calls[0][1]["query"]
+        self.assertEqual(query, f"reid:{self.RID}")
+
+    def test_album_lookup_prefers_a_year_match_and_keeps_exact_keys_only(self):
+        def responder(url, params):
+            return {"count": 3, "release-groups": [
+                {"id": "rg-wrong-year", "title": "OK Computer", "first-release-date": "2001",
+                 "artist-credit": [{"name": "Radiohead"}]},
+                {"id": "rg-right-year", "title": "OK Computer", "first-release-date": "1997",
+                 "artist-credit": [{"name": "Radiohead"}]},
+                {"id": "rg-other-artist", "title": "OK Computer", "first-release-date": "1997",
+                 "artist-credit": [{"name": "Someone"}]},
+            ]}
+
+        client, _ = self.client(responder)
+        found = client.album_identities([("Radiohead", "OK Computer", 1997)], remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual(found, {("radiohead", "ok computer"): "rg-right-year"})
+
+    def test_album_lookup_pages_only_while_albums_are_unresolved_and_results_remain(self):
+        def responder(url, params):
+            if params["offset"] == 0:
+                return {"count": 150, "release-groups": []}
+            return {"count": 150, "release-groups": [
+                {"id": "rg-ok", "title": "OK Computer", "first-release-date": "1997",
+                 "artist-credit": [{"name": "Radiohead"}]},
+            ]}
+
+        client, calls = self.client(responder)
+        found = client.album_identities([("Radiohead", "OK Computer", None)], remaining=plenty, cancelled=never_cancelled())
+        self.assertEqual(found, {("radiohead", "ok computer"): "rg-ok"})
+        self.assertEqual([c[1]["offset"] for c in calls], [0, 100])
+
+
 class LastFmTopAlbumsTests(unittest.TestCase):
     def test_top_albums_are_read_as_candidates_under_the_requested_artist(self):
         get = ScriptedGet(FakeResponse(200, {"topalbums": {"album": [

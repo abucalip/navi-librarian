@@ -7,6 +7,7 @@ the contract reports (``failed`` or ``rate_limited``); the runner maps a deadlin
 
 from __future__ import annotations
 
+import re
 import time
 from collections.abc import Callable
 from typing import Any
@@ -224,6 +225,86 @@ class MusicBrainzSearch:
                     break
         return found
 
+    def release_groups_for_releases(self, release_ids: list[str], *, remaining, cancelled) -> dict[str, str]:
+        """Release-group MBID for each release MBID, in OR batches. Malformed IDs are skipped."""
+        valid = list(dict.fromkeys(rid for rid in release_ids if _RELEASE_ID.fullmatch(rid or "")))
+        found: dict[str, str] = {}
+        for batch in _term_batches([(rid, f"reid:{rid}") for rid in valid]):
+            wanted = {rid for rid, _ in batch}
+            query = " OR ".join(term for _, term in batch)
+            for page in range(IDENTITY_MAX_PAGES):
+                payload = self._request(
+                    "/release",
+                    {"query": query, "limit": IDENTITY_BATCH_NAMES, "offset": page * IDENTITY_BATCH_NAMES},
+                    remaining=remaining,
+                    cancelled=cancelled,
+                )
+                for item in _as_list(payload.get("releases")):
+                    if not isinstance(item, dict):
+                        continue
+                    rid = item.get("id")
+                    group = (item.get("release-group") or {}).get("id")
+                    if rid in wanted and group and rid not in found:
+                        found[rid] = group
+                fetched = (page + 1) * IDENTITY_BATCH_NAMES
+                if wanted.issubset(found) or fetched >= int(payload.get("count") or 0):
+                    break
+        return found
+
+    def album_identities(
+        self,
+        albums: list[tuple[str, str, int | None]],
+        *,
+        remaining,
+        cancelled,
+    ) -> dict[tuple[str, str], str]:
+        """Release-group MBID for (artist, title, year) triples, in OR batches.
+
+        Returns ``{(artist key, album key): MBID}``. Only exact key matches count. When several
+        matches exist, the first one whose year agrees (or is unknown) wins; otherwise the first.
+        """
+        wanted: dict[tuple[str, str], tuple[str, str, int | None]] = {}
+        for artist, title, year in albums:
+            key = (normalize_key(artist), normalize_key(title))
+            if key[0] and key[1] and key not in wanted:
+                wanted[key] = (artist, title, year)
+        found: dict[tuple[str, str], str] = {}
+        year_agrees: set[tuple[str, str]] = set()
+        terms = [
+            (key, f"(releasegroup:{lucene_phrase(title)} AND artist:{lucene_phrase(artist)} AND primarytype:album)")
+            for key, (artist, title, _) in wanted.items()
+        ]
+        for batch in _term_batches(terms):
+            keys = {key for key, _ in batch}
+            query = " OR ".join(term for _, term in batch)
+            for page in range(IDENTITY_MAX_PAGES):
+                payload = self._request(
+                    "/release-group",
+                    {"query": query, "limit": IDENTITY_BATCH_NAMES, "offset": page * IDENTITY_BATCH_NAMES},
+                    remaining=remaining,
+                    cancelled=cancelled,
+                )
+                for item in _as_list(payload.get("release-groups")):
+                    if not isinstance(item, dict) or not item.get("id"):
+                        continue
+                    key = (
+                        normalize_key(_credit_name(item.get("artist-credit"))),
+                        normalize_key(item.get("title")),
+                    )
+                    if key not in keys:
+                        continue
+                    wanted_year = wanted[key][2]
+                    year = _year(item.get("first-release-date"))
+                    agrees = wanted_year is None or year is None or year == wanted_year
+                    if key not in found or (agrees and key not in year_agrees):
+                        found[key] = item["id"]
+                        if agrees:
+                            year_agrees.add(key)
+                fetched = (page + 1) * IDENTITY_BATCH_NAMES
+                if keys.issubset(found) or fetched >= int(payload.get("count") or 0):
+                    break
+        return found
+
     def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Studio albums of one artist (primary type album, no secondary types such as live or compilation)."""
         payload = self._request(
@@ -244,6 +325,24 @@ class MusicBrainzSearch:
                 item.get("id"),
             ))
         return [c for c in candidates if _usable(c) and c["artist"]]
+
+
+_RELEASE_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def _term_batches(items: list[tuple[str, str]]):
+    """Yield lists of ``(key, term)`` under the name and character limits of one OR query."""
+    batch: list[tuple[str, str]] = []
+    size = 0
+    for key, term in items:
+        cost = len(term) + len(" OR ")
+        if batch and (len(batch) >= IDENTITY_BATCH_NAMES or size + cost > IDENTITY_BATCH_CHARS):
+            yield batch
+            batch, size = [], 0
+        batch.append((key, term))
+        size += cost
+    if batch:
+        yield batch
 
 
 def _identity_batches(wanted: dict[str, str]):
