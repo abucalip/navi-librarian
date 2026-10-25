@@ -725,9 +725,9 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 These need an owner decision or a change in another phase. They are not done in this slice.
 
 1. **ListenBrainz in search: not needed, and not built (resolved 2026-10-25).** ListenBrainz has no text search. Its uses in section 5.1 are popularity, metadata, radio and similar artists, none of which search needs. Search reports it `not_in_this_build`. Its only use is popularity on the artist page's `missing_albums`.
-2. **Batched identity lookup (section 8.1, 100-term batching): built, not yet called.** See section 12.8.
-3. **Owned MBID matching (section 8.1).** Owned albums and artists have no MBIDs (section 11.2). The test cannot be written until the owned snapshot carries MBIDs.
-4. **Background deletion of old-generation cache entries (section 5.2): done** in slice D (section 12.8).
+2. **Batched identity lookup (section 8.1, 100-term batching): called by the identity job** (section 12.9).
+3. **Owned MBID matching: done** in slice E (section 12.9). Stored MBIDs are used when both sides have one, with name matching as the fallback.
+4. **Background deletion of old-generation cache entries (section 5.2): done** in slice D (section 12.8). Identity records under old generations are not yet deleted (section 12.9).
 5. **Last.fm on the artist page: done** in slice D (section 12.8).
 
 ### 12.8 Slice D (branch `search-p2d`)
@@ -750,4 +750,32 @@ Most files are not tagged, so the premise of a majority does not hold. Two facts
 - **Old-generation cache cleanup.** `discovery/store.py` `delete_prefix_except` removes entries under a prefix except the current generation's. It compares prefixes as plain text, so `%` and `_` in names are safe. The search path schedules this once per source and generation per process, on a background thread. Failures are retried on a later request.
 
 **Still open:** the library-wide identity job (see above); owned MBID matching for provider results (the owned index has no MBIDs).
+
+### 12.9 Slice E (branch `search-p2e`, stacked on `search-p2d`)
+
+Owner approvals (2026-10-26): permanent storage of identities, a background pass after each owned-index build and for new items, and scope limited to artists and albums.
+
+**What is stored.** One record per artist and per album, under the Navidrome generation:
+- `identity:navidrome{gen}:artist:{id}` → `{"mbid", "source"}`.
+- `identity:navidrome{gen}:album:{id}` → `{"release_group_mbid", "source"}`.
+
+`source` is `navidrome`, `musicbrainz`, or `unresolved`. Records have no expiry. This is the approved deviation from the 30-day rule in section 6.
+
+**How it is resolved.**
+- Artists: Navidrome's tag first (`getArtist`). Untagged artists are matched by exact name in batches of 100. A name shared by two library artists is stored `unresolved`, because a name cannot tell them apart.
+- Albums: the release MBID Navidrome tags is mapped to its release group in batches (`reid:` OR query). Albums without a tag are matched by exact artist and title, with the year as a tie-breaker. Compilations are stored `unresolved`.
+- A lookup that answers with no match is stored `unresolved` and not asked again. A failed lookup stores nothing, and the next run retries it.
+
+**When it runs.** Once after each owned-index build, on a background thread, one pass at a time. The pass resolves only items with no stored record. When a pass stores something, the index is rebuilt once so the MBIDs reach search results. A later pass with nothing new makes no calls.
+
+**What changes for users.**
+- Owned artists and albums carry their `mbid` and `release_group_mbid`, where known. Provider results matching an owned item by MBID are not shown again. Without an MBID they still match by name, as before.
+- The artist page uses the stored MBID and skips the name lookup.
+
+**Expected work for the owner's library** (from the probe in section 12.8): about 420 artist name lookups, about 5 batches; about 9 release batches plus a few dozen title batches for albums. The first pass takes a few minutes at MusicBrainz's rate limit. Later passes make almost no calls.
+
+**Limits.**
+- A name can match the wrong artist when the name is unique in the library but ambiguous in MusicBrainz. The first exact match is taken.
+- An unresolved item stays unresolved until its record is removed. There is no correction tool yet.
+- Identity records under old Navidrome generations are not deleted. Only `search:` cache entries are purged (section 12.8).
 

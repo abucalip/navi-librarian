@@ -81,7 +81,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 slices A, B and C are on their branches; slices A and B are merged (PRs #613 and #614). Slice C (`search-p2c`) splits the search results into "Not in your library" and shows provider status. Next: open and verify the slice C PR, then decide the items in `docs/SEARCH_CONTRACT.md` section 12.7 (ListenBrainz in search first). Not published or deployed.
+Global search P2 slices A to D are merged (PRs #613 to #616). Slice E is open as PR #618 against `main`, rebased from #617, which should be closed. #618 stores MusicBrainz identities permanently and runs an identity pass after each owned-index build. Next: merge #618 once its required workflows pass on the final head, then run the first identity pass against the owner's library and record its counts. Not published or deployed.
 
 ## Where to look
 

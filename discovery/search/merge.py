@@ -27,23 +27,38 @@ def _tier(key: str, query: str) -> int | None:
     return None
 
 
+def _mbid_match(candidate: str | None, owned: list[str | None]) -> bool:
+    """MBIDs agree, or one side has none. Unknown MBIDs fall back to name matching."""
+    if candidate is None or any(mbid is None for mbid in owned):
+        return True
+    return candidate in owned
+
+
 class OwnedKeys:
-    """Owned artist keys and owned album keys with their years, built once per request."""
+    """Owned artists and albums with their MBIDs, built once per request.
+
+    A candidate with an MBID matches an owned entry only when the MBIDs agree. A candidate
+    or an owned entry without one matches by normalized key (and year, for albums).
+    """
 
     def __init__(self, data: OwnedData | None):
-        self._artists: set[str] = set()
-        self._albums: dict[str, list[int | None]] = {}
+        self._artists: dict[str, list[str | None]] = {}
+        self._albums: dict[str, list[tuple[int | None, str | None]]] = {}
         if data is None:
             return
-        self._artists = {artist["key"] for artist in data.artists}
+        for artist in data.artists:
+            self._artists.setdefault(artist["key"], []).append(artist.get("mbid"))
         for album in data.albums:
-            self._albums.setdefault(album["key"], []).append(album["year"])
+            self._albums.setdefault(album["key"], []).append((album["year"], album.get("release_group_mbid")))
 
     def owns(self, candidate: dict[str, Any]) -> bool:
         if candidate["type"] == "artist":
-            return candidate["key"] in self._artists
-        years = self._albums.get(candidate["key"], [])
-        return any(_years_match(candidate["year"], year) for year in years)
+            owned = self._artists.get(candidate["key"])
+            return bool(owned) and _mbid_match(candidate["mbid"], owned)
+        return any(
+            _years_match(candidate["year"], year) and _mbid_match(candidate["release_group_mbid"], [mbid])
+            for year, mbid in self._albums.get(candidate["key"], [])
+        )
 
 
 def same_entity(first: dict[str, Any], second: dict[str, Any]) -> bool:

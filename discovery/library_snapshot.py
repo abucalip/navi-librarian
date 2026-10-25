@@ -82,6 +82,7 @@ def build_library_snapshot(
                 "song_count" in cached["payload"]["albums"][0]
                 and "artist_id" in cached["payload"]["albums"][0]
                 and "genre" in cached["payload"]["albums"][0]
+                and "release_mbid" in cached["payload"]["albums"][0]
             )
         )
     ):
@@ -113,6 +114,8 @@ def build_library_snapshot(
             "year": album.get("year"),
             "song_count": int(album.get("songCount") or 0),
             "coverArt": album.get("coverArt"),
+            # The release MBID Navidrome tags on the album (not the release-group MBID).
+            "release_mbid": album.get("musicBrainzId") or None,
         }
         for album in raw_albums
     ]

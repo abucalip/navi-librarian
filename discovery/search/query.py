@@ -44,7 +44,7 @@ def _artist_result(entry: dict[str, Any]) -> dict[str, Any]:
         "id": entry["id"],
         "key": entry["key"],
         "name": entry["name"],
-        "mbid": None,
+        "mbid": entry.get("mbid"),
         "album_count": entry["album_count"],
         "genre": entry["genre"],
         "sources": [SOURCE_NAME],
@@ -63,7 +63,7 @@ def _album_result(entry: dict[str, Any]) -> dict[str, Any]:
         "artist": entry["artist"],
         "artist_key": entry["artist_key"],
         "year": entry["year"],
-        "release_group_mbid": None,
+        "release_group_mbid": entry.get("release_group_mbid"),
         "sources": [SOURCE_NAME],
         "artwork_url": artwork_url(entry["id"]),
     }

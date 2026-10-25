@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.api.dependencies import get_librarian
 from discovery import store as discovery_store
+from discovery.identity import IdentityJob, load_identities
 from discovery.library_snapshot import build_library_snapshot
 from discovery.search.artist_page import artist_page, json_sections, section_events
 from discovery.search.events import search_events, sse
@@ -41,16 +42,57 @@ def _snapshot_lists(librarian, generation):
     return snapshot["artists"], snapshot["albums"]
 
 
+_identity_job = IdentityJob()
+
+
+def _identity_pass(librarian, data):
+    """One background pass that stores MBIDs for artists and albums that do not have one yet."""
+    import httpx
+
+    from discovery.identity import resolve_identities
+    from discovery.search.network import LIMITER
+    from discovery.search.providers import MusicBrainzSearch
+
+    musicbrainz = MusicBrainzSearch(get=httpx.get, limiter=LIMITER, pause=time.sleep)
+
+    def navidrome_mbid(artist_id):
+        artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
+        return artist.get("musicBrainzId") or None
+
+    return resolve_identities(
+        data,
+        navidrome_mbid=navidrome_mbid,
+        musicbrainz=musicbrainz,
+        read_prefix=lambda prefix: discovery_store.read_prefix(librarian.DISCOVERY_DB, prefix),
+        write_many=lambda lists: discovery_store.write_many(librarian.DISCOVERY_DB, lists),
+        remaining=lambda: 3600.0,
+        cancelled=threading.Event(),
+    )
+
+
 def owned_index_for(librarian) -> OwnedIndex:
     """Return the process-wide owned index, creating it on first use with the given service."""
     global _owned_index
     with _owned_index_lock:
         if _owned_index is None:
+            def after_build(data):
+                # New identities change owned results, so rebuild once when a pass stored any.
+                _identity_job.start(
+                    lambda: _identity_pass(librarian, data),
+                    # refresh() does nothing when this pass's generation is no longer current.
+                    on_changed=lambda: _owned_index and _owned_index.refresh(data.generation),
+                )
+
             _owned_index = OwnedIndex(
                 load_library=lambda: _snapshot_lists(
                     librarian, navidrome_generation(librarian._discovery_settings_read)
                 ),
                 load_songs=lambda: fetch_song_inventory(librarian.api_call, librarian.items),
+                load_identities=lambda generation: load_identities(
+                    lambda prefix: discovery_store.read_prefix(librarian.DISCOVERY_DB, prefix),
+                    generation,
+                ),
+                after_build=after_build,
             )
         return _owned_index
 

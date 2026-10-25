@@ -10,6 +10,7 @@ import math
 import sqlite3
 import time
 from os import PathLike
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -42,6 +43,41 @@ def read_list(database_path: str | PathLike[str], name: str) -> dict[str, Any] |
         return None
     return {"payload": payload, "generated_at": row[1]}
 
+
+
+def read_prefix(database_path: str | PathLike[str], prefix: str) -> dict[str, Any]:
+    """Return every cached list whose name starts with ``prefix``, keyed by full name.
+
+    Prefixes are compared as plain text. Malformed payloads are left out.
+    """
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_schema(db)
+        rows = db.execute(
+            "SELECT name, payload_json FROM discovery_lists WHERE substr(name, 1, ?) = ?",
+            (len(prefix), prefix),
+        ).fetchall()
+    found: dict[str, Any] = {}
+    for name, payload_json in rows:
+        try:
+            found[name] = json.loads(payload_json)
+        except (ValueError, TypeError):
+            continue
+    return found
+
+
+def write_many(database_path: str | PathLike[str], lists: Mapping[str, Any]) -> None:
+    """Store several lists in one transaction, so a batch is either all written or none."""
+    if not lists:
+        return
+    now = time.time()
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_schema(db)
+        db.executemany(
+            "INSERT INTO discovery_lists(name, payload_json, generated_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(name) DO UPDATE SET payload_json = excluded.payload_json, "
+            "generated_at = excluded.generated_at",
+            [(name, json.dumps(payload, ensure_ascii=False), now) for name, payload in lists.items()],
+        )
 
 
 def delete_prefix_except(
