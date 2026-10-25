@@ -96,13 +96,26 @@ class MissingAlbumsTests(unittest.TestCase):
     def test_owned_and_duplicate_albums_are_removed_and_the_rest_ordered_by_listens(self):
         net = network(
             FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS),
-            popularity=lambda mbids: {"rg-3": {"listeners": 900}, "rg-2": {"listeners": 100}},
+            popularity=lambda mbids: {"rg-3": {"playcount": 900, "listeners": 50},
+                                      "rg-2": {"playcount": 100, "listeners": 80}},
         )
         items = self.run_missing(net)
         self.assertEqual([i["name"] for i in items], ["The Bends", "Pablo Honey"])
         self.assertEqual(items[0]["popularity"], 900)
         self.assertEqual(items[0]["sources"], ["musicbrainz", "listenbrainz"])
         self.assertNotIn("OK Computer", [i["name"] for i in items])
+
+    def test_ordering_is_by_listen_count_not_by_listener_count(self):
+        # rg-2 has more users (listeners) but fewer listens (playcount); the listen count decides.
+        net = network(
+            FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS),
+            popularity=lambda mbids: {"rg-2": {"playcount": 100, "listeners": 500},
+                                      "rg-3": {"playcount": 900, "listeners": 40}},
+        )
+        items = self.run_missing(net)
+        self.assertEqual([i["name"] for i in items], ["The Bends", "Pablo Honey"])
+        self.assertEqual(items[0]["popularity"], 900)
+        self.assertEqual(items[1]["popularity"], 100)
 
     def test_listenbrainz_failure_keeps_the_albums_without_popularity(self):
         def broken(mbids):

@@ -107,7 +107,8 @@ def missing_albums(
     items = []
     for album in unique:
         mbid_album = album["release_group_mbid"]
-        listens = (stats.get(mbid_album) or {}).get("listeners") if mbid_album else None
+        # "playcount" is the total listen count; "listeners" is the number of users.
+        listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
         sources = [album["source"]] + (["listenbrainz"] if listens is not None else [])
         items.append({
             "name": album["name"],
