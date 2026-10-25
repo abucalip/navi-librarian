@@ -122,7 +122,7 @@ class RailStructureTests(unittest.TestCase):
         text = block.group(1)
         self.assertIn("nav { inset: auto 0 0 0;", text)
         self.assertIn("padding: 0 4px env(safe-area-inset-bottom, 0px);", text)
-        self.assertIn("main { margin: 94px 14px 0;", text)
+        self.assertIn("main { margin: 136px 14px 0;", text)
         self.assertIn(".nav-indicator { display: none; }", text)
 
     def test_phone_bar_is_slim_and_icon_only_with_names_kept_for_assistive_tech(self):

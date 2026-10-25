@@ -17,6 +17,16 @@
 <a class="skip-link" href="#content">Skip to content</a>
 <header>
   <h1>Navidrome Librarian</h1>
+  <form id="globalSearch" class="global-search" role="search" autocomplete="off">
+    <label for="globalSearchInput" class="sr-only">Search your library</label>
+    <input id="globalSearchInput" type="search" name="q" maxlength="200"
+           placeholder="Search artists, albums and songs"
+           aria-controls="globalSearchResults" aria-expanded="false" aria-autocomplete="list">
+    <div id="globalSearchResults" class="search-results" role="region" aria-label="Search results" hidden>
+      <p id="globalSearchStatus" class="status-line" aria-live="polite"></p>
+      <div id="globalSearchGroups"></div>
+    </div>
+  </form>
   <div class="header-tools">
     <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
     <div class="header-menu">
@@ -31,6 +41,7 @@
         </svg>
       </button>
       <div id="appMenu" class="header-menu-panel" hidden>
+        <button type="button" data-page="library">Library</button>
         <button type="button" data-page="saved">Saved</button>
         <button type="button" data-page="settings">Settings</button>
         <div class="header-menu-separator" role="separator"></div>
@@ -216,6 +227,36 @@
   </div>
 </section>
 
+<section id="library" class="page hidden" aria-labelledby="libraryHeading">
+  <div class="panel">
+    <h2 id="libraryHeading">Library</h2>
+    <p>Artists in your Navidrome library. Search from the top bar to find albums and songs.</p>
+    <div id="libraryListView">
+      <div class="library-controls">
+        <div class="library-control">
+          <label for="libraryFilter">Filter artists</label>
+          <input id="libraryFilter" type="search" autocomplete="off" maxlength="200">
+        </div>
+        <div class="library-control">
+          <label for="librarySort">Sort by</label>
+          <select id="librarySort">
+            <option value="name">Name</option>
+            <option value="album_count">Album count</option>
+          </select>
+        </div>
+      </div>
+      <p id="libraryStatus" class="status-line" aria-live="polite"></p>
+      <ul id="libraryList" class="library-list"></ul>
+      <button type="button" id="libraryMore" hidden>Load more</button>
+    </div>
+    <div id="libraryDetailView" hidden>
+      <button type="button" id="libraryBack">Back to library</button>
+      <h3 id="artistDetailHeading" tabindex="-1"></h3>
+      <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
+      <ul id="artistAlbums" class="library-album-list"></ul>
+    </div>
+  </div>
+</section>
 <section id="saved" class="page hidden" aria-labelledby="savedHeading">
   <div class="panel">
     <h2 id="savedHeading">Saved</h2>

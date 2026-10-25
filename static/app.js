@@ -26,7 +26,7 @@ function showPage(name) {
   document.querySelectorAll('nav button[data-page]').forEach(el =>
     el.classList.toggle('active', el.dataset.page === name));
   // Settings lives in the header menu, so the gear toggle carries the "you are here" cue.
-  $('appMenuButton').classList.toggle('is-current', name === 'settings' || name === 'saved');
+  $('appMenuButton').classList.toggle('is-current', name === 'settings' || name === 'saved' || name === 'library');
   // The phone bar's More control carries the cue when one of its two destinations is current.
   $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
@@ -75,6 +75,8 @@ function navigateTo(name) {
   initializePage(name);
   // Saved is read on every visit: saves made on other pages since the last visit must appear.
   if (name === 'saved') loadSaved();
+  // The library restarts from the first page on every visit, so new artists appear.
+  if (name === 'library') loadLibrary({reset: true});
   // The stream is closed on leaving Acquisitions, so it must restart on every visit, not only
   // the first one that initializePage handles; startAcquisitionStream is a no-op while open.
   if (name === 'acquisitions') startAcquisitionStream();
@@ -2959,3 +2961,343 @@ makeScrollTrackFocusable($('dashboardCarousel'));
 // Populate only the visible dashboard on startup. Other pages load on first visit
 // so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
+
+// ---- Library and global search (SEARCH_CONTRACT P1) --------------------------------
+// Data comes from /api/search (SSE), /api/library/artists and /api/artists/{key}. Every
+// value is written with textContent or attributes, never through HTML strings.
+
+const SEARCH_DEBOUNCE_MS = 250;
+const SEARCH_GROUPS = [['artist', 'Artists'], ['album', 'Albums'], ['song', 'Songs']];
+const LIBRARY_PAGE_SIZE = 60;
+const INDEX_REASON_MESSAGES = {
+  index_building: 'Your library is still being indexed. Try again in a moment.',
+  index_unavailable: 'Your library could not be indexed right now.',
+};
+
+let globalSearchSource = null;
+let globalSearchTimer = 0;
+let globalSearchSeq = 0;
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, retry: false, detailSeq: 0, detailReturn: null};
+let libraryFilterTimer = 0;
+
+function setStatus(el, message, kind) {
+  el.textContent = message;
+  setStatusState(el, kind);
+}
+
+// Artwork is optional. A failed image is removed, so the row keeps its text and layout.
+function buildArtwork(url, className) {
+  const frame = document.createElement('div');
+  frame.className = className;
+  if (!url) return frame;
+  const image = document.createElement('img');
+  image.alt = '';
+  image.loading = 'lazy';
+  image.decoding = 'async';
+  image.onerror = () => image.remove();
+  image.src = url;
+  frame.append(image);
+  return frame;
+}
+
+// ---- Global search ----
+
+function setGlobalSearchOpen(open) {
+  $('globalSearchResults').hidden = !open;
+  $('globalSearchInput').setAttribute('aria-expanded', String(open));
+}
+
+function closeGlobalSearch({focusInput = false} = {}) {
+  clearTimeout(globalSearchTimer);
+  if (globalSearchSource) {
+    globalSearchSource.close();
+    globalSearchSource = null;
+  }
+  globalSearchSeq += 1;
+  setGlobalSearchOpen(false);
+  if (focusInput) $('globalSearchInput').focus();
+}
+
+function startGlobalSearch(rawQuery) {
+  const query = rawQuery.trim();
+  clearTimeout(globalSearchTimer);
+  if (globalSearchSource) {
+    globalSearchSource.close();
+    globalSearchSource = null;
+  }
+  const seq = ++globalSearchSeq;
+  if (!query) {
+    closeGlobalSearch();
+    return;
+  }
+  const status = $('globalSearchStatus');
+  const groupsEl = $('globalSearchGroups');
+  const groups = {artist: [], album: [], song: []};
+  let capabilities = null;
+  const isCurrent = () => seq === globalSearchSeq;
+  groupsEl.replaceChildren();
+  setGlobalSearchOpen(true);
+  setStatus(status, 'Searching…', 'loading');
+
+  const source = new EventSource('/api/search?' + new URLSearchParams({q: query, limit: '10'}));
+  globalSearchSource = source;
+  const finish = () => {
+    source.close();
+    if (globalSearchSource === source) globalSearchSource = null;
+  };
+
+  source.addEventListener('capabilities', event => {
+    if (isCurrent()) capabilities = JSON.parse(event.data);
+  });
+  source.addEventListener('result', event => {
+    if (!isCurrent()) return;
+    const item = JSON.parse(event.data);
+    if (groups[item.type]) groups[item.type].push(item);
+  });
+  source.addEventListener('done', () => {
+    finish();
+    if (isCurrent()) renderGlobalSearch(query, groups, capabilities);
+  });
+  source.addEventListener('error', event => {
+    finish();
+    if (!isCurrent()) return;
+    // A server "error" event carries data; a dropped connection does not.
+    const message = event.data
+      ? 'Search stopped before it finished. Try again.'
+      : 'Search is unavailable right now. Try again.';
+    setStatus(status, message, 'error');
+  });
+}
+
+function renderGlobalSearch(query, groups, capabilities) {
+  const status = $('globalSearchStatus');
+  const groupsEl = $('globalSearchGroups');
+  groupsEl.replaceChildren();
+  const index = capabilities && capabilities.owned_index;
+  if (index && !index.available) {
+    const message = INDEX_REASON_MESSAGES[index.reason] || 'Your library is not available right now.';
+    setStatus(status, message, index.reason === 'index_building' ? 'loading' : 'error');
+    return;
+  }
+  const total = SEARCH_GROUPS.reduce((count, [type]) => count + groups[type].length, 0);
+  if (!total) {
+    setStatus(status, 'No matches in your library for “' + query + '”.', 'empty');
+    return;
+  }
+  setStatus(status, pluralize(total, 'match', 'matches') + ' in your library', 'progress');
+  for (const [type, label] of SEARCH_GROUPS) {
+    if (!groups[type].length) continue;
+    const section = document.createElement('section');
+    section.className = 'search-group';
+    addTextElement(section, 'h3', 'search-group-heading', label);
+    const list = document.createElement('ul');
+    list.className = 'search-group-list';
+    for (const item of groups[type]) list.append(buildSearchItem(item));
+    section.append(list);
+    groupsEl.append(section);
+  }
+}
+
+function searchItemDetail(item) {
+  if (item.type === 'artist') return pluralize(item.album_count, 'album', 'albums');
+  if (item.type === 'album') return [item.artist, item.year].filter(Boolean).join(' · ');
+  return [item.artist, item.album].filter(Boolean).join(' · ');
+}
+
+function buildSearchItem(item) {
+  const row = document.createElement('li');
+  row.className = 'search-item';
+  // Artists open the artist view. Albums and songs are listed for reference only in P1.
+  const content = item.type === 'artist' ? document.createElement('button') : document.createElement('div');
+  if (item.type === 'artist') {
+    content.type = 'button';
+    content.addEventListener('click', () => openArtistFromSearch(item));
+  }
+  content.className = 'search-item-content';
+  content.append(buildArtwork(item.artwork_url, 'search-item-art'));
+  const text = document.createElement('span');
+  text.className = 'search-item-text';
+  addTextElement(text, 'span', 'search-item-name', item.name);
+  addTextElement(text, 'span', 'search-item-detail', searchItemDetail(item));
+  content.append(text);
+  row.append(content);
+  return row;
+}
+
+function openArtistFromSearch(item) {
+  closeGlobalSearch();
+  $('globalSearchInput').value = '';
+  navigateTo('library');
+  openArtistDetail(item.id, item.key, null);
+}
+
+// ---- Library list ----
+
+function showLibraryListMore(visible, label, retry) {
+  const more = $('libraryMore');
+  more.hidden = !visible;
+  more.textContent = label;
+  libraryView.retry = retry;
+}
+
+async function loadLibrary({reset = true} = {}) {
+  const view = libraryView;
+  if (reset) {
+    view.cursor = null;
+    view.seq += 1;
+  }
+  const seq = view.seq;
+  const list = $('libraryList');
+  const status = $('libraryStatus');
+  const params = new URLSearchParams({limit: String(LIBRARY_PAGE_SIZE), sort: view.sort});
+  if (view.query) params.set('q', view.query);
+  if (!reset && view.cursor) params.set('cursor', view.cursor);
+  if (reset) {
+    list.replaceChildren();
+    showLibraryListMore(false, 'Load more', false);
+    setStatus(status, 'Loading artists…', 'loading');
+  } else {
+    $('libraryMore').disabled = true;
+  }
+  try {
+    const data = await requestJSON('/api/library/artists?' + params);
+    if (seq !== view.seq) return;
+    $('libraryMore').disabled = false;
+    if (data.index_state === 'building' || data.index_state === 'unavailable') {
+      const message = data.index_state === 'building'
+        ? 'Your library is still being indexed. Try again in a moment.'
+        : 'Your library could not be indexed right now.';
+      setStatus(status, message, data.index_state === 'building' ? 'loading' : 'error');
+      showLibraryListMore(true, 'Try again', true);
+      return;
+    }
+    for (const artist of data.items) list.append(buildLibraryRow(artist));
+    view.cursor = data.next_cursor;
+    const shown = list.children.length;
+    if (!data.total) {
+      setStatus(status, view.query ? 'No artists match “' + view.query + '”.' : 'No artists in your library.', 'empty');
+    } else {
+      const countText = data.next_cursor
+        ? 'Showing ' + shown + ' of ' + pluralize(data.total, 'artist', 'artists')
+        : pluralize(data.total, 'artist', 'artists');
+      setStatus(status, countText + (data.index_state === 'stale' ? ' · Showing the last indexed library' : ''), 'progress');
+    }
+    showLibraryListMore(Boolean(data.next_cursor), 'Load more', false);
+  } catch (error) {
+    if (seq !== view.seq) return;
+    $('libraryMore').disabled = false;
+    setStatus(status, 'Your library could not be loaded. Try again.', 'error');
+    showLibraryListMore(true, 'Try again', true);
+  }
+}
+
+function buildLibraryRow(artist) {
+  const row = document.createElement('li');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'library-artist';
+  button.append(buildArtwork(artist.artwork_url, 'library-art'));
+  const text = document.createElement('span');
+  text.className = 'library-artist-text';
+  addTextElement(text, 'span', 'library-artist-name', artist.name);
+  addTextElement(text, 'span', 'library-artist-count', pluralize(artist.album_count, 'album', 'albums'));
+  button.append(text);
+  button.addEventListener('click', () => openArtistDetail(artist.id, artist.key, button));
+  row.append(button);
+  return row;
+}
+
+// ---- Artist view ----
+
+async function openArtistDetail(id, key, returnFocus) {
+  const view = libraryView;
+  view.detailReturn = returnFocus;
+  const seq = ++view.detailSeq;
+  $('libraryListView').hidden = true;
+  $('libraryDetailView').hidden = false;
+  const heading = $('artistDetailHeading');
+  const status = $('artistDetailStatus');
+  const albums = $('artistAlbums');
+  heading.textContent = 'Loading artist…';
+  albums.replaceChildren();
+  setStatus(status, 'Loading…', 'loading');
+  heading.focus();
+
+  const params = new URLSearchParams({id});
+  try {
+    const response = await fetch('/api/artists/' + encodeURIComponent(key) + '?' + params);
+    const data = await response.json();
+    if (seq !== view.detailSeq) return;
+    if (response.status === 404) {
+      heading.textContent = 'Artist not found';
+      setStatus(status, 'This artist is no longer in your library.', 'error');
+      return;
+    }
+    if (!response.ok) throw new Error(data.message || 'Request failed');
+    const artistSection = data.sections.artist;
+    if (!artistSection.available) {
+      heading.textContent = 'Artist';
+      setStatus(status, INDEX_REASON_MESSAGES[artistSection.reason] || 'This artist is not available right now.',
+        artistSection.reason === 'index_building' ? 'loading' : 'error');
+      return;
+    }
+    heading.textContent = artistSection.artist.name;
+    setStatus(status, pluralize(artistSection.artist.album_count, 'album', 'albums') + ' in your library', 'progress');
+    for (const album of data.sections.owned_albums.items) albums.append(buildArtistAlbum(album));
+  } catch (error) {
+    if (seq !== view.detailSeq) return;
+    heading.textContent = 'Artist';
+    setStatus(status, 'This artist could not be loaded. Try again.', 'error');
+  }
+}
+
+function buildArtistAlbum(album) {
+  const row = document.createElement('li');
+  row.className = 'library-album';
+  addTextElement(row, 'span', 'library-album-name', album.name);
+  const details = [album.year, pluralize(album.song_count, 'track', 'tracks')].filter(value => value !== null && value !== undefined && value !== '');
+  addTextElement(row, 'span', 'library-album-detail', details.join(' · '));
+  return row;
+}
+
+function closeArtistDetail() {
+  libraryView.detailSeq += 1;
+  $('libraryDetailView').hidden = true;
+  $('libraryListView').hidden = false;
+  const back = libraryView.detailReturn;
+  if (back && back.isConnected) back.focus();
+  else $('libraryHeading').focus();
+}
+
+// ---- Wiring ----
+
+$('globalSearch').addEventListener('submit', event => {
+  event.preventDefault();
+  startGlobalSearch($('globalSearchInput').value);
+});
+$('globalSearchInput').addEventListener('input', () => {
+  clearTimeout(globalSearchTimer);
+  globalSearchTimer = setTimeout(() => startGlobalSearch($('globalSearchInput').value), SEARCH_DEBOUNCE_MS);
+});
+$('globalSearchInput').addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeGlobalSearch({focusInput: true});
+  }
+});
+document.addEventListener('click', event => {
+  if (!$('globalSearch').contains(event.target)) closeGlobalSearch();
+});
+$('libraryFilter').addEventListener('input', () => {
+  clearTimeout(libraryFilterTimer);
+  libraryFilterTimer = setTimeout(() => {
+    libraryView.query = $('libraryFilter').value.trim();
+    loadLibrary({reset: true});
+  }, SEARCH_DEBOUNCE_MS);
+});
+$('librarySort').addEventListener('change', () => {
+  libraryView.sort = $('librarySort').value;
+  loadLibrary({reset: true});
+});
+$('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.retry}));
+$('libraryBack').addEventListener('click', closeArtistDetail);

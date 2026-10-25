@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). The P1 backend is implemented in PR #609 (branch `search-p1`) (see section 11 for the implementation record and open items). The P1 browser UI (top-bar search box and library page) is not part of that change. P2 to P5 are not started.
+Status: **approved by the owner** (2026-10-25). The P1 backend merged in PR #609 (squash `52b0010`). The P1 UI (top-bar search and library page) is on branch `search-ui`. P2 to P5 are not started. See section 11 for the record and open items.
 
 ## 1. Owner decisions (recorded)
 
@@ -628,6 +628,17 @@ This section records what P1 built and every decision the contract left open. Se
 
 ### 11.4 Open items
 
-1. **P1 UI.** The top-bar search box and the library page are not built. They need the UI acceptance gates in `docs/TEST_PLAN.md` and a browser check under `docs/LOCAL_UI_TESTING.md`.
+1. **P1 UI manual gate.** The top-bar search and library page are built (section 11.5). Their browser checklist under `docs/LOCAL_UI_TESTING.md` is for the owner to run on the exact tested SHA.
 2. **Recommendation snapshot generation (accepted, deferred).** The recommendation path still reads the unscoped `library_snapshot`. After a credential change it can serve the previous server's inventory for up to 10 min. The owner accepted this as a deferred follow-up on 2026-10-25. The fix is the same key scoping, and it touches existing recommendation code, so it needs its own change.
 3. **Manual refresh route.** Section 4.1 mentions a manual refresh path. P1 has the internal `force` argument but no route.
+
+### 11.5 P1 UI (branch `search-ui`)
+
+- **Top bar:** a search form in the header (`role="search"`). Input is debounced at 250 ms and streams from `GET /api/search`. Results are grouped as Artists, Albums and Songs under a status line with `aria-live`. Escape or an outside click closes the panel. A new query closes the previous stream, and events from a superseded stream are ignored. A dropped connection and a server `error` event show different messages. Index states show the matching message, and "No matches" appears only when the index is available.
+- **Artists** open the artist view on the library page, by `id` and `key`. **Albums and songs** are listed for reference only in P1, with no action.
+- **Library page:** reached from the header menu, next to Saved. It has a filter (debounced, sent to the server as `q`), a sort control (`name` or `album_count`), and a Load more control that follows `next_cursor`. `building` and `unavailable` show messages with a Try again control, never an empty library. `stale` is labeled.
+- **Artist view:** lists the owned albums with year and track count. It takes focus on open, returns focus on close, and shows a not-found message on 404.
+- **Rendering:** every value is set with `textContent` or as an attribute. Artwork comes from `artwork_url` and is removed when it fails to load.
+- **Verification:** `tests/test_library_search_ui_contract.py` checks structure and rendering rules in source. A DOM harness in jsdom drove the page script against stub API and stream responses, covering the flows above, and passed. Headless Chromium at 1280 px and 390 px rendered the header, search results, library, and artist view, with no console errors and no horizontal overflow. Those checks were run by the agent. The owner's manual browser checklist is still required.
+- **Not verified:** keyboard-only pass on a real browser, reduced-motion behavior, screen-reader output, and behavior against a real Navidrome library.
+

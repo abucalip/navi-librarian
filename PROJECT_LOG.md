@@ -1,3 +1,12 @@
+## 2026-10-25 — Global search P1 UI (branch `search-ui`)
+
+- **Merged before this work:** PR #609 (squash `52b0010`), after the owner approved it. The review finding on SVG artwork was fixed in `62fd363` (raster allowlist plus nosniff), and CI passed on that head.
+- **Change:** top-bar search (`GET /api/search` over SSE, debounced, grouped results, Escape and outside-click close), a Library page from the header menu (filter, sort, Load more, index-state messages), and an artist view with owned albums. `static/app.js`, `app/templates/index.html`, `static/app.css`. Contract section 11.5.
+- **Tests run:** `tests/test_library_search_ui_contract.py` (9). All 29 existing `test_*ui_contract*.py` modules pass, after updating one pinned phone margin in `test_shell_rail_ui_contract.py` for the new header row.
+- **Browser checks run by the agent (not the owner's checklist):** a jsdom harness drove the page script against stub API and stream responses (36 checks: library paging, filter and sort, artist view and back, search streaming, superseded and error streams, index states, search-to-artist, 404). Headless Chromium at 1280 px and 390 px: no console errors, no horizontal overflow, screenshots reviewed.
+- **Not verified:** the owner's manual checklist, keyboard-only pass, reduced motion, screen readers, a real Navidrome library.
+- **Release state:** branch only. No merge, publication or deployment.
+
 ## 2026-10-25 — Global search P1: artwork and approvals (PR #609)
 
 - **Owner decisions:** the 10% sanity threshold is approved; the recommendation snapshot's unscoped key is accepted as a deferred follow-up; owned artwork must be served.

@@ -501,7 +501,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 /* The active-download count sits on the icon's corner when the label is hidden. */
 @media (max-width: 900px) { nav button .nav-count { position: absolute; top: 5px; right: 5px; margin-left: 0; font-size: var(--text-xs); } }
 @media (max-width: 620px) {
-  header { min-height: 70px; padding: 12px 15px; } header h1 { font-size: var(--text-xl); } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
+  header { min-height: 70px; padding: 12px 15px; flex-wrap: wrap; row-gap: 10px; } header .global-search { order: 3; flex: 1 0 100%; margin-left: 0; } header h1 { font-size: var(--text-xl); } header h1::before { flex-basis: 32px; width: 32px; height: 32px; } header p { display: none; }
   /* Bottom tab bar. Icons only (names stay visually hidden for assistive tech), 44px+ targets, scrolls sideways when the tabs do not fit. */
   nav { inset: auto 0 0 0; width: auto; min-height: 56px; flex-direction: row; align-items: stretch; gap: 0; padding: 0 4px env(safe-area-inset-bottom, 0px); overflow-x: auto; overflow-y: hidden; border-right: 0; border-top: 1px solid var(--edge); border-bottom: 0; }
   main > nav::before { display: none; }
@@ -529,7 +529,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   .nav-more-panel button[aria-current="page"] { background: var(--accent-dim); box-shadow: inset 3px 0 var(--accent); }
   .nav-more-toggle[aria-expanded="true"], .nav-more-toggle.is-current { color: var(--accent); }
   .nav-more-toggle.is-current { box-shadow: inset 0 3px var(--accent); }
-  main { margin: 94px 14px 0; padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: var(--text-2xl); } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: var(--text-md); } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
+  main { margin: 136px 14px 0; padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 24px); } footer { margin-left: 14px; margin-right: 14px; } .panel h2 { font-size: var(--text-2xl); } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .card h3 { font-size: var(--text-md); } .card > :not(.card-art) { margin-left: 10px; margin-right: 10px; } .card-category { max-width: calc(100% - 20px); } .discovery-controls { grid-template-columns: 1fr; } .discovery-controls input { grid-column: auto; }
 }
 @media (max-width: 360px) { .cards { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
@@ -677,3 +677,32 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .save-album.is-saved { color: var(--text); border-color: var(--accent); background: var(--surface-raised); }
 .save-album.is-failed { color: var(--chart-red-text); border-color: var(--chart-red); }
 .save-album[aria-busy="true"] { cursor: progress; opacity: .7; }
+
+/* ---- Global search and library (SEARCH_CONTRACT P1) ---- */
+.global-search { position: relative; flex: 0 1 420px; min-width: 0; margin-left: auto; }
+.global-search input[type="search"] { width: 100%; min-height: 44px; }
+.search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; max-height: min(64vh, 560px); overflow-y: auto; padding: var(--space-3); background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: 4px; }
+.search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryMore[hidden] { display: none; }
+.search-group + .search-group { margin-top: var(--space-3); }
+.search-group-heading { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-xs); letter-spacing: .08em; text-transform: uppercase; }
+.search-group-list, .library-list, .library-album-list { list-style: none; margin: 0; padding: 0; }
+.search-group-list { display: grid; gap: 2px; }
+.search-item-content, .library-artist { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 8px; text-align: left; background: transparent; border-color: transparent; border-radius: 4px; }
+.search-item-content:hover, .library-artist:hover { background: var(--surface-hover); }
+.search-item-art, .library-art { flex: 0 0 40px; width: 40px; height: 40px; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
+.library-art { flex-basis: 48px; width: 48px; height: 48px; }
+.search-item-art img, .library-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.search-item-text, .library-artist-text { display: grid; min-width: 0; }
+.search-item-name, .library-artist-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-item-detail, .library-artist-count, .library-album-detail { overflow: hidden; color: var(--text-muted); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
+.library-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: var(--space-3); margin-top: var(--space-3); }
+.library-control { display: grid; gap: 6px; min-width: 0; }
+.library-control select, .library-control input { width: 100%; min-height: 44px; }
+.library-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; margin-top: var(--space-4); }
+.library-album-list { display: grid; gap: 2px; margin-top: var(--space-3); }
+.library-album { display: grid; gap: 2px; padding: 10px 12px; border-bottom: 1px solid var(--edge); }
+.library-album-name { overflow-wrap: anywhere; }
+#libraryDetailView > button { margin-bottom: var(--space-3); }
+#artistDetailHeading { margin: 0; }
+@media (max-width: 620px) { .library-controls { grid-template-columns: minmax(0, 1fr); } }
+
