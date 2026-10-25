@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **revised after PR #608 review; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
+Status: **revised after the second PR #608 review; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
 
 ## 1. Owner decisions (recorded)
 
@@ -81,7 +81,7 @@ Events (each `data:` line is JSON):
 
 Caching: a fully cached query is emitted as normal events, with every `source` event set to `cached`.
 
-Errors before streaming starts: `400` for a bad `q`, `types` or `scope`; `401` from the existing login middleware. `503` if the owned index has never been built and the build has failed (section 4.1).
+Errors before streaming starts: `400` for a bad `q`, `types` or `scope`; `401` from the existing login middleware. An owned index that is not available is **not** an HTTP error. The stream starts, and the owned types are reported unavailable in `capabilities` (section 3.6), so provider results can still arrive (section 4.1).
 
 ### 3.2 `GET /api/library/artists`
 
@@ -98,11 +98,18 @@ Response:
 ```json
 {"items": [{"id": "...", "key": "...", "name": "...", "album_count": 12,
             "artwork_url": "…|null"}],
- "next_cursor": "…|null", "total": 733, "index_state": "fresh|stale|building",
+ "next_cursor": "…|null", "total": 733, "index_state": "fresh|stale|building|unavailable",
  "snapshot_at": "2026-10-25T16:00:00Z"}
 ```
 
-`index_state` is `building` before the first index exists; the list is then `items: []` with `index_state: "building"`, which is distinct from a valid empty result (`index_state: "fresh"`, `total: 0`). `stale` means the last refresh failed and the list shows the last known-good data.
+`index_state` values:
+
+- `fresh`: the list comes from a completed build. A valid empty result is `fresh` with `total: 0`.
+- `stale`: the last refresh failed; the list shows the last known-good data.
+- `building`: the first build is running and no index exists yet. `items: []`, `total: null`.
+- `unavailable`: the first build failed and no last-known-good index exists. `items: []`, `total: null`. The response is still HTTP 200, so the page can show a clear message and retry on the next refresh trigger.
+
+`building` and `unavailable` are never reported as an empty library.
 
 ### 3.3 `GET /api/artists/{key}`
 
@@ -123,7 +130,7 @@ When a section is `available: true` with `items: []`, that is a valid empty resu
 
 Missing-album items, from P2, include `release_group_mbid`, `popularity` and `sources`. Similar items, from P3, include `score` and `reasons`.
 
-The artist page may stream. If `Accept: text/event-stream` is sent, the same sections are emitted as `section` events, one per section, followed by a terminal `done` or `error` (section 3.7). Otherwise it returns one JSON document, from cache where possible.
+The artist page may stream. If `Accept: text/event-stream` is sent, the stream follows the same contract as search (section 3.7): it begins with exactly one `capabilities` event that uses the vocabulary in section 3.6, then emits one `section` event per section, then exactly one terminal `done` or `error`. Otherwise it returns one JSON document, from cache where possible, with the same `available`/`reason` fields in each section.
 
 ### 3.4 `GET /api/genres/{tag}`
 
@@ -134,7 +141,7 @@ Available from P4. Genre page: top owned and unowned artists and albums for a ta
 Available from P4. Mirrors the existing Last.fm settings contract (`app/api/settings.py`, `settings/service.py`), so the token is never returned to the browser. Authentication is a Discogs **personal access token** (decided by the owner). The OAuth consumer key and secret in `config.env` are not used by this integration.
 
 - `GET /api/settings/discogs` → `{"token_configured": true|false, "source": "settings|environment|none"}`. The token value is never included.
-- `PUT /api/settings/discogs` with `{"token": "..."}` → saves the token; an empty string clears it. Returns the same shape as GET. Saving or clearing the token invalidates every Discogs cache entry (section 5).
+- `PUT /api/settings/discogs` with `{"token": "..."}` → saves the token; an empty string clears it. Returns the same shape as GET. Saving a new token, replacing an existing one, or clearing it invalidates every Discogs cache entry (section 5.2).
 - `POST /api/settings/discogs/test` → one lightweight authenticated request; returns `{"ok": true|false, "error": "..."}`.
 
 The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a password-type input, a configured/not-configured status line, Save, and Test. The token can also come from an environment variable, `DISCOGS_TOKEN`, following the existing `LASTFM_*` pattern. Discogs is disabled, and the search source reports `disabled`, until a token is configured.
@@ -146,7 +153,7 @@ The `capabilities` event (search) and the `reason` fields (artist page) use one 
 | Field | Values |
 |---|---|
 | `available` | `true` or `false` |
-| `reason` | `not_in_this_build`, `source_disabled` (no token or key), `source_failed` (last attempt failed), `indexing` (owned index not built yet) |
+| `reason` | `not_in_this_build`, `source_disabled` (no token or key), `source_failed` (last attempt failed), `index_building` (first build running; no index yet), `index_unavailable` (first build failed; no last-known-good index) |
 
 A capability that is not available is never reported as an empty list. The frontend shows a "not available yet" or "not configured" message for these, and "No matches" only for `available: true` with no items.
 
@@ -160,8 +167,10 @@ Invariants, each covered by an automated test in the phase that introduces the s
 4. A fatal error after the stream started emits one `error` event and closes. No `done` follows it.
 5. A provider failure or timeout emits a `source` event with `failed` or `timeout`. It does not end the stream, and it does not discard results already emitted.
 6. A provider that is timed out or cancelled emits no further `result` events. Results that arrive after cancellation are dropped on the server.
-7. A client disconnect cancels all in-flight provider work for that stream. Disconnects are detected on write; no further events are written.
-8. Identical concurrent queries share one set of provider calls (request coalescing). A second client receives the same events, not a second round of calls.
+7. Shared provider work is reference-counted by its active consumers (streams). A client disconnect removes that client's reference. Provider work is cancelled only when its last consumer disconnects. A disconnect is detected on write, and no further events are written to that client.
+8. Identical concurrent queries share one set of provider calls (request coalescing). Every consumer receives the same events from the shared work, and a consumer that joins later receives the events already emitted, followed by the rest.
+9. Work that is cancelled, or that hits the deadline, is never written to the cache as a complete result. Only complete results from a finished call are cached.
+10. The first event on any stream, whether search or artist page, is `capabilities`.
 
 ## 4. Search and matching
 
@@ -178,7 +187,8 @@ Lifecycle rules:
 - **Single flight**: one build runs at a time, guarded by one lock. A refresh requested while a build is running joins that build; it does not start a second full scan.
 - **Atomic swap**: the new index replaces the current one only after a build completes. The build is complete only when every song page succeeded and the final page was short. A failed or incomplete build leaves the last known-good index in place and sets `index_state: "stale"`.
 - **Sanity check**: a build whose song count falls by more than 10% from the last good index is rejected as suspicious and reported as stale. The threshold is a proposal to confirm in P1.
-- **First build**: before the first successful build, owned search returns `capabilities` with `reason: "indexing"` for owned types. Provider results may still be shown. A first build that fails leaves `index_state` at `building` with the error logged, and search returns `503` for owned types.
+- **First build**: before the first successful build, a search stream starts normally. Owned types are reported in `capabilities` with `available: false, reason: "index_building"`, and provider results may still arrive. If the first build fails and no last-known-good index exists, owned types are reported with `reason: "index_unavailable"`, the error is logged, and the next refresh trigger retries the build. A search never returns `503` for this case. This contract defines no `503` for index failures.
+- **Scope-owned search with no index**: the stream starts, owned types are unavailable as above, no provider calls are made, and the terminal `done` has `partial: true`.
 - **Refresh trigger**: the index is rebuilt when the library snapshot is rebuilt (its 10-minute TTL), and by the existing manual refresh path. Navidrome settings changes trigger a rebuild.
 - **Memory**: the index holds only normalized keys and display fields, which is small at 12,097 songs.
 
@@ -212,13 +222,13 @@ Each layer has one owner and one invalidation rule. The existing persistence (`_
 |---|---|---|---|---|---|
 | Library snapshot | `discovery/library_snapshot.py` | Persistent list store | `library_snapshot` | 10-minute TTL; Navidrome settings change | Keep the previous snapshot; do not write a partial one. |
 | Owned index (artists, albums, songs) | `discovery/search/index.py` | Memory | Single index | Rebuilt with the snapshot; manual refresh | Keep last known-good index; set `stale`. Never swap in a partial build. |
-| Provider query results | `discovery/search/cache.py` | Persistent list store | `search:{source}:{config_fingerprint}:{normalized query}:{types}` | 24 h TTL; any change to that source's settings changes the fingerprint | Failures and timeouts are not cached as hits. A short negative entry (1 h) is cached for definitive empty answers only. |
+| Provider query results | `discovery/search/cache.py` | Persistent list store | `search:{source}:{config_generation}:{normalized query}:{types}:depth{50}` | 24 h TTL; any credential or setting change bumps the source's `config_generation` (below) | Stores a complete result set at fixed depth 50 per type, independent of request `scope` and `limit`. `scope` and `limit` are applied per request after the cache read. Failures, timeouts and cancelled work are not cached. A 1 h negative entry is cached only for definitive empty answers. |
 | Provider entity lookups (MBID) | the source's integration module | Persistent list store | `mbid:{source}:{mbid}` | 30-day TTL | Same as above. |
-| Discogs credentials | `settings/service.py` | Existing settings store | Setting key | Save or clear invalidates all `search:discogs:*` and `mbid:discogs:*` entries via the fingerprint | Token is never in a cache key or response. |
+| Provider credentials and settings | `settings/service.py` | Existing settings store | Per-source `config_generation` counter | Every save that changes a credential (new token, replacement, clear) or a non-secret setting increments the counter. Old-generation entries become unreachable and are deleted in the background. | Tokens are never stored in cache keys, logs or responses. The counter is the only credential-derived value in a key. |
 | Similar artists | `discovery/similar_artists.py` (precompute job) | Persistent list store | `similar:{artist_mbid}` | Daily precompute, same cadence as lens lists; 7-day TTL for on-demand entries | Keep the previous entry on a failed recompute. |
 | Genre tag results | the genre module (P4) | Persistent list store | `genre:{source}:{tag}` | 7-day TTL | Same as provider results. |
 
-"Config fingerprint" means a hash of the source's non-secret settings and the token's presence. Changing a token or key therefore produces a new cache namespace without storing the secret anywhere in the key.
+`config_generation` is a per-source integer stored with that source's settings. It is incremented on every save that changes a credential or non-secret setting: setting a first token, replacing one non-empty token with another, or clearing a token. The increment, not a hash of the token, is what separates one credential's cache from another's, so no token-derived value is stored or logged. Entries under an old generation are never read again.
 
 ## 6. Caching TTLs (summary)
 
@@ -257,10 +267,10 @@ Correctness tests land in the same PR as the code they cover.
 
 | Phase | Required automated tests |
 |---|---|
-| P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale` and `indexing` states; owned identity and ownership matching, including false matches (same name, different MBID; Various Artists); `capabilities` event first; owned results before any provider event; library artist list paging and `index_state`. |
-| P2 | Provider isolation (one failing provider does not affect others); cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 3 to 8 (section 3.7); cancellation on disconnect. |
-| P3 | Seed artist exclusion from `lb-radio`; owned candidates moved to the owned list; ranking with no ListenBrainz score; precompute failure keeps the previous entry; `similar` section availability. |
-| P4 | Discogs token handling (never in responses, logs or cache keys); token change invalidates Discogs cache namespace; attribution text present on every Discogs-sourced item; genre matching; `disabled` state without a token. |
+| P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale`, `building` and `unavailable` states; first build failure with no last-known-good index reports `index_unavailable` in an HTTP 200 stream or response, never a `503` and never an empty library; `scope=owned` with no index emits a `done` with `partial: true` and makes no provider calls; owned identity and ownership matching, including false matches (same name, different MBID; Various Artists); `capabilities` event first; owned results before any provider event; library artist list paging and `index_state`. |
+| P2 | Provider isolation (one failing provider does not affect others); cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 3 to 10 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
+| P3 | Seed artist exclusion from `lb-radio`; owned candidates moved to the owned list; ranking with no ListenBrainz score; precompute failure keeps the previous entry; `similar` section availability; artist-page stream begins with `capabilities`. |
+| P4 | Discogs token handling (never in responses, logs or cache keys); first token set, token replacement (non-empty to different non-empty), and clear each bump `config_generation`, and old-generation entries are never read; attribution text present on every Discogs-sourced item; genre matching; `disabled` state without a token. |
 | P5 | Latency measurements against section 2.1 targets, with results recorded in `PROJECT_LOG.md`; `TEST_PLAN.md` entries for each phase. |
 
 ## 9. Verification results and open items
@@ -302,7 +312,7 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 ### Open
 
-No open items in this section. The review items are addressed in sections 2.1, 3.2 to 3.7, 4.1, 5.2 and 8.1. Re-review is requested before P1 starts.
+No open items in this section. The second re-review items are addressed in sections 3.1 (no `503` for owned-index failure), 3.2 (`index_state` values), 3.3 and 3.7 (artist-page stream and shared-work cancellation), 5.2 (cache keys and `config_generation`) and 8.1 (tests). Re-review is requested before P1 starts.
 
 ## 10. Phasing
 
