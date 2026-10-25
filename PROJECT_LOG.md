@@ -1,3 +1,12 @@
+## 2026-10-25 — Current tastes replaces Now (PR #607)
+
+- **Merged:** PR [#607](https://github.com/abucalip/navi-librarian/pull/607), squash commit `690c718d8f89dfb9a1d5d28482b8335f4fde4f59`, from reviewed head `2b5e3f62540710a9487ad5fb2858a7eb167750d7`.
+- **Change:** Replaced the Now daily-picks lens with Current tastes. It builds seeds from a recent listening window, adds similar-artist and collaborator links, and ranks with regional and era signals. Release-year metadata now enriches legacy popularity-cache entries missing a year; tests cover legacy cache enrichment and the no-extra-search fast path when a year is already present.
+- **Review follow-up:** The prior medium-severity cache finding was addressed in the updated head. The legacy path searches for years without refetching album popularity, then rewrites cache entries; cached entries already containing a year avoid that extra search.
+- **Verification:** CI passed on exact PR head `2b5e3f62540710a9487ad5fb2858a7eb167750d7`: Docker packaging/full unit suite/image build (run `40205211049`), Python syntax/acquisition-safety (run `40205211052`), container runtime smoke (run `40205211051`), and validation-only multi-architecture image validation (run `40205211070`). Release validation (run `40205211056`) passed with publishing skipped. PR reports 299 focused tests; the full unit suite was run by CI, not manually.
+- **UI gate:** The owner waived manual UI review. No browser test was performed.
+- **Release state:** Merged only. No publication, deployment, or runtime verification.
+
 ## 2026-10-24 — Published image v0.2.3
 
 - Owner explicitly authorized publication after PR #605 merged. Annotated tag `v0.2.3` was pushed at `7883fe93a0559ca46381e6ef8bd91eaab556ca31`, the then-current `main` head (`docs: record lens lists default-on decision`). All four required workflows had passed on that exact commit.
