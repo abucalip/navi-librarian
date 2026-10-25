@@ -234,6 +234,48 @@ class GenerationRaceTests(unittest.TestCase):
         self.assertEqual(view.data.generation, 2)
         self.assertEqual(view.state, STATE_FRESH)
 
+    def test_identities_stored_while_a_build_is_in_flight_reach_the_next_published_index(self):
+        from discovery.search.index import OwnedIndex, STATE_FRESH
+
+        store = {}
+        read_done = threading.Event()
+        release_build = threading.Event()
+        first_read = []
+
+        def identities(generation):
+            # The first build reads the store, then waits. Later builds never wait.
+            snapshot = dict(store)
+            if not first_read:
+                first_read.append(1)
+                read_done.set()
+                release_build.wait(5)
+            return {k: v for k, v in snapshot.items()}
+
+        index = OwnedIndex(
+            load_library=lambda: ([{"id": "ar1", "name": "Ash", "album_count": 1}], []),
+            load_songs=lambda: [],
+            load_identities=lambda generation: load_identities(
+                lambda prefix: {k: v for k, v in identities(generation).items() if k.startswith(prefix)},
+                generation,
+            ),
+        )
+        index.ensure(1)
+        self.assertTrue(read_done.wait(5))
+        # An identity pass stores an MBID while that build is in flight, then asks for a refresh.
+        store[f"{identity_prefix(1)}artist:ar1"] = {"mbid": "mb-ash", "source": "navidrome"}
+        index.refresh(1)
+        release_build.set()
+
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            view = index.view()
+            if view.state == STATE_FRESH and view.data and view.data.artists[0]["mbid"] == "mb-ash":
+                break
+            time.sleep(0.02)
+        view = index.view()
+        self.assertEqual(view.state, STATE_FRESH)
+        self.assertEqual(view.data.artists[0]["mbid"], "mb-ash")
+
     def test_refresh_for_the_current_generation_rebuilds_it(self):
         from discovery.search.index import OwnedIndex
 

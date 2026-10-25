@@ -263,6 +263,7 @@ class OwnedIndex:
         self._data: OwnedData | None = None
         self._state = STATE_BUILDING
         self._building = False
+        self._refresh_requested = False
         self._retry_at = 0.0
 
     def view(self) -> IndexView:
@@ -283,6 +284,7 @@ class OwnedIndex:
         with self._lock:
             if generation != self._generation:
                 self._generation = generation
+                self._refresh_requested = False
                 self._data = None
                 self._state = STATE_BUILDING
                 self._retry_at = 0.0
@@ -301,7 +303,12 @@ class OwnedIndex:
         the index back to a server that is no longer configured.
         """
         with self._lock:
-            if generation != self._generation or self._building:
+            if generation != self._generation:
+                return
+            if self._building:
+                # A build is already running and may have read the data before this request's
+                # writes. Build once more when it finishes (see _run_build).
+                self._refresh_requested = True
                 return
             self._building = True
             generation_to_build = self._generation
@@ -335,6 +342,10 @@ class OwnedIndex:
             else:
                 self._data = data
                 self._state = STATE_FRESH
+            if next_generation is None and self._refresh_requested and generation == self._generation:
+                self._refresh_requested = False
+                self._building = True
+                next_generation = self._generation
         if next_generation is not None:
             self._spawn(next_generation)
         elif data is not None and self._after_build is not None:
