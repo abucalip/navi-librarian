@@ -20,6 +20,19 @@ def provider_cache_key(source: str, generation: int, query: str, kind: str) -> s
     return f"search:{source}:{generation}:{query}:{kind}:depth{DEPTH}"
 
 
+def purge_stale_generations(
+    delete_except: Callable[[str, str], int],
+    source: str,
+    generation: int,
+) -> int:
+    """Delete every cached entry for ``source`` whose generation is not ``generation``.
+
+    Old-generation entries are already unreachable (section 5.2); this only reclaims their
+    storage. ``delete_except(prefix, keep_prefix)`` is the store's prefix delete.
+    """
+    return delete_except(f"search:{source}:", f"search:{source}:{generation}:")
+
+
 def read_cached(
     read: Callable[[str], Any],
     key: str,

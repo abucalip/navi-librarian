@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.api.dependencies import get_librarian
+from discovery import store as discovery_store
 from discovery.library_snapshot import build_library_snapshot
 from discovery.search.artist_page import artist_page, json_sections, section_events
 from discovery.search.events import search_events, sse
@@ -18,7 +19,7 @@ from discovery.search.index import OwnedIndex, fetch_song_inventory
 from discovery.search.network import artist_network, external_search
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
-from settings.service import navidrome_generation
+from settings.service import lastfm_generation, navidrome_generation
 
 router = APIRouter()
 
@@ -121,6 +122,9 @@ def search(
             settings_read=librarian._discovery_settings_read,
             cache_read=librarian._discovery_read_list,
             cache_write=librarian._discovery_write_list,
+            delete_except=lambda prefix, keep: discovery_store.delete_prefix_except(
+                librarian.DISCOVERY_DB, prefix, keep
+            ),
         )
 
     def stream():
@@ -169,11 +173,20 @@ def artist_network_for(librarian):
     def bio(name):
         return artist_bio(artist=name)["bio"]
 
+    def navidrome_mbid(artist_id):
+        # One read-only Navidrome call per artist page; the library tags MBIDs on many artists.
+        artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
+        return artist.get("musicBrainzId") or None
+
+    settings = librarian._discovery_settings_read()
     return artist_network(
         cache_read=librarian._discovery_read_list,
         cache_write=librarian._discovery_write_list,
         popularity=popularity,
         bio=bio,
+        navidrome_mbid=navidrome_mbid,
+        lastfm_api_key=str(settings.get("lastfm_api_key") or "").strip(),
+        lastfm_gen=lastfm_generation(librarian._discovery_settings_read),
     )
 
 

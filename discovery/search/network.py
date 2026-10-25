@@ -14,7 +14,9 @@ from typing import Any
 import httpx
 
 from discovery.search.artist_sections import ArtistNetwork
-from discovery.search.cache import provider_cache_key
+import threading
+
+from discovery.search.cache import provider_cache_key, purge_stale_generations
 from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
 from discovery.search.providers import LastFmSearch, MusicBrainzSearch
@@ -29,6 +31,28 @@ REGISTRY = FetchRegistry()
 LIMITER = SourceLimiter({"musicbrainz": 1.0, "lastfm": 0.2})
 
 _KINDS = ("artist", "album")
+
+# (source, generation) pairs whose stale entries a purge has already been scheduled for, per process.
+_purge_scheduled: set[tuple[str, int]] = set()
+_purge_lock = threading.Lock()
+
+
+def _schedule_purge(delete_except: Callable[[str, str], int], source: str, generation: int) -> None:
+    """Remove this source's old-generation entries on a background thread, once per generation."""
+    with _purge_lock:
+        if (source, generation) in _purge_scheduled:
+            return
+        _purge_scheduled.add((source, generation))
+
+    def run() -> None:
+        try:
+            purge_stale_generations(delete_except, source, generation)
+        except Exception:
+            # Storage cleanup is best effort. Allow a later request to try again.
+            with _purge_lock:
+                _purge_scheduled.discard((source, generation))
+
+    threading.Thread(target=run, daemon=True).start()
 
 
 def _source_capabilities(api_key: str) -> dict[str, dict[str, Any]]:
@@ -47,6 +71,7 @@ def external_search(
     settings_read: Callable[[], Mapping[str, Any]],
     cache_read: Callable[[str], Any],
     cache_write: Callable[[str, Any], None],
+    delete_except: Callable[[str, str], int] | None = None,
     http_get: Callable[..., Any] | None = None,
     registry: FetchRegistry | None = None,
     limiter: SourceLimiter | None = None,
@@ -56,6 +81,9 @@ def external_search(
     settings = settings_read()
     api_key = str(settings.get(LASTFM_API_KEY) or "").strip()
     lastfm_gen = lastfm_generation(settings_read)
+    if delete_except is not None:
+        _schedule_purge(delete_except, "lastfm", lastfm_gen)
+        _schedule_purge(delete_except, "musicbrainz", MUSICBRAINZ_GENERATION)
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
@@ -102,6 +130,9 @@ def artist_network(
     cache_write: Callable[[str, Any], None],
     popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]],
     bio: Callable[[str], str | None],
+    navidrome_mbid: Callable[[str], str | None] | None = None,
+    lastfm_api_key: str = "",
+    lastfm_gen: int = 0,
     http_get: Callable[..., Any] | None = None,
     limiter: SourceLimiter | None = None,
     clock: Callable[[], float] = time.monotonic,
@@ -114,11 +145,11 @@ def artist_network(
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
+    lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=lastfm_api_key) if lastfm_api_key else None
     sources = {
         "navidrome": availability(True),
         "musicbrainz": availability(True),
-        # The artist page uses Last.fm for nothing yet, so it is not in this build here.
-        "lastfm": availability(False, NOT_IN_BUILD),
+        "lastfm": availability(True) if lastfm is not None else availability(False, "source_disabled"),
         "listenbrainz": availability(True),
         "discogs": availability(False, NOT_IN_BUILD),
     }
@@ -128,6 +159,9 @@ def artist_network(
         bio=bio,
         cache_read=cache_read,
         cache_write=cache_write,
+        navidrome_mbid=navidrome_mbid,
+        lastfm=lastfm,
+        lastfm_generation=lastfm_gen,
         sources=sources,
         clock=clock,
     )
