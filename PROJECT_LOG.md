@@ -1,3 +1,40 @@
+## 2026-10-25 — Search UI layout pass (branch `search-ui`)
+
+- **Scope:** step 4 of the critique (`/impeccable layout`): the artist view's hierarchy and artwork.
+- **Changes:** the artist view leads with an artwork hero (160 px, 128 px on phones) from the clicked row's `artwork_url`, so the artist API gains no field. The artist name takes page-title styling (the `.panel h2` treatment, with its chart-red rule) and stays an `h3`, so heading order is unchanged. The Library intro is hidden while the artist view is open and returns with the list.
+- **Verification:** the jsdom harness passes 53 checks, including the hero image source and the intro toggle. Chromium at 1280 px and 390 px: the hero and albums render, no horizontal overflow, and the intro is hidden. All 29 `*ui_contract*` modules pass.
+- **Not verified:** album art (needs the contract proposal in 11.6), long artist names beyond the checked case, Safari, and screen readers. The hero art is blank in screenshots because the stub returns an invalid JPEG.
+
+## 2026-10-25 — Search UI polish pass (branch `search-ui`)
+
+- **Scope:** step 3 of the critique (`/impeccable polish`): streamed results, running count, and no flicker between queries.
+- **Changes:** each result is placed in its type group as it arrives, and groups stay in Artists, Albums, Songs order. The status shows "Searching… N matches so far", with `aria-live` off while streaming and polite at the end. Previous results stay until the new stream's first event. A server error keeps the results already shown.
+- **Verification:** the jsdom harness passes 50 checks, including results before `done`, the running count, group order, the partial results on error, and the live-region state. Chromium: keyboard, focus, hover and copy checks pass with no errors; the phone heading and status are visible. All 29 `*ui_contract*` modules pass. The stub responds too fast to observe streaming in a real browser, so the streaming behaviour is verified in jsdom only.
+- **Not verified:** streaming against a slow real Navidrome, screen-reader output, Safari.
+
+## 2026-10-25 — Search UI clarify pass (branch `search-ui`)
+
+- **Scope:** step 2 of the critique (`/impeccable clarify`): dead album and song rows and the copy that promised them.
+- **Changes:** album and song rows are plain rows with no hover state. Only artist buttons highlight. The placeholder is "Search your library", and the library intro is "Select an artist to see their albums." The header tagline rules are scoped to `.header-tools > p`, because the bare `header p` rule right-aligned and, on phones, hid the search status and group headings.
+- **Verification:** the jsdom harness passes 43 checks. Chromium: album rows have a transparent hover background, artist buttons keep theirs, the new copy renders, and there are no page errors. Phone width: the group heading and status are visible and the tagline stays hidden. All 29 `*ui_contract*` modules pass, including the new copy and tagline tests.
+- **Not verified:** Safari, VoiceOver, and a real Navidrome library.
+
+## 2026-10-25 — Search UI harden pass (branch `search-ui`)
+
+- **Scope:** step 1 of the critique (`/impeccable harden`): search keyboard and ARIA, heading order, and load-more retry.
+- **Changes:** the searchbox has no combobox ARIA; Escape is handled on the form; focus leaving the form to a real outside element closes it, while a null target does not (Safari click path); group headings are `<p>` instead of `<h3>`; a failed append retries the append instead of resetting the list.
+- **Verification:** the jsdom harness passes 43 checks, including Escape from a result, the focus-out rules, and the append-failure retry. Headless Chromium: Escape from a result and Tab out close the panel, a mouse click still opens the artist, the console is clean, and overflow is 0 at both widths. `tests/test_library_search_ui_contract.py` (13) and all 29 `*ui_contract*` modules pass. The detector no longer reports the search heading skip; its one remaining finding is the pre-existing settings-tabs warning.
+- **Not verified:** Safari and VoiceOver. The null-target focus rule is written for Safari's click behaviour but was not tested in Safari.
+
+## 2026-10-25 — Global search P1 UI (branch `search-ui`)
+
+- **Merged before this work:** PR #609 (squash `52b0010`), after the owner approved it. The review finding on SVG artwork was fixed in `62fd363` (raster allowlist plus nosniff), and CI passed on that head.
+- **Change:** top-bar search (`GET /api/search` over SSE, debounced, grouped results, Escape and outside-click close), a Library page from the header menu (filter, sort, Load more, index-state messages), and an artist view with owned albums. `static/app.js`, `app/templates/index.html`, `static/app.css`. Contract section 11.5.
+- **Tests run:** `tests/test_library_search_ui_contract.py` (9). All 29 existing `test_*ui_contract*.py` modules pass, after updating one pinned phone margin in `test_shell_rail_ui_contract.py` for the new header row.
+- **Browser checks run by the agent (not the owner's checklist):** a jsdom harness drove the page script against stub API and stream responses (36 checks: library paging, filter and sort, artist view and back, search streaming, superseded and error streams, index states, search-to-artist, 404). Headless Chromium at 1280 px and 390 px: no console errors, no horizontal overflow, screenshots reviewed.
+- **Not verified:** the owner's manual checklist, keyboard-only pass, reduced motion, screen readers, a real Navidrome library.
+- **Release state:** branch only. No merge, publication or deployment.
+
 ## 2026-10-25 — Global search P1: artwork and approvals (PR #609)
 
 - **Owner decisions:** the 10% sanity threshold is approved; the recommendation snapshot's unscoped key is accepted as a deferred follow-up; owned artwork must be served.
