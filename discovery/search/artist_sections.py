@@ -80,8 +80,13 @@ def missing_albums(
     *,
     remaining,
     cancelled,
+    progress: dict | None = None,
 ) -> list[dict[str, Any]]:
-    """Albums MusicBrainz lists for this artist that the library does not own, most listened first."""
+    """Albums MusicBrainz lists for this artist that the library does not own, most listened first.
+
+    ``progress`` receives ``items`` as soon as the album list is known, before popularity is
+    looked up, so a caller that runs out of time can still return a partial list.
+    """
     mbid = resolve_identity(network, name, remaining=remaining, cancelled=cancelled)
     if mbid is None:
         return []
@@ -100,6 +105,9 @@ def missing_albums(
             continue
         unique.append(album)
 
+    if progress is not None:
+        progress["items"] = _shape_items(unique, {})
+
     def can_cache() -> bool:
         return remaining() > 0 and not cancelled.is_set()
 
@@ -112,8 +120,13 @@ def missing_albums(
         # Popularity only orders the list and labels its source; without it the list is still valid.
         stats = {}
 
+    return _shape_items(unique, stats)
+
+
+def _shape_items(albums: list[dict[str, Any]], stats: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Section items with ListenBrainz listen counts where known, most listened first."""
     items = []
-    for album in unique:
+    for album in albums:
         mbid_album = album["release_group_mbid"]
         # "playcount" is the total listen count; "listeners" is the number of users.
         listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
@@ -165,8 +178,10 @@ def network_sections(
             return _available("bio", "bio", None)
         return _available("bio", "bio", {"text": text, "source": BIO_SOURCE})
 
+    progress: dict[str, Any] = {}
+
     def missing_job() -> dict[str, Any]:
-        items = missing_albums(network, name, owned, remaining=remaining, cancelled=cancelled)
+        items = missing_albums(network, name, owned, remaining=remaining, cancelled=cancelled, progress=progress)
         return _available("missing_albums", "items", items)
 
     jobs = {"bio": ("bio", bio_job), "missing_albums": ("items", missing_job)}
@@ -179,7 +194,14 @@ def network_sections(
             try:
                 results[section] = future.result(timeout=max(0.0, remaining()))
             except FutureTimeout:
-                results[section] = _incomplete(section, "deadline", payload_key)
+                if section == "missing_albums" and "items" in progress:
+                    # The album list was known in time; only popularity was still pending.
+                    results[section] = {
+                        "section": section, "available": True, "complete": False,
+                        "reason": "deadline", "items": progress["items"],
+                    }
+                else:
+                    results[section] = _incomplete(section, "deadline", payload_key)
             except Exception:
                 results[section] = _incomplete(section, "source_failed", payload_key)
     finally:

@@ -684,6 +684,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; max-height: min(64vh, 560px); overflow-y: auto; padding: var(--space-3); background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: 4px; }
 .search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryMore[hidden] { display: none; }
 .search-group + .search-group { margin-top: var(--space-3); }
+.search-sources { list-style: none; margin: var(--space-2) 0 0; padding: 0; color: var(--text-muted); font-size: var(--text-xs); }
 .search-group-heading { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--text-xs); letter-spacing: .08em; text-transform: uppercase; }
 .search-group-list, .library-list, .library-album-list { list-style: none; margin: 0; padding: 0; }
 .search-group-list { display: grid; gap: 2px; }

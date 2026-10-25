@@ -712,3 +712,21 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 - Last.fm on the artist page (`lastfm` is reported `not_in_this_build` there).
 - Cached entries for an old credential generation are not deleted in the background (section 5.2).
 
+### 12.6 Slice C (branch `search-p2c`)
+
+- **"Not in your library" group.** Results with `owned: false` go to their own section below the owned groups. Owned results keep their groups and their count. The summary reads "N matches in your library · M not in your library".
+- **Source status.** One line per `source` event (for example "MusicBrainz: searching…", then "12 results" or "did not answer in time"). A failing source adds "Some sources did not finish." to the summary.
+- **Artists not in the library do not open the artist view**, because their IDs are MBIDs, not Navidrome IDs.
+- **Partial album list.** When the artist page's deadline falls after the album list is known and before popularity arrives, `missing_albums` returns `available: true, complete: false, reason: deadline` with the albums it has (section 8.1, P2 row).
+- **Last.fm generation.** A test shows that a new key bumps `lastfm_generation` and a repeated or blank key does not.
+
+### 12.7 Still open after slice C
+
+These need an owner decision or a change in another phase. They are not done in this slice.
+
+1. **ListenBrainz for search results (section 12.5).** ListenBrainz has no text search, so it can only add popularity to results that already exist. Adding it means either waiting before emitting album results, which breaks the 1.5 s first-external-result target, or a result-update event that the contract does not define. Owner to choose.
+2. **Batched MusicBrainz identity lookup (section 8.1, 100-term batching).** The app has no flow that resolves several artists at once yet. Build this with the flow that needs it.
+3. **Owned MBID matching (section 8.1).** Owned albums and artists have no MBIDs (section 11.2). The test cannot be written until the owned snapshot carries MBIDs.
+4. **Background deletion of old-generation cache entries (section 5.2).** Old entries are unreachable but not deleted. This needs a prefix-delete operation on the discovery store.
+5. **Last.fm on the artist page (section 12.5).** It is reported `not_in_this_build` there.
+

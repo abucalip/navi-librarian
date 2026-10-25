@@ -81,7 +81,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 slice A is merged (PR #613). Slice B is on branch `search-p2b`: the artist page's `bio` and `missing_albums` sections, with ListenBrainz popularity (`docs/SEARCH_CONTRACT.md` section 12.3). Next: open and verify its PR on the exact head, then the "Not in your library" UI group (section 12.5). Not published or deployed.
+Global search P2 slices A, B and C are on their branches; slices A and B are merged (PRs #613 and #614). Slice C (`search-p2c`) splits the search results into "Not in your library" and shows provider status. Next: open and verify the slice C PR, then decide the items in `docs/SEARCH_CONTRACT.md` section 12.7 (ListenBrainz in search first). Not published or deployed.
 
 ## Where to look
 

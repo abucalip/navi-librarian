@@ -2969,6 +2969,10 @@ loadDashboardPicks();
 const SEARCH_DEBOUNCE_MS = 250;
 const SEARCH_GROUPS = [['artist', 'Artists'], ['album', 'Albums'], ['song', 'Songs']];
 const LIBRARY_PAGE_SIZE = 60;
+// Labels for the provider source status line. Keys are the source names from the `source` event.
+const SOURCE_LABELS = {navidrome: 'Your library', musicbrainz: 'MusicBrainz', lastfm: 'Last.fm', listenbrainz: 'ListenBrainz', discogs: 'Discogs'};
+const SOURCE_PROBLEM_STATES = ['failed', 'timeout', 'rate_limited'];
+const TYPE_LABELS = {artist: 'Artist', album: 'Album', song: 'Song'};
 const INDEX_REASON_MESSAGES = {
   index_building: 'Your library is still being indexed. Try again in a moment.',
   index_unavailable: 'Your library could not be indexed right now.',
@@ -3057,7 +3061,12 @@ function startGlobalSearch(rawQuery) {
   }
   const status = $('globalSearchStatus');
   const groupsEl = $('globalSearchGroups');
+  const externalEl = $('globalSearchExternal');
+  const externalList = $('globalSearchExternalList');
+  const sourcesEl = $('globalSearchSources');
   let shown = 0;
+  let external = 0;
+  let sourceProblem = false;
   let capabilities = null;
   const isCurrent = () => seq === globalSearchSeq;
   // The previous results stay on screen until this stream's first event, so the list does not
@@ -3077,20 +3086,36 @@ function startGlobalSearch(rawQuery) {
     if (!isCurrent()) return;
     capabilities = JSON.parse(event.data);
     groupsEl.replaceChildren();
+    externalList.replaceChildren();
+    externalEl.hidden = true;
+    sourcesEl.replaceChildren();
+    sourcesEl.hidden = true;
+  });
+  source.addEventListener('source', event => {
+    if (!isCurrent()) return;
+    const update = JSON.parse(event.data);
+    if (SOURCE_PROBLEM_STATES.includes(update.state)) sourceProblem = true;
+    renderSourceStatus(sourcesEl, update);
   });
   source.addEventListener('result', event => {
     if (!isCurrent()) return;
     const item = JSON.parse(event.data);
     if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;
-    searchGroupList(item.type).append(buildSearchItem(item));
-    shown += 1;
-    setStatus(status, 'Searching… ' + pluralize(shown, 'match', 'matches') + ' so far', 'loading');
+    if (item.owned) {
+      searchGroupList(item.type).append(buildSearchItem(item));
+      shown += 1;
+    } else {
+      externalEl.hidden = false;
+      externalList.append(buildSearchItem(item));
+      external += 1;
+    }
+    setStatus(status, 'Searching… ' + pluralize(shown + external, 'match', 'matches') + ' so far', 'loading');
   });
   source.addEventListener('done', () => {
     finish();
     if (isCurrent()) {
       setSearchStatusLive(true);
-      renderGlobalSearchSummary(query, shown, capabilities);
+      renderGlobalSearchSummary(query, shown, external, capabilities, sourceProblem);
     }
   });
   source.addEventListener('error', event => {
@@ -3105,19 +3130,45 @@ function startGlobalSearch(rawQuery) {
   });
 }
 
-function renderGlobalSearchSummary(query, shown, capabilities) {
+// One provider's state, as a line in the source status list. Each source has one line, updated in place.
+function renderSourceStatus(listEl, update) {
+  listEl.hidden = false;
+  let line = listEl.querySelector('[data-source="' + update.source + '"]');
+  if (!line) {
+    line = document.createElement('li');
+    line.dataset.source = update.source;
+    listEl.append(line);
+  }
+  const label = SOURCE_LABELS[update.source] || update.source;
+  const detail = {
+    pending: 'searching…',
+    done: pluralize(update.count, 'result', 'results'),
+    cached: pluralize(update.count, 'result', 'results') + ' (saved)',
+    failed: 'failed',
+    timeout: 'did not answer in time',
+    rate_limited: 'skipped, too many requests',
+    disabled: 'not set up',
+  }[update.state] || update.state;
+  line.textContent = label + ': ' + detail;
+}
+
+function renderGlobalSearchSummary(query, owned, external, capabilities, sourceProblem) {
   const status = $('globalSearchStatus');
   const index = capabilities && capabilities.owned_index;
+  const parts = [];
+  let kind = 'progress';
   if (index && !index.available) {
-    const message = INDEX_REASON_MESSAGES[index.reason] || 'Your library is not available right now.';
-    setStatus(status, message, index.reason === 'index_building' ? 'loading' : 'error');
-    return;
+    parts.push(INDEX_REASON_MESSAGES[index.reason] || 'Your library is not available right now.');
+    kind = index.reason === 'index_building' ? 'loading' : 'error';
+  } else if (owned) {
+    parts.push(pluralize(owned, 'match', 'matches') + ' in your library');
+  } else if (!external) {
+    parts.push('No matches in your library for “' + query + '”.');
+    kind = 'empty';
   }
-  if (!shown) {
-    setStatus(status, 'No matches in your library for “' + query + '”.', 'empty');
-    return;
-  }
-  setStatus(status, pluralize(shown, 'match', 'matches') + ' in your library', 'progress');
+  if (external) parts.push(pluralize(external, 'match', 'matches') + ' not in your library');
+  if (sourceProblem) parts.push('Some sources did not finish.');
+  setStatus(status, parts.join(' · '), kind);
 }
 
 // Artists with a genre show it after the name, so two artists with the same name can be told apart.
@@ -3127,17 +3178,21 @@ function searchItemName(item) {
 }
 
 function searchItemDetail(item) {
+  // Provider artists have no album count, so the detail line only states the type.
+  if (!item.owned && item.type === 'artist') return TYPE_LABELS.artist;
   if (item.type === 'artist') return pluralize(item.album_count, 'album', 'albums');
-  if (item.type === 'album') return [item.artist, item.year].filter(Boolean).join(' · ');
-  return [item.artist, item.album].filter(Boolean).join(' · ');
+  const details = item.type === 'album' ? [item.artist, item.year] : [item.artist, item.album];
+  return details.filter(Boolean).join(' · ');
 }
 
 function buildSearchItem(item) {
   const row = document.createElement('li');
   row.className = 'search-item';
-  // Artists open the artist view. Albums and songs are listed for reference only in P1.
-  const content = item.type === 'artist' ? document.createElement('button') : document.createElement('div');
-  if (item.type === 'artist') {
+  // Owned artists open the artist view. Albums and songs, and artists not in the library, are
+  // listed for reference only.
+  const opens = item.type === 'artist' && item.owned;
+  const content = opens ? document.createElement('button') : document.createElement('div');
+  if (opens) {
     content.type = 'button';
     content.addEventListener('click', () => openArtistFromSearch(item));
   }
