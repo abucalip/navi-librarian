@@ -55,7 +55,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - "Not in your library" results group, waiting for the P2 network sources.
   - Recommendation snapshot generation key, accepted as a deferred follow-up.
   - Safari, VoiceOver and keyboard-only checks in a real browser.
-- **P2 (network sources):** slices A and B merged (PRs #613, #614). Slice C ("Not in your library" UI group, source status) is on branch `search-p2c`. Open decisions are in `SEARCH_CONTRACT.md` section 12.7, the first being ListenBrainz in search.
+- **P2 (network sources):** merged in PRs #613 to #618. Remaining work is listed in `SEARCH_CONTRACT.md` section 12.10: the first identity pass on the owner's library, browser verification, cleanup of old-generation identity records, and a correction path for stored identities.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated
