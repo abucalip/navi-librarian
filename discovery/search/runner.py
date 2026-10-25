@@ -59,6 +59,10 @@ class FetchRegistry:
     ) -> SharedFetch:
         """Attach a consumer. The first consumer starts the call; later ones share it.
 
+        The shared call runs until the latest deadline among its consumers, so a later consumer
+        with time left keeps a call alive after an earlier consumer has timed out. Each consumer
+        still stops waiting at its own deadline.
+
         ``inbox`` receives ``(token, work)`` when the work finishes. A call that has already
         finished is no longer in flight, so a later search starts a new one (the cache serves it).
         """
@@ -68,6 +72,8 @@ class FetchRegistry:
             if is_new:
                 work = SharedFetch(key, deadline_at)
                 self._inflight[key] = work
+            else:
+                work.deadline_at = max(work.deadline_at, deadline_at)
             # Register this consumer before the worker can run, so a call that finishes at once
             # still notifies it.
             work.refs += 1

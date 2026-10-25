@@ -235,7 +235,7 @@ Invariants, each covered by an automated test in the phase that introduces it. I
 5. A provider failure or timeout emits a `source` event with `failed` or `timeout`. It does not end the stream, and it does not discard results already emitted.
 6. A provider that is timed out or cancelled emits no further `result` events. Results that arrive after cancellation are dropped on the server.
 7. Shared provider work is reference-counted by its active consumers (streams). A client disconnect removes that client's reference. Provider work is cancelled only when its last consumer disconnects. A disconnect is detected on write, and no further events are written to that client.
-8. Identical concurrent queries share one set of provider calls (request coalescing). The coalescing key is source, config generation, normalized query, types and depth, the same as the provider cache key in section 5.2. Every consumer receives the same events from the shared work. A consumer that joins later receives the events already emitted, followed by the rest. A late joiner does not get a new deadline: the shared work keeps the deadline of its first consumer, and the late joiner's `done` reports that same `deadline_hit`.
+8. Identical concurrent queries share one set of provider calls (request coalescing). The coalescing key is source, config generation, normalized query, types and depth, the same as the provider cache key in section 5.2. Every consumer receives the same events from the shared work. A consumer that joins later receives the events already emitted, followed by the rest. The shared work runs until the latest deadline among its active consumers, so an earlier consumer's timeout does not cancel work that a later consumer can still use. Each consumer stops waiting at its own deadline, and its `done` reports its own `deadline_hit`.
 9. Work that is cancelled, or that hits the deadline, is never written to the cache as a complete result. Only complete results from a finished call are cached.
 10. The first event on any stream, whether search or artist page, is `capabilities`.
 
@@ -676,7 +676,7 @@ P2 is delivered in slices. This section records slice A; slice B is listed at th
 
 - **Sources:** MusicBrainz (artist search, release-group search restricted to albums, depth 50, 503 retried after 1 s and 2 s) and Last.fm (`artist.search`, `album.search`). Last.fm is `source_disabled` until a key is saved. Both run only for `scope=all` and only for the `artist` and `album` types.
 - **Pacing and deadline:** one limiter per process (MusicBrainz 1 call/s, Last.fm 5 calls/s). The deadline is 3.0 s from request receipt. Unfinished sources are reported `timeout` and set `deadline_hit`.
-- **Sharing and cache:** calls are keyed by the cache key in section 5.2. Identical concurrent searches share one call. A call is cancelled only when its last consumer leaves. Only complete results are cached.
+- **Sharing and cache:** calls are keyed by the cache key in section 5.2. Identical concurrent searches share one call, which runs until the latest deadline among its consumers (invariant 8). A call is cancelled only when its last consumer leaves. Only complete results that arrive before the call's deadline are cached.
 - **Generation:** `lastfm_generation` in the settings store. MusicBrainz uses generation `0`.
 
 ### 12.2 Deviations (slice A)

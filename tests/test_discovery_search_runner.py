@@ -226,6 +226,45 @@ class CacheAndSharingTests(unittest.TestCase):
         token, work = inbox.get(timeout=2)
         self.assertEqual((token, work.state), (5, "done"))
 
+    def test_later_consumer_keeps_a_shared_call_alive_past_the_first_deadline(self):
+        registry = FetchRegistry()
+        store = Store()
+        calls = []
+
+        def slow_answer(remaining, cancelled):
+            calls.append(1)
+            time.sleep(0.6)
+            return MB_ASH
+
+        parts = [part("musicbrainz", slow_answer)]
+        first = ExternalSearch(
+            parts_for=lambda q, t: parts, sources={}, registry=registry,
+            cache_read=store.read, cache_write=store.write, deadline_seconds=0.3,
+        )
+        second = ExternalSearch(
+            parts_for=lambda q, t: parts, sources={}, registry=registry,
+            cache_read=store.read, cache_write=store.write, deadline_seconds=1.5,
+        )
+        first_run = RunState()
+        first_events = []
+        first_started = time.monotonic()
+        first_thread = threading.Thread(target=lambda: first_events.extend(first.stream(
+            query="ash", types=["artist"], limit=10, owned=None, started=first_started, run=first_run,
+        )))
+        first_thread.start()
+        time.sleep(0.1)  # the first consumer has joined and is waiting; the second joins now
+        second_run = RunState()
+        second_events = list(second.stream(query="ash", types=["artist"], limit=10, owned=None,
+                                           started=time.monotonic(), run=second_run))
+        first_thread.join(5)
+
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(first_run.deadline_hit)
+        self.assertFalse(second_run.deadline_hit)
+        second_results = [p["name"] for name, p in second_events if name == "result"]
+        self.assertEqual(second_results, ["Ash"])
+        self.assertIn("search:musicbrainz:0:ash:artist:depth50", store.data)
+
     def test_result_that_arrives_after_the_deadline_is_a_timeout_and_never_cached(self):
         store = Store()
         search = make_search([], store=store)
