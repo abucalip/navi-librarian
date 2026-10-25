@@ -52,5 +52,8 @@ def owned_artwork(cover_id: str, size: str | None = None, librarian=Depends(get_
     return Response(
         content=body,
         media_type=content_type,
-        headers={"Cache-Control": "private, max-age=3600"},
+        headers={
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+        },
     )

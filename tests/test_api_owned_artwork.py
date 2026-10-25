@@ -28,6 +28,7 @@ class OwnedArtworkRouteTests(unittest.TestCase):
         self.assertEqual(response.content, b"png-bytes")
         self.assertEqual(response.headers["content-type"], "image/png")
         self.assertEqual(response.headers["cache-control"], "private, max-age=3600")
+        self.assertEqual(response.headers["x-content-type-options"], "nosniff")
         fetch.assert_called_once()
         self.assertEqual(fetch.call_args.args[1:], ("al-1",))
         self.assertEqual(fetch.call_args.kwargs["size"], 128)

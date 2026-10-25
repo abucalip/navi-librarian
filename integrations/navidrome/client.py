@@ -7,6 +7,9 @@ import httpx
 
 
 MAX_COVER_BYTES = 5 * 1024 * 1024
+# Raster formats only. SVG can carry script, and anything not listed is refused
+# rather than passed to the browser from this origin.
+RASTER_IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/webp", "image/gif"})
 
 
 class CoverArtUnavailable(LookupError):
@@ -64,8 +67,8 @@ def api_call(method, config_provider, *, client_factory=None, salt_factory=None,
 def cover_art(config_provider, cover_id, *, size, client_factory=None, salt_factory=None):
     """Fetch one cover image as ``(content_type, bytes)`` using the signed ``getCoverArt`` call.
 
-    Only image responses are returned. A Subsonic error body, a non-image type, or an
-    oversized body raises ``CoverArtUnavailable``, so JSON or credentials never reach the caller.
+    Only supported raster images are returned. A Subsonic error body, an SVG or other
+    type not in ``RASTER_IMAGE_TYPES``, or an oversized body raises ``CoverArtUnavailable``.
     """
     if client_factory is None:
         client_factory = httpx.Client
@@ -80,9 +83,9 @@ def cover_art(config_provider, cover_id, *, size, client_factory=None, salt_fact
     if response.status_code == 404:
         raise CoverArtUnavailable("Navidrome has no cover art for this ID.")
     response.raise_for_status()
-    content_type = str(response.headers.get("content-type", "")).split(";")[0].strip()
-    if not content_type.startswith("image/"):
-        raise CoverArtUnavailable("Navidrome did not return an image.")
+    content_type = str(response.headers.get("content-type", "")).split(";")[0].strip().lower()
+    if content_type not in RASTER_IMAGE_TYPES:
+        raise CoverArtUnavailable("Navidrome did not return a supported raster image.")
     body = response.content
     if len(body) > MAX_COVER_BYTES:
         raise CoverArtUnavailable("Cover art is larger than the allowed size.")

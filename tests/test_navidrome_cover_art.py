@@ -70,6 +70,25 @@ class CoverArtTests(unittest.TestCase):
         with self.assertRaises(client.CoverArtUnavailable):
             self.fetch(FakeResponse(content_type="application/json", body=b'{"error": "x"}'))
 
+    def test_supported_raster_types_pass_through(self):
+        for content_type in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+            with self.subTest(content_type=content_type):
+                (returned, _), _ = self.fetch(FakeResponse(content_type=content_type))
+                self.assertEqual(returned, content_type)
+
+    def test_svg_is_refused_even_with_a_matching_image_prefix(self):
+        for content_type in ("image/svg+xml", "image/svg+xml; charset=utf-8", "IMAGE/SVG+XML"):
+            with self.subTest(content_type=content_type):
+                with self.assertRaises(client.CoverArtUnavailable):
+                    self.fetch(FakeResponse(content_type=content_type, body=b"<svg onload=alert(1)>"))
+
+    def test_other_active_or_unlisted_types_are_refused(self):
+        for content_type in ("text/html", "application/xhtml+xml", "application/octet-stream",
+                             "image/avif", "image/x-icon", "image/bmp"):
+            with self.subTest(content_type=content_type):
+                with self.assertRaises(client.CoverArtUnavailable):
+                    self.fetch(FakeResponse(content_type=content_type))
+
     def test_missing_content_type_is_unavailable(self):
         with self.assertRaises(client.CoverArtUnavailable):
             self.fetch(FakeResponse(content_type=None))

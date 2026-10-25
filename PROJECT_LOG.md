@@ -2,7 +2,7 @@
 
 - **Owner decisions:** the 10% sanity threshold is approved; the recommendation snapshot's unscoped key is accepted as a deferred follow-up; owned artwork must be served.
 - **Change:** `GET /api/owned/artwork/{id}` (`app/api/owned_artwork.py`) returns Navidrome cover art through a signed `getCoverArt` request made on the server. `integrations/navidrome/client.py` gained `cover_art()`, and its request signing is shared with `api_call`. Owned results carry `artwork_url` pointing at this route.
-- **Tests run (focused):** `test_navidrome_cover_art.py` (7), `test_api_owned_artwork.py` (5), `test_navidrome_client.py`, `test_discovery_search_query.py` (20), plus the earlier P1 modules. The stub end-to-end check returned 200 `image/jpeg` with `Cache-Control: private, max-age=3600`.
+- **Tests run (focused):** `test_navidrome_cover_art.py` (10, including the raster allowlist and SVG refusal), `test_api_owned_artwork.py` (5), `test_navidrome_client.py`, `test_discovery_search_query.py` (20), plus the earlier P1 modules. The stub end-to-end check returned 200 `image/jpeg` with `Cache-Control: private, max-age=3600`.
 - **Not verified:** browser rendering of artwork (no UI yet); behavior against a real Navidrome cover endpoint.
 
 ## 2026-10-25 — Global search P1 backend (PR #609)
