@@ -1,8 +1,10 @@
 ## 2026-10-25 — Global search P2, slice B (branch `search-p2b`)
 
+- **Merge:** PR [#614](https://github.com/abucalip/navi-librarian/pull/614) squash-merged as `f2da69505bce733f62980881fd993ed02e722914` from reviewed head `1da2c0ba710d7abe0a82f3f3a846d9c31a5c7976`. No publication, deployment, or runtime verification.
+
 - **Built:** the artist page's `bio` and `missing_albums` sections, run on separate threads under the 3.0 s deadline. `missing_albums` resolves the owned artist's MusicBrainz identity by exact name, browses its studio albums, drops owned and duplicate albums, and orders by ListenBrainz listen count (`discovery/search/artist_sections.py`, `providers.py` browse, `network.py` `artist_network`). `bio` reuses the existing bio service through a route adapter (`app/api/search.py`).
 - **Contract:** section 8.0 rule (agents never run the full unit suite); section 12.3 to 12.5 record slice B, its deviations and what is still open.
-- **Verification:** focused modules only (164 passed, including the new artist-section and browse tests). Guard scripts pass. Not run: the full unit suite (CI runs it), live provider calls, the artist route against the real `navidrome_server`.
+- **Verification:** focused modules reported 164 passed, including the new artist-section and browse tests. On exact PR head `1da2c0ba710d7abe0a82f3f3a846d9c31a5c7976`, all four required workflows passed: Docker packaging/full unit suite/image build (`40241617604`; unit tests and image build succeeded), Python syntax and safety checks (`40241617609`), container runtime smoke (`40241617581`), and validation-only multi-architecture image validation (`40241617635`, publishing paused). The full unit suite passed in CI and was not run manually. Release workflow validation passed (`40241617634`); publishing was skipped. Not verified: live provider calls and the artist route against the real Navidrome server. No browser test was applicable.
 - **Still open:** the "Not in your library" UI group; Last.fm on the artist page.
 
 ## 2026-10-25 — Global search P2, slice A (branch `search-p2`)
