@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **revised after the fourth PR #608 review; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
+Status: **revised after the final review (Opus, medium effort) of PR #608; pending re-review.** Not implemented. P1 does not start until this revision is approved. Per `PRODUCT.md`, no endpoint or field may be added without an approved contract; sections 3 to 6 are that contract.
 
 ## 1. Owner decisions (recorded)
 
@@ -15,7 +15,7 @@ Status: **revised after the fourth PR #608 review; pending re-review.** Not impl
 | Similar artists | Include ListenBrainz from the start. |
 | Transport | SSE streaming. |
 | Library page | Both a standalone library page and top-bar search. |
-| Library size | **12,097 songs, 1,744 albums, 733 artists** (Navidrome counts; artists are whatever Navidrome returns). |
+| Library size | **12,097 songs and 733 artists** (Navidrome counts; artists are whatever Navidrome returns), **1,744 albums** (owner-supplied, not probed). |
 | Local MusicBrainz replication | Not now. Reopen only if measured search timings show the public API is the bottleneck. |
 
 ## 2. Constraints that shape the design
@@ -35,12 +35,12 @@ These are proposed acceptance targets. P1 and P5 measure them; none is claimed a
 | Time to first owned result, warm index, server | p95 ≤ 100 ms | Measured from request receipt to the first `result` event. |
 | Time to first owned result, browser | p95 ≤ 250 ms | Includes rendering. Owned results are shown without waiting for any `source` event. |
 | Time to first external result, cache miss | p95 ≤ 1.5 s | Measured from request receipt to the first external `result` event. |
-| Terminal `done` event | ≤ 3.0 s server, always | Enforced by the deadline. |
+| Terminal `done` event | sent within 3.0 s of request receipt (the deadline), plus at most 100 ms of write latency | Enforced by the deadline. |
 | Browser-rendered complete results | ≤ 4.0 s | End-to-end, including network and rendering. |
 | Cache hit, all sources | terminal `done` ≤ 300 ms | Every `source` event reports `cached`. |
 | Index refresh | Background; target ≤ 10 s, measured in P1 | Never on the request path. The 1.8 s probe for song paging is a lower bound, not a build time. |
 | Slow or unavailable provider | Reported `timeout` or `failed` at the deadline; other sources and owned results unaffected | Verified by a test with a stubbed slow provider. |
-| Deadline expiry | `done` with `deadline_hit: true` within 3.0 s + 100 ms | Verified by a test. |
+| Deadline expiry | `done` with `deadline_hit: true`, sent within 3.0 s + 100 ms of request receipt | Verified by a test. |
 
 ## 3. Endpoints
 
@@ -115,22 +115,46 @@ Response:
 
 Artist page. `key` is the normalized artist key, with `?mbid=` optional to disambiguate.
 
-Each section carries its own availability. Owned albums are available in P1. Missing albums are available from P2. Similar artists are available from P3. Bio is available where the existing bio service has one.
+Sections and their phases:
 
-Response:
+| Section | Phase | Why |
+|---|---|---|
+| `artist` | P1 | Owned data from the owned index. |
+| `owned_albums` | P1 | Owned data from the owned index. |
+| `bio` | P2 | Uses the existing bio service, a network source. |
+| `missing_albums` | P2 | Uses MusicBrainz, Last.fm and ListenBrainz. |
+| `similar` | P3 | Uses similar-artist fusion (section 7). |
+
+P1 builds only `artist` and `owned_albums`. Other sections report `not_in_this_build` until their phase.
+
+**JSON form** (default, no `Accept: text/event-stream`). The document has the same shape as the stream, collected into one object:
+
 ```json
-{"artist": {"name": "...", "mbid": "…|null", "owned": true, "bio": "…|null"},
- "owned_albums": {"available": true, "items": [{"name": "...", "year": 2019, "song_count": 12, "album_key": "…"}]},
- "missing_albums": {"available": false, "reason": "not_in_this_build", "items": []},
- "similar": {"available": false, "reason": "not_in_this_build", "items": []},
- "sources": [{"source": "lastfm", "state": "done"}]}
+{"capabilities": {"sections": {"artist": {"available": true, "reason": null},
+                               "bio": {"available": false, "reason": "not_in_this_build"},
+                               "owned_albums": {"available": true, "reason": null},
+                               "missing_albums": {"available": false, "reason": "not_in_this_build"},
+                               "similar": {"available": false, "reason": "not_in_this_build"}},
+                  "sources": {"navidrome": {"available": true, "reason": null}},
+                  "owned_index": {"available": true, "reason": null, "state": "fresh"}},
+ "sections": {"artist": {"available": true, "complete": true, "reason": null,
+                         "artist": {"name": "Radiohead", "mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711", "owned": true, "album_count": 9}},
+              "owned_albums": {"available": true, "complete": true, "reason": null,
+                               "items": [{"name": "...", "year": 2019, "song_count": 12, "album_key": "…"}]},
+              "bio": {"available": false, "complete": false, "reason": "not_in_this_build", "bio": null},
+              "missing_albums": {"available": false, "complete": false, "reason": "not_in_this_build", "items": []},
+              "similar": {"available": false, "complete": false, "reason": "not_in_this_build", "items": []}}}
 ```
 
-When a section is `available: true` with `items: []`, that is a valid empty result. When `available: false`, the `reason` says why (`not_in_this_build`, `source_disabled`, `source_failed`). The frontend renders the two cases differently.
+Each entry under `sections` is the same object as the stream's `section` event (section 3.8) with the `section` key removed. The JSON form and the stream therefore use one schema.
+
+**Artist-page capabilities** (the first event of the stream, and the `capabilities` object of the JSON form) use the vocabulary in section 3.6 with three keys: `sections` (one availability object per section name above), `sources`, and `owned_index`. The artist page has no `types` key.
+
+When a section is `available: true` with `items: []`, that is a valid empty result. When `available: false`, the `reason` says why. The frontend renders the two cases differently.
 
 Missing-album items, from P2, include `release_group_mbid`, `popularity` and `sources`. Similar items, from P3, include `score` and `reasons`.
 
-The artist page may stream. If `Accept: text/event-stream` is sent, the stream follows the same contract as search (section 3.7): it begins with exactly one `capabilities` event that uses the vocabulary in section 3.6, then emits one `section` event per section (schema in section 3.8), then exactly one terminal `done` or `error`. Otherwise it returns one JSON document, from cache where possible, with the same `available`/`reason` fields in each section.
+The artist page streams when `Accept: text/event-stream` is sent. The stream follows section 3.7: it begins with exactly one `capabilities` event, emits one `section` event per section (schema in section 3.8), then exactly one terminal `done` or `error`.
 
 ### 3.4 `GET /api/genres/{tag}`
 
@@ -153,7 +177,7 @@ The `capabilities` event (search) and the `reason` fields (artist page) use one 
 | Field | Values |
 |---|---|
 | `available` | `true` or `false` |
-| `reason` | `not_in_this_build`, `source_disabled` (no token or key), `source_failed` (last attempt failed), `index_building` (first build running; no index yet), `index_unavailable` (first build failed; no last-known-good index) |
+| `reason` | `not_in_this_build`, `source_disabled` (no token or key), `source_failed` (last attempt failed), `index_building` (first build running; no index yet), `index_unavailable` (first build failed; no last-known-good index), `deadline` (section events only; see section 3.8) |
 
 Availability is reported at three scopes, each with its own `available` and `reason`:
 
@@ -165,7 +189,7 @@ A capability that is not available is never reported as an empty list. The front
 
 ### 3.7 SSE stream semantics
 
-Invariants, each covered by an automated test in the phase that introduces the stream (P1 for the owned-only stream, P2 for provider streams):
+Invariants, each covered by an automated test in the phase that introduces it. Invariants 1 to 4 and 10 apply to the owned-only stream in P1. Invariants 5 to 9 apply once providers stream, in P2:
 
 1. Every stream begins with exactly one `capabilities` event.
 2. Owned `result` events are emitted before any provider `result` event.
@@ -174,7 +198,7 @@ Invariants, each covered by an automated test in the phase that introduces the s
 5. A provider failure or timeout emits a `source` event with `failed` or `timeout`. It does not end the stream, and it does not discard results already emitted.
 6. A provider that is timed out or cancelled emits no further `result` events. Results that arrive after cancellation are dropped on the server.
 7. Shared provider work is reference-counted by its active consumers (streams). A client disconnect removes that client's reference. Provider work is cancelled only when its last consumer disconnects. A disconnect is detected on write, and no further events are written to that client.
-8. Identical concurrent queries share one set of provider calls (request coalescing). Every consumer receives the same events from the shared work, and a consumer that joins later receives the events already emitted, followed by the rest.
+8. Identical concurrent queries share one set of provider calls (request coalescing). The coalescing key is source, config generation, normalized query, types and depth, the same as the provider cache key in section 5.2. Every consumer receives the same events from the shared work. A consumer that joins later receives the events already emitted, followed by the rest. A late joiner does not get a new deadline: the shared work keeps the deadline of its first consumer, and the late joiner's `done` reports that same `deadline_hit`.
 9. Work that is cancelled, or that hits the deadline, is never written to the cache as a complete result. Only complete results from a finished call are cached.
 10. The first event on any stream, whether search or artist page, is `capabilities`.
 
@@ -189,9 +213,40 @@ These are the contract targets for backend implementation and API contract tests
 | `available` | yes | bool | |
 | `reason` | yes when `available` is false; `null` otherwise | string or null | One of the vocabulary in section 3.6, plus `deadline` for sections. |
 
-**`capabilities` event** (always first, exactly once per stream):
+**`result` event** (one per entity; required fields by type):
 
-Example while the owned index is still building (owned types are therefore unavailable):
+| Field | Required | Type | Rule |
+|---|---|---|---|
+| `type` | yes | string | `artist`, `album`, `song` or `genre`. |
+| `owned` | yes | bool | |
+| `id` | yes | string | Navidrome ID for owned results; source-specific ID otherwise. |
+| `key` | yes | string | Normalized key (section 4.1). |
+| `name` | yes | string | Display name. For `song`, the title. |
+| `mbid` | yes | string or null | `null` when no MBID is known. |
+| `sources` | yes | array of strings | Non-empty for owned results (`["navidrome"]` at least). `[]` is not allowed. |
+| `artwork_url` | yes | string or null | |
+| `album_count` | artist only | int | |
+| `artist`, `artist_key`, `year`, `release_group_mbid` | album only | see section 3.1 | `year` may be `null`. |
+| `album`, `duration`, `track_number` | song only | | |
+| `tag`, `tag_source` | genre only | | `tag_source` is one of `musicbrainz`, `discogs`, `listenbrainz`. |
+| `owned_candidates` | no | array of keys | Optional. Present only when `owned` is `false`. |
+
+**P1 sends only owned `result` events.** Each owned result has `owned: true` and `sources: ["navidrome"]`.
+
+**`source` event** (one per provider state change). Required fields:
+
+| Field | Required | Type | Rule |
+|---|---|---|---|
+| `source` | yes | string | One of the sources in section 5.1. |
+| `state` | yes | string | `pending`, `done`, `failed`, `timeout`, `rate_limited`, `disabled` or `cached`. |
+| `count` | yes | int or null | `null` while `pending`. An int otherwise. |
+| `ms` | yes | int or null | `null` while `pending`. An int otherwise. |
+
+**P1 sends no `source` events**, because it has no providers. Its `done` reports `partial` as defined below.
+
+**`capabilities` event** (always first, exactly once per stream).
+
+Example in the P1 build, while the owned index is still building. Owned types are unavailable; Discogs is not in this build yet:
 
 ```json
 {"types": {"artist": {"available": false, "reason": "index_building"},
@@ -202,21 +257,21 @@ Example while the owned index is still building (owned types are therefore unava
              "musicbrainz": {"available": false, "reason": "not_in_this_build"},
              "lastfm": {"available": false, "reason": "not_in_this_build"},
              "listenbrainz": {"available": false, "reason": "not_in_this_build"},
-             "discogs": {"available": false, "reason": "source_disabled"}},
+             "discogs": {"available": false, "reason": "not_in_this_build"}},
  "owned_index": {"available": false, "reason": "index_building", "state": "building"}}
 ```
 
-Example once the owned index is fresh (the Discogs token is set, so Discogs participates):
+Example in the P4 build, once the owned index is fresh. The Discogs token is set; MusicBrainz, Last.fm and ListenBrainz are available:
 
 ```json
 {"types": {"artist": {"available": true, "reason": null},
            "album": {"available": true, "reason": null},
            "song": {"available": true, "reason": null},
-           "genre": {"available": false, "reason": "not_in_this_build"}},
+           "genre": {"available": true, "reason": null}},
  "sources": {"navidrome": {"available": true, "reason": null},
-             "musicbrainz": {"available": false, "reason": "not_in_this_build"},
-             "lastfm": {"available": false, "reason": "not_in_this_build"},
-             "listenbrainz": {"available": false, "reason": "not_in_this_build"},
+             "musicbrainz": {"available": true, "reason": null},
+             "lastfm": {"available": true, "reason": null},
+             "listenbrainz": {"available": true, "reason": null},
              "discogs": {"available": true, "reason": null}},
  "owned_index": {"available": true, "reason": null, "state": "fresh"}}
 ```
@@ -236,6 +291,8 @@ Every `section` event has the common fields below. The section's payload is one 
 | `available` | yes | bool | |
 | `complete` | yes | bool | `false` when the section ended early (deadline or source failure). |
 | `reason` | yes | string or null | `null` when `available` is true and `complete` is true. Otherwise one of `not_in_this_build`, `source_disabled`, `source_failed`, `deadline`. When `available` is true and `complete` is false, `reason` is `deadline` or `source_failed`. |
+
+`available: false` always implies `complete: false`. A section that is not available is never reported as complete.
 
 **Payload shape by section:**
 
@@ -280,7 +337,14 @@ Examples:
 {"elapsed_ms": 2930, "deadline_hit": false, "partial": false}
 ```
 
-All three fields are required. `partial` is `true` when any section, source or type is incomplete.
+All three fields are required. `partial` is `true` only when at least one of these holds:
+
+- the deadline was hit (`deadline_hit` is `true`);
+- a type the request asked for is unavailable with an `index_*` reason;
+- a source ended `failed`, `timeout` or `rate_limited`;
+- a section ended with `complete: false`.
+
+`not_in_this_build` and `source_disabled` never set `partial`. A P1 stream with no index problem is therefore `partial: false`, even though `genre` is not in this build.
 
 **`error` event** (terminal, fatal):
 
@@ -304,7 +368,8 @@ Lifecycle rules:
 - **Build**: a background job assembles a new index object from the snapshot and the full song pages. It is never built inside a request.
 - **Single flight**: one build runs at a time, guarded by one lock. A refresh requested while a build is running joins that build; it does not start a second full scan.
 - **Atomic swap**: the new index replaces the current one only after a build completes. The build is complete only when every song page succeeded and the final page was short. A failed or incomplete build leaves the last known-good index in place and sets `index_state: "stale"`.
-- **Sanity check**: a build whose song count falls by more than 10% from the last good index is rejected as suspicious and reported as stale. The threshold is a proposal to confirm in P1.
+- **Sanity check**: a build whose song count falls by more than 10% from the last good index is rejected as suspicious and reported as stale. The threshold is a proposal to confirm in P1. The check does not apply to the first build after a Navidrome generation change (below), because there is no comparable last good index.
+- **Navidrome generation change**: when the Navidrome credential or URL changes (section 5.2), the old index is dropped at once. Owned state becomes `building` and owned types are reported `index_building`, so no data from the previous server is served. The index is then rebuilt from the new server.
 - **First build**: before the first successful build, a search stream starts normally. Owned types are reported in `capabilities` with `available: false, reason: "index_building"`, and provider results may still arrive. If the first build fails and no last-known-good index exists, owned types are reported with `reason: "index_unavailable"`, the error is logged, and the next refresh trigger retries the build. A search never returns `503` for this case. This contract defines no `503` for index failures.
 - **Scope-owned search with no index**: the stream starts, owned types are unavailable as above, no provider calls are made, and the terminal `done` has `partial: true`.
 - **Refresh trigger**: the index is rebuilt when the library snapshot is rebuilt (its 10-minute TTL), and by the existing manual refresh path. Navidrome settings changes trigger a rebuild.
@@ -343,7 +408,7 @@ Each layer has one owner and one invalidation rule. The existing persistence (`_
 | Provider query results | `discovery/search/cache.py` | Persistent list store | `search:{source}:{config_generation}:{normalized query}:{types}:depth{50}` | 24 h TTL; any credential or setting change bumps the source's `config_generation` (below) | Stores a complete result set at fixed depth 50 per type, independent of request `scope` and `limit`. `scope` and `limit` are applied per request after the cache read. Failures, timeouts and cancelled work are not cached. A 1 h negative entry is cached only for definitive empty answers. |
 | Provider entity lookups (MBID) | the source's integration module | Persistent list store | `mbid:{source}:{config_generation}:{mbid}` (MusicBrainz, which has no credential, uses generation `0`) | 30-day TTL; any generation change for the source makes all of its entries unreachable | Same as above. |
 | Provider credentials and settings | `settings/service.py` | Existing settings store | Per-source `config_generation` counter | Every save that changes a credential (new token, replacement, clear) or a non-secret setting increments the counter. Old-generation entries become unreachable and are deleted in the background. | Tokens are never stored in cache keys, logs or responses. The counter is the only credential-derived value in a key. |
-| Similar artists | `discovery/similar_artists.py` (precompute job) | Persistent list store | `similar:{artist_mbid}:lastfm{gen}:listenbrainz{gen}:discogs{gen}` (generation of each credentialed source used to build the entry) | Daily precompute, same cadence as lens lists; 7-day TTL for on-demand entries; a generation change for any source it used makes the entry unreachable | Keep the previous entry on a failed recompute. |
+| Similar artists | `discovery/similar_artists.py` (precompute job) | Persistent list store | `similar:{artist_mbid}:navidrome{gen}:lastfm{gen}:listenbrainz{gen}:discogs{gen}` (generation of each credentialed source used to build the entry, including Navidrome for the owner-listening boost) | Daily precompute, same cadence as lens lists; 7-day TTL for on-demand entries; a generation change for any source it used makes the entry unreachable | Keep the previous entry on a failed recompute. |
 | Genre tag results | the genre module (P4) | Persistent list store | `genre:{source}:{config_generation}:{tag}` | 7-day TTL; generation change makes entries unreachable | Same as provider results. |
 
 `config_generation` is a per-source integer stored with that source's settings. It is incremented on every save that changes a credential or non-secret setting: setting a first token, replacing one non-empty token with another, or clearing a token. The increment, not a hash of the token, is what separates one credential's cache from another's, so no token-derived value is stored or logged. Entries under an old generation are never read again.
@@ -356,6 +421,12 @@ The generation rule applies to every credentialed source: Navidrome (user, passw
 - Changes to an environment variable are read only at process start. When the process starts with an environment-sourced credential in use, it bumps that source's generation once at startup. This is conservative: a restart may refill that source's cache, but it can never serve an entry written under a different environment value. The environment value is not stored, logged or put in a key.
 - Clearing a stored setting falls back to the environment value. That fallback is a credential change, so it bumps the generation.
 
+**Transport and logging.** Secrets do not appear in cache keys, logs, responses or error messages:
+
+- The Discogs token is sent in the `Authorization` header (`Discogs token=…`), not in the query string (**to verify** against the Discogs API documentation).
+- Last.fm's API key is a query parameter, because that is how Last.fm's API takes it. Request logging for these hosts must redact query parameters before writing, and no full URL that contains a credential is logged.
+- `POST /api/settings/discogs/test` returns an `error` string that follows the `message` rule in section 3.8. It never echoes a provider response body or a request URL.
+
 ## 6. Caching TTLs (summary)
 
 | Data | TTL |
@@ -366,7 +437,6 @@ The generation rule applies to every credentialed source: Navidrome (user, passw
 | MBID entity lookups | 30 days |
 | Similar artists | 7 days; precomputed daily for library artists |
 | Genre tag results | 7 days |
-| Songs search (Navidrome, on-demand fallback only) | 10 min |
 
 Cache misses and failures are never stored as hits. TTLs are fixed; a hit does not extend them.
 
@@ -393,8 +463,8 @@ Correctness tests land in the same PR as the code they cover.
 
 | Phase | Required automated tests |
 |---|---|
-| P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale`, `building` and `unavailable` states; first build failure with no last-known-good index reports `index_unavailable` in an HTTP 200 stream or response, never a `503` and never an empty library; `scope=owned` with no index emits a `done` with `partial: true` and makes no provider calls; owned identity and ownership matching, including false matches (same name, different MBID; Various Artists); `capabilities` event first; owned results before any provider event; library artist list paging and `index_state`. |
-| P2 | Provider isolation (one failing provider does not affect others); entity-lookup and genre entries are unreachable after a generation change; schema tests for `capabilities` against both examples in section 3.8 (owned types unavailable with `index_building`, and fresh with owned types available); schema tests for `section` events covering each payload shape: `artist` object (available, unavailable with `artist: null`), `bio` object (with text), `bio: null` (valid empty), and list sections with `items` (available, empty, partial with `reason: "deadline"`, and source-failed with `items: []`); the `items` field absent on `artist` and `bio` events; the `done` payload matches section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 3 to 10 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
+| P1 | Complete song retrieval and paging (including a short final page and an empty library); index build single flight; failed or incomplete build keeps the last good index; `stale`, `building` and `unavailable` states; first build failure with no last-known-good index reports `index_unavailable` in an HTTP 200 stream or response, never a `503` and never an empty library; `scope=owned` with no index emits a `done` with `partial: true` and makes no provider calls; Navidrome generation change drops the index to `building` and skips the 10% sanity check on the first rebuild, with a test that the previous server's data is never served; owned identity and ownership matching, including false matches (same name, different MBID; Various Artists); SSE invariants 1 to 4 and 10 (section 3.7); schema tests for `capabilities` (the P1 example in section 3.8), `result` (owned results only, required fields), `done` (including `partial` false for a P1 stream with `genre` not in this build), and `error` (`code` and `message` present, no credential in `message`); no `source` events in P1; artist-page `artist` and `owned_albums` sections with the JSON form and the stream form matching the same schema; library artist list paging and `index_state`; index build time recorded against the section 2.1 target. |
+| P2 | Provider isolation (one failing provider does not affect others); entity-lookup and genre entries are unreachable after a generation change; schema tests for `capabilities` against the P2 build (MusicBrainz, Last.fm and ListenBrainz available; Discogs `not_in_this_build`) and for `source` events (`pending` with `count` and `ms` null; terminal states with ints); schema tests for `section` events covering each payload shape: `artist` object (available, unavailable with `artist: null`), `bio` object (with text), `bio: null` (valid empty), and list sections with `items` (available, empty, partial with `reason: "deadline"`, and source-failed with `items: []`); the `items` field absent on `artist` and `bio` events; the `done` payload matches section 3.8; cross-provider deduplication by MBID and by key plus year; MusicBrainz 503 backoff and retry; 100-term batching and paging; rate-limit skip (`rate_limited`); deadline expiry (`deadline_hit`); SSE invariants 5 to 9 (section 3.7); shared-work cancellation: one consumer disconnects while another continues, and the shared call is cancelled only when the last consumer disconnects; cancelled or deadline-expired work is not cached; provider cache stores depth 50 and serves smaller `limit` values by slicing; `scope=owned` never reads or writes the provider cache. |
 | P3 | Seed artist exclusion from `lb-radio`; owned candidates moved to the owned list; ranking with no ListenBrainz score; precompute failure keeps the previous entry; `similar` section availability; artist-page stream begins with `capabilities`. |
 | P4 | Discogs token handling (never in responses, logs or cache keys); first token set, token replacement (non-empty to different non-empty), and clear each bump `config_generation`, and old-generation entries are never read from the query, entity-lookup, genre or similar-artist layers; environment-sourced `DISCOGS_TOKEN`: a process start with the variable set bumps the generation, a stored setting takes precedence over the variable, and clearing the stored setting falls back to the variable with a generation bump; a `capabilities` payload for each state (`not_in_this_build`, `source_disabled`, available); the `capabilities` payload never contains a credential value; attribution text present on every Discogs-sourced item; genre matching; `disabled` state without a token. |
 | P5 | Latency measurements against section 2.1 targets, with results recorded in `PROJECT_LOG.md`; `TEST_PLAN.md` entries for each phase. |
@@ -438,12 +508,12 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 ### Open
 
-No open items in this section. The fourth re-review items are addressed in section 3.8 (consistent `capabilities` examples, the `reason` rule for partial sections, and the `artist` and `bio` payload shapes) and in section 8.1 (schema tests). Re-review is requested before P1 starts.
+No open items in this section. The final review's blocking items are addressed in: `result` and `source` schemas and the P1 `source` rule (3.8); the `partial` rule (3.8); invariants and tests moved to P1 (3.7, 8.1); phase-matched `capabilities` examples (3.8); the Navidrome generation drop and sanity-check exception (4.1); and the artist-page phases, JSON form, and capabilities (3.3). Non-blocking items are addressed in sections 2.1, 3.6, 3.7, 3.8, 5.2, 6 and 8.1. Re-review is requested before P1 starts.
 
 ## 10. Phasing
 
-- **P1**: owned search and library page, with the owned index lifecycle (section 4.1), the `capabilities` event, and no network sources. Ships first; no new provider risk. Owned types only; genre and external types report `not_in_this_build`.
-- **P2**: MusicBrainz, Last.fm and ListenBrainz for not-owned artists and albums; deduplication; provider streaming; the deadline runner; missing-album sections on the artist page.
+- **P1**: owned search and library page, with the owned index lifecycle (section 4.1), the `capabilities` event, the owned-only stream, the artist page's `artist` and `owned_albums` sections, and no network sources. Ships first; no new provider risk. Owned types only; genre and external types report `not_in_this_build`.
+- **P2**: MusicBrainz, Last.fm and ListenBrainz for not-owned artists and albums; deduplication; provider streaming and `source` events; the deadline runner; the artist page's `bio` and `missing_albums` sections.
 - **P3**: similar artists with fusion and daily precompute; the `similar` section.
 - **P4**: Discogs integration, including the Settings page (section 3.5); genre pages.
 - **P5**: consolidated integration and performance: latency measurement against section 2.1, and `TEST_PLAN.md` entries.
