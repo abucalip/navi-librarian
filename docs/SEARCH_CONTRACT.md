@@ -6,7 +6,9 @@ Status: **approved by the owner; finalized; pending review before implementation
 
 | Topic | Decision |
 |---|---|
-| Discogs | Integrate, with a configuration page in Settings (section 3.5). |
+| Discogs | Integrate, with a configuration page in Settings (section 3.5). Authentication is a **personal access token**. |
+| Discogs caching | Private single-owner app, so the six-hour cap that applies to public apps does not apply. Standard cache TTLs (section 6). The owner confirmed the attribution wording "Data provided by Discogs" is still shown next to Discogs data. |
+| Batch lookups | Use a batch request wherever a provider offers one, for every provider. Where none exists, coalesce concurrent identical requests and cache the results (section 2). |
 | Latency | Per search, complete (or partial with status) within **4 seconds**. |
 | Provider budgets | No per-day ceiling. Providers limit per minute; the limiter queues and skips, it does not cap daily totals. |
 | Cache | Required. The library is large. |
@@ -19,6 +21,7 @@ Status: **approved by the owner; finalized; pending review before implementation
 
 - **Rate limits decide the spine.** MusicBrainz allows an average of 1 request/second per source IP, with a 503 when exceeded. Discogs is reported at 60 requests/minute authenticated and 25/minute unauthenticated (secondary sources only; see section 9). Inside a 4-second window MusicBrainz can answer only about 3 uncached requests. So MusicBrainz is used for identity resolution of the top few candidates only, and its answers are cached for a long time. Bulk discovery depends on Last.fm, ListenBrainz and Discogs, and on the cache.
 - **Owned results never wait on the network.** They come from the in-process index built from `discovery/library_snapshot.py`.
+- **Batch first.** Every provider call goes through the batch path when the provider has one: one request for many IDs, or one request for many queries. Single-item calls are the fallback. Batching reduces requests per minute, which is the constraint that matters most here.
 - **The whole song library fits in memory.** At 12,000 songs and 1,744 albums, an in-memory song index is small. It is rebuilt with the library snapshot, not queried per keystroke.
 - **Deadline, not per-source timeouts alone.** Each search has one server-side deadline of **3.0 s** (1 s headroom for network and rendering). Sources still running at the deadline are cancelled and reported as `timeout`.
 
@@ -103,13 +106,13 @@ Genre page: top owned and unowned artists and albums for a tag, with the tag's s
 
 ### 3.5 Discogs settings
 
-Mirrors the existing Last.fm settings contract (`app/api/settings.py`, `settings/service.py`), so the token is never returned to the browser.
+Mirrors the existing Last.fm settings contract (`app/api/settings.py`, `settings/service.py`), so the token is never returned to the browser. Authentication is a Discogs **personal access token** (decided by the owner). The OAuth consumer key and secret in `config.env` are not used by this integration.
 
 - `GET /api/settings/discogs` → `{"token_configured": true|false, "source": "settings|environment|none"}`. The token value is never included.
 - `PUT /api/settings/discogs` with `{"token": "..."}` → saves the token; an empty string clears it. Returns the same shape as GET.
 - `POST /api/settings/discogs/test` → one lightweight authenticated request; returns `{"ok": true|false, "error": "..."}`.
 
-The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a password-type input, a configured/not-configured status line, Save, and Test. The token can also come from an environment variable, following the existing `LASTFM_*` pattern. Discogs is disabled, and the search source reports `disabled`, until a token is configured.
+The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a password-type input, a configured/not-configured status line, Save, and Test. The token can also come from an environment variable, `DISCOGS_TOKEN`, following the existing `LASTFM_*` pattern. Discogs is disabled, and the search source reports `disabled`, until a token is configured.
 
 ## 4. Search and matching
 
@@ -126,7 +129,7 @@ The Settings page gets a Discogs section beside Last.fm and ListenBrainz: a pass
 | Last.fm | Fast text search, `getSimilar`, top albums, popularity | Documented per-second cap | Primary for bulk candidates. |
 | ListenBrainz | Release-group popularity, tag radio, similarity | Per-minute header-driven | Popularity already implemented in `integrations/listenbrainz/popularity.py`. |
 | MusicBrainz | MBIDs, release-groups, tags | About 1 req/s | Identity for the top candidates only; long cache. |
-| Discogs | Styles and genres, release variants | 60 req/min authenticated, 25/min unauthenticated (secondary sources) | New integration. Credentials: `DISCOGS_CONSUMER_KEY`/`SECRET` already appear in `config.env`; see section 9 on the auth method. |
+| Discogs | Styles and genres, release variants | 60 req/min authenticated (secondary sources) | New integration. Personal access token in settings. No batch endpoint is known; requests are coalesced and cached. |
 | Deezer | Artwork, tracklists | Existing | Already integrated. |
 | Wikidata | Bios, genre hierarchy | Existing | Already integrated. |
 
@@ -137,7 +140,7 @@ Each source has its own token bucket and concurrency cap in one limiter module. 
 | Data | Key | TTL |
 |---|---|---|
 | Owned index | snapshot | 10 min (existing) |
-| Text search results per source | source + normalized query + types | 24 h (Discogs: 6 h, see section 9) |
+| Text search results per source | source + normalized query + types | 24 h |
 | Negative search results | same | 1 h |
 | MBID entity lookups | source + MBID | 30 days |
 | Similar artists | artist key or MBID | 7 days; precomputed daily for library artists |
@@ -176,16 +179,19 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 ### Partly verified
 
 - **Discogs rate limits.** Secondary sources report 60 requests/minute authenticated and 25/minute unauthenticated ([Discogs-MCP PR #69](https://github.com/WOIII-me/Discogs-MCP/pull/69), [Sonovault](https://sonovault.now/resources/discogs-api-rate-limits)). Responses over the limit return 429.
-- **Discogs caching.** Secondary sources state a **six-hour** maximum cache age and require the notice "Data provided by Discogs" next to any Discogs-sourced data. I could not read the official [API Terms of Use](https://support.discogs.com/hc/en-us/articles/360009334593-API-Terms-of-Use); the server returned HTTP 403. The terms, as quoted, forbid displaying API content more than six hours behind discogs.com, and caching it for longer than needed. **Until the official text is read, the Discogs cache TTL is six hours, not the 7 days in section 6.** Attribution is added to every Discogs-sourced item.
+- **Discogs caching and attribution (owner-confirmed).** The owner confirmed the attribution wording "Data provided by Discogs" is correct. The six-hour cache cap applies to public apps only; this app is private and single-owner, so the standard TTLs in section 6 apply. The official terms page was still not readable by the agent, so the owner's reading is the basis for this.
 - **ListenBrainz similar artists.** The core docs page has no artist-similarity route. A search snippet of the ListenBrainz docs lists `/1/lb-radio/artist/{seed_artist_mbid}` as returning similar artists with listen counts and recording MBIDs. The Labs `similar-artists/json` route is undocumented, and sources disagree on whether its parameter is `artist_mbid` or `artist_mbids`. The plan uses the documented route. The response shape must be checked against a live call before implementation.
+
+### Decided
+
+- **Discogs authentication:** personal access token, stored in settings or `DISCOGS_TOKEN` (section 3.5).
 
 ### Open
 
-1. **Read the Discogs terms in a browser**, and confirm the caching clause, the attribution wording, and the rate limits. If the six-hour cap holds, the Discogs cache TTL in section 6 changes to six hours.
-2. **Discogs authentication method.** `config.env` holds `DISCOGS_CONSUMER_KEY`, `DISCOGS_CONSUMER_SECRET`, and OAuth request, authorize and access URLs. That is the OAuth 1.0a consumer flow, not a personal token. Section 3.5 currently says "token." The owner should choose: OAuth (per-user, as the config suggests) or a personal access token, which is simpler for a single-owner app (**to verify** that it is available for this account).
-3. **Artist count**: 733 from the live server versus 734 reported. Confirm which artist is missing before sizing the artist index.
-4. **Live check of the ListenBrainz `lb-radio` response** before P3.
-5. **Look for a MusicBrainz local-replication decision.** At the current scale, rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
+1. **Artist count**: 733 from the live server versus 734 reported. Confirm which artist is missing before sizing the artist index.
+2. **Live check of the ListenBrainz `lb-radio` response** before P3.
+3. **Batch endpoints per provider.** Batch requests were not verified for any provider. Before P2, confirm each one: MusicBrainz (lookup by many MBIDs, or Lucene `OR` search), ListenBrainz (any batch POST for metadata or similarity), Last.fm (no batch method known), Discogs (no batch method known). Where none exists, requests are coalesced and cached.
+4. **MusicBrainz local replication.** At the current scale rate limits are the constraint. If bulk MusicBrainz use grows, the public service will not be enough.
 
 ## 10. Phasing
 
