@@ -87,6 +87,19 @@ The harness compares the first five days and last five days of the supplied hist
 
 This is a profile-responsiveness experiment, not a chronological future-listen hit-rate/nDCG evaluation when the capture postdates the windows. A successful deterministic baseline replay remains a separate gate. Keep both the capture and any identity-bearing reports outside the repository with owner-only permissions.
 
+## Global search P1 focused checks
+
+Run these focused modules for changes to the owned search index, routes and settings generation (contract P1, `docs/SEARCH_CONTRACT.md` section 11):
+
+```sh
+python -m unittest discover -s tests -p 'test_discovery_search_*.py' -v
+python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
+python -m unittest discover -s tests -p 'test_navidrome_generation.py' -v
+python -m unittest discover -s tests -p 'test_discovery_library_snapshot.py' -v
+```
+
+The index tests run builds inline (`background=False`); the route tests inject an index and a fake librarian, so none of them calls Navidrome. A live check against a real Navidrome server is a separate, owner-approved step.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

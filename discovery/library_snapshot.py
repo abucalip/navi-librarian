@@ -78,7 +78,10 @@ def build_library_snapshot(
         and now() - cached["generated_at"] < cache_ttl_seconds
         and (
             not cached["payload"].get("albums")
-            or "song_count" in cached["payload"]["albums"][0]
+            or (
+                "song_count" in cached["payload"]["albums"][0]
+                and "artist_id" in cached["payload"]["albums"][0]
+            )
         )
     ):
         return cached["payload"]
@@ -103,6 +106,7 @@ def build_library_snapshot(
         {
             "id": album.get("id"),
             "artist": album.get("artist", ""),
+            "artist_id": album.get("artistId"),
             "album": album.get("name", ""),
             "year": album.get("year"),
             "song_count": int(album.get("songCount") or 0),

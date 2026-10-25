@@ -1,3 +1,13 @@
+## 2026-10-25 — Global search P1 backend (branch `search-p1`)
+
+- **Scope:** `docs/SEARCH_CONTRACT.md` P1 backend, approved by the owner on 2026-10-25 against `main` `ddb58a8` (PR #608). Adds the owned index (`discovery/search/`), `GET /api/search` (SSE, owned results only), `GET /api/artists/{key}` (JSON and SSE, owned sections), and `GET /api/library/artists`, with routes in `app/api/search.py` and `app/api/library.py`. Supporting changes: album `artist_id` in the library snapshot; a `navidrome_generation` counter in settings, bumped on any Navidrome URL, user or password change.
+- **Decisions:** recorded in `docs/SEARCH_CONTRACT.md` section 11 and `docs/DECISIONS.md` D-017.
+- **Tests run (focused, by the agent):** `test_discovery_search_*.py` (46 tests at last run), `test_api_search_routes.py`, `test_navidrome_generation.py`, `test_discovery_library_snapshot.py`, `test_service_settings.py`, `test_settings_routes.py`, `test_app_legacy_import_boundary.py`, `test_auth_routes_integration.py`, `test_api_discovery_injection.py`, all passing. The full unit suite was not run by the agent (owner rule); CI runs it on the PR head.
+- **Guards:** `scripts/check_server_size.py` passes (`navidrome_server.py` 2,457 lines, ceiling 2,650); `scripts/check_app_legacy_imports.py` passes.
+- **Local end-to-end check (not a repository test):** a throwaway Subsonic stub on localhost with an app account created through `/api/auth/setup`. Library paging reported `fresh`; search streamed `capabilities`, owned `result` events and one `done` with `partial: false`; an ambiguous artist key returned `409` and `?id=` resolved it.
+- **Not verified:** the UI (not built), browser behavior, latency targets in section 2.1, behavior against the owner's real Navidrome server, and CI on the PR head.
+- **Release state:** branch only. No merge, publication or deployment.
+
 ## 2026-10-25 — Current tastes replaces Now (PR #607)
 
 - **Merged:** PR [#607](https://github.com/abucalip/navi-librarian/pull/607), squash commit `690c718d8f89dfb9a1d5d28482b8335f4fde4f59`, from reviewed head `2b5e3f62540710a9487ad5fb2858a7eb167750d7`.

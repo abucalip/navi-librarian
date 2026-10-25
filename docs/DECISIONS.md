@@ -138,3 +138,12 @@ Record decisions here when they constrain future implementation. Add new entries
 **Reason:** The server is the compatibility boundary (D-001) and already exceeds the size ceiling checked by `scripts/check_server_size.py`. Growing it makes the decoupling work (D-002 to D-015) harder to finish.
 
 **Consequence:** PR #592 (Engine 2 Phase 4 slice 3, merged as `0a8f9090fbb218f6508b33d9e72ebedbcdc64fd1`) added the lens adapters to `navidrome_server.py`, which broke this rule. The follow-up (PR #593, merged as `8ef9eb6e1f6e7099ae0369f0bd2471872fab816b`) moved them to `discovery/lens_service.py`, wired from `app/api/discovery.py` (lens names and the manual "all" refresh) and `app/main.py` (daily refresh), and returned `navidrome_server.py` to its pre-PR-592 content. The size guard does not yet enforce this rule; enforcing it (a ceiling at the current line count) is a separate, owner-approved change.
+
+## D-017 — Owned search state is an in-process index keyed by a Navidrome generation
+
+**Decision:** Global search and library browsing read an in-process owned index in `discovery/search/`, built in the background from the library snapshot and a paged song inventory. Each build is keyed by a non-secret Navidrome generation counter in the settings store. The counter increments whenever the Navidrome URL, user or password changes, so a changed server's data is never served. A completed build replaces the previous index atomically; a failed or suspicious build keeps the last known-good index and reports `stale`.
+
+**Reason:** Owned results must not wait on the network (SEARCH_CONTRACT section 2), and the library is large enough (12,097 songs) that a request-time scan would be too slow. A counter, rather than a hash of the password, keeps credential-derived values out of keys, logs and responses.
+
+**Consequence:** The recommendation path still reads the unscoped library snapshot, so the generation rule covers search only until the follow-up in SEARCH_CONTRACT section 11.4. Index state is per process; a restart rebuilds it from the snapshot.
+

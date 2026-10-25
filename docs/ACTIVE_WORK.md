@@ -44,6 +44,14 @@ Goal: several complementary lists of 10 ("lenses") from one shared candidate poo
 
 Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_MAX_PAGES` to 8 when coverage is on, add a settings control, or add extra data sources. The family-coverage policy itself is merged in PR #573, remains opt-in, and leaves `CF_MAX_PAGES` at 4. Listed in `engine2.md` under "Open decisions". Nothing in Phase 1 changes ranking weights or defaults.
 
+## 2d. Global search and library browsing — P1 in review
+
+- Contract: [SEARCH_CONTRACT.md](SEARCH_CONTRACT.md), approved by the owner on 2026-10-25. Section 11 is the P1 record.
+- **P1 backend:** implemented on branch `search-p1` from `main` (`ddb58a8`). Owned search, the library artists route, and the artist page's owned sections. No network sources. Pending: CI on the exact PR head, owner review, and merge.
+- **Remaining P1 work:** the top-bar search box and the library page (browser UI, with the UI gates in `TEST_PLAN.md`). Not started.
+- **Open decisions (contract 11.4):** the 10% sanity threshold; the recommendation snapshot's generation key; the manual refresh route; owned artwork.
+- Not published or deployed.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
