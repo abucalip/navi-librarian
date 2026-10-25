@@ -305,12 +305,17 @@ def resolve_popularity(
     # Album level: cache first, then resolve releases for the groups still unknown.
     album: dict[str, int | None] = {}
     cached_years: dict[str, int | None] = {}
+    # Hits cached before release years were stored: their year is filled below.
+    legacy: dict[str, dict[str, Any]] = {}
     pending = []
     for group in groups:
         hit, value = _cached(cache_get, f"{ALBUM_CACHE_PREFIX}{group}")
         if hit:
             album[group] = value["listeners"]
-            cached_years[group] = value.get("release_year")
+            if "release_year" in value:
+                cached_years[group] = value["release_year"]
+            else:
+                legacy[group] = value
         else:
             pending.append(group)
     if pending and budget.left > 0:
@@ -339,6 +344,18 @@ def resolve_popularity(
                 _store(cache_set, f"{ALBUM_CACHE_PREFIX}{group}", entry)
                 album[group] = stats["listeners"] if stats else None
                 cached_years[group] = release_years.get(group)
+
+    # One release search fills the year of the legacy hits, then each entry is rewritten with it so the
+    # next run takes the fast path. Listeners are not refetched. A group with no date is stored with
+    # None, as a miss is; a search that failed for good is therefore not retried until the entry expires.
+    if legacy:
+        fetch_release_mbids(get, list(legacy), headers=headers, sleep=sleep, timeout=timeout, years=release_years)
+        for group, value in legacy.items():
+            cached_years[group] = release_years.get(group)
+            try:
+                cache_set(f"{ALBUM_CACHE_PREFIX}{group}", {**value, "release_year": cached_years[group]})
+            except Exception:
+                pass
 
     for group in groups:
         listeners = album.get(group)
