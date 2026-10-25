@@ -94,11 +94,15 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("pluralize(external, 'match', 'matches') + ' not in your library'", self.new_js)
         self.assertNotIn("in your library' + ' not", self.new_js)
 
-    def test_provider_status_is_shown_one_line_per_source_from_source_events(self):
-        self.assertIn('<ul id="globalSearchSources" class="search-sources"', self.html)
-        self.assertIn("source.addEventListener('source'", self.new_js)
-        self.assertIn("function renderSourceStatus(listEl, update)", self.new_js)
-        self.assertIn("'Some sources did not finish.'", self.new_js)
+    def test_search_panel_shows_two_sections_and_no_provider_names_or_status(self):
+        # Direction from the owner: while typing, the panel shows only "In your library" and
+        # "Not in your library". Provider names, provider status and popularity never appear.
+        self.assertNotIn("globalSearchSources", self.html)
+        self.assertNotIn("source.addEventListener('source'", self.new_js)
+        self.assertNotIn("renderSourceStatus", self.new_js)
+        self.assertNotIn("Some sources did not finish", self.new_js)
+        for provider in ("MusicBrainz", "Last.fm", "ListenBrainz", "Discogs"):
+            self.assertNotIn(provider, self.new_js[self.new_js.index("function searchItemName"):self.new_js.index("// ---- Library list ----")])
 
     def test_only_owned_artists_open_the_artist_view(self):
         self.assertIn("const opens = item.type === 'artist' && item.owned;", self.new_js)

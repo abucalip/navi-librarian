@@ -2969,9 +2969,6 @@ loadDashboardPicks();
 const SEARCH_DEBOUNCE_MS = 250;
 const SEARCH_GROUPS = [['artist', 'Artists'], ['album', 'Albums'], ['song', 'Songs']];
 const LIBRARY_PAGE_SIZE = 60;
-// Labels for the provider source status line. Keys are the source names from the `source` event.
-const SOURCE_LABELS = {navidrome: 'Your library', musicbrainz: 'MusicBrainz', lastfm: 'Last.fm', listenbrainz: 'ListenBrainz', discogs: 'Discogs'};
-const SOURCE_PROBLEM_STATES = ['failed', 'timeout', 'rate_limited'];
 const TYPE_LABELS = {artist: 'Artist', album: 'Album', song: 'Song'};
 const INDEX_REASON_MESSAGES = {
   index_building: 'Your library is still being indexed. Try again in a moment.',
@@ -3063,10 +3060,8 @@ function startGlobalSearch(rawQuery) {
   const groupsEl = $('globalSearchGroups');
   const externalEl = $('globalSearchExternal');
   const externalList = $('globalSearchExternalList');
-  const sourcesEl = $('globalSearchSources');
   let shown = 0;
   let external = 0;
-  let sourceProblem = false;
   let capabilities = null;
   const isCurrent = () => seq === globalSearchSeq;
   // The previous results stay on screen until this stream's first event, so the list does not
@@ -3088,14 +3083,6 @@ function startGlobalSearch(rawQuery) {
     groupsEl.replaceChildren();
     externalList.replaceChildren();
     externalEl.hidden = true;
-    sourcesEl.replaceChildren();
-    sourcesEl.hidden = true;
-  });
-  source.addEventListener('source', event => {
-    if (!isCurrent()) return;
-    const update = JSON.parse(event.data);
-    if (SOURCE_PROBLEM_STATES.includes(update.state)) sourceProblem = true;
-    renderSourceStatus(sourcesEl, update);
   });
   source.addEventListener('result', event => {
     if (!isCurrent()) return;
@@ -3115,7 +3102,7 @@ function startGlobalSearch(rawQuery) {
     finish();
     if (isCurrent()) {
       setSearchStatusLive(true);
-      renderGlobalSearchSummary(query, shown, external, capabilities, sourceProblem);
+      renderGlobalSearchSummary(query, shown, external, capabilities);
     }
   });
   source.addEventListener('error', event => {
@@ -3130,29 +3117,7 @@ function startGlobalSearch(rawQuery) {
   });
 }
 
-// One provider's state, as a line in the source status list. Each source has one line, updated in place.
-function renderSourceStatus(listEl, update) {
-  listEl.hidden = false;
-  let line = listEl.querySelector('[data-source="' + update.source + '"]');
-  if (!line) {
-    line = document.createElement('li');
-    line.dataset.source = update.source;
-    listEl.append(line);
-  }
-  const label = SOURCE_LABELS[update.source] || update.source;
-  const detail = {
-    pending: 'searching…',
-    done: pluralize(update.count, 'result', 'results'),
-    cached: pluralize(update.count, 'result', 'results') + ' (saved)',
-    failed: 'failed',
-    timeout: 'did not answer in time',
-    rate_limited: 'skipped, too many requests',
-    disabled: 'not set up',
-  }[update.state] || update.state;
-  line.textContent = label + ': ' + detail;
-}
-
-function renderGlobalSearchSummary(query, owned, external, capabilities, sourceProblem) {
+function renderGlobalSearchSummary(query, owned, external, capabilities) {
   const status = $('globalSearchStatus');
   const index = capabilities && capabilities.owned_index;
   const parts = [];
@@ -3167,7 +3132,6 @@ function renderGlobalSearchSummary(query, owned, external, capabilities, sourceP
     kind = 'empty';
   }
   if (external) parts.push(pluralize(external, 'match', 'matches') + ' not in your library');
-  if (sourceProblem) parts.push('Some sources did not finish.');
   setStatus(status, parts.join(' · '), kind);
 }
 
