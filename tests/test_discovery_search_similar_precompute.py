@@ -92,6 +92,35 @@ class PrecomputeTests(unittest.TestCase):
         run_precompute(artists(2), network(), owned(), clock=clock, artist_seconds=60.0, similar=similar)
         self.assertEqual(remaining_seen, [55.0, 55.0])
 
+    def test_a_run_starts_at_the_given_position_wraps_and_reports_progress(self):
+        seen, progress = [], []
+
+        def similar(net, name, artist_id, own, **kwargs):
+            seen.append(artist_id)
+            return {"available": True, "complete": True}
+
+        run_precompute(artists(4), network(), owned(), similar=similar, start=2, on_progress=progress.append)
+        ids = [a["id"] for a in artists(4)]
+        self.assertEqual(seen, ids[2:] + ids[:2])
+        self.assertEqual(progress, [3, 0, 1, 2])
+
+    def test_a_run_out_of_budget_leaves_the_next_position_at_the_first_unreached_artist(self):
+        ticks = iter([0.0, 0.0, 0.0, 10.0])
+        progress = []
+        counts = run_precompute(
+            artists(5), network(), owned(), clock=lambda: next(ticks), budget_seconds=5.0,
+            similar=lambda *a, **k: {"available": True, "complete": True}, start=1, on_progress=progress.append,
+        )
+        self.assertEqual(progress[-1], 2)
+        self.assertEqual(counts["complete"], 1)
+        self.assertEqual(counts["not_reached"], 4)
+
+    def test_an_empty_library_runs_nothing(self):
+        self.assertEqual(
+            run_precompute([], network(), owned(), start=5),
+            {"complete": 0, "partial": 0, "unavailable": 0, "failed": 0, "not_reached": 0},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
