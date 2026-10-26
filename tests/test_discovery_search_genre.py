@@ -323,7 +323,7 @@ class SearchWiringTests(unittest.TestCase):
                 settings_read=lambda: settings, cache_read=lambda k: None, cache_write=lambda k, v: None,
                 http_get=Get(),
             )
-        return search.parts_for("ash", ["artist", "album"])
+        return search._parts_for("ash", ["artist", "album"])
 
     def test_discogs_is_queried_exactly_when_it_is_reported_available(self):
         with_token = self.parts({"discogs_token": TOKEN, "discogs_generation": 3})
