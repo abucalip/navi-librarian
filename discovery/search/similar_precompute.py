@@ -3,7 +3,8 @@
 Each library artist goes through the on-demand path with ``refresh=True``, so a complete result
 overwrites the cached entry. A partial or failed result writes nothing, which keeps the previous
 entry (contract section 5.2). The run stops at its time budget; artists it does not reach keep
-their entries and are reached on a later run.
+their entries. A run starts at ``start`` and wraps around the list, and ``on_progress`` reports the
+position to start the next run at, so a pass that runs out of budget is continued, not restarted.
 
 The network and the owned data are injected, so the scheduling stays in the app layer.
 """
@@ -31,6 +32,8 @@ def run_precompute(
     budget_seconds: float = PRECOMPUTE_BUDGET_SECONDS,
     artist_seconds: float = PRECOMPUTE_ARTIST_SECONDS,
     similar: Callable[..., dict[str, Any]] = similar_items,
+    start: int = 0,
+    on_progress: Callable[[int], None] | None = None,
 ) -> dict[str, int]:
     """Compute and store similar artists for each artist, in order, until the budget ends.
 
@@ -39,10 +42,14 @@ def run_precompute(
     """
     counts = {"complete": 0, "partial": 0, "unavailable": 0, "failed": 0, "not_reached": 0}
     stop_at = clock() + budget_seconds
-    for position, artist in enumerate(artists):
+    total = len(artists)
+    start = start % total if total else 0
+    for done in range(total):
         if clock() >= stop_at:
-            counts["not_reached"] = len(artists) - position
+            counts["not_reached"] = total - done
             break
+        position = (start + done) % total
+        artist = artists[position]
         deadline_at = clock() + artist_seconds
         try:
             section = similar(
@@ -57,7 +64,11 @@ def run_precompute(
             )
         except Exception:
             counts["failed"] += 1
+            if on_progress is not None:
+                on_progress((position + 1) % total)
             continue
+        if on_progress is not None:
+            on_progress((position + 1) % total)
         if not section["available"]:
             counts["unavailable"] += 1
         elif section["complete"]:

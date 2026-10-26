@@ -293,13 +293,27 @@ PRECOMPUTE_CHECK_SECONDS = 1800
 logger = logging.getLogger(__name__)
 
 
+PRECOMPUTE_CURSOR = "similar-precompute-cursor"
+
+
+def _precompute_cursor(librarian) -> dict:
+    """Where the last precompute pass stopped: ``{"next": position}`` in the owned artist list."""
+    stored = librarian._discovery_read_list(PRECOMPUTE_CURSOR)
+    payload = stored.get("payload") if isinstance(stored, dict) else None
+    return payload if isinstance(payload, dict) else {}
+
+
 def _precompute_once(librarian):
     """One precompute pass over the library, or None when the owned index is not usable yet."""
     view = owned_view(librarian)
     if view.data is None or view.state not in (STATE_FRESH, STATE_STALE):
         return None
+    artists = list(view.data.artists)
+    cursor = _precompute_cursor(librarian)
     return run_precompute(
-        list(view.data.artists), artist_network_for(librarian), OwnedKeys(view.data),
+        artists, artist_network_for(librarian), OwnedKeys(view.data),
+        start=cursor.get("next", 0) if isinstance(cursor.get("next", 0), int) else 0,
+        on_progress=lambda position: librarian._discovery_write_list(PRECOMPUTE_CURSOR, {"next": position}),
     )
 
 
