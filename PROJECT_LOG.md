@@ -1,3 +1,11 @@
+## 2026-10-26 — Published image v0.2.4
+
+- Owner explicitly authorized publication of current `main`. Annotated tag `v0.2.4` was pushed at `b79a229dbca2e36bb96e523be12dff0a579139db`, the `main` head (`docs: close out P5, add P2-P4 focused checks to the test plan`). The four required workflows had passed on that commit.
+- Release workflow "Publish Docker release" run [40261391680](https://github.com/abucalip/navi-librarian/actions/runs/40261391680) succeeded.
+- **Published:** `ghcr.io/abucalip/navi-librarian:v0.2.4` and `ghcr.io/abucalip/navi-librarian:sha-b79a229dbca2e36bb96e523be12dff0a579139db`; package version digest `sha256:3ec82f0d1c20260c0d8f4e82d075972a704673fee54bda5b33d6ad9086827203` (from the GitHub Packages API). `latest` was not checked or moved by this step.
+- **Contents:** global search P1 to P5 (owned index, network sources, similar artists, Discogs and genre pages, latency script), the provider-cache read fix (PR #628), the MusicBrainz throttle change (PR #627), and the precompute cursor (PR #629), plus other changes merged since v0.2.3. The v0.2.3 image is the rollback reference.
+- **Not verified:** per-platform manifests were not inspected, the image was not pulled or run, no GitHub Release was created. Not deployed; no live-runtime verification. Real-browser checks for global search remain deferred by the owner.
+
 ## 2026-10-26 — P5 closeout; PRs #628 and #629 merged
 
 - **Merged at the owner's direction:** PR [#628](https://github.com/abucalip/navi-librarian/pull/628) (`2ce6f02`) and PR [#629](https://github.com/abucalip/navi-librarian/pull/629) (`1984d3b`). Required CI passed on each exact head (`83bb39b`, `6b72bbd`): compile, container-smoke, test-and-build, validate-container, validate-release-workflow.
