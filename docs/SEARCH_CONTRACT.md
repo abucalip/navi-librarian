@@ -197,7 +197,7 @@ The artist page streams when `Accept: text/event-stream` is sent. The stream fol
 
 Available from P4. Genre page: owned and unowned artists and albums for a tag. Same envelope as 3.3 (`capabilities`, `sections`, `done`; JSON or SSE), with `artists` and `albums` sections in place of `artist`. The tag is lower-cased with single spaces; a blank tag or one over 100 characters is `400`.
 
-- **Owned items** come from the owned index with no network call. An album matches when its Navidrome genre equals the tag (ignoring case), and an artist matches through such an album. Owned items are listed first (built as chosen by the agent, pending the owner's confirmation; see 13.3).
+- **Owned items** come from the owned index with no network call. An album matches when its Navidrome genre equals the tag (ignoring case), and an artist matches through such an album. Owned items are listed first (approved by the owner, 2026-10-26).
 - **Unowned items** come from MusicBrainz tag search (`tag:"…"` on artists and on studio release-groups) and, when a Discogs token is saved, Discogs style search on master releases. Discogs lists only albums, so its artists are the album artists, most frequent first. The sources are interleaved, owned entities and duplicates are dropped, and each section keeps at most 30 unowned items. Each item lists its `sources`.
 - **Attribution.** A Discogs-sourced item carries `attribution: "Data provided by Discogs"`.
 - **Cache.** Each source's records for one tag and kind are cached for 7 days under `genre:{source}:{config_generation}:{tag}:{kind}` (section 5.2). Only complete answers are written.
@@ -279,7 +279,7 @@ These are the contract targets for backend implementation and API contract tests
 | `duration` | song only | int or null | Seconds, rounded down. |
 | `track_number` | song only | int or null | 1-based. `null` when unknown. |
 | `tag` | genre only | string | Normalized tag. |
-| `tag_source` | genre only | string | One of `musicbrainz`, `discogs`, `listenbrainz`, or `navidrome` for an owned genre. **The `navidrome` value was added in P4 and is pending the owner's approval (13.3).** `listenbrainz` is not produced by this build. |
+| `tag_source` | genre only | string | One of `musicbrainz`, `discogs`, `listenbrainz`, or `navidrome` for an owned genre. **The `navidrome` value was added in P4 and approved by the owner on 2026-10-26.** `listenbrainz` is not produced by this build. |
 | `owned_candidates` | no | array of keys | Optional. Present only when `owned` is `false`. |
 
 **P1 sends only owned `result` events.** Each owned result has `owned: true` and `sources: ["navidrome"]`.
@@ -868,12 +868,11 @@ Run with the app's own client code and a real personal access token. Only status
 | Wrong token | `ProviderError("failed")`, not an empty list |
 | MusicBrainz `/genre/all?fmt=txt` | 2,216 names, includes `shoegaze` |
 
-**Not exercised live:** the Discogs genre extraction; a real HTTP 429 (pacing kept the run under the limit); the `Ash (2)` disambiguation suffix; the Settings Test button in the app; the whole app against live providers.
+**Not exercised live (the owner scheduled these for the end of P5):** the Discogs genre extraction; a real HTTP 429 (pacing kept the run under the limit); the `Ash (2)` disambiguation suffix; the Settings Test button in the app; the whole app against live providers.
 
 ### 13.3 Decisions and deviations
 
-- **Pending the owner's decision:** `tag_source: "navidrome"` for owned genre results (3.8). The built rule is one line in `discovery/search/query.py` if the owner prefers another.
-- **Built as chosen by the agent, pending the owner's confirmation:** owned items before unowned on genre pages (similar artists lists unowned first).
+- **Approved by the owner (2026-10-26):** `tag_source: "navidrome"` for owned genre results (3.8), and owned items before unowned on genre pages (similar artists lists unowned first).
 - **ListenBrainz is not a genre source** in this build, though 3.8 lists it as a possible `tag_source`. Last.fm tags are not used.
 - **Discogs generation not in the similar-artists key.** The cached similar records come only from Last.fm and ListenBrainz; Discogs styles are read from their own generation-keyed cache on every request, so a token change cannot serve stale styles.
 - **Manual browser checks were waived by the owner for this batch and not performed.**

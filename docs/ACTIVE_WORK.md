@@ -65,8 +65,8 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - **Precompute is on by default**, with no settings switch. It runs only while the app process is running and the owned index is usable.
 - **P4 (Discogs and genre pages): complete.** PRs [#623](https://github.com/abucalip/navi-librarian/pull/623) to [#625](https://github.com/abucalip/navi-librarian/pull/625) are merged: Discogs token settings and client, Discogs styles as a shared-tag source, global genre search, genre pages, and the Settings/genre UI. Record: `SEARCH_CONTRACT.md` section 13. Exact SHAs and CI: `PROJECT_STATUS.md` and `PROJECT_LOG.md`.
 - **P4 follow-ups, not closed:**
-  - **Owner decisions.** `tag_source: "navidrome"` for owned genre results (contract 3.8 amendment), and owned-before-unowned ordering on genre pages (`SEARCH_CONTRACT.md` 13.3).
-  - **Live Discogs check: partly done (2026-10-26).** The auth header, Test call, style lookup, style browse, text search and bad-token failure were confirmed with a real token. Not run live: Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button in the app, and the whole app against live providers (13.2).
+  - **Owner decisions: approved (2026-10-26).** `tag_source: "navidrome"` for owned genre results and owned-before-unowned ordering on genre pages (`SEARCH_CONTRACT.md` 3.4, 3.8, 13.3).
+  - **Live Discogs check: partly done (2026-10-26); the remaining live run tests are scheduled for the end of P5 (owner direction).** The auth header, Test call, style lookup, style browse, text search and bad-token failure were confirmed with a real token. Not run live: Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button in the app, and the whole app against live providers (13.2).
   - **Browser checks** were waived for the P4 batch and not performed: Settings tab, genre view, search genre results, keyboard and focus, narrow widths.
 - Not published or deployed.
 

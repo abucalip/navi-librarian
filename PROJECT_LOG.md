@@ -1,3 +1,9 @@
+## 2026-10-26 — P4 owner decisions recorded
+
+- **Approved by the owner:** `tag_source: "navidrome"` for owned genre results (contract 3.8 amendment), and owned items before unowned on genre pages. Recorded in `docs/SEARCH_CONTRACT.md` 3.4, 3.8 and 13.3; no code change, since both were built that way.
+- **Scheduled by the owner:** the remaining live run tests (Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button, the app against live providers) run at the end of P5.
+- **Next action:** P5.
+
 ## 2026-10-26 — Global search P4 closed out; partial live Discogs check
 
 - **P4 is complete:** PRs #623 (`2f66598`), #624 (`13cb7d3`) and #625 (`afade38`) are merged. Exact heads and CI runs are in the entries below. The P4 record is `docs/SEARCH_CONTRACT.md` section 13, which also now holds the genre page design (3.4), the `tag_source` rule (3.8), and the closed header-format item (5.2, 9).
