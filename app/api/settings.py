@@ -4,12 +4,17 @@ These handlers intentionally delegate all configuration and connection behavior 
 the existing librarian domain functions; this module only adapts HTTP payloads.
 """
 import json
+import os
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from settings.service import (
+    discogs_token_and_source as _discogs_token_and_source,
+    get_discogs_settings as _get_discogs_settings,
+    set_discogs_settings as _set_discogs_settings,
+    test_discogs_connection as _test_discogs_connection,
     get_automatic_refill_settings as _get_automatic_refill_settings,
     get_recommendation_diversity_settings as _get_recommendation_diversity_settings,
     set_automatic_refill_settings as _set_automatic_refill_settings,
@@ -226,3 +231,40 @@ def test_slskd_settings(librarian=Depends(get_librarian)):
         return parse_result(librarian.discovery_test_slskd_connection())
     except Exception:
         raise HTTPException(status_code=502, detail="Could not test the slskd connection.")
+
+
+@router.get("/api/settings/discogs")
+def get_discogs_settings(librarian=Depends(get_librarian)):
+    try:
+        return parse_result(_get_discogs_settings(librarian._discovery_settings_read, os.environ))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not read Discogs settings.")
+
+
+@router.put("/api/settings/discogs")
+def set_discogs_settings(payload: dict, librarian=Depends(get_librarian)):
+    token = payload.get("token")
+    if not isinstance(token, str):
+        raise HTTPException(status_code=400, detail="token must be a string.")
+    try:
+        result = parse_result(_set_discogs_settings(
+            librarian._discovery_settings_read, librarian._discovery_settings_write, os.environ, token,
+        ))
+        if isinstance(result, dict) and not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Invalid Discogs settings."))
+        return {key: result[key] for key in ("token_configured", "source")}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not save Discogs settings.")
+
+
+@router.post("/api/settings/discogs/test")
+def test_discogs_settings(librarian=Depends(get_librarian)):
+    import httpx
+
+    try:
+        token, _ = _discogs_token_and_source(librarian._discovery_settings_read, os.environ)
+        return parse_result(_test_discogs_connection(token, httpx.get, json.dumps))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not test the Discogs connection.")
