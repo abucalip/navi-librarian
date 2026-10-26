@@ -203,7 +203,9 @@ def main(argv: list[str] | None = None) -> int:
     from discovery.search.index import OwnedIndex, fetch_song_inventory
 
     index = OwnedIndex(
-        load_library=lambda: search_api._snapshot_lists(librarian, generation),
+        load_library=lambda: search_api._snapshot_lists(
+            librarian, navidrome_generation(librarian._discovery_settings_read)
+        ),
         load_songs=lambda: fetch_song_inventory(librarian.api_call, librarian.items),
         load_identities=lambda current_generation: load_identities(
             lambda prefix: discovery_store.read_prefix(librarian.DISCOVERY_DB, prefix),
@@ -224,7 +226,13 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2))
         return 1
     report["index_builds"] = [
-        {**build, "milliseconds": round(build.pop("seconds") * 1000, 2)} for build in builds
+        {
+            "run": build["run"],
+            "cold": build["cold"],
+            "milliseconds": round(build["seconds"] * 1000, 2),
+            "state": build["state"],
+        }
+        for build in builds
     ]
     report["library"] = {
         "songs": view.data.song_count, "artists": len(view.data.artists), "albums": len(view.data.albums),
