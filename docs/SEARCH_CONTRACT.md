@@ -822,7 +822,7 @@ Sample check (names and MBIDs read by hand): artist matches were correct in ever
 - A MusicBrainz request timeout escaped the identity job and aborted the whole pass. A failed request now skips only its batch.
 - The background pass used the 5 s search timeout. It now uses 30 s.
 
-**Cleanup.** Each pass deletes identity records of other Navidrome generations, and does nothing if its generation is no longer current.
+**Cleanup.** Each pass deletes identity records of generations older than the current one. Generations are an increasing counter, so the comparison is numeric. The current generation is read at the moment of the delete, and the pass stops if the generation changes during the cleanup. Records of the current or a newer generation are never removed.
 
 **Correction path.** `PUT /api/identities/{kind}/{id}` stores the owner's MBID as a manual record (`null` marks "no MBID"). `DELETE /api/identities/{kind}/{id}` removes the record, so the next pass resolves the item again. The MBID must be a lowercase UUID. The item must exist in the current index. The index is refreshed for the current generation only. These routes sit behind the login middleware.
 
