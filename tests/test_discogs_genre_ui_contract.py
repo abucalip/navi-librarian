@@ -61,7 +61,9 @@ class GenreViewUITests(unittest.TestCase):
 
     def test_genre_button_sits_in_the_artist_view_and_starts_hidden(self):
         self.assertIn('id="artistGenre" class="genre-link" hidden', HTML)
-        self.assertIn("$('artistGenre').addEventListener('click', () => openGenre($('artistGenre').dataset.genre));", JS)
+        self.assertIn("$('artistGenre').addEventListener('click', () => {", JS)
+        self.assertIn("libraryView.genreReturn = 'artist';", JS)
+        self.assertIn("openGenre($('artistGenre').dataset.genre);", JS)
 
     def test_data_is_written_with_text_only(self):
         self.assertNotIn("innerHTML", self.genre_js)
