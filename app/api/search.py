@@ -58,12 +58,22 @@ def _identity_pass(librarian, data):
     from discovery.search.network import LIMITER
     from discovery.search.providers import MusicBrainzSearch
 
-    if data.generation != navidrome_generation(librarian._discovery_settings_read):
-        return {"artists": 0, "albums": 0, "unresolved": 0}
+    def current_generation():
+        return navidrome_generation(librarian._discovery_settings_read)
+
+    idle = {"artists": 0, "albums": 0, "unresolved": 0}
+    if data.generation != current_generation():
+        return idle
     purge_stale_identities(
-        lambda prefix, keep: discovery_store.delete_prefix_except(librarian.DISCOVERY_DB, prefix, keep),
-        data.generation,
+        lambda namespace, generation: discovery_store.delete_numbered_below(
+            librarian.DISCOVERY_DB, namespace, generation
+        ),
+        current_generation,
     )
+    # The generation may have changed while the cleanup ran. Writes under this pass's generation would
+    # be stale, so stop here.
+    if data.generation != current_generation():
+        return idle
     # A background pass can wait longer than a search request, and a timed-out batch is simply retried.
     musicbrainz = MusicBrainzSearch(get=httpx.get, limiter=LIMITER, pause=time.sleep, request_timeout=30.0)
 

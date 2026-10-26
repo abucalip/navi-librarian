@@ -137,20 +137,60 @@ class IdentityPassGuardTests(unittest.TestCase):
 
 
 class PurgeStaleIdentitiesTests(unittest.TestCase):
-    def test_other_generations_are_removed_and_the_current_one_is_kept(self):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.db = Path(tmp.name) / "discovery.sqlite3"
+        discovery_store.write_many(self.db, {
+            identity_name(1, "artist", "ar1"): {"mbid": ASH, "source": "navidrome"},
+            identity_name(2, "artist", "ar1"): {"mbid": ASH, "source": "navidrome"},
+            identity_name(10, "artist", "ar1"): {"mbid": OTHER, "source": "navidrome"},
+        })
+
+    def purge(self, current):
+        return purge_stale_identities(
+            lambda namespace, generation: discovery_store.delete_numbered_below(self.db, namespace, generation),
+            current,
+        )
+
+    def test_records_below_the_current_generation_are_removed_and_numbers_compare_as_integers(self):
+        removed = self.purge(lambda: 10)
+        self.assertEqual(removed, 2)  # generations 1 and 2; generation 10 is current and kept
+        self.assertEqual(sorted(discovery_store.read_prefix(self.db, "identity:navidrome")),
+                         [identity_name(10, "artist", "ar1")])
+
+    def test_records_of_a_newer_generation_are_never_removed(self):
+        removed = self.purge(lambda: 1)
+        self.assertEqual(removed, 0)
+        self.assertEqual(len(discovery_store.read_prefix(self.db, "identity:navidrome")), 3)
+
+
+class GenerationFlipDuringCleanupTests(unittest.TestCase):
+    def test_a_generation_change_between_the_check_and_the_cleanup_keeps_the_new_generation_records(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         db = Path(tmp.name) / "discovery.sqlite3"
         discovery_store.write_many(db, {
             identity_name(1, "artist", "ar1"): {"mbid": ASH, "source": "navidrome"},
-            identity_name(10, "artist", "ar1"): {"mbid": OTHER, "source": "navidrome"},
-            identity_name(2, "artist", "ar1"): {"mbid": ASH, "source": "navidrome"},
+            identity_name(2, "artist", "ar1"): {"mbid": OTHER, "source": "manual"},
         })
-        removed = purge_stale_identities(
-            lambda prefix, keep: discovery_store.delete_prefix_except(db, prefix, keep), 1,
-        )
-        self.assertEqual(removed, 2)
-        self.assertEqual(sorted(discovery_store.read_prefix(db, "identity:navidrome")), [identity_name(1, "artist", "ar1")])
+        data = build_owned_data(generation=1, built_at=0, artists=[{"id": "ar1", "name": "Ash", "album_count": 1}],
+                                albums=[], songs=[])
+        # Settings report generation 1 for the first check, then generation 2 from the cleanup on.
+        reads = iter([1])
+
+        class FlippingLibrarian(FakeLibrarian):
+            def _discovery_settings_read(self):
+                try:
+                    return {"navidrome_generation": next(reads)}
+                except StopIteration:
+                    return {"navidrome_generation": 2}
+
+        counts = search_routes._identity_pass(FlippingLibrarian(db, generation=1), data)
+        self.assertEqual(counts, {"artists": 0, "albums": 0, "unresolved": 0})
+        remaining = discovery_store.read_prefix(db, "identity:navidrome")
+        self.assertEqual(sorted(remaining), [identity_name(2, "artist", "ar1")])
+        self.assertEqual(remaining[identity_name(2, "artist", "ar1")], {"mbid": OTHER, "source": "manual"})
 
 
 if __name__ == "__main__":

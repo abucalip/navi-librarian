@@ -45,6 +45,34 @@ def read_list(database_path: str | PathLike[str], name: str) -> dict[str, Any] |
 
 
 
+def delete_numbered_below(
+    database_path: str | PathLike[str],
+    namespace: str,
+    generation: int,
+) -> int:
+    """Delete cached lists named ``{namespace}{n}:...`` where ``n`` is an integer below ``generation``.
+
+    The number is compared as an integer, so ``identity:navidrome10:...`` is not treated as
+    generation 1. Names that do not follow the pattern are left alone. Read and delete run in
+    one transaction, so the rows removed are exactly those selected.
+    """
+    removed = 0
+    with sqlite3.connect(database_path, timeout=10) as db:
+        _ensure_schema(db)
+        rows = db.execute(
+            "SELECT name FROM discovery_lists WHERE substr(name, 1, ?) = ?",
+            (len(namespace), namespace),
+        ).fetchall()
+        stale = []
+        for (name,) in rows:
+            number, separator, _ = name[len(namespace):].partition(":")
+            if separator and number.isdigit() and int(number) < generation:
+                stale.append(name)
+        for name in stale:
+            removed += db.execute("DELETE FROM discovery_lists WHERE name = ?", (name,)).rowcount
+    return removed
+
+
 def delete_list(database_path: str | PathLike[str], name: str) -> int:
     """Delete one cached list. Returns the number of rows removed (0 or 1)."""
     with sqlite3.connect(database_path, timeout=10) as db:

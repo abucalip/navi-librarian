@@ -46,13 +46,15 @@ def record_for(kind: str, mbid: str | None, source: str) -> dict[str, Any]:
     return _record(kind, mbid, source)
 
 
-def purge_stale_identities(delete_except: Callable[[str, str], int], generation: Any) -> int:
-    """Delete identity records of every other Navidrome generation (section 5.2 cleanup).
+def purge_stale_identities(delete_below: Callable[[str, int], int], current: Callable[[], int]) -> int:
+    """Delete identity records of generations older than the current one (section 5.2 cleanup).
 
-    Records of the current generation are kept. ``delete_except(prefix, keep_prefix)`` is the
-    store's prefix delete.
+    Generations are an increasing counter, so "older" is a number comparison. ``current`` is read
+    here, at the moment of the delete, and never taken from an earlier check. A record can
+    therefore only be removed if it is older than the generation that is current at that moment.
+    ``delete_below(namespace, generation)`` is the store's numbered delete.
     """
-    return delete_except(IDENTITY_NAMESPACE, identity_prefix(generation))
+    return delete_below(IDENTITY_NAMESPACE, int(current()))
 
 
 def load_identities(read_prefix: Callable[[str], Mapping[str, Any]], generation: Any) -> dict[str, dict[str, Any]]:
