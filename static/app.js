@@ -3013,7 +3013,7 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0, genreTag: '', fromGenre: ''};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0, genreTag: '', genreReturn: 'list', fromGenre: ''};
 let libraryFilterTimer = 0;
 
 function setStatus(el, message, kind) {
@@ -3220,6 +3220,7 @@ function openGenreFromSearch(item) {
   navigateTo('library');
   $('libraryIntro').hidden = true;
   libraryView.fromGenre = '';
+  libraryView.genreReturn = 'list';
   openGenre(item.tag);
 }
 
@@ -3459,10 +3460,16 @@ async function openGenre(tag) {
 function closeGenre() {
   libraryView.genreSeq += 1;
   $('libraryGenreView').hidden = true;
-  $('libraryDetailView').hidden = false;
-  const button = $('artistGenre');
-  if (!button.hidden) button.focus();
-  else $('artistDetailHeading').focus();
+  if (libraryView.genreReturn === 'artist') {
+    $('libraryDetailView').hidden = false;
+    const button = $('artistGenre');
+    if (!button.hidden) button.focus();
+    else $('artistDetailHeading').focus();
+    return;
+  }
+  $('libraryListView').hidden = false;
+  $('libraryIntro').hidden = false;
+  $('libraryHeading').focus();
 }
 
 // ---- Wiring ----
@@ -3504,5 +3511,8 @@ $('librarySort').addEventListener('change', () => {
 });
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 $('libraryBack').addEventListener('click', closeArtistDetail);
-$('artistGenre').addEventListener('click', () => openGenre($('artistGenre').dataset.genre));
+$('artistGenre').addEventListener('click', () => {
+  libraryView.genreReturn = 'artist';
+  openGenre($('artistGenre').dataset.genre);
+});
 $('genreBack').addEventListener('click', closeGenre);
