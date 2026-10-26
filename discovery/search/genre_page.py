@@ -150,8 +150,8 @@ def _artists_from_albums(albums: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def genre_sections(
     view: IndexView, network: GenreNetwork | None, tag: str,
-) -> tuple[dict[str, dict[str, Any]], bool]:
-    """Both section objects and ``partial``. Owned items first, then the unowned ones from the network."""
+) -> tuple[dict[str, dict[str, Any]], bool, bool]:
+    """Both section objects, ``partial`` and ``deadline_hit``. Owned items first, then the unowned ones from the network."""
     owned_artists, owned_albums = owned_items(view, tag)
     sections = {
         "artists": {"section": "artists", "available": True, "complete": True, "reason": None, "items": owned_artists},
@@ -159,7 +159,7 @@ def genre_sections(
     }
     partial = not owned_type_available(view)
     if network is None:
-        return sections, partial
+        return sections, partial, False
 
     owned = OwnedKeys(view.data if owned_type_available(view) else None)
     cancelled = threading.Event()
@@ -226,7 +226,7 @@ def genre_sections(
         elif wanted & timed_out:
             section.update(complete=False, reason="deadline")
     partial = partial or any(s["reason"] is not None for s in sections.values())
-    return sections, partial
+    return sections, partial, any(s["reason"] == "deadline" for s in sections.values())
 
 
 def json_sections(sections: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:

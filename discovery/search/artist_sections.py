@@ -310,7 +310,7 @@ def similar_items(
         fetched = False
 
     seed_tags: set[str] = set()
-    style_tags: set[str] = set()
+    candidate_styles: dict[str, set[str]] = {}
     tags_hit_deadline = False
     if mbid:
         seed_tags, tags_hit_deadline = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
@@ -318,7 +318,6 @@ def similar_items(
     seed_styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled)
     tags_hit_deadline = tags_hit_deadline or hit
     seed_styles = seed_styles or set()
-    style_tags |= seed_styles
     seed_tags = seed_tags | seed_styles
     candidate_tags: dict[str, set[str]] = {}
     if seed_tags:
@@ -332,13 +331,15 @@ def similar_items(
             tags_hit_deadline = tags_hit_deadline or hit
             styles, hit = _styles_for(network, candidate_name, remaining=remaining, cancelled=cancelled)
             tags_hit_deadline = tags_hit_deadline or hit
-            style_tags |= styles or set()
+            if styles:
+                candidate_styles[candidate_mbid] = styles
             combined = (tags or set()) | (styles or set())
             if combined:
                 candidate_tags[candidate_mbid] = combined
 
     items = fuse_similar(
-        records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags, style_tags=style_tags,
+        records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags,
+        seed_styles=seed_styles, candidate_styles=candidate_styles,
     )
     # Commit the fetched records only once the whole section is complete, so an incomplete
     # refresh (a rate-limited tag lookup, say) leaves the previous entry in place (contract 5.2).

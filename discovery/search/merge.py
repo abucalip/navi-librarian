@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from discovery.search.index import OwnedData
+from discovery.search.providers import DISCOGS_ATTRIBUTION
 
 
 def _years_match(first: int | None, second: int | None) -> bool:
@@ -127,6 +128,8 @@ def shape_result(candidate: dict[str, Any]) -> dict[str, Any]:
         "sources": [candidate["source"]],
         "artwork_url": None,
     }
+    if candidate["source"] == "discogs":
+        base["attribution"] = DISCOGS_ATTRIBUTION
     if candidate["type"] == "artist":
         # Search sources do not report album counts or genres, so both are null (see PR notes).
         return {**base, "album_count": None, "genre": None}
