@@ -56,6 +56,10 @@ def validate_isolated_data_dir(raw_path: str | None, root: Path) -> Path:
         raise ValueError("The isolated data directory must already exist.")
     if not (path / "navidrome_discovery.sqlite3").is_file():
         raise ValueError("The isolated directory must contain a copied navidrome_discovery.sqlite3.")
+    if not (path / ".navi-librarian-search-latency-isolated").is_file():
+        raise ValueError(
+            "Create .navi-librarian-search-latency-isolated in the copied data directory to confirm it is isolated."
+        )
     return path
 
 
