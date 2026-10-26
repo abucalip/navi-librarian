@@ -55,7 +55,8 @@ def search_capabilities(
     types = {}
     for kind in OWNED_TYPES:
         types[kind] = availability(owned_ok, view.reason)
-    types["genre"] = availability(False, NOT_IN_BUILD)
+    # Genre results come from the library's album genres, and from the network when its sources are on.
+    types["genre"] = availability(owned_ok or sources is not None, view.reason)
     return {
         "types": types,
         "sources": dict(sources) if sources is not None else source_capabilities(),
@@ -92,7 +93,7 @@ def search_events(
     )
     try:
         if owned_type_available(view):
-            owned_requested = [t for t in ordered if t in OWNED_TYPES]
+            owned_requested = [t for t in ordered if t in OWNED_TYPES or t == "genre"]
             found = search_owned(view.data, query, owned_requested, limit)
             for kind in owned_requested:
                 for result in found.get(kind, []):

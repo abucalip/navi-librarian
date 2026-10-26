@@ -81,8 +81,28 @@ class SearchOwnedTests(unittest.TestCase):
         self.assertEqual(song["duration"], 284)
         self.assertIsNone(song["track_number"])
 
-    def test_genre_and_unknown_types_are_ignored(self):
-        self.assertEqual(search_owned(sample_data(), "ash", ["genre"], limit=5), {})
+    def test_unknown_types_are_ignored(self):
+        self.assertEqual(search_owned(sample_data(), "ash", ["podcast"], limit=5), {})
+
+    def test_owned_genres_match_album_genres_once_per_normalized_key(self):
+        data = build_owned_data(
+            generation="g", built_at=0,
+            artists=[{"id": "ar1", "name": "Ride", "album_count": 2}],
+            albums=[
+                {"id": "al1", "artist": "Ride", "artist_id": "ar1", "album": "Nowhere", "genre": "Shoegaze"},
+                {"id": "al2", "artist": "Ride", "artist_id": "ar1", "album": "Going Blank Again", "genre": "shoegaze"},
+                {"id": "al3", "artist": "Ride", "artist_id": "ar1", "album": "Untitled"},
+            ],
+            songs=[],
+        )
+        found = search_owned(data, "shoe", ["genre"], limit=5)["genre"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0], {
+            "type": "genre", "owned": True, "id": "shoegaze", "key": "shoegaze", "name": "Shoegaze",
+            "mbid": None, "tag": "shoegaze", "tag_source": "navidrome", "sources": ["navidrome"],
+            "artwork_url": None,
+        })
+        self.assertEqual(search_owned(data, "jazz", ["genre"], limit=5)["genre"], [])
 
 
 class LibraryPageTests(unittest.TestCase):
