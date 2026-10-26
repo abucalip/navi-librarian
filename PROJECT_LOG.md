@@ -1,3 +1,15 @@
+## 2026-10-26 — P5: live run tests and the MusicBrainz throttle change
+
+- **PR #626 merged** (`1a8c062`). **PR [#627](https://github.com/abucalip/navi-librarian/pull/627) open** (owner decision: accept partial results when MusicBrainz throttles): a 503 backoff that cannot fit in the remaining deadline now reports `rate_limited` at once. Focused tests: 136 OK; the full suite was not run. Live re-measure, 6 searches 8 s apart: deadline hit on 1 of 6 (3 to 5 of 5-6 before); `done` p50 2.3 s, p95 3.0 s, so the 3.0 s and cache-hit targets are still not reliably met while MusicBrainz is slow.
+- **Live run tests (real Discogs token, real Navidrome library, live MusicBrainz and Last.fm; an isolated data directory; slskd disabled):**
+  - **Discogs genre extraction:** `genres("shoegaze")` returned 1 (`Shoegaze`), `genres("jazz")` 11 (`Jazz`, `Free Jazz`, `Soul-Jazz`, …), a nonsense query 0; 0.4 to 1.6 s.
+  - **`Ash (2)` suffix:** raw Discogs artist titles included `Ash (3)`, `Ash (35)`, `Ben Ash (2)`; the app's cleaner returned `Ash`, `Ash`, `Ben Ash`; none of the 50 `artists("ash")` candidates kept a `(`.
+  - **Real 429:** an unpaced burst got `rate_limited` on call 62 after 21.4 s, matching the documented 60 per minute; the paced client never hit it.
+  - **Settings Test:** `POST /api/settings/discogs/test` (the route the button calls) returned `{"ok": true}` with the token from `DISCOGS_TOKEN` (source `environment`). The button itself was not clicked: no browser was available.
+  - **Whole app against live providers, through the API with a signed-in session:** search `shoegaze` showed Discogs, Last.fm and MusicBrainz sources and a Discogs genre result, with MusicBrainz `rate_limited` after 2.7 s and `partial: true`; search `slowdive` ended at 3.0 s with `deadline_hit` (MusicBrainz `timeout`); the `shoegaze` genre page returned 30 artists (`source_failed`, partial) and 30 albums (complete); an owned artist page returned `artist`, `owned_albums` and `bio` but `missing_albums` and `similar` as `deadline` (the known cold-cache behavior). No tracebacks in the app log.
+- **Not done:** any check in a real browser (Settings button, keyboard and focus, narrow widths, Safari, VoiceOver); ListenBrainz-backed similar results with a warm cache; the P3 precompute timing. No image publication, deployment, or runtime verification.
+- **Next action:** the owner reviews and merges PR #627.
+
 ## 2026-10-26 — P5: latency measurement (PR #626 open, not merged)
 
 - **Tool:** `scripts/search_latency.py` with `tests/test_search_latency_script.py`, in [PR #626](https://github.com/abucalip/navi-librarian/pull/626) (head `5f8cf3dc567eef74ba22a03169779a8e41196dff`; compile, container-smoke, test-and-build and validate-container passed). It serves the real search router in a throwaway app with an isolated data directory and times real HTTP/SSE requests. The merge was not done: the permission check denied it, so it waits for the owner. Focused tests run: the new module, `test_discovery_search_runner`, `test_api_search_routes` (45 tests, OK). The full suite was not run (owner rule).

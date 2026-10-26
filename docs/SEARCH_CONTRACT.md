@@ -868,7 +868,7 @@ Run with the app's own client code and a real personal access token. Only status
 | Wrong token | `ProviderError("failed")`, not an empty list |
 | MusicBrainz `/genre/all?fmt=txt` | 2,216 names, includes `shoegaze` |
 
-**Not exercised live (the owner scheduled these for the end of P5):** the Discogs genre extraction; a real HTTP 429 (pacing kept the run under the limit); the `Ash (2)` disambiguation suffix; the Settings Test button in the app; the whole app against live providers.
+**Exercised live at the end of P5 (2026-10-26, see `PROJECT_LOG.md`):** Discogs genre extraction, a real HTTP 429 (call 62 of an unpaced burst), the `Ash (2)` suffix, the Settings Test route, and the app against live providers through the API. Not done: the Settings button and the UI in a real browser.
 
 ### 13.3 Decisions and deviations
 
