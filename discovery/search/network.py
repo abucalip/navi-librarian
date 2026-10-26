@@ -88,13 +88,16 @@ def external_search(
     api_key = str(settings.get(LASTFM_API_KEY) or "").strip()
     lastfm_gen = lastfm_generation(settings_read)
     discogs_token, _ = discogs_token_and_source(settings_read, os.environ)
+    discogs_gen = discogs_generation(settings_read)
     if delete_except is not None:
         _schedule_purge(delete_except, "lastfm", lastfm_gen)
+        _schedule_purge(delete_except, "discogs", discogs_gen)
         _schedule_purge(delete_except, "musicbrainz", MUSICBRAINZ_GENERATION)
     get = http_get or httpx.get
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=api_key) if api_key else None
+    discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
 
     def parts_for(query: str, types: Sequence[str]) -> list[Part]:
         parts: list[Part] = []
@@ -116,6 +119,15 @@ def external_search(
                     kind=kind,
                     key=provider_cache_key("lastfm", lastfm_gen, query, kind),
                     fetch=lambda remaining, cancelled, q=query, m=method: getattr(lastfm, m)(
+                        q, remaining=remaining, cancelled=cancelled
+                    ),
+                ))
+            if discogs is not None:
+                parts.append(Part(
+                    source="discogs",
+                    kind=kind,
+                    key=provider_cache_key("discogs", discogs_gen, query, kind),
+                    fetch=lambda remaining, cancelled, q=query, m=method: getattr(discogs, m)(
                         q, remaining=remaining, cancelled=cancelled
                     ),
                 ))

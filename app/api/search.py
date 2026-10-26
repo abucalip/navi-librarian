@@ -455,14 +455,14 @@ def genre(tag: str, request: Request, librarian=Depends(get_librarian)):
                 librarian.DISCOVERY_DB, prefix, keep
             ),
         )
-        sections, partial = genre_sections(view, network, normalized)
+        sections, partial, deadline_hit = genre_sections(view, network, normalized)
         capabilities = genre_capabilities(view, network)
     except Exception:
         return JSONResponse(
             status_code=502,
             content={"code": "genre_failed", "message": "Genre page failed."},
         )
-    done = {"elapsed_ms": _elapsed_ms(started), "deadline_hit": False, "partial": partial}
+    done = {"elapsed_ms": _elapsed_ms(started), "deadline_hit": deadline_hit, "partial": partial}
     if _wants_stream(request):
         def stream():
             yield sse("capabilities", capabilities)

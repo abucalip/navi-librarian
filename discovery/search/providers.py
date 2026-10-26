@@ -565,6 +565,11 @@ class ListenBrainzRadio:
         return output
 
 
+def _discogs_name(name: str) -> str:
+    """An artist name without Discogs' disambiguation suffix, so "Ash (2)" reads "Ash"."""
+    return re.sub(r"\s+\(\d+\)$", "", name.strip())
+
+
 class DiscogsSearch:
     """Discogs styles and style browsing. Needs a personal access token; the caller checks it first.
 
@@ -607,19 +612,35 @@ class DiscogsSearch:
             raise ProviderError("failed")
         return _as_list(payload.get("results"))
 
-    def style_albums(self, style: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Master releases in one style as album candidates (genre pages). Titles read ``Artist - Album``."""
+    def _master_albums(self, params: dict[str, Any], *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases as album candidates. Discogs titles read ``Artist - Album``."""
         candidates = []
-        for item in self._search({"style": style}, remaining=remaining, cancelled=cancelled):
+        for item in self._search(params, remaining=remaining, cancelled=cancelled):
             if not isinstance(item, dict):
                 continue
             artist, separator, title = str(item.get("title") or "").partition(" - ")
             if not separator:
                 continue
             candidates.append(album_candidate(
-                self.source, title.strip(), artist.strip(), _year(item.get("year")), None,
+                self.source, title.strip(), _discogs_name(artist), _year(item.get("year")), None,
             ))
         return [c for c in candidates if _usable(c) and c["artist"]]
+
+    def style_albums(self, style: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases in one style as album candidates (genre pages)."""
+        return self._master_albums({"style": style}, remaining=remaining, cancelled=cancelled)
+
+    def albums(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases matching a text query (global search)."""
+        return self._master_albums({"q": query}, remaining=remaining, cancelled=cancelled)
+
+    def artists(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Artists matching a text query (global search). Discogs has no MBIDs, so matching is by name."""
+        candidates = []
+        for item in self._search({"q": query, "type": "artist"}, remaining=remaining, cancelled=cancelled):
+            if isinstance(item, dict):
+                candidates.append(artist_candidate(self.source, _discogs_name(str(item.get("title") or "")), None))
+        return [c for c in candidates if _usable(c)]
 
     def artist_styles(self, name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Styles on the artist's master releases, lower-cased, most frequent first. Used for shared-style similarity."""
@@ -629,7 +650,7 @@ class DiscogsSearch:
             if not isinstance(item, dict):
                 continue
             artist, separator, _ = str(item.get("title") or "").partition(" - ")
-            if not separator or normalize_key(artist) != key:
+            if not separator or normalize_key(_discogs_name(artist)) != key:
                 continue
             for style in _as_list(item.get("style")):
                 folded = str(style).strip().casefold()

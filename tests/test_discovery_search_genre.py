@@ -107,6 +107,21 @@ class DiscogsSearchTests(unittest.TestCase):
         self.assertEqual(caught.exception.state, "rate_limited")
         self.assertEqual(get.requests, [])
 
+    def test_text_search_reads_artists_without_the_disambiguation_suffix_and_albums_from_masters(self):
+        get = Get(
+            Response(payload={"results": [{"title": "Ash (2)"}, {"title": "Ride"}]}),
+            Response(payload=MASTERS),
+        )
+        client = discogs(get)
+        cancelled = threading.Event()
+        artists = client.artists("ash", remaining=plenty, cancelled=cancelled)
+        albums = client.albums("slowdive", remaining=plenty, cancelled=cancelled)
+        self.assertEqual([(a["name"], a["source"], a["mbid"]) for a in artists], [("Ash", "discogs", None), ("Ride", "discogs", None)])
+        self.assertEqual(albums[0]["artist"], "Slowdive")
+        self.assertEqual(get.requests[0][1]["type"], "artist")
+        self.assertEqual(get.requests[1][1]["type"], "master")
+        self.assertEqual(get.requests[1][1]["q"], "slowdive")
+
     def test_musicbrainz_tag_queries(self):
         get = Get(
             Response(payload={"artists": [{"id": "a1", "name": "Slowdive"}]}),
@@ -193,7 +208,7 @@ class GenreSectionsTests(unittest.TestCase):
             artists=[artist_candidate("musicbrainz", "Slowdive", "m1"), artist_candidate("musicbrainz", "Ride", "m2")],
             albums=[album_candidate("musicbrainz", "Souvlaki", "Slowdive", 1993, "rg1")],
         )
-        sections, partial = genre_sections(owned_view(), genre_network(mb), normalize_tag("  SHOEGAZE "))
+        sections, partial, _ = genre_sections(owned_view(), genre_network(mb), normalize_tag("  SHOEGAZE "))
         artists = sections["artists"]["items"]
         self.assertEqual([(i["name"], i["owned"]) for i in artists], [("Ride", True), ("Slowdive", False)])
         albums = sections["albums"]["items"]
@@ -206,7 +221,7 @@ class GenreSectionsTests(unittest.TestCase):
             album_candidate("discogs", "Souvlaki", "Slowdive", 1993, None),
             album_candidate("discogs", "Loveless", "My Bloody Valentine", 1991, None),
         ])
-        sections, _ = genre_sections(owned_view(), genre_network(mb, dg), "shoegaze")
+        sections, _, _ = genre_sections(owned_view(), genre_network(mb, dg), "shoegaze")
         by_name = {i["name"]: i for i in sections["albums"]["items"]}
         self.assertEqual(by_name["Souvlaki"]["sources"], ["musicbrainz", "discogs"])
         self.assertEqual(by_name["Souvlaki"]["attribution"], DISCOGS_ATTRIBUTION)
@@ -218,11 +233,11 @@ class GenreSectionsTests(unittest.TestCase):
 
     def test_musicbrainz_only_items_have_no_attribution(self):
         mb = FakeMB(albums=[album_candidate("musicbrainz", "Souvlaki", "Slowdive", 1993, "rg1")])
-        sections, _ = genre_sections(owned_view(), genre_network(mb), "shoegaze")
+        sections, _, _ = genre_sections(owned_view(), genre_network(mb), "shoegaze")
         self.assertTrue(all("attribution" not in i for i in sections["albums"]["items"]))
 
     def test_failed_source_makes_the_sections_incomplete_and_the_page_partial(self):
-        sections, partial = genre_sections(owned_view(), genre_network(FakeMB(fail=True)), "shoegaze")
+        sections, partial, _ = genre_sections(owned_view(), genre_network(FakeMB(fail=True)), "shoegaze")
         self.assertEqual(sections["albums"]["reason"], "source_failed")
         self.assertFalse(sections["albums"]["complete"])
         self.assertEqual([i["name"] for i in sections["albums"]["items"]], ["Nowhere"])
@@ -230,7 +245,7 @@ class GenreSectionsTests(unittest.TestCase):
 
     def test_building_index_still_serves_network_items_and_is_partial(self):
         mb = FakeMB(artists=[artist_candidate("musicbrainz", "Slowdive", "m1")])
-        sections, partial = genre_sections(owned_view(STATE_BUILDING), genre_network(mb), "shoegaze")
+        sections, partial, _ = genre_sections(owned_view(STATE_BUILDING), genre_network(mb), "shoegaze")
         self.assertEqual([i["name"] for i in sections["artists"]["items"]], ["Slowdive"])
         self.assertTrue(partial)
 
@@ -249,8 +264,30 @@ class GenreSectionsTests(unittest.TestCase):
         genre_sections(owned_view(), genre_network(FakeMB(fail=True), None, store), "shoegaze")
         self.assertEqual(store.data, {})
 
+    def test_a_source_that_misses_the_deadline_reports_deadline_and_deadline_hit(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class SlowMB(FakeMB):
+            def artists_by_tag(self, tag, *, remaining, cancelled):
+                release.wait(5)
+                return []
+
+        net = genre_network(SlowMB(albums=[album_candidate("musicbrainz", "Souvlaki", "Slowdive", 1993, "rg1")]))
+        net.deadline_seconds = 0.05
+        sections, partial, deadline_hit = genre_sections(owned_view(), net, "shoegaze")
+        self.assertEqual(sections["artists"]["reason"], "deadline")
+        self.assertFalse(sections["artists"]["complete"])
+        self.assertIsNone(sections["albums"]["reason"])
+        self.assertTrue(partial)
+        self.assertTrue(deadline_hit)
+
+    def test_no_deadline_hit_when_every_source_answers(self):
+        _, _, deadline_hit = genre_sections(owned_view(), genre_network(), "shoegaze")
+        self.assertFalse(deadline_hit)
+
     def test_json_sections_drop_the_section_key(self):
-        sections, _ = genre_sections(owned_view(), genre_network(), "shoegaze")
+        sections, _, _ = genre_sections(owned_view(), genre_network(), "shoegaze")
         self.assertTrue(all("section" not in s for s in json_sections(sections).values()))
 
     def test_purge_covers_genre_entries_of_old_generations(self):
@@ -272,6 +309,39 @@ class GenreCapabilitiesTests(unittest.TestCase):
         caps = genre_capabilities(owned_view(STATE_BUILDING), genre_network())
         self.assertTrue(caps["sections"]["artists"]["available"])
         self.assertFalse(caps["owned_index"]["available"])
+
+
+class SearchWiringTests(unittest.TestCase):
+    def parts(self, settings):
+        from discovery.search.network import external_search
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("DISCOGS_TOKEN", None)
+            search = external_search(
+                settings_read=lambda: settings, cache_read=lambda k: None, cache_write=lambda k, v: None,
+                http_get=Get(),
+            )
+        return search.parts_for("ash", ["artist", "album"])
+
+    def test_discogs_is_queried_exactly_when_it_is_reported_available(self):
+        with_token = self.parts({"discogs_token": TOKEN, "discogs_generation": 3})
+        self.assertEqual(sorted((p.source, p.kind) for p in with_token if p.source == "discogs"),
+                         [("discogs", "album"), ("discogs", "artist")])
+        self.assertTrue(all(":3:" in p.key for p in with_token if p.source == "discogs"))
+        self.assertNotIn(TOKEN, json.dumps([p.key for p in with_token]))
+        self.assertFalse([p for p in self.parts({}) if p.source == "discogs"])
+
+    def test_discogs_search_results_carry_the_attribution(self):
+        from discovery.search.merge import shape_result
+
+        artist = shape_result(artist_candidate("discogs", "Ride", None))
+        album = shape_result(album_candidate("discogs", "Nowhere", "Ride", 1990, None))
+        other = shape_result(artist_candidate("musicbrainz", "Ride", "m1"))
+        self.assertEqual(artist["attribution"], DISCOGS_ATTRIBUTION)
+        self.assertEqual(album["attribution"], DISCOGS_ATTRIBUTION)
+        self.assertNotIn("attribution", other)
 
 
 class SimilarStylesTests(unittest.TestCase):
@@ -308,6 +378,27 @@ class SimilarStylesTests(unittest.TestCase):
         self.assertIn("Shared tags: shoegaze", item["reasons"])
         self.assertEqual(item["attribution"], DISCOGS_ATTRIBUTION)
         self.assertTrue(any(k.startswith("search:discogs:0:artist-styles:") for k in store.data))
+
+    def test_styles_of_one_candidate_never_attribute_another_candidates_tag(self):
+        from discovery.search.similar import fuse_similar
+
+        records = [
+            {"source": "lastfm", "name": "Ride", "mbid": "m-ride", "match": 0.5},
+            {"source": "lastfm", "name": "Lush", "mbid": "m-lush", "match": 0.4},
+        ]
+        items = {
+            item["name"]: item
+            for item in fuse_similar(
+                records, "Slowdive", "m-sd", OwnedKeys(None),
+                seed_tags={"shoegaze"},
+                candidate_tags={"m-ride": {"shoegaze"}, "m-lush": {"shoegaze"}},
+                seed_styles=set(),
+                candidate_styles={"m-ride": {"shoegaze"}},  # Discogs supplied the tag for Ride only
+            )
+        }
+        self.assertEqual(items["Ride"]["attribution"], DISCOGS_ATTRIBUTION)
+        self.assertNotIn("attribution", items["Lush"])
+        self.assertIn("Shared tags: shoegaze", items["Lush"]["reasons"])
 
     def test_without_a_token_there_is_no_discogs_call_or_attribution(self):
         section, store = self.run_similar(False)

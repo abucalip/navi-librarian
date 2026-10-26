@@ -57,7 +57,8 @@ def fuse_similar(
     *,
     seed_tags: Collection[str] = (),
     candidate_tags: Mapping[str, Collection[str]] | None = None,
-    style_tags: Collection[str] = (),
+    seed_styles: Collection[str] = (),
+    candidate_styles: Mapping[str, Collection[str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Fused suggestions: artists not in the library by score, then owned artists by score.
 
@@ -91,7 +92,7 @@ def fuse_similar(
             entry["reasons"].append(reason)
 
     seed_tag_set = {tag.casefold() for tag in seed_tags}
-    style_set = {tag.casefold() for tag in style_tags}
+    seed_style_set = {tag.casefold() for tag in seed_styles}
     for entry in merged:
         candidate = entry["candidate"]
         entry["owned_artist"] = owned.owned_artist(candidate)
@@ -102,8 +103,10 @@ def fuse_similar(
                 union = seed_tag_set | {tag.casefold() for tag in tags}
                 entry["score"] += TAG_WEIGHT * len(shared) / len(union)
                 entry["reasons"].append("Shared tags: " + ", ".join(shared[:TAG_REASON_LIMIT]))
-                # A shared tag that Discogs supplied carries the Discogs attribution (contract section 1).
-                entry["discogs"] = bool(style_set & set(shared))
+                # A shared tag that Discogs supplied for the seed or for this candidate carries the Discogs
+                # attribution (contract section 1). Another candidate's styles never count.
+                own_styles = {tag.casefold() for tag in (candidate_styles or {}).get(candidate["mbid"], ())}
+                entry["discogs"] = bool((seed_style_set | own_styles) & set(shared))
         if entry["owned_artist"] is not None:
             plays = int(entry["owned_artist"].get("plays") or 0)
             boost = owner_boost(plays)
