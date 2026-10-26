@@ -6,6 +6,7 @@ HTTP adapters only. Matching, ranking and index lifecycle live in ``discovery/se
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from datetime import date
@@ -22,11 +23,18 @@ from discovery.search.artist_page import artist_page, json_sections, section_eve
 from discovery.search.events import search_events, sse
 from discovery.search.index import STATE_FRESH, STATE_STALE, OwnedIndex, fetch_song_inventory
 from discovery.search.merge import OwnedKeys
-from discovery.search.network import artist_network, external_search
+from discovery.search.genre_page import (
+    SECTION_ORDER as GENRE_SECTION_ORDER,
+    genre_capabilities,
+    genre_sections,
+    json_sections as genre_json_sections,
+    normalize_tag,
+)
+from discovery.search.network import artist_network, external_search, genre_network
 from discovery.search.similar_precompute import run_precompute
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
-from settings.service import lastfm_generation, navidrome_generation
+from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation, navidrome_generation
 
 router = APIRouter()
 
@@ -363,6 +371,8 @@ def artist_network_for(librarian):
         navidrome_mbid=navidrome_mbid,
         lastfm_api_key=str(settings.get("lastfm_api_key") or "").strip(),
         lastfm_gen=lastfm_generation(librarian._discovery_settings_read),
+        discogs_token=discogs_token_and_source(librarian._discovery_settings_read, os.environ)[0],
+        discogs_gen=discogs_generation(librarian._discovery_settings_read),
     )
 
 
@@ -426,3 +436,39 @@ def artist(
         "sections": json_sections(page),
         "done": done,
     }
+
+
+@router.get("/api/genres/{tag}")
+def genre(tag: str, request: Request, librarian=Depends(get_librarian)):
+    """Genre page (contract section 3.4): owned and unowned artists and albums for a tag."""
+    normalized = normalize_tag(tag)
+    if not normalized or len(normalized) > 100:
+        raise HTTPException(status_code=400, detail="tag must be 1 to 100 characters.")
+    started = time.monotonic()
+    try:
+        view = owned_view(librarian)
+        network = genre_network(
+            settings_read=librarian._discovery_settings_read,
+            cache_read=librarian._discovery_read_list,
+            cache_write=librarian._discovery_write_list,
+            delete_except=lambda prefix, keep: discovery_store.delete_prefix_except(
+                librarian.DISCOVERY_DB, prefix, keep
+            ),
+        )
+        sections, partial = genre_sections(view, network, normalized)
+        capabilities = genre_capabilities(view, network)
+    except Exception:
+        return JSONResponse(
+            status_code=502,
+            content={"code": "genre_failed", "message": "Genre page failed."},
+        )
+    done = {"elapsed_ms": _elapsed_ms(started), "deadline_hit": False, "partial": partial}
+    if _wants_stream(request):
+        def stream():
+            yield sse("capabilities", capabilities)
+            for name in GENRE_SECTION_ORDER:
+                yield sse("section", sections[name])
+            yield sse("done", done)
+
+        return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+    return {"capabilities": capabilities, "sections": genre_json_sections(sections), "done": done}

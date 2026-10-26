@@ -25,7 +25,7 @@ from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import normalize_key
-from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
+from discovery.search.providers import DISCOGS_ATTRIBUTION, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
 from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
 
@@ -54,6 +54,9 @@ class ArtistNetwork:
     lastfm_generation: int = 0
     # ListenBrainz radio, which needs the artist's MBID. None when the source is not wired.
     listenbrainz: ListenBrainzRadio | None = None
+    # Discogs styles join the shared tags when a token is saved. ``discogs_generation`` keys their cache entries.
+    discogs: DiscogsSearch | None = None
+    discogs_generation: int = 0
     sources: Mapping[str, dict[str, Any]] = field(default_factory=dict)
     clock: Callable[[], float] = time.monotonic
     deadline_seconds: float = SEARCH_DEADLINE_SECONDS
@@ -229,6 +232,25 @@ def _tags_for(network: ArtistNetwork, mbid: str, *, remaining, cancelled) -> tup
     return {record["name"] for record in records}, False
 
 
+def _styles_for(network: ArtistNetwork, name: str, *, remaining, cancelled) -> tuple[set[str] | None, bool]:
+    """Discogs styles of one artist, as ``(styles, hit_deadline)``; same failure rules as ``_tags_for``."""
+    if network.discogs is None:
+        return set(), False
+    key = provider_cache_key("discogs", network.discogs_generation, f"artist-styles:{normalize_key(name)}", "styles")
+    hit = read_cached(network.cache_read, key, time.time(), positive_ttl=TAG_TTL_SECONDS)
+    if hit is not None:
+        return {record["name"] for record in hit}, False
+    try:
+        records = network.discogs.artist_styles(name, remaining=remaining, cancelled=cancelled)
+    except ProviderError as exc:
+        return None, exc.state == "rate_limited"
+    except Exception:
+        return None, False
+    if remaining() > 0 and not cancelled.is_set():
+        write_cached(network.cache_write, key, records, time.time())
+    return {record["name"] for record in records}, False
+
+
 def similar_items(
     network: ArtistNetwork,
     name: str,
@@ -288,25 +310,35 @@ def similar_items(
         fetched = False
 
     seed_tags: set[str] = set()
+    style_tags: set[str] = set()
     tags_hit_deadline = False
     if mbid:
         seed_tags, tags_hit_deadline = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
         seed_tags = seed_tags or set()
+    seed_styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled)
+    tags_hit_deadline = tags_hit_deadline or hit
+    seed_styles = seed_styles or set()
+    style_tags |= seed_styles
+    seed_tags = seed_tags | seed_styles
     candidate_tags: dict[str, set[str]] = {}
     if seed_tags:
         # Only the top unowned candidates with an MBID are looked up; the rest have no shared-tag score.
         ranked = fuse_similar(records, name, mbid, owned, limit=SIMILAR_LIMIT)
         looked_up = [
-            item["mbid"] for item in ranked if not item["owned"] and item["mbid"]
+            (item["mbid"], item["name"]) for item in ranked if not item["owned"] and item["mbid"]
         ][:TAG_LOOKUP_LIMIT]
-        for candidate_mbid in looked_up:
+        for candidate_mbid, candidate_name in looked_up:
             tags, hit = _tags_for(network, candidate_mbid, remaining=remaining, cancelled=cancelled)
             tags_hit_deadline = tags_hit_deadline or hit
-            if tags:
-                candidate_tags[candidate_mbid] = tags
+            styles, hit = _styles_for(network, candidate_name, remaining=remaining, cancelled=cancelled)
+            tags_hit_deadline = tags_hit_deadline or hit
+            style_tags |= styles or set()
+            combined = (tags or set()) | (styles or set())
+            if combined:
+                candidate_tags[candidate_mbid] = combined
 
     items = fuse_similar(
-        records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags,
+        records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags, style_tags=style_tags,
     )
     # Commit the fetched records only once the whole section is complete, so an incomplete
     # refresh (a rate-limited tag lookup, say) leaves the previous entry in place (contract 5.2).
