@@ -57,14 +57,17 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - Safari, VoiceOver and keyboard-only checks in a real browser.
 - **P2 (network sources):** complete (PRs #613 to #620). Limits carried forward are in `SEARCH_CONTRACT.md` section 12.10.
 - **P3 (similar artists) and P3b:** merged in PRs [#621](https://github.com/abucalip/navi-librarian/pull/621) (squash `7f1b44f`, fusion slice) and [#622](https://github.com/abucalip/navi-librarian/pull/622) (squash `05b259c`, shared tags, owner boost, daily precompute). Contract: `SEARCH_CONTRACT.md` sections 7, 8.1 and 10. Closed out in the owner's direction on 2026-10-26.
-- **P3 follow-ups, not yet verified:**
+- **P3 follow-ups, not yet verified (P4 did not change them):**
   - **Live provider check.** Nothing has run against the live MusicBrainz, ListenBrainz or Last.fm services or the owner's library. The first precompute pass should be timed and its call volume recorded: about 733 ListenBrainz radio calls at 2 s spacing, plus up to 10 MusicBrainz tag lookups per artist at 1 req/s. Record the results in `PROJECT_LOG.md`.
   - **Tuning.** The tag and boost weights (0.5), the 100-play scale, the 10-candidate tag limit, and the 6 h / 120 s precompute budgets are starting values. Check them against real results before treating them as settled.
   - **Partial artist pages until the tag cache is warm.** Tag lookups run at 1 req/s inside the 3 s page deadline, so artist pages often return `similar` as incomplete with reason `deadline` until precompute has filled the tag cache.
   - **Fixed precompute order.** Each daily pass starts from the same point in the library list. If a full pass ever runs past the 6 h budget, the artists at the end are never reached. Rotate the start point, or record the last artist reached, before this matters.
   - **Precompute is on by default**, with no settings switch. It runs only while the app process is running and the owned index is usable.
-- **P4 (Discogs and genre pages) implemented and merged:** PRs [#623](https://github.com/abucalip/navi-librarian/pull/623)–[#625](https://github.com/abucalip/navi-librarian/pull/625) are merged. Includes Discogs token settings/client and styles as a shared-tag source, global genre search, genre pages, and the settings/genre UI. Verification and exact SHAs are recorded in `PROJECT_STATUS.md` and `PROJECT_LOG.md`.
-- **P4 follow-up not verified:** no live Discogs token/API check was performed. Keep publication and deployment paused. Do not treat mocked authorization-header tests or green CI as live-provider verification.
+- **P4 (Discogs and genre pages): complete.** PRs [#623](https://github.com/abucalip/navi-librarian/pull/623) to [#625](https://github.com/abucalip/navi-librarian/pull/625) are merged: Discogs token settings and client, Discogs styles as a shared-tag source, global genre search, genre pages, and the Settings/genre UI. Record: `SEARCH_CONTRACT.md` section 13. Exact SHAs and CI: `PROJECT_STATUS.md` and `PROJECT_LOG.md`.
+- **P4 follow-ups, not closed:**
+  - **Owner decisions.** `tag_source: "navidrome"` for owned genre results (contract 3.8 amendment), and owned-before-unowned ordering on genre pages (`SEARCH_CONTRACT.md` 13.3).
+  - **Live Discogs check: partly done (2026-10-26).** The auth header, Test call, style lookup, style browse, text search and bad-token failure were confirmed with a real token. Not run live: Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button in the app, and the whole app against live providers (13.2).
+  - **Browser checks** were waived for the P4 batch and not performed: Settings tab, genre view, search genre results, keyboard and focus, narrow widths.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated

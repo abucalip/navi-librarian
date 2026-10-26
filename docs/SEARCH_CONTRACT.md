@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **P5 is not started**; it covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
+Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged (P4 record: section 13)**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **P5 is not started**; it covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
 
 ## 1. Owner decisions (recorded)
 
@@ -195,7 +195,14 @@ The artist page streams when `Accept: text/event-stream` is sent. The stream fol
 
 ### 3.4 `GET /api/genres/{tag}`
 
-Available from P4. Genre page: top owned and unowned artists and albums for a tag, with the tag's sources. Same section structure as 3.3, with `artists` and `albums` sections in place of `artist`.
+Available from P4. Genre page: owned and unowned artists and albums for a tag. Same envelope as 3.3 (`capabilities`, `sections`, `done`; JSON or SSE), with `artists` and `albums` sections in place of `artist`. The tag is lower-cased with single spaces; a blank tag or one over 100 characters is `400`.
+
+- **Owned items** come from the owned index with no network call. An album matches when its Navidrome genre equals the tag (ignoring case), and an artist matches through such an album. Owned items are listed first (built as chosen by the agent, pending the owner's confirmation; see 13.3).
+- **Unowned items** come from MusicBrainz tag search (`tag:"…"` on artists and on studio release-groups) and, when a Discogs token is saved, Discogs style search on master releases. Discogs lists only albums, so its artists are the album artists, most frequent first. The sources are interleaved, owned entities and duplicates are dropped, and each section keeps at most 30 unowned items. Each item lists its `sources`.
+- **Attribution.** A Discogs-sourced item carries `attribution: "Data provided by Discogs"`.
+- **Cache.** Each source's records for one tag and kind are cached for 7 days under `genre:{source}:{config_generation}:{tag}:{kind}` (section 5.2). Only complete answers are written.
+- **Sections and `done`.** A source that fails makes the sections it feeds incomplete with `source_failed`; a source that misses the 3.0 s deadline makes them incomplete with `deadline`, and `done.deadline_hit` is then `true`. Either makes the page `partial`. While the owned index builds, the page still serves network items and is `partial`.
+- **Capabilities** use `sections` (`artists`, `albums`), `sources` (`navidrome`, `musicbrainz`, `discogs`) and `owned_index`. Discogs is `source_disabled` without a token.
 
 ### 3.5 Discogs settings
 
@@ -272,7 +279,7 @@ These are the contract targets for backend implementation and API contract tests
 | `duration` | song only | int or null | Seconds, rounded down. |
 | `track_number` | song only | int or null | 1-based. `null` when unknown. |
 | `tag` | genre only | string | Normalized tag. |
-| `tag_source` | genre only | string | One of `musicbrainz`, `discogs`, `listenbrainz`. |
+| `tag_source` | genre only | string | One of `musicbrainz`, `discogs`, `listenbrainz`, or `navidrome` for an owned genre. **The `navidrome` value was added in P4 and is pending the owner's approval (13.3).** `listenbrainz` is not produced by this build. |
 | `owned_candidates` | no | array of keys | Optional. Present only when `owned` is `false`. |
 
 **P1 sends only owned `result` events.** Each owned result has `owned: true` and `sources: ["navidrome"]`.
@@ -486,7 +493,7 @@ The generation rule applies to every credentialed source: Navidrome (user, passw
 
 **Transport and logging.** Secrets do not appear in cache keys, logs, responses or error messages:
 
-- The Discogs token is sent in the `Authorization` header (`Discogs token=…`), not in the query string (**to verify** against the Discogs API documentation).
+- The Discogs token is sent in the `Authorization` header (`Discogs token=…`), not in the query string. A live request with a real token confirmed the format on 2026-10-26 (section 13.2).
 - Last.fm's API key is a query parameter, because that is how Last.fm's API takes it. Request logging for these hosts must redact query parameters before writing, and no full URL that contains a credential is logged.
 - `POST /api/settings/discogs/test` returns an `error` string that follows the `message` rule in section 3.8. It never echoes a provider response body or a request URL.
 
@@ -576,7 +583,7 @@ Checked on 2026-10-25. Live results are authoritative; secondary sources are mar
 
 ### Open
 
-**Open:** confirm the Discogs `Authorization: Discogs token=…` header format (section 5.2) against the Discogs API documentation before P4.
+**Closed (2026-10-26):** the Discogs `Authorization: Discogs token=…` header format is accepted by the live API (section 13.2). The official documentation page was still not readable by the agent.
 
 Fixes for the third review are in the sections listed below. They have not yet been re-reviewed. Earlier fixes: `result` and `source` schemas and the P1 `source` rule (3.8); the `partial` rule (3.8); invariants and tests moved to P1 (3.7, 8.1); phase-matched `capabilities` examples (3.8); the Navidrome generation drop and sanity-check exception (4.1); and the artist-page phases, JSON form, and capabilities (3.3). Non-blocking items are addressed in sections 2.1, 3.6, 3.7, 3.8, 5.2, 6 and 8.1. Re-review is requested before P1 starts.
 
@@ -832,4 +839,49 @@ Sample check (names and MBIDs read by hand): artist matches were correct in ever
 **Limits.**
 - Unresolved records are not retried. The 744 unresolved items stay unresolved until corrected or deleted through the endpoint above.
 - A name match can still be wrong. The first exact match in MusicBrainz's ranking is taken.
+
+## 13. P4 implementation record (Discogs and genre pages)
+
+Merged in PRs [#623](https://github.com/abucalip/navi-librarian/pull/623) (token settings, squash `2f66598`), [#624](https://github.com/abucalip/navi-librarian/pull/624) (client, shared styles, genre pages, global genre search, squash `13cb7d3`) and [#625](https://github.com/abucalip/navi-librarian/pull/625) (Settings tab and genre view, squash `afade38`). Exact heads and CI runs are in `PROJECT_LOG.md`.
+
+### 13.1 What was built
+
+- **Token settings (3.5, 5.2).** `GET/PUT /api/settings/discogs` and `POST /api/settings/discogs/test`. The stored token wins over `DISCOGS_TOKEN`. The generation counter bumps on a first token, a replacement, a clear, and a clear that falls back to the environment value, and once at startup when the environment token is in use. No change to `navidrome_server.py`.
+- **Client (`discovery/search/providers.py`, `DiscogsSearch`).** Master-release search by text (artists, albums) and by style, artist styles for shared-tag scoring, and genre names read off master results. Paced at 1 request/second. HTTP 429 is `rate_limited`; any other failure is `failed`, never an empty answer.
+- **Capabilities.** `discogs` is `source_disabled` without a token and available with one, in search, the artist page and the genre page. It is queried for artist and album search and for genre search whenever it is reported available.
+- **Similar artists (7).** Discogs styles join MusicBrainz tags as shared-tag input (styles cached 30 days under the Discogs generation). An item whose shared tag came from Discogs for the seed or for that candidate carries the attribution; another candidate's styles never count. The similar-artists cache key does not include the Discogs generation (see 13.3).
+- **Global genre search (3.1, 3.8).** `genre` results come from the library's album genres, from MusicBrainz (the full `/genre/all?fmt=txt` list, one request, cached 30 days, filtered per query, because MusicBrainz has no genre search) and from Discogs (styles and genres on the master results a text search returns, because Discogs has no style search). A genre the library has is returned once, as owned. A genre two sources name is returned once, keeping the first.
+- **UI.** A Discogs tab in Settings (password field never filled from the server; Save refuses an empty token; a separate Remove button; Test), a Genres group in the search panel, a genre button on the artist view, and a genre view. Back from a genre opened via search returns to the library list; Back from an artist opened in a genre returns to that genre.
+
+### 13.2 Live check against Discogs (2026-10-26)
+
+Run with the app's own client code and a real personal access token. Only statuses, counts and public names were printed.
+
+| Check | Result |
+|---|---|
+| Settings Test call (`GET /oauth/identity`) | `ok` |
+| Auth header `Authorization: Discogs token=…` | accepted |
+| `artist_styles("Slowdive")` | 9 styles in 0.7 s (`shoegaze`, `dream pop`, `indie rock`, …) |
+| `style_albums("Shoegaze")` | 50 masters in 1.2 s; `Artist - Album` titles parse |
+| `artists("slowdive")` | 50 records in 0.4 s |
+| `albums("souvlaki")` | 48 usable records of 50 in 2.0 s (two had no ` - ` separator) |
+| Wrong token | `ProviderError("failed")`, not an empty list |
+| MusicBrainz `/genre/all?fmt=txt` | 2,216 names, includes `shoegaze` |
+
+**Not exercised live:** the Discogs genre extraction; a real HTTP 429 (pacing kept the run under the limit); the `Ash (2)` disambiguation suffix; the Settings Test button in the app; the whole app against live providers.
+
+### 13.3 Decisions and deviations
+
+- **Pending the owner's decision:** `tag_source: "navidrome"` for owned genre results (3.8). The built rule is one line in `discovery/search/query.py` if the owner prefers another.
+- **Built as chosen by the agent, pending the owner's confirmation:** owned items before unowned on genre pages (similar artists lists unowned first).
+- **ListenBrainz is not a genre source** in this build, though 3.8 lists it as a possible `tag_source`. Last.fm tags are not used.
+- **Discogs generation not in the similar-artists key.** The cached similar records come only from Last.fm and ListenBrainz; Discogs styles are read from their own generation-keyed cache on every request, so a token change cannot serve stale styles.
+- **Manual browser checks were waived by the owner for this batch and not performed.**
+
+### 13.4 Limits carried forward
+
+- Discogs has no style search, so Discogs genre results depend on what the master-release search returns for the query text.
+- Genre pages cap unowned items at 30 per section and rely on tag quality at MusicBrainz and Discogs.
+- Tag lookups for shared styles add up to about 11 Discogs requests (1 per second) to an uncached artist page, inside the same 3 s page deadline.
+- The first-page latency targets in section 2.1 have not been measured (P5).
 

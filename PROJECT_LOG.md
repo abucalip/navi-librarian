@@ -1,3 +1,12 @@
+## 2026-10-26 — Global search P4 closed out; partial live Discogs check
+
+- **P4 is complete:** PRs #623 (`2f66598`), #624 (`13cb7d3`) and #625 (`afade38`) are merged. Exact heads and CI runs are in the entries below. The P4 record is `docs/SEARCH_CONTRACT.md` section 13, which also now holds the genre page design (3.4), the `tag_source` rule (3.8), and the closed header-format item (5.2, 9).
+- **Live Discogs check, run with the app's own client code and a real personal access token:** the Settings Test call returned `ok`; the `Authorization: Discogs token=…` header was accepted; `artist_styles("Slowdive")` returned 9 styles in 0.7 s; `style_albums("Shoegaze")` returned 50 masters in 1.2 s; `artists("slowdive")` returned 50 records in 0.4 s; `albums("souvlaki")` returned 48 usable records of 50 in 2.0 s; a wrong token failed with `ProviderError("failed")` rather than an empty list. MusicBrainz `/genre/all?fmt=txt` returned 2,216 names including `shoegaze`.
+- **Not exercised live:** Discogs genre extraction; a real HTTP 429; the `Ash (2)` suffix; the Settings Test button in the app; the whole app against live providers. Manual browser checks were waived by the owner and not performed. The live run reads and does not change any state; the token file used for it was a local file outside the repository.
+- **Open owner decisions:** `tag_source: "navidrome"` for owned genre results; owned-before-unowned ordering on genre pages.
+- **Release state:** no image publication, deployment, or runtime verification.
+- **Next action:** P5 (latency measurement against section 2.1 and `TEST_PLAN.md` entries). The P3 and P4 follow-ups in `ACTIVE_WORK.md` section 2d stay open.
+
 ## 2026-10-26 — P4 review and PR #623 merge; PRs #624–#625 held
 
 - **Merged:** PR #623, P4a Discogs token settings, squash commit `2f6659978195cd314faa26dbc259fd9ae68ad751`, from exact reviewed head `19549f14101fbe6a8a7e4b94707b63cf4af6235b`.
