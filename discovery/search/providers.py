@@ -128,10 +128,12 @@ class MusicBrainzSearch:
         get: Callable[..., Any],
         limiter: SourceLimiter,
         pause: Callable[[float], None] = time.sleep,
+        request_timeout: float = REQUEST_TIMEOUT,
     ):
         self._get = get
         self._limiter = limiter
         self._pause = pause
+        self._request_timeout = request_timeout
 
     def _request(self, path: str, params: dict[str, Any], *, remaining, cancelled) -> dict[str, Any]:
         for delay in (0.0, *MB_RETRY_DELAYS):
@@ -141,12 +143,16 @@ class MusicBrainzSearch:
                 self._pause(delay)
             if not self._limiter.admit(self.source, remaining()):
                 raise ProviderError("rate_limited")
-            response = self._get(
-                f"{MB_BASE}{path}",
-                params={**params, "fmt": "json"},
-                headers=MB_HEADERS,
-                timeout=REQUEST_TIMEOUT,
-            )
+            try:
+                response = self._get(
+                    f"{MB_BASE}{path}",
+                    params={**params, "fmt": "json"},
+                    headers=MB_HEADERS,
+                    timeout=self._request_timeout,
+                )
+            except Exception as exc:
+                # A timeout or connection error is a failed call, so callers can skip just this request.
+                raise ProviderError("failed") from exc
             if response.status_code == 503:
                 continue
             response.raise_for_status()

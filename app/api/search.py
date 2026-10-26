@@ -9,6 +9,7 @@ import threading
 import time
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
 
 from app.api.dependencies import get_librarian
 from discovery import store as discovery_store
@@ -46,14 +47,35 @@ _identity_job = IdentityJob()
 
 
 def _identity_pass(librarian, data):
-    """One background pass that stores MBIDs for artists and albums that do not have one yet."""
+    """One background pass that stores MBIDs for artists and albums that do not have one yet.
+
+    A pass for a generation that is no longer current does nothing, so it cannot delete the
+    records of the current generation or store records under an old one.
+    """
     import httpx
 
-    from discovery.identity import resolve_identities
+    from discovery.identity import purge_stale_identities, resolve_identities
     from discovery.search.network import LIMITER
     from discovery.search.providers import MusicBrainzSearch
 
-    musicbrainz = MusicBrainzSearch(get=httpx.get, limiter=LIMITER, pause=time.sleep)
+    def current_generation():
+        return navidrome_generation(librarian._discovery_settings_read)
+
+    idle = {"artists": 0, "albums": 0, "unresolved": 0}
+    if data.generation != current_generation():
+        return idle
+    purge_stale_identities(
+        lambda namespace, generation: discovery_store.delete_numbered_below(
+            librarian.DISCOVERY_DB, namespace, generation
+        ),
+        current_generation,
+    )
+    # The generation may have changed while the cleanup ran. Writes under this pass's generation would
+    # be stale, so stop here.
+    if data.generation != current_generation():
+        return idle
+    # A background pass can wait longer than a search request, and a timed-out batch is simply retried.
+    musicbrainz = MusicBrainzSearch(get=httpx.get, limiter=LIMITER, pause=time.sleep, request_timeout=30.0)
 
     def navidrome_mbid(artist_id):
         artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
@@ -68,6 +90,62 @@ def _identity_pass(librarian, data):
         remaining=lambda: 3600.0,
         cancelled=threading.Event(),
     )
+
+
+class IdentityCorrection(BaseModel):
+    """An MBID chosen by the owner. ``null`` marks the item as having no MBID."""
+
+    mbid: str | None = None
+
+
+def _refresh_identities(generation) -> None:
+    """Rebuild the owned index for this generation so a correction reaches results."""
+    if _owned_index is not None:
+        _owned_index.refresh(generation)
+
+
+@router.put("/api/identities/{kind}/{item_id}")
+def correct_identity(kind: str, item_id: str, body: IdentityCorrection, librarian=Depends(get_librarian)):
+    """Store the owner's MBID for one artist (``kind=artist``) or album (``kind=album``).
+
+    For an album the MBID is the release-group MBID. A stored correction is never replaced by the
+    identity pass; delete the record to let the pass resolve the item again.
+    """
+    from discovery.identity import MBID_PATTERN, KINDS, identity_name, record_for
+
+    if kind not in KINDS:
+        raise HTTPException(status_code=404, detail="Unknown kind. Use artist or album.")
+    if body.mbid is not None and not MBID_PATTERN.fullmatch(body.mbid):
+        raise HTTPException(status_code=400, detail="mbid must be a lowercase MusicBrainz UUID or null.")
+    view = owned_view(librarian)
+    generation = navidrome_generation(librarian._discovery_settings_read)
+    if view.data is None:
+        # Corrections need the library to be indexed, so the ID can be checked against it.
+        return JSONResponse(
+            status_code=409,
+            content={"code": "index_not_ready", "message": "The library index is not ready. Try again shortly."},
+        )
+    items = view.data.artists if kind == "artist" else view.data.albums
+    if not any(item["id"] == item_id for item in items):
+        raise HTTPException(status_code=404, detail="No library item has this ID.")
+    discovery_store.write_many(librarian.DISCOVERY_DB, {
+        identity_name(generation, kind, item_id): record_for(kind, body.mbid, "manual"),
+    })
+    _refresh_identities(generation)
+    return {"kind": kind, "id": item_id, "mbid": body.mbid, "source": "manual"}
+
+
+@router.delete("/api/identities/{kind}/{item_id}")
+def reset_identity(kind: str, item_id: str, librarian=Depends(get_librarian)):
+    """Delete the stored identity for one item, so the next identity pass resolves it again."""
+    from discovery.identity import KINDS, identity_name
+
+    if kind not in KINDS:
+        raise HTTPException(status_code=404, detail="Unknown kind. Use artist or album.")
+    generation = navidrome_generation(librarian._discovery_settings_read)
+    removed = discovery_store.delete_list(librarian.DISCOVERY_DB, identity_name(generation, kind, item_id))
+    _refresh_identities(generation)
+    return {"kind": kind, "id": item_id, "removed": bool(removed)}
 
 
 def owned_index_for(librarian) -> OwnedIndex:

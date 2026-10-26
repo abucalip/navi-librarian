@@ -1,3 +1,17 @@
+## 2026-10-26 — Global search P2 complete; first identity pass (branch `search-p2f`)
+
+- **First identity pass on the owner's library:** 409 artists and 1745 albums processed (744 unresolved). Artists with an MBID: 609 of 732. Albums with a release-group MBID: 1114 of 1745. 103 MusicBrainz requests, 195 s. A second pass made no calls.
+- **Fixed in this slice:** a MusicBrainz timeout no longer aborts the pass; the background pass uses a 30 s timeout.
+- **Added:** cleanup of old-generation identity records; the correction path (`PUT` and `DELETE /api/identities/{kind}/{id}`).
+- **Closed:** PR #617 (superseded by #618).
+- **Contract:** section 12.11.
+
+## 2026-10-26 — Global search P2 slice E merged (PR #618)
+
+- **Merged:** PR #618 (squash `a37f804`) at head `77993e2`. Required workflows passed on that head; the unit-test step reported `Ran 1870 tests … OK`.
+- **Contract:** section 12.9 now says merged. Section 12.10 lists what remains in P2.
+- **Replaced:** PR #617 (base `search-p2d`, so it had no checks) was superseded by #618. Close #617 when convenient.
+
 ## 2026-10-26 — Global search P2, slice E (branch `search-p2e`, stacked on `search-p2d`)
 
 - **Approved:** permanent storage of MusicBrainz identities; a background pass after each owned-index build; artists and albums.

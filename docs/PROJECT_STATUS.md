@@ -81,7 +81,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 slices A to D are merged (PRs #613 to #616). Slice E is open as PR #618 against `main`, rebased from #617, which should be closed. #618 stores MusicBrainz identities permanently and runs an identity pass after each owned-index build. Next: merge #618 once its required workflows pass on the final head, then run the first identity pass against the owner's library and record its counts. Not published or deployed.
+Global search P2 is complete (`docs/SEARCH_CONTRACT.md` section 12.11). Slice F (`search-p2f`) adds the first identity pass results, the cleanup of old identity records, and the correction path, and needs its PR merged. Next: review and merge slice F, then P3 (similar artists) when the owner starts it. Not published or deployed.
 
 ## Where to look
 
