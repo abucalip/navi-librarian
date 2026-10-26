@@ -285,20 +285,31 @@ def _precompute_once(librarian):
     )
 
 
+def _precompute_step(librarian, last_day: str | None) -> str | None:
+    """Run the day's precompute if it has not run yet; return the day that is now done.
+
+    A day that is not usable yet (the owned index is still building) stays undone and is retried
+    on the next check. A run that raises counts as done, so a broken run is not retried in a loop.
+    """
+    today = date.today().isoformat()
+    if today == last_day:
+        return last_day
+    try:
+        counts = _precompute_once(librarian)
+    except Exception as exc:
+        # Bounded diagnostics: the error type only, never provider details.
+        logger.error("Similar-artist precompute failed (%s)", type(exc).__name__)
+        return today
+    if counts is None:
+        return last_day
+    logger.info("Similar-artist precompute finished: %s", counts)
+    return today
+
+
 def _precompute_loop(librarian) -> None:
     last_day = None
     while True:
-        today = date.today().isoformat()
-        if today != last_day:
-            # One attempt per local day, even when it fails, so a broken run is not retried in a loop.
-            last_day = today
-            try:
-                counts = _precompute_once(librarian)
-                if counts is not None:
-                    logger.info("Similar-artist precompute finished: %s", counts)
-            except Exception as exc:
-                # Bounded diagnostics: the error type only, never provider details.
-                logger.error("Similar-artist precompute failed (%s)", type(exc).__name__)
+        last_day = _precompute_step(librarian, last_day)
         time.sleep(PRECOMPUTE_CHECK_SECONDS)
 
 
