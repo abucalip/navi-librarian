@@ -182,8 +182,7 @@ class SearchRouteTests(unittest.TestCase):
         self.assertEqual(set(capabilities), {"types", "sources", "owned_index"})
         self.assertEqual(list(capabilities["sources"]),
                          ["navidrome", "musicbrainz", "lastfm", "listenbrainz", "discogs"])
-        self.assertEqual(capabilities["types"]["genre"],
-                         {"available": False, "reason": "not_in_this_build"})
+        self.assertEqual(capabilities["types"]["genre"], {"available": True, "reason": None})
         self.assertEqual(capabilities["owned_index"]["state"], "fresh")
 
         results = [data for name, data in events if name == "result"]

@@ -20,9 +20,12 @@ from discovery.search.normalize import normalize_key
 MUSICBRAINZ = "musicbrainz"
 LASTFM = "lastfm"
 LISTENBRAINZ = "listenbrainz"
+DISCOGS = "discogs"
 
 MB_BASE = "https://musicbrainz.org/ws/2"
 LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
+DISCOGS_BASE = "https://api.discogs.com"
+DISCOGS_ATTRIBUTION = "Data provided by Discogs"
 MB_HEADERS = {
     "User-Agent": "NavidromeLibrarian/1.0 (personal music discovery; contact: local app)",
     "Accept": "application/json",
@@ -87,6 +90,21 @@ def artist_candidate(source: str, name: str, mbid: str | None) -> dict[str, Any]
     }
 
 
+def genre_candidate(source: str, name: str) -> dict[str, Any]:
+    """A genre or style name. The key doubles as the normalized tag (contract section 3.8)."""
+    return {
+        "type": "genre",
+        "source": source,
+        "name": name,
+        "key": normalize_key(name),
+        "mbid": None,
+        "artist": None,
+        "artist_key": None,
+        "year": None,
+        "release_group_mbid": None,
+    }
+
+
 def album_candidate(
     source: str,
     title: str,
@@ -137,7 +155,7 @@ class MusicBrainzSearch:
         self._pause = pause
         self._request_timeout = request_timeout
 
-    def _request(self, path: str, params: dict[str, Any], *, remaining, cancelled) -> dict[str, Any]:
+    def _request(self, path: str, params: dict[str, Any], *, remaining, cancelled, raw: bool = False) -> Any:
         for delay in (0.0, *MB_RETRY_DELAYS):
             if cancelled.is_set():
                 raise ProviderError("failed")
@@ -148,7 +166,7 @@ class MusicBrainzSearch:
             try:
                 response = self._get(
                     f"{MB_BASE}{path}",
-                    params={**params, "fmt": "json"},
+                    params={**params, "fmt": "txt" if raw else "json"},
                     headers=MB_HEADERS,
                     timeout=self._request_timeout,
                 )
@@ -158,8 +176,17 @@ class MusicBrainzSearch:
             if response.status_code == 503:
                 continue
             response.raise_for_status()
-            return response.json()
+            return response.text if raw else response.json()
         raise ProviderError("failed")
+
+    def genre_names(self, *, remaining, cancelled) -> list[str]:
+        """Every MusicBrainz genre name, from the one-request plain-text list (MusicBrainz has no genre search)."""
+        text = self._request("/genre/all", {}, remaining=remaining, cancelled=cancelled, raw=True)
+        names = [line.strip() for line in str(text).splitlines() if line.strip()]
+        if not names:
+            # An empty list is a failed answer, not "no genres": it must never be cached.
+            raise ProviderError("failed")
+        return names
 
     def artists(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         payload = self._request(
@@ -198,6 +225,42 @@ class MusicBrainzSearch:
             ))
         return [c for c in candidates if _usable(c) and c["artist"]]
 
+
+    def artists_by_tag(self, tag: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Artists carrying a community tag, best match first (genre pages)."""
+        payload = self._request(
+            "/artist",
+            {"query": f"tag:{lucene_phrase(tag)}", "limit": DEPTH},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        candidates = [
+            artist_candidate(self.source, str(item.get("name") or "").strip(), item.get("id"))
+            for item in _as_list(payload.get("artists"))
+            if isinstance(item, dict) and item.get("id")
+        ]
+        return [c for c in candidates if _usable(c)]
+
+    def albums_by_tag(self, tag: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Studio albums carrying a community tag, best match first (genre pages)."""
+        payload = self._request(
+            "/release-group",
+            {"query": f"tag:{lucene_phrase(tag)} AND primarytype:album", "limit": DEPTH},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        candidates = []
+        for item in _as_list(payload.get("release-groups")):
+            if not isinstance(item, dict) or not item.get("id") or item.get("secondary-types"):
+                continue
+            candidates.append(album_candidate(
+                self.source,
+                str(item.get("title") or "").strip(),
+                _credit_name(item.get("artist-credit")),
+                _year(item.get("first-release-date")),
+                item.get("id"),
+            ))
+        return [c for c in candidates if _usable(c) and c["artist"]]
 
     def artist_identities(self, names: list[str], *, remaining, cancelled) -> dict[str, str]:
         """MBIDs for many artist names, found with OR queries of up to 100 names each.
@@ -524,3 +587,114 @@ class ListenBrainzRadio:
                 seen.add(mbid)
                 output.append({"name": name, "mbid": mbid, "match": None})
         return output
+
+
+def _discogs_name(name: str) -> str:
+    """An artist name without Discogs' disambiguation suffix, so "Ash (2)" reads "Ash"."""
+    return re.sub(r"\s+\(\d+\)$", "", name.strip())
+
+
+class DiscogsSearch:
+    """Discogs styles and style browsing. Needs a personal access token; the caller checks it first.
+
+    The token goes in the ``Authorization`` header only, never in a URL or a log line. Discogs
+    answers 429 over the limit, which is reported as ``rate_limited``.
+    """
+
+    source = DISCOGS
+
+    def __init__(self, *, get: Callable[..., Any], limiter: SourceLimiter, token: str):
+        self._get = get
+        self._limiter = limiter
+        self._token = token
+
+    def _search(self, params: dict[str, Any], *, remaining, cancelled) -> list[Any]:
+        if cancelled.is_set():
+            raise ProviderError("failed")
+        if not self._limiter.admit(self.source, remaining()):
+            raise ProviderError("rate_limited")
+        try:
+            response = self._get(
+                f"{DISCOGS_BASE}/database/search",
+                params={"type": "master", "per_page": DEPTH, **params},
+                headers={
+                    "Authorization": f"Discogs token={self._token}",
+                    "User-Agent": MB_HEADERS["User-Agent"],
+                },
+                timeout=REQUEST_TIMEOUT,
+            )
+        except Exception as exc:
+            raise ProviderError("failed") from exc
+        if response.status_code == 429:
+            raise ProviderError("rate_limited")
+        try:
+            response.raise_for_status()
+            payload = response.json()
+        except Exception as exc:
+            raise ProviderError("failed") from exc
+        if not isinstance(payload, dict):
+            raise ProviderError("failed")
+        return _as_list(payload.get("results"))
+
+    def _master_albums(self, params: dict[str, Any], *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases as album candidates. Discogs titles read ``Artist - Album``."""
+        candidates = []
+        for item in self._search(params, remaining=remaining, cancelled=cancelled):
+            if not isinstance(item, dict):
+                continue
+            artist, separator, title = str(item.get("title") or "").partition(" - ")
+            if not separator:
+                continue
+            candidates.append(album_candidate(
+                self.source, title.strip(), _discogs_name(artist), _year(item.get("year")), None,
+            ))
+        return [c for c in candidates if _usable(c) and c["artist"]]
+
+    def style_albums(self, style: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases in one style as album candidates (genre pages)."""
+        return self._master_albums({"style": style}, remaining=remaining, cancelled=cancelled)
+
+    def albums(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Master releases matching a text query (global search)."""
+        return self._master_albums({"q": query}, remaining=remaining, cancelled=cancelled)
+
+    def artists(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Artists matching a text query (global search). Discogs has no MBIDs, so matching is by name."""
+        candidates = []
+        for item in self._search({"q": query, "type": "artist"}, remaining=remaining, cancelled=cancelled):
+            if isinstance(item, dict):
+                candidates.append(artist_candidate(self.source, _discogs_name(str(item.get("title") or "")), None))
+        return [c for c in candidates if _usable(c)]
+
+    def genres(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Genres and styles named on the master releases a text query finds, when they contain the query.
+
+        Discogs has no style search, so its published vocabulary is read off the search results.
+        """
+        wanted = normalize_key(query)
+        names: dict[str, str] = {}
+        for item in self._search({"q": query}, remaining=remaining, cancelled=cancelled):
+            if not isinstance(item, dict):
+                continue
+            for value in [*_as_list(item.get("style")), *_as_list(item.get("genre"))]:
+                name = str(value).strip()
+                key = normalize_key(name)
+                if key and wanted in key:
+                    names.setdefault(key, name)
+        return [genre_candidate(self.source, name) for name in names.values()]
+
+    def artist_styles(self, name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Styles on the artist's master releases, lower-cased, most frequent first. Used for shared-style similarity."""
+        key = normalize_key(name)
+        counts: dict[str, int] = {}
+        for item in self._search({"artist": name, "per_page": 25}, remaining=remaining, cancelled=cancelled):
+            if not isinstance(item, dict):
+                continue
+            artist, separator, _ = str(item.get("title") or "").partition(" - ")
+            if not separator or normalize_key(_discogs_name(artist)) != key:
+                continue
+            for style in _as_list(item.get("style")):
+                folded = str(style).strip().casefold()
+                if folded:
+                    counts[folded] = counts.get(folded, 0) + 1
+        return [{"name": style} for style in sorted(counts, key=lambda s: (-counts[s], s))]

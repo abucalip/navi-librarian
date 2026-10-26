@@ -62,7 +62,10 @@ class PrefixDeleteTests(unittest.TestCase):
     def test_purge_helper_uses_the_source_and_generation(self):
         calls = []
         purge_stale_generations(lambda prefix, keep: calls.append((prefix, keep)) or 0, "lastfm", 4)
-        self.assertEqual(calls, [("search:lastfm:", "search:lastfm:4:")])
+        self.assertEqual(calls, [
+            ("search:lastfm:", "search:lastfm:4:"),
+            ("genre:lastfm:", "genre:lastfm:4:"),
+        ])
 
 
 class PrefixReadAndBatchWriteTests(unittest.TestCase):

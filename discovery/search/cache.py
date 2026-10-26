@@ -16,6 +16,11 @@ NEGATIVE_TTL_SECONDS = 60 * 60
 SIMILAR_TTL_SECONDS = 7 * 24 * 60 * 60
 
 
+def genre_cache_key(source: str, generation: int, tag: str, kind: str) -> str:
+    """Genre-page entry (section 5.2): one source's records for one tag and kind. Holds no credential."""
+    return f"genre:{source}:{generation}:{tag}:{kind}"
+
+
 def provider_cache_key(source: str, generation: int, query: str, kind: str) -> str:
     """Key shape from section 5.2. Holds no credential, only the source's generation counter."""
     return f"search:{source}:{generation}:{query}:{kind}:depth{DEPTH}"
@@ -31,7 +36,8 @@ def purge_stale_generations(
     Old-generation entries are already unreachable (section 5.2); this only reclaims their
     storage. ``delete_except(prefix, keep_prefix)`` is the store's prefix delete.
     """
-    return delete_except(f"search:{source}:", f"search:{source}:{generation}:")
+    removed = delete_except(f"search:{source}:", f"search:{source}:{generation}:")
+    return removed + delete_except(f"genre:{source}:", f"genre:{source}:{generation}:")
 
 
 def read_cached(

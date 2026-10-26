@@ -10,6 +10,8 @@ from __future__ import annotations
 from typing import Any
 
 from discovery.search.index import OwnedData
+from discovery.search.normalize import normalize_key
+from discovery.search.providers import DISCOGS_ATTRIBUTION
 
 
 def _years_match(first: int | None, second: int | None) -> bool:
@@ -45,12 +47,15 @@ class OwnedKeys:
         self._artists: dict[str, list[str | None]] = {}
         self._albums: dict[str, list[tuple[int | None, str | None]]] = {}
         self._artist_entries: dict[str, list[dict[str, Any]]] = {}
+        self._genres: set[str] = set()
         if data is None:
             return
         for artist in data.artists:
             self._artists.setdefault(artist["key"], []).append(artist.get("mbid"))
             self._artist_entries.setdefault(artist["key"], []).append(artist)
         for album in data.albums:
+            if album.get("genre"):
+                self._genres.add(normalize_key(album["genre"]))
             self._albums.setdefault(album["key"], []).append((album["year"], album.get("release_group_mbid")))
 
     def owned_artist(self, candidate: dict[str, Any]) -> dict[str, Any] | None:
@@ -61,6 +66,8 @@ class OwnedKeys:
         return None
 
     def owns(self, candidate: dict[str, Any]) -> bool:
+        if candidate["type"] == "genre":
+            return candidate["key"] in self._genres
         if candidate["type"] == "artist":
             owned = self._artists.get(candidate["key"])
             return bool(owned) and _mbid_match(candidate["mbid"], owned)
@@ -127,6 +134,10 @@ def shape_result(candidate: dict[str, Any]) -> dict[str, Any]:
         "sources": [candidate["source"]],
         "artwork_url": None,
     }
+    if candidate["source"] == "discogs":
+        base["attribution"] = DISCOGS_ATTRIBUTION
+    if candidate["type"] == "genre":
+        return {**base, "id": f"{candidate['source']}:{candidate['key']}", "tag": candidate["key"], "tag_source": candidate["source"]}
     if candidate["type"] == "artist":
         # Search sources do not report album counts or genres, so both are null (see PR notes).
         return {**base, "album_count": None, "genre": None}

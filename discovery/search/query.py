@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from discovery.search.index import OwnedData
+from discovery.search.normalize import normalize_key
 
 ARTWORK_PATH = "/api/owned/artwork/"
 SEARCH_TYPES = ("artist", "album", "song", "genre")
@@ -85,7 +86,34 @@ def _song_result(entry: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-_SHAPERS = {"artist": _artist_result, "album": _album_result, "song": _song_result}
+def owned_genres(data: OwnedData) -> list[dict[str, Any]]:
+    """Distinct album genres of the library, one entry per normalized key (first spelling kept)."""
+    found: dict[str, dict[str, Any]] = {}
+    for album in data.albums:
+        name = str(album.get("genre") or "").strip()
+        key = normalize_key(name)
+        if key and key not in found:
+            found[key] = {"id": key, "key": key, "name": name, "name_key": key}
+    return list(found.values())
+
+
+def _genre_result(entry: dict[str, Any]) -> dict[str, Any]:
+    # An owned genre has no provider of its own, so its tag source is the library (section 3.8 amendment).
+    return {
+        "type": "genre",
+        "owned": True,
+        "id": entry["id"],
+        "key": entry["key"],
+        "name": entry["name"],
+        "mbid": None,
+        "tag": entry["key"],
+        "tag_source": SOURCE_NAME,
+        "sources": [SOURCE_NAME],
+        "artwork_url": None,
+    }
+
+
+_SHAPERS = {"genre": _genre_result, "artist": _artist_result, "album": _album_result, "song": _song_result}
 
 
 def search_owned(
@@ -95,10 +123,12 @@ def search_owned(
     limit: int = DEFAULT_LIMIT,
 ) -> dict[str, list[dict[str, Any]]]:
     """Return up to ``limit`` owned results per requested type, best match first."""
+    types = list(types)
     pools = {
         "artist": (data.artists, "key"),
         "album": (data.albums, "name_key"),
         "song": (data.songs, "name_key"),
+        "genre": (owned_genres(data) if "genre" in types else (), "name_key"),
     }
     results: dict[str, list[dict[str, Any]]] = {}
     for kind in types:
