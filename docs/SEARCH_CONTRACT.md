@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). **P1 and P2 are complete and merged** (PRs #609 to #620). P3 to P5 are not started. Section 11 is the P1 record, section 12 the P2 record (12.10 is the P2 summary, 12.11 the final slice). The per-phase history below is kept as written.
+Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **P5 is not started**; it covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
 
 ## 1. Owner decisions (recorded)
 
