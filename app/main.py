@@ -52,11 +52,23 @@ app = FastAPI(
 _discovery_scheduler_start_timer = None
 
 
+def _bump_discogs_generation_at_startup(librarian):
+    """Separate Discogs cache entries written under an earlier DISCOGS_TOKEN value (contract 5.2)."""
+    import os
+
+    from settings.service import bump_discogs_generation_for_environment
+
+    bump_discogs_generation_for_environment(
+        librarian._discovery_settings_read, librarian._discovery_settings_write, os.environ
+    )
+
+
 def _start_discovery_background():
     """Start the legacy scheduler and the daily lens-list refresh (Engine 2, Phase 4)."""
     from discovery import lens_service
 
     librarian = get_librarian()
+    _bump_discogs_generation_at_startup(librarian)
     librarian._start_discovery_scheduler()
     lens_service.start_daily_refresh(librarian)
     from app.api.search import start_similar_precompute

@@ -128,6 +128,73 @@ def lastfm_generation(settings_read):
         return 0
 
 
+DISCOGS_TOKEN_KEY = "discogs_token"
+DISCOGS_GENERATION_KEY = "discogs_generation"
+DISCOGS_ENV_VARIABLE = "DISCOGS_TOKEN"
+
+
+def discogs_generation(settings_read):
+    """Return the non-secret counter that changes whenever the Discogs credential changes."""
+    try:
+        return int(settings_read().get(DISCOGS_GENERATION_KEY) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def discogs_token_and_source(settings_read, environ):
+    """Return ``(token, source)``: the stored setting wins, then ``DISCOGS_TOKEN``, else ``("", "none")``."""
+    stored = str(settings_read().get(DISCOGS_TOKEN_KEY) or "").strip()
+    if stored:
+        return stored, "settings"
+    from_env = str(environ.get(DISCOGS_ENV_VARIABLE) or "").strip()
+    if from_env:
+        return from_env, "environment"
+    return "", "none"
+
+
+def get_discogs_settings(settings_read, environ):
+    """Return whether a Discogs token is configured and where it comes from, never the token."""
+    token, source = discogs_token_and_source(settings_read, environ)
+    return json.dumps({"token_configured": bool(token), "source": source})
+
+
+def set_discogs_settings(settings_read, settings_write, environ, token):
+    """Save or clear (empty string) the Discogs token.
+
+    Any change of the effective credential bumps the generation (contract section 5.2): a first
+    token, a replacement, a clear, and a clear that falls back to the environment value.
+    """
+    if not isinstance(token, str):
+        return json.dumps({"ok": False, "error": "token must be a string."})
+    value = token.strip()
+    if value and not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", value):
+        return json.dumps({"ok": False, "error": "The Discogs token may only contain letters, numbers, hyphens and underscores."})
+    before, _ = discogs_token_and_source(settings_read, environ)
+    values = {DISCOGS_TOKEN_KEY: value}
+    after = value or str(environ.get(DISCOGS_ENV_VARIABLE) or "").strip()
+    if after != before:
+        values[DISCOGS_GENERATION_KEY] = discogs_generation(settings_read) + 1
+    settings_write(values)
+    return json.dumps({
+        "ok": True,
+        **json.loads(get_discogs_settings(lambda: {**settings_read(), **values}, environ)),
+        "message": "Discogs settings saved; the token is never returned.",
+    })
+
+
+def bump_discogs_generation_for_environment(settings_read, settings_write, environ):
+    """At process start, bump the generation once when the environment token is the one in use.
+
+    Conservative: a restart may refill the Discogs cache, but an entry written under a different
+    environment value is never served (contract section 5.2). Returns True when it bumped.
+    """
+    _, source = discogs_token_and_source(settings_read, environ)
+    if source != "environment":
+        return False
+    settings_write({DISCOGS_GENERATION_KEY: discogs_generation(settings_read) + 1})
+    return True
+
+
 def navidrome_config(settings_read):
     """Return validated Navidrome connection settings without exposing secrets."""
     settings = settings_read()
@@ -419,3 +486,21 @@ def test_listenbrainz_connection(username_get, http_get, json_dumps):
         return json_dumps({"ok": True, "status": "connected", "message": "ListenBrainz profile is reachable."})
     except Exception:
         return json_dumps({"ok": False, "status": "connection_failed", "message": "Could not reach ListenBrainz or validate the username."})
+
+
+def test_discogs_connection(token, http_get, json_dumps):
+    """Make one lightweight authenticated Discogs request; the result never echoes the response or URL."""
+    if not token:
+        return json_dumps({"ok": False, "error": "Add a Discogs token first."})
+    try:
+        response = http_get(
+            "https://api.discogs.com/oauth/identity",
+            headers={"Authorization": f"Discogs token={token}", "User-Agent": "NavidromeLibrarian/1.0"},
+            timeout=10,
+        )
+        if response.status_code in (401, 403):
+            return json_dumps({"ok": False, "error": "Discogs rejected the token. Check the token in Settings."})
+        response.raise_for_status()
+        return json_dumps({"ok": True})
+    except Exception:
+        return json_dumps({"ok": False, "error": "Could not reach Discogs or validate the token."})
