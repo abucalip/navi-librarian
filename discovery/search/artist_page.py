@@ -104,6 +104,7 @@ def artist_page(
                 "mbid": artist.get("mbid"),
                 "owned": True,
                 "album_count": artist["album_count"],
+                "genre": artist.get("genre"),
             },
         },
         "owned_albums": {

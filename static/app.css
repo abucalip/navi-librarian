@@ -714,3 +714,6 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 @media (max-width: 620px) { .artist-hero-art { flex-basis: 128px; width: 128px; height: 128px; } }
 @media (max-width: 620px) { .library-controls { grid-template-columns: minmax(0, 1fr); } }
 
+.genre-link, .genre-item-link { min-height: 44px; }
+.genre-item-link { padding: 0; text-align: left; background: transparent; border-color: transparent; text-decoration: underline; overflow-wrap: anywhere; }
+#libraryGenreView h4 { margin: var(--space-4) 0 0; }
