@@ -1,3 +1,10 @@
+## 2026-10-26 — Global search P2 complete (PRs #613 to #620)
+
+- **Merged:** PR #620 (squash `262486e`), slice F: the first identity pass on the owner's library, the identity cleanup, and the correction path. PR #620 includes a generation-race fix from review, so the cleanup reads the current generation at delete time.
+- **P2 summary:** section 12.10 of `docs/SEARCH_CONTRACT.md`.
+- **Superseded:** PR #617 (closed) and PR #619 (docs-only, superseded by #620; open).
+- **Next:** P3 only when the owner starts it.
+
 ## 2026-10-26 — Review, full CI suite, and merge PR #620
 
 - **Reviewed final PR head:** `de8376b55435264c31ff5408179bafdf4c6535f5`. The previous blocking generation-cleanup race is addressed: cleanup reads the current generation at the point of deletion and removes only numerically older records; the pass checks the generation again before starting identity resolution. A deterministic regression test flips generation between the initial check and cleanup and asserts that the new-generation manual record survives.

@@ -83,7 +83,7 @@ Last checked: 2026-10-26. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 is complete (`docs/SEARCH_CONTRACT.md` section 12.11); slices A–F are merged, with slice F in PR #620. Next: begin P3 (similar artists) only when the owner starts it. No publication or deployment is authorized by this merge.
+Global search P2 is complete and merged (PRs #613 to #620; `docs/SEARCH_CONTRACT.md` section 12.10). Next: P3 (similar artists) only when the owner starts it. The open PR #619 is a superseded docs-only PR and can be closed. No publication or deployment is authorized.
 
 ## Where to look
 

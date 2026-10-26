@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). The P1 backend merged in PR #609 (squash `52b0010`). The P1 UI (top-bar search and library page) is on branch `search-ui`. P2 to P5 are not started. See section 11 for the record and open items.
+Status: **approved by the owner** (2026-10-25). **P1 and P2 are complete and merged** (PRs #609 to #620). P3 to P5 are not started. Section 11 is the P1 record, section 12 the P2 record (12.10 is the P2 summary, 12.11 the final slice). The per-phase history below is kept as written.
 
 ## 1. Owner decisions (recorded)
 
@@ -779,25 +779,26 @@ Owner approvals (2026-10-26): permanent storage of identities, a background pass
 - An unresolved item stays unresolved until its record is removed. There is no correction tool yet.
 - Identity records under old Navidrome generations are not deleted. Only `search:` cache entries are purged (section 12.8).
 
-### 12.10 P2 status after slice E (2026-10-26)
+### 12.10 P2 status: complete (2026-10-26)
 
-**Built and merged (PRs #613 to #618):**
+**Built and merged (PRs #613 to #620):**
 - Provider search (MusicBrainz, Last.fm) behind the 3.0 s deadline runner, with `source` events, dedupe, shared calls, cancellation and complete-only caching (slice A).
 - Artist page `bio` and `missing_albums`, with ListenBrainz listen-count ordering, under the deadline (slice B).
 - The "Not in your library" group, with the search panel showing two sections only (slice C, direction of 2026-10-25).
 - Navidrome MBID on the artist page, Last.fm top albums on the artist page, old-generation cache cleanup for search keys (slice D).
-- Stored MusicBrainz identities for artists and albums, resolved in batches after each index build, with owned matches by MBID (slice E).
+- Stored MusicBrainz identities for artists and albums, resolved in batches after each index build, with owned matches by MBID (slice E, PR #618).
+- First identity pass on the owner's library, a cleanup of old identity records, and a correction path for stored identities (slice F, PR #620, section 12.11).
 
 **Decided, not built:**
 - ListenBrainz in search. The owner's direction (2026-10-25): search does not need it. Section 10's wording "MusicBrainz, Last.fm and ListenBrainz for not-owned artists and albums" is superseded for search. ListenBrainz is used only for popularity on the artist page.
 - Provider artist results report `album_count: null` and `genre: null` (section 12.2).
 
-**Remaining in P2:** none that block merging. The items below were completed in slice F (section 12.11).
+**Remaining in P2:** nothing. Browser verification was waived by the owner.
 
-1. First identity pass on the owner's library: done, results in section 12.11.
-2. Browser verification: waived by the owner.
-3. Cleanup of identity records from old generations: done.
-4. Correction path for stored identities: done.
+**Known limits carried into P3 (not blockers):**
+- 744 identities are stored as unresolved, and unresolved records are not retried. They change only through the correction endpoint.
+- A name match can pick the wrong artist when MusicBrainz has several exact matches.
+- Provider artist results have no album count or genre (section 12.2).
 
 **Not P2:** `similar` (P3), Discogs and genre (P4), latency measurement and `TEST_PLAN.md` entries (P5).
 

@@ -55,7 +55,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - "Not in your library" results group, waiting for the P2 network sources.
   - Recommendation snapshot generation key, accepted as a deferred follow-up.
   - Safari, VoiceOver and keyboard-only checks in a real browser.
-- **P2 (network sources):** complete. Slice F (`search-p2f`) is open for review; see `SEARCH_CONTRACT.md` section 12.11.
+- **P2 (network sources):** complete (PRs #613 to #620). Limits carried forward are in `SEARCH_CONTRACT.md` section 12.10. Next phase, P3 (similar artists), starts only when the owner says so.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated
