@@ -68,7 +68,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - **Owner decisions: approved (2026-10-26).** `tag_source: "navidrome"` for owned genre results and owned-before-unowned ordering on genre pages (`SEARCH_CONTRACT.md` 3.4, 3.8, 13.3).
   - **Live Discogs check: partly done (2026-10-26); the remaining live run tests are scheduled for the end of P5 (owner direction).** The auth header, Test call, style lookup, style browse, text search and bad-token failure were confirmed with a real token. Not run live: Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button in the app, and the whole app against live providers (13.2).
   - **Browser checks** were waived for the P4 batch and not performed: Settings tab, genre view, search genre results, keyboard and focus, narrow widths.
-- **P5 (latency and live tests): done except browser checks.** PR #626 is merged; PR [#627](https://github.com/abucalip/navi-librarian/pull/627) (accept partial results when MusicBrainz throttles) is open. Results are in `PROJECT_LOG.md`. The 3.0 s `done` and cache-hit targets are still not reliably met while MusicBrainz is slow. Not done: real-browser checks.
+- **P5: closed with exceptions (2026-10-26).** PRs #626 to #629 are merged. Still open and deferred by the owner: real-browser checks; the 3.0 s `done` target with a slow MusicBrainz; P3 follow-ups (weight and scale tuning, full-library precompute timing, two artists whose precompute failed, a settings switch for precompute). Fixed: provider cache reads (#628), precompute start rotation (#629). Evidence in `PROJECT_LOG.md`.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated

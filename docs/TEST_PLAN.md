@@ -104,6 +104,27 @@ python -m unittest discover -s tests -p 'test_discovery_library_snapshot.py' -v
 
 The index tests run builds inline (`background=False`); the route tests inject an index and a fake librarian, so none of them calls Navidrome. A live check against a real Navidrome server is a separate, owner-approved step.
 
+## Global search P2 to P4 focused checks
+
+Focused modules per phase (contract `docs/SEARCH_CONTRACT.md` section 8.1 lists the required cases). None calls a live provider; stubs and fakes stand in.
+
+```sh
+# P2 network sources, deadline runner, artist-page sections, provider cache
+python -m unittest discover -s tests -p 'test_discovery_search_providers.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_runner.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_merge.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_artist_sections.py' -v
+# P3 and P3b similar artists, shared tags, owner boost, daily precompute and its cursor
+python -m unittest discover -s tests -p 'test_discovery_search_similar.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_similar_precompute.py' -v
+python -m unittest discover -s tests -p 'test_similar_precompute_schedule.py' -v
+# P4 Discogs, genre search and genre pages, Settings
+python -m unittest discover -s tests -p 'test_discovery_search_genre.py' -v
+python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
+```
+
+`FakeLibrarian` in `tests/test_api_search_routes.py` must return list-store entries in the real shape (`{"payload": entry, ...}`); a fake that returns the raw entry hid a bug where the provider cache never hit (fixed in PR #628). Live provider checks are separate, owner-approved steps; their results are in `PROJECT_LOG.md`. Browser checks follow the UI section below.
+
 ## Global search P5 latency measurement
 
 Measure the section 2.1 targets of `docs/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:

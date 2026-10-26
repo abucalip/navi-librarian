@@ -1,3 +1,14 @@
+## 2026-10-26 — P5 closeout; PRs #628 and #629 merged
+
+- **Merged at the owner's direction:** PR [#628](https://github.com/abucalip/navi-librarian/pull/628) (`2ce6f02`) and PR [#629](https://github.com/abucalip/navi-librarian/pull/629) (`1984d3b`). Required CI passed on each exact head (`83bb39b`, `6b72bbd`): compile, container-smoke, test-and-build, validate-container, validate-release-workflow.
+- **#628 fixes a bug found by the P5 runs:** the search routes passed `_discovery_read_list` straight to the provider cache, but the store wraps each entry as `{"payload": entry, ...}`, so every provider-cache read missed. Repeat searches re-queried every source, and artist pages never read cached similar-artist, tag or bio entries. After the fix a repeated `radiohead` search went from 651 ms to 14 ms with both sources `cached` (live, isolated data directory). The `FakeLibrarian` test double now returns the real shape. This likely also explains part of the "partial artist pages until the tag cache is warm" follow-up; not re-measured on an artist page.
+- **#629 (P3 follow-up, fixed precompute order):** a pass continues where the last one stopped (cursor `similar-precompute-cursor`) instead of restarting at the first artist.
+- **Cache decision:** finished sources are cached per source and now actually served. A source that times out is still not cached (contract 8.1), so a repeat search with a slow MusicBrainz still waits for it; the 3.0 s `done` target is not reliably met in that case.
+- **Live precompute sample (12 library artists, live providers, two runs):** 11 to 16 s per artist, 91 to 159 MusicBrainz calls, 8 to 10 ListenBrainz and 10 Last.fm calls for 12 artists; 10 complete and 2 `failed` each time (error type not examined). The first run saw 6 MusicBrainz 503s of 159. A full pass of 732 artists extrapolates to about 2.3 to 3.2 h. Not a measured full pass.
+- **Not done, deferred by the owner:** weight and scale tuning, the 61-artist evaluation (started, stopped), the cause of the 2 failed artists, the full-library precompute timing, partial artist pages re-check, a settings switch for precompute, and all real-browser checks.
+- **Release state:** no image publication, deployment, or runtime verification. Full suite not run by the agent (owner rule).
+- **Next action:** the owner's next priority; P5 is closed with the exceptions above.
+
 ## 2026-10-26 — P5: live run tests and the MusicBrainz throttle change
 
 - **PR #626 merged** (`1a8c062`). **PR [#627](https://github.com/abucalip/navi-librarian/pull/627) open** (owner decision: accept partial results when MusicBrainz throttles): a 503 backoff that cannot fit in the remaining deadline now reports `rate_limited` at once. Focused tests: 136 OK; the full suite was not run. Live re-measure, 6 searches 8 s apart: deadline hit on 1 of 6 (3 to 5 of 5-6 before); `done` p50 2.3 s, p95 3.0 s, so the 3.0 s and cache-hit targets are still not reliably met while MusicBrainz is slow.
