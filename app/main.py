@@ -59,6 +59,9 @@ def _start_discovery_background():
     librarian = get_librarian()
     librarian._start_discovery_scheduler()
     lens_service.start_daily_refresh(librarian)
+    from app.api.search import start_similar_precompute
+
+    start_similar_precompute(librarian)
 
 
 def _schedule_discovery_scheduler_startup():

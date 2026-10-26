@@ -166,7 +166,13 @@ def _song_entry(song: Mapping[str, Any]) -> dict[str, Any]:
         "key": f"{normalize_key(artist_name)}/{normalize_key(title)}",
         "duration": int(duration) if isinstance(duration, (int, float)) else None,
         "track_number": int(track) if isinstance(track, int) and track >= 1 else None,
+        # Navidrome's play count for the song (Subsonic ``playCount``); zero when absent.
+        "plays": _count(song.get("playCount")),
     }
+
+
+def _count(value: Any) -> int:
+    return int(value) if isinstance(value, int) and value > 0 else 0
 
 
 def build_owned_data(
@@ -199,9 +205,14 @@ def build_owned_data(
     by_artist: dict[str, list[dict[str, Any]]] = {}
     for album in album_entries:
         by_artist.setdefault(album["artist_id"], []).append(album)
+    plays_by_artist: dict[str, int] = {}
+    for song in song_entries:
+        plays_by_artist[song["artist_id"]] = plays_by_artist.get(song["artist_id"], 0) + song["plays"]
     for artist in artist_entries:
         artist["genre"] = _artist_genre(by_artist.get(artist["id"], ()))
         artist["mbid"] = (identities.get(f"artist:{artist['id']}") or {}).get("mbid") or None
+        # Owner play count across the artist's songs (contract 4.1 owned data; used by the similar boost).
+        artist["plays"] = plays_by_artist.get(artist["id"], 0)
     for album in album_entries:
         album["release_group_mbid"] = (
             (identities.get(f"album:{album['id']}") or {}).get("release_group_mbid") or None
