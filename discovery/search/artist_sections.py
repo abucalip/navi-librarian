@@ -27,10 +27,13 @@ from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import normalize_key
 from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
-from discovery.search.similar import LASTFM, LISTENBRAINZ, fuse_similar
+from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
 
 MISSING_ALBUMS_LIMIT = 50
 BIO_SOURCE = "wikidata"
+# Tag lookups per artist page: the seed plus this many top unowned candidates (MusicBrainz is 1 req/s).
+TAG_LOOKUP_LIMIT = 10
+TAG_TTL_SECONDS = 30 * 24 * 60 * 60
 
 
 @dataclass
@@ -205,6 +208,27 @@ def _shape_items(albums: list[dict[str, Any]], stats: Mapping[str, Mapping[str, 
     return items[:MISSING_ALBUMS_LIMIT]
 
 
+def _tags_for(network: ArtistNetwork, mbid: str, *, remaining, cancelled) -> tuple[set[str] | None, bool]:
+    """MusicBrainz tags for one MBID, as ``(tags, hit_deadline)``.
+
+    ``tags`` is None when the lookup failed; a failure contributes no tags and is not cached.
+    ``hit_deadline`` is True when the call was rate-limited, so the section is incomplete.
+    """
+    key = provider_cache_key("musicbrainz", 0, f"artist-tags:{mbid}", "tags")
+    hit = read_cached(network.cache_read, key, time.time(), positive_ttl=TAG_TTL_SECONDS)
+    if hit is not None:
+        return {record["name"] for record in hit}, False
+    try:
+        records = network.musicbrainz.artist_tags(mbid, remaining=remaining, cancelled=cancelled)
+    except ProviderError as exc:
+        return None, exc.state == "rate_limited"
+    except Exception:
+        return None, False
+    if remaining() > 0 and not cancelled.is_set():
+        write_cached(network.cache_write, key, records, time.time())
+    return {record["name"] for record in records}, False
+
+
 def similar_items(
     network: ArtistNetwork,
     name: str,
@@ -214,17 +238,23 @@ def similar_items(
     remaining,
     cancelled,
     known_mbid: str | None = None,
+    refresh: bool = False,
 ) -> dict[str, Any]:
     """The ``similar`` section object. Raises when no source produced an answer.
 
     A source that fails while another answers gives a partial section (``source_failed``, with
     the other source's items). Only a complete fetch is cached, so a failure is never a hit.
+    Shared tags (MusicBrainz) add to the ranking; a tag lookup rate-limited or out of time makes
+    the section incomplete with reason ``deadline``. ``refresh`` skips the cached records (used
+    by the daily precompute).
     """
     mbid = resolve_identity(
         network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
     )
     key = f"similar:{mbid or 'none'}:{normalize_key(name)}:lastfm{network.lastfm_generation}:listenbrainz0"
-    records = read_cached(network.cache_read, key, time.time(), positive_ttl=SIMILAR_TTL_SECONDS)
+    records = None if refresh else read_cached(
+        network.cache_read, key, time.time(), positive_ttl=SIMILAR_TTL_SECONDS,
+    )
     if records is None:
         records, failed, attempted = [], 0, 0
         if network.lastfm is not None:
@@ -257,12 +287,32 @@ def similar_items(
     else:
         complete = True
 
-    items = fuse_similar(records, name, mbid, owned)
-    if complete:
+    seed_tags: set[str] = set()
+    tags_hit_deadline = False
+    if mbid:
+        seed_tags, tags_hit_deadline = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
+        seed_tags = seed_tags or set()
+    candidate_tags: dict[str, set[str]] = {}
+    if seed_tags:
+        # Only the top unowned candidates with an MBID are looked up; the rest have no shared-tag score.
+        ranked = fuse_similar(records, name, mbid, owned, limit=SIMILAR_LIMIT)
+        looked_up = [
+            item["mbid"] for item in ranked if not item["owned"] and item["mbid"]
+        ][:TAG_LOOKUP_LIMIT]
+        for candidate_mbid in looked_up:
+            tags, hit = _tags_for(network, candidate_mbid, remaining=remaining, cancelled=cancelled)
+            tags_hit_deadline = tags_hit_deadline or hit
+            if tags:
+                candidate_tags[candidate_mbid] = tags
+
+    items = fuse_similar(
+        records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags,
+    )
+    if complete and not tags_hit_deadline:
         return _available("similar", "items", items)
     return {
         "section": "similar", "available": True, "complete": False,
-        "reason": "source_failed", "items": items,
+        "reason": "source_failed" if not complete else "deadline", "items": items,
     }
 
 

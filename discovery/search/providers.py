@@ -313,6 +313,23 @@ class MusicBrainzSearch:
                     break
         return found
 
+    def artist_tags(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Community tags of one artist, lower-cased, with their vote counts. Used for shared-tag similarity."""
+        payload = self._request(
+            f"/artist/{quote(artist_mbid, safe='')}",
+            {"inc": "tags"},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        output = []
+        for item in _as_list(payload.get("tags")):
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip().casefold()
+            if name and int(item.get("count") or 0) >= 1:
+                output.append({"name": name})
+        return output
+
     def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Studio albums of one artist (primary type album, no secondary types such as live or compilation)."""
         payload = self._request(

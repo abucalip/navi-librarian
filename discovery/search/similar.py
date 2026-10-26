@@ -12,7 +12,8 @@ ranking run on every read.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+import math
+from collections.abc import Collection, Iterable, Mapping
 from typing import Any
 
 from discovery.search.merge import OwnedKeys, same_entity
@@ -25,11 +26,25 @@ REASONS = {
     LASTFM: "Last.fm similar artist",
     LISTENBRAINZ: "ListenBrainz similar artist",
 }
+# Shared tags add TAG_WEIGHT times the Jaccard overlap of the two tag sets (0 to 1).
+TAG_WEIGHT = 0.5
+TAG_REASON_LIMIT = 3
+# An owned artist the owner plays gets up to OWNER_BOOST_WEIGHT, rising with log(plays) and
+# reaching the full weight at OWNER_PLAY_SCALE plays. These are starting values, not measured.
+OWNER_BOOST_WEIGHT = 0.5
+OWNER_PLAY_SCALE = 100
 
 
 def _artist(name: str, mbid: str | None) -> dict[str, Any]:
     """The candidate shape ``same_entity`` and ``OwnedKeys`` compare."""
     return {"type": "artist", "name": name, "key": normalize_key(name), "mbid": mbid or None, "year": None}
+
+
+def owner_boost(plays: int) -> float:
+    """Boost for an owned artist the owner plays: 0 at no plays, rising with log(plays) to the full weight."""
+    if plays <= 0:
+        return 0.0
+    return OWNER_BOOST_WEIGHT * min(1.0, math.log1p(plays) / math.log1p(OWNER_PLAY_SCALE))
 
 
 def fuse_similar(
@@ -38,10 +53,15 @@ def fuse_similar(
     seed_mbid: str | None,
     owned: OwnedKeys,
     limit: int = SIMILAR_LIMIT,
+    *,
+    seed_tags: Collection[str] = (),
+    candidate_tags: Mapping[str, Collection[str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Fused suggestions: artists not in the library by score, then owned artists by score.
 
-    The seed artist is never suggested.
+    ``seed_tags`` and ``candidate_tags`` (keyed by MBID) add the shared-tag contribution. Owned
+    artists the owner plays get the owner boost (contract section 7, item 4). The seed artist is
+    never suggested.
     """
     seed = _artist(seed_name, seed_mbid)
     positions: dict[str, int] = {}
@@ -68,8 +88,23 @@ def fuse_similar(
         if reason not in entry["reasons"]:
             entry["reasons"].append(reason)
 
+    seed_tag_set = {tag.casefold() for tag in seed_tags}
     for entry in merged:
-        entry["owned_artist"] = owned.owned_artist(entry["candidate"])
+        candidate = entry["candidate"]
+        entry["owned_artist"] = owned.owned_artist(candidate)
+        tags = (candidate_tags or {}).get(candidate["mbid"]) if candidate["mbid"] else None
+        if tags and seed_tag_set:
+            shared = sorted(seed_tag_set & {tag.casefold() for tag in tags})
+            if shared:
+                union = seed_tag_set | {tag.casefold() for tag in tags}
+                entry["score"] += TAG_WEIGHT * len(shared) / len(union)
+                entry["reasons"].append("Shared tags: " + ", ".join(shared[:TAG_REASON_LIMIT]))
+        if entry["owned_artist"] is not None:
+            plays = int(entry["owned_artist"].get("plays") or 0)
+            boost = owner_boost(plays)
+            if boost:
+                entry["score"] += boost
+                entry["reasons"].append("You play this artist")
     # Owned artists go to the owned list, which follows the unowned suggestions (contract 8.1).
     ranked = sorted(
         merged,

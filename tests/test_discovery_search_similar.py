@@ -8,8 +8,8 @@ from discovery.search.cache import SIMILAR_TTL_SECONDS
 from discovery.search.index import build_owned_data
 from discovery.search.limiter import SourceLimiter
 from discovery.search.merge import OwnedKeys
-from discovery.search.providers import LastFmSearch, ListenBrainzRadio, ProviderError, artist_candidate
-from discovery.search.similar import SIMILAR_LIMIT, fuse_similar
+from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError, artist_candidate
+from discovery.search.similar import OWNER_BOOST_WEIGHT, SIMILAR_LIMIT, TAG_WEIGHT, fuse_similar, owner_boost
 
 
 class Response:
@@ -55,6 +55,74 @@ def owned_keys():
 
 def artist(name, mbid=None):
     return artist_candidate("test", name, mbid)
+
+
+class MusicBrainzArtistTagsTests(unittest.TestCase):
+    def test_keeps_voted_tags_lower_cased_and_escapes_the_mbid(self):
+        calls = []
+
+        def get(url, **kwargs):
+            calls.append((url, kwargs["params"]))
+            return Response({"tags": [
+                {"name": "Trip Hop", "count": 4},
+                {"name": "unvoted", "count": 0},
+                {"name": "", "count": 9},
+                "not a dict",
+            ]})
+
+        musicbrainz = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        tags = musicbrainz.artist_tags("mb/x", remaining=lambda: 10.0, cancelled=never_cancelled())
+        self.assertEqual(tags, [{"name": "trip hop"}])
+        self.assertEqual(calls[0][0], "https://musicbrainz.org/ws/2/artist/mb%2Fx")
+        self.assertEqual(calls[0][1]["inc"], "tags")
+
+
+class SharedTagAndOwnerBoostTests(unittest.TestCase):
+    def test_shared_tags_add_the_jaccard_overlap_and_a_reason(self):
+        records = [{"source": "listenbrainz", "name": "Atoms for Peace", "mbid": "mb-afp", "match": None}]
+        items = fuse_similar(
+            records, "Radiohead", "mb-rh", OwnedKeys(None),
+            seed_tags={"rock", "trip hop"},
+            candidate_tags={"mb-afp": {"Rock", "electronic"}},
+        )
+        # Shared {rock} over the union {rock, trip hop, electronic}: one third of TAG_WEIGHT.
+        self.assertAlmostEqual(items[0]["score"], round(0.5 + TAG_WEIGHT / 3, 3))
+        self.assertIn("Shared tags: rock", items[0]["reasons"])
+
+    def test_no_seed_tags_means_no_shared_tag_contribution(self):
+        records = [{"source": "listenbrainz", "name": "Other", "mbid": "mb-o", "match": None}]
+        items = fuse_similar(records, "Radiohead", "mb-rh", OwnedKeys(None), candidate_tags={"mb-o": {"rock"}})
+        self.assertEqual(items[0]["score"], 0.5)
+        self.assertEqual(items[0]["reasons"], ["ListenBrainz similar artist"])
+
+    def test_owner_boost_rises_with_plays_and_is_capped(self):
+        self.assertEqual(owner_boost(0), 0.0)
+        self.assertLess(owner_boost(1), owner_boost(10))
+        self.assertLess(owner_boost(10), owner_boost(100))
+        self.assertEqual(owner_boost(100), OWNER_BOOST_WEIGHT)
+        self.assertEqual(owner_boost(10_000), OWNER_BOOST_WEIGHT)
+
+    def test_owned_artists_the_owner_plays_rank_first_within_the_owned_list(self):
+        data = build_owned_data(
+            generation=1, built_at=0,
+            artists=[
+                {"id": "ar1", "name": "Portishead", "album_count": 0},
+                {"id": "ar2", "name": "Massive Attack", "album_count": 0},
+            ],
+            albums=[],
+            songs=[
+                {"id": "s1", "title": "Roads", "artist": "Portishead", "artistId": "ar1", "playCount": 100},
+                {"id": "s2", "title": "Teardrop", "artist": "Massive Attack", "artistId": "ar2"},
+            ],
+        )
+        records = [
+            {"source": "listenbrainz", "name": "Massive Attack", "mbid": None, "match": None},
+            {"source": "listenbrainz", "name": "Portishead", "mbid": None, "match": None},
+        ]
+        items = fuse_similar(records, "Radiohead", "mb-rh", OwnedKeys(data))
+        self.assertEqual([i["name"] for i in items], ["Portishead", "Massive Attack"])
+        self.assertIn("You play this artist", items[0]["reasons"])
+        self.assertNotIn("You play this artist", items[1]["reasons"])
 
 
 class FuseTests(unittest.TestCase):
@@ -216,14 +284,23 @@ class LastFmSimilarTests(unittest.TestCase):
 
 class SimilarSectionTests(unittest.TestCase):
     class MusicBrainz:
-        def __init__(self, mbid="mb-rh"):
+        def __init__(self, mbid="mb-rh", tags=None, rate_limited=False):
             self._mbid = mbid
+            self._tags = tags or {}
+            self._rate_limited = rate_limited
+            self.tag_calls = []
 
         def artists(self, query, *, remaining, cancelled):
             return [artist_candidate("musicbrainz", "Radiohead", self._mbid)] if self._mbid else []
 
         def albums_by_artist(self, mbid, *, remaining, cancelled):
             return []
+
+        def artist_tags(self, mbid, *, remaining, cancelled):
+            self.tag_calls.append(mbid)
+            if self._rate_limited:
+                raise ProviderError("rate_limited")
+            return [{"name": name} for name in self._tags.get(mbid, [])]
 
     class Fake:
         def __init__(self, records=(), fail=False):
@@ -237,10 +314,10 @@ class SimilarSectionTests(unittest.TestCase):
                 raise ProviderError("failed")
             return [dict(r) for r in self._records]
 
-    def network(self, lastfm=None, listenbrainz=None, store=None, mbid="mb-rh"):
+    def network(self, lastfm=None, listenbrainz=None, store=None, mbid="mb-rh", musicbrainz=None):
         store = store or Store()
         return ArtistNetwork(
-            musicbrainz=self.MusicBrainz(mbid),
+            musicbrainz=musicbrainz or self.MusicBrainz(mbid),
             popularity=lambda mbids, can_cache: {},
             bio=lambda name: None,
             cache_read=store.read,
@@ -299,6 +376,45 @@ class SimilarSectionTests(unittest.TestCase):
         entry = store.data["similar:mb-rh:radiohead:lastfm3:listenbrainz0"]
         self.assertEqual(len(entry["results"]), 1)
         self.assertEqual(SIMILAR_TTL_SECONDS, 7 * 24 * 60 * 60)
+
+    def test_shared_tags_from_musicbrainz_reorder_the_suggestions(self):
+        musicbrainz = self.MusicBrainz(tags={
+            "mb-rh": ["rock", "trip hop"],
+            "mb-afp": ["rock", "electronic"],
+            "mb-o": ["jazz"],
+        })
+        net = self.network(
+            lastfm=self.Fake([{"name": "Other", "mbid": "mb-o", "match": 0.6}]),
+            listenbrainz=self.Fake([{"name": "Atoms for Peace", "mbid": "mb-afp", "match": None}]),
+            musicbrainz=musicbrainz,
+        )
+        section = self.run_similar(net)
+        self.assertTrue(section["complete"])
+        self.assertEqual(section["items"][0]["name"], "Atoms for Peace")
+        self.assertIn("Shared tags: rock", section["items"][0]["reasons"])
+        self.assertNotIn("Shared tags", " ".join(section["items"][1]["reasons"]))
+
+    def test_a_rate_limited_tag_lookup_makes_the_section_incomplete_with_deadline(self):
+        net = self.network(
+            lastfm=self.Fake([{"name": "Thom Yorke", "mbid": "mb-ty", "match": 0.9}]),
+            musicbrainz=self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True),
+        )
+        section = self.run_similar(net)
+        self.assertTrue(section["available"])
+        self.assertFalse(section["complete"])
+        self.assertEqual(section["reason"], "deadline")
+        self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke"])
+
+    def test_refresh_skips_the_cached_records_and_calls_the_sources(self):
+        store = Store()
+        self.run_similar(self.network(lastfm=self.Fake([{"name": "Old", "mbid": None, "match": 0.1}]), store=store))
+        fresh = self.Fake([{"name": "New", "mbid": None, "match": 0.9}])
+        section = similar_items(
+            self.network(lastfm=fresh, store=store), "Radiohead", None, owned_keys(),
+            remaining=lambda: 10.0, cancelled=never_cancelled(), refresh=True,
+        )
+        self.assertEqual(fresh.calls, 1)
+        self.assertEqual([i["name"] for i in section["items"]], ["New"])
 
     def test_every_source_failing_is_a_source_failed_section_on_the_page(self):
         net = self.network(lastfm=self.Fake(fail=True), listenbrainz=self.Fake(fail=True))

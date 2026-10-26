@@ -5,8 +5,11 @@ HTTP adapters only. Matching, ranking and index lifecycle live in ``discovery/se
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -17,8 +20,10 @@ from discovery.identity import IdentityJob, load_identities
 from discovery.library_snapshot import build_library_snapshot
 from discovery.search.artist_page import artist_page, json_sections, section_events
 from discovery.search.events import search_events, sse
-from discovery.search.index import OwnedIndex, fetch_song_inventory
+from discovery.search.index import STATE_FRESH, STATE_STALE, OwnedIndex, fetch_song_inventory
+from discovery.search.merge import OwnedKeys
 from discovery.search.network import artist_network, external_search
+from discovery.search.similar_precompute import run_precompute
 from discovery.search.normalize import normalize_key, normalize_query
 from discovery.search.query import SEARCH_TYPES
 from settings.service import lastfm_generation, navidrome_generation
@@ -264,6 +269,46 @@ def search(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store"},
     )
+
+
+PRECOMPUTE_CHECK_SECONDS = 1800
+logger = logging.getLogger(__name__)
+
+
+def _precompute_once(librarian):
+    """One precompute pass over the library, or None when the owned index is not usable yet."""
+    view = owned_view(librarian)
+    if view.data is None or view.state not in (STATE_FRESH, STATE_STALE):
+        return None
+    return run_precompute(
+        list(view.data.artists), artist_network_for(librarian), OwnedKeys(view.data),
+    )
+
+
+def _precompute_loop(librarian) -> None:
+    last_day = None
+    while True:
+        today = date.today().isoformat()
+        if today != last_day:
+            # One attempt per local day, even when it fails, so a broken run is not retried in a loop.
+            last_day = today
+            try:
+                counts = _precompute_once(librarian)
+                if counts is not None:
+                    logger.info("Similar-artist precompute finished: %s", counts)
+            except Exception as exc:
+                # Bounded diagnostics: the error type only, never provider details.
+                logger.error("Similar-artist precompute failed (%s)", type(exc).__name__)
+        time.sleep(PRECOMPUTE_CHECK_SECONDS)
+
+
+def start_similar_precompute(librarian) -> threading.Thread:
+    """Start the background loop that precomputes similar artists once per local day."""
+    thread = threading.Thread(
+        target=_precompute_loop, args=(librarian,), name="navidrome-similar-artists", daemon=True,
+    )
+    thread.start()
+    return thread
 
 
 def artist_network_for(librarian):
