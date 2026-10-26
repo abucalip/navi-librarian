@@ -1,8 +1,8 @@
 """Regression contract for the primary button (DESIGN_SYSTEM.md sections 9.1 and 16.5 row 10).
 
 The primary button is one class, `.btn-primary`, built from the accent tokens. It is used on
-five actions that were already yellow by element id: Generate recommendations and the four
-Save settings buttons, one per settings tab panel. The id-based yellow rules are removed, so
+six actions: Generate recommendations and the five Save buttons, one per settings tab panel
+(the Discogs one was added with the Discogs tab). The id-based yellow rules are removed, so
 the class is the only primary rule. These tests read the markup and stylesheet only.
 """
 import re
@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_CSS = ROOT / "static" / "app.css"
 INDEX = ROOT / "app" / "templates" / "index.html"
 
-PRIMARY_IDS = ("loadRecommendations", "saveNavidrome", "saveSlskd", "saveLastfm", "saveListenbrainz")
+PRIMARY_IDS = ("loadRecommendations", "saveNavidrome", "saveSlskd", "saveLastfm", "saveListenbrainz", "saveDiscogs")
 
 
 class PrimaryButtonUIContractTests(unittest.TestCase):
@@ -28,7 +28,7 @@ class PrimaryButtonUIContractTests(unittest.TestCase):
             with self.subTest(ident=ident):
                 self.assertRegex(self.html, rf'<button id="{ident}" class="btn-primary"')
 
-    def test_only_the_five_primary_actions_carry_the_class(self):
+    def test_only_the_listed_primary_actions_carry_the_class(self):
         self.assertEqual(len(re.findall(r'class="btn-primary"', self.html)), len(PRIMARY_IDS))
 
     def test_primary_rule_uses_accent_tokens(self):

@@ -65,7 +65,7 @@ function initializePage(name) {
   else if (name === 'lensLists') loadLensList(activeLens);
   else if (name === 'classics') loadDiscovery('classics', {rotate: true});
   else if (name === 'artistDeepDive') loadDiscovery('artist_deep_dive', {rotate: true});
-  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); }
+  else if (name === 'settings') { loadNavidromeSettings(); loadSlskdSettings(); loadLastfmSettings(); loadListenbrainzSettings(); loadDiscogsSettings(); }
 }
 
 // One navigation path for the rail and the header menu, so Settings in the menu still runs
@@ -2698,13 +2698,47 @@ $('saveListenbrainz').addEventListener('click', async () => {
   } catch (error) { $('listenbrainzStatus').textContent = error.message; setStatusState($('listenbrainzStatus'), 'error'); }
 });
 
+const DISCOGS_SOURCE_LABELS = {
+  settings: 'Token configured.',
+  environment: 'Token configured from the DISCOGS_TOKEN environment variable.',
+  none: 'Token not configured (optional).'
+};
+async function loadDiscogsSettings(keepStatus = false) {
+  try {
+    const data = await requestJSON('/api/settings/discogs');
+    $('discogsToken').value = '';
+    if (keepStatus) return;
+    $('discogsStatus').textContent = DISCOGS_SOURCE_LABELS[data.source] || DISCOGS_SOURCE_LABELS.none;
+    setStatusState($('discogsStatus'), 'idle');
+  } catch (error) { $('discogsStatus').textContent = error.message; setStatusState($('discogsStatus'), 'error'); }
+}
+// An empty token clears the saved one; the Save button never sends an empty field.
+async function saveDiscogsToken(token) {
+  try {
+    const result = await sendJSON('/api/settings/discogs', 'PUT', {token});
+    $('discogsToken').value = '';
+    $('discogsStatus').textContent = (token ? 'Token saved. ' : 'Saved token removed. ') + (DISCOGS_SOURCE_LABELS[result.source] || '');
+    setStatusState($('discogsStatus'), 'success');
+  } catch (error) { $('discogsStatus').textContent = error.message; setStatusState($('discogsStatus'), 'error'); }
+}
+$('saveDiscogs').addEventListener('click', () => {
+  const token = $('discogsToken').value.trim();
+  if (!token) {
+    $('discogsStatus').textContent = 'Enter a token to save, or use Remove saved token.';
+    setStatusState($('discogsStatus'), 'error');
+    return;
+  }
+  saveDiscogsToken(token);
+});
+$('removeDiscogs').addEventListener('click', () => saveDiscogsToken(''));
+
 async function testServiceConnection(endpoint, statusId) {
   const status = $(statusId);
   status.textContent = 'Testing connection…';
   setStatusState(status, 'loading');
   try {
     const data = await sendJSON(endpoint, 'POST');
-    status.textContent = data.message || (data.ok ? 'Connection successful.' : 'Test failed.');
+    status.textContent = data.message || data.error || (data.ok ? 'Connection successful.' : 'Test failed.');
     setStatusState(status, data.ok ? 'success' : 'error');
   } catch (error) {
     status.textContent = error.message;
@@ -2713,6 +2747,7 @@ async function testServiceConnection(endpoint, statusId) {
 }
 $('testLastfm').addEventListener('click', () => testServiceConnection('/api/settings/lastfm/test', 'lastfmStatus'));
 $('testListenbrainz').addEventListener('click', () => testServiceConnection('/api/settings/listenbrainz/test', 'listenbrainzStatus'));
+$('testDiscogs').addEventListener('click', () => testServiceConnection('/api/settings/discogs/test', 'discogsStatus'));
 
 // Complete the tabs pattern. The markup already had role=tablist/tab/tabpanel and
 // aria-controls, but the widget was missing the two halves that make it operable rather than
@@ -2726,7 +2761,7 @@ $('testListenbrainz').addEventListener('click', () => testServiceConnection('/ap
 const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
 const settingsPanels = {
   navidrome: 'settingsNavidrome', slskd: 'settingsSlskd',
-  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz'
+  lastfm: 'settingsLastfm', listenbrainz: 'settingsListenbrainz', discogs: 'settingsDiscogs'
 };
 
 function selectSettingsTab(button, moveFocus = true) {
@@ -2978,7 +3013,7 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0};
 let libraryFilterTimer = 0;
 
 function setStatus(el, message, kind) {
@@ -3273,6 +3308,8 @@ async function openArtistDetail(id, key, returnFocus, artworkUrl) {
   const status = $('artistDetailStatus');
   const albums = $('artistAlbums');
   heading.textContent = 'Loading artist…';
+  $('artistGenre').hidden = true;
+  $('libraryGenreView').hidden = true;
   albums.replaceChildren();
   setStatus(status, 'Loading…', 'loading');
   heading.focus();
@@ -3296,6 +3333,10 @@ async function openArtistDetail(id, key, returnFocus, artworkUrl) {
       return;
     }
     heading.textContent = artistSection.artist.name;
+    const genreButton = $('artistGenre');
+    genreButton.hidden = !artistSection.artist.genre;
+    genreButton.textContent = artistSection.artist.genre ? 'Genre: ' + artistSection.artist.genre : '';
+    genreButton.dataset.genre = artistSection.artist.genre || '';
     setStatus(status, pluralize(artistSection.artist.album_count, 'album', 'albums') + ' in your library', 'progress');
     for (const album of data.sections.owned_albums.items) albums.append(buildArtistAlbum(album));
   } catch (error) {
@@ -3322,6 +3363,85 @@ function closeArtistDetail() {
   const back = libraryView.detailReturn;
   if (back && back.isConnected) back.focus();
   else $('libraryHeading').focus();
+}
+
+// ---- Genre view (SEARCH_CONTRACT P4) ----
+// Opens from the genre button on an artist. Owned artists open their artist view; items not in the
+// library are listed for reference, with the Discogs attribution where Discogs supplied them.
+
+const GENRE_SECTION_NAMES = {artists: 'artists', albums: 'albums'};
+
+function buildGenreItem(item, type) {
+  const row = document.createElement('li');
+  row.className = 'library-album';
+  if (item.owned && type === 'artists') {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'genre-item-link';
+    button.textContent = item.name;
+    button.addEventListener('click', () => {
+      $('libraryGenreView').hidden = true;
+      libraryView.genreSeq += 1;
+      openArtistDetail(item.id, item.key, button, null);
+    });
+    row.append(button);
+  } else {
+    addTextElement(row, 'span', 'library-album-name', item.name);
+  }
+  const detail = [];
+  if (type === 'albums') detail.push(item.artist, item.year);
+  detail.push(item.owned ? 'In your library' : 'Not in your library');
+  addTextElement(row, 'span', 'library-album-detail', detail.filter(value => value !== null && value !== undefined && value !== '').join(' · '));
+  if (item.attribution) addTextElement(row, 'span', 'library-album-detail', item.attribution);
+  return row;
+}
+
+async function openGenre(tag) {
+  const view = libraryView;
+  const seq = ++view.genreSeq;
+  $('libraryDetailView').hidden = true;
+  $('libraryListView').hidden = true;
+  $('libraryGenreView').hidden = false;
+  const heading = $('genreHeading');
+  const status = $('genreStatus');
+  heading.textContent = tag;
+  $('genreArtists').replaceChildren();
+  $('genreAlbums').replaceChildren();
+  setStatus(status, 'Loading…', 'loading');
+  heading.focus();
+  try {
+    const response = await fetch('/api/genres/' + encodeURIComponent(tag));
+    const data = await response.json();
+    if (seq !== view.genreSeq) return;
+    if (!response.ok) throw new Error(data.message || 'Request failed');
+    let count = 0;
+    let incomplete = false;
+    for (const name of Object.keys(GENRE_SECTION_NAMES)) {
+      const section = data.sections[name];
+      const list = name === 'artists' ? $('genreArtists') : $('genreAlbums');
+      if (!section.available) continue;
+      for (const item of section.items) list.append(buildGenreItem(item, name));
+      count += section.items.length;
+      if (!section.complete) incomplete = true;
+    }
+    if (!count) {
+      setStatus(status, incomplete ? 'Nothing could be loaded for this genre right now. Try again.' : 'Nothing found for this genre.', incomplete ? 'error' : 'empty');
+    } else {
+      setStatus(status, pluralize(count, 'item', 'items') + (incomplete ? ' · Some sources did not answer, so this list may be incomplete' : ''), 'progress');
+    }
+  } catch (error) {
+    if (seq !== view.genreSeq) return;
+    setStatus(status, 'This genre could not be loaded. Try again.', 'error');
+  }
+}
+
+function closeGenre() {
+  libraryView.genreSeq += 1;
+  $('libraryGenreView').hidden = true;
+  $('libraryDetailView').hidden = false;
+  const button = $('artistGenre');
+  if (!button.hidden) button.focus();
+  else $('artistDetailHeading').focus();
 }
 
 // ---- Wiring ----
@@ -3363,3 +3483,5 @@ $('librarySort').addEventListener('change', () => {
 });
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 $('libraryBack').addEventListener('click', closeArtistDetail);
+$('artistGenre').addEventListener('click', () => openGenre($('artistGenre').dataset.genre));
+$('genreBack').addEventListener('click', closeGenre);
