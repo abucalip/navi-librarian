@@ -17,15 +17,17 @@ import httpx
 from discovery.search.artist_sections import ArtistNetwork
 import threading
 
-from discovery.search.cache import provider_cache_key, purge_stale_generations
+from discovery.search.cache import provider_cache_key, purge_stale_generations, read_cached, write_cached
 from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
+from discovery.search.normalize import normalize_key
 from discovery.search.genre_page import GenreNetwork
-from discovery.search.providers import DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch
+from discovery.search.providers import DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, genre_candidate
 from discovery.search.runner import ExternalSearch, FetchRegistry, Part
 from integrations.listenbrainz.client import request_headers
 from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation
 
+MBID_TTL_SECONDS = 30 * 24 * 60 * 60  # The MusicBrainz genre list changes rarely (section 6, entity lookups).
 MUSICBRAINZ_GENERATION = 0  # MusicBrainz has no credential (section 5.2).
 LASTFM_API_KEY = "lastfm_api_key"
 
@@ -99,8 +101,39 @@ def external_search(
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=api_key) if api_key else None
     discogs = DiscogsSearch(get=get, limiter=rate_limiter, token=discogs_token) if discogs_token else None
 
+    def musicbrainz_genres(query: str, remaining, cancelled) -> list[dict[str, Any]]:
+        """MusicBrainz genres containing the query, from the full list that is fetched once and kept 30 days."""
+        key = provider_cache_key("musicbrainz", MUSICBRAINZ_GENERATION, "genre-list", "all")
+        names = read_cached(cache_read, key, time.time(), positive_ttl=MBID_TTL_SECONDS)
+        if names is None:
+            fetched = musicbrainz.genre_names(remaining=remaining, cancelled=cancelled)
+            names = [{"name": name} for name in fetched]
+            if remaining() > 0 and not cancelled.is_set():
+                write_cached(cache_write, key, names, time.time())
+        return [
+            genre_candidate("musicbrainz", record["name"])
+            for record in names
+            if query in normalize_key(record["name"])
+        ]
+
     def parts_for(query: str, types: Sequence[str]) -> list[Part]:
         parts: list[Part] = []
+        if "genre" in types:
+            parts.append(Part(
+                source="musicbrainz",
+                kind="genre",
+                key=provider_cache_key("musicbrainz", MUSICBRAINZ_GENERATION, query, "genre"),
+                fetch=lambda remaining, cancelled, q=query: musicbrainz_genres(q, remaining, cancelled),
+            ))
+            if discogs is not None:
+                parts.append(Part(
+                    source="discogs",
+                    kind="genre",
+                    key=provider_cache_key("discogs", discogs_gen, query, "genre"),
+                    fetch=lambda remaining, cancelled, q=query: discogs.genres(
+                        q, remaining=remaining, cancelled=cancelled
+                    ),
+                ))
         for kind in _KINDS:
             if kind not in types:
                 continue

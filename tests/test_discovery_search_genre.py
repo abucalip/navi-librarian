@@ -311,6 +311,107 @@ class GenreCapabilitiesTests(unittest.TestCase):
         self.assertFalse(caps["owned_index"]["available"])
 
 
+GENRE_MASTERS = {"results": [
+    {"title": "Slowdive - Souvlaki", "style": ["Shoegaze", "Dream Pop"], "genre": ["Rock"]},
+    {"title": "Ride - Nowhere", "style": ["Shoegaze", "Indie Rock"], "genre": ["Rock"]},
+]}
+
+
+class GenreSearchTests(unittest.TestCase):
+    def test_discogs_genres_are_the_styles_and_genres_on_results_that_contain_the_query(self):
+        client = discogs(Get(Response(payload=GENRE_MASTERS)))
+        found = client.genres("shoe", remaining=plenty, cancelled=threading.Event())
+        self.assertEqual([(g["name"], g["source"], g["type"]) for g in found], [("Shoegaze", "discogs", "genre")])
+        found = discogs(Get(Response(payload=GENRE_MASTERS))).genres("rock", remaining=plenty, cancelled=threading.Event())
+        self.assertEqual(sorted(g["key"] for g in found), ["indie rock", "rock"])
+
+    def test_musicbrainz_genre_list_is_one_plain_text_request(self):
+        get = Get(Response(payload={}))
+        get.responses[0].text = "2 tone\nshoegaze\n\nacid jazz\n"
+        mb = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        names = mb.genre_names(remaining=plenty, cancelled=threading.Event())
+        self.assertEqual(names, ["2 tone", "shoegaze", "acid jazz"])
+        self.assertEqual(get.requests[0][0], "https://musicbrainz.org/ws/2/genre/all")
+        self.assertEqual(get.requests[0][1], {"fmt": "txt"})
+
+    def test_an_empty_musicbrainz_list_is_a_failure_not_an_answer(self):
+        get = Get(Response(payload={}))
+        get.responses[0].text = "\n"
+        mb = MusicBrainzSearch(get=get, limiter=SourceLimiter({}), pause=lambda s: None)
+        with self.assertRaises(ProviderError):
+            mb.genre_names(remaining=plenty, cancelled=threading.Event())
+
+    def search(self, store, get, settings=None):
+        from discovery.search.network import external_search
+
+        return external_search(
+            settings_read=lambda: settings or {}, cache_read=store.read, cache_write=store.write, http_get=get,
+            limiter=SourceLimiter({}),
+        )
+
+    def run_parts(self, search, query="shoe"):
+        cancelled = threading.Event()
+        return {
+            (part.source, part.kind): part.fetch(remaining=plenty, cancelled=cancelled)
+            for part in search._parts_for(query, ["genre"])
+        }
+
+    def test_musicbrainz_list_is_fetched_once_cached_and_filtered_per_query(self):
+        store = Store()
+        get = Get(Response(payload={}))
+        get.responses[0].text = "2 tone\nshoegaze\nacid jazz\nshoegaze revival\n"
+        search = self.search(store, get)
+        first = self.run_parts(search, "shoegaze")
+        self.assertEqual([g["name"] for g in first[("musicbrainz", "genre")]], ["shoegaze", "shoegaze revival"])
+        second = self.run_parts(search, "jazz")  # served from the cached list: no second request
+        self.assertEqual([g["name"] for g in second[("musicbrainz", "genre")]], ["acid jazz"])
+        self.assertEqual(len(get.requests), 1)
+
+    def test_discogs_genre_part_exists_only_with_a_token(self):
+        self.assertEqual(sorted(k for k in self.run_parts_keys({})), [("musicbrainz", "genre")])
+        self.assertEqual(sorted(self.run_parts_keys({"discogs_token": TOKEN})),
+                         [("discogs", "genre"), ("musicbrainz", "genre")])
+
+    def run_parts_keys(self, settings):
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("DISCOGS_TOKEN", None)
+            search = self.search(Store(), Get(), settings)
+        return [(p.source, p.kind) for p in search._parts_for("shoe", ["genre"])]
+
+    def test_genre_results_have_the_contract_fields_and_skip_genres_the_library_has(self):
+        from discovery.search.merge import fresh_candidates, shape_result
+        from discovery.search.providers import genre_candidate
+
+        candidates = [genre_candidate("musicbrainz", "Shoegaze"), genre_candidate("musicbrainz", "Shoegaze revival")]
+        owned = OwnedKeys(owned_view().data)
+        fresh = fresh_candidates(candidates, query="shoegaze", owned=owned, emitted=[])
+        self.assertEqual([c["name"] for c in fresh], ["Shoegaze revival"])  # "Shoegaze" is an owned genre
+        result = shape_result(fresh[0])
+        self.assertEqual(result["type"], "genre")
+        self.assertEqual(result["tag"], "shoegaze revival")
+        self.assertEqual(result["tag_source"], "musicbrainz")
+        self.assertFalse(result["owned"])
+        self.assertEqual(result["sources"], ["musicbrainz"])
+        self.assertIsNone(result["artwork_url"])
+        discogs_result = shape_result(genre_candidate("discogs", "Dream Pop"))
+        self.assertEqual(discogs_result["attribution"], DISCOGS_ATTRIBUTION)
+        self.assertEqual(discogs_result["tag_source"], "discogs")
+
+    def test_dedupes_the_same_genre_from_two_sources_keeping_the_first(self):
+        from discovery.search.merge import fresh_candidates
+        from discovery.search.providers import genre_candidate
+
+        emitted = []
+        fresh = fresh_candidates(
+            [genre_candidate("musicbrainz", "dream pop"), genre_candidate("discogs", "Dream Pop")],
+            query="dream", owned=OwnedKeys(None), emitted=emitted,
+        )
+        self.assertEqual([c["source"] for c in fresh], ["musicbrainz"])
+
+
 class SearchWiringTests(unittest.TestCase):
     def parts(self, settings):
         from discovery.search.network import external_search

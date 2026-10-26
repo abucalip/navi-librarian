@@ -46,7 +46,8 @@ class SearchEventTests(unittest.TestCase):
 
     def test_capabilities_report_genre_and_sources_with_contract_reasons(self):
         capabilities = self.events(ready_view())[0][1]
-        self.assertEqual(capabilities["types"]["genre"], {"available": False, "reason": "not_in_this_build"})
+        # Owned-only scope: genre results come from the library's album genres.
+        self.assertEqual(capabilities["types"]["genre"], {"available": True, "reason": None})
         self.assertEqual(capabilities["sources"]["navidrome"], {"available": True, "reason": None})
         self.assertEqual(capabilities["sources"]["discogs"], {"available": False, "reason": "not_in_this_build"})
 

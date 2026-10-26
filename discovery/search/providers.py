@@ -90,6 +90,21 @@ def artist_candidate(source: str, name: str, mbid: str | None) -> dict[str, Any]
     }
 
 
+def genre_candidate(source: str, name: str) -> dict[str, Any]:
+    """A genre or style name. The key doubles as the normalized tag (contract section 3.8)."""
+    return {
+        "type": "genre",
+        "source": source,
+        "name": name,
+        "key": normalize_key(name),
+        "mbid": None,
+        "artist": None,
+        "artist_key": None,
+        "year": None,
+        "release_group_mbid": None,
+    }
+
+
 def album_candidate(
     source: str,
     title: str,
@@ -140,7 +155,7 @@ class MusicBrainzSearch:
         self._pause = pause
         self._request_timeout = request_timeout
 
-    def _request(self, path: str, params: dict[str, Any], *, remaining, cancelled) -> dict[str, Any]:
+    def _request(self, path: str, params: dict[str, Any], *, remaining, cancelled, raw: bool = False) -> Any:
         for delay in (0.0, *MB_RETRY_DELAYS):
             if cancelled.is_set():
                 raise ProviderError("failed")
@@ -151,7 +166,7 @@ class MusicBrainzSearch:
             try:
                 response = self._get(
                     f"{MB_BASE}{path}",
-                    params={**params, "fmt": "json"},
+                    params={**params, "fmt": "txt" if raw else "json"},
                     headers=MB_HEADERS,
                     timeout=self._request_timeout,
                 )
@@ -161,8 +176,17 @@ class MusicBrainzSearch:
             if response.status_code == 503:
                 continue
             response.raise_for_status()
-            return response.json()
+            return response.text if raw else response.json()
         raise ProviderError("failed")
+
+    def genre_names(self, *, remaining, cancelled) -> list[str]:
+        """Every MusicBrainz genre name, from the one-request plain-text list (MusicBrainz has no genre search)."""
+        text = self._request("/genre/all", {}, remaining=remaining, cancelled=cancelled, raw=True)
+        names = [line.strip() for line in str(text).splitlines() if line.strip()]
+        if not names:
+            # An empty list is a failed answer, not "no genres": it must never be cached.
+            raise ProviderError("failed")
+        return names
 
     def artists(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         payload = self._request(
@@ -641,6 +665,23 @@ class DiscogsSearch:
             if isinstance(item, dict):
                 candidates.append(artist_candidate(self.source, _discogs_name(str(item.get("title") or "")), None))
         return [c for c in candidates if _usable(c)]
+
+    def genres(self, query: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Genres and styles named on the master releases a text query finds, when they contain the query.
+
+        Discogs has no style search, so its published vocabulary is read off the search results.
+        """
+        wanted = normalize_key(query)
+        names: dict[str, str] = {}
+        for item in self._search({"q": query}, remaining=remaining, cancelled=cancelled):
+            if not isinstance(item, dict):
+                continue
+            for value in [*_as_list(item.get("style")), *_as_list(item.get("genre"))]:
+                name = str(value).strip()
+                key = normalize_key(name)
+                if key and wanted in key:
+                    names.setdefault(key, name)
+        return [genre_candidate(self.source, name) for name in names.values()]
 
     def artist_styles(self, name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Styles on the artist's master releases, lower-cased, most frequent first. Used for shared-style similarity."""
