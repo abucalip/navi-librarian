@@ -104,6 +104,18 @@ python -m unittest discover -s tests -p 'test_discovery_library_snapshot.py' -v
 
 The index tests run builds inline (`background=False`); the route tests inject an index and a fake librarian, so none of them calls Navidrome. A live check against a real Navidrome server is a separate, owner-approved step.
 
+## Global search P5 latency measurement
+
+Measure the section 2.1 targets of `docs/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:
+
+```sh
+set -a; source /path/to/config.env; set +a
+NAVIDROME_LIBRARIAN_DATA_DIR=/tmp/search-latency-data python scripts/search_latency.py --builds 3 --queries 20
+python scripts/search_latency.py --network --network-queries 5 --network-gap 5   # live providers: owner-approved runs only
+```
+
+Focused tests: `python -m unittest discover -s tests -p 'test_search_latency_script.py' -v`. A stub run does not count for the index build time. Record each result against its target in `PROJECT_LOG.md`, and say which targets were not measured (browser-side targets need a real browser). The script prints aggregate timings only, so reports can be kept in the repository.
+
 ## UI changes
 
 After automated CI succeeds, run the full manual browser checklist in `docs/LOCAL_UI_TESTING.md` against the exact tested SHA. Cover affected workflows and record the actual result. Do not claim manual verification from source inspection or automated tests alone.

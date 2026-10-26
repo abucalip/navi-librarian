@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged (P4 record: section 13)**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **P5 is not started**; it covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
+Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged (P4 record: section 13)**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **P5 is measured; its script is in PR #626 (open), and the results are in `PROJECT_LOG.md`**; it covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
 
 ## 1. Owner decisions (recorded)
 
