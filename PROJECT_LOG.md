@@ -1,3 +1,12 @@
+## 2026-10-26 — Global search P3 closed (PRs #621 and #622)
+
+- **Merged:** PR #621 (squash `7f1b44f`), the similar-artist fusion slice, after the owner narrowed P3 on 2026-10-26. PR #622 (squash `05b259c`), P3b: shared MusicBrainz tags, owner play-count boost, and daily precompute.
+- **Verification:** each PR's required workflows passed on its exact final head. The full unit suite ran in CI, not locally. Focused modules were run by the agent at each step (165 tests in the final P3b set). Size and legacy-import guards passed.
+- **Not verified:** no live MusicBrainz, ListenBrainz or Last.fm calls; nothing against the owner's library. Weights and budgets are starting values.
+- **Known gaps:** listed in `docs/ACTIVE_WORK.md` section 2d (live check and timing, tuning, partial artist pages until the tag cache is warm, fixed precompute order).
+- **Release state:** not published, deployed, or runtime verified.
+- **Next:** P4 (Discogs and genre pages), per the owner's direction on 2026-10-26.
+
 ## 2026-10-26 — Global search P2 complete (PRs #613 to #620)
 
 - **Merged:** PR #620 (squash `262486e`), slice F: the first identity pass on the owner's library, the identity cleanup, and the correction path. PR #620 includes a generation-race fix from review, so the cleanup reads the current generation at delete time.

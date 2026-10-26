@@ -55,7 +55,15 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - "Not in your library" results group, waiting for the P2 network sources.
   - Recommendation snapshot generation key, accepted as a deferred follow-up.
   - Safari, VoiceOver and keyboard-only checks in a real browser.
-- **P2 (network sources):** complete (PRs #613 to #620). Limits carried forward are in `SEARCH_CONTRACT.md` section 12.10. Next phase, P3 (similar artists), starts only when the owner says so.
+- **P2 (network sources):** complete (PRs #613 to #620). Limits carried forward are in `SEARCH_CONTRACT.md` section 12.10.
+- **P3 (similar artists) and P3b:** merged in PRs [#621](https://github.com/abucalip/navi-librarian/pull/621) (squash `7f1b44f`, fusion slice) and [#622](https://github.com/abucalip/navi-librarian/pull/622) (squash `05b259c`, shared tags, owner boost, daily precompute). Contract: `SEARCH_CONTRACT.md` sections 7, 8.1 and 10. Closed out in the owner's direction on 2026-10-26.
+- **P3 follow-ups, not yet verified:**
+  - **Live provider check.** Nothing has run against the live MusicBrainz, ListenBrainz or Last.fm services or the owner's library. The first precompute pass should be timed and its call volume recorded: about 733 ListenBrainz radio calls at 2 s spacing, plus up to 10 MusicBrainz tag lookups per artist at 1 req/s. Record the results in `PROJECT_LOG.md`.
+  - **Tuning.** The tag and boost weights (0.5), the 100-play scale, the 10-candidate tag limit, and the 6 h / 120 s precompute budgets are starting values. Check them against real results before treating them as settled.
+  - **Partial artist pages until the tag cache is warm.** Tag lookups run at 1 req/s inside the 3 s page deadline, so artist pages often return `similar` as incomplete with reason `deadline` until precompute has filled the tag cache.
+  - **Fixed precompute order.** Each daily pass starts from the same point in the library list. If a full pass ever runs past the 6 h budget, the artists at the end are never reached. Rotate the start point, or record the last artist reached, before this matters.
+  - **Precompute is on by default**, with no settings switch. It runs only while the app process is running and the owned index is usable.
+- **P4 (Discogs and genre pages)** is next. It includes Discogs styles as a shared-tag source, which P3b deferred to P4.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated
