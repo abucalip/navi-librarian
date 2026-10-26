@@ -160,6 +160,10 @@ class MusicBrainzSearch:
             if cancelled.is_set():
                 raise ProviderError("failed")
             if delay:
+                if remaining() <= delay:
+                    # Throttled, and the backoff cannot fit in the deadline: report it now and let the
+                    # search finish with the other sources' results instead of waiting for a timeout.
+                    raise ProviderError("rate_limited")
                 self._pause(delay)
             if not self._limiter.admit(self.source, remaining()):
                 raise ProviderError("rate_limited")
