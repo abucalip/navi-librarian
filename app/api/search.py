@@ -56,6 +56,16 @@ def _snapshot_lists(librarian, generation):
     return snapshot["artists"], snapshot["albums"]
 
 
+def _cache_reader(librarian):
+    """Reader for provider cache entries. The store wraps each entry as ``{"payload": entry, ...}``."""
+
+    def read(name):
+        stored = librarian._discovery_read_list(name)
+        return stored.get("payload") if isinstance(stored, dict) else None
+
+    return read
+
+
 _identity_job = IdentityJob()
 
 
@@ -253,7 +263,7 @@ def search(
     if scope == "all":
         external = external_search(
             settings_read=librarian._discovery_settings_read,
-            cache_read=librarian._discovery_read_list,
+            cache_read=_cache_reader(librarian),
             cache_write=librarian._discovery_write_list,
             delete_except=lambda prefix, keep: discovery_store.delete_prefix_except(
                 librarian.DISCOVERY_DB, prefix, keep
@@ -364,7 +374,7 @@ def artist_network_for(librarian):
 
     settings = librarian._discovery_settings_read()
     return artist_network(
-        cache_read=librarian._discovery_read_list,
+        cache_read=_cache_reader(librarian),
         cache_write=librarian._discovery_write_list,
         popularity=popularity,
         bio=bio,
@@ -449,7 +459,7 @@ def genre(tag: str, request: Request, librarian=Depends(get_librarian)):
         view = owned_view(librarian)
         network = genre_network(
             settings_read=librarian._discovery_settings_read,
-            cache_read=librarian._discovery_read_list,
+            cache_read=_cache_reader(librarian),
             cache_write=librarian._discovery_write_list,
             delete_except=lambda prefix, keep: discovery_store.delete_prefix_except(
                 librarian.DISCOVERY_DB, prefix, keep

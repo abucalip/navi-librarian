@@ -35,7 +35,10 @@ class FakeLibrarian:
         return {"navidrome_generation": 1}
 
     def _discovery_read_list(self, name):
-        return self.store.get(name)
+        # Same shape as discovery.store.read_list: the stored payload sits under "payload".
+        if name not in self.store:
+            return None
+        return {"payload": self.store[name], "generated_at": "2026-10-26T00:00:00"}
 
     def _discovery_write_list(self, name, payload):
         self.store[name] = payload
@@ -83,6 +86,22 @@ def parse_sse(body):
                 data = json.loads(line[len("data: "):])
         events.append((name, data))
     return events
+
+
+class ProviderCacheReaderTests(unittest.TestCase):
+    def test_entries_written_by_the_cache_are_read_back_through_the_store_shape(self):
+        from discovery.search.cache import read_cached, write_cached
+
+        librarian = FakeLibrarian()
+        key = "search:lastfm:0:ash:artist:depth50"
+        self.assertIsNone(read_cached(search_routes._cache_reader(librarian), key, 1000.0))
+        write_cached(librarian._discovery_write_list, key, [{"name": "Ash"}], 1000.0)
+        self.assertEqual(read_cached(search_routes._cache_reader(librarian), key, 1001.0), [{"name": "Ash"}])
+
+    def test_a_missing_or_malformed_entry_reads_as_absent(self):
+        librarian = FakeLibrarian()
+        librarian._discovery_read_list = lambda name: "not a mapping"
+        self.assertIsNone(search_routes._cache_reader(librarian)("anything"))
 
 
 class SearchRouteTests(unittest.TestCase):
