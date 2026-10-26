@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import socket
 import sys
 import threading
@@ -43,6 +44,21 @@ def percentile(values: list[float], fraction: float) -> float | None:
     return ordered[rank - 1]
 
 
+def validate_isolated_data_dir(raw_path: str | None, root: Path) -> Path:
+    """Require an existing, copied data directory outside the source tree."""
+    if not raw_path or not raw_path.strip():
+        raise ValueError("Set NAVIDROME_LIBRARIAN_DATA_DIR to an isolated copy of the app data directory.")
+    path = Path(raw_path).expanduser().resolve()
+    source_root = root.resolve()
+    if path == source_root or source_root in path.parents:
+        raise ValueError("The data directory must be outside the repository.")
+    if not path.is_dir():
+        raise ValueError("The isolated data directory must already exist.")
+    if not (path / "navidrome_discovery.sqlite3").is_file():
+        raise ValueError("The isolated directory must contain a copied navidrome_discovery.sqlite3.")
+    return path
+
+
 def summarize(values: list[float]) -> dict[str, Any]:
     return {
         "n": len(values),
@@ -69,6 +85,7 @@ def time_search(client, base: str, params: dict[str, str]) -> dict[str, Any]:
     """One streamed search. Times are milliseconds from sending the request."""
     started = time.monotonic()
     first_result = first_external = None
+    done_ms = None
     sources: dict[str, str] = {}
     done: dict[str, Any] = {}
     with client.stream("GET", f"{base}/api/search", params=params, headers={"accept": "text/event-stream"}) as response:
@@ -84,11 +101,13 @@ def time_search(client, base: str, params: dict[str, str]) -> dict[str, Any]:
                 sources[payload.get("source", "?")] = payload.get("state", "?")
             elif event == "done":
                 done = payload
+                done_ms = now
     return {
         "first_result_ms": first_result,
         "first_external_ms": first_external,
-        "done_ms": (time.monotonic() - started) * 1000,
-        "deadline_hit": bool(done.get("deadline_hit")),
+        "done_ms": done_ms,
+        "stream_end_ms": (time.monotonic() - started) * 1000,
+        "deadline_hit": bool(done["deadline_hit"]) if "deadline_hit" in done else None,
         "partial": bool(done.get("partial")),
         "sources": sources,
     }
@@ -151,6 +170,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", help="write the JSON report to this path")
     args = parser.parse_args(argv)
+    if args.builds < 1:
+        parser.error("--builds must be at least 1")
+    if args.queries < 1:
+        parser.error("--queries must be at least 1")
+    if args.network_queries < 1:
+        parser.error("--network-queries must be at least 1")
+    if args.network_gap < 0:
+        parser.error("--network-gap cannot be negative")
+    try:
+        data_dir = validate_isolated_data_dir(os.environ.get("NAVIDROME_LIBRARIAN_DATA_DIR"), ROOT)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     sys.path.insert(0, str(ROOT))
     import httpx
@@ -161,8 +192,26 @@ def main(argv: list[str] | None = None) -> int:
     from settings.service import navidrome_generation
 
     librarian = get_librarian()
+    # Build a measurement-only index. The normal route index starts an identity resolver after
+    # each build, which writes to the discovery DB and calls MusicBrainz even without --network.
+    # This isolated index deliberately has no after_build callback; only --network may call providers.
+    if search_api._owned_index is not None:
+        parser.error("The search router index was initialized before the measurement harness.")
     generation = navidrome_generation(librarian._discovery_settings_read)
-    index = search_api.owned_index_for(librarian)
+    from discovery import store as discovery_store
+    from discovery.identity import load_identities
+    from discovery.search.index import OwnedIndex, fetch_song_inventory
+
+    index = OwnedIndex(
+        load_library=lambda: search_api._snapshot_lists(librarian, generation),
+        load_songs=lambda: fetch_song_inventory(librarian.api_call, librarian.items),
+        load_identities=lambda current_generation: load_identities(
+            lambda prefix: discovery_store.read_prefix(librarian.DISCOVERY_DB, prefix),
+            current_generation,
+        ),
+        after_build=None,
+    )
+    search_api._owned_index = index
 
     report: dict[str, Any] = {"targets_ms": TARGETS_MS}
     builds = []
@@ -174,7 +223,9 @@ def main(argv: list[str] | None = None) -> int:
         report["error"] = f"owned index not usable: {view.state}"
         print(json.dumps(report, indent=2))
         return 1
-    report["index_builds"] = builds
+    report["index_builds"] = [
+        {**build, "milliseconds": round(build.pop("seconds") * 1000, 2)} for build in builds
+    ]
     report["library"] = {
         "songs": view.data.song_count, "artists": len(view.data.artists), "albums": len(view.data.albums),
     }
@@ -189,8 +240,9 @@ def main(argv: list[str] | None = None) -> int:
             report["owned"] = {
                 "queries": len(queries),
                 "first_result_ms": summarize([r["first_result_ms"] for r in owned if r["first_result_ms"] is not None]),
-                "done_ms": summarize([r["done_ms"] for r in owned]),
+                "done_ms": summarize([r["done_ms"] for r in owned if r["done_ms"] is not None]),
                 "no_result": sum(1 for r in owned if r["first_result_ms"] is None),
+                "no_done": sum(1 for r in owned if r["done_ms"] is None),
             }
             if args.network:
                 sample = queries[: args.network_queries]
@@ -205,12 +257,14 @@ def main(argv: list[str] | None = None) -> int:
                 warm = run_all()
                 report["network_miss"] = {
                     "first_external_ms": summarize([r["first_external_ms"] for r in cold if r["first_external_ms"] is not None]),
-                    "done_ms": summarize([r["done_ms"] for r in cold]),
-                    "deadline_hit": sum(r["deadline_hit"] for r in cold),
+                    "done_ms": summarize([r["done_ms"] for r in cold if r["done_ms"] is not None]),
+                    "no_done": sum(1 for r in cold if r["done_ms"] is None),
+                    "deadline_hit": sum(r["deadline_hit"] is True for r in cold),
                     "source_states": sorted({f"{k}:{v}" for r in cold for k, v in r["sources"].items()}),
                 }
                 report["network_hit"] = {
-                    "done_ms": summarize([r["done_ms"] for r in warm]),
+                    "done_ms": summarize([r["done_ms"] for r in warm if r["done_ms"] is not None]),
+                    "no_done": sum(1 for r in warm if r["done_ms"] is None),
                     "source_states": sorted({f"{k}:{v}" for r in warm for k, v in r["sources"].items()}),
                 }
     finally:
