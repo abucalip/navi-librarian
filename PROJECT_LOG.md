@@ -1,3 +1,13 @@
+## 2026-10-26 — P4 review and PR #623 merge; PRs #624–#625 held
+
+- **Merged:** PR #623, P4a Discogs token settings, squash commit `2f6659978195cd314faa26dbc259fd9ae68ad751`, from exact reviewed head `19549f14101fbe6a8a7e4b94707b63cf4af6235b`.
+- **CI evidence:** all five associated workflows passed on that exact head: `test-and-build` / full unit suite and image build (run `40254517946`), Python syntax/safety (run `40254517856`), container smoke (run `40254517841`), non-publishing image validation (run `40254517876`), and release-workflow validation (run `40254517937`; publish job skipped). No full suite was run manually.
+- **Integration limitation:** no live Discogs request with a real token was performed. The contract's open verification of `Authorization: Discogs token=…` remains outstanding for the provider integration; mocked tests establish only the header shape.
+- **PR #624:** re-reviewed exact head `33e20afb263469e2032116a6d60554972ad6ec05`. Previous deadline-reporting, Discogs global artist/album query, and cross-candidate attribution findings appear fixed with regression tests. Held because global `genre` search remains `not_in_this_build` despite the approved P4 contract, and no GitHub Actions runs/statuses exist on this exact head. Base was retargeted to `main` after #623 merged.
+- **PR #625:** re-reviewed exact head `628270e0716212dad67e4ea04f796db1849837d2`. Genre-to-artist return navigation appears fixed. The owner waived manual browser testing for this batch; no Actions runs/statuses exist on this exact head, so automated CI remains a merge gate. Also held while the P4 global-genre contract gap in #624 remains unresolved.
+- **Release state:** no publishing, deployment, or runtime verification. PR #624 and #625 remain open and unmerged.
+- **Next action:** implement and regression-test the contracted global genre results, then run all required workflows on the final #624/#625 heads; retain the live Discogs-token integration check as an explicit outstanding verification item.
+
 ## 2026-10-26 — Global search P3 closed (PRs #621 and #622)
 
 - **Merged:** PR #621 (squash `7f1b44f`), the similar-artist fusion slice, after the owner narrowed P3 on 2026-10-26. PR #622 (squash `05b259c`), P3b: shared MusicBrainz tags, owner play-count boost, and daily precompute.
