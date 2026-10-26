@@ -1,3 +1,12 @@
+## 2026-10-26 — Review, full CI suite, and merge PR #620
+
+- **Reviewed final PR head:** `de8376b55435264c31ff5408179bafdf4c6535f5`. The previous blocking generation-cleanup race is addressed: cleanup reads the current generation at the point of deletion and removes only numerically older records; the pass checks the generation again before starting identity resolution. A deterministic regression test flips generation between the initial check and cleanup and asserts that the new-generation manual record survives.
+- **Tests and CI:** all four required workflows passed on the exact PR head. Docker packaging/full unit suite/image build passed (run `40247599274`, job `test-and-build`, including the `Run unit tests` step); Python syntax and acquisition-safety checks passed (run `40247599271`); container runtime smoke passed (run `40247599291`); non-publishing multi-architecture validation passed (run `40247599292`, publish disabled). Release workflow validation passed (run `40247599282`); its `publish-release` job was skipped. Manual browser verification was waived by the owner.
+- **Merged:** PR #620 by squash as `262486e7ce11bd11f74e5204990dfcc48ee99891`. GitHub confirms merged. Documentation status was updated in commit `ce8cb05328f3a79fc3605963b6d106938629d850`.
+- **Delivered:** global search P2 is complete through slice F: generation-safe identity cleanup, identity correction/reset endpoints, and transport-error handling in the identity pass.
+- **Release state:** no image publication, deployment, or runtime verification occurred. The full unit suite was run by CI on the exact reviewed PR head, not manually in this environment.
+- **Next action:** start P3 (similar artists) only when the owner directs it.
+
 ## 2026-10-26 — Global search P2 complete; first identity pass (branch `search-p2f`)
 
 - **First identity pass on the owner's library:** 409 artists and 1745 albums processed (744 unresolved). Artists with an MBID: 609 of 732. Albums with a release-group MBID: 1114 of 1745. 103 MusicBrainz requests, 195 s. A second pass made no calls.
