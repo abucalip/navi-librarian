@@ -84,6 +84,7 @@ class GenreViewUITests(unittest.TestCase):
         self.assertIn("'This genre could not be loaded. Try again.'", self.genre_js)
 
     def test_back_returns_focus_to_the_genre_button_or_the_artist_heading(self):
+        self.assertIn("libraryView.genreReturn = 'artist';", JS)
         self.assertIn("if (!button.hidden) button.focus();", self.genre_js)
         self.assertIn("$('genreBack').addEventListener('click', closeGenre);", JS)
 
