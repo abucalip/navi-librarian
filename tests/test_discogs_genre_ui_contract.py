@@ -100,6 +100,15 @@ class GenreViewUITests(unittest.TestCase):
     def test_other_ways_of_opening_an_artist_clear_the_genre_return(self):
         self.assertIn("async function openArtistDetail(id, key, returnFocus, artworkUrl, fromGenre = '') {", JS)
 
+    def test_search_lists_genres_and_a_genre_result_opens_the_genre_view(self):
+        self.assertIn("['genre', 'Genres']];", JS)
+        self.assertIn("genre: 'Genre'}", JS)
+        self.assertIn("openGenreFromSearch(item)", JS)
+        opener = JS[JS.index("function openGenreFromSearch"):JS.index("// ---- Library list ----")]
+        self.assertIn("navigateTo('library');", opener)
+        self.assertIn("openGenre(item.tag);", opener)
+        self.assertNotIn("innerHTML", opener)
+
     def test_touch_targets_meet_the_44px_floor(self):
         self.assertRegex(CSS, r"\.genre-link, \.genre-item-link \{ min-height: 44px; \}")
 

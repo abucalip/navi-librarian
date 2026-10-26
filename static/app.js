@@ -3002,9 +3002,9 @@ loadDashboardPicks();
 // value is written with textContent or attributes, never through HTML strings.
 
 const SEARCH_DEBOUNCE_MS = 250;
-const SEARCH_GROUPS = [['artist', 'Artists'], ['album', 'Albums'], ['song', 'Songs']];
+const SEARCH_GROUPS = [['artist', 'Artists'], ['album', 'Albums'], ['song', 'Songs'], ['genre', 'Genres']];
 const LIBRARY_PAGE_SIZE = 60;
-const TYPE_LABELS = {artist: 'Artist', album: 'Album', song: 'Song'};
+const TYPE_LABELS = {artist: 'Artist', album: 'Album', song: 'Song', genre: 'Genre'};
 const INDEX_REASON_MESSAGES = {
   index_building: 'Your library is still being indexed. Try again in a moment.',
   index_unavailable: 'Your library could not be indexed right now.',
@@ -3178,6 +3178,7 @@ function searchItemName(item) {
 
 function searchItemDetail(item) {
   // Provider artists have no album count, so the detail line only states the type.
+  if (item.type === 'genre') return item.owned ? 'Genre · in your library' : TYPE_LABELS.genre;
   if (!item.owned && item.type === 'artist') return TYPE_LABELS.artist;
   if (item.type === 'artist') return pluralize(item.album_count, 'album', 'albums');
   const details = item.type === 'album' ? [item.artist, item.year] : [item.artist, item.album];
@@ -3187,13 +3188,13 @@ function searchItemDetail(item) {
 function buildSearchItem(item) {
   const row = document.createElement('li');
   row.className = 'search-item';
-  // Owned artists open the artist view. Albums and songs, and artists not in the library, are
-  // listed for reference only.
-  const opens = item.type === 'artist' && item.owned;
+  // Owned artists open the artist view and any genre opens its genre view. Albums and songs, and
+  // artists not in the library, are listed for reference only.
+  const opens = (item.type === 'artist' && item.owned) || item.type === 'genre';
   const content = opens ? document.createElement('button') : document.createElement('div');
   if (opens) {
     content.type = 'button';
-    content.addEventListener('click', () => openArtistFromSearch(item));
+    content.addEventListener('click', () => (item.type === 'genre' ? openGenreFromSearch(item) : openArtistFromSearch(item)));
   }
   content.className = 'search-item-content';
   content.append(buildArtwork(item.artwork_url, 'search-item-art'));
@@ -3211,6 +3212,15 @@ function openArtistFromSearch(item) {
   $('globalSearchInput').value = '';
   navigateTo('library');
   openArtistDetail(item.id, item.key, null, item.artwork_url);
+}
+
+function openGenreFromSearch(item) {
+  closeGlobalSearch();
+  $('globalSearchInput').value = '';
+  navigateTo('library');
+  $('libraryIntro').hidden = true;
+  libraryView.fromGenre = '';
+  openGenre(item.tag);
 }
 
 // ---- Library list ----
