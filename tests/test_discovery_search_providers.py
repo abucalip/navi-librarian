@@ -93,6 +93,15 @@ class MusicBrainzTests(unittest.TestCase):
         self.assertEqual(raised.exception.state, "failed")
         self.assertEqual(len(get.requests), 3)
 
+    def test_503_with_no_time_left_for_the_backoff_reports_rate_limited_at_once(self):
+        pauses = []
+        get = ScriptedGet(FakeResponse(503), FakeResponse(200, {"artists": []}))
+        with self.assertRaises(ProviderError) as raised:
+            self.client(get, pauses.append).artists("ash", remaining=lambda: 0.8, cancelled=never_cancelled())
+        self.assertEqual(raised.exception.state, "rate_limited")
+        self.assertEqual(pauses, [])
+        self.assertEqual(len(get.requests), 1)
+
     def test_refused_pacing_reports_rate_limited_without_a_request(self):
         limiter = SourceLimiter({"musicbrainz": 5.0})
         limiter.admit("musicbrainz", 10.0)
