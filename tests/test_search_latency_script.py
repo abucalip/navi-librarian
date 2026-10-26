@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.search_latency import parse_sse, percentile, pick_queries, summarize
+from scripts.search_latency import parse_sse, percentile, pick_queries, summarize, validate_isolated_data_dir
 
 
 class _Data:
@@ -12,6 +12,21 @@ class _Data:
 
 
 class SearchLatencyHelpersTests(unittest.TestCase):
+    def test_isolated_data_dir_requires_existing_copy_outside_repository(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        root = Path(__file__).resolve().parent.parent
+        with self.assertRaisesRegex(ValueError, "Set NAVIDROME_LIBRARIAN_DATA_DIR"):
+            validate_isolated_data_dir(None, root)
+        with self.assertRaisesRegex(ValueError, "outside the repository"):
+            validate_isolated_data_dir(str(root), root)
+        with TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(ValueError, "copied navidrome_discovery.sqlite3"):
+                validate_isolated_data_dir(temporary, root)
+            Path(temporary, "navidrome_discovery.sqlite3").touch()
+            self.assertEqual(validate_isolated_data_dir(temporary, root), Path(temporary).resolve())
+
     def test_percentile_is_nearest_rank(self):
         values = list(range(1, 101))
         self.assertEqual(percentile(values, 0.95), 95)
