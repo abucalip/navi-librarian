@@ -63,7 +63,8 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - **Partial artist pages until the tag cache is warm.** Tag lookups run at 1 req/s inside the 3 s page deadline, so artist pages often return `similar` as incomplete with reason `deadline` until precompute has filled the tag cache.
   - **Fixed precompute order.** Each daily pass starts from the same point in the library list. If a full pass ever runs past the 6 h budget, the artists at the end are never reached. Rotate the start point, or record the last artist reached, before this matters.
   - **Precompute is on by default**, with no settings switch. It runs only while the app process is running and the owned index is usable.
-- **P4 (Discogs and genre pages)** is next. It includes Discogs styles as a shared-tag source, which P3b deferred to P4.
+- **P4 (Discogs and genre pages) implemented and merged:** PRs [#623](https://github.com/abucalip/navi-librarian/pull/623)–[#625](https://github.com/abucalip/navi-librarian/pull/625) are merged. Includes Discogs token settings/client and styles as a shared-tag source, global genre search, genre pages, and the settings/genre UI. Verification and exact SHAs are recorded in `PROJECT_STATUS.md` and `PROJECT_LOG.md`.
+- **P4 follow-up not verified:** no live Discogs token/API check was performed. Keep publication and deployment paused. Do not treat mocked authorization-header tests or green CI as live-provider verification.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated
