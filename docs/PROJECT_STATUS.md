@@ -1,8 +1,10 @@
 # Project status
 
-Last checked: 2026-10-25. GitHub `main` is authoritative.
+Last checked: 2026-10-26. GitHub `main` is authoritative.
 
 ## Current state
+
+- **Global search P2 slice F merged:** PR [#620](https://github.com/abucalip/navi-librarian/pull/620), squash commit `262486e7ce11bd11f74e5204990dfcc48ee99891`, from reviewed head `de8376b55435264c31ff5408179bafdf4c6535f5`. The generation-cleanup race is fixed by reading the current generation at cleanup time, deleting only numerically older records, and checking the generation again before starting identity resolution; a deterministic generation-flip regression test covers preservation of the new generation. All required CI workflows passed on the exact head, including the full unit-test suite and Docker build (run `40247599274`), Python syntax/acquisition-safety (run `40247599271`), container runtime smoke (run `40247599291`), and non-publishing multi-architecture validation (run `40247599292`, publishing paused). Release workflow validation passed (run `40247599282`); publishing was skipped. Browser verification was waived by the owner. Merged only: not published, deployed, or runtime verified.
 
 - **Global search P2 slice B merged:** PR [#614](https://github.com/abucalip/navi-librarian/pull/614), squash commit `f2da69505bce733f62980881fd993ed02e722914`, from reviewed head `1da2c0ba710d7abe0a82f3f3a846d9c31a5c7976`. Adds artist-page `bio` and `missing_albums` sections under the 3-second deadline, with ListenBrainz play-count ranking and a cache-write guard for late popularity responses. All four required workflows passed on the exact PR head: Docker packaging/full unit suite/image build (run `40241617604`; unit tests and image build succeeded), Python syntax and safety checks (run `40241617609`), container runtime smoke test (run `40241617581`), and validation-only multi-architecture image validation (run `40241617635`, publishing paused). The full unit suite passed in CI; it was not run manually. Release workflow validation passed (run `40241617634`); publishing was skipped. Not verified: live provider calls or the artist route against the real Navidrome server. Backend-only; no browser test applicable. Not published, deployed, or runtime verified. Next: continue the remaining P2 work only after inspecting current dependencies and acceptance criteria.
 
@@ -81,7 +83,7 @@ Last checked: 2026-10-25. GitHub `main` is authoritative.
 
 ## Next action
 
-Global search P2 is complete (`docs/SEARCH_CONTRACT.md` section 12.11). Slice F (`search-p2f`) adds the first identity pass results, the cleanup of old identity records, and the correction path, and needs its PR merged. Next: review and merge slice F, then P3 (similar artists) when the owner starts it. Not published or deployed.
+Global search P2 is complete (`docs/SEARCH_CONTRACT.md` section 12.11); slices A–F are merged, with slice F in PR #620. Next: begin P3 (similar artists) only when the owner starts it. No publication or deployment is authorized by this merge.
 
 ## Where to look
 
