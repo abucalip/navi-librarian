@@ -109,6 +109,15 @@ class GenreViewUITests(unittest.TestCase):
         self.assertIn("openGenre(item.tag);", opener)
         self.assertNotIn("innerHTML", opener)
 
+    def test_back_from_search_genre_returns_to_library_list(self):
+        opener = JS[JS.index("function openGenreFromSearch"):JS.index("// ---- Library list ----")]
+        self.assertIn("libraryView.genreReturn = 'list';", opener)
+        close = JS[JS.index("function closeGenre()"):JS.index("// ---- Wiring ----")]
+        self.assertIn("if (libraryView.genreReturn === 'artist')", close)
+        self.assertIn("$('libraryListView').hidden = false;", close)
+        self.assertIn("$('libraryIntro').hidden = false;", close)
+        self.assertIn("$('libraryHeading').focus();", close)
+
     def test_touch_targets_meet_the_44px_floor(self):
         self.assertRegex(CSS, r"\.genre-link, \.genre-item-link \{ min-height: 44px; \}")
 
