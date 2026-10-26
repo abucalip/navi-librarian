@@ -25,6 +25,9 @@ class SearchLatencyHelpersTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "copied navidrome_discovery.sqlite3"):
                 validate_isolated_data_dir(temporary, root)
             Path(temporary, "navidrome_discovery.sqlite3").touch()
+            with self.assertRaisesRegex(ValueError, "confirm it is isolated"):
+                validate_isolated_data_dir(temporary, root)
+            Path(temporary, ".navi-librarian-search-latency-isolated").touch()
             self.assertEqual(validate_isolated_data_dir(temporary, root), Path(temporary).resolve())
 
     def test_percentile_is_nearest_rank(self):
