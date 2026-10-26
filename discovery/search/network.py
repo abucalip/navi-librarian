@@ -19,8 +19,9 @@ import threading
 from discovery.search.cache import provider_cache_key, purge_stale_generations
 from discovery.search.events import NOT_IN_BUILD, availability
 from discovery.search.limiter import SourceLimiter
-from discovery.search.providers import LastFmSearch, MusicBrainzSearch
+from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch
 from discovery.search.runner import ExternalSearch, FetchRegistry, Part
+from integrations.listenbrainz.client import request_headers
 from settings.service import lastfm_generation
 
 MUSICBRAINZ_GENERATION = 0  # MusicBrainz has no credential (section 5.2).
@@ -28,7 +29,8 @@ LASTFM_API_KEY = "lastfm_api_key"
 
 REGISTRY = FetchRegistry()
 # MusicBrainz asks for an average of one request per second per IP; Last.fm allows about five per second.
-LIMITER = SourceLimiter({"musicbrainz": 1.0, "lastfm": 0.2})
+# ListenBrainz radio allows 30 requests per window (contract section 5.1), so one every two seconds.
+LIMITER = SourceLimiter({"musicbrainz": 1.0, "lastfm": 0.2, "listenbrainz": 2.0})
 
 _KINDS = ("artist", "album")
 
@@ -146,6 +148,7 @@ def artist_network(
     rate_limiter = limiter or LIMITER
     musicbrainz = MusicBrainzSearch(get=get, limiter=rate_limiter, pause=time.sleep)
     lastfm = LastFmSearch(get=get, limiter=rate_limiter, api_key=lastfm_api_key) if lastfm_api_key else None
+    listenbrainz = ListenBrainzRadio(get=get, limiter=rate_limiter, headers=request_headers())
     sources = {
         "navidrome": availability(True),
         "musicbrainz": availability(True),
@@ -162,6 +165,7 @@ def artist_network(
         navidrome_mbid=navidrome_mbid,
         lastfm=lastfm,
         lastfm_generation=lastfm_gen,
+        listenbrainz=listenbrainz,
         sources=sources,
         clock=clock,
     )

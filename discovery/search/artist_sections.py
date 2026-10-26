@@ -6,6 +6,9 @@ Last.fm, deduplicated; the list is ordered by ListenBrainz listen counts.
 
 Each network section runs on its own thread under one artist-page deadline. A section that has
 not finished by then is reported ``deadline``; a failed one ``source_failed``.
+
+``similar`` fuses Last.fm and ListenBrainz radio (contract section 7). Its raw records are cached
+for seven days; owned filtering runs on every read.
 """
 
 from __future__ import annotations
@@ -18,12 +21,13 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 from typing import Any
 
-from discovery.search.cache import provider_cache_key, read_cached, write_cached
+from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import normalize_key
-from discovery.search.providers import LastFmSearch, MusicBrainzSearch
+from discovery.search.providers import LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
+from discovery.search.similar import LASTFM, LISTENBRAINZ, fuse_similar
 
 MISSING_ALBUMS_LIMIT = 50
 BIO_SOURCE = "wikidata"
@@ -45,6 +49,8 @@ class ArtistNetwork:
     # Last.fm, when a key is saved. ``lastfm_generation`` keys its cache entries (section 5.2).
     lastfm: LastFmSearch | None = None
     lastfm_generation: int = 0
+    # ListenBrainz radio, which needs the artist's MBID. None when the source is not wired.
+    listenbrainz: ListenBrainzRadio | None = None
     sources: Mapping[str, dict[str, Any]] = field(default_factory=dict)
     clock: Callable[[], float] = time.monotonic
     deadline_seconds: float = SEARCH_DEADLINE_SECONDS
@@ -199,6 +205,67 @@ def _shape_items(albums: list[dict[str, Any]], stats: Mapping[str, Mapping[str, 
     return items[:MISSING_ALBUMS_LIMIT]
 
 
+def similar_items(
+    network: ArtistNetwork,
+    name: str,
+    artist_id: str | None,
+    owned: OwnedKeys,
+    *,
+    remaining,
+    cancelled,
+    known_mbid: str | None = None,
+) -> dict[str, Any]:
+    """The ``similar`` section object. Raises when no source produced an answer.
+
+    A source that fails while another answers gives a partial section (``source_failed``, with
+    the other source's items). Only a complete fetch is cached, so a failure is never a hit.
+    """
+    mbid = resolve_identity(
+        network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+    )
+    key = f"similar:{mbid or 'none'}:{normalize_key(name)}:lastfm{network.lastfm_generation}:listenbrainz0"
+    records = read_cached(network.cache_read, key, time.time(), positive_ttl=SIMILAR_TTL_SECONDS)
+    if records is None:
+        records, failed, attempted = [], 0, 0
+        if network.lastfm is not None:
+            attempted += 1
+            try:
+                records += [
+                    {"source": LASTFM, **record}
+                    for record in network.lastfm.similar(name, remaining=remaining, cancelled=cancelled)
+                ]
+            except Exception:
+                failed += 1
+        if network.listenbrainz is not None and mbid:
+            attempted += 1
+            try:
+                records += [
+                    {"source": LISTENBRAINZ, **record}
+                    for record in network.listenbrainz.similar(mbid, remaining=remaining, cancelled=cancelled)
+                ]
+            except Exception:
+                failed += 1
+        if attempted == 0:
+            # No source can answer for this artist (no Last.fm key, and no MBID for radio).
+            return {"section": "similar", "available": False, "complete": False,
+                    "reason": "source_disabled", "items": []}
+        if failed == attempted:
+            raise ProviderError("failed")
+        if failed == 0 and remaining() > 0 and not cancelled.is_set():
+            write_cached(network.cache_write, key, records, time.time())
+        complete = failed == 0
+    else:
+        complete = True
+
+    items = fuse_similar(records, name, mbid, owned)
+    if complete:
+        return _available("similar", "items", items)
+    return {
+        "section": "similar", "available": True, "complete": False,
+        "reason": "source_failed", "items": items,
+    }
+
+
 def _available(name: str, payload_key: str, payload: Any) -> dict[str, Any]:
     return {"section": name, "available": True, "complete": True, "reason": None, payload_key: payload}
 
@@ -241,7 +308,17 @@ def network_sections(
         )
         return _available("missing_albums", "items", items)
 
-    jobs = {"bio": ("bio", bio_job), "missing_albums": ("items", missing_job)}
+    def similar_job() -> dict[str, Any]:
+        return similar_items(
+            network, name, artist_id, owned,
+            remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+        )
+
+    jobs = {
+        "bio": ("bio", bio_job),
+        "missing_albums": ("items", missing_job),
+        "similar": ("items", similar_job),
+    }
     pool = ThreadPoolExecutor(max_workers=len(jobs))
     try:
         futures = {section: pool.submit(job) for section, (_, job) in jobs.items()}

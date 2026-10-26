@@ -11,6 +11,7 @@ import re
 import time
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import quote
 
 from discovery.search.cache import DEPTH
 from discovery.search.limiter import SourceLimiter
@@ -18,6 +19,7 @@ from discovery.search.normalize import normalize_key
 
 MUSICBRAINZ = "musicbrainz"
 LASTFM = "lastfm"
+LISTENBRAINZ = "listenbrainz"
 
 MB_BASE = "https://musicbrainz.org/ws/2"
 LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/"
@@ -426,6 +428,28 @@ class LastFmSearch:
         ]
         return [c for c in candidates if _usable(c) and c["artist"]]
 
+    def similar(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Last.fm's similar artists, best first, with the match score (0 to 1) it reports."""
+        payload = self._call("artist.getSimilar", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
+        matches = _as_list((payload.get("similarartists") or {}).get("artist"))
+        output = []
+        for item in matches:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            if not name:
+                continue
+            try:
+                match = float(item.get("match") or 0)
+            except (TypeError, ValueError):
+                match = 0.0
+            output.append({
+                "name": name,
+                "mbid": str(item.get("mbid") or "").strip() or None,
+                "match": min(max(match, 0.0), 1.0),
+            })
+        return output
+
     def top_albums(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Last.fm's top albums for one artist. Used on the artist page, not in search."""
         payload = self._call("artist.getTopAlbums", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
@@ -436,3 +460,50 @@ class LastFmSearch:
             if isinstance(item, dict)
         ]
         return [c for c in candidates if _usable(c)]
+
+
+LB_RADIO_BASE = "https://api.listenbrainz.org/1/lb-radio/artist"
+# Per the contract (section 7): five similar artists, one recording each, popularity unrestricted.
+LB_RADIO_PARAMS = {"mode": "easy", "max_similar_artists": 5, "max_recordings_per_artist": 1, "pop_begin": 0, "pop_end": 100}
+
+
+class ListenBrainzRadio:
+    """ListenBrainz similar artists for one seed MBID. The result is ordered and has no score."""
+
+    source = LISTENBRAINZ
+
+    def __init__(self, *, get: Callable[..., Any], limiter: SourceLimiter, headers: dict[str, str]):
+        self._get = get
+        self._limiter = limiter
+        self._headers = headers
+
+    def similar(self, seed_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Similar artists in the order ListenBrainz returns them. The seed is removed."""
+        if cancelled.is_set():
+            raise ProviderError("failed")
+        if not self._limiter.admit(self.source, remaining()):
+            raise ProviderError("rate_limited")
+        response = self._get(
+            f"{LB_RADIO_BASE}/{quote(seed_mbid, safe='')}",
+            params=dict(LB_RADIO_PARAMS),
+            headers=dict(self._headers),
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ProviderError("failed")
+        output: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        # The body is keyed by artist MBID; every value is a list of entries. Flatten in order.
+        for entries in payload.values():
+            for entry in _as_list(entries):
+                if not isinstance(entry, dict):
+                    continue
+                mbid = str(entry.get("similar_artist_mbid") or "").strip()
+                name = str(entry.get("similar_artist_name") or "").strip()
+                if not mbid or not name or mbid == seed_mbid or mbid in seen:
+                    continue
+                seen.add(mbid)
+                output.append({"name": name, "mbid": mbid, "match": None})
+        return output
