@@ -281,11 +281,11 @@ def similar_items(
                     "reason": "source_disabled", "items": []}
         if failed == attempted:
             raise ProviderError("failed")
-        if failed == 0 and remaining() > 0 and not cancelled.is_set():
-            write_cached(network.cache_write, key, records, time.time())
         complete = failed == 0
+        fetched = True
     else:
         complete = True
+        fetched = False
 
     seed_tags: set[str] = set()
     tags_hit_deadline = False
@@ -308,6 +308,10 @@ def similar_items(
     items = fuse_similar(
         records, name, mbid, owned, seed_tags=seed_tags, candidate_tags=candidate_tags,
     )
+    # Commit the fetched records only once the whole section is complete, so an incomplete
+    # refresh (a rate-limited tag lookup, say) leaves the previous entry in place (contract 5.2).
+    if fetched and complete and not tags_hit_deadline and remaining() > 0 and not cancelled.is_set():
+        write_cached(network.cache_write, key, records, time.time())
     if complete and not tags_hit_deadline:
         return _available("similar", "items", items)
     return {

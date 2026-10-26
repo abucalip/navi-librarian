@@ -405,6 +405,25 @@ class SimilarSectionTests(unittest.TestCase):
         self.assertEqual(section["reason"], "deadline")
         self.assertEqual([i["name"] for i in section["items"]], ["Thom Yorke"])
 
+    def test_an_incomplete_tag_refresh_leaves_the_previous_cache_entry_unchanged(self):
+        import time
+        store = Store()
+        key = "similar:mb-rh:radiohead:lastfm3:listenbrainz0"
+        previous = {"at": time.time(), "results": [{"source": "lastfm", "name": "Old", "mbid": None, "match": 0.1}]}
+        store.data[key] = previous
+        net = self.network(
+            lastfm=self.Fake([{"name": "New", "mbid": None, "match": 0.9}]),
+            store=store,
+            musicbrainz=self.MusicBrainz(tags={"mb-rh": ["rock"]}, rate_limited=True),
+        )
+        section = similar_items(
+            net, "Radiohead", None, owned_keys(),
+            remaining=lambda: 10.0, cancelled=never_cancelled(), refresh=True,
+        )
+        self.assertFalse(section["complete"])
+        self.assertEqual(section["reason"], "deadline")
+        self.assertIs(store.data[key], previous)
+
     def test_refresh_skips_the_cached_records_and_calls_the_sources(self):
         store = Store()
         self.run_similar(self.network(lastfm=self.Fake([{"name": "Old", "mbid": None, "match": 0.1}]), store=store))
