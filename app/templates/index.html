@@ -261,7 +261,17 @@
           <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
         </div>
       </div>
+      <p><button type="button" id="artistGenre" class="genre-link" hidden></button></p>
       <ul id="artistAlbums" class="library-album-list"></ul>
+    </div>
+    <div id="libraryGenreView" hidden>
+      <button type="button" id="genreBack">Back</button>
+      <h3 id="genreHeading" tabindex="-1"></h3>
+      <p id="genreStatus" class="status-line" aria-live="polite"></p>
+      <h4 id="genreArtistsHeading">Artists</h4>
+      <ul id="genreArtists" class="library-album-list" aria-labelledby="genreArtistsHeading"></ul>
+      <h4 id="genreAlbumsHeading">Albums</h4>
+      <ul id="genreAlbums" class="library-album-list" aria-labelledby="genreAlbumsHeading"></ul>
     </div>
   </div>
 </section>
@@ -284,6 +294,7 @@
       <button type="button" id="tabSlskd" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsSlskd" data-settings-tab="slskd">slskd</button>
       <button type="button" id="tabLastfm" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsLastfm" data-settings-tab="lastfm">Last.fm</button>
       <button type="button" id="tabListenbrainz" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsListenbrainz" data-settings-tab="listenbrainz">ListenBrainz</button>
+      <button type="button" id="tabDiscogs" class="settings-tab" role="tab" aria-selected="false" aria-controls="settingsDiscogs" data-settings-tab="discogs">Discogs</button>
     </div>
     <div id="settingsNavidrome" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabNavidrome">
       <h3>Navidrome connection</h3>
@@ -326,6 +337,13 @@
       <label>User token (optional) <input id="listenbrainzToken" type="password" placeholder="Leave blank to keep the saved token" autocomplete="new-password"></label>
       <p id="listenbrainzStatus" class="status-line" aria-live="polite"></p>
       <p><button id="saveListenbrainz" class="btn-primary">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+    </div>
+    <div id="settingsDiscogs" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabDiscogs" hidden>
+      <h3>Discogs</h3>
+      <p class="muted">Optional. Adds Discogs styles to similar artists and genre pages. Create a personal access token in your Discogs developer settings. Data provided by Discogs.</p>
+      <label>Personal access token <input id="discogsToken" type="password" placeholder="Enter a token to set or replace it" autocomplete="new-password"></label>
+      <p id="discogsStatus" class="status-line" aria-live="polite"></p>
+      <p><button id="saveDiscogs" class="btn-primary">Save token</button> <button id="removeDiscogs">Remove saved token</button> <button id="testDiscogs">Test connection</button></p>
     </div>
   </div>
 </section>

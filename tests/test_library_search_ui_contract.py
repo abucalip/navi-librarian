@@ -105,7 +105,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
             self.assertNotIn(provider, self.new_js[self.new_js.index("function searchItemName"):self.new_js.index("// ---- Library list ----")])
 
     def test_only_owned_artists_open_the_artist_view(self):
-        self.assertIn("const opens = item.type === 'artist' && item.owned;", self.new_js)
+        self.assertIn("const opens = (item.type === 'artist' && item.owned) || item.type === 'genre';", self.new_js)
 
     def test_new_script_never_writes_html_from_data(self):
         self.assertNotIn("innerHTML", self.new_js)
