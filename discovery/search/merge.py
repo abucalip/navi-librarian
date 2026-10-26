@@ -44,12 +44,21 @@ class OwnedKeys:
     def __init__(self, data: OwnedData | None):
         self._artists: dict[str, list[str | None]] = {}
         self._albums: dict[str, list[tuple[int | None, str | None]]] = {}
+        self._artist_entries: dict[str, list[dict[str, Any]]] = {}
         if data is None:
             return
         for artist in data.artists:
             self._artists.setdefault(artist["key"], []).append(artist.get("mbid"))
+            self._artist_entries.setdefault(artist["key"], []).append(artist)
         for album in data.albums:
             self._albums.setdefault(album["key"], []).append((album["year"], album.get("release_group_mbid")))
+
+    def owned_artist(self, candidate: dict[str, Any]) -> dict[str, Any] | None:
+        """The owned artist entry this artist candidate matches, or None. Same rule as ``owns``."""
+        for entry in self._artist_entries.get(candidate["key"], []):
+            if _mbid_match(candidate["mbid"], [entry.get("mbid")]):
+                return entry
+        return None
 
     def owns(self, candidate: dict[str, Any]) -> bool:
         if candidate["type"] == "artist":

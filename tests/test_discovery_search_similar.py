@@ -89,13 +89,39 @@ class FuseTests(unittest.TestCase):
         items = fuse_similar(records, "Radiohead", "mb-rh", OwnedKeys(None))
         self.assertEqual([i["name"] for i in items], ["Other"])
 
-    def test_owned_artists_are_moved_out_of_the_suggestions(self):
+    def test_owned_artists_move_to_the_owned_list_after_the_unowned_ones(self):
+        records = [
+            {"source": "listenbrainz", "name": "Portishead", "mbid": None, "match": None},
+            {"source": "listenbrainz", "name": "Massive Attack", "mbid": "mb-ma", "match": None},
+            {"source": "lastfm", "name": "Thom Yorke", "mbid": None, "match": 0.2},
+        ]
+        items = fuse_similar(records, "Radiohead", "mb-rh", owned_keys())
+        self.assertEqual([i["name"] for i in items], ["Massive Attack", "Thom Yorke", "Portishead"])
+        self.assertEqual([i["owned"] for i in items], [False, False, True])
+
+    def test_item_shape_carries_owned_and_the_library_id(self):
         records = [
             {"source": "listenbrainz", "name": "Portishead", "mbid": None, "match": None},
             {"source": "listenbrainz", "name": "Massive Attack", "mbid": "mb-ma", "match": None},
         ]
         items = fuse_similar(records, "Radiohead", "mb-rh", owned_keys())
-        self.assertEqual([i["name"] for i in items], ["Massive Attack"])
+        self.assertEqual(items[0], {
+            "name": "Massive Attack", "mbid": "mb-ma", "owned": False, "id": None,
+            "score": 0.333, "reasons": ["ListenBrainz similar artist"],
+        })
+        self.assertEqual(items[1]["owned"], True)
+        self.assertEqual(items[1]["id"], "ar2")
+        self.assertEqual(items[1]["name"], "Portishead")
+
+    def test_an_owned_artist_matched_by_mbid_keeps_its_library_id(self):
+        data = build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "ar9", "name": "Portishead", "album_count": 0, "mbid": "mb-p"}],
+            albums=[], songs=[],
+        )
+        records = [{"source": "lastfm", "name": "Portishead", "mbid": "mb-p", "match": 0.7}]
+        items = fuse_similar(records, "Radiohead", "mb-rh", OwnedKeys(data))
+        self.assertEqual((items[0]["owned"], items[0]["id"]), (True, "ar9"))
 
     def test_suggestions_are_capped(self):
         records = [

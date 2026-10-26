@@ -4,8 +4,10 @@ Last.fm reports a match score, so its contribution is that score. ListenBrainz r
 only an order, so its contribution is position based: the first result counts 1/2, the second
 1/3, and so on. An artist listed by both sources adds both contributions.
 
-Records arrive as one flat list, each with a ``source`` field, in the order the source returned
-them. The list is what the cache stores, so owned filtering and ranking run on every read.
+An owned artist is not dropped: it is flagged ``owned`` with its library ID and listed after the
+artists the library does not have. Records arrive as one flat list, each with a ``source`` field,
+in the order the source returned them. The list is what the cache stores, so owned matching and
+ranking run on every read.
 """
 
 from __future__ import annotations
@@ -37,7 +39,10 @@ def fuse_similar(
     owned: OwnedKeys,
     limit: int = SIMILAR_LIMIT,
 ) -> list[dict[str, Any]]:
-    """Fused suggestions, best first. The seed and owned artists are never suggested."""
+    """Fused suggestions: artists not in the library by score, then owned artists by score.
+
+    The seed artist is never suggested.
+    """
     seed = _artist(seed_name, seed_mbid)
     positions: dict[str, int] = {}
     merged: list[dict[str, Any]] = []
@@ -63,17 +68,22 @@ def fuse_similar(
         if reason not in entry["reasons"]:
             entry["reasons"].append(reason)
 
-    ranked = sorted(merged, key=lambda m: (-m["score"], m["candidate"]["name"].casefold()))
+    for entry in merged:
+        entry["owned_artist"] = owned.owned_artist(entry["candidate"])
+    # Owned artists go to the owned list, which follows the unowned suggestions (contract 8.1).
+    ranked = sorted(
+        merged,
+        key=lambda m: (m["owned_artist"] is not None, -m["score"], m["candidate"]["name"].casefold()),
+    )
     items = []
-    for entry in ranked:
-        if owned.owns(entry["candidate"]):
-            continue
+    for entry in ranked[:limit]:
+        owned_artist = entry["owned_artist"]
         items.append({
             "name": entry["candidate"]["name"],
             "mbid": entry["candidate"]["mbid"],
+            "owned": owned_artist is not None,
+            "id": owned_artist["id"] if owned_artist else None,
             "score": round(entry["score"], 3),
             "reasons": entry["reasons"],
         })
-        if len(items) == limit:
-            break
     return items
