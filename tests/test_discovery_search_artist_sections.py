@@ -320,7 +320,9 @@ class ArtistPageNetworkTests(unittest.TestCase):
         self.assertTrue(page.capabilities["sections"]["missing_albums"]["available"])
         self.assertEqual(page.sections["missing_albums"]["section"], "missing_albums")
         self.assertFalse(page.partial)
-        self.assertEqual(page.sections["similar"]["reason"], "not_in_this_build")
+        # This network has neither Last.fm nor ListenBrainz wired, so no source can answer.
+        self.assertEqual(page.capabilities["sections"]["similar"]["reason"], "source_disabled")
+        self.assertEqual(page.sections["similar"]["reason"], "source_disabled")
 
     def test_a_failed_source_makes_the_page_partial(self):
         net = network(FakeMusicBrainz(fail="failed"), bio=lambda name: "Bio.")

@@ -13,6 +13,7 @@ from typing import Any
 DEPTH = 50
 POSITIVE_TTL_SECONDS = 24 * 60 * 60
 NEGATIVE_TTL_SECONDS = 60 * 60
+SIMILAR_TTL_SECONDS = 7 * 24 * 60 * 60
 
 
 def provider_cache_key(source: str, generation: int, query: str, kind: str) -> str:
@@ -37,10 +38,12 @@ def read_cached(
     read: Callable[[str], Any],
     key: str,
     now: float,
+    positive_ttl: int = POSITIVE_TTL_SECONDS,
 ) -> list[dict[str, Any]] | None:
     """Return the cached records for ``key``, or None when missing or expired.
 
-    A definitive empty answer is cached for an hour; a non-empty one for 24 hours.
+    A definitive empty answer is cached for an hour; a non-empty one for ``positive_ttl``
+    (24 hours for search results, 7 days for similar artists).
     """
     entry = read(key)
     if not isinstance(entry, dict):
@@ -49,7 +52,7 @@ def read_cached(
     at = entry.get("at")
     if not isinstance(records, list) or not isinstance(at, (int, float)):
         return None
-    ttl = POSITIVE_TTL_SECONDS if records else NEGATIVE_TTL_SECONDS
+    ttl = positive_ttl if records else NEGATIVE_TTL_SECONDS
     if now - at > ttl:
         return None
     return records

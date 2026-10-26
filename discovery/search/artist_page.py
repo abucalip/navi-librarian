@@ -40,8 +40,8 @@ def artist_capabilities(view: IndexView, network: ArtistNetwork | None = None) -
     for name in _NETWORK_SECTIONS:
         if network is None:
             sections[name] = availability(False, NOT_IN_BUILD)
-        elif name == "similar":
-            sections[name] = availability(False, NOT_IN_BUILD)
+        elif name == "similar" and network.lastfm is None and network.listenbrainz is None:
+            sections[name] = availability(False, "source_disabled")
         else:
             sections[name] = availability(True)
     return {
