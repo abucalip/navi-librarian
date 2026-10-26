@@ -3013,7 +3013,7 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0, genreTag: '', fromGenre: ''};
 let libraryFilterTimer = 0;
 
 function setStatus(el, message, kind) {
@@ -3292,9 +3292,11 @@ function buildLibraryRow(artist) {
 
 // ---- Artist view ----
 
-async function openArtistDetail(id, key, returnFocus, artworkUrl) {
+async function openArtistDetail(id, key, returnFocus, artworkUrl, fromGenre = '') {
   const view = libraryView;
   view.detailReturn = returnFocus;
+  // The genre this artist was opened from, so closing the artist returns there instead of to the list.
+  view.fromGenre = fromGenre;
   const seq = ++view.detailSeq;
   $('libraryListView').hidden = true;
   $('libraryDetailView').hidden = false;
@@ -3357,6 +3359,14 @@ function buildArtistAlbum(album) {
 
 function closeArtistDetail() {
   libraryView.detailSeq += 1;
+  // An artist opened from a genre returns to that genre, which takes focus on its heading.
+  if (libraryView.fromGenre) {
+    const tag = libraryView.fromGenre;
+    libraryView.fromGenre = '';
+    $('libraryDetailView').hidden = true;
+    openGenre(tag);
+    return;
+  }
   $('libraryDetailView').hidden = true;
   $('libraryListView').hidden = false;
   $('libraryIntro').hidden = false;
@@ -3382,7 +3392,7 @@ function buildGenreItem(item, type) {
     button.addEventListener('click', () => {
       $('libraryGenreView').hidden = true;
       libraryView.genreSeq += 1;
-      openArtistDetail(item.id, item.key, button, null);
+      openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);
     });
     row.append(button);
   } else {
@@ -3399,6 +3409,7 @@ function buildGenreItem(item, type) {
 async function openGenre(tag) {
   const view = libraryView;
   const seq = ++view.genreSeq;
+  view.genreTag = tag;
   $('libraryDetailView').hidden = true;
   $('libraryListView').hidden = true;
   $('libraryGenreView').hidden = false;

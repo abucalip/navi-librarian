@@ -76,7 +76,7 @@ class GenreViewUITests(unittest.TestCase):
 
     def test_owned_artists_open_their_artist_view_and_others_are_text_only(self):
         self.assertIn("if (item.owned && type === 'artists') {", self.genre_js)
-        self.assertIn("openArtistDetail(item.id, item.key, button, null);", self.genre_js)
+        self.assertIn("openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);", self.genre_js)
 
     def test_incomplete_and_empty_states_are_distinct(self):
         self.assertIn("Some sources did not answer, so this list may be incomplete", self.genre_js)
@@ -86,6 +86,19 @@ class GenreViewUITests(unittest.TestCase):
     def test_back_returns_focus_to_the_genre_button_or_the_artist_heading(self):
         self.assertIn("if (!button.hidden) button.focus();", self.genre_js)
         self.assertIn("$('genreBack').addEventListener('click', closeGenre);", JS)
+
+    def test_an_artist_opened_from_a_genre_returns_to_that_genre(self):
+        self.assertIn("openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);", self.genre_js)
+        self.assertIn("view.fromGenre = fromGenre;", JS)
+        close = JS[JS.index("function closeArtistDetail()"):JS.index("// ---- Genre view")]
+        self.assertIn("if (libraryView.fromGenre) {", close)
+        self.assertIn("openGenre(tag);", close)
+        # The list view stays hidden on that path, so focus is never sent to a hidden return button.
+        self.assertLess(close.index("openGenre(tag);"), close.index("libraryListView"))
+        self.assertLess(close.index("return;"), close.index("libraryListView"))
+
+    def test_other_ways_of_opening_an_artist_clear_the_genre_return(self):
+        self.assertIn("async function openArtistDetail(id, key, returnFocus, artworkUrl, fromGenre = '') {", JS)
 
     def test_touch_targets_meet_the_44px_floor(self):
         self.assertRegex(CSS, r"\.genre-link, \.genre-item-link \{ min-height: 44px; \}")
