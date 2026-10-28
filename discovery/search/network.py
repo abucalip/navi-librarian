@@ -27,6 +27,9 @@ from discovery.search.runner import ExternalSearch, FetchRegistry, Part
 from integrations.listenbrainz.client import request_headers
 from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation
 
+# Artist and album pages stream their sections, so a slow source delays only its own section; they
+# wait longer than a search does (MusicBrainz answers about one request a second).
+PAGE_DEADLINE_SECONDS = 8.0
 MBID_TTL_SECONDS = 30 * 24 * 60 * 60  # The MusicBrainz genre list changes rarely (section 6, entity lookups).
 MUSICBRAINZ_GENERATION = 0  # MusicBrainz has no credential (section 5.2).
 LASTFM_API_KEY = "lastfm_api_key"
@@ -183,6 +186,10 @@ def artist_network(
     popularity: Callable[[list[str], Callable[[], bool]], Mapping[str, Mapping[str, Any]]],
     bio: Callable[[str], str | None],
     navidrome_mbid: Callable[[str], str | None] | None = None,
+    navidrome_bio: Callable[[str], str | None] | None = None,
+    deezer_tracks: Callable[[str, str], list[dict[str, Any]]] | None = None,
+    album_year: Callable[[str, str], int | None] | None = None,
+    album_description: Callable[[str, str], dict[str, Any]] | None = None,
     lastfm_api_key: str = "",
     lastfm_gen: int = 0,
     discogs_token: str = "",
@@ -190,6 +197,7 @@ def artist_network(
     http_get: Callable[..., Any] | None = None,
     limiter: SourceLimiter | None = None,
     clock: Callable[[], float] = time.monotonic,
+    deadline_seconds: float = PAGE_DEADLINE_SECONDS,
 ) -> ArtistNetwork:
     """Build the network side of one artist page: MusicBrainz identity and albums, ListenBrainz popularity, bio.
 
@@ -216,6 +224,10 @@ def artist_network(
         cache_read=cache_read,
         cache_write=cache_write,
         navidrome_mbid=navidrome_mbid,
+        navidrome_bio=navidrome_bio,
+        deezer_tracks=deezer_tracks,
+        album_year=album_year,
+        album_description=album_description,
         lastfm=lastfm,
         lastfm_generation=lastfm_gen,
         listenbrainz=listenbrainz,
@@ -223,6 +235,7 @@ def artist_network(
         discogs_generation=discogs_gen,
         sources=sources,
         clock=clock,
+        deadline_seconds=deadline_seconds,
     )
 
 

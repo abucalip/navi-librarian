@@ -38,7 +38,22 @@ class MetadataRoutesTests(unittest.TestCase):
             ("/api/album-years", "POST"),
             ("/api/album-details", "GET"),
             ("/api/artwork", "GET"),
+            ("/api/artist-image", "GET"),
+            ("/api/album-links", "GET"),
+            ("/api/album-description", "GET"),
         })
+
+    def test_artist_image_returns_the_large_deezer_photo_for_an_exact_name(self):
+        metadata._artist_image_cache.clear()
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.return_value.json.return_value = {"data": [
+                {"name": "Other", "picture_xl": "http://x/other.jpg"},
+                {"name": "Portishead", "picture_big": "http://x/big.jpg", "picture_xl": "http://x/xl.jpg"},
+            ]}
+            result = metadata.artist_image("portishead")
+        self.assertEqual(result["artwork_url"], "https://x/xl.jpg")
+        with self.assertRaises(HTTPException):
+            metadata.artist_image(" ")
 
     def test_artist_bio_validates_input_and_returns_cached_bio(self):
         with self.assertRaises(HTTPException) as raised:

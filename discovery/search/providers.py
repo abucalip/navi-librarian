@@ -7,6 +7,7 @@ the contract reports (``failed`` or ``rate_limited``); the runner maps a deadlin
 
 from __future__ import annotations
 
+import html
 import re
 import time
 from collections.abc import Callable
@@ -397,11 +398,58 @@ class MusicBrainzSearch:
                 output.append({"name": name})
         return output
 
-    def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
-        """Studio albums of one artist (primary type album, no secondary types such as live or compilation)."""
+    def release_group_tracks(self, release_group_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Tracks of the first official release in one release group (two requests)."""
+        group = self._request(
+            f"/release-group/{quote(release_group_mbid, safe='')}",
+            {"inc": "releases"},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        releases = [r for r in _as_list(group.get("releases")) if isinstance(r, dict) and r.get("id")]
+        releases.sort(key=lambda r: (r.get("status") != "Official", str(r.get("date") or "9999")))
+        if not releases:
+            return []
+        release = self._request(
+            f"/release/{quote(releases[0]['id'], safe='')}",
+            {"inc": "recordings"},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        output: list[dict[str, Any]] = []
+        for medium in _as_list(release.get("media")):
+            if not isinstance(medium, dict):
+                continue
+            for track in _as_list(medium.get("tracks")):
+                title = str(track.get("title") or "").strip() if isinstance(track, dict) else ""
+                if title:
+                    length = track.get("length")
+                    output.append({
+                        "track_number": len(output) + 1,
+                        "title": title,
+                        "duration_seconds": int(length // 1000) if isinstance(length, (int, float)) else 0,
+                    })
+        return output
+
+    def release_groups_named(self, artist: str, album: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Raw release-group results for an exact artist and title query (used to link an album's own page)."""
         payload = self._request(
             "/release-group",
-            {"artist": artist_mbid, "type": "album", "limit": BROWSE_LIMIT},
+            {"query": f"releasegroup:{lucene_phrase(album)} AND artist:{lucene_phrase(artist)}", "limit": 5},
+            remaining=remaining,
+            cancelled=cancelled,
+        )
+        return [g for g in _as_list(payload.get("release-groups")) if isinstance(g, dict)]
+
+    def albums_by_artist(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Studio albums of one artist (primary type album, no secondary types such as live or compilation).
+
+        This is a search, not a browse: a browse returns release groups in no useful order, and an
+        artist with hundreds of live recordings fills its first page with them and shows no albums.
+        """
+        payload = self._request(
+            "/release-group",
+            {"query": f"arid:{artist_mbid} AND primarytype:album AND NOT secondarytype:*", "limit": BROWSE_LIMIT},
             remaining=remaining,
             cancelled=cancelled,
         )
@@ -534,15 +582,45 @@ class LastFmSearch:
             })
         return output
 
+    def artist_bio(self, artist_name: str, *, remaining, cancelled) -> str | None:
+        """Last.fm's biography of an artist as plain text (the source Navidrome's own bios usually come from)."""
+        payload = self._call("artist.getInfo", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
+        content = str(((payload.get("artist") or {}).get("bio") or {}).get("content") or "")
+        text = re.sub(r"<a\b[^>]*>.*?</a>", "", content, flags=re.S | re.I)
+        text = re.sub(r"<[^>]+>", "", text)
+        return re.sub(r"\s+", " ", html.unescape(text)).strip() or None
+
+    def album_tracks(self, artist_name: str, album_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Last.fm's tracklist for one album (one request)."""
+        payload = self._call(
+            "album.getInfo", {"artist": artist_name, "album": album_name},
+            remaining=remaining, cancelled=cancelled,
+        )
+        output: list[dict[str, Any]] = []
+        for item in _as_list(((payload.get("album") or {}).get("tracks") or {}).get("track")):
+            title = str(item.get("name") or "").strip() if isinstance(item, dict) else ""
+            if title:
+                try:
+                    seconds = int(item.get("duration") or 0)
+                except (TypeError, ValueError):
+                    seconds = 0
+                output.append({"track_number": len(output) + 1, "title": title, "duration_seconds": seconds})
+        return output
+
     def top_albums(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
         """Last.fm's top albums for one artist. Used on the artist page, not in search."""
         payload = self._call("artist.getTopAlbums", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
         albums = _as_list((payload.get("topalbums") or {}).get("album"))
-        candidates = [
-            album_candidate(self.source, str(item.get("name") or "").strip(), artist_name, None, None)
-            for item in albums
-            if isinstance(item, dict)
-        ]
+        candidates = []
+        for item in albums:
+            if not isinstance(item, dict):
+                continue
+            candidate = album_candidate(self.source, str(item.get("name") or "").strip(), artist_name, None, None)
+            try:
+                candidate["playcount"] = int(item.get("playcount") or 0) or None
+            except (TypeError, ValueError):
+                candidate["playcount"] = None
+            candidates.append(candidate)
         return [c for c in candidates if _usable(c)]
 
 

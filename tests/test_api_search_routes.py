@@ -300,14 +300,16 @@ class SearchRouteTests(unittest.TestCase):
         response = self.client.get("/api/artists/ash", params={"mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711"})
         self.assertEqual(response.status_code, 409)
 
-    def test_artist_stream_form_emits_capabilities_five_sections_then_done(self):
+    def test_artist_stream_form_emits_capabilities_seven_sections_then_done(self):
         response = self.client.get("/api/artists/radiohead", headers={"Accept": "text/event-stream"})
         events = parse_sse(response.text)
         names = [name for name, _ in events]
         self.assertEqual(names[0], "capabilities")
         self.assertEqual(names[-1], "done")
         sections = [data["section"] for name, data in events if name == "section"]
-        self.assertEqual(sections, ["artist", "owned_albums", "bio", "missing_albums", "similar"])
+        # Owned sections lead; network sections follow in the order they finish.
+        self.assertEqual(sections[:2], ["artist", "owned_albums"])
+        self.assertEqual(sorted(sections[2:]), ["albums", "bio", "missing_albums", "similar", "tags"])
 
     def test_artist_answers_200_while_the_index_is_building(self):
         self.building_index()
@@ -345,6 +347,66 @@ class SearchRouteTests(unittest.TestCase):
             params={"limit": "1", "cursor": first["next_cursor"], "sort": "album_count"},
         )
         self.assertEqual(response.status_code, 400)
+
+
+class AlbumAndUnownedArtistRouteTests(SearchRouteTests):
+    def setUp(self):
+        super().setUp()
+        from discovery.search.artist_sections import ArtistNetwork
+
+        class Mb:
+            def artists(self, query, *, remaining, cancelled):
+                return []
+
+        self.network = ArtistNetwork(
+            musicbrainz=Mb(), popularity=lambda mbids, can_cache: {}, bio=lambda name: "Public bio.",
+            cache_read=lambda key: None, cache_write=lambda key, value: None,
+            deezer_tracks=lambda artist, album: [{"track_number": 1, "title": "Found", "duration_seconds": 10}],
+            sources={"navidrome": {"available": True, "reason": None}},
+            deadline_seconds=2.0,
+        )
+        search_routes.artist_network_for = lambda librarian: self.network
+
+    def test_owned_album_page_uses_the_index_tracks(self):
+        body = self.client.get("/api/albums/radiohead/kid a").json()
+        self.assertEqual(body["sections"]["album"]["album"]["id"], "al1")
+        self.assertTrue(body["sections"]["album"]["album"]["owned"])
+        self.assertEqual([t["title"] for t in body["sections"]["tracks"]["items"]], ["Kid A"])
+        self.assertEqual(set(body["sections"]), {"album", "year", "description", "tracks", "similar_artists", "similar_albums"})
+
+    def test_unowned_album_needs_artist_and_name(self):
+        response = self.client.get("/api/albums/portishead/dummy")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], "unknown_album")
+
+    def test_unowned_album_page_races_for_tracks(self):
+        body = self.client.get(
+            "/api/albums/portishead/dummy",
+            params={"artist": "Portishead", "name": "Dummy", "year": 1994, "mbid": "rg-9"},
+        ).json()
+        album = body["sections"]["album"]["album"]
+        self.assertFalse(album["owned"])
+        self.assertEqual(album["year"], 1994)
+        self.assertEqual(body["sections"]["tracks"]["items"][0]["title"], "Found")
+
+    def test_album_stream_emits_capabilities_sections_then_done(self):
+        response = self.client.get("/api/albums/radiohead/kid a", headers={"Accept": "text/event-stream"})
+        names = [name for name, _ in parse_sse(response.text)]
+        self.assertEqual(names[0], "capabilities")
+        self.assertEqual(names[-1], "done")
+        self.assertEqual({d["section"] for n, d in parse_sse(response.text) if n == "section"},
+                         {"album", "year", "description", "tracks", "similar_artists", "similar_albums"})
+
+    def test_unknown_key_with_a_name_is_served_as_an_unowned_artist(self):
+        body = self.client.get("/api/artists/portishead", params={"name": "Portishead", "mbid": "mb-p"}).json()
+        artist = body["sections"]["artist"]["artist"]
+        self.assertEqual((artist["owned"], artist["id"], artist["mbid"]), (False, None, "mb-p"))
+        self.assertEqual(body["sections"]["owned_albums"]["items"], [])
+        self.assertEqual(body["sections"]["bio"]["bio"]["text"], "Public bio.")
+
+    def test_unknown_key_without_a_name_is_still_404(self):
+        self.assertEqual(self.client.get("/api/artists/portishead").status_code, 404)
+
 
 
 if __name__ == "__main__":

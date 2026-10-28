@@ -171,7 +171,7 @@ class LastFmTests(unittest.TestCase):
 
 
 class MusicBrainzBrowseTests(unittest.TestCase):
-    def test_browse_keeps_studio_albums_and_drops_live_and_compilation_releases(self):
+    def test_search_keeps_studio_albums_and_drops_live_and_compilation_releases(self):
         get = ScriptedGet(FakeResponse(200, {"release-groups": [
             {"id": "rg-1", "title": "The Bends", "first-release-date": "1995",
              "artist-credit": [{"name": "Radiohead"}]},
@@ -182,8 +182,8 @@ class MusicBrainzBrowseTests(unittest.TestCase):
         albums = client.albums_by_artist("mb-rh", remaining=plenty, cancelled=never_cancelled())
         self.assertEqual([a["name"] for a in albums], ["The Bends"])
         _, params = get.requests[0]
-        self.assertEqual(params["artist"], "mb-rh")
-        self.assertEqual(params["type"], "album")
+        # A search for studio albums of the artist: a browse fills its first page with live recordings.
+        self.assertEqual(params["query"], "arid:mb-rh AND primarytype:album AND NOT secondarytype:*")
         self.assertEqual(params["limit"], 100)
 
 

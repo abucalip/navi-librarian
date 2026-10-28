@@ -341,5 +341,110 @@ class ArtistPageNetworkTests(unittest.TestCase):
         self.assertTrue(page.partial)
 
 
+class NavidromeBioTests(unittest.TestCase):
+    def test_owned_artist_uses_the_navidrome_bio_before_wikidata(self):
+        net = network(bio=lambda name: "Wikidata text.")
+        net.navidrome_bio = lambda artist_id: "Navidrome text."
+        sections = network_sections(net, "Radiohead", "ar-1", radiohead_owned())
+        self.assertEqual(sections["bio"]["bio"], {"text": "Navidrome text.", "source": "navidrome"})
+
+    def test_empty_or_failed_navidrome_bio_falls_back_to_wikidata(self):
+        for reader in (lambda artist_id: None, lambda artist_id: 1 / 0):
+            net = network(bio=lambda name: "Wikidata text.")
+            net.navidrome_bio = reader
+            sections = network_sections(net, "Radiohead", "ar-1", radiohead_owned())
+            self.assertEqual(sections["bio"]["bio"], {"text": "Wikidata text.", "source": "wikidata"})
+
+    def test_unowned_artist_never_asks_navidrome(self):
+        net = network(bio=lambda name: "Wikidata text.")
+        net.navidrome_bio = lambda artist_id: self.fail("Navidrome must not be asked")
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
+        self.assertEqual(sections["bio"]["bio"]["source"], "wikidata")
+
+    def test_unowned_artist_bio_prefers_lastfm_over_wikidata(self):
+        class Lf:
+            def artist_bio(self, name, *, remaining, cancelled):
+                return "Last.fm text."
+
+            def top_albums(self, name, *, remaining, cancelled):
+                return []
+
+            def similar(self, name, *, remaining, cancelled):
+                return []
+
+        net = network(bio=lambda name: "Wikidata text.")
+        net.lastfm = Lf()
+        sections = network_sections(net, "Radiohead", None, radiohead_owned())
+        self.assertEqual(sections["bio"]["bio"], {"text": "Last.fm text.", "source": "lastfm"})
+
+
+class CatalogTests(unittest.TestCase):
+    def sections(self, **kwargs):
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), **kwargs)
+        owned_items = [{"name": "OK Computer", "year": 1997, "song_count": 12, "key": "radiohead/ok computer",
+                        "id": "al1", "artwork_url": "/art/al1"},
+                       {"name": "Live Bootleg", "year": 2001, "song_count": 3, "key": "radiohead/live bootleg",
+                        "id": "al9", "artwork_url": "/art/al9"}]
+        return network_sections(net, "Radiohead", "ar1", radiohead_owned(), owned_album_items=owned_items)
+
+    def test_albums_merges_owned_and_unowned_ranked_by_popularity(self):
+        stats = {"rg-owned": {"playcount": 900}, "rg-2": {"playcount": 50}, "rg-3": {"playcount": 500}}
+        sections = self.sections(popularity=lambda mbids, can_cache: stats)
+        items = sections["albums"]["items"]
+        self.assertEqual([i["name"] for i in items], ["OK Computer", "The Bends", "Pablo Honey", "Live Bootleg"])
+        self.assertEqual([i["owned"] for i in items], [True, False, False, True])
+        self.assertEqual(items[0]["id"], "al1")
+        self.assertEqual(items[0]["key"], "radiohead/ok computer")
+        self.assertEqual(items[1]["key"], "radiohead/bends")
+        self.assertIsNone(items[1]["id"])
+
+    def test_albums_section_is_capped_at_twenty_most_popular(self):
+        many = [album_candidate("musicbrainz", f"Album {i}", "Radiohead", 2000, f"rg-{i}") for i in range(40)]
+        stats = {f"rg-{i}": {"playcount": i} for i in range(40)}
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=many), popularity=lambda mbids, can_cache: stats)
+        items = network_sections(net, "Radiohead", None, radiohead_owned())["albums"]["items"]
+        self.assertEqual(len(items), 20)
+        self.assertEqual(items[0]["name"], "Album 39")
+        self.assertEqual(items[-1]["name"], "Album 20")
+
+    def test_lastfm_play_counts_stand_in_only_when_listenbrainz_knows_none(self):
+        class Lf:
+            def top_albums(self, name, *, remaining, cancelled):
+                return [{**album_candidate("lastfm", "Pablo Honey", "Radiohead", None, None), "playcount": 5_000_000}]
+
+            def artist_bio(self, name, *, remaining, cancelled):
+                return None
+
+            def similar(self, name, *, remaining, cancelled):
+                return []
+
+        net = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS))
+        net.lastfm = Lf()
+        items = network_sections(net, "Radiohead", None, radiohead_owned())["albums"]["items"]
+        honey = next(i for i in items if i["name"] == "Pablo Honey")
+        self.assertEqual((honey["popularity"], honey["popularity_source"]), (5_000_000, "lastfm"))
+        stats = {"rg-3": {"playcount": 900}}
+        net2 = network(FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS), popularity=lambda m, c: stats)
+        net2.lastfm = Lf()
+        items2 = network_sections(net2, "Radiohead", None, radiohead_owned())["albums"]["items"]
+        honey2 = next(i for i in items2 if i["name"] == "Pablo Honey")
+        self.assertIsNone(honey2["popularity"])
+
+    def test_missing_albums_stays_the_unowned_subset(self):
+        sections = self.sections()
+        self.assertEqual(sorted(i["name"] for i in sections["missing_albums"]["items"]), ["Pablo Honey", "The Bends"])
+        self.assertEqual(set(sections["missing_albums"]["items"][0]),
+                         {"name", "year", "release_group_mbid", "popularity", "sources"})
+
+
+class TagTests(unittest.TestCase):
+    def test_tags_lead_with_the_library_genre_then_musicbrainz_tags(self):
+        mb = FakeMusicBrainz(artists=RADIOHEAD, albums=ALBUMS)
+        mb.artist_tags = lambda mbid, *, remaining, cancelled: [{"name": "art rock"}, {"name": "alternative rock"}]
+        sections = network_sections(network(mb), "Radiohead", "ar1", radiohead_owned(), library_genre="Rock")
+        self.assertEqual([t["name"] for t in sections["tags"]["items"]], ["rock", "alternative rock", "art rock"])
+        self.assertTrue(sections["tags"]["complete"])
+
+
 if __name__ == "__main__":
     unittest.main()

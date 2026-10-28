@@ -57,16 +57,16 @@ class RailStructureTests(unittest.TestCase):
 
     def test_every_rail_icon_names_a_symbol_that_exists(self):
         refs = re.findall(r'<use href="/static/icons\.svg#([\w-]+)">', self.rail)
-        # Eight rail icons: Daily lists (Engine 2, Phase 4 slice 4) adds one.
-        self.assertEqual(len(refs), 8)
+        # Nine rail icons: Library joined Collection and shares the library symbol with Add to your collection.
+        self.assertEqual(len(refs), 9)
         for name in refs:
             self.assertIn(f'<symbol id="{name}"', self.icons, msg=name)
 
     def test_rail_icons_are_decorative(self):
         icons = re.findall(r'<svg class="icon"[^>]*>', self.rail)
-        # Eight sprite icons plus the inline More disclosure icon on the phone bottom bar
+        # Nine sprite icons plus the inline More disclosure icon on the phone bottom bar
         # (UI_BACKLOG_EXECUTION section 36). The count of sprite references above is unchanged.
-        self.assertEqual(len(icons), 9)
+        self.assertEqual(len(icons), 10)
         for tag in icons:
             self.assertIn('aria-hidden="true"', tag)
             self.assertIn('focusable="false"', tag)
@@ -142,11 +142,11 @@ class RailStructureTests(unittest.TestCase):
     def test_rail_items_meet_the_44px_target_floor(self):
         self.assertRegex(self.css, r"nav button \{[^}]*min-height: 44px;")
 
-    def test_phone_bar_keeps_five_destinations_and_a_more_disclosure(self):
-        # UI_BACKLOG_EXECUTION section 36: five destinations stay in the phone bar, and the other
+    def test_phone_bar_keeps_six_destinations_and_a_more_disclosure(self):
+        # UI_BACKLOG_EXECUTION section 36: six destinations (Library joined Collection) stay in the phone bar, and the other
         # two open from More. Each overflow destination is in the rail too, for 621px and up.
         # Daily lists took the bar slot New releases held (Discover keeps three bar destinations).
-        bar_pages = ["dashboard", "acquisitions", "recommendations", "personalDiscoveries", "lensLists"]
+        bar_pages = ["dashboard", "library", "acquisitions", "recommendations", "personalDiscoveries", "lensLists"]
         more_pages = ["newReleases", "classics", "artistDeepDive"]
         for page in bar_pages:
             button = re.search(rf'<button[^>]*data-page="{page}"[^>]*>', self.rail).group(0)

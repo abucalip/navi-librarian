@@ -884,3 +884,33 @@ Run with the app's own client code and a real personal access token. Only status
 - Tag lookups for shared styles add up to about 11 Discogs requests (1 per second) to an uncached artist page, inside the same 3 s page deadline.
 - The first-page latency targets in section 2.1 have not been measured (P5).
 
+
+## 14. Library pages and album page (follow-up to P1 to P4)
+
+Requested by the owner and built on branch `library-pages`. This section supersedes the P1 rule in 11.5 that albums and songs are reference-only rows. Status: implemented, focused tests pass, not yet checked in a browser by the owner.
+
+### 14.1 What changed
+
+- **Navigation.** Every artist, album and genre name opens its library page: search results (a song opens its album), library rows, album rows, similar artists, genre items, and the names and tags on cards, rows and the album panel elsewhere in the app. Only song names are not links. One back stack serves the artist, album and genre pages. Library is also a sidebar tab between Dashboard and Acquisitions.
+- **Artist page (`GET /api/artists/{key}`).**
+  - `?name=` (with `?mbid=`) serves an artist the library does not have from the network sections alone. Without `name`, an unknown key is still 404.
+  - New sections: `tags` (library genre first, then MusicBrainz tags and Discogs styles, at most 8) and `albums` (owned and unowned albums together, at most 20, most listened first). `missing_albums` is unchanged (the unowned subset, at most 50).
+  - `albums` items carry `name`, `year`, `key`, `owned`, `id`, `artwork_url`, `release_group_mbid`, `popularity`, `popularity_source` (`listenbrainz` or `lastfm`), `rank` and `sources`. A listen count appears only when the source knows it; Last.fm counts are used only when ListenBrainz knows none of the albums, so the two scales never mix.
+  - `owned_albums` items add `id` and `artwork_url`. `similar` items add `key` and `artwork_url`.
+  - The stream sends `artist` and `owned_albums` first and every other section as it finishes, so section order after those two is completion order. The page deadline is 8 s (search stays 3 s).
+  - `bio`: owned artists use Navidrome (`getArtistInfo2`, source `navidrome`), then Last.fm, then Wikidata; other artists use Last.fm, then Wikidata.
+- **MusicBrainz album list.** Studio albums are fetched with a search (`arid:<mbid> AND primarytype:album AND NOT secondarytype:*`), not a browse. A browse returned the first 100 of hundreds of release groups, all live recordings for some artists, so those artists showed no albums, years or listen counts.
+- **Album page (`GET /api/albums/{artist_key}/{album_key}`).** Query parameters `id`, `artist`, `name`, `year`, `mbid`; an album the library lacks needs `artist` and `name`, otherwise 404 `unknown_album`. Same envelope as 3.3 with sections `album`, `year`, `description`, `tracks`, `similar_artists` and `similar_albums`, streamed as they finish.
+  - `tracks`: from the owned index for an owned album; otherwise the first non-empty answer from Deezer, Last.fm and MusicBrainz, raced. Cached 7 days.
+  - `year`: sent at once when known, otherwise looked up through the existing catalogue lookup.
+  - `description`: Apple Music's editorial notes, read from the public album page after an exact match. Many albums have none.
+  - `similar_albums`: one top Last.fm album per similar artist, for albums the library does not own.
+- **Other endpoints.** `GET /api/artist-image?name=` (Deezer photo), `GET /api/album-links?artist=&album=&mbid=` (exact album pages on Apple Music, Deezer, MusicBrainz and ListenBrainz; Spotify, Qobuz and Bandcamp keep search links), `GET /api/album-description?artist=&album=`.
+- **Search results.** Song results add `album_id`, `artist` and `artist_key`.
+
+### 14.2 Limits and decisions
+
+- Qobuz and ListenBrainz have no licensed logo; their buttons use drawn monograms (`static/vendor/simple-icons/NOTICE.md`). Spotify, Qobuz and Bandcamp expose no keyless album lookup, so they open a search page.
+- Apple Music notes come from the public page, not the catalogue API (which needs a developer token). If Apple changes the page, the description disappears and nothing else breaks.
+- Several library artists with one name: a link made from a card (which has no Navidrome ID) opens the one with the most albums.
+- Verification: focused tests for the new and changed modules and the UI contract files only; the full suite was not run (owner rule). Live checks against the owner's Navidrome and the public providers were made in an isolated instance. No browser check has been done.

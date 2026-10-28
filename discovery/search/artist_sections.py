@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable, Mapping
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FutureTimeout
+from collections.abc import Callable, Iterator, Mapping
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -30,9 +29,12 @@ from discovery.search.runner import SEARCH_DEADLINE_SECONDS
 from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
 
 MISSING_ALBUMS_LIMIT = 50
+CATALOG_LIMIT = 20
 BIO_SOURCE = "wikidata"
+NAVIDROME_BIO_SOURCE = "navidrome"
 # Tag lookups per artist page: the seed plus this many top unowned candidates (MusicBrainz is 1 req/s).
-TAG_LOOKUP_LIMIT = 10
+TAG_LOOKUP_LIMIT = 4
+TAG_DISPLAY_LIMIT = 8
 TAG_TTL_SECONDS = 30 * 24 * 60 * 60
 
 
@@ -49,6 +51,15 @@ class ArtistNetwork:
     cache_write: Callable[[str, Any], None]
     # Navidrome's MBID for an artist ID, or None when the library does not tag it.
     navidrome_mbid: Callable[[str], str | None] | None = None
+    # Navidrome's own biography for an artist ID (``getArtistInfo2``). Owned artists use it before
+    # the Wikidata service, so the page shows the text Navidrome shows.
+    navidrome_bio: Callable[[str], str | None] | None = None
+    # Deezer's tracklist for ``(artist, album)``, supplied by the route adapter (it owns the HTTP client).
+    deezer_tracks: Callable[[str, str], list[dict[str, Any]]] | None = None
+    # The release year of ``(artist, album)`` from the catalogue lookups, supplied by the route adapter.
+    album_year: Callable[[str, str], int | None] | None = None
+    # Apple Music's editorial notes for ``(artist, album)``, supplied by the route adapter.
+    album_description: Callable[[str, str], dict[str, Any]] | None = None
     # Last.fm, when a key is saved. ``lastfm_generation`` keys its cache entries (section 5.2).
     lastfm: LastFmSearch | None = None
     lastfm_generation: int = 0
@@ -118,13 +129,114 @@ def _lastfm_albums(network: ArtistNetwork, name: str, *, remaining, cancelled) -
     try:
         return _cached_records(
             network,
-            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "albums"),
+            provider_cache_key("lastfm", network.lastfm_generation, f"artist-top:{normalize_key(name)}", "albums-plays"),
             lambda remaining, cancelled: network.lastfm.top_albums(name, remaining=remaining, cancelled=cancelled),
             remaining,
             cancelled,
         )
     except Exception:
         return []
+
+
+def _owned_match(album: dict[str, Any], owned_albums: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """The owned album (an ``owned_albums`` item) a provider album describes: same name key, compatible year."""
+    key = normalize_key(album["name"])
+    for entry in owned_albums:
+        if entry["key"].split("/", 1)[-1] == key and (
+            album["year"] is None or entry["year"] is None or album["year"] == entry["year"]
+        ):
+            return entry
+    return None
+
+
+def album_catalog(
+    network: ArtistNetwork,
+    name: str,
+    artist_id: str | None,
+    owned: OwnedKeys,
+    owned_albums: list[dict[str, Any]],
+    *,
+    remaining,
+    cancelled,
+    progress: dict | None = None,
+    known_mbid: str | None = None,
+) -> list[dict[str, Any]]:
+    """Every album MusicBrainz or Last.fm lists for this artist, plus owned albums they do not list.
+
+    Each item has ``owned``; owned items also carry the library ``id``, ``key`` and artwork. Most
+    listened first (ListenBrainz). ``progress`` receives ``items`` as soon as the album list is
+    known, before popularity is looked up, so a caller that runs out of time can still return a
+    partial list.
+    """
+    mbid = resolve_identity(
+        network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+    )
+    mb_albums: list[dict[str, Any]] = []
+    if mbid is not None:
+        mb_albums = _cached_records(
+            network,
+            provider_cache_key("musicbrainz", 0, f"artist-mbid:{mbid}", "studio-albums"),
+            lambda remaining, cancelled: network.musicbrainz.albums_by_artist(
+                mbid, remaining=remaining, cancelled=cancelled
+            ),
+            remaining,
+            cancelled,
+        )
+    lastfm_albums = _lastfm_albums(network, name, remaining=remaining, cancelled=cancelled)
+
+    unique: list[dict[str, Any]] = []
+    # Last.fm lists an artist's albums most played first; that order ranks albums ListenBrainz cannot.
+    lastfm_rank = {normalize_key(a["name"]): position for position, a in enumerate(lastfm_albums)}
+    lastfm_plays = {normalize_key(a["name"]): a.get("playcount") for a in lastfm_albums}
+    for album in [*mb_albums, *lastfm_albums]:
+        match = next((seen for seen in unique if same_entity(album, seen)), None)
+        if match is None:
+            unique.append({**album, "sources": [album["source"]],
+                           "rank": lastfm_rank.get(normalize_key(album["name"])),
+                           "lastfm_plays": lastfm_plays.get(normalize_key(album["name"]))})
+        elif album["source"] not in match["sources"]:
+            match["sources"].append(album["source"])
+
+    artist_key = normalize_key(name)
+    seen_owned: set[str] = set()
+    for album in unique:
+        album["owned_flag"] = owned.owns(album)
+        entry = _owned_match(album, owned_albums) if album["owned_flag"] else None
+        album["owned_entry"] = entry
+        if entry is not None:
+            seen_owned.add(entry["key"])
+    # Owned albums the providers do not list (live albums, compilations) still belong on the page.
+    for entry in owned_albums:
+        if entry["key"] not in seen_owned:
+            unique.append({
+                "name": entry["name"], "year": entry["year"], "release_group_mbid": None,
+                "sources": ["navidrome"], "owned_entry": entry,
+            })
+
+    def shape(stats: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
+        return _shape_items(unique, stats, artist=name, artist_key=artist_key)
+
+    if progress is not None:
+        progress["catalog"] = shape({})
+
+    def can_cache() -> bool:
+        return remaining() > 0 and not cancelled.is_set()
+
+    try:
+        stats = network.popularity(
+            [a["release_group_mbid"] for a in unique if a["release_group_mbid"]],
+            can_cache,
+        )
+    except Exception:
+        # Popularity only orders the list and labels its source; without it the list is still valid.
+        stats = {}
+    return shape(stats)
+
+
+def unowned_only(catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The ``missing_albums`` view of a catalog: albums the library does not own."""
+    keep = ("name", "year", "release_group_mbid", "popularity", "sources")
+    return [{k: item[k] for k in keep} for item in catalog if not item["owned"]][:MISSING_ALBUMS_LIMIT]
 
 
 def missing_albums(
@@ -138,77 +250,58 @@ def missing_albums(
     progress: dict | None = None,
     known_mbid: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Albums MusicBrainz or Last.fm lists for this artist that the library does not own.
-
-    Most listened first. ``progress`` receives ``items`` as soon as the album list is known,
-    before popularity is looked up, so a caller that runs out of time can still return a
-    partial list.
-    """
-    mbid = resolve_identity(
-        network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
-    )
-    mb_albums: list[dict[str, Any]] = []
-    if mbid is not None:
-        mb_albums = _cached_records(
-            network,
-            provider_cache_key("musicbrainz", 0, f"artist-mbid:{mbid}", "albums"),
-            lambda remaining, cancelled: network.musicbrainz.albums_by_artist(
-                mbid, remaining=remaining, cancelled=cancelled
-            ),
-            remaining,
-            cancelled,
-        )
-    lastfm_albums = _lastfm_albums(network, name, remaining=remaining, cancelled=cancelled)
-
-    unique: list[dict[str, Any]] = []
-    for album in [*mb_albums, *lastfm_albums]:
-        if owned.owns(album):
-            continue
-        match = next((seen for seen in unique if same_entity(album, seen)), None)
-        if match is None:
-            unique.append({**album, "sources": [album["source"]]})
-        elif album["source"] not in match["sources"]:
-            match["sources"].append(album["source"])
-
-    if progress is not None:
-        progress["items"] = _shape_items(unique, {})
-
-    def can_cache() -> bool:
-        return remaining() > 0 and not cancelled.is_set()
-
-    try:
-        stats = network.popularity(
-            [a["release_group_mbid"] for a in unique if a["release_group_mbid"]],
-            can_cache,
-        )
-    except Exception:
-        # Popularity only orders the list and labels its source; without it the list is still valid.
-        stats = {}
-    return _shape_items(unique, stats)
+    """Albums MusicBrainz or Last.fm lists for this artist that the library does not own."""
+    return unowned_only(album_catalog(
+        network, name, artist_id, owned, [],
+        remaining=remaining, cancelled=cancelled, progress=progress, known_mbid=known_mbid,
+    ))
 
 
-def _shape_items(albums: list[dict[str, Any]], stats: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Section items with ListenBrainz listen counts where known, most listened first."""
+def _shape_items(
+    albums: list[dict[str, Any]],
+    stats: Mapping[str, Mapping[str, Any]],
+    *,
+    artist: str,
+    artist_key: str,
+) -> list[dict[str, Any]]:
+    """Catalog items with ListenBrainz listen counts where known, most listened first."""
     items = []
+    # Last.fm's play counts stand in only when ListenBrainz knows none of the albums: the two services
+    # count on very different scales, so a list never mixes them.
+    has_listenbrainz = any((stats.get(a["release_group_mbid"]) or {}).get("playcount") is not None
+                           for a in albums if a["release_group_mbid"])
     for album in albums:
         mbid_album = album["release_group_mbid"]
         # "playcount" is the total listen count; "listeners" is the number of users.
         listens = (stats.get(mbid_album) or {}).get("playcount") if mbid_album else None
-        sources = list(album["sources"]) + (["listenbrainz"] if listens is not None else [])
+        listen_source = "listenbrainz" if listens is not None else None
+        if listens is None and not has_listenbrainz and album.get("lastfm_plays"):
+            listens, listen_source = album["lastfm_plays"], "lastfm"
+        sources = list(album["sources"]) + (["listenbrainz"] if listen_source == "listenbrainz" else [])
+        entry = album.get("owned_entry")
         items.append({
             "name": album["name"],
             "year": album["year"],
             "release_group_mbid": mbid_album,
             "popularity": listens,
+            "popularity_source": listen_source,
             "sources": sources,
+            "rank": album.get("rank"),
+            "owned": bool(album.get("owned_flag")) or entry is not None,
+            "artist": artist,
+            "key": entry["key"] if entry else f"{artist_key}/{normalize_key(album['name'])}",
+            "id": entry.get("id") if entry else None,
+            "artwork_url": entry.get("artwork_url") if entry else None,
         })
     items.sort(key=lambda i: (
         -(i["popularity"] if i["popularity"] is not None else -1),
+        i["rank"] is None,
+        i["rank"] or 0,
         i["year"] is None,
         i["year"] or 0,
         i["name"].casefold(),
     ))
-    return items[:MISSING_ALBUMS_LIMIT]
+    return items
 
 
 def _tags_for(network: ArtistNetwork, mbid: str, *, remaining, cancelled) -> tuple[set[str] | None, bool]:
@@ -358,21 +451,56 @@ def _available(name: str, payload_key: str, payload: Any) -> dict[str, Any]:
 
 
 def _incomplete(name: str, reason: str, payload_key: str) -> dict[str, Any]:
-    empty = None if payload_key == "bio" else []
+    empty = None if payload_key in ("bio", "year", "description") else []
     return {
         "section": name, "available": False, "complete": False,
         "reason": reason, payload_key: empty,
     }
 
 
-def network_sections(
+def tag_items(
+    network: ArtistNetwork,
+    name: str,
+    artist_id: str | None,
+    *,
+    remaining,
+    cancelled,
+    known_mbid: str | None = None,
+    library_genre: str | None = None,
+) -> dict[str, Any]:
+    """The ``tags`` section: the artist's MusicBrainz tags and Discogs styles, library genre first."""
+    mbid = resolve_identity(
+        network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+    )
+    names: list[str] = [library_genre.casefold()] if library_genre else []
+    incomplete = False
+    if mbid:
+        tags, hit = _tags_for(network, mbid, remaining=remaining, cancelled=cancelled)
+        incomplete = incomplete or hit
+        names += sorted(tags or ())
+    styles, hit = _styles_for(network, name, remaining=remaining, cancelled=cancelled)
+    incomplete = incomplete or hit
+    names += sorted(styles or ())
+    unique = list(dict.fromkeys(names))[:TAG_DISPLAY_LIMIT]
+    items = [{"name": tag} for tag in unique]
+    if incomplete:
+        return {"section": "tags", "available": True, "complete": False, "reason": "deadline", "items": items}
+    return _available("tags", "items", items)
+
+
+def iter_network_sections(
     network: ArtistNetwork,
     name: str,
     artist_id: str | None,
     owned_data: OwnedData | None,
     known_mbid: str | None = None,
+    owned_album_items: list[dict[str, Any]] | None = None,
+    library_genre: str | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Run ``bio`` and ``missing_albums`` under one deadline. Returns the two section objects."""
+    """Run ``bio``, ``tags``, ``albums``, ``missing_albums`` and ``similar`` under one deadline.
+
+    ``albums`` and ``missing_albums`` come from one catalog fetch. Sections are yielded as they finish.
+    """
     owned = OwnedKeys(owned_data)
     cancelled = threading.Event()
     deadline_at = network.clock() + network.deadline_seconds
@@ -381,51 +509,106 @@ def network_sections(
         return deadline_at - network.clock()
 
     def bio_job() -> dict[str, Any]:
+        if artist_id and network.navidrome_bio is not None:
+            try:
+                owned_text = network.navidrome_bio(artist_id)
+            except Exception:
+                owned_text = None  # A failed Navidrome read falls back to the public bio service.
+            if owned_text:
+                return _available("bio", "bio", {"text": owned_text, "source": NAVIDROME_BIO_SOURCE})
+        if network.lastfm is not None:
+            try:
+                lastfm_text = network.lastfm.artist_bio(name, remaining=remaining, cancelled=cancelled)
+            except Exception:
+                lastfm_text = None  # Last.fm is best effort; the public bio service is next.
+            if lastfm_text:
+                return _available("bio", "bio", {"text": lastfm_text, "source": LASTFM})
         text = network.bio(name)
         if not text:
             return _available("bio", "bio", None)
         return _available("bio", "bio", {"text": text, "source": BIO_SOURCE})
 
     progress: dict[str, Any] = {}
+    identity_lock = threading.Lock()
+    identity: dict[str, str | None] = {}
 
-    def missing_job() -> dict[str, Any]:
-        items = missing_albums(
-            network, name, artist_id, owned,
-            remaining=remaining, cancelled=cancelled, progress=progress, known_mbid=known_mbid,
+    def mbid_once() -> str | None:
+        """The artist's MBID, looked up once for every job (three jobs asking at once would queue behind MusicBrainz's limiter)."""
+        with identity_lock:
+            if "mbid" not in identity:
+                identity["mbid"] = resolve_identity(
+                    network, name, artist_id, remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+                )
+            return identity["mbid"]
+
+    def catalog_job() -> dict[str, Any]:
+        catalog = album_catalog(
+            network, name, artist_id, owned, owned_album_items or [],
+            remaining=remaining, cancelled=cancelled, progress=progress, known_mbid=mbid_once(),
         )
-        return _available("missing_albums", "items", items)
+        return {"albums": catalog}
 
     def similar_job() -> dict[str, Any]:
         return similar_items(
             network, name, artist_id, owned,
-            remaining=remaining, cancelled=cancelled, known_mbid=known_mbid,
+            remaining=remaining, cancelled=cancelled, known_mbid=mbid_once(),
+        )
+
+    def tags_job() -> dict[str, Any]:
+        return tag_items(
+            network, name, artist_id,
+            remaining=remaining, cancelled=cancelled, known_mbid=mbid_once(), library_genre=library_genre,
         )
 
     jobs = {
         "bio": ("bio", bio_job),
-        "missing_albums": ("items", missing_job),
+        "tags": ("items", tags_job),
+        "catalog": ("items", catalog_job),
         "similar": ("items", similar_job),
     }
     pool = ThreadPoolExecutor(max_workers=len(jobs))
     try:
-        futures = {section: pool.submit(job) for section, (_, job) in jobs.items()}
-        results = {}
-        for section, future in futures.items():
-            payload_key = jobs[section][0]
-            try:
-                results[section] = future.result(timeout=max(0.0, remaining()))
-            except FutureTimeout:
-                if section == "missing_albums" and "items" in progress:
-                    # The album list was known in time; only popularity was still pending.
-                    results[section] = {
-                        "section": section, "available": True, "complete": False,
-                        "reason": "deadline", "items": progress["items"],
-                    }
+        pending = {pool.submit(job): section for section, (_, job) in jobs.items()}
+        while pending:
+            done, _ = wait(set(pending), timeout=max(0.0, remaining()), return_when=FIRST_COMPLETED)
+            if not done:
+                # The deadline passed: every section still running is reported ``deadline``.
+                for section in pending.values():
+                    yield from _failed_sections(section, "deadline", jobs, progress)
+                return
+            for future in done:
+                section = pending.pop(future)
+                try:
+                    result = future.result()
+                except Exception:
+                    yield from _failed_sections(section, "source_failed", jobs, progress)
+                    continue
+                if section == "catalog":
+                    catalog = result["albums"]
+                    yield _available("albums", "items", catalog[:CATALOG_LIMIT])
+                    yield _available("missing_albums", "items", unowned_only(catalog))
                 else:
-                    results[section] = _incomplete(section, "deadline", payload_key)
-            except Exception:
-                results[section] = _incomplete(section, "source_failed", payload_key)
+                    yield result
     finally:
         cancelled.set()
         pool.shutdown(wait=False, cancel_futures=True)
-    return results
+
+
+def _failed_sections(section: str, reason: str, jobs, progress) -> Iterator[dict[str, Any]]:
+    """Section objects for a job that failed or ran out of time."""
+    if section != "catalog":
+        yield _incomplete(section, reason, jobs[section][0])
+        return
+    partial = progress.get("catalog") if reason == "deadline" else None
+    for target in ("albums", "missing_albums"):
+        if partial is None:
+            yield _incomplete(target, reason, "items")
+        else:
+            # The list was known in time; only popularity was still pending.
+            items = partial[:CATALOG_LIMIT] if target == "albums" else unowned_only(partial)
+            yield {"section": target, "available": True, "complete": False, "reason": "deadline", "items": items}
+
+
+def network_sections(*args: Any, **kwargs: Any) -> dict[str, dict[str, Any]]:
+    """Every network section, collected. See ``iter_network_sections`` for the streaming form."""
+    return {section["section"]: section for section in iter_network_sections(*args, **kwargs)}

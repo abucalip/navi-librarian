@@ -174,7 +174,7 @@ class FuseTests(unittest.TestCase):
         ]
         items = fuse_similar(records, "Radiohead", "mb-rh", owned_keys())
         self.assertEqual(items[0], {
-            "name": "Massive Attack", "mbid": "mb-ma", "owned": False, "id": None,
+            "name": "Massive Attack", "key": "massive attack", "artwork_url": None, "mbid": "mb-ma", "owned": False, "id": None,
             "score": 0.333, "reasons": ["ListenBrainz similar artist"],
         })
         self.assertEqual(items[1]["owned"], True)

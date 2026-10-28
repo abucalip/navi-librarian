@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -12,12 +13,12 @@ from discovery.search.events import (
     owned_type_available,
     source_capabilities,
 )
-from discovery.search.artist_sections import ArtistNetwork, network_sections
+from discovery.search.artist_sections import ArtistNetwork, iter_network_sections, network_sections
 from discovery.search.index import IndexView
 from discovery.search.query import find_artist, owned_albums
 
-SECTION_ORDER = ("artist", "owned_albums", "bio", "missing_albums", "similar")
-_NETWORK_SECTIONS = ("bio", "missing_albums", "similar")
+SECTION_ORDER = ("artist", "owned_albums", "bio", "tags", "albums", "missing_albums", "similar")
+_NETWORK_SECTIONS = ("bio", "tags", "albums", "missing_albums", "similar")
 
 
 @dataclass
@@ -29,6 +30,8 @@ class ArtistPage:
     sections: dict[str, dict[str, Any]] = field(default_factory=dict)
     candidates: list[dict[str, Any]] = field(default_factory=list)
     partial: bool = False
+    # Network sections not yet run (``defer_network``); a generator that yields each as it finishes.
+    deferred: Iterator[dict[str, Any]] | None = None
 
 
 def artist_capabilities(view: IndexView, network: ArtistNetwork | None = None) -> dict[str, Any]:
@@ -74,9 +77,21 @@ def artist_page(
     key: str,
     artist_id: str | None,
     network: ArtistNetwork | None = None,
+    *,
+    name: str | None = None,
+    mbid: str | None = None,
+    defer_network: bool = False,
 ) -> ArtistPage:
-    """Build every section for one artist key, or report why the key cannot be served."""
+    """Build every section for one artist key, or report why the key cannot be served.
+
+    An artist the library does not have is served from the network sections alone when the caller
+    names it (``name``, with ``mbid`` when known): that is the page of an unowned search result.
+    """
     capabilities = artist_capabilities(view, network)
+    sections_for = iter_network_sections if defer_network else network_sections
+    if not owned_type_available(view) and name and not artist_id and network is not None:
+        # No ownership can be checked yet, so the named artist is served from the network alone.
+        return _build(ArtistPage("ok", capabilities, {}), view, _unowned_sections(view, network, name, mbid, sections_for))
     if not owned_type_available(view):
         # Owned sections cannot be served yet. The response is still 200, never 404.
         sections = {
@@ -89,8 +104,11 @@ def artist_page(
         return _finish(ArtistPage("ok", capabilities, sections), view)
 
     status, artist, candidates = find_artist(view.data, key, artist_id)
+    if status == "unknown" and name and not artist_id and network is not None:
+        return _build(ArtistPage("ok", capabilities, {}), view, _unowned_sections(view, network, name, mbid, sections_for))
     if status != "ok":
         return ArtistPage(status, capabilities, candidates=candidates)
+    albums = owned_albums(view.data, artist["id"])
 
     sections = {
         "artist": {
@@ -112,14 +130,57 @@ def artist_page(
             "available": True,
             "complete": True,
             "reason": None,
-            "items": owned_albums(view.data, artist["id"]),
+            "items": albums,
         },
     }
+    page = ArtistPage("ok", capabilities, sections)
     if network is not None:
-        sections.update(network_sections(
+        network_part = sections_for(
             network, artist["name"], artist["id"], view.data, known_mbid=artist.get("mbid"),
-        ))
-    return _finish(ArtistPage("ok", capabilities, sections), view)
+            owned_album_items=albums, library_genre=artist.get("genre"),
+        )
+        return _attach(page, view, network_part)
+    return _finish(page, view)
+
+
+def _attach(page: ArtistPage, view: IndexView, network_part: Any) -> ArtistPage:
+    """Add the network sections now, or keep the generator for the stream to drain."""
+    if isinstance(network_part, dict):
+        page.sections.update(network_part)
+        return _finish(page, view)
+    page.deferred = network_part
+    return page
+
+
+def _build(page: ArtistPage, view: IndexView, parts: tuple[dict[str, dict[str, Any]], Any]) -> ArtistPage:
+    owned_part, network_part = parts
+    page.sections.update(owned_part)
+    return _attach(page, view, network_part)
+
+
+def drain_deferred(page: ArtistPage, view: IndexView) -> Iterator[dict[str, Any]]:
+    """Yield the deferred network sections as they finish, then complete the page (``partial``)."""
+    for section in page.deferred or ():
+        page.sections[section["section"]] = section
+        yield section
+    page.deferred = None
+    _finish(page, view)
+
+
+def _unowned_sections(
+    view: IndexView, network: ArtistNetwork, name: str, mbid: str | None, sections_for: Any,
+) -> tuple[dict[str, dict[str, Any]], Any]:
+    sections = {
+        "artist": {
+            "section": "artist", "available": True, "complete": True, "reason": None,
+            "artist": {"id": None, "name": name, "mbid": mbid or None, "owned": False,
+                       "album_count": 0, "genre": None},
+        },
+        "owned_albums": {
+            "section": "owned_albums", "available": True, "complete": True, "reason": None, "items": [],
+        },
+    }
+    return sections, sections_for(network, name, None, view.data, known_mbid=mbid or None)
 
 
 def _finish(page: ArtistPage, view: IndexView) -> ArtistPage:
