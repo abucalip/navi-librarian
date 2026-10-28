@@ -31,6 +31,7 @@ function showPage(name) {
   $('navMoreButton').classList.toggle('is-current', NAV_MORE_PAGES.includes(name));
   moveNavIndicator();
   syncNavAria();
+  syncLocationHash();
 }
 
 // Slide the navigation indicator to the active item using translateY only. The indicator is a
@@ -3403,18 +3404,21 @@ function libraryReset() {
   libraryNav.stack = [];
   libraryNav.current = null;
   libraryShow('list');
+  syncLocationHash();
 }
 
 function libraryOpen(target) {
   if (libraryNav.current) libraryNav.stack.push(libraryNav.current);
   libraryNav.current = target;
   renderLibraryTarget(target);
+  syncLocationHash();
 }
 
 function libraryBack() {
   closeLibraryStreams();
   const previous = libraryNav.stack.pop() || null;
   libraryNav.current = previous;
+  syncLocationHash();
   if (previous) {
     renderLibraryTarget(previous);
     return;
@@ -3423,6 +3427,85 @@ function libraryBack() {
   const back = libraryView.listReturn;
   if (back && back.isConnected) back.focus();
   else $('libraryHeading').focus();
+}
+
+// ---- The address keeps the current page across a browser refresh ----
+// The hash is '#<page>' for a top-level page and '#library/<artist|album|genre>?<fields>' for a
+// library page, every field URI-encoded by URLSearchParams. It carries only names, keys and
+// catalog IDs, never a token or secret. The hash is replaced, not pushed, so Back still leaves
+// the app; after a refresh only the current page is known, so Back returns to the library list.
+const HASH_FIELDS = {
+  artist: ['key', 'id', 'name', 'mbid'],
+  album: ['key', 'id', 'artist', 'name', 'year', 'mbid'],
+  genre: ['tag'],
+};
+const HASH_FIELD_MAX = 300;
+
+function encodeLibraryHash(target) {
+  const fields = target && HASH_FIELDS[target.type];
+  if (!fields) return '#library';
+  const params = new URLSearchParams();
+  for (const field of fields) {
+    const value = field === 'tag' ? target.tag : target[field];
+    if (value !== null && value !== undefined && value !== '') params.set(field, String(value));
+  }
+  return '#library/' + target.type + '?' + params;
+}
+
+// Returns a library target, or null for anything that is not a well-formed library address.
+function decodeLibraryHash(hash) {
+  const match = /^#library\/(artist|album|genre)\?(.*)$/.exec(hash || '');
+  if (!match) return null;
+  const type = match[1];
+  let params;
+  try {
+    params = new URLSearchParams(match[2]);
+    for (const value of params.values()) if (value.length > HASH_FIELD_MAX) return null;
+  } catch (error) {
+    return null;
+  }
+  const get = field => params.get(field) || null;
+  if (type === 'genre') return get('tag') ? {type, tag: get('tag')} : null;
+  if (type === 'artist') {
+    if (!get('key')) return null;
+    return {type, id: get('id'), key: get('key'), name: get('name') || '', mbid: get('mbid'), artworkUrl: null};
+  }
+  if (!(get('key') || '').includes('/') || !get('name')) return null;
+  return {
+    type, key: get('key'), id: get('id'), artist: get('artist') || '', name: get('name'),
+    year: get('year'), mbid: get('mbid'), artworkUrl: get('id') ? '/api/owned/artwork/' + get('id') : null,
+    owned: Boolean(get('id')),
+  };
+}
+
+function currentLocationHash() {
+  if (activePage === 'library' && libraryNav.current) return encodeLibraryHash(libraryNav.current);
+  return '#' + activePage;
+}
+
+function syncLocationHash() {
+  const hash = currentLocationHash();
+  if (window.location.hash === hash) return;
+  try {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+  } catch (error) {
+    // The address is a convenience; a browser that refuses the update keeps working without it.
+  }
+}
+
+// Open the page the hash names. An unknown or malformed hash leaves the dashboard showing.
+function restoreFromHash() {
+  const hash = window.location.hash;
+  const name = hash.slice(1).split('/')[0].split('?')[0];
+  const section = name ? $(name) : null;
+  if (!section || !section.classList.contains('page') || name === 'dashboard') return;
+  navigateTo(name);
+  if (name !== 'library') return;
+  const target = decodeLibraryHash(hash);
+  if (target) {
+    libraryView.listReturn = null;
+    libraryOpen(target);
+  }
 }
 
 function renderLibraryTarget(target) {
@@ -4179,3 +4262,4 @@ $('artistOwnedOnly').addEventListener('change', () => {
   libraryView.ownedOnly = $('artistOwnedOnly').checked;
   if (libraryView.artistCtx) paintArtistAlbums(libraryView.artistCtx);
 });
+restoreFromHash();

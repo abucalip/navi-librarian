@@ -117,8 +117,8 @@ class LoginScriptTests(unittest.TestCase):
         self.assertIn("body.password_confirmation=confirmationInput.value", self.js)
 
     def test_redirect_happens_only_after_the_server_accepts(self):
-        self.assertRegex(self.js, r"if\(!r\.ok\)throw.*\n?.*window\.location\.replace\('/'\)")
-        self.assertLess(self.js.index("if(!r.ok)"), self.js.index("window.location.replace('/')"))
+        self.assertRegex(self.js, r"if\(!r\.ok\)throw.*\n?.*window\.location\.replace\('/'\+window\.location\.hash\)")
+        self.assertLess(self.js.index("if(!r.ok)"), self.js.index("window.location.replace('/'+window.location.hash)"))
 
     def test_server_text_is_never_inserted_as_markup(self):
         self.assertNotIn("innerHTML", self.js)
