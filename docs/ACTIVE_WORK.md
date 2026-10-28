@@ -69,11 +69,11 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
   - **Live Discogs check: partly done (2026-10-26); the remaining live run tests are scheduled for the end of P5 (owner direction).** The auth header, Test call, style lookup, style browse, text search and bad-token failure were confirmed with a real token. Not run live: Discogs genre extraction, a real 429, the `Ash (2)` suffix, the Settings Test button in the app, and the whole app against live providers (13.2).
   - **Browser checks** were waived for the P4 batch and not performed: Settings tab, genre view, search genre results, keyboard and focus, narrow widths.
 - **P5: closed with exceptions (2026-10-26).** PRs #626 to #629 are merged. Still open and deferred by the owner: real-browser checks; the 3.0 s `done` target with a slow MusicBrainz; P3 follow-ups (weight and scale tuning, full-library precompute timing, two artists whose precompute failed, a settings switch for precompute). Fixed: provider cache reads (#628), precompute start rotation (#629). Evidence in `PROJECT_LOG.md`.
-- **Library pages (PR [#630](https://github.com/abucalip/navi-librarian/pull/630), open):** artist, album and genre pages reachable from everywhere; contract section 14. CI on the exact head and the manual browser checklist ([LOCAL_UI_TESTING.md](LOCAL_UI_TESTING.md)) are still open. Not merged, published or deployed.
+- **Library pages: merged in PR [#630](https://github.com/abucalip/navi-librarian/pull/630)** (squash `70b5330`, tested head `327c477`; all required checks and the full unit suite passed in CI). Artist, album and genre pages reachable from everywhere; contract section 14. The manual browser checklist ([LOCAL_UI_TESTING.md](LOCAL_UI_TESTING.md)) has not been done. Not published or deployed.
 
 ### 2e. Refresh keeps the current page — requested by the owner, not started
 
-Today a browser refresh always returns to the dashboard, because the current page lives only in script state. Goal: a refresh returns to the page the owner was on. Do it after PR #630 merges; the library part depends on its navigation.
+Today a browser refresh always returns to the dashboard, because the current page lives only in script state. Goal: a refresh returns to the page the owner was on. PR #630 (the library navigation it depends on) is merged.
 
 Acceptance: refresh on any top-level page, and on an artist, album or genre page, reloads that same page; a bad or stale address falls back to the dashboard without an error; no secret or token ever goes into the address.
 
