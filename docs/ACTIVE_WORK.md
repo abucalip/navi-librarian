@@ -85,7 +85,7 @@ Acceptance: refresh on any top-level page, and on an artist, album or genre page
 6. **Tests.** Source-contract tests for the hash read and write, a round-trip test of the encode and decode helpers with awkward names, and a fallback test for an unknown hash. Then the manual refresh check on each page type.
 7. **Docs.** Add the address format to `REQUIREMENTS.md` once agreed.
 
-- **Status:** steps 1 to 4, 6 (automated part) and 7 are implemented on the branch. Step 5 (browser Back and Forward) is not done and needs a separate decision. The manual refresh check on each page type has not been done. Focused tests only (`tests/test_refresh_keeps_page_ui_contract.py`, login and library-search contract tests); the full suite is left to the owner and CI.
+- **Status:** steps 1 to 7 (automated part of 6) are implemented on the branch. Step 5 (browser Back and Forward via pushState and popstate) is implemented too. The manual refresh check on each page type has not been done. Focused tests only (`tests/test_refresh_keeps_page_ui_contract.py`, login and library-search contract tests); the full suite is left to the owner and CI.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated

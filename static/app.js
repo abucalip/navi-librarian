@@ -3418,7 +3418,7 @@ function libraryBack() {
   closeLibraryStreams();
   const previous = libraryNav.stack.pop() || null;
   libraryNav.current = previous;
-  syncLocationHash();
+  syncLocationHash({replace: true});
   if (previous) {
     renderLibraryTarget(previous);
     return;
@@ -3432,8 +3432,9 @@ function libraryBack() {
 // ---- The address keeps the current page across a browser refresh ----
 // The hash is '#<page>' for a top-level page and '#library/<artist|album|genre>?<fields>' for a
 // library page, every field URI-encoded by URLSearchParams. It carries only names, keys and
-// catalog IDs, never a token or secret. The hash is replaced, not pushed, so Back still leaves
-// the app; after a refresh only the current page is known, so Back returns to the library list.
+// catalog IDs, never a token or secret. Each page change pushes a history entry and popstate
+// reapplies it. The in-app library stack is not stored, so after a refresh the in-app Back
+// button returns to the library list.
 const HASH_FIELDS = {
   artist: ['key', 'id', 'name', 'mbid'],
   album: ['key', 'id', 'artist', 'name', 'year', 'mbid'],
@@ -3483,30 +3484,45 @@ function currentLocationHash() {
   return '#' + activePage;
 }
 
-function syncLocationHash() {
+// Pushes a history entry, so the browser Back and Forward buttons step through the in-app pages.
+// Backing out of a library page with the in-app button replaces the entry instead of pushing.
+let applyingHash = false;
+
+function syncLocationHash({replace = false} = {}) {
+  if (applyingHash) return;
   const hash = currentLocationHash();
   if (window.location.hash === hash) return;
   try {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+    const url = window.location.pathname + window.location.search + hash;
+    if (replace) window.history.replaceState(null, '', url);
+    else window.history.pushState(null, '', url);
   } catch (error) {
     // The address is a convenience; a browser that refuses the update keeps working without it.
   }
 }
 
-// Open the page the hash names. An unknown or malformed hash leaves the dashboard showing.
-function restoreFromHash() {
-  const hash = window.location.hash;
+// Show the page the hash names without writing the hash back. An unknown or malformed hash
+// shows the dashboard.
+function applyHash(hash) {
   const name = hash.slice(1).split('/')[0].split('?')[0];
   const section = name ? $(name) : null;
-  if (!section || !section.classList.contains('page') || name === 'dashboard') return;
-  navigateTo(name);
-  if (name !== 'library') return;
-  const target = decodeLibraryHash(hash);
-  if (target) {
-    libraryView.listReturn = null;
-    libraryOpen(target);
+  const page = section && section.classList.contains('page') ? name : 'dashboard';
+  applyingHash = true;
+  try {
+    if (!$('albumModalBackdrop').hidden) closeAlbumModal();
+    navigateTo(page);
+    if (page !== 'library') return;
+    const target = decodeLibraryHash(hash);
+    if (target) {
+      libraryView.listReturn = null;
+      libraryOpen(target);
+    }
+  } finally {
+    applyingHash = false;
   }
 }
+
+window.addEventListener('popstate', () => applyHash(window.location.hash));
 
 function renderLibraryTarget(target) {
   closeLibraryStreams();
@@ -4262,4 +4278,4 @@ $('artistOwnedOnly').addEventListener('change', () => {
   libraryView.ownedOnly = $('artistOwnedOnly').checked;
   if (libraryView.artistCtx) paintArtistAlbums(libraryView.artistCtx);
 });
-restoreFromHash();
+if (window.location.hash) applyHash(window.location.hash);

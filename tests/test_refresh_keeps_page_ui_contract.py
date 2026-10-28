@@ -19,7 +19,7 @@ NODE = shutil.which("node")
 def _function_source(js, name):
     start = js.index("function " + name + "(")
     depth = 0
-    for index in range(js.index("{", start), len(js)):
+    for index in range(js.index(") {", start) + 2, len(js)):
         depth += js[index] == "{"
         depth -= js[index] == "}"
         if depth == 0:
@@ -34,22 +34,29 @@ class RefreshKeepsPageSourceTests(unittest.TestCase):
 
     def test_show_page_and_library_navigation_write_the_hash(self):
         self.assertIn("syncLocationHash();", _function_source(self.js, "showPage"))
-        for name in ("libraryReset", "libraryOpen", "libraryBack"):
+        for name in ("libraryReset", "libraryOpen"):
             self.assertIn("syncLocationHash();", _function_source(self.js, name), name)
+        self.assertIn("syncLocationHash(", _function_source(self.js, "libraryBack"))
 
-    def test_hash_is_replaced_not_pushed_and_carries_no_secret(self):
+    def test_page_changes_push_history_and_popstate_reapplies_without_writing(self):
         sync = _function_source(self.js, "syncLocationHash")
+        self.assertIn("history.pushState", sync)
         self.assertIn("history.replaceState", sync)
-        self.assertNotIn("pushState", self.js)
+        self.assertIn("if (applyingHash) return;", sync)
+        self.assertIn("addEventListener('popstate', () => applyHash(window.location.hash))", self.js)
+        self.assertIn("syncLocationHash({replace: true});", _function_source(self.js, "libraryBack"))
+
+    def test_hash_carries_no_secret(self):
         fields = self.js[self.js.index("const HASH_FIELDS"):self.js.index("const HASH_FIELD_MAX")]
         for forbidden in ("token", "password", "secret", "artworkUrl", "api_key"):
             self.assertNotIn(forbidden, fields)
 
-    def test_startup_restores_from_the_hash_after_everything_is_defined(self):
-        self.assertTrue(self.js.rstrip().endswith("restoreFromHash();"))
-        restore = _function_source(self.js, "restoreFromHash")
-        self.assertIn("classList.contains('page')", restore)
-        self.assertIn("decodeLibraryHash(hash)", restore)
+    def test_startup_applies_the_hash_after_everything_is_defined(self):
+        self.assertTrue(self.js.rstrip().endswith("if (window.location.hash) applyHash(window.location.hash);"))
+        apply_hash = _function_source(self.js, "applyHash")
+        self.assertIn("classList.contains('page')", apply_hash)
+        self.assertIn("decodeLibraryHash(hash)", apply_hash)
+        self.assertIn("'dashboard'", apply_hash)
 
     def test_login_keeps_the_hash(self):
         login = LOGIN_JS.read_text(encoding="utf-8")
