@@ -1,3 +1,13 @@
+## 2026-10-28 — Refresh keeps the page: PR #631 merged; image v0.2.5 published
+
+- **Merged:** PR [#631](https://github.com/abucalip/navi-librarian/pull/631), squash `5873e576ae6c04261e93431209dbf24de7c5e6b1`, tested head `aa51d05e02e0d04b609f3730e74294ba55a5086a`, at the owner's direction. Required checks (compile, container-smoke, test-and-build, validate-container, validate-release-workflow) passed on the head; the four workflows on `main` passed on the merge commit.
+- **Built:** address hash for the page (`#<page>`, `#library/artist|album|genre?...`, URI-encoded, no secret); startup and `popstate` apply it with a dashboard fallback; `pushState` per page change so browser Back and Forward work, `replaceState` for the in-app library Back; login keeps the hash.
+- **Bug found by the owner after the first build:** a blue rectangle around the artist or album name after a refresh. It was the browser focus ring on the heading the library views focus on navigation. Restoring from the address now skips that focus.
+- **Tests run (agent, focused only):** `test_refresh_keeps_page_ui_contract` (9, including a Node round-trip of the hash helpers), `test_login_ui_contract`, `test_library_search_ui_contract`, `test_header_menu_ui_contract`, `test_album_modal_ui_contract`, `test_artist_deep_dive_ui_contract`; `node --check`. The grep-based run of every module that reads `app.js` (TEST_PLAN) was not done locally; CI ran the full suite and passed. A first `LIB-02` row clashed with the existing LIB-02 and was renumbered into LIB-04.
+- **Published:** annotated tag `v0.2.5` at the merge commit; release workflow run [40753975898](https://github.com/abucalip/navi-librarian/actions/runs/40753975898) succeeded. `ghcr.io/abucalip/navi-librarian:v0.2.5` and `:sha-5873e576ae6c04261e93431209dbf24de7c5e6b1`; package version digest `sha256:543d16bb3ef3b95e9253d057055ce793d10f38cf8b9565f00f0b8096c287ec1c` (GitHub Packages API). v0.2.4 is the rollback reference. `latest` was not checked or moved; per-platform manifests were not inspected; the image was not pulled or run; no GitHub Release was created.
+- **Not done:** manual refresh, Back and Forward check on each page type; deployment; runtime verification.
+- **Next action:** the owner runs the browser checklist (`LOCAL_UI_TESTING.md`), or authorizes deployment of v0.2.5.
+
 ## 2026-10-28 — Library pages: PR #630 merged
 
 - **Merged:** PR [#630](https://github.com/abucalip/navi-librarian/pull/630), squash `70b5330bb2c9ba46d7645427e3d943a268df7ab8`, tested head `327c477fdb9862670c78c7b94d0711c62f08de5e`, at the owner's direction. Scope: contract section 14.
