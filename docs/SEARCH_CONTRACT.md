@@ -1,6 +1,6 @@
 # Global search and library browsing: API contract
 
-Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged (P4 record: section 13)**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **The P5 measurement harness is merged in PR #626**; exploratory results are in `PROJECT_LOG.md`, but repeat measurements with the corrected harness are required before final performance conclusions. P5 covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
+Status: **approved by the owner** (2026-10-25). **P1–P4 are implemented and merged (P4 record: section 13)**: P1 PRs #609–#612, P2 PRs #613–#620, P3/P3b PRs #621–#622, and P4 PRs #623–#625. **Section 14 (library pages and album page) is merged in PR #630.** **The P5 measurement harness is merged in PR #626**; exploratory results are in `PROJECT_LOG.md`, but repeat measurements with the corrected harness are required before final performance conclusions. P5 covers integration and performance verification against section 2.1 targets. Section 11 remains the P1 record and section 12 the P2 record. Historical per-phase notes below are preserved as written.
 
 ## 1. Owner decisions (recorded)
 
@@ -887,7 +887,7 @@ Run with the app's own client code and a real personal access token. Only status
 
 ## 14. Library pages and album page (follow-up to P1 to P4)
 
-Requested by the owner and built on branch `library-pages`. This section supersedes the P1 rule in 11.5 that albums and songs are reference-only rows. Status: implemented, focused tests pass, not yet checked in a browser by the owner.
+Requested by the owner; merged in PR [#630](https://github.com/abucalip/navi-librarian/pull/630) (squash `70b5330`). This section supersedes the P1 rule in 11.5 that albums and songs are reference-only rows. Status: implemented, required CI passed; not yet checked in a browser by the owner.
 
 ### 14.1 What changed
 

@@ -125,6 +125,24 @@ python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
 
 `FakeLibrarian` in `tests/test_api_search_routes.py` must return list-store entries in the real shape (`{"payload": entry, ...}`); a fake that returns the raw entry hid a bug where the provider cache never hit (fixed in PR #628). Live provider checks are separate, owner-approved steps; their results are in `PROJECT_LOG.md`. Browser checks follow the UI section below.
 
+## Library pages and album page focused checks
+
+For changes to the artist, album and genre pages, the in-app links, the album page endpoints and the album service links (`docs/SEARCH_CONTRACT.md` section 14). None calls a live provider.
+
+```sh
+python -m unittest discover -s tests -p 'test_discovery_search_album_page.py' -v
+python -m unittest discover -s tests -p 'test_discovery_search_artist_sections.py' -v
+python -m unittest discover -s tests -p 'test_api_search_routes.py' -v
+python -m unittest discover -s tests -p 'test_album_links.py' -v
+python -m unittest discover -s tests -p 'test_apple_description.py' -v
+python -m unittest discover -s tests -p 'test_metadata_routes.py' -v
+python -m unittest discover -s tests -p 'test_library_search_ui_contract.py' -v
+```
+
+Also run every test module that reads `static/app.js`, `static/app.css`, `app/templates/index.html` or `static/icons.svg`, not only files named `*ui_contract*`: `grep -l "app.js\|app.css\|index.html\|icons.svg" tests/*.py`. `test_ui_keyboard_and_feedback_contract.py` was missed by the name pattern in PR #630 and failed CI. Source-contract tests pin exact lines, so a UI edit should be followed by this grep-based run.
+
+Manual (owner): artist page for an owned and an unowned artist; album page for an owned and an unowned album (tracklist, year, description with Read more, service links, Get button size and place); every name and tag link on cards, rows, the album panel and search results; Back through artist, album and genre pages; the library-only toggle; Library tab at phone width. Live data to try: an artist with many live recordings (for example Radiohead) must show studio albums with years and listen counts.
+
 ## Global search P5 latency measurement
 
 Measure the section 2.1 targets of `docs/SEARCH_CONTRACT.md` with the script, against the owner's real Navidrome library, using an isolated data directory so the app's own data is untouched:
