@@ -132,13 +132,19 @@ class DashboardTileStripTests(unittest.TestCase):
         self.assertIn("makeAlbumCardInteractive(tile, artist, album, item, true, false);", self.js)
 
     def test_closing_the_dialog_returns_focus_to_the_tile_button(self):
-        open_modal = function_source(self.js, "async function openAlbumModal(", "  $('albumModalTitle').textContent = album;")
+        open_modal = function_source(self.js, "async function openAlbumModal(", "  $('albumModalTitle').replaceChildren();")
         self.assertIn("async function openAlbumModal(card, returnFocus = card) {", open_modal)
         self.assertIn("albumModalReturnFocus = returnFocus;", open_modal)
 
-    def test_metadata_text_is_hidden_because_the_open_control_names_the_tile(self):
+    def test_metadata_text_is_not_hidden_because_the_album_and_artist_names_are_links(self):
+        # The album and artist names on a tile open their library pages, so the metadata block must stay
+        # in the accessibility tree: focusable links inside an aria-hidden block are an ARIA violation.
+        # The links sit above the tile's full-size open control so they can be clicked.
         tile = function_source(self.js, "function buildDashboardTile(item) {", "async function loadDashboardPicks(")
-        self.assertIn("meta.setAttribute('aria-hidden', 'true');", tile)
+        self.assertNotIn("meta.setAttribute('aria-hidden', 'true');", tile)
+        self.assertIn("linkAlbumName(title, artist, album, item);", tile)
+        self.assertIn("linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), artist);", tile)
+        self.assertIn(".dashboard-tile-meta .inline-link { position: relative; z-index: 3; }", self.css)
 
     def test_get_keeps_the_server_confirmed_state_machine(self):
         search = function_source(self.js, "async function searchAlbum(", "// Route acquisition feedback")

@@ -77,7 +77,7 @@ class AlbumModalStyleTests(unittest.TestCase):
     def test_touch_targets_are_44_pixels(self):
         self.assertRegex(self.block, r"\.album-modal-close \{[^}]*width: 44px; height: 44px;")
         # Platform links are text chips now (PR for DESIGN_SYSTEM.md 16.2 row 12): min-width, not a fixed width, so the name fits.
-        self.assertRegex(self.block, r"\.album-modal-art-column \.album-platform-links a \{[^}]*min-width: 44px; height: 44px;")
+        self.assertRegex(self.block, r"\.album-modal-art-column \.album-platform-links a \{[^}]*width: 44px; height: 44px;")
         self.assertNotIn("inset: -7px", self.block)
 
     def test_tracklist_rows_are_compact_48_pixels(self):
@@ -109,20 +109,21 @@ class AlbumModalBehaviourGuardTests(unittest.TestCase):
         # AGENTS.md: no runtime third-party assets. Every image the platform links load is a local
         # vendored file under /static/vendor/simple-icons/, and the script names none of the hosts
         # the old logo images came from. The visible platform name is set as text on every link.
-        start = self.js.index("function setAlbumPlatformLinks(")
-        end = self.js.index("\n}\n", start)
+        start = self.js.index("const PLATFORM_ICONS = {")
+        # The links are built by a shared helper, so the guard reads from the modal's list to its end.
+        end = self.js.index("\n}\n", self.js.index("function fillPlatformLinks("))
         body = self.js[start:end]
         for host in ("raw.githubusercontent.com", "simpleicons.org", "community.qobuz.com"):
             self.assertNotIn(host, self.js)
         for src in re.findall(r"'(/static/vendor/[^']+)'", body):
             self.assertTrue((ROOT / src.lstrip("/")).is_file(), src)
+        # Logos only: no visible service name, but every link keeps it as its accessible name.
+        self.assertNotIn("link.append(label);", body)
+        self.assertIn("link.setAttribute('aria-label', link.title);", body)
         self.assertIn("icon.alt = '';", body)
-        self.assertIn("link.append(label);", body)
-        self.assertIn("link.setAttribute('aria-label',", body)
-        # Qobuz and ListenBrainz have no vendored mark, so they are text-only links.
-        self.assertIn("['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, null]", body)
-        self.assertIn("['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, null]", body)
+        # Qobuz and ListenBrainz have no licensed mark; their local files are monograms.
+        self.assertIn("'Qobuz': '/static/vendor/simple-icons/qobuz.svg'", body)
+        self.assertIn("'ListenBrainz': '/static/vendor/simple-icons/listenbrainz.svg'", body)
+        # Each link is upgraded from a search page to the album's own page when one matched.
+        self.assertIn("'/api/album-links?'", body)
 
-
-if __name__ == "__main__":
-    unittest.main()

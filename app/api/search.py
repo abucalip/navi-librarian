@@ -19,8 +19,9 @@ from app.api.dependencies import get_librarian
 from discovery import store as discovery_store
 from discovery.identity import IdentityJob, load_identities
 from discovery.library_snapshot import build_library_snapshot
-from discovery.search.artist_page import artist_page, json_sections, section_events
-from discovery.search.events import search_events, sse
+from discovery.search.album_page import ALBUM_SECTION_ORDER, album_sections, find_album
+from discovery.search.artist_page import artist_page, drain_deferred, json_sections, section_events
+from discovery.search.events import NOT_IN_BUILD, search_events, sse
 from discovery.search.index import STATE_FRESH, STATE_STALE, OwnedIndex, fetch_song_inventory
 from discovery.search.merge import OwnedKeys
 from discovery.search.genre_page import (
@@ -37,6 +38,16 @@ from discovery.search.query import SEARCH_TYPES
 from settings.service import discogs_generation, discogs_token_and_source, lastfm_generation, navidrome_generation
 
 router = APIRouter()
+
+
+def clean_navidrome_bio(raw) -> str | None:
+    """Plain text from Navidrome's biography: tags dropped, the "Read more" link removed."""
+    import html
+    import re
+
+    text = re.sub(r"<a\b[^>]*>.*?</a>", "", str(raw or ""), flags=re.S | re.I)
+    text = html.unescape(re.sub(r"<[^>]+>", "", text))
+    return re.sub(r"\s+", " ", text).strip() or None
 
 _owned_index: OwnedIndex | None = None
 _owned_index_lock = threading.Lock()
@@ -386,6 +397,26 @@ def artist_network_for(librarian):
         artist = librarian.api_call("getArtist", id=artist_id).get("artist", {})
         return artist.get("musicBrainzId") or None
 
+    def deezer_tracks(artist, album):
+        from app.api.metadata import album_details
+
+        return album_details(artist=artist, album=album).get("tracks") or []
+
+    def album_year(artist, album):
+        from app.api.metadata import album_year as lookup
+
+        return lookup(artist=artist, album=album).get("year")
+
+    def album_description(artist, album):
+        from app.api.metadata import album_description as lookup
+
+        return lookup(artist, album)
+
+    def navidrome_bio(artist_id):
+        # Navidrome's own biography text, read-only. Its agents (Last.fm and others) fill it in.
+        info = librarian.api_call("getArtistInfo2", id=artist_id).get("artistInfo2", {})
+        return clean_navidrome_bio(info.get("biography"))
+
     settings = librarian._discovery_settings_read()
     return artist_network(
         cache_read=_cache_reader(librarian),
@@ -393,6 +424,10 @@ def artist_network_for(librarian):
         popularity=popularity,
         bio=bio,
         navidrome_mbid=navidrome_mbid,
+        navidrome_bio=navidrome_bio,
+        deezer_tracks=deezer_tracks,
+        album_year=album_year,
+        album_description=album_description,
         lastfm_api_key=str(settings.get("lastfm_api_key") or "").strip(),
         lastfm_gen=lastfm_generation(librarian._discovery_settings_read),
         discogs_token=discogs_token_and_source(librarian._discovery_settings_read, os.environ)[0],
@@ -406,16 +441,24 @@ def artist(
     request: Request,
     id: str | None = None,
     mbid: str | None = None,
+    name: str | None = None,
     librarian=Depends(get_librarian),
 ):
-    """Artist page. ``mbid`` is accepted for provider lookups; it never selects the owned artist."""
+    """Artist page. ``mbid`` is accepted for provider lookups; it never selects the owned artist.
+
+    ``name`` lets a key the library does not have be served as an unowned artist page.
+    """
     started = time.monotonic()
     try:
+        view = owned_view(librarian)
         page = artist_page(
-            owned_view(librarian),
+            view,
             normalize_key(key),
             id,
             network=artist_network_for(librarian),
+            name=(name or "").strip()[:200] or None,
+            mbid=mbid,
+            defer_network=_wants_stream(request),
         )
     except Exception:
         return JSONResponse(
@@ -446,9 +489,19 @@ def artist(
     if _wants_stream(request):
         def stream():
             yield sse("capabilities", page.capabilities)
-            for section in section_events(page):
+            # Owned sections go out at once; each network section follows as it finishes.
+            for section in [page.sections[n] for n in ("artist", "owned_albums") if n in page.sections]:
                 yield sse("section", section)
-            yield sse("done", done)
+            if page.deferred is not None:
+                for section in drain_deferred(page, view):
+                    yield sse("section", section)
+                for section in section_events(page):
+                    if section["section"] not in ("artist", "owned_albums") and section["reason"] == NOT_IN_BUILD:
+                        yield sse("section", section)
+            else:
+                for section in section_events(page)[2:]:
+                    yield sse("section", section)
+            yield sse("done", {**done, "elapsed_ms": _elapsed_ms(started), "partial": page.partial})
 
         return StreamingResponse(
             stream(),
@@ -460,6 +513,68 @@ def artist(
         "sections": json_sections(page),
         "done": done,
     }
+
+
+@router.get("/api/albums/{artist_key}/{album_key}")
+def album(
+    artist_key: str,
+    album_key: str,
+    request: Request,
+    id: str | None = None,
+    artist: str | None = None,
+    name: str | None = None,
+    year: int | None = None,
+    mbid: str | None = None,
+    librarian=Depends(get_librarian),
+):
+    """Album page: header, tracklist, similar artists and similar unowned albums.
+
+    An album the library has is found by its keys (and ``id``). Any other album needs ``artist`` and
+    ``name`` (and ``year`` and the release-group ``mbid`` when known), as an unowned search result carries.
+    """
+    started = time.monotonic()
+    artist_key, album_key = normalize_key(artist_key), normalize_key(album_key)
+    view = owned_view(librarian)
+    data = view.data if view.state in (STATE_FRESH, STATE_STALE) else None
+    owned_entry = find_album(data, artist_key, album_key, id) if data else None
+    shown_artist, shown_name = (artist or "").strip()[:200], (name or "").strip()[:200]
+    if owned_entry is None and not (shown_artist and shown_name):
+        return JSONResponse(
+            status_code=404,
+            content={"code": "unknown_album", "message": "No album matches this key."},
+        )
+    network = artist_network_for(librarian)
+    capabilities = {
+        "sections": {section: {"available": True, "reason": None} for section in ALBUM_SECTION_ORDER},
+        "sources": dict(network.sources),
+        "owned_index": {"available": data is not None, "reason": view.reason, "state": view.state},
+    }
+    sections_iter = album_sections(
+        network, data, album=owned_entry, artist=shown_artist, artist_key=artist_key,
+        name=shown_name, year=year, release_group_mbid=mbid,
+    )
+
+    def finish(partial: bool) -> dict:
+        return {"elapsed_ms": _elapsed_ms(started), "deadline_hit": partial, "partial": partial}
+
+    if _wants_stream(request):
+        def stream():
+            yield sse("capabilities", capabilities)
+            partial = False
+            for section in sections_iter:
+                partial = partial or section["reason"] in ("deadline", "source_failed")
+                yield sse("section", section)
+            yield sse("done", finish(partial))
+
+        return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+    collected = {section["section"]: section for section in sections_iter}
+    sections = {}
+    for section_name in ALBUM_SECTION_ORDER:
+        entry = collected.get(section_name) or {
+            "available": False, "complete": False, "reason": "deadline", "items": []}
+        sections[section_name] = {k: v for k, v in entry.items() if k != "section"}
+    partial = any(s["reason"] in ("deadline", "source_failed") for s in sections.values())
+    return {"capabilities": capabilities, "sections": sections, "done": finish(partial)}
 
 
 @router.get("/api/genres/{tag}")

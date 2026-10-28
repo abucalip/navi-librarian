@@ -79,6 +79,9 @@ def _song_result(entry: dict[str, Any]) -> dict[str, Any]:
         "name": entry["name"],
         "mbid": None,
         "album": entry["album"],
+        "album_id": entry["album_id"] or None,
+        "artist": entry["artist"],
+        "artist_key": entry["artist_key"],
         "duration": entry["duration"],
         "track_number": entry["track_number"],
         "sources": [SOURCE_NAME],
@@ -225,6 +228,7 @@ def owned_albums(data: OwnedData, artist_id: str) -> list[dict[str, Any]]:
         key=lambda a: (a["year"] is None, a["year"] or 0, a["name"].casefold(), a["id"]),
     )
     return [
-        {"name": a["name"], "year": a["year"], "song_count": a["song_count"], "key": a["key"]}
+        {"name": a["name"], "year": a["year"], "song_count": a["song_count"], "key": a["key"],
+         "id": a["id"], "artwork_url": artwork_url(a["id"])}
         for a in albums
     ]

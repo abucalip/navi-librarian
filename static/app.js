@@ -76,7 +76,7 @@ function navigateTo(name) {
   // Saved is read on every visit: saves made on other pages since the last visit must appear.
   if (name === 'saved') loadSaved();
   // The library restarts from the first page on every visit, so new artists appear.
-  if (name === 'library') loadLibrary({reset: true});
+  if (name === 'library') { libraryReset(); loadLibrary({reset: true}); }
   // The stream is closed on leaving Acquisitions, so it must restart on every visit, not only
   // the first one that initializePage handles; startAcquisitionStream is a no-op while open.
   if (name === 'acquisitions') startAcquisitionStream();
@@ -374,9 +374,9 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       const main = document.createElement('div');
       main.className = 'acq-main';
       row.append(main);
-      addTextElement(main, 'h3', '', album);
+      linkAlbumName(addTextElement(main, 'h3', '', ''), artist, album, details);
       ensureAlbumYearBadge(row);
-      addTextElement(main, 'p', 'acq-artist', artist);
+      linkArtistName(addTextElement(main, 'p', 'acq-artist', ''), artist);
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
@@ -896,39 +896,87 @@ function applyAlbumYear(card, value) {
   if (activeAlbumModal && activeAlbumModal.card === card && modalYear) modalYear.textContent = String(year);
 }
 
-function setAlbumPlatformLinks(artist, album) {
-  const query = [artist, album].filter(Boolean).join(' ').trim();
-  const encoded = encodeURIComponent(query);
-  // Every image is a local file under /static/vendor (AGENTS.md: no runtime third-party assets).
-  // The visible text is kept beside each mark, so the name never depends on the picture. Only
-  // the services with a vendored mark have an icon (see static/vendor/simple-icons/NOTICE.md).
-  const links = [
-    ['ListenBrainz', 'https://listenbrainz.org/search/?query=' + encoded, null],
-    ['Apple Music', 'https://music.apple.com/search?term=' + encoded, '/static/vendor/simple-icons/applemusic.svg'],
-    ['Spotify', 'https://open.spotify.com/search/' + encoded, '/static/vendor/simple-icons/spotify.svg'],
-    ['Qobuz', 'https://www.qobuz.com/us-en/search/albums/' + encoded, null],
-    ['Bandcamp', 'https://bandcamp.com/search?q=' + encoded, '/static/vendor/simple-icons/bandcamp.svg']
-  ];
-  const nav = $('albumModalPlatformLinks');
+// Logo-only service links. Each opens a search page at once and is upgraded to the album's own
+// page when /api/album-links finds an exact match. Every mark is a local file under
+// /static/vendor (AGENTS.md: no runtime third-party assets); see static/vendor/simple-icons/NOTICE.md
+// for which marks are the services' own and which are monograms. The service name is the link's
+// accessible name and tooltip, since no text is drawn.
+const PLATFORM_ICONS = {
+  'Apple Music': '/static/vendor/simple-icons/applemusic.svg',
+  'Spotify': '/static/vendor/simple-icons/spotify.svg',
+  'Bandcamp': '/static/vendor/simple-icons/bandcamp.svg',
+  'Deezer': '/static/vendor/simple-icons/deezer.svg',
+  'MusicBrainz': '/static/vendor/simple-icons/musicbrainz.svg',
+  'Qobuz': '/static/vendor/simple-icons/qobuz.svg',
+  'ListenBrainz': '/static/vendor/simple-icons/listenbrainz.svg'
+};
+const PLATFORM_LINK_KEYS = {
+  'Apple Music': 'apple_music', 'Spotify': 'spotify', 'Deezer': 'deezer',
+  'MusicBrainz': 'musicbrainz', 'ListenBrainz': 'listenbrainz'
+};
+const albumLinkRequests = new Map();
+
+function platformSearchLinks(encoded) {
+  return {
+    'ListenBrainz': 'https://listenbrainz.org/search/?query=' + encoded,
+    'Apple Music': 'https://music.apple.com/search?term=' + encoded,
+    'Spotify': 'https://open.spotify.com/search/' + encoded,
+    'Deezer': 'https://www.deezer.com/search/' + encoded,
+    'MusicBrainz': 'https://musicbrainz.org/search?type=release_group&query=' + encoded,
+    'Qobuz': 'https://www.qobuz.com/us-en/search/albums/' + encoded,
+    'Bandcamp': 'https://bandcamp.com/search?q=' + encoded
+  };
+}
+
+function setAlbumPlatformLinks(artist, album, mbid) {
+  fillPlatformLinks($('albumModalPlatformLinks'), artist, album, mbid,
+    ['ListenBrainz', 'Apple Music', 'Spotify', 'Qobuz', 'Bandcamp']);
+}
+
+// The album page's links: the same chips as the album panel, for the services it names.
+function setAlbumPagePlatformLinks(artist, album, mbid) {
+  fillPlatformLinks($('albumPlatformLinks'), artist, album, mbid, ['Apple Music', 'Deezer', 'MusicBrainz', 'Qobuz']);
+}
+
+function fillPlatformLinks(nav, artist, album, mbid, services) {
+  const stamp = [artist, album, mbid || ''].join('|');
+  // The same album again keeps the links already upgraded.
+  if (nav.dataset.albumStamp === stamp && nav.childElementCount) return;
+  nav.dataset.albumStamp = stamp;
   nav.replaceChildren();
-  for (const [label, href, iconSrc] of links) {
+  const searches = platformSearchLinks(encodeURIComponent([artist, album].filter(Boolean).join(' ').trim()));
+  const anchors = new Map();
+  for (const label of services) {
     const link = document.createElement('a');
-    link.href = href;
+    link.href = searches[label];
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.title = 'Search ' + artist + ' ' + album + ' on ' + label;
-    link.setAttribute('aria-label', 'Search ' + artist + ' ' + album + ' on ' + label);
-    if (iconSrc) {
-      const icon = document.createElement('img');
-      icon.src = iconSrc;
-      icon.alt = '';
-      icon.width = 18;
-      icon.height = 18;
-      link.append(icon);
-    }
-    link.append(label);
+    link.setAttribute('aria-label', link.title);
+    const icon = document.createElement('img');
+    icon.src = PLATFORM_ICONS[label];
+    icon.alt = '';
+    icon.width = 22;
+    icon.height = 22;
+    link.append(icon);
     nav.append(link);
+    anchors.set(label, link);
   }
+  if (!artist || !album) return;
+  const query = new URLSearchParams({artist, album});
+  if (mbid) query.set('mbid', mbid);
+  cachedJSONRequest(albumLinkRequests, stamp, '/api/album-links?' + query)
+    .then(links => {
+      if (!links || nav.dataset.albumStamp !== stamp) return;
+      for (const [label, link] of anchors) {
+        const url = links[PLATFORM_LINK_KEYS[label]];
+        if (!url) continue;
+        link.href = url;
+        link.title = 'Open ' + album + ' on ' + label;
+        link.setAttribute('aria-label', link.title);
+      }
+    })
+    .catch(() => {});
 }
 // The dialog sets aria-modal, which tells assistive tech the rest of the page is inert, but
 // nothing contained Tab, so it walked straight out of the dialog into the sidebar behind it.
@@ -1009,8 +1057,10 @@ async function openAlbumModal(card, returnFocus = card) {
   const get = $('albumModalGet');
   activeAlbumModal = {card, artist, album, metadata};
   albumModalReturnFocus = returnFocus;
-  $('albumModalTitle').textContent = album;
-  $('albumModalArtist').textContent = artist;
+  $('albumModalTitle').replaceChildren();
+  linkAlbumName($('albumModalTitle'), artist, album, metadata);
+  $('albumModalArtist').replaceChildren();
+  linkArtistName($('albumModalArtist'), artist);
   $('albumModalYear').textContent = String(firstReleaseYear(metadata.year, metadata.release_year, metadata.first_release_year, card.dataset.releaseYear) || '');
   setAlbumPlatformLinks(artist, album);
   loadAlbumModalBio(card, artist);
@@ -1165,14 +1215,13 @@ function buildDashboardTile(item) {
   // The name above carries the album and artist, so the visible copy is hidden from assistive tech.
   const meta = document.createElement('div');
   meta.className = 'dashboard-tile-meta';
-  meta.setAttribute('aria-hidden', 'true');
   addTextElement(meta, 'p', 'card-category', item.dashboard_category || 'Discovery');
   const title = document.createElement('h3');
-  title.append(document.createTextNode(album));
+  linkAlbumName(title, artist, album, item);
   const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, tile.dataset.releaseYear);
   if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
   meta.append(title);
-  addTextElement(meta, 'p', 'card-artist', artist);
+  linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), artist);
   if (artist !== 'Unknown artist') attachCardArtistBio(tile, meta, artist);
   tile.append(meta);
   ensureAlbumYearBadge(tile);
@@ -1425,10 +1474,10 @@ function buildRecommendationRow(item, rank, options = {}) {
   const main = document.createElement('div');
   main.className = 'row-main';
   const title = document.createElement('h3');
-  title.textContent = album || 'Untitled album';
   title.setAttribute('title', album || 'Untitled album');
+  linkAlbumName(title, artist, album || 'Untitled album', item);
   main.append(title);
-  addTextElement(main, 'p', 'row-artist', artist || 'Unknown artist');
+  linkArtistName(addTextElement(main, 'p', 'row-artist', ''), artist || 'Unknown artist');
   if (options.artistBio) attachArtistBio(row, main, artist);
   row.append(main);
   // The release-date column already shows the year, so a release-date row carries no year badge.
@@ -1747,7 +1796,8 @@ function addRecommendationMeta(meta, item) {
     ...(Array.isArray(item.genre_families) ? item.genre_families : [])
   ])];
   if (genres.length) {
-    const genreLine = addTextElement(meta, 'p', 'row-meta-line row-genres', genres.join(' · '));
+    const genreLine = addTextElement(meta, 'p', 'row-meta-line row-genres', '');
+    linkGenres(genreLine, genres);
     genreLine.title = genres.join(' · ');
   }
   if (item.diversity_style) {
@@ -1998,7 +2048,8 @@ async function loadDiscovery(name, options = {}) {
         row.className = 'genre-row';
         const heading = document.createElement('div');
         heading.className = 'genre-row-heading';
-        addTextElement(heading, 'h3', '', genreRowLabel(genre, rowLabels));
+        const genreTitle = addTextElement(heading, 'h3', '', '');
+        genreTitle.append(buildInlineLink(genreRowLabel(genre, rowLabels), {type: 'genre', tag: String(genre).toLocaleLowerCase()}));
         addTextElement(heading, 'span', 'genre-row-count', pluralize(genreItems.length, 'album', 'albums'));
         const arrows = document.createElement('div');
         arrows.className = 'genre-row-arrows';
@@ -2090,13 +2141,16 @@ async function loadDiscovery(name, options = {}) {
       // artists in your library". The artist therefore takes the card's heading role and the
       // album becomes the supporting line, rather than the reverse inherited from the
       // album-grid sections.
-      title.append(document.createTextNode(isDeepDive ? artist : album));
+      if (isDeepDive) linkArtistName(title, artist);
+      else linkAlbumName(title, artist, album, item);
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
       if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
       card.append(title);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.
-      const supportingLine = addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);
+      const supportingLine = addTextElement(card, 'p', 'card-artist', '');
+      if (isDeepDive) linkAlbumName(supportingLine, artist, album, item);
+      else linkArtistName(supportingLine, artist);
       if (isDeepDive) card.dataset.yearTarget = 'supporting';
       // Keep release-year metadata with the album when the artist is the primary heading.
       if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));
@@ -3013,7 +3067,9 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, detailReturn: null, genreSeq: 0, genreTag: '', genreReturn: 'list', fromGenre: ''};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, albumSeq: 0, genreSeq: 0, listReturn: null, ownedOnly: false, artistCtx: null};
+// Open artist and album streams, so leaving a page closes them.
+const libraryStreams = new Set();
 let libraryFilterTimer = 0;
 
 function setStatus(el, message, kind) {
@@ -3185,19 +3241,38 @@ function searchItemDetail(item) {
   return details.filter(Boolean).join(' · ');
 }
 
+// Artists, albums and genres open their page, owned or not; a song opens its album.
+// The album part of a route key: lower case, as the server normalises it again.
+function normalizeAlbumKey(name) {
+  return String(name).trim().toLocaleLowerCase();
+}
+
+function searchItemTarget(item) {
+  if (item.type === 'artist') return artistTarget(item);
+  if (item.type === 'album') return albumTarget(item);
+  if (item.type === 'genre') return {type: 'genre', tag: item.tag};
+  if (item.type === 'song' && item.album) {
+    // A song opens the album that holds it.
+    return albumTarget({
+      owned: item.owned, id: item.album_id, key: (item.artist_key || '') + '/' + normalizeAlbumKey(item.album),
+      artist: item.artist, name: item.album,
+      artwork_url: item.artwork_url,
+    });
+  }
+  return null;
+}
+
 function buildSearchItem(item) {
   const row = document.createElement('li');
   row.className = 'search-item';
-  // Owned artists open the artist view and any genre opens its genre view. Albums and songs, and
-  // artists not in the library, are listed for reference only.
-  const opens = (item.type === 'artist' && item.owned) || item.type === 'genre';
-  const content = opens ? document.createElement('button') : document.createElement('div');
-  if (opens) {
+  const target = searchItemTarget(item);
+  const content = target ? document.createElement('button') : document.createElement('div');
+  if (target) {
     content.type = 'button';
-    content.addEventListener('click', () => (item.type === 'genre' ? openGenreFromSearch(item) : openArtistFromSearch(item)));
+    content.addEventListener('click', () => openFromSearch(target));
   }
   content.className = 'search-item-content';
-  content.append(buildArtwork(item.artwork_url, 'search-item-art'));
+  content.append(buildArtwork(item.type === 'album' ? sizedArtwork(item.artwork_url, 96) : item.artwork_url, 'search-item-art'));
   const text = document.createElement('span');
   text.className = 'search-item-text';
   addTextElement(text, 'span', 'search-item-name', searchItemName(item));
@@ -3207,21 +3282,10 @@ function buildSearchItem(item) {
   return row;
 }
 
-function openArtistFromSearch(item) {
+function openFromSearch(target) {
   closeGlobalSearch();
   $('globalSearchInput').value = '';
-  navigateTo('library');
-  openArtistDetail(item.id, item.key, null, item.artwork_url);
-}
-
-function openGenreFromSearch(item) {
-  closeGlobalSearch();
-  $('globalSearchInput').value = '';
-  navigateTo('library');
-  $('libraryIntro').hidden = true;
-  libraryView.fromGenre = '';
-  libraryView.genreReturn = 'list';
-  openGenre(item.tag);
+  openLibraryTarget(target);
 }
 
 // ---- Library list ----
@@ -3296,119 +3360,735 @@ function buildLibraryRow(artist) {
   addTextElement(text, 'span', 'library-artist-name', artist.name);
   addTextElement(text, 'span', 'library-artist-count', pluralize(artist.album_count, 'album', 'albums'));
   button.append(text);
-  button.addEventListener('click', () => openArtistDetail(artist.id, artist.key, button, artist.artwork_url));
+  button.addEventListener('click', () => {
+    libraryView.listReturn = button;
+    libraryOpen(artistTarget(artist));
+  });
   row.append(button);
   return row;
 }
 
-// ---- Artist view ----
+// ---- Navigation between library views ----
+// One stack serves the artist, album and genre views, so every name in the library can open its
+// page and Back always returns to the page the reader came from. The list is the stack's floor.
 
-async function openArtistDetail(id, key, returnFocus, artworkUrl, fromGenre = '') {
-  const view = libraryView;
-  view.detailReturn = returnFocus;
-  // The genre this artist was opened from, so closing the artist returns there instead of to the list.
-  view.fromGenre = fromGenre;
-  const seq = ++view.detailSeq;
-  $('libraryListView').hidden = true;
-  $('libraryDetailView').hidden = false;
-  // The artist view is the reading path, so the page intro steps aside while it is open.
-  $('libraryIntro').hidden = true;
-  // The artwork comes from the row or result that was clicked, so the artist API needs no new field.
-  const hero = document.querySelector('.artist-hero');
-  hero.querySelector('.artist-hero-art')?.remove();
-  hero.prepend(buildArtwork(artworkUrl, 'artist-hero-art'));
-  const heading = $('artistDetailHeading');
-  const status = $('artistDetailStatus');
-  const albums = $('artistAlbums');
-  heading.textContent = 'Loading artist…';
-  $('artistGenre').hidden = true;
-  $('libraryGenreView').hidden = true;
-  albums.replaceChildren();
-  setStatus(status, 'Loading…', 'loading');
-  heading.focus();
+const LIBRARY_VIEWS = {
+  list: 'libraryListView',
+  artist: 'libraryDetailView',
+  album: 'libraryAlbumView',
+  genre: 'libraryGenreView',
+};
+const libraryNav = {stack: [], current: null};
 
-  const params = new URLSearchParams({id});
-  try {
-    const response = await fetch('/api/artists/' + encodeURIComponent(key) + '?' + params);
-    const data = await response.json();
-    if (seq !== view.detailSeq) return;
-    if (response.status === 404) {
-      heading.textContent = 'Artist not found';
-      setStatus(status, 'This artist is no longer in your library.', 'error');
-      return;
-    }
-    if (!response.ok) throw new Error(data.message || 'Request failed');
-    const artistSection = data.sections.artist;
-    if (!artistSection.available) {
-      heading.textContent = 'Artist';
-      setStatus(status, INDEX_REASON_MESSAGES[artistSection.reason] || 'This artist is not available right now.',
-        artistSection.reason === 'index_building' ? 'loading' : 'error');
-      return;
-    }
-    heading.textContent = artistSection.artist.name;
-    const genreButton = $('artistGenre');
-    genreButton.hidden = !artistSection.artist.genre;
-    genreButton.textContent = artistSection.artist.genre ? 'Genre: ' + artistSection.artist.genre : '';
-    genreButton.dataset.genre = artistSection.artist.genre || '';
-    setStatus(status, pluralize(artistSection.artist.album_count, 'album', 'albums') + ' in your library', 'progress');
-    for (const album of data.sections.owned_albums.items) albums.append(buildArtistAlbum(album));
-  } catch (error) {
-    if (seq !== view.detailSeq) return;
-    heading.textContent = 'Artist';
-    setStatus(status, 'This artist could not be loaded. Try again.', 'error');
-  }
+function sizedArtwork(url, size) {
+  return url ? url + (url.includes('?') ? '&' : '?') + 'size=' + size : null;
 }
 
-function buildArtistAlbum(album) {
-  const row = document.createElement('li');
-  row.className = 'library-album';
-  addTextElement(row, 'span', 'library-album-name', album.name);
-  const details = [album.year, pluralize(album.song_count, 'track', 'tracks')].filter(value => value !== null && value !== undefined && value !== '');
-  addTextElement(row, 'span', 'library-album-detail', details.join(' · '));
-  return row;
+function libraryShow(name) {
+  for (const [view, id] of Object.entries(LIBRARY_VIEWS)) $(id).hidden = view !== name;
+  // The page intro belongs to the list; every other view is the reading path.
+  $('libraryIntro').hidden = name !== 'list';
 }
 
-function closeArtistDetail() {
+function closeLibraryStreams() {
   libraryView.detailSeq += 1;
-  // An artist opened from a genre returns to that genre, which takes focus on its heading.
-  if (libraryView.fromGenre) {
-    const tag = libraryView.fromGenre;
-    libraryView.fromGenre = '';
-    $('libraryDetailView').hidden = true;
-    openGenre(tag);
+  libraryView.albumSeq += 1;
+  libraryView.genreSeq += 1;
+  for (const source of libraryStreams) source.close();
+  libraryStreams.clear();
+}
+
+function libraryReset() {
+  closeLibraryStreams();
+  libraryNav.stack = [];
+  libraryNav.current = null;
+  libraryShow('list');
+}
+
+function libraryOpen(target) {
+  if (libraryNav.current) libraryNav.stack.push(libraryNav.current);
+  libraryNav.current = target;
+  renderLibraryTarget(target);
+}
+
+function libraryBack() {
+  closeLibraryStreams();
+  const previous = libraryNav.stack.pop() || null;
+  libraryNav.current = previous;
+  if (previous) {
+    renderLibraryTarget(previous);
     return;
   }
-  $('libraryDetailView').hidden = true;
-  $('libraryListView').hidden = false;
-  $('libraryIntro').hidden = false;
-  const back = libraryView.detailReturn;
+  libraryShow('list');
+  const back = libraryView.listReturn;
   if (back && back.isConnected) back.focus();
   else $('libraryHeading').focus();
 }
 
+function renderLibraryTarget(target) {
+  closeLibraryStreams();
+  if (target.type === 'artist') renderArtist(target);
+  else if (target.type === 'album') renderAlbum(target);
+  else renderGenre(target.tag);
+}
+
+// Targets are built from any item that names an artist, album or genre: search results, library
+// rows, album rows, similar artists and genre items. Only an owned item carries a Navidrome ID.
+function artistTarget(item) {
+  const owned = item.owned !== false;
+  return {
+    type: 'artist',
+    id: owned ? item.id || null : null,
+    key: item.key || item.artist_key,
+    name: item.name || item.artist || '',
+    mbid: item.mbid || null,
+    artworkUrl: item.artwork_url || null,
+  };
+}
+
+function albumRouteKey(item) {
+  const key = item.key || '';
+  return key.includes('/') ? key : (item.artist_key || '') + '/' + key;
+}
+
+function albumTarget(item) {
+  const owned = item.owned !== false;
+  return {
+    type: 'album',
+    key: albumRouteKey(item),
+    id: owned ? item.id || null : null,
+    artist: item.artist || '',
+    name: item.name || '',
+    year: item.year || null,
+    mbid: item.release_group_mbid || null,
+    artworkUrl: item.artwork_url || (owned && item.id ? '/api/owned/artwork/' + item.id : null),
+    owned,
+  };
+}
+
+// ---- Links from cards and rows elsewhere in the app ----
+// Album names, artist names and tags on cards, rows and the album panel open the matching library
+// page. These items carry names, not library keys, so the keys are derived the way the server
+// derives them (accents and punctuation folded, a leading "The" dropped).
+function foldKey(name) {
+  const folded = String(name || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  return folded.replace(/^the (?=.)/, '');
+}
+
+function namedArtistTarget(name, mbid = null) {
+  return {type: 'artist', id: null, key: foldKey(name), name, mbid, artworkUrl: null};
+}
+
+function namedAlbumTarget(artist, album, item = {}) {
+  return {
+    type: 'album', key: foldKey(artist) + '/' + foldKey(album), id: null, artist, name: album,
+    year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
+    mbid: item.release_group_mbid || null, artworkUrl: null, owned: false,
+  };
+}
+
+function openLibraryTarget(target) {
+  if (!$('albumModalBackdrop').hidden) closeAlbumModal();
+  navigateTo('library');
+  libraryView.listReturn = null;
+  libraryOpen(target);
+}
+
+// A text link inside a card or row: it inherits the surrounding type and opens the page on click.
+// The card's own click handler ignores clicks on buttons, so it does not also open the album panel.
+function buildInlineLink(text, target) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'inline-link';
+  button.textContent = text;
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    openLibraryTarget(target);
+  });
+  return button;
+}
+
+function linkArtistName(parent, artist) {
+  if (!artist || artist === 'Unknown artist') {
+    parent.append(document.createTextNode(artist || ''));
+    return;
+  }
+  parent.append(buildInlineLink(artist, namedArtistTarget(artist)));
+}
+
+function linkAlbumName(parent, artist, album, item) {
+  if (!artist || !album || artist === 'Unknown artist') {
+    parent.append(document.createTextNode(album || ''));
+    return;
+  }
+  parent.append(buildInlineLink(album, namedAlbumTarget(artist, album, item)));
+}
+
+// Genres and tags as links, separated by a middle dot.
+function linkGenres(parent, genres) {
+  genres.forEach((genre, index) => {
+    if (index) parent.append(document.createTextNode(' · '));
+    parent.append(buildInlineLink(genre, {type: 'genre', tag: String(genre).toLocaleLowerCase()}));
+  });
+}
+
+// A name in the library that opens a page. The caller says which page by passing the target.
+function buildLibraryLink(text, target, className = 'library-link') {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.textContent = text;
+  button.addEventListener('click', () => libraryOpen(target));
+  return button;
+}
+
+// Covers for albums the library does not have come from the artwork service, one request per
+// visible row, and are cached for the page's life.
+const remoteArtworkObserver = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        remoteArtworkObserver.unobserve(entry.target);
+        entry.target.loadRemoteArtwork();
+      }
+    }, {rootMargin: '200px'})
+  : null;
+
+function buildAlbumArtwork(item, className, size) {
+  if (item.artwork_url) return buildArtwork(sizedArtwork(item.artwork_url, size), className);
+  const frame = buildArtwork(null, className);
+  if (item.owned || !item.artist) return frame;
+  frame.loadRemoteArtwork = () => {
+    const cacheKey = item.artist.trim().toLocaleLowerCase() + '::' + item.name.trim().toLocaleLowerCase();
+    const query = new URLSearchParams({artist: item.artist, album: item.name});
+    cachedJSONRequest(artworkRequests, cacheKey, '/api/artwork?' + query)
+      .then(data => {
+        if (!data || !data.artwork_url) return;
+        const image = document.createElement('img');
+        image.alt = '';
+        image.decoding = 'async';
+        image.onerror = () => image.remove();
+        image.src = data.artwork_url;
+        frame.append(image);
+        if (frame.onRemoteArtwork) frame.onRemoteArtwork(data);
+      })
+      .catch(() => {});
+  };
+  if (remoteArtworkObserver) remoteArtworkObserver.observe(frame);
+  else frame.loadRemoteArtwork();
+  return frame;
+}
+
+function buildOwnedCheck() {
+  const mark = document.createElement('span');
+  mark.className = 'owned-check';
+  mark.title = 'In your library';
+  mark.setAttribute('role', 'img');
+  mark.setAttribute('aria-label', 'In your library');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'owned-check-glyph');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  for (const [name, value] of [['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.5'], ['stroke-linecap', 'round'], ['stroke-linejoin', 'round']]) {
+    svg.setAttribute(name, value);
+  }
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', 'M5 12.5 10 17.5 19 7');
+  svg.append(path);
+  mark.append(svg);
+  return mark;
+}
+
+// The state control of an album: a green check when the library has it, the Get button when not.
+function buildAlbumState(item) {
+  if (item.owned) return buildOwnedCheck();
+  return createGetButton(item.artist, item.name, {
+    artist: item.artist, album: item.name, year: item.year || null, release_group_mbid: item.release_group_mbid || null,
+  });
+}
+
+function compactCount(value) {
+  return new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(Number(value));
+}
+
+function buildAlbumRow(item) {
+  const row = document.createElement('li');
+  row.className = 'album-row';
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'album-row-open';
+  open.append(buildAlbumArtwork(item, 'album-row-art', 120));
+  const text = document.createElement('span');
+  text.className = 'album-row-text';
+  const title = document.createElement('span');
+  title.className = 'album-row-title';
+  addTextElement(title, 'span', 'album-row-name', item.name);
+  // Rows from other artists (similar albums) name their artist, in grey, beside the album.
+  if (item.showArtist && item.artist) addTextElement(title, 'span', 'album-row-artist', item.artist);
+  // Listen counts (ListenBrainz) show beside the name on the artist page, where albums are ranked by them.
+  if (item.showListens && item.popularity !== null && item.popularity !== undefined) {
+    const listens = addTextElement(title, 'span', 'album-row-listens', compactCount(item.popularity) + ' listens');
+    listens.title = Number(item.popularity).toLocaleString() + ' listens on ' + (item.popularity_source === 'lastfm' ? 'Last.fm' : 'ListenBrainz');
+  }
+  text.append(title);
+  const detail = [item.year].filter(value => value !== null && value !== undefined && value !== '');
+  if (detail.length) addTextElement(text, 'span', 'album-row-detail', detail.join(' · '));
+  open.append(text);
+  open.addEventListener('click', () => libraryOpen(albumTarget(item)));
+  row.append(open);
+  row.append(buildAlbumState(item));
+  return row;
+}
+
+const artistImageRequests = new Map();
+
+// An artist with no library cover gets a photo from the artist-image service, loaded when its row
+// scrolls into view. A failed or missing photo leaves the empty frame, as for any other cover.
+function buildArtistPhoto(item) {
+  if (item.artwork_url) return buildArtwork(sizedArtwork(item.artwork_url, 96), 'library-art');
+  const frame = buildArtwork(null, 'library-art');
+  if (!item.name) return frame;
+  frame.loadRemoteArtwork = () => {
+    cachedJSONRequest(artistImageRequests, item.name.trim().toLocaleLowerCase(),
+      '/api/artist-image?' + new URLSearchParams({name: item.name}))
+      .then(data => {
+        if (!data || !data.artwork_url) return;
+        const image = document.createElement('img');
+        image.alt = '';
+        image.decoding = 'async';
+        image.onerror = () => image.remove();
+        image.src = data.artwork_url;
+        frame.append(image);
+      })
+      .catch(() => {});
+  };
+  if (remoteArtworkObserver) remoteArtworkObserver.observe(frame);
+  else frame.loadRemoteArtwork();
+  return frame;
+}
+
+function buildArtistChip(item) {
+  const row = document.createElement('li');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'library-artist';
+  button.append(buildArtistPhoto(item));
+  const text = document.createElement('span');
+  text.className = 'library-artist-text';
+  addTextElement(text, 'span', 'library-artist-name', item.name);
+  addTextElement(text, 'span', 'library-artist-count', item.owned ? 'In your library' : 'Not in your library');
+  button.append(text);
+  button.addEventListener('click', () => libraryOpen(artistTarget(item)));
+  row.append(button);
+  return row;
+}
+
+// A section that is unavailable says why; one that is available and empty says there is nothing.
+const SECTION_REASON_MESSAGES = {
+  source_disabled: 'This needs a service that is not configured.',
+  source_failed: 'This could not be loaded right now.',
+  deadline: 'This took too long to load.',
+  not_in_this_build: 'This is not available yet.',
+};
+
+function setSectionNote(id, message) {
+  const note = $(id);
+  note.textContent = message || '';
+  note.hidden = !message;
+}
+
+function fillRows(list, items, build) {
+  list.replaceChildren();
+  for (const item of items) list.append(build(item));
+}
+
+// ---- Artist view ----
+// Opens from a search result, a library row, an album, a similar artist or a genre. An owned
+// artist is addressed by key and Navidrome ID; any other by key, name and MusicBrainz ID.
+
+function setArtistHero(target, name) {
+  const hero = document.querySelector('.artist-hero');
+  hero.querySelector('.artist-hero-art')?.remove();
+  const frame = buildArtwork(sizedArtwork(target.artworkUrl, 400), 'artist-hero-art');
+  hero.prepend(frame);
+  if (target.artworkUrl || !name) return;
+  const seq = libraryView.detailSeq;
+  requestJSON('/api/artist-image?' + new URLSearchParams({name}))
+    .then(data => {
+      if (seq !== libraryView.detailSeq || !data || !data.artwork_url) return;
+      const image = document.createElement('img');
+      image.alt = '';
+      image.decoding = 'async';
+      image.onerror = () => image.remove();
+      image.src = data.artwork_url;
+      frame.append(image);
+    })
+    .catch(() => {});
+}
+
+const BIO_CLAMP_LENGTH = 420;
+// The server ranks and caps the album list at the same number; this only bounds the early owned-only view.
+const ARTIST_ALBUM_LIMIT = 20;
+
+function setArtistBio(bio) {
+  const text = $('artistBio');
+  const toggle = $('artistBioToggle');
+  text.textContent = bio && bio.text ? bio.text : '';
+  text.hidden = !text.textContent;
+  text.classList.toggle('is-clamped', text.textContent.length > BIO_CLAMP_LENGTH);
+  toggle.hidden = text.textContent.length <= BIO_CLAMP_LENGTH;
+  toggle.textContent = 'Read more';
+  toggle.setAttribute('aria-expanded', 'false');
+}
+
+function toggleArtistBio() {
+  const text = $('artistBio');
+  const clamped = text.classList.toggle('is-clamped');
+  $('artistBioToggle').textContent = clamped ? 'Read more' : 'Show less';
+  $('artistBioToggle').setAttribute('aria-expanded', String(!clamped));
+}
+
+function renderArtist(target) {
+  const view = libraryView;
+  const seq = ++view.detailSeq;
+  libraryShow('artist');
+  setArtistHero(target, target.name);
+  const heading = $('artistDetailHeading');
+  const status = $('artistDetailStatus');
+  heading.textContent = target.name || 'Loading artist…';
+  setArtistBio(null);
+  $('artistOwnedOnly').checked = libraryView.ownedOnly;
+  fillRows($('artistTags'), [], () => null);
+  $('artistTags').hidden = true;
+  for (const id of ['artistAlbums', 'artistSimilar']) $(id).replaceChildren();
+  setSectionNote('artistAlbumsNote', 'Loading albums…');
+  setSectionNote('artistSimilarNote', 'Loading similar artists…');
+  $('artistAlbumsSection').hidden = false;
+  $('artistSimilarSection').hidden = false;
+  setStatus(status, 'Loading…', 'loading');
+  heading.focus();
+
+  const params = new URLSearchParams();
+  if (target.id) params.set('id', target.id);
+  if (target.name) params.set('name', target.name);
+  if (target.mbid) params.set('mbid', target.mbid);
+  const source = new EventSource('/api/artists/' + encodeURIComponent(target.key) + '?' + params);
+  libraryStreams.add(source);
+  const ctx = {name: target.name, ownedAlbums: [], ownedLoaded: false, catalog: null, catalogShown: false, artistShown: false};
+  libraryView.artistCtx = ctx;
+  source.addEventListener('section', event => {
+    if (seq !== view.detailSeq) return;
+    applyArtistSection(JSON.parse(event.data), ctx);
+  });
+  source.addEventListener('done', () => {
+    source.close();
+    libraryStreams.delete(source);
+    if (seq === view.detailSeq && !ctx.artistShown) setStatus(status, 'This artist could not be loaded. Try again.', 'error');
+  });
+  source.addEventListener('error', async () => {
+    source.close();
+    libraryStreams.delete(source);
+    if (seq !== view.detailSeq || ctx.artistShown) return;
+    // A closed stream does not say why. A plain request tells a missing artist from a failure.
+    let missing = false;
+    try {
+      const response = await fetch('/api/artists/' + encodeURIComponent(target.key) + '?' + params);
+      missing = response.status === 404;
+      if (response.status === 409 && !target.id) {
+        // Several library artists share this name: open the one with the most albums.
+        const best = (await response.json()).candidates.sort((a, b) => b.album_count - a.album_count)[0];
+        if (seq === view.detailSeq && best) {
+          libraryNav.current = {...target, id: best.id};
+          renderArtist(libraryNav.current);
+          return;
+        }
+      }
+    } catch (error) {
+      missing = false;
+    }
+    if (seq !== view.detailSeq) return;
+    heading.textContent = missing ? 'Artist not found' : target.name || 'Artist';
+    setStatus(status, missing ? 'This artist is no longer in your library.' : 'This artist could not be loaded. Try again.', 'error');
+  });
+}
+
+// The albums shown: the ranked top of the catalogue, or, with the toggle on, every album in the
+// library (ranked like the catalogue where it lists them, the rest after).
+function artistAlbumsToShow(ctx) {
+  if (libraryView.ownedOnly) {
+    const ranked = new Map((ctx.catalog || []).map((item, index) => [item.key, {index, item}]));
+    return ctx.ownedAlbums
+      .map(album => ({...album, popularity: ranked.get(album.key)?.item.popularity ?? null}))
+      .sort((a, b) => (ranked.get(a.key)?.index ?? Infinity) - (ranked.get(b.key)?.index ?? Infinity));
+  }
+  if (ctx.catalog) return ctx.catalog;
+  return ctx.ownedAlbums.slice(0, ARTIST_ALBUM_LIMIT);
+}
+
+// Albums the providers list without a year get one from the catalogue batch lookup, one request
+// for the page, and the list is repainted with what it finds.
+async function fillMissingYears(ctx) {
+  const missing = (ctx.catalog || []).filter(item => !item.year);
+  if (!missing.length || ctx.yearsRequested) return;
+  ctx.yearsRequested = true;
+  const seq = libraryView.detailSeq;
+  try {
+    const data = await sendJSON('/api/album-years', 'POST', {items: missing.map(item => ({artist: item.artist, album: item.name}))});
+    if (seq !== libraryView.detailSeq) return;
+    const years = new Map(((data && data.years) || []).map(entry => [albumYearKey(entry.artist, entry.album), entry.year]));
+    let changed = false;
+    for (const item of missing) {
+      const year = years.get(albumYearKey(item.artist, item.name));
+      if (year) { item.year = year; changed = true; }
+    }
+    if (changed) paintArtistAlbums(ctx);
+  } catch (error) {
+    // Years are decoration; the list stays as it is.
+  }
+}
+
+function paintArtistAlbums(ctx) {
+  const items = artistAlbumsToShow(ctx);
+  fillRows($('artistAlbums'), items, item => buildAlbumRow({...item, showListens: true}));
+  if (libraryView.ownedOnly && !items.length && ctx.ownedLoaded) {
+    setSectionNote('artistAlbumsNote', 'None of this artist\'s albums are in your library.');
+  }
+}
+
+function applyArtistSection(section, ctx) {
+  const status = $('artistDetailStatus');
+  if (section.section === 'artist') {
+    if (!section.available) {
+      $('artistDetailHeading').textContent = ctx.name || 'Artist';
+      setStatus(status, INDEX_REASON_MESSAGES[section.reason] || 'This artist is not available right now.',
+        section.reason === 'index_building' ? 'loading' : 'error');
+      return;
+    }
+    const artist = section.artist;
+    ctx.artistShown = true;
+    ctx.name = artist.name;
+    ctx.owned = artist.owned;
+    $('artistDetailHeading').textContent = artist.name;
+    setStatus(status, artist.owned ? pluralize(artist.album_count, 'album', 'albums') + ' in your library' : 'Not in your library', 'progress');
+  } else if (section.section === 'owned_albums') {
+    if (!section.available) return;
+    ctx.ownedLoaded = true;
+    ctx.ownedAlbums = section.items.map(album => ({...album, owned: true, artist: ctx.name}));
+    // The library's own albums show at once; the ranked catalogue replaces them when it arrives.
+    if (!ctx.catalogShown && ctx.ownedAlbums.length) setSectionNote('artistAlbumsNote', 'Loading more albums…');
+    paintArtistAlbums(ctx);
+  } else if (section.section === 'bio') {
+    setArtistBio(section.bio);
+  } else if (section.section === 'tags') {
+    const tags = $('artistTags');
+    fillRows(tags, section.items || [], tag => {
+      const item = document.createElement('li');
+      item.append(buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'tag-button'));
+      return item;
+    });
+    tags.hidden = !tags.childElementCount;
+  } else if (section.section === 'albums') {
+    ctx.catalogShown = section.available;
+    ctx.catalog = section.available ? section.items.map(item => ({...item, artist: item.artist || ctx.name})) : null;
+    paintArtistAlbums(ctx);
+    fillMissingYears(ctx);
+    if (section.available && section.items.length) {
+      setSectionNote('artistAlbumsNote', section.complete ? '' : 'Some albums may be missing. Popularity could not be fully loaded.');
+    } else if (section.available) {
+      setSectionNote('artistAlbumsNote', ctx.ownedAlbums.length ? '' : 'No albums found for this artist.');
+    } else {
+      setSectionNote('artistAlbumsNote',
+        (ctx.ownedAlbums.length ? 'Showing the albums in your library. ' : '') +
+        (SECTION_REASON_MESSAGES[section.reason] || 'Albums are not available right now.'));
+    }
+  } else if (section.section === 'similar') {
+    if (section.available && section.items.length) {
+      fillRows($('artistSimilar'), section.items, buildArtistChip);
+      // A tag lookup that ran out of time only changes the order, so the list needs no warning.
+      setSectionNote('artistSimilarNote', '');
+    } else {
+      setSectionNote('artistSimilarNote', section.available ? 'No similar artists found.'
+        : SECTION_REASON_MESSAGES[section.reason] || 'Similar artists are not available right now.');
+    }
+  }
+}
+
+// ---- Album view ----
+// Header, tracklist, then similar artists and similar albums the library does not have. The same
+// view serves owned and unowned albums; only the state control differs.
+
+function formatDuration(seconds) {
+  if (!seconds) return '';
+  return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+}
+
+// Apple Music's notes: the first paragraph shows; the rest (or the rest of a single very long
+// paragraph) opens with Read more. Albums Apple has no notes for show no description at all.
+const ALBUM_DESCRIPTION_CLAMP_LENGTH = 700;
+
+function setAlbumDescription(description) {
+  const box = $('albumDescription');
+  const text = $('albumDescriptionText');
+  const toggle = $('albumDescriptionToggle');
+  const paragraphs = description && Array.isArray(description.paragraphs) ? description.paragraphs : [];
+  text.replaceChildren();
+  box.hidden = !paragraphs.length;
+  toggle.hidden = true;
+  if (!paragraphs.length) return;
+  for (const paragraph of paragraphs) addTextElement(text, 'p', '', paragraph);
+  const long = paragraphs.length > 1 || paragraphs[0].length > ALBUM_DESCRIPTION_CLAMP_LENGTH;
+  text.classList.toggle('is-collapsed', long);
+  toggle.hidden = !long;
+  toggle.textContent = 'Read more';
+  toggle.setAttribute('aria-expanded', 'false');
+  const link = $('albumDescriptionLink');
+  link.href = description.url || '#';
+  link.hidden = !description.url;
+}
+
+function toggleAlbumDescription() {
+  const collapsed = $('albumDescriptionText').classList.toggle('is-collapsed');
+  $('albumDescriptionToggle').textContent = collapsed ? 'Read more' : 'Show less';
+  $('albumDescriptionToggle').setAttribute('aria-expanded', String(!collapsed));
+}
+
+function renderAlbum(target) {
+  const view = libraryView;
+  const seq = ++view.albumSeq;
+  libraryShow('album');
+  const heading = $('albumHeading');
+  const status = $('albumStatus');
+  heading.textContent = target.name || 'Loading album…';
+  $('albumArtist').replaceChildren();
+  $('albumYear').textContent = target.year || '';
+  $('albumAction').replaceChildren();
+  $('albumTracks').replaceChildren();
+  for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
+  setAlbumDescription(null);
+  setSectionNote('albumTracksNote', 'Loading tracklist…');
+  setSectionNote('albumSimilarArtistsNote', 'Loading similar artists…');
+  setSectionNote('albumSimilarAlbumsNote', 'Loading similar albums…');
+  setStatus(status, '', 'idle');
+  setAlbumHero(target, seq);
+  setAlbumPagePlatformLinks(target.artist, target.name, target.mbid);
+  heading.focus();
+
+  const params = new URLSearchParams();
+  if (target.id) params.set('id', target.id);
+  if (target.artist) params.set('artist', target.artist);
+  if (target.name) params.set('name', target.name);
+  if (target.year) params.set('year', String(target.year));
+  if (target.mbid) params.set('mbid', target.mbid);
+  const source = new EventSource('/api/albums/' + target.key.split('/').map(encodeURIComponent).join('/') + '?' + params);
+  libraryStreams.add(source);
+  let shown = false;
+  source.addEventListener('section', event => {
+    if (seq !== view.albumSeq) return;
+    shown = applyAlbumSection(JSON.parse(event.data), target) || shown;
+  });
+  source.addEventListener('done', () => {
+    source.close();
+    libraryStreams.delete(source);
+  });
+  source.addEventListener('error', () => {
+    source.close();
+    libraryStreams.delete(source);
+    if (seq !== view.albumSeq || shown) return;
+    setStatus(status, 'This album could not be loaded. Try again.', 'error');
+  });
+}
+
+function setAlbumHero(target, seq) {
+  const hero = document.querySelector('.album-hero-art-wrap');
+  hero.querySelector('.album-hero-art')?.remove();
+  const frame = buildAlbumArtwork({
+    artwork_url: target.artworkUrl, owned: target.owned, artist: target.artist, name: target.name,
+  }, 'album-hero-art', 500);
+  frame.onRemoteArtwork = data => {
+    if (seq === libraryView.albumSeq && data.year && !$('albumYear').textContent) $('albumYear').textContent = data.year;
+  };
+  hero.prepend(frame);
+}
+
+function applyAlbumSection(section, target) {
+  if (section.section === 'album') {
+    const album = section.album;
+    $('albumHeading').textContent = album.name;
+    if (album.artwork_url && !target.artworkUrl) {
+      const wrap = document.querySelector('.album-hero-art-wrap');
+      wrap.querySelector('.album-hero-art')?.remove();
+      wrap.prepend(buildArtwork(sizedArtwork(album.artwork_url, 500), 'album-hero-art'));
+    }
+    $('albumYear').textContent = album.year || $('albumYear').textContent;
+    const artist = $('albumArtist');
+    artist.replaceChildren();
+    artist.append(buildLibraryLink(album.artist, {
+      type: 'artist', id: album.owned ? album.artist_id : null, key: album.artist_key,
+      name: album.artist, mbid: null, artworkUrl: null,
+    }, 'library-link'));
+    setAlbumPagePlatformLinks(album.artist, album.name, album.release_group_mbid);
+    const action = $('albumAction');
+    action.replaceChildren(buildAlbumState({
+      owned: album.owned, artist: album.artist, name: album.name, year: album.year,
+      release_group_mbid: album.release_group_mbid,
+    }));
+    return true;
+  }
+  if (section.section === 'year') {
+    // The year may come from the library, the caller or a catalogue lookup, whichever knows it.
+    if (section.year) $('albumYear').textContent = section.year;
+    return false;
+  }
+  if (section.section === 'description') {
+    setAlbumDescription(section.description);
+    return false;
+  }
+  if (section.section === 'tracks') {
+    if (section.available && section.items.length) {
+      fillRows($('albumTracks'), section.items, track => {
+        const row = document.createElement('li');
+        addTextElement(row, 'span', 'track-title', track.title);
+        addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
+        return row;
+      });
+      setSectionNote('albumTracksNote', '');
+    } else {
+      setSectionNote('albumTracksNote', section.available ? 'No tracklist was found for this album.'
+        : SECTION_REASON_MESSAGES[section.reason] || 'The tracklist is not available right now.');
+    }
+  } else if (section.section === 'similar_artists') {
+    if (section.available && section.items.length) {
+      fillRows($('albumSimilarArtists'), section.items, buildArtistChip);
+      setSectionNote('albumSimilarArtistsNote', '');
+    } else {
+      setSectionNote('albumSimilarArtistsNote', section.available ? 'No similar artists found.'
+        : SECTION_REASON_MESSAGES[section.reason] || 'Similar artists are not available right now.');
+    }
+  } else if (section.section === 'similar_albums') {
+    if (section.available && section.items.length) {
+      fillRows($('albumSimilarAlbums'), section.items, item => buildAlbumRow({...item, showArtist: true}));
+      setSectionNote('albumSimilarAlbumsNote', '');
+    } else {
+      setSectionNote('albumSimilarAlbumsNote', section.available ? 'No similar albums found.'
+        : SECTION_REASON_MESSAGES[section.reason] || 'Similar albums are not available right now.');
+    }
+  }
+  return false;
+}
+
 // ---- Genre view (SEARCH_CONTRACT P4) ----
-// Opens from the genre button on an artist. Owned artists open their artist view; items not in the
-// library are listed for reference, with the Discogs attribution where Discogs supplied them.
+// Opens from a tag, a genre result or a genre name. Every artist and album in it opens its page;
+// items not in the library carry the Discogs attribution where Discogs supplied them.
 
 const GENRE_SECTION_NAMES = {artists: 'artists', albums: 'albums'};
 
 function buildGenreItem(item, type) {
   const row = document.createElement('li');
   row.className = 'library-album';
-  if (item.owned && type === 'artists') {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'genre-item-link';
-    button.textContent = item.name;
-    button.addEventListener('click', () => {
-      $('libraryGenreView').hidden = true;
-      libraryView.genreSeq += 1;
-      openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);
-    });
-    row.append(button);
-  } else {
-    addTextElement(row, 'span', 'library-album-name', item.name);
-  }
+  const target = type === 'artists' ? artistTarget(item) : albumTarget(item);
+  row.append(buildLibraryLink(item.name, target, 'genre-item-link'));
   const detail = [];
   if (type === 'albums') detail.push(item.artist, item.year);
   detail.push(item.owned ? 'In your library' : 'Not in your library');
@@ -3417,13 +4097,10 @@ function buildGenreItem(item, type) {
   return row;
 }
 
-async function openGenre(tag) {
+async function renderGenre(tag) {
   const view = libraryView;
   const seq = ++view.genreSeq;
-  view.genreTag = tag;
-  $('libraryDetailView').hidden = true;
-  $('libraryListView').hidden = true;
-  $('libraryGenreView').hidden = false;
+  libraryShow('genre');
   const heading = $('genreHeading');
   const status = $('genreStatus');
   heading.textContent = tag;
@@ -3455,21 +4132,6 @@ async function openGenre(tag) {
     if (seq !== view.genreSeq) return;
     setStatus(status, 'This genre could not be loaded. Try again.', 'error');
   }
-}
-
-function closeGenre() {
-  libraryView.genreSeq += 1;
-  $('libraryGenreView').hidden = true;
-  if (libraryView.genreReturn === 'artist') {
-    $('libraryDetailView').hidden = false;
-    const button = $('artistGenre');
-    if (!button.hidden) button.focus();
-    else $('artistDetailHeading').focus();
-    return;
-  }
-  $('libraryListView').hidden = false;
-  $('libraryIntro').hidden = false;
-  $('libraryHeading').focus();
 }
 
 // ---- Wiring ----
@@ -3510,9 +4172,10 @@ $('librarySort').addEventListener('change', () => {
   loadLibrary({reset: true});
 });
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
-$('libraryBack').addEventListener('click', closeArtistDetail);
-$('artistGenre').addEventListener('click', () => {
-  libraryView.genreReturn = 'artist';
-  openGenre($('artistGenre').dataset.genre);
+for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListener('click', libraryBack);
+$('artistBioToggle').addEventListener('click', toggleArtistBio);
+$('albumDescriptionToggle').addEventListener('click', toggleAlbumDescription);
+$('artistOwnedOnly').addEventListener('change', () => {
+  libraryView.ownedOnly = $('artistOwnedOnly').checked;
+  if (libraryView.artistCtx) paintArtistAlbums(libraryView.artistCtx);
 });
-$('genreBack').addEventListener('click', closeGenre);

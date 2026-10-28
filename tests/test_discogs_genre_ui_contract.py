@@ -59,11 +59,10 @@ class GenreViewUITests(unittest.TestCase):
         self.assertIn('<ul id="genreArtists" class="library-album-list" aria-labelledby="genreArtistsHeading">', HTML)
         self.assertIn('<ul id="genreAlbums" class="library-album-list" aria-labelledby="genreAlbumsHeading">', HTML)
 
-    def test_genre_button_sits_in_the_artist_view_and_starts_hidden(self):
-        self.assertIn('id="artistGenre" class="genre-link" hidden', HTML)
-        self.assertIn("$('artistGenre').addEventListener('click', () => {", JS)
-        self.assertIn("libraryView.genreReturn = 'artist';", JS)
-        self.assertIn("openGenre($('artistGenre').dataset.genre);", JS)
+    def test_tags_in_the_artist_view_open_the_genre_view(self):
+        self.assertIn('<ul id="artistTags" class="tag-list" aria-label="Tags" hidden></ul>', HTML)
+        self.assertIn("buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'tag-button')", JS)
+        self.assertIn("else renderGenre(target.tag);", JS)
 
     def test_data_is_written_with_text_only(self):
         self.assertNotIn("innerHTML", self.genre_js)
@@ -76,50 +75,32 @@ class GenreViewUITests(unittest.TestCase):
     def test_attribution_is_shown_from_the_server_field_on_each_item(self):
         self.assertIn("if (item.attribution) addTextElement(row, 'span', 'library-album-detail', item.attribution);", self.genre_js)
 
-    def test_owned_artists_open_their_artist_view_and_others_are_text_only(self):
-        self.assertIn("if (item.owned && type === 'artists') {", self.genre_js)
-        self.assertIn("openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);", self.genre_js)
+    def test_every_genre_item_opens_its_artist_or_album_page(self):
+        self.assertIn("const target = type === 'artists' ? artistTarget(item) : albumTarget(item);", self.genre_js)
+        self.assertIn("row.append(buildLibraryLink(item.name, target, 'genre-item-link'));", self.genre_js)
 
     def test_incomplete_and_empty_states_are_distinct(self):
         self.assertIn("Some sources did not answer, so this list may be incomplete", self.genre_js)
         self.assertIn("'Nothing found for this genre.'", self.genre_js)
         self.assertIn("'This genre could not be loaded. Try again.'", self.genre_js)
 
-    def test_back_returns_focus_to_the_genre_button_or_the_artist_heading(self):
-        self.assertIn("libraryView.genreReturn = 'artist';", JS)
-        self.assertIn("if (!button.hidden) button.focus();", self.genre_js)
-        self.assertIn("$('genreBack').addEventListener('click', closeGenre);", JS)
-
-    def test_an_artist_opened_from_a_genre_returns_to_that_genre(self):
-        self.assertIn("openArtistDetail(item.id, item.key, button, null, libraryView.genreTag);", self.genre_js)
-        self.assertIn("view.fromGenre = fromGenre;", JS)
-        close = JS[JS.index("function closeArtistDetail()"):JS.index("// ---- Genre view")]
-        self.assertIn("if (libraryView.fromGenre) {", close)
-        self.assertIn("openGenre(tag);", close)
-        # The list view stays hidden on that path, so focus is never sent to a hidden return button.
-        self.assertLess(close.index("openGenre(tag);"), close.index("libraryListView"))
-        self.assertLess(close.index("return;"), close.index("libraryListView"))
-
-    def test_other_ways_of_opening_an_artist_clear_the_genre_return(self):
-        self.assertIn("async function openArtistDetail(id, key, returnFocus, artworkUrl, fromGenre = '') {", JS)
+    def test_back_pops_one_shared_stack_so_a_genre_returns_to_where_it_was_opened(self):
+        nav = JS[JS.index("function libraryOpen(target)"):JS.index("function renderLibraryTarget")]
+        self.assertIn("libraryNav.stack.push(libraryNav.current);", nav)
+        self.assertIn("const previous = libraryNav.stack.pop() || null;", nav)
+        self.assertIn("libraryShow('list');", nav)
+        self.assertIn("for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListener('click', libraryBack);", JS)
 
     def test_search_lists_genres_and_a_genre_result_opens_the_genre_view(self):
         self.assertIn("['genre', 'Genres']];", JS)
         self.assertIn("genre: 'Genre'}", JS)
-        self.assertIn("openGenreFromSearch(item)", JS)
-        opener = JS[JS.index("function openGenreFromSearch"):JS.index("// ---- Library list ----")]
-        self.assertIn("navigateTo('library');", opener)
-        self.assertIn("openGenre(item.tag);", opener)
-        self.assertNotIn("innerHTML", opener)
-
-    def test_back_from_search_genre_returns_to_library_list(self):
-        opener = JS[JS.index("function openGenreFromSearch"):JS.index("// ---- Library list ----")]
-        self.assertIn("libraryView.genreReturn = 'list';", opener)
-        close = JS[JS.index("function closeGenre()"):JS.index("// ---- Wiring ----")]
-        self.assertIn("if (libraryView.genreReturn === 'artist')", close)
-        self.assertIn("$('libraryListView').hidden = false;", close)
-        self.assertIn("$('libraryIntro').hidden = false;", close)
-        self.assertIn("$('libraryHeading').focus();", close)
+        self.assertIn("if (item.type === 'genre') return {type: 'genre', tag: item.tag};", JS)
+        opener = JS[JS.index("function openFromSearch"):JS.index("// ---- Library list ----")]
+        self.assertIn("openLibraryTarget(target);", opener)
+        shared = JS[JS.index("function openLibraryTarget"):JS.index("// A text link inside a card or row")]
+        self.assertIn("navigateTo('library');", shared)
+        self.assertIn("libraryOpen(target);", shared)
+        self.assertNotIn("innerHTML", opener + shared)
 
     def test_touch_targets_meet_the_44px_floor(self):
         self.assertRegex(CSS, r"\.genre-link, \.genre-item-link \{ min-height: 44px; \}")

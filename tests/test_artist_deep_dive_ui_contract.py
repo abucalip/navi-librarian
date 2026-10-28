@@ -21,9 +21,13 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
     def test_artist_hierarchy_and_category_change_are_scoped_to_deep_dive(self):
         self.assertIn("const isDeepDive = name === 'artist_deep_dive';", self.js)
         self.assertIn("if (!isDeepDive) {", self.js)
-        self.assertIn("title.append(document.createTextNode(isDeepDive ? artist : album));", self.js)
+        # The heading is the artist in a deep dive and the album elsewhere; either name opens its library page.
+        self.assertIn("if (isDeepDive) linkArtistName(title, artist);", self.js)
+        self.assertIn("else linkAlbumName(title, artist, album, item);", self.js)
         self.assertIn("if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));", self.js)
-        self.assertIn("const supportingLine = addTextElement(card, 'p', 'card-artist', isDeepDive ? album : artist);", self.js)
+        self.assertIn("const supportingLine = addTextElement(card, 'p', 'card-artist', '');", self.js)
+        self.assertIn("if (isDeepDive) linkAlbumName(supportingLine, artist, album, item);", self.js)
+        self.assertIn("else linkArtistName(supportingLine, artist);", self.js)
         self.assertIn("if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));", self.js)
 
     def test_arrows_are_hidden_and_removed_from_tab_order_when_track_fits(self):

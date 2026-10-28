@@ -69,6 +69,7 @@
       <div class="nav-group" role="group" aria-labelledby="navGroupCollection">
         <p id="navGroupCollection" class="nav-group-label">Collection</p>
         <button class="active" data-page="dashboard" title="Dashboard"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#layout-dashboard"></use></svg><span>Dashboard</span></button>
+        <button data-page="library" title="Library"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#library"></use></svg><span>Library</span></button>
         <button data-page="acquisitions" title="Acquisitions"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#download"></use></svg><span>Acquisitions</span> <span id="activeDownloadBadge" class="nav-count" hidden aria-label="Active downloads">0</span></button>
       </div>
       <div class="nav-group" role="group" aria-labelledby="navGroupDiscover">
@@ -234,7 +235,7 @@
 <section id="library" class="page hidden" aria-labelledby="libraryHeading">
   <div class="panel">
     <h2 id="libraryHeading">Library</h2>
-    <p id="libraryIntro">Artists in your Navidrome library. Select an artist to see their albums.</p>
+    <p id="libraryIntro">Artists in your Navidrome library. Select an artist to see their bio, albums and similar artists.</p>
     <div id="libraryListView">
       <div class="library-controls">
         <div class="library-control">
@@ -254,15 +255,64 @@
       <button type="button" id="libraryMore" hidden>Load more</button>
     </div>
     <div id="libraryDetailView" hidden>
-      <button type="button" id="libraryBack">Back to library</button>
+      <button type="button" id="libraryBack">Back</button>
       <div class="artist-hero">
         <div class="artist-hero-text">
           <h3 id="artistDetailHeading" tabindex="-1"></h3>
           <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
         </div>
       </div>
-      <p><button type="button" id="artistGenre" class="genre-link" hidden></button></p>
-      <ul id="artistAlbums" class="library-album-list"></ul>
+      <p id="artistBio" class="library-bio" hidden></p>
+      <button type="button" id="artistBioToggle" class="bio-toggle" aria-expanded="false" aria-controls="artistBio" hidden>Read more</button>
+      <ul id="artistTags" class="tag-list" aria-label="Tags" hidden></ul>
+      <section id="artistAlbumsSection" aria-labelledby="artistAlbumsHeading">
+        <div class="section-heading-row">
+          <h4 id="artistAlbumsHeading">Albums</h4>
+          <label class="inline-toggle"><input type="checkbox" id="artistOwnedOnly"> Only show albums in your library</label>
+        </div>
+        <p id="artistAlbumsNote" class="section-note" role="status" hidden></p>
+        <ul id="artistAlbums" class="album-row-list"></ul>
+      </section>
+      <section id="artistSimilarSection" aria-labelledby="artistSimilarHeading">
+        <h4 id="artistSimilarHeading">Similar artists</h4>
+        <p id="artistSimilarNote" class="section-note" role="status" hidden></p>
+        <ul id="artistSimilar" class="library-list"></ul>
+      </section>
+    </div>
+    <div id="libraryAlbumView" hidden>
+      <button type="button" id="albumBack">Back</button>
+      <div class="album-hero">
+        <div class="album-hero-media">
+          <div class="album-hero-art-wrap"><div id="albumAction" class="album-hero-action"></div></div>
+          <div id="albumPlatformLinks" class="album-platform-links" role="group" aria-label="Open this album on music services"></div>
+        </div>
+        <div class="album-hero-text">
+          <h3 id="albumHeading" tabindex="-1"></h3>
+          <p id="albumArtist" class="album-hero-artist"></p>
+          <p id="albumYear" class="album-hero-year"></p>
+          <div id="albumDescription" class="album-description" hidden>
+            <div id="albumDescriptionText" class="album-description-text"></div>
+            <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
+            <p class="album-description-source">Description from <a id="albumDescriptionLink" href="#" target="_blank" rel="noopener noreferrer">Apple Music</a></p>
+          </div>
+          <p id="albumStatus" class="status-line" aria-live="polite"></p>
+        </div>
+      </div>
+      <section aria-labelledby="albumTracksHeading">
+        <h4 id="albumTracksHeading">Tracklist</h4>
+        <p id="albumTracksNote" class="section-note" role="status" hidden></p>
+        <ol id="albumTracks" class="track-list"></ol>
+      </section>
+      <section aria-labelledby="albumSimilarArtistsHeading">
+        <h4 id="albumSimilarArtistsHeading">Similar artists</h4>
+        <p id="albumSimilarArtistsNote" class="section-note" role="status" hidden></p>
+        <ul id="albumSimilarArtists" class="library-list"></ul>
+      </section>
+      <section aria-labelledby="albumSimilarAlbumsHeading">
+        <h4 id="albumSimilarAlbumsHeading">Similar albums</h4>
+        <p id="albumSimilarAlbumsNote" class="section-note" role="status" hidden></p>
+        <ul id="albumSimilarAlbums" class="album-row-list"></ul>
+      </section>
     </div>
     <div id="libraryGenreView" hidden>
       <button type="button" id="genreBack">Back</button>

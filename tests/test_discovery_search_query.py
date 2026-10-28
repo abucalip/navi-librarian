@@ -163,7 +163,7 @@ class ArtistLookupTests(unittest.TestCase):
                          ["Airbag", "Pablo Honey", "Kid A", "Amnesiac"])
         self.assertIsNone(albums[-1]["year"])
         self.assertEqual(albums[0]["key"], "radiohead/airbag")
-        self.assertEqual(set(albums[0]), {"name", "year", "song_count", "key"})
+        self.assertEqual(set(albums[0]), {"name", "year", "song_count", "key", "id", "artwork_url"})
 
 
 class ArtistPageTests(unittest.TestCase):

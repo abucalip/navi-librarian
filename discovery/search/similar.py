@@ -19,6 +19,7 @@ from typing import Any
 from discovery.search.merge import OwnedKeys, same_entity
 from discovery.search.normalize import normalize_key
 from discovery.search.providers import DISCOGS_ATTRIBUTION
+from discovery.search.query import artwork_url
 
 SIMILAR_LIMIT = 20
 LASTFM = "lastfm"
@@ -125,6 +126,8 @@ def fuse_similar(
         items.append({
             **extra,
             "name": entry["candidate"]["name"],
+            "key": entry["candidate"]["key"],
+            "artwork_url": artwork_url(owned_artist["id"]) if owned_artist else None,
             "mbid": entry["candidate"]["mbid"],
             "owned": owned_artist is not None,
             "id": owned_artist["id"] if owned_artist else None,
