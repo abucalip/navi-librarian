@@ -71,7 +71,7 @@ Remaining Phase 0 decisions that come first or alongside: whether to raise `CF_M
 - **P5: closed with exceptions (2026-10-26).** PRs #626 to #629 are merged. Still open and deferred by the owner: real-browser checks; the 3.0 s `done` target with a slow MusicBrainz; P3 follow-ups (weight and scale tuning, full-library precompute timing, two artists whose precompute failed, a settings switch for precompute). Fixed: provider cache reads (#628), precompute start rotation (#629). Evidence in `PROJECT_LOG.md`.
 - **Library pages: merged in PR [#630](https://github.com/abucalip/navi-librarian/pull/630)** (squash `70b5330`, tested head `327c477`; all required checks and the full unit suite passed in CI). Artist, album and genre pages reachable from everywhere; contract section 14. The manual browser checklist ([LOCAL_UI_TESTING.md](LOCAL_UI_TESTING.md)) has not been done. Not published or deployed.
 
-### 2e. Refresh keeps the current page — requested by the owner, not started
+### 2e. Refresh keeps the current page — implemented on branch `ui/refresh-keeps-page`, not merged
 
 Today a browser refresh always returns to the dashboard, because the current page lives only in script state. Goal: a refresh returns to the page the owner was on. PR #630 (the library navigation it depends on) is merged.
 
@@ -85,6 +85,7 @@ Acceptance: refresh on any top-level page, and on an artist, album or genre page
 6. **Tests.** Source-contract tests for the hash read and write, a round-trip test of the encode and decode helpers with awkward names, and a fallback test for an unknown hash. Then the manual refresh check on each page type.
 7. **Docs.** Add the address format to `REQUIREMENTS.md` once agreed.
 
+- **Status:** steps 1 to 7 (automated part of 6) are implemented on the branch. Step 5 (browser Back and Forward via pushState and popstate) is implemented too. The manual refresh check on each page type has not been done. Focused tests only (`tests/test_refresh_keeps_page_ui_contract.py`, login and library-search contract tests); the full suite is left to the owner and CI.
 - Not published or deployed.
 
 ## 3. Recommendation engine — gated
