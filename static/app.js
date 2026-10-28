@@ -3486,6 +3486,8 @@ function currentLocationHash() {
 
 // Pushes a history entry, so the browser Back and Forward buttons step through the in-app pages.
 // Backing out of a library page with the in-app button replaces the entry instead of pushing.
+// The library views move focus to their heading on a user's navigation; restoring from the address
+// skips that, or a refresh would show the browser's focus ring around the heading.
 let applyingHash = false;
 
 function syncLocationHash({replace = false} = {}) {
@@ -3867,7 +3869,7 @@ function renderArtist(target) {
   $('artistAlbumsSection').hidden = false;
   $('artistSimilarSection').hidden = false;
   setStatus(status, 'Loading…', 'loading');
-  heading.focus();
+  if (!applyingHash) heading.focus();
 
   const params = new URLSearchParams();
   if (target.id) params.set('id', target.id);
@@ -4072,7 +4074,7 @@ function renderAlbum(target) {
   setStatus(status, '', 'idle');
   setAlbumHero(target, seq);
   setAlbumPagePlatformLinks(target.artist, target.name, target.mbid);
-  heading.focus();
+  if (!applyingHash) heading.focus();
 
   const params = new URLSearchParams();
   if (target.id) params.set('id', target.id);
@@ -4206,7 +4208,7 @@ async function renderGenre(tag) {
   $('genreArtists').replaceChildren();
   $('genreAlbums').replaceChildren();
   setStatus(status, 'Loading…', 'loading');
-  heading.focus();
+  if (!applyingHash) heading.focus();
   try {
     const response = await fetch('/api/genres/' + encodeURIComponent(tag));
     const data = await response.json();

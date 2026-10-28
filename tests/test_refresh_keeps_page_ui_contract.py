@@ -58,6 +58,12 @@ class RefreshKeepsPageSourceTests(unittest.TestCase):
         self.assertIn("decodeLibraryHash(hash)", apply_hash)
         self.assertIn("'dashboard'", apply_hash)
 
+    def test_restoring_from_the_address_does_not_focus_the_heading(self):
+        for name in ("renderArtist", "renderAlbum", "renderGenre"):
+            source = _function_source(self.js, name)
+            self.assertIn("if (!applyingHash) heading.focus();", source, name)
+            self.assertNotIn("\n  heading.focus();", source, name)
+
     def test_login_keeps_the_hash(self):
         login = LOGIN_JS.read_text(encoding="utf-8")
         self.assertIn("window.location.replace('/'+window.location.hash)", login)
