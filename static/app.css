@@ -964,7 +964,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 }
 .radio-switch-knob {
   position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--text-muted); transition: transform var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease-out);
+  background: var(--text-muted); transition: transform var(--dur-slow) var(--ease-out);
 }
 .radio-switch[aria-checked="true"] { background: var(--ink); border-color: var(--accent); }
 .radio-switch[aria-checked="true"] .radio-switch-knob { transform: translateX(16px); background: var(--accent); }
