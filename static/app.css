@@ -433,7 +433,7 @@ summary { min-height: 44px; display: list-item; padding-top: 10px; padding-botto
 .quality-priority-list { display: grid; gap: 8px; max-width: 680px; margin: 12px 0 18px; padding: 0; list-style: none; }
 /* Compact 48px rows for Settings (DESIGN_SYSTEM.md 6). The move buttons keep 44px targets. */
 .quality-priority-item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 8px 0 0; border: 1px solid var(--edge); border-radius: 4px; background: var(--surface); will-change: transform; }
-.quality-priority-item.is-idle { transition: transform .25s ease; }
+.quality-priority-item.is-idle { transition: transform var(--dur-slow) var(--ease-out); }
 .quality-priority-item.is-draggable { z-index: 10; border-color: var(--accent); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); cursor: grabbing; }
 /* The grip is the drag handle: a 44px target that opts out of touch scrolling so touch drags reach the pointer handlers. */
 .quality-priority-grip { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; color: var(--accent); font: var(--text-md)/1 var(--mono); cursor: grab; user-select: none; touch-action: none; }
