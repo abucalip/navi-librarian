@@ -1,3 +1,11 @@
+## 2026-10-29 — Album page redesign: PR #635 merged
+
+- **Merged:** PR [#635](https://github.com/abucalip/navi-librarian/pull/635), squash commit `58a8148b05066d7008d8b1f3eabdecb5fcf0c7d6`, from tested head `0741da3276ef1a1ef256efe4d991ae3bd9af74c6`, at the owner's direction. All five required checks passed (compile, test-and-build, container-smoke, validate-container, validate-release-workflow; `publish-release` skipped).
+- **What changed:** the album page is one centered column: large cover, bold title, artist, genre and year, description (three lines on desktop, six on a phone, plain-text Read more only when there is more), tracklist with number, title, length and an owned check, a centered summary line ("N songs, H hour M minutes · X in your library"), a centered row of service links, ranked similar albums with numerals, similar-artist circles. The Library heading and text Back button are gone (icon-only back button).
+- **Backend:** per-track `owned` on the `tracks` section (title match, or track number plus length within 3 s; library-only songs appended; owned albums fall back to the library tracklist when providers fail). New `genre` section (library genre, else first artist tag); the owner approved a genre field, built as its own section like `year`. Contract: `SEARCH_CONTRACT.md` 14.4.
+- **Not built:** the per-track Get button. Song-only acquisition is a new pipeline; the draft is in `ALBUM_PAGE_REDESIGN_PROPOSAL.md` section 3 and waits for the owner's decisions.
+- **Verification:** focused album, search-route and UI-contract tests passed; the browser checklist and live provider checks were not done. `tests/test_acquisition_import.py` `test_success_persists_importing_before_import_and_then_imported` fails on a local clean `main` too and passed in CI.
+
 ## 2026-10-29 — Artist page redesign: PR #634 merged
 
 - **Merged:** PR [#634](https://github.com/abucalip/navi-librarian/pull/634), squash commit `2ca07f86e931a7aee5c84a2bcd80e81da9834803`, from tested head `ac18b86e8352ada5a2ac01b1eaa8772869e47c8e`, at the owner's direction.

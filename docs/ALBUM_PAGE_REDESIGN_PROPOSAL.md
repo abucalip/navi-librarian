@@ -1,6 +1,6 @@
 # Album page redesign: layout record and song-only Get proposal
 
-Status: layout, `genre` and per-track `owned` are **implemented on branch `album-page-redesign`** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is a **draft for owner approval; nothing of it is built**.
+Status: layout, `genre` and per-track `owned` are **merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635)** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is a **draft for owner approval; nothing of it is built**.
 
 ## 1. Layout requested by the owner
 

@@ -926,7 +926,7 @@ Proposal and layout record: `ARTIST_PAGE_REDESIGN_PROPOSAL.md`. Status: merged i
 
 ### 14.4 Album page redesign: per-track ownership and genre (approved by the owner, 2026-10-29)
 
-Layout record and the song-only Get proposal: `ALBUM_PAGE_REDESIGN_PROPOSAL.md`. Status: implemented on branch `album-page-redesign`.
+Layout record and the song-only Get proposal: `ALBUM_PAGE_REDESIGN_PROPOSAL.md`. Status: merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635) (squash `58a8148`); not browser-checked by the owner. The per-track Get button is not built.
 
 - **`tracks` items add `owned`** (bool). The tracklist now comes from the provider race for every album, owned or not; each track is `owned` when a library song on this album has the same normalized title, or the same track number and a length within 3 seconds (remasters rename tracks but keep their place). Library songs the provider does not list are appended with `owned: true`. When no provider answers, an owned album falls back to the library's own tracklist (every track `owned: true`); an unowned album with no answer is unchanged (`source_failed` or `deadline`). Matching is per album: a song owned on a different album (a compilation, say) does not make the track owned.
 - **New section `genre`** (`genre`: string or null), emitted like `year`: at once when the library has a genre for the album or its artist, otherwise looked up as the artist's first MusicBrainz tag or Discogs style (`complete: false`, reason `deadline` when a lookup ran out of time). Library genres are lower-cased, like tags. A null genre is a valid answer.
