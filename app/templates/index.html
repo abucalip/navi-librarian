@@ -317,7 +317,7 @@
       <section id="artistMissingSection" aria-labelledby="artistMissingHeading">
         <h4 id="artistMissingHeading">Missing albums</h4>
         <p id="artistMissingNote" class="section-note" role="status" hidden></p>
-        <ol id="artistMissingAlbums" class="album-row-list missing-album-list"></ol>
+        <ol id="artistMissingAlbums" class="album-row-list ranked-album-list"></ol>
         <button type="button" id="artistMissingAll" class="show-all-button" hidden>All missing albums</button>
       </section>
       <section id="artistSimilarSection" aria-labelledby="artistSimilarHeading">
@@ -327,17 +327,14 @@
       </section>
     </div>
     <div id="libraryAlbumView" hidden>
-      <button type="button" id="albumBack">Back</button>
-      <div class="album-hero">
-        <div class="album-hero-media">
+      <div class="album-page">
+        <button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
+        <div class="album-head">
           <div class="album-hero-art-wrap"><div id="albumAction" class="album-hero-action"></div></div>
-          <div id="albumPlatformLinks" class="album-platform-links" role="group" aria-label="Open this album on music services"></div>
-        </div>
-        <div class="album-hero-text">
-          <h3 id="albumHeading" tabindex="-1"></h3>
+          <h2 id="albumHeading" tabindex="-1"></h2>
           <p id="albumArtist" class="album-hero-artist"></p>
-          <p id="albumYear" class="album-hero-year"></p>
-          <p id="albumOwnership" class="album-hero-year" hidden>Not in your library</p>
+          <p class="album-meta"><span id="albumGenre"></span><span id="albumYear"></span></p>
+          <p id="albumOwnership" class="album-meta" hidden>Not in your library</p>
           <div id="albumDescription" class="album-description" hidden>
             <div id="albumDescriptionText" class="album-description-text"></div>
             <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
@@ -345,23 +342,25 @@
           </div>
           <p id="albumStatus" class="status-line" aria-live="polite"></p>
         </div>
+        <section aria-labelledby="albumTracksHeading">
+          <h3 id="albumTracksHeading" class="sr-only">Tracklist</h3>
+          <p id="albumTracksNote" class="section-note" role="status" hidden></p>
+          <ol id="albumTracks" class="track-list"></ol>
+          <p id="albumSummary" class="album-summary"></p>
+          <div id="albumPlatformLinks" class="album-platform-links" role="group" aria-label="Open this album on music services"></div>
+        </section>
+        <section aria-labelledby="albumSimilarAlbumsHeading">
+          <h4 id="albumSimilarAlbumsHeading">Similar albums</h4>
+          <p id="albumSimilarAlbumsNote" class="section-note" role="status" hidden></p>
+          <ol id="albumSimilarAlbums" class="album-row-list ranked-album-list"></ol>
+          <button type="button" id="albumSimilarAlbumsAll" class="show-all-button" hidden>All albums</button>
+        </section>
+        <section aria-labelledby="albumSimilarArtistsHeading">
+          <h4 id="albumSimilarArtistsHeading">Similar artists</h4>
+          <p id="albumSimilarArtistsNote" class="section-note" role="status" hidden></p>
+          <ul id="albumSimilarArtists" class="library-list similar-artists"></ul>
+        </section>
       </div>
-      <section aria-labelledby="albumTracksHeading">
-        <h4 id="albumTracksHeading">Tracklist</h4>
-        <p id="albumTracksNote" class="section-note" role="status" hidden></p>
-        <ol id="albumTracks" class="track-list"></ol>
-      </section>
-      <section aria-labelledby="albumSimilarArtistsHeading">
-        <h4 id="albumSimilarArtistsHeading">Similar artists</h4>
-        <p id="albumSimilarArtistsNote" class="section-note" role="status" hidden></p>
-        <ul id="albumSimilarArtists" class="library-list similar-artists"></ul>
-      </section>
-      <section aria-labelledby="albumSimilarAlbumsHeading">
-        <h4 id="albumSimilarAlbumsHeading">Similar albums</h4>
-        <p id="albumSimilarAlbumsNote" class="section-note" role="status" hidden></p>
-        <ul id="albumSimilarAlbums" class="album-row-list"></ul>
-        <button type="button" id="albumSimilarAlbumsAll" class="show-all-button" hidden>All albums</button>
-      </section>
     </div>
     <div id="libraryGenreView" hidden>
       <button type="button" id="genreBack">Back</button>

@@ -190,7 +190,8 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("section.section === 'description'", self.new_js)
         self.assertIn("for (const paragraph of paragraphs) addTextElement(text, 'p', '', paragraph);", self.new_js)
         self.assertIn(".album-description-text.is-collapsed p:not(:first-child) { display: none; }", self.css)
-        self.assertIn(".album-hero { display: flex; align-items: flex-start;", self.css)
+        self.assertIn(".album-head { display: grid; justify-items: center;", self.css)
+        self.assertIn("-webkit-line-clamp: 3; overflow: hidden; }\n@media (max-width: 620px) { .album-description-text.is-collapsed p:first-child { -webkit-line-clamp: 6; } }", self.css)
 
     def test_an_empty_album_status_draws_no_marker(self):
         self.assertIn("setStatus(status, '', 'idle');", self.new_js)
@@ -206,14 +207,14 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('<div class="artist-hero">', self.html)
         self.assertIn("$('libraryIntro').hidden = name !== 'list';", self.new_js)
         self.assertIn("buildArtwork(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), 'artist-hero-art')", self.new_js)
-        self.assertIn("$('libraryHeading').hidden = name === 'artist';", self.new_js)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album';", self.new_js)
         self.assertIn("'/api/artist-image?'", self.new_js)
         self.assertIn("#artistDetailHeading { margin: 0; font: 700 clamp(2.75rem, 8vw, 6.5rem)/.92 var(--display);", self.css)
 
     def test_artist_page_has_an_icon_only_back_button_and_no_library_heading(self):
         self.assertIn('<button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back">', self.html)
         self.assertNotIn(">Back</button>\n      <div class=\"artist-hero\">", self.html)
-        self.assertIn("$('libraryHeading').hidden = name === 'artist';", self.new_js)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist' || name === 'album';", self.new_js)
 
     def test_artist_page_top_songs_show_rank_title_listens_and_an_owned_check_without_play_buttons(self):
         self.assertIn("function buildTopSongRow(item) {", self.new_js)
@@ -231,6 +232,33 @@ class LibrarySearchUIContractTests(unittest.TestCase):
     def test_artist_page_shows_at_most_three_genre_tags(self):
         self.assertIn("const ARTIST_TAGS_SHOWN = 3;", self.new_js)
         self.assertIn("}, ARTIST_TAGS_SHOWN);", self.new_js)
+
+    def test_album_page_is_one_centered_column_in_the_owner_s_order(self):
+        album = self.html[self.html.index('<div id="libraryAlbumView" hidden>'):self.html.index('<div id="libraryGenreView"')]
+        order = ['id="albumAction"', 'id="albumHeading"', 'id="albumArtist"', 'id="albumGenre"', 'id="albumYear"',
+                 'id="albumDescription"', 'id="albumTracks"', 'id="albumPlatformLinks"', 'id="albumSimilarAlbums"',
+                 'id="albumSimilarArtists"']
+        positions = [album.index(part) for part in order]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('<button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back">', album)
+        self.assertIn('<ol id="albumSimilarAlbums" class="album-row-list ranked-album-list"></ol>', album)
+        self.assertIn(".album-page { position: relative; max-width: 880px; margin: 0 auto;", self.css)
+
+    def test_album_tracks_show_number_title_length_and_an_owned_check(self):
+        self.assertIn("function buildTrackRow(track, index) {", self.new_js)
+        self.assertIn("row.append(track.owned ? buildOwnedCheck() : document.createElement('span'));", self.new_js)
+        self.assertIn("fillRows($('albumTracks'), section.items, buildTrackRow);", self.new_js)
+        self.assertIn("function albumSummary(tracks) {", self.new_js)
+
+    def test_album_genre_is_a_text_link_before_the_year(self):
+        self.assertIn("section.section === 'genre'", self.new_js)
+        self.assertIn("buildLibraryLink(genre, {type: 'genre', tag: genre}, 'genre-text-link')", self.new_js)
+        self.assertIn('#albumGenre:not(:empty) + #albumYear:not(:empty)::before', self.css)
+
+    def test_album_description_read_more_appears_only_when_there_is_more(self):
+        self.assertIn("function fitAlbumDescription() {", self.new_js)
+        self.assertIn("const long = text.childElementCount > 1 || first.scrollHeight > first.clientHeight + 1;", self.new_js)
+        self.assertNotIn("ALBUM_DESCRIPTION_CLAMP_LENGTH", self.new_js)
 
     def test_index_states_are_never_shown_as_an_empty_library(self):
         self.assertIn("if (data.index_state === 'building' || data.index_state === 'unavailable') {", self.new_js)

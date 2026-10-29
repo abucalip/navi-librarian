@@ -1,9 +1,11 @@
-"""Album page sections: ``album``, ``tracks``, ``similar_artists`` and ``similar_albums``.
+"""Album page sections: ``album``, ``year``, ``genre``, ``description``, ``tracks``, ``similar_artists`` and ``similar_albums``.
 
-An owned album takes its tracks from the owned index. Every other tracklist comes from a race
-between the providers that can supply one (Deezer, Last.fm, MusicBrainz): the first non-empty
-answer wins, so the page waits for the fastest source rather than the best one. Sections are
-yielded as they finish, so the album header never waits for the network.
+The tracklist comes from a race between the providers that can supply one (Deezer, Last.fm,
+MusicBrainz): the first non-empty answer wins, so the page waits for the fastest source rather
+than the best one. Each track is marked ``owned`` against the library's songs for that album
+(by title, or by track number and length), and library songs the provider does not list are
+appended as owned. When no provider answers, an owned album falls back to the library's own
+tracklist. Sections are yielded as they finish, so the album header never waits for the network.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from discovery.search.artist_sections import (
     _lastfm_albums,
     resolve_identity,
     similar_items,
+    tag_items,
 )
 from discovery.search.cache import provider_cache_key
 from discovery.search.index import OwnedData
@@ -29,13 +32,15 @@ from discovery.search.merge import OwnedKeys
 from discovery.search.normalize import normalize_key
 from discovery.search.query import artwork_url
 
-ALBUM_SECTION_ORDER = ("album", "year", "description", "tracks", "similar_artists", "similar_albums")
+ALBUM_SECTION_ORDER = ("album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums")
+# A provider track and a library song with the same number and a length within this many seconds are one track.
+TRACK_LENGTH_TOLERANCE_SECONDS = 3
 SIMILAR_ALBUM_ARTISTS = 6
 SIMILAR_ALBUM_LIMIT = 12
 
 
 def _payload_key(section: str) -> str:
-    return section if section in ("year", "description") else "items"
+    return section if section in ("year", "genre", "description") else "items"
 
 
 def find_album(data: OwnedData, artist_key: str, album_key: str, album_id: str | None) -> dict[str, Any] | None:
@@ -55,9 +60,46 @@ def owned_tracks(data: OwnedData, album_id: str) -> list[dict[str, Any]]:
         key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()),
     )
     return [
-        {"track_number": s["track_number"] or index + 1, "title": s["name"], "duration_seconds": s["duration"] or 0}
+        {"track_number": s["track_number"] or index + 1, "title": s["name"],
+         "duration_seconds": s["duration"] or 0, "owned": True}
         for index, s in enumerate(songs)
     ]
+
+
+def mark_owned_tracks(provider: list[dict[str, Any]], songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The provider's tracklist with ``owned`` on each track, plus library songs it does not list.
+
+    ``songs`` are the library's songs for this album. A track is owned when a song has the same
+    normalized title, or the same track number and a length within a few seconds (remasters
+    rename tracks but keep their place). Songs matching no track are appended as owned.
+    """
+    unmatched = list(songs)
+    matched: dict[int, dict[str, Any]] = {}
+    for index, track in enumerate(provider):
+        key = normalize_key(track["title"])
+        song = next((s for s in unmatched if s["name_key"] == key), None)
+        if song is not None:
+            unmatched.remove(song)
+            matched[index] = song
+    for index, track in enumerate(provider):
+        if index in matched or not track.get("duration_seconds"):
+            continue
+        song = next((
+            s for s in unmatched
+            if s["track_number"] == track["track_number"] and s["duration"]
+            and abs(s["duration"] - track["duration_seconds"]) <= TRACK_LENGTH_TOLERANCE_SECONDS
+        ), None)
+        if song is not None:
+            unmatched.remove(song)
+            matched[index] = song
+    items = [{**track, "owned": index in matched} for index, track in enumerate(provider)]
+    extras = sorted(unmatched, key=lambda s: (s["track_number"] is None, s["track_number"] or 0, s["name"].casefold()))
+    for song in extras:
+        items.append({
+            "track_number": song["track_number"] or len(items) + 1,
+            "title": song["name"], "duration_seconds": song["duration"] or 0, "owned": True,
+        })
+    return items
 
 
 def race_tracks(
@@ -190,10 +232,26 @@ def album_sections(
         return {**_available("description", "description", found or {"paragraphs": [], "source": "Apple Music", "url": None})}
 
     def tracks_job() -> dict[str, Any]:
-        tracks = owned_tracks(data, album["id"]) if album and data else []
-        if not tracks:
-            tracks = race_tracks(network, shown_artist, shown_name, rg_mbid, remaining=remaining, cancelled=cancelled)
-        return _available("tracks", "items", tracks)
+        library = owned_tracks(data, album["id"]) if album and data else []
+        try:
+            provider = race_tracks(network, shown_artist, shown_name, rg_mbid, remaining=remaining, cancelled=cancelled)
+        except Exception:
+            if not library:
+                raise
+            # No provider answered: an owned album still lists what the library has.
+            return _available("tracks", "items", library)
+        songs = sorted(
+            (s for s in data.songs if s["album_id"] == album["id"]), key=lambda s: s["track_number"] or 0,
+        ) if album and data else []
+        return _available("tracks", "items", mark_owned_tracks(provider, songs) if provider else library)
+
+    def genre_job() -> dict[str, Any]:
+        tags = tag_items(
+            network, shown_artist, artist_id, remaining=remaining, cancelled=cancelled,
+            known_mbid=(owned_artist or {}).get("mbid"),
+        )
+        names = tags.get("items") or []
+        return {**_available("genre", "genre", names[0]["name"] if names else None), "complete": tags["complete"]}
 
     def similar_job() -> dict[str, Any]:
         section = similar_items(
@@ -205,13 +263,18 @@ def album_sections(
         return section
 
     # The year is in the section at once when the library or the caller knows it; otherwise it is looked up.
-    pool = ThreadPoolExecutor(max_workers=5)
+    pool = ThreadPoolExecutor(max_workers=6)
     try:
         pending = {
             pool.submit(tracks_job): "tracks",
             pool.submit(similar_job): "similar_artists",
             pool.submit(description_job): "description",
         }
+        library_genre = (album or {}).get("genre") or (owned_artist or {}).get("genre")
+        if library_genre:
+            yield _available("genre", "genre", library_genre.casefold())
+        else:
+            pending[pool.submit(genre_job)] = "genre"
         if known_year is not None:
             yield _available("year", "year", known_year)
         else:

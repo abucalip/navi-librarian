@@ -371,8 +371,10 @@ class AlbumAndUnownedArtistRouteTests(SearchRouteTests):
         body = self.client.get("/api/albums/radiohead/kid a").json()
         self.assertEqual(body["sections"]["album"]["album"]["id"], "al1")
         self.assertTrue(body["sections"]["album"]["album"]["owned"])
-        self.assertEqual([t["title"] for t in body["sections"]["tracks"]["items"]], ["Kid A"])
-        self.assertEqual(set(body["sections"]), {"album", "year", "description", "tracks", "similar_artists", "similar_albums"})
+        # The provider lists "Found"; the library's song "Kid A" matches no track and is appended as owned.
+        self.assertEqual([(t["title"], t["owned"]) for t in body["sections"]["tracks"]["items"]],
+                         [("Found", False), ("Kid A", True)])
+        self.assertEqual(set(body["sections"]), {"album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums"})
 
     def test_unowned_album_needs_artist_and_name(self):
         response = self.client.get("/api/albums/portishead/dummy")
@@ -395,7 +397,7 @@ class AlbumAndUnownedArtistRouteTests(SearchRouteTests):
         self.assertEqual(names[0], "capabilities")
         self.assertEqual(names[-1], "done")
         self.assertEqual({d["section"] for n, d in parse_sse(response.text) if n == "section"},
-                         {"album", "year", "description", "tracks", "similar_artists", "similar_albums"})
+                         {"album", "year", "genre", "description", "tracks", "similar_artists", "similar_albums"})
 
     def test_unknown_key_with_a_name_is_served_as_an_unowned_artist(self):
         body = self.client.get("/api/artists/portishead", params={"name": "Portishead", "mbid": "mb-p"}).json()

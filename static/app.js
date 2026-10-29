@@ -3613,8 +3613,8 @@ function libraryShow(name) {
   for (const [view, id] of Object.entries(LIBRARY_VIEWS)) $(id).hidden = view !== name;
   // The page intro belongs to the list; every other view is the reading path.
   $('libraryIntro').hidden = name !== 'list';
-  // The artist page opens on the photo: the section heading would only repeat the sidebar tab.
-  $('libraryHeading').hidden = name === 'artist';
+  // The artist and album pages open on the picture: the section heading would only repeat the sidebar tab.
+  $('libraryHeading').hidden = name === 'artist' || name === 'album';
 }
 
 function closeLibraryStreams() {
@@ -4028,7 +4028,7 @@ function setSectionNote(id, message) {
 
 function fillRows(list, items, build, limit = Infinity) {
   list.replaceChildren();
-  for (const item of items.slice(0, limit)) list.append(build(item));
+  items.slice(0, limit).forEach((item, index) => list.append(build(item, index)));
 }
 
 // Artist and album pages show a random few of the similar artists, as circles across the page.
@@ -4336,28 +4336,37 @@ function formatDuration(seconds) {
   return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
 }
 
-// Apple Music's notes: the first paragraph shows; the rest (or the rest of a single very long
-// paragraph) opens with Read more. Albums Apple has no notes for show no description at all.
-const ALBUM_DESCRIPTION_CLAMP_LENGTH = 700;
-
+// Apple Music's notes: the first paragraph shows, three lines of it (six on a phone). "Read more"
+// appears only when there is more to show: a second paragraph or a first one that overflows.
+// Albums Apple has no notes for show no description at all.
 function setAlbumDescription(description) {
   const box = $('albumDescription');
   const text = $('albumDescriptionText');
-  const toggle = $('albumDescriptionToggle');
   const paragraphs = description && Array.isArray(description.paragraphs) ? description.paragraphs : [];
   text.replaceChildren();
   box.hidden = !paragraphs.length;
-  toggle.hidden = true;
+  $('albumDescriptionToggle').hidden = true;
+  $('albumDescriptionToggle').setAttribute('aria-expanded', 'false');
   if (!paragraphs.length) return;
   for (const paragraph of paragraphs) addTextElement(text, 'p', '', paragraph);
-  const long = paragraphs.length > 1 || paragraphs[0].length > ALBUM_DESCRIPTION_CLAMP_LENGTH;
-  text.classList.toggle('is-collapsed', long);
-  toggle.hidden = !long;
-  toggle.textContent = 'Read more';
-  toggle.setAttribute('aria-expanded', 'false');
   const link = $('albumDescriptionLink');
   link.href = description.url || '#';
   link.hidden = !description.url;
+  fitAlbumDescription();
+}
+
+function fitAlbumDescription() {
+  const box = $('albumDescription');
+  const text = $('albumDescriptionText');
+  const toggle = $('albumDescriptionToggle');
+  // A page that is not on screen has no layout to measure; the next resize or visit fits it.
+  if (box.hidden || !text.clientWidth || toggle.getAttribute('aria-expanded') === 'true') return;
+  text.classList.add('is-collapsed');
+  const first = text.firstElementChild;
+  const long = text.childElementCount > 1 || first.scrollHeight > first.clientHeight + 1;
+  text.classList.toggle('is-collapsed', long);
+  toggle.hidden = !long;
+  toggle.textContent = 'Read more';
 }
 
 function toggleAlbumDescription() {
@@ -4375,6 +4384,8 @@ function renderAlbum(target) {
   heading.textContent = displayAlbumName(target.name) || 'Loading album…';
   $('albumArtist').replaceChildren();
   $('albumYear').textContent = target.year || '';
+  $('albumGenre').replaceChildren();
+  $('albumSummary').textContent = '';
   $('albumOwnership').hidden = target.owned !== false;
   $('albumAction').replaceChildren();
   $('albumTracks').replaceChildren();
@@ -4426,6 +4437,38 @@ function setAlbumHero(target, seq) {
   hero.prepend(frame);
 }
 
+// The genre sits before the year, as a link to its page; an album with none shows the year alone.
+function setAlbumGenre(genre) {
+  const box = $('albumGenre');
+  box.replaceChildren();
+  if (genre) box.append(buildLibraryLink(genre, {type: 'genre', tag: genre}, 'genre-text-link'));
+}
+
+// A track: number, title, length, and a green check when the library has the song.
+function buildTrackRow(track, index) {
+  const row = document.createElement('li');
+  row.className = 'track';
+  addTextElement(row, 'span', 'track-number', track.track_number || index + 1);
+  addTextElement(row, 'span', 'track-title', track.title);
+  addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
+  row.append(track.owned ? buildOwnedCheck() : document.createElement('span'));
+  return row;
+}
+
+// "17 songs, 1 hour 1 minute", plus how many the library has when it has some but not all.
+function albumSummary(tracks) {
+  const parts = [pluralize(tracks.length, 'song', 'songs')];
+  const seconds = tracks.reduce((sum, track) => sum + (track.duration_seconds || 0), 0);
+  if (tracks.every(track => track.duration_seconds) && seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    parts[0] += ', ' + [hours ? pluralize(hours, 'hour', 'hours') : '', minutes || !hours ? pluralize(minutes, 'minute', 'minutes') : ''].filter(Boolean).join(' ');
+  }
+  const owned = tracks.filter(track => track.owned).length;
+  if (owned && owned < tracks.length) parts.push(owned + ' in your library');
+  return parts.join(' · ');
+}
+
 function applyAlbumSection(section, target) {
   if (section.section === 'album') {
     const album = section.album;
@@ -4460,14 +4503,14 @@ function applyAlbumSection(section, target) {
     setAlbumDescription(section.description);
     return false;
   }
+  if (section.section === 'genre') {
+    setAlbumGenre(section.available ? section.genre : null);
+    return false;
+  }
   if (section.section === 'tracks') {
     if (section.available && section.items.length) {
-      fillRows($('albumTracks'), section.items, track => {
-        const row = document.createElement('li');
-        addTextElement(row, 'span', 'track-title', track.title);
-        addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
-        return row;
-      });
+      fillRows($('albumTracks'), section.items, buildTrackRow);
+      $('albumSummary').textContent = albumSummary(section.items);
       setSectionNote('albumTracksNote', '');
     } else {
       setSectionNote('albumTracksNote', section.available ? 'No tracklist was found for this album.'
@@ -4599,6 +4642,6 @@ $('librarySort').addEventListener('change', () => {
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListener('click', libraryBack);
 $('artistBioToggle').addEventListener('click', toggleArtistBio);
-window.addEventListener('resize', fitArtistBio);
+window.addEventListener('resize', () => { fitArtistBio(); fitAlbumDescription(); });
 $('albumDescriptionToggle').addEventListener('click', toggleAlbumDescription);
 if (window.location.hash) applyHash(window.location.hash);
