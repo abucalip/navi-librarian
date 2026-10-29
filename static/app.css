@@ -959,15 +959,15 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .radio-remove .icon { width: 20px; height: 20px; }
 /* A switch is a button with role="switch": the click is asynchronous, so the state changes only once the server has. */
 .radio-switch {
-  position: relative; flex: 0 0 auto; width: 52px; height: 32px; min-height: 0; padding: 0; border-radius: 16px;
+  position: relative; flex: 0 0 auto; width: 40px; height: 24px; min-height: 0; padding: 0; border-radius: 12px;
   background: var(--surface-hover); border: 1px solid var(--edge); cursor: pointer;
 }
 .radio-switch-knob {
-  position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
   background: var(--text-muted); transition: transform var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease-out);
 }
-.radio-switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
-.radio-switch[aria-checked="true"] .radio-switch-knob { transform: translateX(20px); background: var(--on-accent); }
+.radio-switch[aria-checked="true"] { background: var(--ink); border-color: var(--accent); }
+.radio-switch[aria-checked="true"] .radio-switch-knob { transform: translateX(16px); background: var(--accent); }
 .radio-switch:disabled { opacity: .6; cursor: progress; }
 .radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .radio-switch-knob { transition: none; } }
