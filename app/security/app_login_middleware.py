@@ -11,13 +11,17 @@ PUBLIC_PATHS = frozenset({
     "/api/auth/logout",
 })
 
+# Subsonic clients play radio through the relay without the web session cookie; the
+# per-station token in the path is the credential (integrations/radio/stations.py).
+PUBLIC_PREFIXES = ("/static/", "/radio/stream/")
+
 
 def create_app_login_middleware(*, auth_configured, session_username, cookie_name):
     """Return the HTTP middleware that protects app routes when an owner is configured."""
 
     async def require_app_login(request: Request, call_next):
         path = request.url.path
-        is_public_asset = path.startswith("/static/") or path == "/assets/cassette.png"
+        is_public_asset = path.startswith(PUBLIC_PREFIXES) or path == "/assets/cassette.png"
         if path not in PUBLIC_PATHS and not is_public_asset and auth_configured():
             username = session_username(request.cookies.get(cookie_name))
             if username:

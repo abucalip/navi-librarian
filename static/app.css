@@ -942,3 +942,32 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-page .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-page .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (max-width: 620px) { .track { gap: var(--space-2); } }
+
+/* Grab the radio: stations and the songs heard, as plain rows with the name on the left and the actions on the right. */
+.radio-list { display: flex; flex-direction: column; border-top: 1px solid var(--edge); margin-bottom: 20px; }
+.radio-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px;
+  background: var(--surface); border-bottom: 1px solid var(--edge);
+}
+.radio-main { min-width: 0; }
+.radio-title { margin: 0; color: var(--text); font: 600 var(--text-base)/1.25 var(--body); overflow-wrap: anywhere; }
+.radio-meta { margin: 2px 0 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.radio-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.radio-actions { align-items: center; }
+.radio-actions .get-album { width: 40px; height: 40px; }
+.radio-remove { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
+.radio-remove .icon { width: 20px; height: 20px; }
+/* A switch is a button with role="switch": the click is asynchronous, so the state changes only once the server has. */
+.radio-switch {
+  position: relative; flex: 0 0 auto; width: 40px; height: 24px; min-height: 0; padding: 0; border-radius: 12px;
+  background: var(--surface-hover); border: 1px solid var(--edge); cursor: pointer;
+}
+.radio-switch-knob {
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text-muted); transition: transform var(--dur-slow) var(--ease-out);
+}
+.radio-switch[aria-checked="true"] { background: var(--ink); border-color: var(--accent); }
+.radio-switch[aria-checked="true"] .radio-switch-knob { transform: translateX(16px); background: var(--accent); }
+.radio-switch:disabled { opacity: .6; cursor: progress; }
+.radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .radio-switch-knob { transition: none; } }
