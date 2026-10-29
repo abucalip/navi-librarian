@@ -79,6 +79,14 @@ Done: the address hash holds the page (`#<page>` or `#library/artist|album|genre
 - **Known limit:** the in-app library stack is not stored in the address, so after a refresh the in-app Back button returns to the library list. Opening a library page from a link elsewhere adds two history entries (the library, then the page).
 - Published, not deployed.
 
+### 2f. Dashboard genres, shelves and Recommended slider — merged in PR [#632](https://github.com/abucalip/navi-librarian/pull/632)
+
+Done: Genres grid and four album shelves on the dashboard, the Recommended slider, and the artist and album page limits (five random circular similar artists, seven albums with "All albums"). Requirements: `REQUIREMENTS.md` DASH-01 to DASH-03 and LIB-05. Record: `PROJECT_LOG.md`, 2026-10-29.
+
+- **Open:** the manual browser check on the dashboard and the library pages (`LOCAL_UI_TESTING.md`) has not been done; nothing has run against a live Navidrome.
+- **Known limits:** the slider is for about ten items with one feature and has not been applied to the other card rows; the similar-artist shuffle uses whatever the server returns (up to 20, fewer while the tag cache is cold); after any `index.html` change the app must be restarted or the image rebuilt.
+- Not published or deployed.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).

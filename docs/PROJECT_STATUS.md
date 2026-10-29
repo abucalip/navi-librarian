@@ -1,10 +1,11 @@
 # Project status
 
-Last checked: 2026-10-28. GitHub `main` is authoritative.
+Last checked: 2026-10-29. GitHub `main` is authoritative.
 
 ## Current state
 
 - **Published, not deployed:** image `ghcr.io/abucalip/navi-librarian:v0.2.5` (tag `v0.2.5` at `main` `5873e576ae6c04261e93431209dbf24de7c5e6b1`; package version digest `sha256:543d16bb3ef3b95e9253d057055ce793d10f38cf8b9565f00f0b8096c287ec1c`) was published by release run 40753975898 with the owner's authorization. v0.2.4 (`sha256:3ec82f0d1c20260c0d8f4e82d075972a704673fee54bda5b33d6ad9086827203`) is the rollback reference. Deployment and runtime verification need separate owner authorization.
+- **Dashboard genres, shelves and Recommended slider merged (2026-10-29):** PR [#632](https://github.com/abucalip/navi-librarian/pull/632), squash `b4dc2274c90b61d144ee6e2820f741100d976fb1`, from tested head `5849b95c198188f617bff03d6817d460e4d8a030`; required checks passed on that head. The dashboard gains a Genres grid and New releases, Newly added, Recently played and Most played card shelves; the Recommended row is a slider (works in Firefox); artist and album pages show five random circular similar artists and seven-item album lists with an "All albums" button. Restart or rebuild is needed after the `index.html` change. **Not done:** the manual browser check, a live Navidrome run, deployment. Details: `ACTIVE_WORK.md` 2f.
 - **Refresh keeps the page merged (2026-10-28):** PR [#631](https://github.com/abucalip/navi-librarian/pull/631), squash `5873e576ae6c04261e93431209dbf24de7c5e6b1`, from tested head `aa51d05e02e0d04b609f3730e74294ba55a5086a`; all required checks passed on that head and on the merge commit. A refresh returns to the same page (including artist, album and genre pages), and browser Back and Forward step through in-app pages. **Not done:** the manual browser check, deployment. Details: `ACTIVE_WORK.md` 2e.
 - **Library pages merged (2026-10-28):** PR [#630](https://github.com/abucalip/navi-librarian/pull/630), squash commit `70b5330bb2c9ba46d7645427e3d943a268df7ab8`, from tested head `327c477fdb9862670c78c7b94d0711c62f08de5e`. Every artist, album and genre name in the app opens its library page (a song opens its album); unowned artists have pages; a new album page shows tracklist, year, Apple Music notes, service links, similar artists and similar albums; Library is a sidebar tab. Fixes MusicBrainz album lists that came back empty for artists with many live recordings (the cause of missing years and listen counts). Contract: `SEARCH_CONTRACT.md` section 14. All required CI passed on the tested head, including the full unit suite. **Not done:** the manual browser checklist, publication, deployment.
 - **Global search P5 closed (2026-10-26) with exceptions:** PRs #626, #627, #628 (`2ce6f02`, provider cache reads fixed) and #629 (`1984d3b`, precompute cursor) are merged with required CI green. Index build and owned search meet their targets; the 3.0 s `done` and cache-hit targets are not reliably met while MusicBrainz is slow. Exceptions: real-browser checks, P3 weight tuning, full-library precompute timing, and two artists whose precompute failed (cause not examined). Details in `PROJECT_LOG.md`. No publication, deployment, or runtime verification. **Next action:** the owner's next priority.
@@ -97,7 +98,7 @@ Last checked: 2026-10-28. GitHub `main` is authoritative.
 
 ## Next action
 
-The owner runs the manual browser checklist (`LOCAL_UI_TESTING.md`) on the merged library pages (PR #630, `main` `70b5330`), then decides whether to start the refresh-keeps-the-page task (`ACTIVE_WORK.md` section 2e). Open exceptions from global search P3 to P5 (weight tuning, full-library precompute timing, real-browser checks) stay in `ACTIVE_WORK.md` section 2d.
+The owner runs the manual browser checklist (`LOCAL_UI_TESTING.md`) on the dashboard (PR #632, `main` `b4dc227`) and the merged library pages (PR #630), then decides whether to extend the Recommended slider to other card lists (`ACTIVE_WORK.md` section 2f). Open exceptions from global search P3 to P5 (weight tuning, full-library precompute timing, real-browser checks) stay in `ACTIVE_WORK.md` section 2d.
 
 ## Where to look
 
