@@ -1,3 +1,11 @@
+## 2026-10-29 — Image v0.2.6 published
+
+- **Authorization:** the owner reported that all manual browser tests were done and directed publication of current `main` as v0.2.6.
+- **Checked before tagging:** local `main` equal to `origin/main` at `de8ba76107875ee4c158e4b16e94a6f86d21c07a` (the PR #632 merge `b4dc227` plus the docs commit `de8ba76`); all required checks had passed on the PR head and on `b4dc227` (compile, test-and-build, container-smoke, validate-container); no change besides documentation sits between `b4dc227` and the tag.
+- **Published:** annotated tag `v0.2.6` at `de8ba76107875ee4c158e4b16e94a6f86d21c07a`; release workflow run [40884649738](https://github.com/abucalip/navi-librarian/actions/runs/40884649738) succeeded (`publish-release` success; `validate-release-workflow` skipped as designed). `ghcr.io/abucalip/navi-librarian:v0.2.6` and `:sha-de8ba76107875ee4c158e4b16e94a6f86d21c07a`; package version digest `sha256:4876c6a67817d6ad8a53c8d614d9c4ddcebb4920383e20ddcd5ab9e4408226cc` (GitHub Packages API). v0.2.5 is the rollback reference. `latest` was not moved and not checked; per-platform manifests were not inspected.
+- **Not done:** deployment; runtime verification of the published image.
+- **Next action:** the owner decides on deploying v0.2.6.
+
 ## 2026-10-29 — Dashboard genres and shelves, Recommended slider, library page tweaks: PR #632 merged
 
 - **Merged:** PR [#632](https://github.com/abucalip/navi-librarian/pull/632), squash commit `b4dc2274c90b61d144ee6e2820f741100d976fb1`, from tested head `5849b95c198188f617bff03d6817d460e4d8a030`. Required checks passed on that head: `compile`, `test-and-build`, `container-smoke`, `validate-container`, `validate-release-workflow` (`publish-release` skipped, publishing paused). Checks on the merge commit were not looked at.

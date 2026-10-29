@@ -83,9 +83,9 @@ Done: the address hash holds the page (`#<page>` or `#library/artist|album|genre
 
 Done: Genres grid and four album shelves on the dashboard, the Recommended slider, and the artist and album page limits (five random circular similar artists, seven albums with "All albums"). Requirements: `REQUIREMENTS.md` DASH-01 to DASH-03 and LIB-05. Record: `PROJECT_LOG.md`, 2026-10-29.
 
-- **Open:** the manual browser check on the dashboard and the library pages (`LOCAL_UI_TESTING.md`) has not been done; nothing has run against a live Navidrome.
+- **Done:** the owner completed the manual browser checks on the dashboard and the library pages (2026-10-29).
 - **Known limits:** the slider is for about ten items with one feature and has not been applied to the other card rows; the similar-artist shuffle uses whatever the server returns (up to 20, fewer while the tag cache is cold); after any `index.html` change the app must be restarted or the image rebuilt.
-- Not published or deployed.
+- Published as v0.2.6 (2026-10-29); not deployed.
 
 ## 3. Recommendation engine — gated
 
