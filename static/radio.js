@@ -52,7 +52,6 @@ function renderRadioStations(items) {
     toggle.setAttribute('role', 'switch');
     toggle.setAttribute('aria-checked', String(station.proxied));
     toggle.setAttribute('aria-label', 'Grab ' + station.name);
-    toggle.append(radioElement('span', 'radio-switch-knob'));
     toggle.addEventListener('click', async () => {
       toggle.disabled = true;
       try {

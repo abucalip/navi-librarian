@@ -957,17 +957,24 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .radio-actions .get-album { width: 40px; height: 40px; }
 .radio-remove { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 .radio-remove .icon { width: 20px; height: 20px; }
-/* A switch is a button with role="switch": the click is asynchronous, so the state changes only once the server has. */
+/* The app's switch, after Uiverse.io's "happy-warthog-87" by Galahhad. A button with role="switch" instead of a
+   checkbox, because the click is asynchronous: the state changes only once the server has. The knob is a pill as
+   wide as the track, shifted 30px left (off) or right (on) behind the clipped edge, and pressing it centres it.
+   Only the knob's transform animates (motion contract), so the track colour changes at once. */
 .radio-switch {
-  position: relative; flex: 0 0 auto; width: 40px; height: 24px; min-height: 0; padding: 0; border-radius: 12px;
-  background: var(--surface-hover); border: 1px solid var(--edge); cursor: pointer;
+  box-sizing: content-box; flex: 0 0 auto; width: 60px; height: 30px; min-height: 0; padding: 0;
+  display: flex; align-items: center; overflow: hidden; border: 4px solid transparent; border-radius: 20px;
+  background: lightgray; box-shadow: 0 0 10px 0 rgb(0 0 0 / .25) inset; cursor: pointer;
 }
-.radio-switch-knob {
-  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
-  background: var(--text-muted); transition: transform var(--dur-slow) var(--ease-out);
+.radio-switch:hover:not(:disabled) { background: lightgray; border-color: transparent; }
+.radio-switch::before {
+  content: ''; display: block; width: 100%; height: 100%; border-radius: 20px; background: #fff;
+  box-shadow: 0 0 10px 3px rgb(0 0 0 / .25); transform: translateX(-30px);
+  transition: transform var(--dur-slow) var(--ease-out);
 }
-.radio-switch[aria-checked="true"] { background: var(--ink); border-color: var(--accent); }
-.radio-switch[aria-checked="true"] .radio-switch-knob { transform: translateX(16px); background: var(--accent); }
+.radio-switch[aria-checked="true"], .radio-switch[aria-checked="true"]:hover:not(:disabled) { background: var(--accent); }
+.radio-switch[aria-checked="true"]::before { transform: translateX(30px); background: var(--ink); }
+.radio-switch:active:not(:disabled)::before { transform: translate(0); }
 .radio-switch:disabled { opacity: .6; cursor: progress; }
 .radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { .radio-switch-knob { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .radio-switch::before { transition: none; } }

@@ -25,6 +25,7 @@ class RadioUiContractTests(unittest.TestCase):
         self.assertIn("role', 'switch'", RADIO_JS)
         self.assertIn("icons.svg#x", RADIO_JS)
         self.assertNotIn("Turn on", RADIO_JS)
+        self.assertNotIn("radio-switch-knob", RADIO_JS)
 
     def test_every_radio_endpoint_the_page_calls_exists(self):
         routes = (ROOT / "app" / "api" / "radio.py").read_text(encoding="utf-8")
