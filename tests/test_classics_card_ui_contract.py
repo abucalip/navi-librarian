@@ -37,8 +37,9 @@ class ClassicsCardTitleTests(unittest.TestCase):
         # Narrow update (Phase 3 item 4): the classics clamp moved to the shared ranked row, so the
         # stylesheet has one title clamp, on `.ranked-row h3`. The other clamps are the genre
         # line (`.row-genres`), which keeps a row with many tags the same size as one with few, and
-        # the artist bio (`.ranked-row .artist-bio`) and the card bio (`.card .artist-bio`).
-        self.assertEqual(len(re.findall(r"-webkit-line-clamp: \d", self.css)), 4)
+        # the artist bio (`.ranked-row .artist-bio`) and the card bio (`.card .artist-bio`), plus the
+        # library artist-page bio (`.library-bio.is-clamped`: three lines, six on a phone).
+        self.assertEqual(len(re.findall(r"-webkit-line-clamp: \d", self.css)), 6)
         self.assertIn(".ranked-row h3 {", self.css)
         self.assertRegex(self.css, r"\.row-genres \{[^}]*-webkit-line-clamp: 2;")
 
