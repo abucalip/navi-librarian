@@ -60,8 +60,8 @@ class GenreViewUITests(unittest.TestCase):
         self.assertIn('<ul id="genreAlbums" class="library-album-list" aria-labelledby="genreAlbumsHeading">', HTML)
 
     def test_tags_in_the_artist_view_open_the_genre_view(self):
-        self.assertIn('<ul id="artistTags" class="tag-list" aria-label="Tags" hidden></ul>', HTML)
-        self.assertIn("buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'tag-button')", JS)
+        self.assertIn('<ul id="artistTags" class="tag-list" aria-label="Genres" hidden></ul>', HTML)
+        self.assertIn("buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'genre-text-link')", JS)
         self.assertIn("else renderGenre(target.tag);", JS)
 
     def test_data_is_written_with_text_only(self):

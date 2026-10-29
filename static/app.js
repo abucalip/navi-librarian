@@ -3292,7 +3292,7 @@ const INDEX_REASON_MESSAGES = {
 let globalSearchSource = null;
 let globalSearchTimer = 0;
 let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, albumSeq: 0, genreSeq: 0, listReturn: null, ownedOnly: false, artistCtx: null};
+const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, albumSeq: 0, genreSeq: 0, listReturn: null, artistCtx: null};
 // Open artist and album streams, so leaving a page closes them.
 const libraryStreams = new Set();
 let libraryFilterTimer = 0;
@@ -3613,6 +3613,8 @@ function libraryShow(name) {
   for (const [view, id] of Object.entries(LIBRARY_VIEWS)) $(id).hidden = view !== name;
   // The page intro belongs to the list; every other view is the reading path.
   $('libraryIntro').hidden = name !== 'list';
+  // The artist page opens on the photo: the section heading would only repeat the sidebar tab.
+  $('libraryHeading').hidden = name === 'artist';
 }
 
 function closeLibraryStreams() {
@@ -4032,7 +4034,6 @@ function fillRows(list, items, build, limit = Infinity) {
 // Artist and album pages show a random few of the similar artists, as circles across the page.
 const SIMILAR_ARTISTS_SHOWN = 5;
 const SIMILAR_ALBUMS_SHOWN = 7;
-const ARTIST_ALBUMS_SHOWN = 7;
 
 function randomSample(items, count) {
   const pool = [...items];
@@ -4048,10 +4049,13 @@ function randomSample(items, count) {
 // artist is addressed by key and Navidrome ID; any other by key, name and MusicBrainz ID.
 
 function setArtistHero(target, name) {
-  const hero = document.querySelector('.artist-hero');
-  hero.querySelector('.artist-hero-art')?.remove();
-  const frame = buildArtwork(sizedArtwork(target.artworkUrl, 400), 'artist-hero-art');
-  hero.prepend(frame);
+  const stage = document.querySelector('.artist-stage');
+  stage.querySelector('.artist-hero-art')?.remove();
+  // The photo fills a wide stage, so it asks for the large size.
+  const frame = buildArtwork(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), 'artist-hero-art');
+  // It is the first thing on the page, so it must not wait for the lazy-loading threshold.
+  frame.querySelector('img')?.setAttribute('loading', 'eager');
+  stage.prepend(frame);
   if (target.artworkUrl || !name) return;
   const seq = libraryView.detailSeq;
   requestJSON('/api/artist-image?' + new URLSearchParams({name}))
@@ -4067,19 +4071,31 @@ function setArtistHero(target, name) {
     .catch(() => {});
 }
 
-const BIO_CLAMP_LENGTH = 420;
-// The server ranks and caps the album list at the same number; this only bounds the early owned-only view.
-const ARTIST_ALBUM_LIMIT = 20;
+const ARTIST_HERO_PHOTO_SIZE = 1000;
+const ARTIST_TAGS_SHOWN = 3;
+const TOP_SONGS_SHOWN = 5;
+const MISSING_ALBUMS_SHOWN = 10;
 
 function setArtistBio(bio) {
   const text = $('artistBio');
-  const toggle = $('artistBioToggle');
   text.textContent = bio && bio.text ? bio.text : '';
   text.hidden = !text.textContent;
-  text.classList.toggle('is-clamped', text.textContent.length > BIO_CLAMP_LENGTH);
-  toggle.hidden = text.textContent.length <= BIO_CLAMP_LENGTH;
+  $('artistBioToggle').setAttribute('aria-expanded', 'false');
+  fitArtistBio();
+}
+
+// The bio is clamped to three lines on a wide screen (six on a phone). "Read more" appears only
+// when the text really overflows, so a short bio shows whole and the link never opens nothing.
+function fitArtistBio() {
+  const text = $('artistBio');
+  const toggle = $('artistBioToggle');
+  // A page that is not on screen has no layout to measure; the next resize or visit fits it.
+  if (text.hidden || !text.clientWidth || toggle.getAttribute('aria-expanded') === 'true') return;
+  text.classList.add('is-clamped');
+  const overflows = text.scrollHeight > text.clientHeight + 1;
+  text.classList.toggle('is-clamped', overflows);
+  toggle.hidden = !overflows;
   toggle.textContent = 'Read more';
-  toggle.setAttribute('aria-expanded', 'false');
 }
 
 function toggleArtistBio() {
@@ -4098,14 +4114,18 @@ function renderArtist(target) {
   const status = $('artistDetailStatus');
   heading.textContent = target.name || 'Loading artist…';
   setArtistBio(null);
-  $('artistOwnedOnly').checked = libraryView.ownedOnly;
-  $('artistAlbumsAll').hidden = true;
   fillRows($('artistTags'), [], () => null);
   $('artistTags').hidden = true;
-  for (const id of ['artistAlbums', 'artistSimilar']) $(id).replaceChildren();
-  setSectionNote('artistAlbumsNote', 'Loading albums…');
+  for (const id of ['artistOwnedAlbums', 'artistMissingAlbums', 'artistSimilar', 'artistTopSongs']) $(id).replaceChildren();
+  $('artistOwnedSection').hidden = true;
+  $('artistMissingAll').hidden = true;
+  $('artistTopSongsAll').hidden = true;
+  $('artistTopSongsSection').hidden = false;
+  document.querySelector('.artist-hero').classList.remove('no-songs');
+  setSectionNote('artistTopSongsNote', 'Loading top songs…');
+  setSectionNote('artistMissingNote', 'Loading missing albums…');
   setSectionNote('artistSimilarNote', 'Loading similar artists…');
-  $('artistAlbumsSection').hidden = false;
+  $('artistMissingSection').hidden = false;
   $('artistSimilarSection').hidden = false;
   setStatus(status, 'Loading…', 'loading');
   if (!applyingHash) heading.focus();
@@ -4116,7 +4136,7 @@ function renderArtist(target) {
   if (target.mbid) params.set('mbid', target.mbid);
   const source = new EventSource('/api/artists/' + encodeURIComponent(target.key) + '?' + params);
   libraryStreams.add(source);
-  const ctx = {name: target.name, ownedAlbums: [], ownedLoaded: false, catalog: null, catalogShown: false, artistShown: false};
+  const ctx = {name: target.name, missing: null, artistShown: false};
   libraryView.artistCtx = ctx;
   source.addEventListener('section', event => {
     if (seq !== view.detailSeq) return;
@@ -4154,23 +4174,10 @@ function renderArtist(target) {
   });
 }
 
-// The albums shown: the ranked top of the catalogue, or, with the toggle on, every album in the
-// library (ranked like the catalogue where it lists them, the rest after).
-function artistAlbumsToShow(ctx) {
-  if (libraryView.ownedOnly) {
-    const ranked = new Map((ctx.catalog || []).map((item, index) => [item.key, {index, item}]));
-    return ctx.ownedAlbums
-      .map(album => ({...album, popularity: ranked.get(album.key)?.item.popularity ?? null}))
-      .sort((a, b) => (ranked.get(a.key)?.index ?? Infinity) - (ranked.get(b.key)?.index ?? Infinity));
-  }
-  if (ctx.catalog) return ctx.catalog;
-  return ctx.ownedAlbums.slice(0, ARTIST_ALBUM_LIMIT);
-}
-
 // Albums the providers list without a year get one from the catalogue batch lookup, one request
 // for the page, and the list is repainted with what it finds.
 async function fillMissingYears(ctx) {
-  const missing = (ctx.catalog || []).filter(item => !item.year);
+  const missing = (ctx.missing || []).filter(item => !item.year);
   if (!missing.length || ctx.yearsRequested) return;
   ctx.yearsRequested = true;
   const seq = libraryView.detailSeq;
@@ -4183,25 +4190,82 @@ async function fillMissingYears(ctx) {
       const year = years.get(albumYearKey(item.artist, item.name));
       if (year) { item.year = year; changed = true; }
     }
-    if (changed) paintArtistAlbums(ctx);
+    if (changed) paintMissingAlbums(ctx);
   } catch (error) {
     // Years are decoration; the list stays as it is.
   }
 }
 
-function paintArtistAlbums(ctx) {
-  const items = artistAlbumsToShow(ctx);
-  fillRows($('artistAlbums'), items, item => buildAlbumRow({...item, showListens: true}),
-    ctx.showAllAlbums ? Infinity : ARTIST_ALBUMS_SHOWN);
-  const allButton = $('artistAlbumsAll');
-  allButton.hidden = ctx.showAllAlbums || items.length <= ARTIST_ALBUMS_SHOWN;
+function paintMissingAlbums(ctx) {
+  const items = ctx.missing || [];
+  fillRows($('artistMissingAlbums'), items, item => buildAlbumRow({...item, showListens: true}),
+    ctx.showAllMissing ? Infinity : MISSING_ALBUMS_SHOWN);
+  const allButton = $('artistMissingAll');
+  allButton.hidden = ctx.showAllMissing || items.length <= MISSING_ALBUMS_SHOWN;
   allButton.onclick = () => {
-    ctx.showAllAlbums = true;
-    paintArtistAlbums(ctx);
+    ctx.showAllMissing = true;
+    paintMissingAlbums(ctx);
   };
-  if (libraryView.ownedOnly && !items.length && ctx.ownedLoaded) {
-    setSectionNote('artistAlbumsNote', 'None of this artist\'s albums are in your library.');
+}
+
+// Some libraries tag albums "Re-Foc (2002)". Cards and the album page show the year on its own line,
+// so the displayed name drops the suffix. Links, keys and requests keep the library's own name.
+const ALBUM_YEAR_SUFFIX = /\s*[(\[]\s*(?:19|20)\d{2}\s*[)\]]\s*$/;
+
+function displayAlbumName(name) {
+  const text = String(name || '');
+  return text.replace(ALBUM_YEAR_SUFFIX, '') || text;
+}
+
+// An album the library owns, as a card: cover, name, year and the green check.
+function buildOwnedAlbumCard(item) {
+  const row = document.createElement('li');
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'owned-album-card';
+  const art = buildAlbumArtwork(item, 'owned-album-art', 400);
+  art.append(buildOwnedCheck());
+  open.append(art);
+  addTextElement(open, 'span', 'owned-album-name', displayAlbumName(item.name));
+  if (item.year) addTextElement(open, 'span', 'owned-album-year', item.year);
+  open.addEventListener('click', () => libraryOpen(albumTarget(item)));
+  row.append(open);
+  return row;
+}
+
+// A top song: rank, title, album, listens, and a check when the library has it. Songs do not open.
+function buildTopSongRow(item) {
+  const row = document.createElement('li');
+  row.className = 'top-song';
+  addTextElement(row, 'span', 'top-song-rank', item.rank);
+  const text = document.createElement('span');
+  text.className = 'top-song-text';
+  addTextElement(text, 'span', 'top-song-name', item.name).title = item.name;
+  if (item.album) addTextElement(text, 'span', 'top-song-album', item.album);
+  row.append(text);
+  const listens = addTextElement(row, 'span', 'top-song-listens', item.listen_count ? compactCount(item.listen_count) : '');
+  if (item.listen_count) {
+    listens.title = Number(item.listen_count).toLocaleString() + ' listens on ' + (item.source === 'lastfm' ? 'Last.fm' : 'ListenBrainz');
   }
+  row.append(item.owned ? buildOwnedCheck() : document.createElement('span'));
+  return row;
+}
+
+function paintTopSongs(ctx) {
+  const items = ctx.topSongs || [];
+  fillRows($('artistTopSongs'), items, buildTopSongRow, ctx.showAllSongs ? Infinity : TOP_SONGS_SHOWN);
+  const allButton = $('artistTopSongsAll');
+  allButton.hidden = ctx.showAllSongs || items.length <= TOP_SONGS_SHOWN;
+  allButton.onclick = () => {
+    ctx.showAllSongs = true;
+    paintTopSongs(ctx);
+  };
+}
+
+// Without top songs the panel goes away and the photo takes the full width.
+function hideTopSongs() {
+  $('artistTopSongsSection').hidden = true;
+  document.querySelector('.artist-hero').classList.add('no-songs');
 }
 
 function applyArtistSection(section, ctx) {
@@ -4218,37 +4282,38 @@ function applyArtistSection(section, ctx) {
     ctx.name = artist.name;
     ctx.owned = artist.owned;
     $('artistDetailHeading').textContent = artist.name;
-    setStatus(status, artist.owned ? pluralize(artist.album_count, 'album', 'albums') + ' in your library' : 'Not in your library', 'progress');
+    setStatus(status, artist.owned ? pluralize(artist.album_count, 'album', 'albums') + ' in your library' : 'Not in your library', 'idle');
   } else if (section.section === 'owned_albums') {
-    if (!section.available) return;
-    ctx.ownedLoaded = true;
-    ctx.ownedAlbums = section.items.map(album => ({...album, owned: true, artist: ctx.name}));
-    // The library's own albums show at once; the ranked catalogue replaces them when it arrives.
-    if (!ctx.catalogShown && ctx.ownedAlbums.length) setSectionNote('artistAlbumsNote', 'Loading more albums…');
-    paintArtistAlbums(ctx);
+    if (!section.available || !section.items.length) return;
+    fillRows($('artistOwnedAlbums'), section.items.map(album => ({...album, owned: true, artist: ctx.name})), buildOwnedAlbumCard);
+    $('artistOwnedSection').hidden = false;
   } else if (section.section === 'bio') {
     setArtistBio(section.bio);
   } else if (section.section === 'tags') {
     const tags = $('artistTags');
     fillRows(tags, section.items || [], tag => {
       const item = document.createElement('li');
-      item.append(buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'tag-button'));
+      item.append(buildLibraryLink(tag.name, {type: 'genre', tag: tag.name}, 'genre-text-link'));
       return item;
-    });
+    }, ARTIST_TAGS_SHOWN);
     tags.hidden = !tags.childElementCount;
-  } else if (section.section === 'albums') {
-    ctx.catalogShown = section.available;
-    ctx.catalog = section.available ? section.items.map(item => ({...item, artist: item.artist || ctx.name})) : null;
-    paintArtistAlbums(ctx);
-    fillMissingYears(ctx);
-    if (section.available && section.items.length) {
-      setSectionNote('artistAlbumsNote', section.complete ? '' : 'Some albums may be missing. Popularity could not be fully loaded.');
-    } else if (section.available) {
-      setSectionNote('artistAlbumsNote', ctx.ownedAlbums.length ? '' : 'No albums found for this artist.');
+  } else if (section.section === 'top_songs') {
+    if (!section.available || !section.items.length) {
+      hideTopSongs();
+      return;
+    }
+    ctx.topSongs = section.items;
+    setSectionNote('artistTopSongsNote', '');
+    paintTopSongs(ctx);
+  } else if (section.section === 'missing_albums') {
+    if (section.available) {
+      ctx.missing = section.items.map(item => ({...item, artist: ctx.name, owned: false}));
+      paintMissingAlbums(ctx);
+      fillMissingYears(ctx);
+      if (!section.items.length) setSectionNote('artistMissingNote', 'You have every album we could find.');
+      else setSectionNote('artistMissingNote', section.complete ? '' : 'Some albums may be missing. Popularity could not be fully loaded.');
     } else {
-      setSectionNote('artistAlbumsNote',
-        (ctx.ownedAlbums.length ? 'Showing the albums in your library. ' : '') +
-        (SECTION_REASON_MESSAGES[section.reason] || 'Albums are not available right now.'));
+      setSectionNote('artistMissingNote', SECTION_REASON_MESSAGES[section.reason] || 'Missing albums are not available right now.');
     }
   } else if (section.section === 'similar') {
     if (section.available && section.items.length) {
@@ -4307,7 +4372,7 @@ function renderAlbum(target) {
   libraryShow('album');
   const heading = $('albumHeading');
   const status = $('albumStatus');
-  heading.textContent = target.name || 'Loading album…';
+  heading.textContent = displayAlbumName(target.name) || 'Loading album…';
   $('albumArtist').replaceChildren();
   $('albumYear').textContent = target.year || '';
   $('albumOwnership').hidden = target.owned !== false;
@@ -4364,7 +4429,7 @@ function setAlbumHero(target, seq) {
 function applyAlbumSection(section, target) {
   if (section.section === 'album') {
     const album = section.album;
-    $('albumHeading').textContent = album.name;
+    $('albumHeading').textContent = displayAlbumName(album.name);
     if (album.artwork_url && !target.artworkUrl) {
       const wrap = document.querySelector('.album-hero-art-wrap');
       wrap.querySelector('.album-hero-art')?.remove();
@@ -4534,9 +4599,6 @@ $('librarySort').addEventListener('change', () => {
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListener('click', libraryBack);
 $('artistBioToggle').addEventListener('click', toggleArtistBio);
+window.addEventListener('resize', fitArtistBio);
 $('albumDescriptionToggle').addEventListener('click', toggleAlbumDescription);
-$('artistOwnedOnly').addEventListener('change', () => {
-  libraryView.ownedOnly = $('artistOwnedOnly').checked;
-  if (libraryView.artistCtx) paintArtistAlbums(libraryView.artistCtx);
-});
 if (window.location.hash) applyHash(window.location.hash);

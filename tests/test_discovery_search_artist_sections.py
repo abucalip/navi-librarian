@@ -434,7 +434,53 @@ class CatalogTests(unittest.TestCase):
         sections = self.sections()
         self.assertEqual(sorted(i["name"] for i in sections["missing_albums"]["items"]), ["Pablo Honey", "The Bends"])
         self.assertEqual(set(sections["missing_albums"]["items"][0]),
-                         {"name", "year", "release_group_mbid", "popularity", "sources"})
+                         {"name", "year", "key", "release_group_mbid", "popularity", "popularity_source", "sources"})
+
+
+class YearSuffixTests(unittest.TestCase):
+    """A library that tags albums "Re-Foc (2002)" still owns the provider's "Re-Foc"."""
+
+    def owned(self):
+        return build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "ar1", "name": "Rodrigo y Gabriela", "album_count": 2}],
+            albums=[
+                {"id": "al1", "artist": "Rodrigo y Gabriela", "artist_id": "ar1", "album": "Re-Foc (2002)", "year": 2002, "song_count": 8},
+                {"id": "al2", "artist": "Rodrigo y Gabriela", "artist_id": "ar1", "album": "11:11", "year": 2009, "song_count": 8},
+            ],
+            songs=[],
+        )
+
+    def test_owned_albums_with_a_year_suffix_are_not_listed_as_missing(self):
+        providers = [
+            artist_candidate("musicbrainz", "Rodrigo y Gabriela", "mb-rg"),
+        ]
+        albums = [
+            album_candidate("musicbrainz", "Re-Foc", "Rodrigo y Gabriela", 2002, "rg-1"),
+            album_candidate("musicbrainz", "11:11", "Rodrigo y Gabriela", 2009, "rg-2"),
+            album_candidate("musicbrainz", "Mettavolution", "Rodrigo y Gabriela", 2019, "rg-3"),
+        ]
+        owned_items = [
+            {"name": "Re-Foc (2002)", "year": 2002, "song_count": 8, "key": "rodrigo y gabriela/re foc 2002", "id": "al1", "artwork_url": None},
+            {"name": "11:11", "year": 2009, "song_count": 8, "key": "rodrigo y gabriela/11 11", "id": "al2", "artwork_url": None},
+        ]
+        sections = network_sections(
+            network(FakeMusicBrainz(artists=providers, albums=albums)),
+            "Rodrigo y Gabriela", "ar1", self.owned(), owned_album_items=owned_items,
+        )
+        self.assertEqual([i["name"] for i in sections["missing_albums"]["items"]], ["Mettavolution"])
+        catalog = {i["name"]: i for i in sections["albums"]["items"]}
+        self.assertTrue(catalog["Re-Foc"]["owned"])
+        self.assertEqual(catalog["Re-Foc"]["id"], "al1")
+        # The owned album is matched, not added a second time.
+        self.assertNotIn("Re-Foc (2002)", catalog)
+
+    def test_only_a_trailing_parenthesized_year_is_ignored(self):
+        from discovery.search.normalize import album_match_key
+        self.assertEqual(album_match_key("Live in Japan (2008)"), album_match_key("Live in Japan"))
+        self.assertEqual(album_match_key("Re-Foc [2002]"), album_match_key("Re-Foc"))
+        self.assertNotEqual(album_match_key("Live 1975"), album_match_key("Live"))
+        self.assertNotEqual(album_match_key("(2002) Re-Foc"), album_match_key("Re-Foc"))
 
 
 class TagTests(unittest.TestCase):

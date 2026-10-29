@@ -55,7 +55,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('<section id="library" class="page hidden" aria-labelledby="libraryHeading">', self.html)
         self.assertIn('<label for="libraryFilter">Filter artists</label>', self.html)
         self.assertIn('<label for="librarySort">Sort by</label>', self.html)
-        self.assertIn('<h3 id="artistDetailHeading" tabindex="-1"></h3>', self.html)
+        self.assertIn('<h2 id="artistDetailHeading" tabindex="-1"></h2>', self.html)
 
     def test_router_marks_library_current_and_loads_it_on_each_visit(self):
         self.assertIn("name === 'saved' || name === 'library'", self.js)
@@ -127,10 +127,12 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("if (target.id) params.set('id', target.id);", self.new_js)
         self.assertIn("if (target.mbid) params.set('mbid', target.mbid);", self.new_js)
 
-    def test_artist_view_shows_bio_tags_ranked_albums_and_similar_artists(self):
-        for element in ('id="artistBio"', 'id="artistTags"', 'id="artistAlbums"', 'id="artistSimilar"'):
+    def test_artist_view_shows_bio_tags_top_songs_owned_missing_and_similar_artists(self):
+        for element in ('id="artistBio"', 'id="artistTags"', 'id="artistTopSongs"', 'id="artistOwnedAlbums"',
+                        'id="artistMissingAlbums"', 'id="artistSimilar"'):
             self.assertIn(element, self.html)
-        for name in ("section.section === 'bio'", "section.section === 'tags'", "section.section === 'albums'", "section.section === 'similar'"):
+        for name in ("section.section === 'bio'", "section.section === 'tags'", "section.section === 'top_songs'",
+                     "section.section === 'owned_albums'", "section.section === 'missing_albums'", "section.section === 'similar'"):
             self.assertIn(name, self.new_js)
 
     def test_albums_are_owned_check_or_get_button(self):
@@ -139,11 +141,12 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("setAttribute('aria-label', 'In your library')", self.new_js)
         self.assertIn("color: var(--ok)", self.css)
 
-    def test_albums_can_be_limited_to_the_library_with_a_toggle(self):
-        self.assertIn('<input type="checkbox" id="artistOwnedOnly"> Only show albums in your library', self.html)
-        self.assertIn("if (libraryView.ownedOnly) {", self.new_js)
-        self.assertIn("return ctx.ownedAlbums", self.new_js)
-        self.assertIn("$('artistOwnedOnly').checked = libraryView.ownedOnly;", self.new_js)
+    def test_owned_and_missing_albums_have_their_own_sections_and_no_toggle(self):
+        self.assertNotIn("artistOwnedOnly", self.html)
+        self.assertNotIn("ownedOnly", self.new_js)
+        self.assertIn("art.append(buildOwnedCheck());", self.new_js)
+        self.assertIn("buildAlbumRow({...item, showListens: true})", self.new_js)
+        self.assertIn('<section id="artistOwnedSection" aria-labelledby="artistOwnedHeading" hidden>', self.html)
 
     def test_similar_albums_name_their_artist_in_grey_beside_the_album(self):
         self.assertIn("if (item.showArtist && item.artist) addTextElement(title, 'span', 'album-row-artist', item.artist);", self.new_js)
@@ -202,9 +205,32 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('<p id="libraryIntro">', self.html)
         self.assertIn('<div class="artist-hero">', self.html)
         self.assertIn("$('libraryIntro').hidden = name !== 'list';", self.new_js)
-        self.assertIn("buildArtwork(sizedArtwork(target.artworkUrl, 400), 'artist-hero-art')", self.new_js)
+        self.assertIn("buildArtwork(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), 'artist-hero-art')", self.new_js)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist';", self.new_js)
         self.assertIn("'/api/artist-image?'", self.new_js)
-        self.assertIn("#artistDetailHeading { margin: 0 0 9px; font: 600 var(--text-2xl)/1.05 var(--display);", self.css)
+        self.assertIn("#artistDetailHeading { margin: 0; font: 700 clamp(2.75rem, 8vw, 6.5rem)/.92 var(--display);", self.css)
+
+    def test_artist_page_has_an_icon_only_back_button_and_no_library_heading(self):
+        self.assertIn('<button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back">', self.html)
+        self.assertNotIn(">Back</button>\n      <div class=\"artist-hero\">", self.html)
+        self.assertIn("$('libraryHeading').hidden = name === 'artist';", self.new_js)
+
+    def test_artist_page_top_songs_show_rank_title_listens_and_an_owned_check_without_play_buttons(self):
+        self.assertIn("function buildTopSongRow(item) {", self.new_js)
+        self.assertIn("row.append(item.owned ? buildOwnedCheck() : document.createElement('span'));", self.new_js)
+        self.assertIn("const TOP_SONGS_SHOWN = 5;", self.new_js)
+        self.assertIn("document.querySelector('.artist-hero').classList.add('no-songs');", self.new_js)
+        self.assertNotIn("play", self.new_js[self.new_js.index("function buildTopSongRow"):self.new_js.index("function paintTopSongs")].lower())
+
+    def test_owned_album_cards_drop_a_year_suffix_from_the_name(self):
+        self.assertIn("const ALBUM_YEAR_SUFFIX = /\\s*[(\\[]\\s*(?:19|20)\\d{2}\\s*[)\\]]\\s*$/;", self.new_js)
+        self.assertIn("displayAlbumName(item.name)", self.new_js)
+        self.assertIn("heading.textContent = displayAlbumName(target.name) || 'Loading album…';", self.new_js)
+        self.assertIn("$('albumHeading').textContent = displayAlbumName(album.name);", self.new_js)
+
+    def test_artist_page_shows_at_most_three_genre_tags(self):
+        self.assertIn("const ARTIST_TAGS_SHOWN = 3;", self.new_js)
+        self.assertIn("}, ARTIST_TAGS_SHOWN);", self.new_js)
 
     def test_index_states_are_never_shown_as_an_empty_library(self):
         self.assertIn("if (data.index_state === 'building' || data.index_state === 'unavailable') {", self.new_js)

@@ -17,8 +17,8 @@ from discovery.search.artist_sections import ArtistNetwork, iter_network_section
 from discovery.search.index import IndexView
 from discovery.search.query import find_artist, owned_albums
 
-SECTION_ORDER = ("artist", "owned_albums", "bio", "tags", "albums", "missing_albums", "similar")
-_NETWORK_SECTIONS = ("bio", "tags", "albums", "missing_albums", "similar")
+SECTION_ORDER = ("artist", "owned_albums", "bio", "tags", "top_songs", "albums", "missing_albums", "similar")
+_NETWORK_SECTIONS = ("bio", "tags", "top_songs", "albums", "missing_albums", "similar")
 
 
 @dataclass

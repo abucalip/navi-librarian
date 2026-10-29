@@ -32,6 +32,18 @@ def normalize_key(name: object) -> str:
     return _LEADING_THE.sub("", fold(name), count=1)
 
 
+_YEAR_SUFFIX = re.compile(r"\s*[(\[]\s*(?:19|20)\d{2}\s*[)\]]\s*$")
+
+
+def album_match_key(name: object) -> str:
+    """Key used only to decide whether two album names are one album.
+
+    A library that tags albums "Re-Foc (2002)" must match the provider's "Re-Foc", so one trailing
+    parenthesized year is dropped. The display key (``normalize_key``) is unchanged.
+    """
+    return normalize_key(_YEAR_SUFFIX.sub("", str(name or "")))
+
+
 def normalize_query(text: object) -> str:
     """Normalize a search query with the same rules as keys.
 

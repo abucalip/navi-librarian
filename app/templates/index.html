@@ -292,24 +292,33 @@
       <button type="button" id="libraryMore" hidden>Load more</button>
     </div>
     <div id="libraryDetailView" hidden>
-      <button type="button" id="libraryBack">Back</button>
       <div class="artist-hero">
-        <div class="artist-hero-text">
-          <h3 id="artistDetailHeading" tabindex="-1"></h3>
-          <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
+        <div class="artist-stage">
+          <button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
+          <div class="artist-hero-text">
+            <h2 id="artistDetailHeading" tabindex="-1"></h2>
+            <ul id="artistTags" class="tag-list" aria-label="Genres" hidden></ul>
+            <p id="artistDetailStatus" class="status-line" aria-live="polite"></p>
+          </div>
         </div>
+        <section id="artistTopSongsSection" class="artist-top-songs" aria-labelledby="artistTopSongsHeading">
+          <h3 id="artistTopSongsHeading">Top songs</h3>
+          <p id="artistTopSongsNote" class="section-note" role="status" hidden></p>
+          <ol id="artistTopSongs" class="top-song-list"></ol>
+          <button type="button" id="artistTopSongsAll" class="show-all-button" hidden>All top songs</button>
+        </section>
       </div>
       <p id="artistBio" class="library-bio" hidden></p>
       <button type="button" id="artistBioToggle" class="bio-toggle" aria-expanded="false" aria-controls="artistBio" hidden>Read more</button>
-      <ul id="artistTags" class="tag-list" aria-label="Tags" hidden></ul>
-      <section id="artistAlbumsSection" aria-labelledby="artistAlbumsHeading">
-        <div class="section-heading-row">
-          <h4 id="artistAlbumsHeading">Albums</h4>
-          <label class="inline-toggle"><input type="checkbox" id="artistOwnedOnly"> Only show albums in your library</label>
-        </div>
-        <p id="artistAlbumsNote" class="section-note" role="status" hidden></p>
-        <ul id="artistAlbums" class="album-row-list"></ul>
-        <button type="button" id="artistAlbumsAll" class="show-all-button" hidden>All albums</button>
+      <section id="artistOwnedSection" aria-labelledby="artistOwnedHeading" hidden>
+        <h4 id="artistOwnedHeading">In your library</h4>
+        <ul id="artistOwnedAlbums" class="owned-album-grid"></ul>
+      </section>
+      <section id="artistMissingSection" aria-labelledby="artistMissingHeading">
+        <h4 id="artistMissingHeading">Missing albums</h4>
+        <p id="artistMissingNote" class="section-note" role="status" hidden></p>
+        <ol id="artistMissingAlbums" class="album-row-list missing-album-list"></ol>
+        <button type="button" id="artistMissingAll" class="show-all-button" hidden>All missing albums</button>
       </section>
       <section id="artistSimilarSection" aria-labelledby="artistSimilarHeading">
         <h4 id="artistSimilarHeading">Similar artists</h4>

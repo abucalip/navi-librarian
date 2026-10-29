@@ -708,33 +708,28 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .library-album-list { display: grid; gap: 2px; margin-top: var(--space-3); }
 .library-album { display: grid; gap: 2px; padding: 10px 12px; border-bottom: 1px solid var(--edge); }
 .library-album-name { overflow-wrap: anywhere; }
-#libraryDetailView > button:first-child, #libraryAlbumView > button:first-child, #libraryGenreView > button:first-child { margin-bottom: var(--space-3); }
-#artistDetailHeading { margin: 0 0 9px; font: 600 var(--text-2xl)/1.05 var(--display); letter-spacing: .01em; overflow-wrap: anywhere; }
-#artistDetailHeading::after { content: ""; display: block; width: 34px; height: 3px; margin-top: 11px; background: var(--chart-red); }
-.artist-hero { display: flex; align-items: flex-end; gap: var(--space-4); margin-top: var(--space-3); min-width: 0; }
-.artist-hero-art { flex: 0 0 200px; width: 200px; height: 200px; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
-.artist-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.artist-hero-text { display: grid; min-width: 0; flex: 1 1 auto; }
+#libraryAlbumView > button:first-child, #libraryGenreView > button:first-child { margin-bottom: var(--space-3); }
 #libraryIntro[hidden] { display: none; }
-@media (max-width: 620px) { .artist-hero-art { flex-basis: 128px; width: 128px; height: 128px; } .album-hero-media { flex-basis: auto; width: 100%; } }
+@media (max-width: 620px) { .album-hero-media { flex-basis: auto; width: 100%; } }
 @media (max-width: 620px) { .album-hero { flex-direction: column; align-items: flex-start; } .library-controls { grid-template-columns: minmax(0, 1fr); } }
 
 .genre-link, .genre-item-link { min-height: 44px; }
 .genre-item-link { padding: 0; text-align: left; background: transparent; border-color: transparent; text-decoration: underline; overflow-wrap: anywhere; }
-#libraryGenreView h4, #libraryDetailView h4, #libraryAlbumView h4 { margin: var(--space-5) 0 0; }
+#libraryGenreView h4, #libraryDetailView h4, #libraryAlbumView h4 { margin: var(--space-6) 0 0; }
 .library-bio { max-width: 70ch; margin: var(--space-4) 0 0; line-height: 1.55; }
-.library-bio.is-clamped { max-height: calc(1.55em * 6); overflow: hidden; }
-.bio-toggle { min-height: 44px; padding: 0 var(--space-2); background: transparent; border-color: transparent; text-decoration: underline; }
+.library-bio.is-clamped { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+@media (max-width: 620px) { .library-bio.is-clamped { -webkit-line-clamp: 6; } }
+.bio-toggle { min-height: 44px; padding: 0; color: var(--text-muted); font-size: var(--text-sm); background: transparent; border-color: transparent; }
+.bio-toggle:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 .tag-list[hidden] { display: none; }
-.tag-button { min-height: 44px; padding: 0 var(--space-3); border-radius: 999px; text-transform: lowercase; }
 .library-link { min-height: 44px; padding: 0; text-align: left; background: transparent; border-color: transparent; text-decoration: underline; overflow-wrap: anywhere; }
 .section-note { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--text-sm); }
 .section-note[hidden] { display: none; }
 .album-row-list { display: grid; gap: 2px; margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 .album-row { display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--edge); }
 .album-row-open { display: flex; flex: 1 1 auto; align-items: center; gap: 12px; min-width: 0; min-height: 56px; padding: 6px 8px; text-align: left; background: transparent; border-color: transparent; border-radius: 4px; }
-.album-row-open:hover { background: var(--surface-hover); }
+.album-row-open:hover { background: var(--surface-hover); border-color: transparent; }
 .album-row-art { flex: 0 0 48px; width: 48px; height: 48px; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
 .album-row-art img, .album-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .album-row-text { display: grid; min-width: 0; }
@@ -769,7 +764,6 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 
 .section-heading-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-top: var(--space-5); }
 .section-heading-row h4 { margin: 0; }
-#libraryDetailView .section-heading-row h4 { margin-top: 0; }
 .inline-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--text-muted); font-size: var(--text-sm); }
 .inline-toggle input { width: 18px; height: 18px; }
 
@@ -865,4 +859,62 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
   .dashboard-slider > .card[data-slot="1"] h3 { font-size: var(--text-lg); }
   .dashboard-slider > .card[data-slot="1"] .artist-bio { display: none; }
   .dashboard-slider-nav { left: calc(var(--art) + 16px); bottom: 12px; }
+}
+
+/* Artist page: a large photo with the name over it, the top songs beside it, then bio, the albums
+   the library owns, the albums it lacks (ranked by listens) and similar artists as circles. */
+.artist-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); min-width: 0; }
+.artist-stage { position: relative; display: flex; align-items: flex-end; min-height: clamp(300px, 42vw, 480px); overflow: hidden; background: var(--surface-raised); border-radius: var(--radius-panel); isolation: isolate; }
+.artist-stage::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(20, 18, 17, .94) 0%, rgba(20, 18, 17, .55) 42%, rgba(20, 18, 17, 0) 75%); pointer-events: none; }
+.artist-hero-art { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.artist-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.artist-hero-text { display: grid; gap: var(--space-2); min-width: 0; width: 100%; padding: var(--space-5); }
+#artistDetailHeading { margin: 0; font: 700 clamp(2.75rem, 8vw, 6.5rem)/.92 var(--display); letter-spacing: .005em; text-wrap: balance; overflow-wrap: anywhere; }
+#artistDetailHeading::after { content: none; }
+/* Genres are plain small text under the name. The 44px hit area stays; the negative margin keeps the lines tight. */
+.artist-hero-text .tag-list { gap: 0 var(--space-3); margin: calc(var(--space-2) * -1) 0; }
+.artist-hero-text .tag-list li + li::before { content: "\00b7"; margin-right: var(--space-3); color: var(--text-subtle); }
+.artist-hero-text .tag-list li { display: flex; align-items: center; }
+.genre-text-link { min-height: 44px; padding: 0; color: var(--text-muted); font-size: var(--text-sm); text-transform: lowercase; text-decoration: none; background: transparent; border-color: transparent; }
+.genre-text-link:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.artist-hero-text .status-line { margin: 0; color: var(--text); }
+#artistDetailStatus:not([class*="is-"])::before { content: none; }
+.artist-back { position: absolute; top: var(--space-3); left: var(--space-3); display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: rgba(20, 18, 17, .72); }
+.artist-back .icon { display: block; width: 22px; height: 22px; }
+.artist-top-songs { min-width: 0; padding: var(--space-4); background: var(--surface); border-radius: var(--radius-panel); }
+.artist-top-songs[hidden] { display: none; }
+.artist-top-songs h3 { margin: 0 0 var(--space-3); font: 600 var(--text-xl)/1.1 var(--display); letter-spacing: .01em; }
+/* "All top songs" and "All missing albums" are plain clickable text, like the genres under the name; the 44px hit area stays. */
+.artist-top-songs .show-all-button, #artistMissingAll { min-height: 44px; margin-top: var(--space-2); padding: 0; color: var(--text-muted); font-size: var(--text-sm); background: transparent; border-color: transparent; }
+.artist-top-songs .show-all-button:hover, #artistMissingAll:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
+.top-song-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.top-song { display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto 28px; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); }
+.top-song:last-child { border-bottom: 0; }
+.top-song-rank { color: var(--text-muted); font: 600 var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
+.top-song-text { display: grid; min-width: 0; }
+.top-song-name, .top-song-album { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-song-album, .top-song-listens { color: var(--text-muted); font-size: var(--text-sm); }
+.top-song-listens { font-variant-numeric: tabular-nums; }
+.top-song .owned-check { width: 28px; height: 28px; }
+.top-song .owned-check-glyph { width: 18px; height: 18px; }
+.owned-album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-4); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.owned-album-card { display: grid; align-content: start; gap: 2px; width: 100%; padding: 0; text-align: left; background: transparent; border-color: transparent; }
+.owned-album-card:hover { background: transparent; border-color: transparent; }
+.owned-album-card:hover .owned-album-art { outline: 2px solid var(--accent); outline-offset: 2px; }
+.owned-album-art { position: relative; width: 100%; aspect-ratio: 1; margin-bottom: var(--space-2); overflow: hidden; background: var(--surface-hover); border-radius: var(--radius-control); }
+.owned-album-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.owned-album-art .owned-check { position: absolute; top: var(--space-2); right: var(--space-2); width: 28px; height: 28px; background: var(--surface-raised); border: 2px solid var(--ok); border-radius: 50%; }
+.owned-album-art .owned-check-glyph { width: 16px; height: 16px; }
+.owned-album-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owned-album-year { color: var(--text-muted); font-size: var(--text-sm); }
+.missing-album-list { counter-reset: missing; }
+.missing-album-list .album-row { counter-increment: missing; }
+.missing-album-list .album-row::before { content: counter(missing); flex: 0 0 2.5ch; padding-left: var(--space-2); color: var(--text-muted); font: 600 var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
+@media (min-width: 1000px) {
+  .artist-hero { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
+  .artist-hero.no-songs { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .artist-hero-text { padding: var(--space-4); }
+  .owned-album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 }
