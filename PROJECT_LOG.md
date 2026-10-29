@@ -1,3 +1,13 @@
+## 2026-10-29 — Quality priority drag replaced: PR #633 merged
+
+- **Merged:** PR [#633](https://github.com/abucalip/navi-librarian/pull/633), squash commit `852cc9ad66381c46d2bb157156c2143fa2e64f8c`, from tested head `3ae1a6e5bedeb4cd866c106e027d3d68e4ac4d4f`, at the owner's direction.
+- **What changed:** the Settings audio quality priority list (`static/app.js`, `static/app.css`, hint in `app/templates/index.html`) uses a pointer-event drag-to-reorder adapted from a public example: the grip is a 44px handle with `touch-action: none`, the grabbed row follows the pointer, passed rows slide aside by transform, and the row glides into its slot on release. Pointer cancel ends the drag at the last pointer position. The glide uses the `--dur-slow` and `--ease-out` tokens and is off under `prefers-reduced-motion`. Move up / Move down buttons, focus return, the polite announcement and the save payload are unchanged. `tests/test_quality_priority.py` now asserts pointer events and the grip instead of `draggable` and `dragover`.
+- **CI finding:** the first head (`4d6eb2b`) failed `compile` and `test-and-build` on `test_motion_ui_contract` because the row transition used a literal `.25s`; durations must be motion tokens. Fixed in `3ae1a6e`; all required checks then passed.
+- **Tests actually run (agent, locally):** `tests/test_quality_priority.py`, `tests/test_settings_ui_contract.py` and `tests/test_motion_ui_contract.py` (33 passed); `node --check static/app.js`. The full suite ran in CI only, per workflow policy.
+- **UI results:** none. The drag was not exercised in a browser and the manual checklist (`LOCAL_UI_TESTING.md`) has not been done.
+- **State:** merged only. Not published or deployed.
+- **Next action:** the owner runs the manual browser check of the drag (mouse and touch) and the Move buttons on Settings, then decides on the next release.
+
 ## 2026-10-29 — Image v0.2.6 published
 
 - **Authorization:** the owner reported that all manual browser tests were done and directed publication of current `main` as v0.2.6.
