@@ -2,9 +2,10 @@
 import time
 import unittest
 
-from discovery.search.album_page import album_sections, find_album, owned_tracks
+from discovery.search.album_page import album_sections, find_album, mark_owned_tracks, owned_tracks
 from discovery.search.artist_sections import ArtistNetwork
 from discovery.search.index import build_owned_data
+from discovery.search.providers import artist_candidate
 
 
 class Store:
@@ -24,6 +25,9 @@ class FakeMusicBrainz:
         self.delay = delay
 
     def artists(self, query, *, remaining, cancelled):
+        return []
+
+    def artist_tags(self, mbid, *, remaining, cancelled):
         return []
 
     def release_group_tracks(self, mbid, *, remaining, cancelled):
@@ -48,8 +52,8 @@ class FakeLastFm:
         return [{"name": "Portishead", "mbid": None, "match": 0.9}]
 
 
-def track(n, title):
-    return {"track_number": n, "title": title, "duration_seconds": 100}
+def track(n, title, seconds=100):
+    return {"track_number": n, "title": title, "duration_seconds": seconds}
 
 
 def make_network(**kwargs):
@@ -104,6 +108,73 @@ class OwnedAlbumTests(unittest.TestCase):
         self.assertTrue(sections["album"]["album"]["owned"])
         self.assertTrue(sections["album"]["album"]["artwork_url"].endswith("al1"))
         self.assertEqual(len(sections["tracks"]["items"]), 2)
+
+
+class TrackOwnershipTests(unittest.TestCase):
+    def test_provider_tracks_are_marked_owned_by_title(self):
+        data = owned()
+        provider = [track(1, "Everything In Its Right Place"), track(2, "Kid A"), track(3, "The National Anthem")]
+        marked = mark_owned_tracks(provider, [s for s in data.songs if s["album_id"] == "al1"])
+        self.assertEqual([(t["title"], t["owned"]) for t in marked],
+                         [("Everything In Its Right Place", True), ("Kid A", False), ("The National Anthem", True)])
+
+    def test_a_renamed_track_in_the_same_place_and_length_is_owned(self):
+        data = owned()
+        provider = [track(1, "Everything In Its Right Place - Remastered", 252), track(2, "The National Anthem", 351)]
+        marked = mark_owned_tracks(provider, [s for s in data.songs if s["album_id"] == "al1"])
+        self.assertEqual([t["owned"] for t in marked], [True, True])
+
+    def test_a_different_track_with_the_same_number_but_another_length_is_not_owned(self):
+        data = owned()
+        marked = mark_owned_tracks([track(1, "Something Else", 100)], [s for s in data.songs if s["album_id"] == "al1"])
+        self.assertFalse(marked[0]["owned"])
+
+    def test_library_songs_the_provider_does_not_list_are_appended_as_owned(self):
+        data = owned()
+        marked = mark_owned_tracks([track(1, "Everything In Its Right Place")], [s for s in data.songs if s["album_id"] == "al1"])
+        self.assertEqual([(t["title"], t["owned"]) for t in marked],
+                         [("Everything In Its Right Place", True), ("The National Anthem", True)])
+
+    def test_an_owned_album_marks_provider_tracks_and_an_unowned_album_marks_none(self):
+        network = make_network(deezer_tracks=lambda a, b: [track(1, "Everything In Its Right Place"), track(2, "Kid A")])
+        data = owned()
+        items = run(network, data, album=find_album(data, "radiohead", "kid a", None))["tracks"]["items"]
+        self.assertEqual([t["owned"] for t in items[:2]], [True, False])
+        items = run(make_network(deezer_tracks=lambda a, b: [track(1, "x")]))["tracks"]["items"]
+        self.assertEqual([t["owned"] for t in items], [False])
+
+    def test_an_owned_album_falls_back_to_the_library_tracklist_when_no_provider_answers(self):
+        def broken(artist, album):
+            raise RuntimeError("down")
+        data = owned()
+        items = run(make_network(deezer_tracks=broken), data, album=find_album(data, "radiohead", "kid a", None))["tracks"]["items"]
+        self.assertEqual([(t["title"], t["owned"]) for t in items],
+                         [("Everything In Its Right Place", True), ("The National Anthem", True)])
+
+
+class GenreTests(unittest.TestCase):
+    def test_the_library_genre_is_emitted_at_once_without_a_lookup(self):
+        data = build_owned_data(
+            generation=1, built_at=0,
+            artists=[{"id": "ar1", "name": "Radiohead", "album_count": 1}],
+            albums=[{"id": "al1", "artist": "Radiohead", "artist_id": "ar1", "album": "Kid A", "year": 2000, "song_count": 0, "genre": "Electronic"}],
+            songs=[],
+        )
+        sections = run(make_network(deezer_tracks=lambda a, b: [track(1, "x")]), data, album=find_album(data, "radiohead", "kid a", None))
+        self.assertEqual(sections["genre"]["genre"], "electronic")
+
+    def test_without_a_library_genre_the_first_artist_tag_is_used(self):
+        mb = FakeMusicBrainz()
+        mb.artists = lambda query, *, remaining, cancelled: [artist_candidate("musicbrainz", "Portishead", "mb-p")]
+        mb.artist_tags = lambda mbid, *, remaining, cancelled: [{"name": "trip hop"}]
+        network = make_network(musicbrainz=mb, deezer_tracks=lambda a, b: [track(1, "x")])
+        section = run(network, artist="Portishead", artist_key="portishead", name="Dummy")["genre"]
+        self.assertEqual((section["available"], section["genre"]), (True, "trip hop"))
+
+    def test_no_known_genre_is_a_valid_empty_answer(self):
+        section = run(make_network(deezer_tracks=lambda a, b: [track(1, "x")]), artist="Nobody", artist_key="nobody", name="Nothing")["genre"]
+        self.assertTrue(section["available"])
+        self.assertIsNone(section["genre"])
 
 
 class YearTests(unittest.TestCase):
