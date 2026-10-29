@@ -1231,18 +1231,72 @@ function buildDashboardTile(item) {
   return tile;
 }
 
+/* The picks are a slider: the first slide after the one just passed is the feature (slot 1), the next
+   three are thumbnails (slots 2 to 4). Rotating moves a slide from one end of the strip to the other,
+   and the slots are read back from the DOM order. */
+function syncDashboardSlider() {
+  const slider = $('dashboardCarousel');
+  const tiles = [...slider.children];
+  tiles.forEach((tile, index) => {
+    const slot = tiles.length === 1 ? 1 : Math.min(index, 5);
+    tile.dataset.slot = String(slot);
+    // Only the feature slide is a tab stop; a thumbnail is reached by Previous, Next or a click.
+    const open = tile.querySelector('.dashboard-tile-open');
+    if (open) open.tabIndex = slot === 1 ? 0 : -1;
+  });
+  const active = tiles.find(tile => tile.dataset.slot === '1');
+  $('dashboardSliderCount').textContent = active ? `${Number(active.dataset.pick) + 1} of ${tiles.length}` : '';
+  $('dashboardPrev').disabled = $('dashboardNext').disabled = tiles.length < 2;
+}
+
+function rotateDashboardSlider(direction) {
+  const slider = $('dashboardCarousel');
+  const tiles = [...slider.children];
+  if (tiles.length < 2) return;
+  if (direction > 0) slider.append(tiles[0]);
+  else slider.prepend(tiles[tiles.length - 1]);
+  syncDashboardSlider();
+}
+
+$('dashboardPrev').addEventListener('click', () => rotateDashboardSlider(-1));
+$('dashboardNext').addEventListener('click', () => rotateDashboardSlider(1));
+$('dashboardCarousel').addEventListener('keydown', event => {
+  if (event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key === 'ArrowRight') rotateDashboardSlider(1);
+  else if (event.key === 'ArrowLeft') rotateDashboardSlider(-1);
+  else return;
+  event.preventDefault();
+});
+// A click on a thumbnail brings that album forward instead of opening it.
+$('dashboardCarousel').addEventListener('click', event => {
+  const tile = event.target.closest('.dashboard-tile');
+  const slot = tile ? Number(tile.dataset.slot) : 1;
+  if (!tile || slot < 2 || slot > 4) return;
+  event.preventDefault();
+  event.stopPropagation();
+  for (let step = 1; step < slot; step += 1) rotateDashboardSlider(1);
+}, true);
+
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
   const status = $('dashboardPicksStatus');
   const shuffle = $('shuffleDashboard');
   target.replaceChildren();
+  syncDashboardSlider();
   status.textContent = 'Picking ten albums across your discovery lists…';
   // A second shuffle while one is pending would race two responses into the same strip.
   shuffle.disabled = true;
   try {
     const data = await requestJSON('/api/dashboard-picks?count=10&nonce=' + Date.now());
     const items = (data.items || []).filter(isAlbumRecommendation);
-    for (const item of items) target.append(buildDashboardTile(item));
+    items.forEach((item, index) => {
+      const tile = buildDashboardTile(item);
+      tile.dataset.pick = String(index);
+      target.append(tile);
+    });
+    // Slot 0 is the slide just passed, so the first pick starts as the feature by moving the last one before it.
+    if (target.children.length > 1) target.prepend(target.lastElementChild);
+    syncDashboardSlider();
     status.textContent = items.length
       ? `${items.length} randomly selected albums from ${data.pool_size || items.length} available suggestions.`
       : 'No suggestions yet. Open a discovery page and refresh its list first.';
@@ -1255,7 +1309,114 @@ async function loadDashboardPicks() {
 
 $('shuffleDashboard').addEventListener('click', loadDashboardPicks);
 
-function attachArtwork(card, artist, album) {
+/* ------------------------------------------------------- dashboard genres and album shelves
+
+   Genre tiles and the album shelves below the picks. Newly added, Recently played and Most played
+   come from Navidrome in its own order; New releases comes from the discovery list. Each card
+   shows a check when the library has the album and the Get control when it does not. */
+const GENRE_TILES_COLLAPSED = 12;
+
+// A stable hue per genre, so a tile keeps its colour across loads.
+function genreTileHue(tag) {
+  let hash = 0;
+  for (const char of tag) hash = (hash * 31 + char.codePointAt(0)) % 360;
+  return hash;
+}
+
+function buildGenreTile(genre) {
+  const tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'genre-tile';
+  tile.style.setProperty('--genre-hue', String(genreTileHue(genre.tag)));
+  tile.textContent = genre.name;
+  tile.title = pluralize(genre.album_count, 'album', 'albums');
+  tile.addEventListener('click', () => openLibraryTarget({type: 'genre', tag: genre.tag}));
+  return tile;
+}
+
+async function loadDashboardGenres() {
+  const target = $('dashboardGenreTiles');
+  const status = $('dashboardGenresStatus');
+  const more = $('dashboardGenresMore');
+  status.textContent = 'Loading genres…';
+  try {
+    const data = await requestJSON('/api/dashboard/genres?limit=60');
+    const genres = data.items || [];
+    const render = expanded => {
+      target.replaceChildren(...(expanded ? genres : genres.slice(0, GENRE_TILES_COLLAPSED)).map(buildGenreTile));
+      more.setAttribute('aria-expanded', String(expanded));
+      more.textContent = expanded ? 'Show fewer' : 'View more';
+    };
+    render(false);
+    more.hidden = genres.length <= GENRE_TILES_COLLAPSED;
+    more.onclick = () => render(more.getAttribute('aria-expanded') !== 'true');
+    status.textContent = genres.length ? '' : 'No genres in your library yet.';
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+function buildShelfCard(item) {
+  const card = document.createElement('article');
+  card.className = 'card shelf-card';
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'dashboard-tile-open';
+  open.setAttribute('aria-label', 'Open ' + item.name + ' by ' + item.artist);
+  open.addEventListener('click', () => openLibraryTarget(item.owned
+    ? albumTarget({...item, key: foldKey(item.artist) + '/' + foldKey(item.name)})
+    : namedAlbumTarget(item.artist, item.name, item)));
+  card.append(open);
+
+  attachArtwork(card, item.artist, item.name, item.owned ? sizedArtwork(item.artwork_url, 300) : null);
+  card.querySelector('.card-art').append(buildAlbumState(item));
+
+  const meta = document.createElement('div');
+  meta.className = 'dashboard-tile-meta';
+  const title = document.createElement('h3');
+  title.append(buildInlineLink(item.name, item.owned
+    ? albumTarget({...item, key: foldKey(item.artist) + '/' + foldKey(item.name)})
+    : namedAlbumTarget(item.artist, item.name, item)));
+  if (item.year) addTextElement(title, 'span', 'album-year', String(item.year));
+  meta.append(title);
+  if (item.artist) linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), item.artist);
+  card.append(meta);
+  return card;
+}
+
+// Discovery items name the album "album"; Navidrome shelves name it "name".
+function shelfItemFromDiscovery(item) {
+  return {
+    name: item.album || item.title || '', artist: item.artist || item.album_artist || '',
+    year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
+    release_group_mbid: item.release_group_mbid || null, owned: item.owned === true,
+  };
+}
+
+async function loadShelf(name, url, mapItems) {
+  const target = $('shelf' + name);
+  const status = $('shelf' + name + 'Status');
+  status.textContent = 'Loading…';
+  try {
+    const data = await requestJSON(url);
+    const items = mapItems(data).filter(item => item.name);
+    target.replaceChildren(...items.map(buildShelfCard));
+    status.textContent = items.length ? '' : 'Nothing to show yet.';
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+function loadDashboardShelves() {
+  loadDashboardGenres();
+  loadShelf('NewReleases', '/api/discovery/new_releases?count=30',
+    data => (data.items || data.recommendations || []).filter(isAlbumRecommendation).map(shelfItemFromDiscovery));
+  loadShelf('Newest', '/api/dashboard/albums/newest?count=20', data => data.items || []);
+  loadShelf('Recent', '/api/dashboard/albums/recent?count=20', data => data.items || []);
+  loadShelf('Frequent', '/api/dashboard/albums/frequent?count=20', data => data.items || []);
+}
+
+function attachArtwork(card, artist, album, knownUrl = null) {
   const art = document.createElement('div');
   art.className = 'card-art';
   // A div has no role, and ARIA forbids naming a generic element, so the label was never
@@ -1273,6 +1434,14 @@ function attachArtwork(card, artist, album) {
   image.decoding = 'async';
   art.append(image, placeholder);
   card.append(art);
+
+  // The library already holds this cover, so there is nothing to look up.
+  if (knownUrl) {
+    image.onload = () => art.classList.add('has-image');
+    image.onerror = () => art.classList.remove('has-image');
+    image.src = knownUrl;
+    return;
+  }
 
   const loadArtwork = () => {
     if (art.dataset.requested) return;
@@ -3046,11 +3215,12 @@ document.getElementById('logoutButton').addEventListener('click', async event =>
   finally { window.location.replace('/login'); }
 });
 
-makeScrollTrackFocusable($('dashboardCarousel'));
+for (const id of ['shelfNewReleases', 'shelfNewest', 'shelfRecent', 'shelfFrequent']) makeScrollTrackFocusable($(id));
 
 // Populate only the visible dashboard on startup. Other pages load on first visit
 // so their API requests don't compete with the page the user is currently viewing.
 loadDashboardPicks();
+loadDashboardShelves();
 
 // ---- Library and global search (SEARCH_CONTRACT P1) --------------------------------
 // Data comes from /api/search (SSE), /api/library/artists and /api/artists/{key}. Every
@@ -3747,8 +3917,8 @@ const artistImageRequests = new Map();
 
 // An artist with no library cover gets a photo from the artist-image service, loaded when its row
 // scrolls into view. A failed or missing photo leaves the empty frame, as for any other cover.
-function buildArtistPhoto(item) {
-  if (item.artwork_url) return buildArtwork(sizedArtwork(item.artwork_url, 96), 'library-art');
+function buildArtistPhoto(item, size = 96) {
+  if (item.artwork_url) return buildArtwork(sizedArtwork(item.artwork_url, size), 'library-art');
   const frame = buildArtwork(null, 'library-art');
   if (!item.name) return frame;
   frame.loadRemoteArtwork = () => {
@@ -3775,11 +3945,11 @@ function buildArtistChip(item) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'library-artist';
-  button.append(buildArtistPhoto(item));
+  button.append(buildArtistPhoto(item, 300));
   const text = document.createElement('span');
   text.className = 'library-artist-text';
   addTextElement(text, 'span', 'library-artist-name', item.name);
-  addTextElement(text, 'span', 'library-artist-count', item.owned ? 'In your library' : 'Not in your library');
+  if (item.owned) addTextElement(text, 'span', 'library-artist-count', 'In your library');
   button.append(text);
   button.addEventListener('click', () => libraryOpen(artistTarget(item)));
   row.append(button);
@@ -3800,9 +3970,23 @@ function setSectionNote(id, message) {
   note.hidden = !message;
 }
 
-function fillRows(list, items, build) {
+function fillRows(list, items, build, limit = Infinity) {
   list.replaceChildren();
-  for (const item of items) list.append(build(item));
+  for (const item of items.slice(0, limit)) list.append(build(item));
+}
+
+// Artist and album pages show a random few of the similar artists, as circles across the page.
+const SIMILAR_ARTISTS_SHOWN = 5;
+const SIMILAR_ALBUMS_SHOWN = 7;
+const ARTIST_ALBUMS_SHOWN = 7;
+
+function randomSample(items, count) {
+  const pool = [...items];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
 }
 
 // ---- Artist view ----
@@ -3861,6 +4045,7 @@ function renderArtist(target) {
   heading.textContent = target.name || 'Loading artist…';
   setArtistBio(null);
   $('artistOwnedOnly').checked = libraryView.ownedOnly;
+  $('artistAlbumsAll').hidden = true;
   fillRows($('artistTags'), [], () => null);
   $('artistTags').hidden = true;
   for (const id of ['artistAlbums', 'artistSimilar']) $(id).replaceChildren();
@@ -3952,7 +4137,14 @@ async function fillMissingYears(ctx) {
 
 function paintArtistAlbums(ctx) {
   const items = artistAlbumsToShow(ctx);
-  fillRows($('artistAlbums'), items, item => buildAlbumRow({...item, showListens: true}));
+  fillRows($('artistAlbums'), items, item => buildAlbumRow({...item, showListens: true}),
+    ctx.showAllAlbums ? Infinity : ARTIST_ALBUMS_SHOWN);
+  const allButton = $('artistAlbumsAll');
+  allButton.hidden = ctx.showAllAlbums || items.length <= ARTIST_ALBUMS_SHOWN;
+  allButton.onclick = () => {
+    ctx.showAllAlbums = true;
+    paintArtistAlbums(ctx);
+  };
   if (libraryView.ownedOnly && !items.length && ctx.ownedLoaded) {
     setSectionNote('artistAlbumsNote', 'None of this artist\'s albums are in your library.');
   }
@@ -4006,7 +4198,7 @@ function applyArtistSection(section, ctx) {
     }
   } else if (section.section === 'similar') {
     if (section.available && section.items.length) {
-      fillRows($('artistSimilar'), section.items, buildArtistChip);
+      fillRows($('artistSimilar'), randomSample(section.items, SIMILAR_ARTISTS_SHOWN), buildArtistChip);
       // A tag lookup that ran out of time only changes the order, so the list needs no warning.
       setSectionNote('artistSimilarNote', '');
     } else {
@@ -4064,9 +4256,11 @@ function renderAlbum(target) {
   heading.textContent = target.name || 'Loading album…';
   $('albumArtist').replaceChildren();
   $('albumYear').textContent = target.year || '';
+  $('albumOwnership').hidden = target.owned !== false;
   $('albumAction').replaceChildren();
   $('albumTracks').replaceChildren();
   for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
+  $('albumSimilarAlbumsAll').hidden = true;
   setAlbumDescription(null);
   setSectionNote('albumTracksNote', 'Loading tracklist…');
   setSectionNote('albumSimilarArtistsNote', 'Loading similar artists…');
@@ -4123,6 +4317,7 @@ function applyAlbumSection(section, target) {
       wrap.prepend(buildArtwork(sizedArtwork(album.artwork_url, 500), 'album-hero-art'));
     }
     $('albumYear').textContent = album.year || $('albumYear').textContent;
+    $('albumOwnership').hidden = Boolean(album.owned);
     const artist = $('albumArtist');
     artist.replaceChildren();
     artist.append(buildLibraryLink(album.artist, {
@@ -4161,7 +4356,7 @@ function applyAlbumSection(section, target) {
     }
   } else if (section.section === 'similar_artists') {
     if (section.available && section.items.length) {
-      fillRows($('albumSimilarArtists'), section.items, buildArtistChip);
+      fillRows($('albumSimilarArtists'), randomSample(section.items, SIMILAR_ARTISTS_SHOWN), buildArtistChip);
       setSectionNote('albumSimilarArtistsNote', '');
     } else {
       setSectionNote('albumSimilarArtistsNote', section.available ? 'No similar artists found.'
@@ -4169,7 +4364,17 @@ function applyAlbumSection(section, target) {
     }
   } else if (section.section === 'similar_albums') {
     if (section.available && section.items.length) {
-      fillRows($('albumSimilarAlbums'), section.items, item => buildAlbumRow({...item, showArtist: true}));
+      const showSimilarAlbums = all => {
+        fillRows($('albumSimilarAlbums'), section.items, item => buildAlbumRow({...item, showArtist: true}),
+          all ? Infinity : SIMILAR_ALBUMS_SHOWN);
+      };
+      showSimilarAlbums(false);
+      const allButton = $('albumSimilarAlbumsAll');
+      allButton.hidden = section.items.length <= SIMILAR_ALBUMS_SHOWN;
+      allButton.onclick = () => {
+        showSimilarAlbums(true);
+        allButton.hidden = true;
+      };
       setSectionNote('albumSimilarAlbumsNote', '');
     } else {
       setSectionNote('albumSimilarAlbumsNote', section.available ? 'No similar albums found.'

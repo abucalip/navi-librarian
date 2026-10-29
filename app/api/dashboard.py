@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from app.services.dashboard import build_dashboard_picks
+from app.services.dashboard_sections import SHELF_TYPES, album_shelf, genre_tiles
 
 router = APIRouter()
 
@@ -47,3 +48,25 @@ def dashboard_picks(count: int = 10, librarian=Depends(get_librarian)):
         count,
         shuffle=random.shuffle,
     )
+
+
+@router.get("/api/dashboard/genres")
+def dashboard_genres(limit: int = 60, librarian=Depends(get_librarian)):
+    if not 1 <= limit <= 200:
+        raise HTTPException(status_code=400, detail="limit must be between 1 and 200")
+    try:
+        return {"items": genre_tiles(librarian.api_call, limit)}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not load genres from Navidrome.")
+
+
+@router.get("/api/dashboard/albums/{shelf}")
+def dashboard_albums(shelf: str, count: int = 20, librarian=Depends(get_librarian)):
+    if shelf not in SHELF_TYPES:
+        raise HTTPException(status_code=404, detail="Unknown album shelf.")
+    if not 1 <= count <= 50:
+        raise HTTPException(status_code=400, detail="count must be between 1 and 50")
+    try:
+        return {"items": album_shelf(librarian.api_call, shelf, count)}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Could not load albums from Navidrome.")

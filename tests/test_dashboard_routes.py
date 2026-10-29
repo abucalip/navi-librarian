@@ -53,6 +53,8 @@ class DashboardRoutesTests(unittest.TestCase):
         self.assertEqual(actual, {
             ("/api/health", "GET"),
             ("/api/dashboard-picks", "GET"),
+            ("/api/dashboard/genres", "GET"),
+            ("/api/dashboard/albums/{shelf}", "GET"),
         })
 
     def test_health_uses_injected_service_and_preserves_response(self):

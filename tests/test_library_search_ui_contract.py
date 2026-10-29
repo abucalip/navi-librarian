@@ -23,7 +23,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_top_bar_search_is_a_labelled_search_landmark_with_a_results_region(self):
         self.assertIn('<form id="globalSearch" class="global-search" role="search"', self.html)
-        self.assertIn('<label for="globalSearchInput" class="sr-only">Search your library</label>', self.html)
+        self.assertIn('<label for="globalSearchInput" class="sr-only">Search your library or discover new music</label>', self.html)
         # A searchbox has no listbox behind it here, so no combobox ARIA may be claimed.
         search_input = self.html[self.html.index('<input id="globalSearchInput"'):]
         search_input = search_input[:search_input.index(">")]
@@ -34,7 +34,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn('id="globalSearchStatus" class="status-line" aria-live="polite"', self.html)
 
     def test_copy_does_not_promise_albums_or_songs_that_do_not_open(self):
-        self.assertIn('placeholder="Search your library"', self.html)
+        self.assertIn('placeholder="Search your library or discover new music"', self.html)
         self.assertNotIn("albums and songs", self.html)
         self.assertIn("Select an artist to see their bio, albums and similar artists.", self.html)
 
@@ -157,7 +157,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
             self.assertIn(service, self.js[self.js.index("function setAlbumPagePlatformLinks"):self.js.index("function fillPlatformLinks")])
 
     def test_similar_artists_without_a_library_cover_load_a_photo(self):
-        self.assertIn("button.append(buildArtistPhoto(item));", self.new_js)
+        self.assertIn("button.append(buildArtistPhoto(item, 300));", self.new_js)
         self.assertIn("'/api/artist-image?' + new URLSearchParams({name: item.name})", self.new_js)
 
     def test_names_and_tags_on_cards_and_rows_open_library_pages(self):

@@ -784,3 +784,82 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-description-text.is-collapsed p:not(:first-child) { display: none; }
 .album-description-text.is-collapsed p:first-child { max-height: calc(1.55em * 6); overflow: hidden; }
 .album-description-source { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--text-xs); }
+
+/* Dashboard genre tiles and album shelves */
+.dashboard-shelf, .dashboard-genres { margin-top: var(--space-4); }
+.dashboard-shelf-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.dashboard-shelf-heading h2 { margin: 0; }
+.dashboard-shelf-heading .link-button { margin-left: auto; background: transparent; border-color: transparent; color: var(--text-muted); }
+.dashboard-shelf-heading .link-button:hover { color: var(--text); }
+.genre-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.genre-tile { --genre-hue: 0; display: flex; align-items: center; min-height: 52px; padding: 8px 16px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--surface-raised); border: 0; border-left: 8px solid hsl(var(--genre-hue) 55% 55%); border-radius: 6px; }
+.genre-tile:hover { background: var(--surface-hover); }
+.shelf-card { position: relative; }
+.shelf-card .card-art { position: relative; }
+.shelf-card .get-album, .shelf-card .owned-check { position: absolute; right: var(--space-2); bottom: var(--space-2); z-index: 3; }
+.shelf-card .owned-check { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-raised); box-shadow: 0 2px 8px rgba(0,0,0,.55); }
+.shelf-card .dashboard-tile-meta .inline-link { position: relative; z-index: 3; }
+.shelf-card > .dashboard-tile-open { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
+.shelf-card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+/* An empty status line on these sections would show only its bullet. It stays in the page so its live region still announces. */
+.dashboard-genres .status-line:empty, .dashboard-shelf .status-line:empty { margin: 0; }
+.dashboard-genres .status-line:empty::before, .dashboard-shelf .status-line:empty::before { content: none; }
+.dashboard-picks-status::before { content: none; }
+
+/* Similar artists: five circular photos that share the page width. */
+.similar-artists { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
+.similar-artists .library-artist { flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-2); text-align: center; border-radius: 8px; }
+.similar-artists .library-art { flex: 0 0 auto; width: 100%; height: auto; aspect-ratio: 1 / 1; border-radius: 50%; }
+.similar-artists .library-artist-text { justify-items: center; width: 100%; }
+@media (max-width: 620px) { .similar-artists { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.show-all-button { margin-top: var(--space-3); }
+
+/* Album page: the year is yellow like elsewhere; the ownership note and the description source are grey. */
+#albumYear { color: var(--accent); font: 500 var(--text-sm)/1.5 var(--mono); }
+#albumOwnership, .album-description-source a { color: var(--text-muted); }
+
+/* Dashboard slider: one large feature slide with the next albums as thumbnails beside it. Previous and
+   Next rotate the slides (script in app.js sets data-slot: 1 is the feature, 2 to 4 the thumbnails, 0 the
+   slide just passed, 5 and up the rest). Plain CSS and JS, so it works in every browser. Only transform
+   and opacity are animated. */
+.dashboard-slider-wrap { --slider-h: 380px; --art: 380px; --thumb-w: 140px; --thumb-h: 190px; --thumb-gap: 12px; --thumbs: 3; position: relative; }
+.dashboard-slider-box { container-type: inline-size; }
+.dashboard-slider { position: relative; height: var(--slider-h); margin: 0; border-radius: 12px; background: var(--surface-raised); }
+.dashboard-slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dashboard-slider > .card { position: absolute; top: 50%; right: 20px; width: var(--thumb-w); height: var(--thumb-h); margin: 0; padding: 0; transform: translateY(-50%); border: 0; border-radius: 10px; box-shadow: 0 12px 28px rgb(0 0 0 / .45); cursor: pointer; transition: opacity var(--dur) var(--ease-out); }
+.dashboard-slider > .card[data-slot="4"], .dashboard-slider > .card[data-slot="5"] { right: 20px; }
+.dashboard-slider > .card[data-slot="3"] { right: calc(20px + var(--thumb-w) + var(--thumb-gap)); }
+.dashboard-slider > .card[data-slot="2"] { right: calc(20px + 2 * (var(--thumb-w) + var(--thumb-gap))); }
+.dashboard-slider > .card[data-slot="5"] { opacity: 0; pointer-events: none; }
+.dashboard-slider > .card[data-slot="0"] { visibility: hidden; pointer-events: none; }
+/* The feature slide fills the strip: artwork on the left, the album's details beside it. */
+.dashboard-slider > .card[data-slot="1"] { inset: 0; width: auto; height: auto; transform: none; display: grid; grid-template-columns: var(--art) minmax(0, 1fr); align-items: center; border-radius: 12px; box-shadow: none; cursor: default; }
+.dashboard-slider > .card > .card-art { position: absolute; inset: 0; width: auto; aspect-ratio: auto; border: 0; }
+.dashboard-slider > .card[data-slot="1"] > .card-art { position: relative; inset: auto; width: 100%; height: 100%; aspect-ratio: auto; }
+.dashboard-slider > .card:not([data-slot="1"]) .get-album, .dashboard-slider > .card:not([data-slot="1"]) .dashboard-tile-meta { display: none; }
+.dashboard-slider > .card > .dashboard-tile-meta { margin: 0; padding: 0 28px; max-width: min(34rem, calc(100cqi - var(--art) - var(--thumbs) * (var(--thumb-w) + var(--thumb-gap)) - 40px)); }
+.dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { animation: dashboard-slide-in var(--dur-slow) var(--ease-out) both; }
+.dashboard-slider > .card[data-slot="1"] h3 { font-size: var(--text-2xl); }
+.dashboard-slider > .card[data-slot="1"] .artist-bio { margin-top: var(--space-3); }
+/* The coming-up thumbnails are slightly blurred so the feature slide stands out; hover clears it. */
+.dashboard-slider > .card[data-slot="2"], .dashboard-slider > .card[data-slot="3"], .dashboard-slider > .card[data-slot="4"] { filter: blur(2px); }
+.dashboard-slider > .card:not([data-slot="1"]):hover { opacity: .85; filter: none; }
+@keyframes dashboard-slide-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { animation: none; } }
+
+.dashboard-slider-nav { position: absolute; left: calc(var(--art) + 28px); bottom: 20px; z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
+.dashboard-slider-nav button { width: 40px; height: 36px; padding: 0; display: grid; place-content: center; }
+.dashboard-slider-count { margin-left: var(--space-2); color: var(--text-muted); font: 500 var(--text-xs)/1 var(--mono); }
+
+/* Narrower rows lose thumbnails first, then the artwork shrinks. */
+@container (max-width: 1140px) { .dashboard-slider-wrap { --thumbs: 2; } .dashboard-slider > .card[data-slot="2"] { opacity: 0; pointer-events: none; } }
+@container (max-width: 990px) { .dashboard-slider-wrap { --thumbs: 1; } .dashboard-slider > .card[data-slot="3"] { opacity: 0; pointer-events: none; } }
+@container (max-width: 840px) { .dashboard-slider-wrap { --thumbs: 0; } .dashboard-slider > .card[data-slot="4"] { opacity: 0; pointer-events: none; } }
+@container (max-width: 720px) {
+  .dashboard-slider-wrap { --slider-h: 250px; --art: 150px; }
+  .dashboard-slider > .card > .dashboard-tile-meta { padding: 0 16px; }
+  .dashboard-slider > .card[data-slot="1"] h3 { font-size: var(--text-lg); }
+  .dashboard-slider > .card[data-slot="1"] .artist-bio { display: none; }
+  .dashboard-slider-nav { left: calc(var(--art) + 16px); bottom: 12px; }
+}
