@@ -89,6 +89,13 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - **Known limits:** the slider is for about ten items with one feature and has not been applied to the other card rows; the similar-artist shuffle uses whatever the server returns (up to 20, fewer while the tag cache is cold); after any `index.html` change the app must be restarted or the image rebuilt.
 - Published as v0.2.6 (2026-10-29); not deployed.
 
+## 2e. Grab the radio — limits and open checks
+
+- Merged in PR [#637](https://github.com/abucalip/navi-librarian/pull/637) (squash `3edd12c`, RADIO-01). Stations whose address is a playlist (`.pls`, `.m3u`), stations that send no ICY titles, and servers that answer with the non-HTTP `ICY 200 OK` status line are not logged. A relayed station stops playing while the app is down; switching it off restores its address.
+- A song with no `Artist - Title` form, or with no exact MusicBrainz match, cannot be downloaded.
+- A station only works from the address it was switched on at: a phone away from home needs an app address it can reach (switch the station on from a browser opened at that address).
+- Not done: browser checklist, live slskd download of a radio song, a phone client test. Possible later work, not approved: a settings field for the app's public address.
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).
