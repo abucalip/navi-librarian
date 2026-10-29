@@ -1,6 +1,6 @@
 # Album page redesign: layout record and song-only Get proposal
 
-Status: layout, `genre` and per-track `owned` are **merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635)** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is a **draft for owner approval; nothing of it is built**.
+Status: layout, `genre` and per-track `owned` are **merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635)** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is **approved by the owner and built, not yet merged** (requirement ACQ-08); the owner's decisions are recorded at the end of section 3.
 
 ## 1. Layout requested by the owner
 
@@ -14,7 +14,7 @@ Decisions carried over from the artist page: no "Library" heading and no text Ba
 - The album-level Get (or owned check) stays on the cover, as before.
 - There is no Get on a track, because Get requests a whole album.
 
-## 3. Proposal: Get a single song (not built)
+## 3. Get a single song (approved, built, not merged)
 
 The owner's direction: a Get on a track downloads only that song and imports it into the right folder, following the established protocol.
 
@@ -30,3 +30,11 @@ What a song-only Get needs, each part to be approved before building:
 6. **Tests.** Safe success and unsafe refusal for each rule above, in the acquisition regression suite, plus Get/pending/requested/failed button states for rows.
 
 Decisions needed from the owner: automatic versus reviewed candidate choice; where a song goes when the album folder does not exist yet; whether a song Get on an album the library does not have should create the album folder with that one song; and whether the album-level Get hides once any track is owned.
+
+### Owner decisions and what was built
+
+- **Candidate choice: automatic.** The best clear file is queued with no review step.
+- **No album folder yet: create it.** `<music root>/<artist>/<album>/` is created with that one song, named as an album import names it. An existing folder is reused, including one with a year in its name; two possible folders refuse.
+- **Album-level Get: hides only when all tracks are owned**, and then becomes the green check. An album the library only partly has keeps its Get.
+- **Built as** `acquisition/track_search.py` (queries and the strict title match), `track_destination.py`, `track_import.py` (no-overwrite, descriptor-pinned import), `track_service.py` (request, watcher with retry and fallback sources, dismissal, restart resume, live progress), `POST /api/acquire/track`, a Get pill on each missing track, and song acquisition cards. A song is one row of the existing acquisition table whose album name is `<title> (song on <album>)`, with `kind: "track"` in its details; its candidate stores `track_file`, never `files`, so the album watcher's restart recovery cannot claim it. `navidrome_server.py` is unchanged (D-016).
+- **Known limits.** (1) The album-level Get on a partly owned album starts the album flow, whose import refuses an existing album folder (`destination_exists`); it does not import only the missing songs. (2) A song's dismissal is refused (fail closed) while another download shares its remote folder name in the download directory, until that one finishes. (3) A song interrupted while `importing` is not resumed and is dismissed by the owner. (4) Nothing ran against live slskd or the owner's library, and the page was not checked in a browser.

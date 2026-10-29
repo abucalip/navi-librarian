@@ -364,7 +364,9 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       const metadata = details.metadata || {};
       const info = acquisitionStatusInfo(job.status);
       const artist = job.artist || 'Unknown artist';
-      const album = job.album || 'Unknown album';
+      // A song's row is named after the song; its album is the one it belongs to.
+      const isSong = details.kind === 'track';
+      const album = (isSong ? details.album_name : job.album) || 'Unknown album';
       const row = document.createElement('article');
       row.className = 'acq-row';
       row.dataset.status = String(job.status || 'unknown');
@@ -375,9 +377,11 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
       const main = document.createElement('div');
       main.className = 'acq-main';
       row.append(main);
-      linkAlbumName(addTextElement(main, 'h3', '', ''), artist, album, details);
+      if (isSong) addTextElement(main, 'h3', '', details.track_title || job.album || 'Unknown song');
+      else linkAlbumName(addTextElement(main, 'h3', '', ''), artist, album, details);
       ensureAlbumYearBadge(row);
       linkArtistName(addTextElement(main, 'p', 'acq-artist', ''), artist);
+      if (isSong) linkAlbumName(addTextElement(main, 'p', 'acq-artist', 'Song on '), artist, album, details);
       const qualityLabels = {
         mp3_320: 'MP3 320 kbps', mp3_193_319: 'MP3 193–319 kbps',
         mp3_192: 'MP3 192 kbps', flac_cd: 'FLAC / CD quality',
@@ -512,7 +516,11 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             retry.disabled = true;
             retry.textContent = 'Retrying…';
             try {
-              await sendJSON('/api/acquire', 'POST', {
+              await sendJSON(isSong ? '/api/acquire/track' : '/api/acquire', 'POST', isSong ? {
+                artist: job.artist, album, title: details.track_title,
+                track_number: details.track_number || undefined, year: details.year || undefined,
+                metadata: details.metadata || {}
+              } : {
                 artist: job.artist, album: job.album,
                 metadata: details.metadata || {}, auto_queue: true
               });
@@ -2687,11 +2695,13 @@ async function pollDiscoveryUntilReady(name) {
 // entrance is a transform and opacity transition (static/app.css), not a dash offset.
 const GET_BUTTON_ICON =
   '<svg class="get-album-glyph" viewBox="0 0 44 44" aria-hidden="true" focusable="false"' +
-  ' fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">' +
+  ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
   '<circle class="get-album-arc" cx="22" cy="22" r="11.5"/>' +
   '<path class="get-album-tick" d="M14.5 22.6 19.6 27.7 29.5 16.4" pathLength="1"/>' +
   '<path class="get-album-arrow" d="M30.8 15.2A11 11 0 1 0 33 22"/>' +
   '<path class="get-album-arrow-head" d="M25.9 16.9 30.9 15.1 29.1 20.1"/>' +
+  '<path class="get-album-down" d="M22 11.5V25M15.8 19.3 22 25.5l6.2-6.2"/>' +
+  '<path class="get-album-tray" d="M13.5 28v4h17v-4"/>' +
   '</svg>';
 
 function decorateGetButton(button) {
@@ -2748,10 +2758,11 @@ function setGetButtonState(button, state, artist, album) {
     button.title = album ? 'Request failed. Try again: ' + album : 'Request failed. Try again';
     button.setAttribute('aria-label', button.title);
   } else {
+    const noun = button.dataset.noun || 'album';
     button.disabled = false;
     setGetButtonLabel(button, 'get');
-    button.title = 'Get this album';
-    button.setAttribute('aria-label', album ? 'Get ' + album : 'Get this album');
+    button.title = 'Get this ' + noun;
+    button.setAttribute('aria-label', album ? 'Get ' + album : 'Get this ' + noun);
   }
 }
 
@@ -2851,6 +2862,52 @@ function reportAcquisitionOutcome(message, kind) {
   liveRegion.textContent = message;
   if (target) setStatusState(target, kind);
 }
+// Get one song of an album. The server chooses the file and files it with the album.
+async function searchTrack(song, button) {
+  if (button.disabled && !button.classList.contains('is-failed')) return;
+  const hadFocus = document.activeElement === button;
+  setGetButtonState(button, 'pending', song.artist, song.title);
+  if (hadFocus) button.parentElement.focus();
+  try {
+    const data = await sendJSON('/api/acquire/track', 'POST', {
+      artist: song.artist, album: song.album, title: song.title,
+      track_number: song.track_number || undefined, year: song.year || undefined,
+    });
+    if (data && data.ok === false) {
+      setGetButtonState(button, 'failed', song.artist, song.title);
+      if (hadFocus) button.focus();
+      reportAcquisitionOutcome(data.message || data.error || 'The request could not be placed.', 'error');
+      return;
+    }
+    // A search that finds nothing is a finished request, not a pending one: Get stays usable.
+    if (data && data.status === 'no_matches') {
+      setGetButtonState(button, 'failed', song.artist, song.title);
+      if (hadFocus) button.focus();
+      reportAcquisitionOutcome(data.message, 'error');
+      await loadAcquisitions();
+      return;
+    }
+    setGetButtonState(button, 'requested', song.artist, song.title);
+    reportAcquisitionOutcome(data && data.message, 'success');
+    await loadAcquisitions();
+  } catch (error) {
+    setGetButtonState(button, 'failed', song.artist, song.title);
+    if (hadFocus) button.focus();
+    reportAcquisitionOutcome(error.message, 'error');
+  }
+}
+
+function createTrackGetButton(song) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'get-album get-track';
+  button.dataset.noun = 'song';
+  decorateGetButton(button);
+  setGetButtonState(button, 'idle', song.artist, song.title);
+  button.addEventListener('click', () => searchTrack(song, button));
+  return button;
+}
+
 async function loadNavidromeSettings() {
   try {
     const data = await requestJSON('/api/settings/navidrome');
@@ -4247,13 +4304,16 @@ function buildTopSongRow(item) {
   if (item.listen_count) {
     listens.title = Number(item.listen_count).toLocaleString() + ' listens on ' + (item.source === 'lastfm' ? 'Last.fm' : 'ListenBrainz');
   }
-  row.append(item.owned ? buildOwnedCheck() : document.createElement('span'));
+  // A song the library lacks gets its own Get when the source named its album, which is where it is filed.
+  row.append(item.owned ? buildOwnedCheck()
+    : item.album && item.artist ? createTrackGetButton({artist: item.artist, album: item.album, title: item.name})
+    : document.createElement('span'));
   return row;
 }
 
 function paintTopSongs(ctx) {
   const items = ctx.topSongs || [];
-  fillRows($('artistTopSongs'), items, buildTopSongRow, ctx.showAllSongs ? Infinity : TOP_SONGS_SHOWN);
+  fillRows($('artistTopSongs'), items.map(song => ({...song, artist: ctx.name})), buildTopSongRow, ctx.showAllSongs ? Infinity : TOP_SONGS_SHOWN);
   const allButton = $('artistTopSongsAll');
   allButton.hidden = ctx.showAllSongs || items.length <= TOP_SONGS_SHOWN;
   allButton.onclick = () => {
@@ -4388,6 +4448,7 @@ function renderAlbum(target) {
   $('albumSummary').textContent = '';
   $('albumOwnership').hidden = target.owned !== false;
   $('albumAction').replaceChildren();
+  albumPage.album = null;
   $('albumTracks').replaceChildren();
   for (const id of ['albumSimilarArtists', 'albumSimilarAlbums']) $(id).replaceChildren();
   $('albumSimilarAlbumsAll').hidden = true;
@@ -4444,6 +4505,19 @@ function setAlbumGenre(genre) {
   if (genre) box.append(buildLibraryLink(genre, {type: 'genre', tag: genre}, 'genre-text-link'));
 }
 
+// The album the open page shows, as its album section reported it; track rows read it for their Get.
+const albumPage = {album: null};
+
+// The album's own state: a green check when every song is in the library, the Get button when not.
+// Before the tracklist arrives an owned album shows the check, as it always did.
+function setAlbumAction(album, tracks) {
+  const complete = tracks ? tracks.every(track => track.owned) : Boolean(album.owned);
+  $('albumAction').replaceChildren(buildAlbumState({
+    owned: complete, artist: album.artist, name: album.name, year: album.year,
+    release_group_mbid: album.release_group_mbid,
+  }));
+}
+
 // A track: number, title, length, and a green check when the library has the song.
 function buildTrackRow(track, index) {
   const row = document.createElement('li');
@@ -4451,7 +4525,14 @@ function buildTrackRow(track, index) {
   addTextElement(row, 'span', 'track-number', track.track_number || index + 1);
   addTextElement(row, 'span', 'track-title', track.title);
   addTextElement(row, 'span', 'track-duration', formatDuration(track.duration_seconds));
-  row.append(track.owned ? buildOwnedCheck() : document.createElement('span'));
+  // A song the library lacks gets its own Get, once the album it belongs to is known.
+  const album = albumPage.album;
+  row.append(track.owned ? buildOwnedCheck()
+    : album ? createTrackGetButton({
+        artist: album.artist, album: album.name, title: track.title,
+        track_number: track.track_number || index + 1, year: album.year,
+      })
+    : document.createElement('span'));
   return row;
 }
 
@@ -4487,11 +4568,8 @@ function applyAlbumSection(section, target) {
       name: album.artist, mbid: null, artworkUrl: null,
     }, 'library-link'));
     setAlbumPagePlatformLinks(album.artist, album.name, album.release_group_mbid);
-    const action = $('albumAction');
-    action.replaceChildren(buildAlbumState({
-      owned: album.owned, artist: album.artist, name: album.name, year: album.year,
-      release_group_mbid: album.release_group_mbid,
-    }));
+    albumPage.album = album;
+    setAlbumAction(album);
     return true;
   }
   if (section.section === 'year') {
@@ -4510,6 +4588,8 @@ function applyAlbumSection(section, target) {
   if (section.section === 'tracks') {
     if (section.available && section.items.length) {
       fillRows($('albumTracks'), section.items, buildTrackRow);
+      // Album Get stays until every song is in the library, then becomes the check.
+      if (albumPage.album) setAlbumAction(albumPage.album, section.items);
       $('albumSummary').textContent = albumSummary(section.items);
       setSectionNote('albumTracksNote', '');
     } else {

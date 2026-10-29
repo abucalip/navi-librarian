@@ -332,7 +332,7 @@ p { line-height: 1.55; }
 .album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 auto; width: 22px; height: 22px; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; font-size: var(--text-xs); }
+.album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 40px; height: 40px; font-size: var(--text-xs); }
 .album-modal-copy h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl)/1.05 var(--display); overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
 .album-modal-bio { margin: var(--space-3) 0 0; color: var(--text-muted); font: 400 var(--text-sm)/1.5 var(--body); max-width: 60ch; }
@@ -350,28 +350,33 @@ p { line-height: 1.55; }
 .card .artist-bio.is-pending { visibility: hidden; }
 /* With no category tag above it (Deep Dives), the heading would sit right against the artwork. */
 .card > .card-art + h3 { margin-top: 13px; }
-.card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 46px; height: 46px; font-size: var(--text-xs); }
+.card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 34px; height: 34px; font-size: var(--text-xs); }
 /* 44x44 hit area in the artwork corner, 20px sprite icon (DESIGN_SYSTEM.md 9.1). The icon is
    inside the clipped artwork, so its focus ring is drawn inside the box. */
 .card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--chart-red-text); box-shadow: none; }
 .card .card-art .deep-dive-dismiss:hover { background: transparent; color: var(--text); border: 0; }
 .card .card-art .deep-dive-dismiss:focus-visible { outline-offset: -4px; }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
-.card .card-actions .get-album { width: 44px; height: 44px; font-size: var(--text-xs); }
+.card .card-actions .get-album { width: 32px; height: 32px; font-size: var(--text-xs); }
 /* One get/request control. The modal, artwork-overlay and card-action variants were
    three copies of the same declarations differing only in size and border width; they
    now share one base and set only their own geometry. State is carried by text and a
    class, never by colour alone. */
 .get-album {
   display: inline-grid; place-items: center; padding: 0;
-  border-radius: 50%; background: var(--accent); border: 2px solid var(--accent-hover);
-  color: var(--on-accent); box-shadow: 0 3px 12px rgba(0,0,0,.55);
+  border-radius: 50%; background: var(--ink); border: 1px solid var(--accent);
+  color: var(--accent); box-shadow: 0 3px 12px rgba(0,0,0,.55);
   font: 700 var(--text-xs)/1 var(--mono); text-transform: uppercase;
   cursor: pointer;
 }
-.get-album:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+.get-album:hover:not(:disabled):not(.is-failed) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+/* Idle face: a download arrow over a tray. On hover the arrow slides in from above (transform and opacity only). */
+.get-album-label { display: none; }
+.get-album-down, .get-album-tray { opacity: 0; }
+.get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-down, .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-tray { opacity: 1; }
+.get-album:hover:not(:disabled):not(.is-failed) .get-album-down { animation: get-arrow-in var(--dur-slow) var(--ease-out) both; }
+@keyframes get-arrow-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
 .get-album:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.get-album-label { grid-area: 1 / 1; }
 .get-album-glyph { grid-area: 1 / 1; width: 100%; height: 100%; }
 .get-album-arc, .get-album-tick, .get-album-arrow, .get-album-arrow-head { opacity: 0; }
 /* Pending: the request is in flight. Applied before the server answers, so it must not
@@ -551,6 +556,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
    state still reads without motion. */
 @media (prefers-reduced-motion: reduce) {
   .get-album.is-pending .get-album-arc { animation: none; }
+  .get-album:hover .get-album-down { animation: none; }
   .get-album.requested .get-album-tick { animation: none; opacity: 1; transform: none; }
 }
 
@@ -622,8 +628,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-category { color: var(--text); font-weight: 600; }
 .row-source { color: var(--text-subtle); }
 .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.ranked-row .get-album { width: auto; height: 44px; min-width: 64px; padding: 0 16px; border-radius: 999px; font-size: var(--text-xs); }
-.ranked-row .get-album-glyph { width: 22px; height: 22px; }
+.ranked-row .get-album { width: 32px; height: 32px; }
 .ranked-row .deep-dive-dismiss {
   width: 44px; height: 44px; padding: 0; display: grid; place-items: center;
   background: transparent; border: 1px solid var(--edge-strong); border-radius: 4px;
@@ -742,7 +747,7 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .album-hero-art-wrap { position: relative; }
 .album-hero-art { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
 .album-hero-action { display: contents; }
-.album-hero-action .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; font-size: var(--text-xs); }
+.album-hero-action .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 40px; height: 40px; font-size: var(--text-xs); }
 .album-hero-action .owned-check { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; border-radius: 50%; background: var(--surface-raised); border: 2px solid var(--ok); box-shadow: 0 3px 12px rgba(0,0,0,.55); }
 
 .section-heading-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-top: var(--space-5); }
@@ -870,7 +875,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .artist-top-songs .show-all-button, #artistMissingAll { min-height: 44px; margin-top: var(--space-2); padding: 0; color: var(--text-muted); font-size: var(--text-sm); background: transparent; border-color: transparent; }
 .artist-top-songs .show-all-button:hover, #artistMissingAll:hover { color: var(--accent); text-decoration: underline; background: transparent; border-color: transparent; }
 .top-song-list { display: grid; margin: 0; padding: 0; list-style: none; }
-.top-song { display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto 28px; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); }
+.top-song { display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto minmax(28px, auto); align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); }
 .top-song:last-child { border-bottom: 0; }
 .top-song-rank { color: var(--text-muted); font: 600 var(--text-md)/1 var(--display); font-variant-numeric: tabular-nums; }
 .top-song-text { display: grid; min-width: 0; }
@@ -920,11 +925,14 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-head .album-description { margin-top: var(--space-3); }
 .album-head .bio-toggle { margin-top: calc(var(--space-2) * -1); }
 .track-list { margin: var(--space-6) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--edge); }
-.track { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto 28px; align-items: center; gap: var(--space-3); min-height: 52px; padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--edge); }
+.track { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto minmax(28px, auto); align-items: center; gap: var(--space-3); min-height: 52px; padding: var(--space-2) var(--space-2); border-bottom: 1px solid var(--edge); }
 .track-number { color: var(--text-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .track-title { min-width: 0; overflow-wrap: anywhere; }
 .track-duration { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .track .owned-check { width: 28px; height: 28px; }
+/* A song's own Get: the same circle, smaller. */
+.track .get-track, .top-song .get-track { width: 26px; height: 26px; }
+.track .get-track .get-album-glyph, .top-song .get-track .get-album-glyph { width: 100%; height: 100%; }
 .track .owned-check-glyph { width: 18px; height: 18px; }
 .album-summary { margin: var(--space-4) var(--space-2) 0; color: var(--text-muted); font-size: var(--text-sm); text-align: center; }
 .album-summary:empty { display: none; }
