@@ -18,9 +18,9 @@
 <header>
   <h1>Navidrome Librarian</h1>
   <form id="globalSearch" class="global-search" role="search" autocomplete="off">
-    <label for="globalSearchInput" class="sr-only">Search your library</label>
+    <label for="globalSearchInput" class="sr-only">Search your library or discover new music</label>
     <input id="globalSearchInput" type="search" name="q" maxlength="200"
-           placeholder="Search your library"
+           placeholder="Search your library or discover new music"
            >
     <div id="globalSearchResults" class="search-results" role="region" aria-label="Search results" hidden>
       <p id="globalSearchStatus" class="status-line" aria-live="polite"></p>
@@ -32,7 +32,6 @@
     </div>
   </form>
   <div class="header-tools">
-    <p>LISTENING INTELLIGENCE · DISCOVERY INDEX</p>
     <div class="header-menu">
       <button id="appMenuButton" class="header-menu-toggle" type="button"
               aria-label="Settings and account" title="Settings and account"
@@ -101,14 +100,52 @@
     <div class="panel">
       <div class="dashboard-carousel-heading">
         <div>
-          <h2 id="dashboardHeading">Ten from the collection</h2>
-          <!-- The strip scrolls sideways, so the copy names the gesture. -->
-          <p>A fresh, random mix from every discovery lane. Scroll the row, or focus it and use ← →.</p>
+          <h2 id="dashboardHeading">Recommended</h2>
         </div>
         <button id="shuffleDashboard">Shuffle picks ↻</button>
       </div>
       <p id="dashboardPicksStatus" class="dashboard-picks-status status-line" aria-live="polite">Finding something unexpected…</p>
-      <div id="dashboardCarousel" class="dashboard-carousel" role="group" aria-label="Random album recommendations"></div>
+      <div class="dashboard-slider-box"><div class="dashboard-slider-wrap">
+        <div id="dashboardCarousel" class="dashboard-slider" role="group" aria-roledescription="carousel" aria-label="Random album recommendations" tabindex="0"></div>
+        <div class="dashboard-slider-nav">
+          <button type="button" id="dashboardPrev" aria-label="Previous album">◁</button>
+          <button type="button" id="dashboardNext" aria-label="Next album">▷</button>
+          <span id="dashboardSliderCount" class="dashboard-slider-count" aria-live="polite"></span>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="panel dashboard-genres" aria-labelledby="dashboardGenresHeading">
+      <div class="dashboard-shelf-heading">
+        <h2 id="dashboardGenresHeading">Genres</h2>
+        <button type="button" id="dashboardGenresMore" class="link-button" hidden aria-expanded="false" aria-controls="dashboardGenreTiles">View more</button>
+      </div>
+      <p id="dashboardGenresStatus" class="status-line" aria-live="polite"></p>
+      <div id="dashboardGenreTiles" class="genre-tiles"></div>
+    </div>
+
+    <div class="panel dashboard-shelf" aria-labelledby="shelfNewReleasesHeading">
+      <div class="dashboard-shelf-heading"><h2 id="shelfNewReleasesHeading">New releases</h2></div>
+      <p id="shelfNewReleasesStatus" class="status-line" aria-live="polite"></p>
+      <div id="shelfNewReleases" class="dashboard-carousel" role="group" aria-label="New releases"></div>
+    </div>
+
+    <div class="panel dashboard-shelf" aria-labelledby="shelfNewestHeading">
+      <div class="dashboard-shelf-heading"><h2 id="shelfNewestHeading">Newly added</h2></div>
+      <p id="shelfNewestStatus" class="status-line" aria-live="polite"></p>
+      <div id="shelfNewest" class="dashboard-carousel" role="group" aria-label="Newly added albums"></div>
+    </div>
+
+    <div class="panel dashboard-shelf" aria-labelledby="shelfRecentHeading">
+      <div class="dashboard-shelf-heading"><h2 id="shelfRecentHeading">Recently played</h2></div>
+      <p id="shelfRecentStatus" class="status-line" aria-live="polite"></p>
+      <div id="shelfRecent" class="dashboard-carousel" role="group" aria-label="Recently played albums"></div>
+    </div>
+
+    <div class="panel dashboard-shelf" aria-labelledby="shelfFrequentHeading">
+      <div class="dashboard-shelf-heading"><h2 id="shelfFrequentHeading">Most played</h2></div>
+      <p id="shelfFrequentStatus" class="status-line" aria-live="polite"></p>
+      <div id="shelfFrequent" class="dashboard-carousel" role="group" aria-label="Most played albums"></div>
     </div>
   </section>
 
@@ -272,11 +309,12 @@
         </div>
         <p id="artistAlbumsNote" class="section-note" role="status" hidden></p>
         <ul id="artistAlbums" class="album-row-list"></ul>
+        <button type="button" id="artistAlbumsAll" class="show-all-button" hidden>All albums</button>
       </section>
       <section id="artistSimilarSection" aria-labelledby="artistSimilarHeading">
         <h4 id="artistSimilarHeading">Similar artists</h4>
         <p id="artistSimilarNote" class="section-note" role="status" hidden></p>
-        <ul id="artistSimilar" class="library-list"></ul>
+        <ul id="artistSimilar" class="library-list similar-artists"></ul>
       </section>
     </div>
     <div id="libraryAlbumView" hidden>
@@ -290,6 +328,7 @@
           <h3 id="albumHeading" tabindex="-1"></h3>
           <p id="albumArtist" class="album-hero-artist"></p>
           <p id="albumYear" class="album-hero-year"></p>
+          <p id="albumOwnership" class="album-hero-year" hidden>Not in your library</p>
           <div id="albumDescription" class="album-description" hidden>
             <div id="albumDescriptionText" class="album-description-text"></div>
             <button type="button" id="albumDescriptionToggle" class="bio-toggle" aria-expanded="false" aria-controls="albumDescriptionText" hidden>Read more</button>
@@ -306,12 +345,13 @@
       <section aria-labelledby="albumSimilarArtistsHeading">
         <h4 id="albumSimilarArtistsHeading">Similar artists</h4>
         <p id="albumSimilarArtistsNote" class="section-note" role="status" hidden></p>
-        <ul id="albumSimilarArtists" class="library-list"></ul>
+        <ul id="albumSimilarArtists" class="library-list similar-artists"></ul>
       </section>
       <section aria-labelledby="albumSimilarAlbumsHeading">
         <h4 id="albumSimilarAlbumsHeading">Similar albums</h4>
         <p id="albumSimilarAlbumsNote" class="section-note" role="status" hidden></p>
         <ul id="albumSimilarAlbums" class="album-row-list"></ul>
+        <button type="button" id="albumSimilarAlbumsAll" class="show-all-button" hidden>All albums</button>
       </section>
     </div>
     <div id="libraryGenreView" hidden>

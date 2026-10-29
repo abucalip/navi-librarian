@@ -59,7 +59,8 @@ class ScrollTrackKeyboardTests(unittest.TestCase):
             self.js, "async function loadDashboardPicks(", "$('shuffleDashboard').addEventListener"
         )
         self.assertNotIn("makeScrollTrackFocusable(", dashboard)
-        self.assertIn("makeScrollTrackFocusable($('dashboardCarousel'));", self.js)
+        # The Recommended row is a slider with its own keys, not a scroller.
+        self.assertNotIn("makeScrollTrackFocusable($('dashboardCarousel'));", self.js)
         self.assertIn(
             "makeScrollTrackFocusable(track, genreRowLabel(genre, rowLabels) + ' albums');", self.js
         )
@@ -160,13 +161,26 @@ class DashboardTileStripTests(unittest.TestCase):
         self.assertIn("status.textContent = error.message;", load)
         self.assertIn("'No suggestions yet. Open a discovery page and refresh its list first.'", load)
 
-    def test_strip_is_a_focusable_named_scroller_with_a_visible_focus_ring(self):
+    def test_row_is_a_focusable_named_slider_with_a_visible_focus_ring(self):
         self.assertIn('aria-label="Random album recommendations"', self.index)
         self.assertIn('role="group"', self.index)
-        self.assertIn(".dashboard-carousel:focus-visible { outline: 2px solid var(--accent);", self.css)
-        self.assertIn(".dashboard-carousel > .card { flex: 0 0 218px; width: 218px;", self.css)
-        # The gesture is named in copy a user can read.
-        self.assertIn("Scroll the row, or focus it and use", self.index)
+        self.assertIn('aria-roledescription="carousel"', self.index)
+        self.assertIn('aria-label="Previous album"', self.index)
+        self.assertIn('aria-label="Next album"', self.index)
+        self.assertIn(".dashboard-slider:focus-visible { outline: 2px solid var(--accent);", self.css)
+
+    def test_slider_rotates_with_buttons_arrow_keys_and_thumbnail_clicks(self):
+        self.assertIn("function rotateDashboardSlider(direction) {", self.js)
+        self.assertIn("$('dashboardPrev').addEventListener('click', () => rotateDashboardSlider(-1));", self.js)
+        self.assertIn("$('dashboardNext').addEventListener('click', () => rotateDashboardSlider(1));", self.js)
+        self.assertIn("event.key === 'ArrowRight'", self.js)
+        self.assertIn("event.key === 'ArrowLeft'", self.js)
+        # Only the feature slide is a tab stop.
+        self.assertIn("open.tabIndex = slot === 1 ? 0 : -1;", self.js)
+
+    def test_slider_motion_uses_only_transform_and_opacity_and_respects_reduced_motion(self):
+        self.assertIn("@keyframes dashboard-slide-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }", self.css)
+        self.assertIn('@media (prefers-reduced-motion: reduce) { .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { animation: none; } }', self.css)
 
     def test_tile_open_control_has_a_visible_focus_ring_inside_the_clipped_tile(self):
         self.assertIn(".dashboard-tile.card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }", self.css)
