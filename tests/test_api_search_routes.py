@@ -300,7 +300,7 @@ class SearchRouteTests(unittest.TestCase):
         response = self.client.get("/api/artists/ash", params={"mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711"})
         self.assertEqual(response.status_code, 409)
 
-    def test_artist_stream_form_emits_capabilities_seven_sections_then_done(self):
+    def test_artist_stream_form_emits_capabilities_eight_sections_then_done(self):
         response = self.client.get("/api/artists/radiohead", headers={"Accept": "text/event-stream"})
         events = parse_sse(response.text)
         names = [name for name, _ in events]
@@ -309,7 +309,7 @@ class SearchRouteTests(unittest.TestCase):
         sections = [data["section"] for name, data in events if name == "section"]
         # Owned sections lead; network sections follow in the order they finish.
         self.assertEqual(sections[:2], ["artist", "owned_albums"])
-        self.assertEqual(sorted(sections[2:]), ["albums", "bio", "missing_albums", "similar", "tags"])
+        self.assertEqual(sorted(sections[2:]), ["albums", "bio", "missing_albums", "similar", "tags", "top_songs"])
 
     def test_artist_answers_200_while_the_index_is_building(self):
         self.building_index()

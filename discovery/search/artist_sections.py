@@ -23,10 +23,11 @@ from typing import Any
 from discovery.search.cache import SIMILAR_TTL_SECONDS, provider_cache_key, read_cached, write_cached
 from discovery.search.index import OwnedData
 from discovery.search.merge import OwnedKeys, same_entity
-from discovery.search.normalize import normalize_key
+from discovery.search.normalize import album_match_key, normalize_key
 from discovery.search.providers import DISCOGS_ATTRIBUTION, DiscogsSearch, LastFmSearch, ListenBrainzRadio, MusicBrainzSearch, ProviderError
 from discovery.search.runner import SEARCH_DEADLINE_SECONDS
 from discovery.search.similar import LASTFM, LISTENBRAINZ, SIMILAR_LIMIT, fuse_similar
+from discovery.search.top_songs import top_songs
 
 MISSING_ALBUMS_LIMIT = 50
 CATALOG_LIMIT = 20
@@ -140,9 +141,9 @@ def _lastfm_albums(network: ArtistNetwork, name: str, *, remaining, cancelled) -
 
 def _owned_match(album: dict[str, Any], owned_albums: list[dict[str, Any]]) -> dict[str, Any] | None:
     """The owned album (an ``owned_albums`` item) a provider album describes: same name key, compatible year."""
-    key = normalize_key(album["name"])
+    key = album_match_key(album["name"])
     for entry in owned_albums:
-        if entry["key"].split("/", 1)[-1] == key and (
+        if album_match_key(entry["name"]) == key and (
             album["year"] is None or entry["year"] is None or album["year"] == entry["year"]
         ):
             return entry
@@ -235,7 +236,7 @@ def album_catalog(
 
 def unowned_only(catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The ``missing_albums`` view of a catalog: albums the library does not own."""
-    keep = ("name", "year", "release_group_mbid", "popularity", "sources")
+    keep = ("name", "year", "key", "release_group_mbid", "popularity", "popularity_source", "sources")
     return [{k: item[k] for k in keep} for item in catalog if not item["owned"]][:MISSING_ALBUMS_LIMIT]
 
 
@@ -497,7 +498,7 @@ def iter_network_sections(
     owned_album_items: list[dict[str, Any]] | None = None,
     library_genre: str | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Run ``bio``, ``tags``, ``albums``, ``missing_albums`` and ``similar`` under one deadline.
+    """Run ``bio``, ``tags``, ``top_songs``, ``albums``, ``missing_albums`` and ``similar`` under one deadline.
 
     ``albums`` and ``missing_albums`` come from one catalog fetch. Sections are yielded as they finish.
     """
@@ -560,8 +561,15 @@ def iter_network_sections(
             remaining=remaining, cancelled=cancelled, known_mbid=mbid_once(), library_genre=library_genre,
         )
 
+    def top_songs_job() -> dict[str, Any]:
+        return top_songs(
+            network, name, artist_id, owned_data,
+            mbid=mbid_once(), remaining=remaining, cancelled=cancelled,
+        )
+
     jobs = {
         "bio": ("bio", bio_job),
+        "top_songs": ("items", top_songs_job),
         "tags": ("items", tags_job),
         "catalog": ("items", catalog_job),
         "similar": ("items", similar_job),

@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from discovery.search.index import OwnedData
-from discovery.search.normalize import normalize_key
+from discovery.search.normalize import album_match_key, normalize_key
 from discovery.search.providers import DISCOGS_ATTRIBUTION
 
 
@@ -36,6 +36,10 @@ def _mbid_match(candidate: str | None, owned: list[str | None]) -> bool:
     return candidate in owned
 
 
+def _album_lookup_key(artist_key: str, name: str) -> str:
+    return f"{artist_key}/{album_match_key(name)}"
+
+
 class OwnedKeys:
     """Owned artists and albums with their MBIDs, built once per request.
 
@@ -56,7 +60,9 @@ class OwnedKeys:
         for album in data.albums:
             if album.get("genre"):
                 self._genres.add(normalize_key(album["genre"]))
-            self._albums.setdefault(album["key"], []).append((album["year"], album.get("release_group_mbid")))
+            entry = (album["year"], album.get("release_group_mbid"))
+            for key in {album["key"], _album_lookup_key(album["artist_key"], album["name"])}:
+                self._albums.setdefault(key, []).append(entry)
 
     def owned_artist(self, candidate: dict[str, Any]) -> dict[str, Any] | None:
         """The owned artist entry this artist candidate matches, or None. Same rule as ``owns``."""
@@ -71,9 +77,11 @@ class OwnedKeys:
         if candidate["type"] == "artist":
             owned = self._artists.get(candidate["key"])
             return bool(owned) and _mbid_match(candidate["mbid"], owned)
+        keys = {candidate["key"], _album_lookup_key(candidate["artist_key"], candidate["name"])}
         return any(
             _years_match(candidate["year"], year) and _mbid_match(candidate["release_group_mbid"], [mbid])
-            for year, mbid in self._albums.get(candidate["key"], [])
+            for key in keys
+            for year, mbid in self._albums.get(key, [])
         )
 
 

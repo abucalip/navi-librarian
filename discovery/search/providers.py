@@ -623,8 +623,31 @@ class LastFmSearch:
             candidates.append(candidate)
         return [c for c in candidates if _usable(c)]
 
+    def top_tracks(self, artist_name: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """Last.fm's top tracks for one artist, most played first. Used on the artist page."""
+        payload = self._call("artist.getTopTracks", {"artist": artist_name}, remaining=remaining, cancelled=cancelled)
+        output: list[dict[str, Any]] = []
+        for item in _as_list((payload.get("toptracks") or {}).get("track")):
+            title = str(item.get("name") or "").strip() if isinstance(item, dict) else ""
+            if not title:
+                continue
+            try:
+                plays = int(item.get("playcount") or 0) or None
+            except (TypeError, ValueError):
+                plays = None
+            output.append({
+                "name": title,
+                "listen_count": plays,
+                "recording_mbid": str(item.get("mbid") or "").strip() or None,
+                "album": None,
+            })
+        return output
+
 
 LB_RADIO_BASE = "https://api.listenbrainz.org/1/lb-radio/artist"
+LB_TOP_RECORDINGS_BASE = "https://api.listenbrainz.org/1/popularity/top-recordings-for-artist"
+# The endpoint returns every recording (thousands); only the head matters for a top list.
+LB_TOP_RECORDINGS_READ = 60
 # Per the contract (section 7): five similar artists, one recording each, popularity unrestricted.
 LB_RADIO_PARAMS = {"mode": "easy", "max_similar_artists": 5, "max_recordings_per_artist": 1, "pop_begin": 0, "pop_end": 100}
 
@@ -668,6 +691,35 @@ class ListenBrainzRadio:
                     continue
                 seen.add(mbid)
                 output.append({"name": name, "mbid": mbid, "match": None})
+        return output
+
+    def top_recordings(self, artist_mbid: str, *, remaining, cancelled) -> list[dict[str, Any]]:
+        """ListenBrainz's most listened recordings for one artist MBID, most listened first."""
+        if cancelled.is_set():
+            raise ProviderError("failed")
+        if not self._limiter.admit(self.source, remaining()):
+            raise ProviderError("rate_limited")
+        response = self._get(
+            f"{LB_TOP_RECORDINGS_BASE}/{quote(artist_mbid, safe='')}",
+            headers=dict(self._headers),
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise ProviderError("failed")
+        output: list[dict[str, Any]] = []
+        for entry in payload[:LB_TOP_RECORDINGS_READ]:
+            title = str(entry.get("recording_name") or "").strip() if isinstance(entry, dict) else ""
+            if not title:
+                continue
+            count = entry.get("total_listen_count")
+            output.append({
+                "name": title,
+                "listen_count": int(count) if isinstance(count, (int, float)) else None,
+                "recording_mbid": str(entry.get("recording_mbid") or "").strip() or None,
+                "album": str(entry.get("release_name") or "").strip() or None,
+            })
         return output
 
 
