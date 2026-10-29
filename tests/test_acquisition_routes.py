@@ -29,6 +29,7 @@ class AcquisitionRoutesTests(unittest.TestCase):
             ("/api/acquisitions/stream", "GET"),
             ("/api/acquire", "POST"),
             ("/api/acquire/queue", "POST"),
+            ("/api/acquire/track", "POST"),
         })
 
     def test_routes_declare_lazy_service_dependency(self):
@@ -39,6 +40,7 @@ class AcquisitionRoutesTests(unittest.TestCase):
             acquisitions.acquisition_status_stream,
             acquisitions.acquire_album,
             acquisitions.queue_reviewed_candidate,
+            acquisitions.acquire_track,
         ):
             dependency = endpoint.__defaults__[-1]
             self.assertIsInstance(dependency, DependsParam)
@@ -94,6 +96,34 @@ class AcquisitionRoutesTests(unittest.TestCase):
         self.assertEqual(call.call_args.kwargs["username"], "peer")
         self.assertEqual(json.loads(call.call_args.kwargs["files_json"]), files)
         self.assertEqual(json.loads(call.call_args.kwargs["quality_summary_json"]), ["flac_cd"])
+
+    def test_acquire_track_maps_payload_to_the_song_service(self):
+        with patch("app.api.acquisitions.track_service.request_track", return_value={"ok": True}) as call:
+            self.assertEqual(acquisitions.acquire_track({
+                "artist": " Artist ", "album": " Album ", "title": " Song ",
+                "track_number": 3, "year": 1999, "metadata": {"lens": "now"},
+            }, self.service), {"ok": True})
+        call.assert_called_once_with(self.service, "Artist", "Album", "Song", 3, 1999, {"lens": "now"})
+
+    def test_acquire_track_validates_before_calling_the_service(self):
+        bad = ({"artist": "A", "album": "B"}, {"artist": "A", "title": "T"}, {"album": "B", "title": "T"},
+               {"artist": "A", "album": "B", "title": "T", "track_number": 0},
+               {"artist": "A", "album": "B", "title": "T", "track_number": True},
+               {"artist": "A", "album": "B", "title": "T", "track_number": "3"},
+               {"artist": "A", "album": "B", "title": "T", "metadata": []})
+        for payload in bad:
+            with self.subTest(payload=payload), patch("app.api.acquisitions.track_service.request_track") as call:
+                with self.assertRaises(HTTPException) as raised:
+                    acquisitions.acquire_track(payload, self.service)
+                self.assertEqual(raised.exception.status_code, 400)
+                call.assert_not_called()
+
+    def test_dismiss_of_a_song_never_reaches_the_album_dismissal(self):
+        with patch("app.api.acquisitions.track_service.dismiss_track", return_value={"ok": True, "status": "dismissed"}), \
+                patch.object(self.service, "discovery_dismiss_acquisition", create=True) as album_dismiss:
+            result = acquisitions.dismiss_acquisition({"artist": "A", "album": "Song (song on B)"}, self.service)
+        self.assertEqual(result["status"], "dismissed")
+        album_dismiss.assert_not_called()
 
     def test_queue_rejects_empty_file_list(self):
         with self.assertRaises(HTTPException) as raised:

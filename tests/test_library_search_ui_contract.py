@@ -154,7 +154,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertRegex(self.css, r"\.album-row-artist \{[^}]*color: var\(--text-muted\)")
 
     def test_album_page_has_the_panel_sized_get_button_and_the_service_links(self):
-        self.assertIn(".album-hero-action .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px;", self.css)
+        self.assertIn(".album-hero-action .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 40px; height: 40px;", self.css)
         self.assertIn('<div id="albumPlatformLinks" class="album-platform-links"', self.html)
         for service in ("'Apple Music'", "'Deezer'", "'MusicBrainz'", "'Qobuz'"):
             self.assertIn(service, self.js[self.js.index("function setAlbumPagePlatformLinks"):self.js.index("function fillPlatformLinks")])
@@ -218,7 +218,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_artist_page_top_songs_show_rank_title_listens_and_an_owned_check_without_play_buttons(self):
         self.assertIn("function buildTopSongRow(item) {", self.new_js)
-        self.assertIn("row.append(item.owned ? buildOwnedCheck() : document.createElement('span'));", self.new_js)
+        self.assertIn("row.append(item.owned ? buildOwnedCheck()", self.new_js)
         self.assertIn("const TOP_SONGS_SHOWN = 5;", self.new_js)
         self.assertIn("document.querySelector('.artist-hero').classList.add('no-songs');", self.new_js)
         self.assertNotIn("play", self.new_js[self.new_js.index("function buildTopSongRow"):self.new_js.index("function paintTopSongs")].lower())
@@ -246,7 +246,8 @@ class LibrarySearchUIContractTests(unittest.TestCase):
 
     def test_album_tracks_show_number_title_length_and_an_owned_check(self):
         self.assertIn("function buildTrackRow(track, index) {", self.new_js)
-        self.assertIn("row.append(track.owned ? buildOwnedCheck() : document.createElement('span'));", self.new_js)
+        self.assertIn("row.append(track.owned ? buildOwnedCheck()", self.new_js)
+        self.assertIn("createTrackGetButton({", self.new_js)
         self.assertIn("fillRows($('albumTracks'), section.items, buildTrackRow);", self.new_js)
         self.assertIn("function albumSummary(tracks) {", self.new_js)
 
