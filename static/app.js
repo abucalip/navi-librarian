@@ -3096,8 +3096,7 @@ function renderQualityPriority(savedValues) {
   for (const value of priorities) {
     const [, label] = qualityOptions.find(([optionValue]) => optionValue === value);
     const item = document.createElement('li');
-    item.className = 'quality-priority-item';
-    item.draggable = true;
+    item.className = 'quality-priority-item is-idle';
     item.dataset.quality = value;
     const grip = document.createElement('span');
     grip.className = 'quality-priority-grip';
@@ -3129,43 +3128,98 @@ function renderQualityPriority(savedValues) {
   updateQualityPriorityPositions();
 }
 
+// Drag-to-reorder (adapted from https://tahazsh.com/blog/seamless-ui-with-js-drag-to-reorder-example):
+// the grabbed row follows the pointer while the rows it passes slide out of the way with a transform.
 const qualityPriorityList = $('qualityPriorityList');
-let draggedQualityItem = null;
-qualityPriorityList.addEventListener('dragstart', event => {
-  const item = event.target.closest('.quality-priority-item');
-  if (!item) return;
-  draggedQualityItem = item;
-  item.classList.add('dragging');
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', item.dataset.quality);
-  }
-});
-qualityPriorityList.addEventListener('dragover', event => {
-  event.preventDefault();
-  const target = event.target.closest('.quality-priority-item');
-  if (!draggedQualityItem || !target || target === draggedQualityItem) return;
-  const bounds = target.getBoundingClientRect();
-  const insertAfter = event.clientY > bounds.top + bounds.height / 2;
-  qualityPriorityList.querySelectorAll('.drop-target').forEach(item => item.classList.remove('drop-target'));
-  target.classList.add('drop-target');
-  qualityPriorityList.insertBefore(draggedQualityItem, insertAfter ? target.nextSibling : target);
-});
-qualityPriorityList.addEventListener('drop', event => {
-  event.preventDefault();
-  if (draggedQualityItem) {
-    const index = [...qualityPriorityList.children].indexOf(draggedQualityItem);
-    updateQualityPriorityPositions();
-    announceQualityPriority(draggedQualityItem, index);
-  }
-});
-qualityPriorityList.addEventListener('dragend', () => {
-  qualityPriorityList.querySelectorAll('.dragging, .drop-target').forEach(item => {
-    item.classList.remove('dragging', 'drop-target');
+const qualityDrag = { item: null, startX: 0, startY: 0, lastX: 0, lastY: 0, gap: 0, items: [], startRect: null };
+
+function qualityIdleItems() {
+  return qualityDrag.items.filter(item => item !== qualityDrag.item);
+}
+
+qualityPriorityList.addEventListener('pointerdown', event => {
+  const handle = event.target.closest('.quality-priority-grip');
+  if (!handle || qualityDrag.item || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  const item = handle.closest('.quality-priority-item');
+  qualityDrag.items = [...qualityPriorityList.querySelectorAll('.quality-priority-item')];
+  qualityDrag.item = item;
+  qualityDrag.startX = qualityDrag.lastX = event.clientX;
+  qualityDrag.startY = qualityDrag.lastY = event.clientY;
+  qualityDrag.startRect = item.getBoundingClientRect();
+  const [first, second] = qualityDrag.items;
+  qualityDrag.gap = second ? Math.abs(first.getBoundingClientRect().bottom - second.getBoundingClientRect().top) : 0;
+  const dragIndex = qualityDrag.items.indexOf(item);
+  qualityDrag.items.forEach((other, index) => {
+    if (other !== item && index < dragIndex) other.dataset.isAbove = '';
   });
-  draggedQualityItem = null;
-  updateQualityPriorityPositions();
+  item.classList.remove('is-idle');
+  item.classList.add('is-draggable');
+  handle.setPointerCapture(event.pointerId);
+  event.preventDefault();
 });
+
+function updateQualityDragPositions() {
+  const rect = qualityDrag.item.getBoundingClientRect();
+  const dragY = rect.top + rect.height / 2;
+  for (const other of qualityIdleItems()) {
+    const otherRect = other.getBoundingClientRect();
+    const otherY = otherRect.top + otherRect.height / 2;
+    const above = 'isAbove' in other.dataset;
+    if (above ? dragY <= otherY : dragY >= otherY) other.dataset.isToggled = '';
+    else delete other.dataset.isToggled;
+    other.style.transform = 'isToggled' in other.dataset
+      ? `translateY(${(above ? 1 : -1) * (rect.height + qualityDrag.gap)}px)`
+      : '';
+  }
+}
+
+qualityPriorityList.addEventListener('pointermove', event => {
+  if (!qualityDrag.item) return;
+  event.preventDefault();
+  qualityDrag.lastX = event.clientX;
+  qualityDrag.lastY = event.clientY;
+  qualityDrag.item.style.transform =
+    `translate(${event.clientX - qualityDrag.startX}px, ${event.clientY - qualityDrag.startY}px)`;
+  updateQualityDragPositions();
+});
+
+function finishQualityDrag() {
+  const { item, items } = qualityDrag;
+  if (!item) return;
+  const from = items.indexOf(item);
+  const passed = qualityIdleItems().filter(other => 'isToggled' in other.dataset);
+  const to = from + passed.filter(other => !('isAbove' in other.dataset)).length
+    - passed.filter(other => 'isAbove' in other.dataset).length;
+  const others = items.filter(other => other !== item);
+  others.splice(to, 0, item);
+  qualityPriorityList.append(...others);
+  for (const other of others) {
+    delete other.dataset.isAbove;
+    delete other.dataset.isToggled;
+    if (other !== item) other.style.transform = '';
+  }
+  // The row is now in its new slot; offset it back to where the pointer left it, then let the
+  // idle transition glide it home.
+  const { startRect, startX, startY, lastX, lastY } = qualityDrag;
+  item.style.transform = '';
+  requestAnimationFrame(() => {
+    const rect = item.getBoundingClientRect();
+    item.style.transform =
+      `translate(${lastX - startX}px, ${lastY - startY + startRect.y - rect.y}px)`;
+    requestAnimationFrame(() => {
+      item.style.transform = '';
+      item.classList.remove('is-draggable');
+      item.classList.add('is-idle');
+    });
+  });
+  qualityDrag.item = null;
+  qualityDrag.items = [];
+  updateQualityPriorityPositions();
+  announceQualityPriority(item, to);
+}
+
+qualityPriorityList.addEventListener('pointerup', finishQualityDrag);
+qualityPriorityList.addEventListener('pointercancel', finishQualityDrag);
 
 $('saveSlskd').addEventListener('click', async () => {
   const priorities = qualityPriorityValues();
