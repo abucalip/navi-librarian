@@ -1,3 +1,10 @@
+## 2026-10-29 — Radio switch restyled: PR #638 merged
+
+- **Merged:** PR [#638](https://github.com/abucalip/navi-librarian/pull/638), squash commit `0c08d5d1d793fb01d5d5ecdd8ec599e3a2ebcd78`, from tested head `241b5f5bddda97d4c37d6a84aa403e6d7fd0591b`, at the owner's direction. All five required checks passed on that head.
+- **What changed:** the station switch on the Radio page (the only toggle in the app) uses the Uiverse "happy-warthog-87" design by Galahhad: 60x30 pill, wide knob sliding behind the clipped edge, pressed state centres it. It stays a `role="switch"` button. Colours follow the app (light-gray off; yellow track with a black knob on). Only the knob's `transform` animates, with the `--dur-slow` token, to satisfy the motion contract.
+- **Verification:** focused tests only (full suite not run by the agent): `test_motion_ui_contract`, `test_radio_ui_contract`, `test_ui_keyboard_and_feedback_contract`. No browser check of the new look is recorded.
+- **Not published or deployed:** it is not in image v0.2.7 (tag at `f7d8e44`); it needs a later version.
+
 ## 2026-10-29 — Image v0.2.7 published
 
 - **Authorization:** the owner directed publication of current `main` as the next version, v0.2.7.
