@@ -917,7 +917,7 @@ Requested by the owner; merged in PR [#630](https://github.com/abucalip/navi-lib
 
 ### 14.3 Artist page redesign: `top_songs` and the new layout (approved by the owner, 2026-10-29)
 
-Proposal and layout record: `ARTIST_PAGE_REDESIGN_PROPOSAL.md`. Status: implemented on branch `artist-page-redesign`; not merged, not browser-checked by the owner.
+Proposal and layout record: `ARTIST_PAGE_REDESIGN_PROPOSAL.md`. Status: merged in PR [#634](https://github.com/abucalip/navi-librarian/pull/634) (squash `2ca07f8`); not browser-checked by the owner. Live provider check of `top_songs` through the app is not done.
 
 - **New section `top_songs`** (artist page, network; the stream and JSON forms carry it like `tags`, in completion order). Items: `rank`, `name`, `listen_count` (int or null), `source` (`listenbrainz` or `lastfm`), `recording_mbid`, `owned`, `album`. At most 10, one per normalized title (the most listened version kept). `owned` is true when the artist's library songs include the same normalized title; it is false for an artist the library lacks.
 - **Sources.** ListenBrainz `GET /1/popularity/top-recordings-for-artist/{mbid}` (checked live 2026-10-29: a list of recordings with `total_listen_count`) when an MBID is known; Last.fm `artist.getTopTracks` when ListenBrainz has none or no MBID exists. A list never mixes the two scales. Records are cached for 24 hours; `owned` is recomputed on every read. With no MBID and no Last.fm key the section is `available: false, reason: source_disabled`; when every source tried fails it is `source_failed`.

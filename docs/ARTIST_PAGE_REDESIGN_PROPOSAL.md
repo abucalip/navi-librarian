@@ -1,6 +1,6 @@
-# Artist page redesign: contract proposal (draft for owner approval)
+# Artist page redesign: contract proposal (approved and merged)
 
-Status: **draft, not approved, nothing built.** Scope is the library artist page (`SEARCH_CONTRACT.md` section 14). Section 3.3 and 14.1 stay authoritative until the owner approves this text; on approval the additions move into the contract.
+Status: **approved by the owner (2026-10-29) and merged in PR [#634](https://github.com/abucalip/navi-librarian/pull/634)** (squash `2ca07f86e931a7aee5c84a2bcd80e81da9834803`). The additions are now in `SEARCH_CONTRACT.md` section 14.3, which is authoritative; this file is the design record. Scope is the library artist page (`SEARCH_CONTRACT.md` section 14).
 
 ## 1. Layout requested by the owner
 
