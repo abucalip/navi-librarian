@@ -1,6 +1,6 @@
 # Album page redesign: layout record and song-only Get proposal
 
-Status: layout, `genre` and per-track `owned` are **merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635)** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is **approved by the owner and built, not yet merged** (requirement ACQ-08); the owner's decisions are recorded at the end of section 3.
+Status: layout, `genre` and per-track `owned` are **merged in PR [#635](https://github.com/abucalip/navi-librarian/pull/635)** (contract `SEARCH_CONTRACT.md` section 14.4). The song-only Get in section 3 is **approved by the owner and merged in PR [#636](https://github.com/abucalip/navi-librarian/pull/636)** (requirement ACQ-08); the owner's decisions are recorded at the end of section 3.
 
 ## 1. Layout requested by the owner
 
@@ -14,7 +14,7 @@ Decisions carried over from the artist page: no "Library" heading and no text Ba
 - The album-level Get (or owned check) stays on the cover, as before.
 - There is no Get on a track, because Get requests a whole album.
 
-## 3. Get a single song (approved, built, not merged)
+## 3. Get a single song (approved, merged)
 
 The owner's direction: a Get on a track downloads only that song and imports it into the right folder, following the established protocol.
 
