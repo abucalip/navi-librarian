@@ -82,6 +82,8 @@ function navigateTo(name) {
   // the first one that initializePage handles; startAcquisitionStream is a no-op while open.
   if (name === 'acquisitions') startAcquisitionStream();
   else stopAcquisitionStream();
+  // Grab the radio (static/radio.js): the log changes while the owner listens, so every visit reloads.
+  if (name === 'radio') loadRadio();
 }
 
 document.querySelectorAll('nav button[data-page], .header-menu button[data-page]').forEach(button =>

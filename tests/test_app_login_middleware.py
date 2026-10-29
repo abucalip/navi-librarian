@@ -36,6 +36,14 @@ class AppLoginMiddlewareTests(unittest.TestCase):
         def static_asset():
             return "css"
 
+        @app.get("/radio/stream/{token}")
+        def radio_stream(token: str):
+            return "audio"
+
+        @app.get("/radio/other")
+        def radio_other():
+            return "private"
+
         @app.get("/assets/cassette.png")
         def cassette():
             return "png"
@@ -66,6 +74,11 @@ class AppLoginMiddlewareTests(unittest.TestCase):
                 with self.subTest(path=path):
                     response = client.get(path, follow_redirects=False)
                     self.assertEqual(response.status_code, 200)
+
+    def test_radio_relay_is_public_but_the_rest_of_radio_is_not(self):
+        with self.make_client(configured=True) as client:
+            self.assertEqual(client.get("/radio/stream/tok", follow_redirects=False).status_code, 200)
+            self.assertEqual(client.get("/radio/other", follow_redirects=False).status_code, 303)
 
     def test_unconfigured_app_keeps_api_routes_closed(self):
         with self.make_client(configured=False) as client:

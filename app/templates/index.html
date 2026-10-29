@@ -46,6 +46,7 @@
       <div id="appMenu" class="header-menu-panel" hidden>
         <button type="button" data-page="library">Library</button>
         <button type="button" data-page="saved">Saved</button>
+        <button type="button" data-page="radio">Radio</button>
         <button type="button" data-page="settings">Settings</button>
         <div class="header-menu-separator" role="separator"></div>
         <button type="button" id="logoutButton">Log out</button>
@@ -457,6 +458,18 @@
 </section>
 
 
+<section id="radio" class="page hidden" aria-labelledby="radioHeading">
+  <div class="panel">
+    <h2 id="radioHeading">Grab the radio</h2>
+    <p class="muted">Turn on a Navidrome radio station and this app relays its stream, so the songs you actually listen to are logged here. Songs you skip past are not. Get downloads a logged song.</p>
+    <p id="radioStatus" class="status-line" aria-live="polite"></p>
+    <h3 id="radioStationsHeading">Stations</h3>
+    <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
+    <h3 id="radioPlaysHeading">Heard</h3>
+    <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
+    <button id="refreshRadio" type="button">Refresh</button>
+  </div>
+</section>
 
 </main>
 
@@ -483,5 +496,6 @@
 </div>
 <script src="/static/vendor/notyf/notyf.min.js" defer></script>
 <script src="/static/app.js" defer></script>
+<script src="/static/radio.js" defer></script>
 </body>
 </html>

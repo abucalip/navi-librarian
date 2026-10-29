@@ -31,6 +31,7 @@ from app.api.acquisitions import router as acquisitions_router
 from app.api.discovery import router as discovery_router
 from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
+from app.api.radio import router as radio_router
 from app.api.search import router as search_router
 from app.api.metadata import router as metadata_router
 from app.api.dashboard import router as dashboard_router
@@ -197,6 +198,7 @@ app.include_router(library_router)
 app.include_router(owned_artwork_router)
 app.include_router(metadata_router)
 app.include_router(dashboard_router)
+app.include_router(radio_router)
 
 PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
 app.include_router(create_pages_router(

@@ -942,3 +942,15 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-page .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-page .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (max-width: 620px) { .track { gap: var(--space-2); } }
+
+/* Grab the radio: stations and the songs heard, as plain rows with the name on the left and the actions on the right. */
+.radio-list { display: flex; flex-direction: column; border-top: 1px solid var(--edge); margin-bottom: 20px; }
+.radio-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px;
+  background: var(--surface); border-bottom: 1px solid var(--edge);
+}
+.radio-main { min-width: 0; }
+.radio-title { margin: 0; color: var(--text); font: 600 var(--text-base)/1.25 var(--body); overflow-wrap: anywhere; }
+.radio-meta { margin: 2px 0 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.radio-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.radio-row button { min-height: 44px; min-width: 44px; padding: 0 14px; font-size: var(--text-xs); font-weight: 600; }
