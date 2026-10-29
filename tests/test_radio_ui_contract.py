@@ -19,6 +19,13 @@ class RadioUiContractTests(unittest.TestCase):
         for unsafe in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
             self.assertNotIn(unsafe, RADIO_JS)
 
+    def test_controls_reuse_the_apps_get_button_a_switch_and_an_x(self):
+        self.assertIn("decorateGetButton(button)", RADIO_JS)
+        self.assertIn("setGetButtonState(", RADIO_JS)
+        self.assertIn("role', 'switch'", RADIO_JS)
+        self.assertIn("icons.svg#x", RADIO_JS)
+        self.assertNotIn("Turn on", RADIO_JS)
+
     def test_every_radio_endpoint_the_page_calls_exists(self):
         routes = (ROOT / "app" / "api" / "radio.py").read_text(encoding="utf-8")
         for path in re.findall(r"'(/api/radio/[a-z/]+)", RADIO_JS):

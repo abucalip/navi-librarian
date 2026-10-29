@@ -46,12 +46,15 @@ function renderRadioStations(items) {
     const row = radioElement('div', 'radio-row');
     const main = radioElement('div', 'radio-main');
     main.append(radioElement('p', 'radio-title', station.name),
-      radioElement('p', 'radio-meta', station.proxied ? 'Relayed through this app' : 'Direct'));
-    const button = radioElement('button', '', station.proxied ? 'Turn off' : 'Turn on');
-    button.type = 'button';
-    button.setAttribute('aria-label', (station.proxied ? 'Turn off ' : 'Turn on ') + station.name);
-    button.addEventListener('click', async () => {
-      button.disabled = true;
+      radioElement('p', 'radio-meta', station.proxied ? 'On: relayed through this app' : 'Off: plays directly'));
+    const toggle = radioElement('button', 'radio-switch');
+    toggle.type = 'button';
+    toggle.setAttribute('role', 'switch');
+    toggle.setAttribute('aria-checked', String(station.proxied));
+    toggle.setAttribute('aria-label', 'Grab ' + station.name);
+    toggle.append(radioElement('span', 'radio-switch-knob'));
+    toggle.addEventListener('click', async () => {
+      toggle.disabled = true;
       try {
         // The address the owner reached this app at is the one the Navidrome clients can use.
         await sendJSON('/api/radio/stations/' + encodeURIComponent(station.id) + (station.proxied ? '/disable' : '/enable'),
@@ -59,12 +62,46 @@ function renderRadioStations(items) {
         await loadRadio();
       } catch (error) {
         radioStatus(error.message, 'error');
-        button.disabled = false;
+        toggle.disabled = false;
       }
     });
-    row.append(main, button);
+    row.append(main, toggle);
     list.append(row);
   }
+}
+
+// The app's own Get button (app.js), so a logged song looks and behaves like Get everywhere else.
+function createRadioGetButton(play) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'get-album get-track';
+  button.dataset.noun = 'song';
+  decorateGetButton(button);
+  setGetButtonState(button, play.grabbed ? 'requested' : 'idle', play.artist, play.title);
+  if (!play.artist) {
+    button.disabled = true;
+    button.title = 'The station did not name an artist';
+    return button;
+  }
+  button.addEventListener('click', async () => {
+    if (button.disabled && !button.classList.contains('is-failed')) return;
+    setGetButtonState(button, 'pending', play.artist, play.title);
+    try {
+      const result = await sendJSON('/api/radio/plays/' + play.id + '/get', 'POST', {});
+      if (result.ok === false || result.status === 'no_matches') {
+        setGetButtonState(button, 'failed', play.artist, play.title);
+        reportAcquisitionOutcome(result.message || result.error || 'The request could not be placed.', 'error');
+      } else {
+        setGetButtonState(button, 'requested', play.artist, play.title);
+        reportAcquisitionOutcome(result.message, 'success');
+      }
+      if (typeof loadAcquisitions === 'function') loadAcquisitions();
+    } catch (error) {
+      setGetButtonState(button, 'failed', play.artist, play.title);
+      reportAcquisitionOutcome(error.message, 'error');
+    }
+  });
+  return button;
 }
 
 function renderRadioPlays(items) {
@@ -81,28 +118,19 @@ function renderRadioPlays(items) {
       radioElement('p', 'radio-meta', [play.artist || 'Unknown artist', play.album].filter(Boolean).join(' · ')),
       radioElement('p', 'radio-meta', play.station_name + ' · ' + radioWhen(play.heard_at) + ' · heard ' + radioHeard(play.listened_seconds)));
     const actions = radioElement('div', 'radio-actions');
-    const get = radioElement('button', '', play.grabbed ? 'Requested' : 'Get');
-    get.type = 'button';
-    get.disabled = !play.artist;
-    get.setAttribute('aria-label', 'Get ' + play.title);
-    get.addEventListener('click', async () => {
-      get.disabled = true;
-      get.textContent = 'Searching…';
-      try {
-        const result = await sendJSON('/api/radio/plays/' + play.id + '/get', 'POST', {});
-        const ok = result.ok !== false && result.status !== 'no_matches';
-        reportAcquisitionOutcome(result.message || (ok ? 'Download requested.' : 'The request could not be placed.'), ok ? 'success' : 'error');
-        await loadRadio();
-        if (typeof loadAcquisitions === 'function') loadAcquisitions();
-      } catch (error) {
-        radioStatus(error.message, 'error');
-        get.disabled = false;
-        get.textContent = 'Get';
-      }
-    });
-    const remove = radioElement('button', '', 'Remove');
+    const get = createRadioGetButton(play);
+    const remove = radioElement('button', 'radio-remove');
     remove.type = 'button';
     remove.setAttribute('aria-label', 'Remove ' + play.title + ' from the log');
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('class', 'icon');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('focusable', 'false');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '/static/icons.svg#x');
+    icon.append(use);
+    remove.append(icon);
     remove.addEventListener('click', async () => {
       remove.disabled = true;
       try {
