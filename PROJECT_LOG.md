@@ -1,3 +1,11 @@
+## 2026-10-29 — Image v0.2.7 published
+
+- **Authorization:** the owner directed publication of current `main` as the next version, v0.2.7.
+- **Checked before tagging:** local `main` equal to `origin/main` at `f7d8e446ef755427ccb6b50fa53cd0a1d2ef72f0` (the PR #637 merge `3edd12c` plus the docs commit `f7d8e44`); the four workflows on `main` at that commit (Python syntax check, Validate Docker image, Container runtime smoke test, Validate Docker packaging) succeeded; no change besides documentation sits between `3edd12c` and the tag.
+- **Published:** annotated tag `v0.2.7` at `f7d8e446ef755427ccb6b50fa53cd0a1d2ef72f0`; release workflow run [40967761510](https://github.com/abucalip/navi-librarian/actions/runs/40967761510) succeeded (`publish-release` success; `validate-release-workflow` skipped as designed). `ghcr.io/abucalip/navi-librarian:v0.2.7` and `:sha-f7d8e446ef755427ccb6b50fa53cd0a1d2ef72f0`; package version digest `sha256:05eda76010842352788eb8a9093c1e616175cedd0ccf95041b7f9f301c9907cd` (GitHub Packages API). It carries Grab the radio (PR #637). v0.2.6 is the rollback reference. `latest` was not moved and not checked; per-platform manifests were not inspected.
+- **Not done:** deployment; runtime verification of the published image; the browser and phone-client checks of Grab the radio.
+- **Next action:** the owner decides on deploying v0.2.7.
+
 ## 2026-10-29 — Grab the radio: PR #637 merged
 
 - **Merged:** PR [#637](https://github.com/abucalip/navi-librarian/pull/637), squash commit `3edd12c3d1fd40c69a286572bbf549fee4c75aec`, from tested head `4b3eeb0a7f234ea3eafc77089bad6c8b5af8215d`, at the owner's direction. All five required checks passed on that head. The first head (`71ee71e`) failed `compile` and `test-and-build` on `test_motion_ui_contract` because the switch knob also transitioned `background`; fixed in `4b3eeb0` (transform only) and CI passed.
