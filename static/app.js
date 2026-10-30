@@ -2534,7 +2534,7 @@ function skeletonRows(count) {
 $('loadRecommendations').addEventListener('click', async () => {
   const button = $('loadRecommendations');
   button.disabled = true;
-  button.textContent = 'Generating…';
+  button.setAttribute('aria-busy', 'true');
   allRecommendations = [];
   $('recommendationCount').textContent = 'Generating recommendations…';
   $('recommendationCards').replaceChildren(...(isMobileLayout() ? [] : skeletonRows(Number($('count').value) || 5)));
@@ -2550,7 +2550,7 @@ $('loadRecommendations').addEventListener('click', async () => {
     $('recommendationDebug').textContent = error.message;
   } finally {
     button.disabled = false;
-    button.textContent = 'Generate recommendations';
+    button.removeAttribute('aria-busy');
   }
 });
 
@@ -2751,7 +2751,9 @@ async function loadDiscovery(name, options = {}) {
         genreTitle.append(buildInlineLink(genreRowLabel(genre, rowLabels), {type: 'genre', tag: String(genre).toLocaleLowerCase()}));
         addTextElement(heading, 'span', 'genre-row-count', pluralize(genreItems.length, 'album', 'albums'));
         const arrows = document.createElement('div');
-        arrows.className = 'genre-row-arrows';
+        arrows.className = 'genre-row-arrows action-group';
+        arrows.setAttribute('role', 'group');
+        arrows.setAttribute('aria-label', genreRowLabel(genre, rowLabels) + ' scroll');
         const track = document.createElement('div');
         track.className = 'genre-row-track';
         makeScrollTrackFocusable(track, genreRowLabel(genre, rowLabels) + ' albums');
@@ -2761,7 +2763,8 @@ async function loadDiscovery(name, options = {}) {
           arrow.className = 'genre-row-arrow';
           arrow.type = 'button';
           arrow.append(spriteIcon(icon));
-          arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');
+          arrow.title = direction < 0 ? 'Scroll albums left' : 'Scroll albums right';
+          arrow.setAttribute('aria-label', arrow.title);
           arrow.addEventListener('click', () => scrollTrackBy(track, direction * trackScrollStep(track)));
           arrows.append(arrow);
           arrowList.push(arrow);
@@ -3707,13 +3710,16 @@ function renderQualityPriority(savedValues) {
     name.className = 'quality-priority-label';
     name.textContent = label;
     const moves = document.createElement('div');
-    moves.className = 'quality-priority-moves';
-    for (const [direction, text] of [['up', '↑'], ['down', '↓']]) {
+    moves.className = 'quality-priority-moves action-group';
+    moves.setAttribute('role', 'group');
+    moves.setAttribute('aria-label', `Move ${label}`);
+    for (const direction of ['up', 'down']) {
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.qualityMove = direction;
+      button.title = `Move ${label} ${direction}`;
       button.setAttribute('aria-label', `Move ${label} ${direction}`);
-      button.textContent = text;
+      button.append(spriteIcon(direction === 'up' ? 'chevron-up' : 'chevron-down'));
       button.addEventListener('click', () => {
         const current = [...list.children].indexOf(item);
         moveQualityPriority(item, current + (direction === 'up' ? -1 : 1), direction);
@@ -4180,8 +4186,10 @@ function openFromSearch(target) {
 
 function showLibraryListMore(visible, label, resetOnRetry) {
   const more = $('libraryMore');
-  more.hidden = !visible;
-  more.textContent = label;
+  $('libraryMoreGroup').hidden = !visible;
+  more.title = label;
+  more.setAttribute('aria-label', label);
+  more.replaceChildren(spriteIcon(label === 'Load more' ? 'plus' : 'rotate-cw'));
   libraryView.resetOnRetry = resetOnRetry;
 }
 

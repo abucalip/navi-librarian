@@ -54,7 +54,7 @@ class SettingsLayoutContractTests(unittest.TestCase):
 
     def test_full_width_blocks_span_both_columns(self):
         self.assertIn(
-            ".settings-tab-panel > h3, .settings-tab-panel > p, .settings-tab-panel > .quality-priority-list { grid-column: 1 / -1; }",
+            ".settings-tab-panel > h3, .settings-tab-panel > p, .settings-tab-panel > .settings-actions, .settings-tab-panel > .quality-priority-list { grid-column: 1 / -1; }",
             self.css,
         )
 
@@ -64,7 +64,8 @@ class SettingsLayoutContractTests(unittest.TestCase):
     def test_settings_tabs_and_buttons_meet_the_44px_floor(self):
         self.assertRegex(self.css, r"\.settings-tabs \.settings-tab \{[^}]*min-height: 44px;")
         self.assertRegex(self.css, r"#settings button \{ min-height: 44px; \}")
-        self.assertRegex(self.css, r"\.quality-priority-moves button \{ min-width: 44px; min-height: 44px;")
+        # Buttons seated in an action group keep the group's 38px height (owner decision, PR #639).
+        self.assertRegex(self.css, r"#settings \.action-group > button \{ min-height: 0; height: var\(--group-h\);")
 
     def test_selected_tab_is_marked_by_more_than_color_alone(self):
         self.assertRegex(self.css, r"\.settings-tabs \.settings-tab\.active \{[^}]*border-bottom-color: var\(--accent\);")

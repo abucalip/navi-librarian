@@ -64,7 +64,7 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         self.assertIn("dismissButton.append(spriteIcon('trash-2'));", self.js)
         self.assertNotIn("arrow.textContent = symbol;", self.js)
         self.assertNotIn("dismissButton.textContent = '×';", self.js)
-        self.assertIn("arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');", self.js)
+        self.assertIn("arrow.title = direction < 0 ? 'Scroll albums left' : 'Scroll albums right';", self.js)
         self.assertIn("dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);", self.js)
         self.assertIn("dismissButton.title = options.dismissTitle || 'Not for me';", self.js)
 
@@ -79,11 +79,11 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         def rule(selector):
             start = self.css.index(selector + " {")
             return self.css[start:self.css.index("}", start)]
-        arrow = rule(".genre-row-arrow")
+        arrow = rule(".action-group > button")
         dismiss = rule(".action-group > button")
         self.assertNotIn("text-shadow", arrow)
         self.assertNotIn("text-shadow", dismiss)
-        self.assertIn("width: 44px; height: 44px;", arrow)
+        self.assertIn("width: 44px; height: var(--group-h);", arrow)
         self.assertIn("height: var(--group-h);", dismiss)
 
     def test_genre_count_uses_body_face_not_mono(self):

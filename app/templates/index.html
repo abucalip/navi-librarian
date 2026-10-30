@@ -120,8 +120,10 @@
         <div id="dashboardCarousel" class="dashboard-slider" role="group" aria-roledescription="carousel" aria-label="Random album recommendations" tabindex="0"></div>
         <div id="dashboardDots" class="dashboard-dots" aria-label="Choose an album"></div>
         <div class="dashboard-slider-nav">
-          <button type="button" id="dashboardPrev" aria-label="Previous album">◁</button>
-          <button type="button" id="dashboardNext" aria-label="Next album">▷</button>
+          <div class="action-group" role="group" aria-label="Browse albums">
+            <button type="button" id="dashboardPrev" title="Previous album" aria-label="Previous album"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
+            <button type="button" id="dashboardNext" title="Next album" aria-label="Next album"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-right"></use></svg></button>
+          </div>
           <span id="dashboardSliderCount" class="dashboard-slider-count" aria-live="polite"></span>
         </div>
       </div></div>
@@ -172,7 +174,9 @@
         <select id="count">
           <option>5</option><option selected>10</option><option>15</option><option>20</option>
         </select>
-        <button id="loadRecommendations" class="btn-primary">Generate recommendations</button>
+        <div class="action-group" role="group" aria-label="Recommendations">
+          <button id="loadRecommendations" type="button" title="Generate recommendations" aria-label="Generate recommendations"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#sparkles"></use></svg></button>
+        </div>
       </div>
       <!-- Phase 2: the results, and the controls that narrow them. Search, category and sort
            only mean anything against a set that already exists, so they belong to the result
@@ -225,8 +229,10 @@
       <h2 id="newReleasesHeading">New releases</h2>
       <p>Full albums released in the last 24 months by artists who already have a full album in your library.</p>
       <div class="controls">
-        <button data-load-discovery="new_releases">Load new releases</button>
-        <button data-refresh-discovery="new_releases">Refresh in background</button>
+        <div class="action-group" role="group" aria-label="New releases">
+          <button data-load-discovery="new_releases" type="button" title="Load new releases" aria-label="Load new releases"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
+          <button data-refresh-discovery="new_releases" type="button" title="Refresh in background" aria-label="Refresh in background"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+        </div>
       </div>
       <p id="newReleasesStatus" class="status-line" aria-live="polite"></p>
       <div id="newReleasesCards" class="ranked-list"></div>
@@ -237,8 +243,10 @@
   <div class="panel">
     <h2 id="personalDiscoveriesHeading">Personal Discoveries</h2>
     <p>Recommendations based on your listening and musical interests.</p>
-    <button data-load-discovery="personal">Load discoveries</button>
-    <button data-refresh-discovery="personal">Refresh</button>
+    <div class="action-group" role="group" aria-label="Load and refresh">
+      <button data-load-discovery="personal" type="button" title="Load discoveries" aria-label="Load discoveries"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
+      <button data-refresh-discovery="personal" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    </div>
     <p id="personalStatus" class="status-line" aria-live="polite"></p>
     <div id="personalCards" class="ranked-list"></div>
   </div>
@@ -263,8 +271,10 @@
   <div class="panel">
     <h2 id="classicsHeading">Add to your collection</h2>
     <p>Find acclaimed albums and less obvious discoveries to expand your library.</p>
-    <button data-load-discovery="classics">Load albums</button>
-    <button data-refresh-discovery="classics">Refresh</button>
+    <div class="action-group" role="group" aria-label="Load and refresh">
+      <button data-load-discovery="classics" type="button" title="Load albums" aria-label="Load albums"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
+      <button data-refresh-discovery="classics" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    </div>
     <p id="classicsStatus" class="status-line" aria-live="polite"></p>
     <div id="classicsCards" class="ranked-list"></div>
   </div>
@@ -274,8 +284,10 @@
   <div class="panel">
     <h2 id="artistDeepDiveHeading">Artist Deep Dives</h2>
     <p>Explore missing albums by artists in your library and discover similar artists.</p>
-    <button data-load-discovery="artist_deep_dive">Load albums</button>
-    <button data-refresh-discovery="artist_deep_dive">Refresh</button>
+    <div class="action-group" role="group" aria-label="Load and refresh">
+      <button data-load-discovery="artist_deep_dive" type="button" title="Load albums" aria-label="Load albums"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list-plus"></use></svg></button>
+      <button data-refresh-discovery="artist_deep_dive" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    </div>
     <p id="artistDeepDiveStatus" class="status-line" aria-live="polite"></p>
     <div id="artistDeepDiveCards" class="cards"></div>
   </div>
@@ -306,7 +318,9 @@
       </div>
       <p id="libraryStatus" class="status-line" aria-live="polite"></p>
       <ul id="libraryList" class="library-list"></ul>
-      <button type="button" id="libraryMore" hidden>Load more</button>
+      <div id="libraryMoreGroup" class="action-group" role="group" aria-label="More artists" hidden>
+        <button id="libraryMore" type="button" title="Load more" aria-label="Load more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plus"></use></svg></button>
+      </div>
     </div>
     <div id="libraryDetailView" class="tint-backdrop" hidden>
       <div class="artist-hero">
@@ -394,7 +408,9 @@
   <div class="panel">
     <h2 id="savedHeading">Saved</h2>
     <p>Albums you bookmarked with Save, newest first. Saving never starts a download.</p>
-    <button type="button" data-refresh-saved>Refresh</button>
+    <div class="action-group" role="group" aria-label="Saved albums">
+      <button data-refresh-saved type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    </div>
     <p id="savedStatus" class="status-line" aria-live="polite"></p>
     <div id="savedCards" class="ranked-list"></div>
   </div>
@@ -419,7 +435,10 @@
       <label>Music library directory visible to the Librarian backend <input id="musicLibraryPath" type="text" placeholder="/media/library/music"></label>
       <p class="muted">Use the path as seen by the Librarian process/container, not a path inside the Navidrome service.</p>
       <p id="connection" class="status status-line">Not checked yet.</p>
-      <p><button id="saveNavidrome" class="btn-primary">Save settings</button> <button id="checkConnection">Test connection</button></p>
+      <div class="settings-actions"><div class="action-group" role="group" aria-label="Navidrome settings">
+        <button id="saveNavidrome" type="button" title="Save settings" aria-label="Save settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="checkConnection" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
+      </div></div>
       <p id="navidromeStatus" class="status-line" aria-live="polite"></p>
     </div>
     <div id="settingsSlskd" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabSlskd" hidden>
@@ -433,7 +452,10 @@
       <p class="muted">Drag a row by its handle to set your preferred order. You can also use the Move up / Move down buttons.</p>
       <ol id="qualityPriorityList" class="quality-priority-list" aria-label="Audio quality priority order"></ol>
       <p id="qualityPriorityAnnouncement" class="sr-only" aria-live="polite"></p>
-      <p><button id="saveSlskd" class="btn-primary">Save settings</button> <button id="testSlskd">Test connection</button></p>
+      <div class="settings-actions"><div class="action-group" role="group" aria-label="slskd settings">
+        <button id="saveSlskd" type="button" title="Save settings" aria-label="Save settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="testSlskd" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
+      </div></div>
       <p id="slskdStatus" class="status-line" aria-live="polite"></p>
     </div>
     <div id="settingsLastfm" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabLastfm" hidden>
@@ -443,7 +465,10 @@
       <p class="muted">Your Last.fm username is used to read your listening history for Daily picks. Leave it blank to use the LASTFM_USERNAME setting.</p>
       <label>API key <input id="lastfmApiKey" type="password" placeholder="Leave blank to keep the saved key" autocomplete="new-password"></label>
       <p id="lastfmStatus" class="status-line" aria-live="polite"></p>
-      <p><button id="saveLastfm" class="btn-primary">Save settings</button> <button id="testLastfm">Test connection</button></p>
+      <div class="settings-actions"><div class="action-group" role="group" aria-label="Last.fm settings">
+        <button id="saveLastfm" type="button" title="Save settings" aria-label="Save settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="testLastfm" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
+      </div></div>
     </div>
     <div id="settingsListenbrainz" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabListenbrainz" hidden>
       <h3>ListenBrainz profile</h3>
@@ -451,14 +476,21 @@
       <label>Username <input id="listenbrainzUsername" type="text" autocomplete="off"></label>
       <label>User token (optional) <input id="listenbrainzToken" type="password" placeholder="Leave blank to keep the saved token" autocomplete="new-password"></label>
       <p id="listenbrainzStatus" class="status-line" aria-live="polite"></p>
-      <p><button id="saveListenbrainz" class="btn-primary">Save settings</button> <button id="testListenbrainz">Test connection</button></p>
+      <div class="settings-actions"><div class="action-group" role="group" aria-label="ListenBrainz settings">
+        <button id="saveListenbrainz" type="button" title="Save settings" aria-label="Save settings"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="testListenbrainz" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
+      </div></div>
     </div>
     <div id="settingsDiscogs" class="settings-tab-panel" role="tabpanel" aria-labelledby="tabDiscogs" hidden>
       <h3>Discogs</h3>
       <p class="muted">Optional. Adds Discogs styles to similar artists and genre pages. Create a personal access token in your Discogs developer settings. Data provided by Discogs.</p>
       <label>Personal access token <input id="discogsToken" type="password" placeholder="Enter a token to set or replace it" autocomplete="new-password"></label>
       <p id="discogsStatus" class="status-line" aria-live="polite"></p>
-      <p><button id="saveDiscogs" class="btn-primary">Save token</button> <button id="removeDiscogs">Remove saved token</button> <button id="testDiscogs">Test connection</button></p>
+      <div class="settings-actions"><div class="action-group" role="group" aria-label="Discogs token">
+        <button id="saveDiscogs" type="button" title="Save token" aria-label="Save token"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+        <button id="removeDiscogs" type="button" title="Remove saved token" aria-label="Remove saved token"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+        <button id="testDiscogs" type="button" title="Test connection" aria-label="Test connection"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plug-zap"></use></svg></button>
+      </div></div>
     </div>
   </div>
 </section>
@@ -489,13 +521,17 @@
     <form id="radioAddressForm" class="radio-address">
       <label for="radioAppUrl" class="muted">The address your Navidrome apps use to reach this app, for example its Tailscale address. Leave blank to use the address of this browser tab.</label>
       <input id="radioAppUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://my-server.tailnet.ts.net:8000">
-      <button id="saveRadioAddress" type="submit">Save</button>
+      <div class="action-group" role="group" aria-label="App address">
+        <button id="saveRadioAddress" type="submit" title="Save" aria-label="Save"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#save"></use></svg></button>
+      </div>
     </form>
     <h3 id="radioStationsHeading">Stations</h3>
     <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
     <h3 id="radioPlaysHeading">Heard</h3>
     <div id="radioPlays" class="radio-list" aria-labelledby="radioPlaysHeading"></div>
-    <button id="refreshRadio" type="button">Refresh</button>
+    <div class="action-group" role="group" aria-label="Radio">
+      <button id="refreshRadio" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+    </div>
   </div>
 </section>
 

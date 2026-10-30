@@ -33,8 +33,8 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
         self.assertNotIn('id="personalCards" class="cards"', self.html)
 
     def test_load_refresh_and_status_line_are_unchanged(self):
-        self.assertIn('data-load-discovery="personal">Load discoveries</button>', self.html)
-        self.assertIn('data-refresh-discovery="personal">Refresh</button>', self.html)
+        self.assertRegex(self.html, r'<button data-load-discovery="personal"[^>]*title="Load discoveries" aria-label="Load discoveries">')
+        self.assertRegex(self.html, r'<button data-refresh-discovery="personal"[^>]*title="Refresh" aria-label="Refresh">')
         self.assertIn('id="personalStatus" class="status-line" aria-live="polite"', self.html)
 
     def test_endpoints_and_feedback_route_are_unchanged(self):

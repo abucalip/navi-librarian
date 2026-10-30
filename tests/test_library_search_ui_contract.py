@@ -288,7 +288,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("loadLibrary({reset: libraryView.resetOnRetry})", self.new_js)
 
     def test_styles_hide_panels_that_use_the_hidden_attribute_and_stack_search_on_phones(self):
-        self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMore[hidden] { display: none; }", self.css)
+        self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMoreGroup[hidden] { display: none; }", self.css)
         self.assertIn("header .global-search { order: 3; flex: 1 0 100%; margin-left: 0; }", self.css)
         self.assertIn("main { margin: 136px 14px 0;", self.css)
 

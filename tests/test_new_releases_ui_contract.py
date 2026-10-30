@@ -27,8 +27,8 @@ class NewReleasesRowContractTests(unittest.TestCase):
         self.assertNotIn('id="newReleasesCards" class="cards"', self.html)
 
     def test_load_and_refresh_controls_and_status_line_are_unchanged(self):
-        self.assertIn('data-load-discovery="new_releases">Load new releases</button>', self.html)
-        self.assertIn('data-refresh-discovery="new_releases">Refresh in background</button>', self.html)
+        self.assertRegex(self.html, r'<button data-load-discovery="new_releases"[^>]*title="Load new releases" aria-label="Load new releases">')
+        self.assertRegex(self.html, r'<button data-refresh-discovery="new_releases"[^>]*title="Refresh in background" aria-label="Refresh in background">')
         self.assertIn('id="newReleasesStatus" class="status-line" aria-live="polite"', self.html)
 
     def test_new_releases_rows_come_from_the_shared_recommendation_row(self):

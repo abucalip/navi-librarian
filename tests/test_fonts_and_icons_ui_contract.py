@@ -19,6 +19,8 @@ ICON_NAMES = [
     "bookmark", "bookmark-check",
     # rotate-cw: shuffle, refresh and try again; skip-forward: use next source (acquisitions group).
     "rotate-cw", "skip-forward",
+    # Button groups: save, plug-zap (test connection), sparkles (generate), list-plus (load), plus (load more), chevrons up/down.
+    "save", "plug-zap", "sparkles", "list-plus", "plus", "chevron-up", "chevron-down",
 ]
 
 
