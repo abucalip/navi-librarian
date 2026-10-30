@@ -1,3 +1,11 @@
+## 2026-10-30 — Radio app address: PR #641 merged; image v0.2.9 published
+
+- **Change:** PR [#641](https://github.com/abucalip/navi-librarian/pull/641), squash `b885b0ecb7689333fe7bd30d557034e95884ed23`, from tested head `1bf75397687bb9ffaa5b79fbcaea6081dd54facf`; all required checks passed. The Radio page has a saved "App address" (for example a Tailscale address) that relayed stations use instead of the browser tab's address; saving a new one moves stations that are already relayed.
+- **Tests run:** focused radio station, route, log and UI-contract tests locally; the full suite ran in CI only.
+- **Published:** annotated tag `v0.2.9` at `b885b0ecb7689333fe7bd30d557034e95884ed23`; release run [41049514958](https://github.com/abucalip/navi-librarian/actions/runs/41049514958) succeeded. Image `ghcr.io/abucalip/navi-librarian:v0.2.9`, digest `sha256:203c6b116297186a9601e96ef2c54cc6fabe85a6339a94c178a715c680b9e67d`. Rollback reference: v0.2.8. Not deployed.
+- **Not done:** browser check and a phone test away from home.
+- **Next action:** the owner deploys v0.2.9, saves the Tailscale address on the Radio page and tests a relayed station from a phone away from home.
+
 ## 2026-10-30 — Pill search fields: PR #640 merged; image v0.2.8 published
 
 - **Merged:** PR [#640](https://github.com/abucalip/navi-librarian/pull/640), squash commit `fb5f7b13a1944705f31d08ce290ed05081998d10`, from tested head `31883a8`, at the owner's direction. All five required checks passed on that head. The first head failed `compile` and `test-and-build` on three UI contract tests (`test_motion_ui_contract` allows only transform and opacity transitions on the motion tokens; the header-menu contract requires `focusable="false"` on SVGs); the glow became an opacity fade on a pseudo-element and the attribute was added.
