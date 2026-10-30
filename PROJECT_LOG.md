@@ -1,3 +1,12 @@
+## 2026-10-30 — Pill search fields: PR #640 merged; image v0.2.8 published
+
+- **Merged:** PR [#640](https://github.com/abucalip/navi-librarian/pull/640), squash commit `fb5f7b13a1944705f31d08ce290ed05081998d10`, from tested head `31883a8`, at the owner's direction. All five required checks passed on that head. The first head failed `compile` and `test-and-build` on three UI contract tests (`test_motion_ui_contract` allows only transform and opacity transitions on the motion tokens; the header-menu contract requires `focusable="false"` on SVGs); the glow became an opacity fade on a pseudo-element and the attribute was added.
+- **What changed:** the top-bar search is a pill with an inline submit icon (`.search-field`); focusing the empty field lists the last three searches from localStorage `navidrome-recent-searches`, saved on submit, on picking a recent term and in `openFromSearch` before the field is cleared. The Library filter (capped at 420 px) and the Sort by select share the rounded style.
+- **Verification:** focused tests only (full suite not run by the agent): `tests/*ui_contract*.py` (365 passed) and `node --check static/app.js`. No browser check is recorded.
+- **Published:** annotated tag `v0.2.8` at `fb5f7b13a1944705f31d08ce290ed05081998d10`; release run [40979128615](https://github.com/abucalip/navi-librarian/actions/runs/40979128615) succeeded. Image `ghcr.io/abucalip/navi-librarian:v0.2.8`, digest `sha256:6c7d00b327066ac77b2477b64f302a458f28b4bfdd5f7c566a0297af2a18d2f8`. It also carries PRs #638 and #639. Rollback reference: v0.2.7.
+- **Not done:** deployment, runtime verification of the image, browser checks of the search fields.
+- **Next action:** the owner checks the search fields in a browser and decides on deploying v0.2.8.
+
 ## 2026-10-30 — Action button group: PR #639 merged
 
 - **Merged:** PR [#639](https://github.com/abucalip/navi-librarian/pull/639), squash commit `a6a8cb29fd5e97a724d422b6286176cdc327427d`, from tested head `1724c41`, at the owner's direction. All five required checks passed on that head.
