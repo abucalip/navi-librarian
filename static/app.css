@@ -705,21 +705,23 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .global-search { position: relative; flex: 0 1 420px; min-width: 0; margin-left: auto; }
 /* Pill field with the submit icon inside its right edge. The input and button share one fill so they read as a single control. */
 .search-field { position: relative; display: flex; align-items: center; }
-.global-search input[type="search"], .library-control input[type="search"], .library-control select { width: 100%; min-height: 44px; padding: 10px 48px 10px 20px; background: var(--surface); border-color: transparent; border-radius: 30px; transition: box-shadow .5s ease-in-out, background-color .5s ease-in-out, border-color .5s ease-in-out; -webkit-appearance: none; appearance: none; }
+.global-search input[type="search"], .library-control input[type="search"], .library-control select { width: 100%; min-height: 44px; padding: 10px 48px 10px 20px; background: var(--surface); border-color: transparent; border-radius: 30px; -webkit-appearance: none; appearance: none; }
 .global-search input[type="search"]::-webkit-search-cancel-button, .library-control input[type="search"]::-webkit-search-cancel-button { display: none; }
 .global-search input[type="search"]::placeholder, .library-control input[type="search"]::placeholder { font-weight: 300; color: var(--text-subtle); }
-.global-search input[type="search"]:hover, .global-search input[type="search"]:focus, .library-control input[type="search"]:hover, .library-control input[type="search"]:focus, .library-control select:hover, .library-control select:focus { box-shadow: 0 0 1em rgba(0, 0, 0, .35); }
+/* The glow is a pseudo-element that fades in; box-shadow itself is never animated (DESIGN_SYSTEM.md 11). */
+.search-field::before { content: ""; position: absolute; inset: 0; border-radius: 30px; box-shadow: 0 0 1em rgba(0, 0, 0, .35); opacity: 0; pointer-events: none; transition: opacity var(--dur-slow) var(--ease-out); }
+.search-field:hover::before, .search-field:focus-within::before { opacity: 1; }
 .global-search input[type="search"]:focus, .library-control input[type="search"]:focus, .library-control select:focus { background: var(--surface-raised); }
 .search-submit { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 100%; padding: 0; background: transparent; border: 0; border-radius: 0 30px 30px 0; cursor: pointer; }
 .search-submit:hover { background: transparent; }
-.search-icon { width: 1.3em; height: 1.3em; fill: var(--text-subtle); transition: fill .2s ease-in-out; }
+.search-icon { width: 1.3em; height: 1.3em; fill: var(--text-subtle); }
 .search-submit:hover .search-icon, .global-search input[type="search"]:focus + .search-submit .search-icon { fill: var(--accent); }
 .search-recent { padding: var(--space-2); }
 .search-recent[hidden] { display: none; }
 /* The library filter filters as you type, so its icon is decoration rather than a button. */
 .search-icon-inline { position: absolute; right: 16px; pointer-events: none; }
 .library-control select { padding-right: 40px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239c958a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; }
-@media (prefers-reduced-motion: reduce) { .global-search input[type="search"], .library-control input[type="search"], .library-control select, .search-icon { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .search-field::before { transition: none; } }
 .search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; max-height: min(64vh, 560px); overflow-y: auto; padding: var(--space-3); background: var(--surface-raised); border: 1px solid var(--edge-strong); border-radius: 4px; }
 .search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMore[hidden] { display: none; }
 .search-group + .search-group { margin-top: var(--space-3); }
