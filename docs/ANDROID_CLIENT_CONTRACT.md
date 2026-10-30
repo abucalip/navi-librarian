@@ -1,0 +1,141 @@
+# Android client contract
+
+Status: **proposal, pending owner approval of the PR. Nothing here is implemented.** Owner decisions on the former open items 2, 3 and 6 are recorded in section 9. Written against local `main` (clean, matching `origin/main` at last fetch). Payload shapes are not yet recorded; Phase 0 produces them (section 7).
+
+## 1. Purpose and scope
+
+A native Android app for the owner, on Android 13. It displays library metadata from Navidrome and recommendation data from Librarian, and it can launch acquisitions and show their progress. It is a thin client: **Librarian is the only component that calculates or recommends** similar artists, albums, discovery lists and ranking. The app renders what it receives, in the order received.
+
+In scope (v1):
+- Dashboard, Library, Artist page, Album page, global search.
+- Discovery lists: Recommendations, New releases, Personal discoveries, Daily picks (lens lists), Classics, Artist deep dives.
+- Launching acquisitions (album and single song) and viewing live progress, retry and dismiss.
+- Discovery feedback (save, dismiss, dismiss artist, remove from For me).
+- Settings: server addresses, sign-in, sign-out.
+
+Out of scope for v1:
+- Playback (may be added later; it needs its own contract, see section 9).
+- Radio, Librarian service settings (Navidrome, slskd, Last.fm, ListenBrainz, Discogs), household or multi-user use.
+- Any on-device ranking, matching or similarity logic.
+- Tailscale itself. The Tailscale app must be connected on the phone.
+
+## 2. Binding rules (inherited from the repo)
+
+1. **Existing API is authoritative.** No endpoint or field is invented. A need the API cannot meet is written up as a contract proposal, not worked around.
+2. **Server-enforced safety.** Get, Dismiss and import are enforced by the server. The app never reports success before the server confirms, and never duplicates acquisition logic.
+3. **Dismiss deletes files** (ACQ-04). The app asks for explicit confirmation before sending it.
+4. **Honest states:** pending, confirmed, failed and recoverable are visibly different, never by colour alone.
+5. **Accessibility floor:** WCAG 2.1 AA, 48dp touch targets (Material minimum, which exceeds the web's 44), TalkBack labels, reduced-motion respected.
+6. **No third-party runtime assets.** Fonts and icons are bundled in the app. No analytics or crash-reporting SDKs.
+7. D-016 (`navidrome_server.py` takes no additions) applies to any backend change that this contract later proposes.
+8. In all documentation, comments and communications, refer to the person directing the project as "the owner".
+
+## 3. Platform
+
+- Android 13 (API 33) minimum and target. No compatibility shims for older versions.
+- Kotlin, Jetpack Compose, Material 3 with a custom theme.
+- OkHttp and Retrofit with kotlinx.serialization; Coil for images; Room for caching; Hilt for dependency injection; Navigation-Compose.
+- Credentials in the Android Keystore through EncryptedSharedPreferences.
+- Project lives in `android/` in this repository. Fixtures live in `android/contract-fixtures/` next to the server code.
+
+## 4. Servers and transport
+
+- Two user-entered base URLs, both `https://<name>.ts.net`, served by `tailscale serve`: Librarian and Navidrome.
+- Cleartext HTTP is disabled in the network security config. Certificates are validated by the system trust store. No pinning and no "trust all" override.
+- When a server is unreachable the app distinguishes "no network", "server unreachable (is Tailscale connected?)", "unauthorised" and "server error", with a retry action.
+- Timeouts: connect 10 s, read 30 s; the progress stream has no read timeout while the screen is visible.
+
+### 4.1 Librarian authentication
+- `GET /api/auth/status`, then `POST /api/auth/login` with `{username, password}`. The session cookie (strict, HTTP-only, Secure) is kept in a persistent cookie jar that is stored encrypted.
+- Any `401` triggers re-login with the stored credentials once; if that fails the app shows the sign-in screen. `429` shows the retry-later message from the server and does not retry automatically.
+- First-time account setup (`/api/auth/setup`) is not part of the app. The owner creates the account in the web UI.
+- **Open question:** behind `tailscale serve` every request may share one client IP, which would share the login rate limit with the web UI (section 9).
+
+### 4.2 Navidrome authentication
+- Subsonic API with token and salt per request, using the owner's Navidrome credentials stored in the Keystore. The password is never sent or logged.
+- **Differs from the web app,** where Navidrome credentials stay server-side. Accepted because the owner chose direct access and the Tailscale network is the boundary. If playback is added later, the same credentials serve streaming.
+
+## 5. Data sources: who supplies what
+
+### 5.1 Navidrome, directly (library metadata)
+`getArtists`, `getArtist`, `getAlbum`, `getAlbumList2`, `getGenres`, `search3`, `getCoverArt`, `ping`. Used for library browsing, owned-state and cover art of owned albums. The app uses these only for what Navidrome owns.
+
+### 5.2 Librarian (recommendations, detail, acquisition)
+
+| Need | Endpoint |
+|---|---|
+| Dashboard picks | `GET /api/dashboard-picks?count=` |
+| Dashboard shelves, genres | `GET /api/dashboard/albums/{shelf}`, `GET /api/dashboard/genres` |
+| Recommendations | `GET /api/recommendations?count=` (1–30) |
+| Discovery lists | `GET /api/discovery/{personal\|for_me\|classics\|artist_deep_dive\|new_releases\|<lens>}?count=` (1–150) |
+| List refresh | `POST /api/discovery/{list}/refresh` (`count` JSON integer 1–20) |
+| Feedback | `POST /api/discovery/feedback` `{artist, album, action, metadata}`; actions `save`, `dismiss`, `dismiss_artist`, `remove_for_me` |
+| Lens feedback summary | `GET /api/discovery/lens-feedback` |
+| Search | `GET /api/search` (SSE stream, `docs/SEARCH_CONTRACT.md` 3.1, 3.7, 3.8) |
+| Artist page | `GET /api/artists/{key}` (`docs/SEARCH_CONTRACT.md` 3.3) |
+| Album page | `GET /api/albums/{artist_key}/{album_key}` |
+| Genre page | `GET /api/genres/{tag}` |
+| Bio, details, links, year | `GET /api/artist-bio`, `/api/album-details`, `/api/album-description`, `/api/album-links`, `/api/album-year` |
+| Images | `GET /api/artwork`, `GET /api/artist-image`, owned cover art under `owned_artwork` |
+| Library browse | `GET /api/library/artists`, `GET /api/library/albums` (used only if Navidrome direct cannot supply the same fields) |
+| Health | `GET /api/health` |
+
+### 5.3 Acquisition (launch and progress)
+
+| Action | Endpoint |
+|---|---|
+| Launch album | `POST /api/acquire` `{artist, album, metadata, auto_queue}` (`auto_queue` is a JSON boolean) |
+| Launch one song | `POST /api/acquire/track` `{artist, album, title, track_number?, year?, metadata?}` |
+| Queue a reviewed candidate | `POST /api/acquire/queue` — **not used in v1** (owner decision: automatic only) |
+| Status snapshot | `GET /api/acquisitions` |
+| Live progress | `GET /api/acquisitions/stream` (SSE, one JSON snapshot per second, `event: error` on a failed read) |
+| Switch source | `POST /api/acquisitions/skip` `{artist, album}` |
+| Dismiss | `POST /api/acquisitions/dismiss` `{artist, album}` (deletes the associated files) |
+
+Behaviour:
+- The progress screen uses the SSE stream while visible and falls back to polling `GET /api/acquisitions` every few seconds if the stream drops. The stream is closed when the screen is not visible, to save battery.
+- No notifications, foreground service or background progress in v1 (owner decision). An in-app badge shows the active count, as the web nav does.
+- Errors from the server (`400`, `404`, `409`, `502`) show the server's `detail` text. `409` on Dismiss means refusal and is shown as such.
+- A Get button shows pending until the server's response arrives and then reflects the returned state. It never shows success optimistically.
+
+## 6. Design and UX
+
+1. **The `/mobile-design` skill is used for every UI decision.** Before the first screen is built, it is invoked to settle navigation pattern, touch targets, thumb-zone placement, list performance and Android conventions. It is invoked again for each new screen type (list rows, artist and album pages, progress screen, search). Decisions it produces are recorded in `android/DESIGN.md`.
+2. Design is a port of the mobile web UI, not a WebView. Visual identity comes from `static/app.css` and `docs/archive/redesign/DESIGN*.md`: the warm dark ink palette, chart-red emphasis, yellow for primary and selected states, artwork-led layouts. Reference screenshots: `album page.jpg`, `artist page.jpg`, `genre tiles.png` (owner's folder, outside the repo).
+3. Icons are converted from `static/icons.svg` to vector drawables. Fonts are the self-hosted ones from `static/fonts`.
+4. Navigation: bottom bar, icon-only with labels for TalkBack, with a More overflow for the less-used lists, as in the web mobile nav (PRs #546 and #547).
+5. Shared "ranked album row": artwork, title, artist, artist bio in the middle with click-to-expand, fixed row height, equal-width ranked rows (web PRs #533, #554).
+6. Dark theme only in v1, matching the web UI.
+
+## 7. Phase 0: payload fixtures (gate before any UI work)
+
+1. Run the local test helper (`docs/LOCAL_UI_TESTING.md`, sandbox music paths, slskd disabled) and record one real response from every endpoint in section 5, including an acquisition status snapshot and a captured SSE sample.
+2. Store them in `android/contract-fixtures/` with the request that produced them.
+3. DTOs are generated from the fixtures, not from guesses. Unknown fields are ignored and missing optional fields tolerated.
+4. A contract test in the repository fails if a route's response shape no longer matches its fixture.
+5. Resolve the rate-limit question and the Navidrome-versus-Librarian field gaps (section 9).
+
+## 8. Phases and acceptance
+
+| Phase | Deliverable | Acceptance |
+|---|---|---|
+| 0 | Fixtures, contract tests, `android/DESIGN.md` from `/mobile-design` | Fixtures committed; owner reviews shapes |
+| 1 | Skeleton, theme, server setup, Librarian login, Navidrome connection test | Signs in over Tailscale, survives restart, clear unreachable state |
+| 2 | Dashboard, Library, Artist and Album pages | Matches the web pages for the same data |
+| 3 | Discovery lists, feedback, search, shared row | Every list shows Librarian's order with no client-side ranking |
+| 4 | Acquisitions: launch album and song, live progress, retry, skip, dismiss with confirmation | Progress matches the web UI; no success shown before server confirmation |
+| 5 | Caching, offline and error states, session expiry, accessibility pass, signed release build | Works with the network dropped; TalkBack pass; installed on the owner's phone away from home |
+
+Testing: unit tests for repositories and DTO parsing against fixtures; Compose screenshot tests; a manual run over the real Tailscale setup. No claim of live behaviour is made until the owner has tested it. Merge, release and deployment remain separate states, as elsewhere in the project.
+
+## 9. Decisions and open items
+
+Decided by the owner:
+1. **Album launch is automatic only.** The app sends `POST /api/acquire` with `auto_queue: true`; there is no candidate review and `POST /api/acquire/queue` is not used.
+2. **No background notifications** in v1.
+3. **Navidrome credentials on the device** are accepted (section 4.2).
+4. **This contract goes through a PR**, not directly to `main`.
+
+Still open:
+1. **Login rate limit:** confirm whether `tailscale serve` hides the client IP from Librarian. If it does, the shared 15-minute lockout could block the app. Any change would be a backend contract proposal.
+2. **Playback later:** it would reuse the Navidrome credentials already on the device, or use the proxy routes in `docs/PLAYER_PROPOSAL.md`. It needs its own approval and contract and amends `PRODUCT.md`.
