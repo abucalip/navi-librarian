@@ -4,7 +4,7 @@ Add to your collection (Classics) reuses the Discover music ranked row through o
 (DESIGN_SYSTEM.md sections 8, 9.2, 9.4, 9.6). The server orders candidates by an exploration
 score with random jitter, and Load albums rotates them on the client, so rows carry a muted
 position and no red rank numeral, and the status line names the basis. Get stays prominent and
-Not for me / Dismiss artist keep routing to the server feedback endpoint. These tests read the
+Not for me keeps routing to the server feedback endpoint. These tests read the
 template, script and stylesheet as source. They never open a browser, so they do not replace the
 manual checklist, and server-side behaviour stays with the backend tests.
 """
@@ -69,7 +69,7 @@ class AddToCollectionRowContractTests(unittest.TestCase):
     def test_dismiss_and_dismiss_artist_route_to_the_classics_list(self):
         body = self._function_body("function buildClassicsRow(", "// Lazy artist bio for a ranked row.")
         self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'classics', row)", body)
-        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'classics', row)", body)
+        self.assertNotIn("dismiss_artist", body)
 
     def test_status_line_names_the_real_basis_and_never_claims_a_score_order(self):
         self.assertIn("name === 'classics' && items.length", self.js)

@@ -52,16 +52,17 @@ class SaveBookmarkTests(unittest.TestCase):
         self.assertIn("'Saved'", self.state)
 
     def test_control_is_wired_to_every_recommendation_list(self):
-        self.assertIn("createSaveButton(artist, album, item, options.listName)", JS)
-        self.assertIn("actions.append(createSaveButton(artist, album, item, name));", JS)
+        self.assertIn("listName: options.listName,", JS)
+        self.assertIn("listName: name,", JS)
+        self.assertIn("group.append(createSaveButton(artist, album, metadata, options.listName));", JS)
         for name in ("new_releases", "personal", "classics"):
             self.assertIn("listName: '%s'," % name, JS)
 
     def test_touch_target_and_focus_ring(self):
-        rule = between(CSS, ".save-album {", "}")
-        self.assertIn("min-height: 44px", rule)
-        self.assertIn("min-width: 44px", rule)
-        self.assertIn(".save-album:focus-visible", CSS)
+        rule = between(CSS, ".action-group > button {", "}")
+        self.assertIn("height: var(--group-h)", rule)
+        self.assertIn("width: 44px", rule)
+        self.assertIn(".action-group > button:focus-visible", CSS)
 
 
 if __name__ == "__main__":

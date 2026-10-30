@@ -61,12 +61,12 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
         self.assertIn("function spriteIcon(name)", self.js)
         self.assertIn("arrow.append(spriteIcon(icon));", self.js)
         self.assertIn("[['chevron-left', -1], ['chevron-right', 1]]", self.js)
-        self.assertIn("notForMe.append(spriteIcon('x'));", self.js)
+        self.assertIn("dismissButton.append(spriteIcon('trash-2'));", self.js)
         self.assertNotIn("arrow.textContent = symbol;", self.js)
-        self.assertNotIn("notForMe.textContent = '×';", self.js)
+        self.assertNotIn("dismissButton.textContent = '×';", self.js)
         self.assertIn("arrow.setAttribute('aria-label', direction < 0 ? 'Scroll albums left' : 'Scroll albums right');", self.js)
-        self.assertIn("notForMe.setAttribute('aria-label', 'Not for me: ' + album);", self.js)
-        self.assertIn("notForMe.title = 'Not for me';", self.js)
+        self.assertIn("dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);", self.js)
+        self.assertIn("dismissButton.title = options.dismissTitle || 'Not for me';", self.js)
 
     def test_sprite_icon_helper_builds_nodes_without_innerhtml(self):
         start = self.js.index("function spriteIcon(name)")
@@ -80,11 +80,11 @@ class ArtistDeepDiveUIContractTests(unittest.TestCase):
             start = self.css.index(selector + " {")
             return self.css[start:self.css.index("}", start)]
         arrow = rule(".genre-row-arrow")
-        dismiss = rule(".card .card-art .deep-dive-dismiss")
+        dismiss = rule(".action-group > button")
         self.assertNotIn("text-shadow", arrow)
         self.assertNotIn("text-shadow", dismiss)
         self.assertIn("width: 44px; height: 44px;", arrow)
-        self.assertIn("width: 44px; height: 44px;", dismiss)
+        self.assertIn("height: var(--group-h);", dismiss)
 
     def test_genre_count_uses_body_face_not_mono(self):
         rule_start = self.css.index(".genre-row-count {")

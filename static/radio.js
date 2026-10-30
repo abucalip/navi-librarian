@@ -113,34 +113,44 @@ function renderRadioPlays(items) {
   for (const play of items) {
     const row = radioElement('div', 'radio-row');
     const main = radioElement('div', 'radio-main');
-    main.append(radioElement('p', 'radio-title', play.title),
-      radioElement('p', 'radio-meta', [play.artist || 'Unknown artist', play.album].filter(Boolean).join(' · ')),
+    // The song opens its album's page (or the artist's, when the station named no album); the
+    // artist and album in the meta line open theirs.
+    const title = radioElement('p', 'radio-title');
+    if (play.artist) {
+      title.append(buildInlineLink(play.title, play.album
+        ? namedAlbumTarget(play.artist, play.album) : namedArtistTarget(play.artist)));
+    } else {
+      title.textContent = play.title;
+    }
+    const meta = radioElement('p', 'radio-meta');
+    linkArtistName(meta, play.artist || 'Unknown artist');
+    if (play.album) {
+      meta.append(document.createTextNode(' · '));
+      linkAlbumName(meta, play.artist, play.album);
+    }
+    main.append(title, meta,
       radioElement('p', 'radio-meta', play.station_name + ' · ' + radioWhen(play.heard_at) + ' · heard ' + radioHeard(play.listened_seconds)));
     const actions = radioElement('div', 'radio-actions');
-    const get = createRadioGetButton(play);
-    const remove = radioElement('button', 'radio-remove');
-    remove.type = 'button';
-    remove.setAttribute('aria-label', 'Remove ' + play.title + ' from the log');
-    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.setAttribute('class', 'icon');
-    icon.setAttribute('viewBox', '0 0 24 24');
-    icon.setAttribute('aria-hidden', 'true');
-    icon.setAttribute('focusable', 'false');
-    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttribute('href', '/static/icons.svg#x');
-    icon.append(use);
-    remove.append(icon);
-    remove.addEventListener('click', async () => {
-      remove.disabled = true;
-      try {
-        await sendJSON('/api/radio/plays/' + play.id, 'DELETE');
-        await loadRadio();
-      } catch (error) {
-        radioStatus(error.message, 'error');
-        remove.disabled = false;
+    // The app's action group: this song's own Get, Save, and Remove, which takes the song out of
+    // the log. A song the station gave no album for is saved under its own title.
+    const saveAlbum = play.album || play.title;
+    actions.append(createActionGroup(play.artist, saveAlbum, {artist: play.artist, album: saveAlbum}, {
+      getButton: createRadioGetButton(play),
+      listName: play.artist ? 'radio' : null,
+      dismissTitle: 'Remove from the log',
+      dismissLabel: 'Remove ' + play.title + ' from the log',
+      onDismiss: async event => {
+        const remove = event.currentTarget;
+        remove.disabled = true;
+        try {
+          await sendJSON('/api/radio/plays/' + play.id, 'DELETE');
+          await loadRadio();
+        } catch (error) {
+          radioStatus(error.message, 'error');
+          remove.disabled = false;
+        }
       }
-    });
-    actions.append(get, remove);
+    }));
     row.append(main, actions);
     list.append(row);
   }

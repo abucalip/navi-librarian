@@ -19,11 +19,12 @@ class RadioUiContractTests(unittest.TestCase):
         for unsafe in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
             self.assertNotIn(unsafe, RADIO_JS)
 
-    def test_controls_reuse_the_apps_get_button_a_switch_and_an_x(self):
+    def test_controls_reuse_the_apps_get_button_a_switch_and_the_action_group(self):
         self.assertIn("decorateGetButton(button)", RADIO_JS)
         self.assertIn("setGetButtonState(", RADIO_JS)
         self.assertIn("role', 'switch'", RADIO_JS)
-        self.assertIn("icons.svg#x", RADIO_JS)
+        self.assertIn("createActionGroup(", RADIO_JS)
+        self.assertIn("'Remove ' + play.title + ' from the log'", RADIO_JS)
         self.assertNotIn("Turn on", RADIO_JS)
         self.assertNotIn("radio-switch-knob", RADIO_JS)
 

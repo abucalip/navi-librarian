@@ -1237,8 +1237,25 @@ function buildDashboardTile(item) {
   tile.append(meta);
   ensureAlbumYearBadge(tile);
 
-  tile.querySelector('.card-art').append(createGetButton(artist, album, item));
+  tile.querySelector('.card-art').append(createActionGroup(artist, album, item, {
+    listName: 'dashboard_picks',
+    onDismiss: () => dismissDashboardPick(tile, artist, album, item)
+  }));
   return tile;
+}
+
+// Not for me on a pick takes the slide out of the strip at once, so the slider never shows an empty
+// feature, and puts it back where it was if the owner undoes the dismissal or the request fails.
+function dismissDashboardPick(tile, artist, album, item) {
+  const slider = $('dashboardCarousel');
+  const before = tile.nextElementSibling;
+  const restore = () => {
+    slider.insertBefore(tile, before && before.parentNode === slider ? before : null);
+    syncDashboardSlider();
+  };
+  tile.remove();
+  syncDashboardSlider();
+  sendFeedback('dismiss', artist, album, item, 'dashboard_picks', tile, restore);
 }
 
 /* The picks are a slider: the first slide after the one just passed is the feature (slot 1), the next
@@ -1366,7 +1383,7 @@ async function loadDashboardGenres() {
   }
 }
 
-function buildShelfCard(item) {
+function buildShelfCard(item, withActions = false) {
   const card = document.createElement('article');
   card.className = 'card shelf-card';
   const open = document.createElement('button');
@@ -1379,7 +1396,19 @@ function buildShelfCard(item) {
   card.append(open);
 
   attachArtwork(card, item.artist, item.name, item.owned ? sizedArtwork(item.artwork_url, 300) : null);
-  card.querySelector('.card-art').append(buildAlbumState(item));
+  // The New releases shelf carries the same group as the cards; an album already in the library
+  // keeps the check, and the other shelves keep their single Get.
+  if (withActions && !item.owned) {
+    const metadata = {
+      artist: item.artist, album: item.name, year: item.year || null, release_group_mbid: item.release_group_mbid || null,
+    };
+    card.querySelector('.card-art').append(createActionGroup(item.artist, item.name, metadata, {
+      listName: 'dashboard_shelf',
+      onDismiss: () => dismissShelfCard(card, item.artist, item.name, metadata)
+    }));
+  } else {
+    card.querySelector('.card-art').append(buildAlbumState(item));
+  }
 
   const meta = document.createElement('div');
   meta.className = 'dashboard-tile-meta';
@@ -1394,6 +1423,15 @@ function buildShelfCard(item) {
   return card;
 }
 
+// Not for me on a shelf card removes it at once and restores it on Undo or on a failed request.
+function dismissShelfCard(card, artist, album, metadata) {
+  const parent = card.parentNode;
+  const before = card.nextElementSibling;
+  card.remove();
+  sendFeedback('dismiss', artist, album, metadata, 'dashboard_shelf', card,
+    () => parent.insertBefore(card, before && before.parentNode === parent ? before : null));
+}
+
 // Discovery items name the album "album"; Navidrome shelves name it "name".
 function shelfItemFromDiscovery(item) {
   return {
@@ -1403,14 +1441,14 @@ function shelfItemFromDiscovery(item) {
   };
 }
 
-async function loadShelf(name, url, mapItems) {
+async function loadShelf(name, url, mapItems, withActions = false) {
   const target = $('shelf' + name);
   const status = $('shelf' + name + 'Status');
   status.textContent = 'Loading…';
   try {
     const data = await requestJSON(url);
     const items = mapItems(data).filter(item => item.name);
-    target.replaceChildren(...items.map(buildShelfCard));
+    target.replaceChildren(...items.map(item => buildShelfCard(item, withActions)));
     status.textContent = items.length ? '' : 'Nothing to show yet.';
   } catch (error) {
     status.textContent = error.message;
@@ -1420,7 +1458,7 @@ async function loadShelf(name, url, mapItems) {
 function loadDashboardShelves() {
   loadDashboardGenres();
   loadShelf('NewReleases', '/api/discovery/new_releases?count=30',
-    data => (data.items || data.recommendations || []).filter(isAlbumRecommendation).map(shelfItemFromDiscovery));
+    data => (data.items || data.recommendations || []).filter(isAlbumRecommendation).map(shelfItemFromDiscovery), true);
   loadShelf('Newest', '/api/dashboard/albums/newest?count=20', data => data.items || []);
   loadShelf('Recent', '/api/dashboard/albums/recent?count=20', data => data.items || []);
   loadShelf('Frequent', '/api/dashboard/albums/frequent?count=20', data => data.items || []);
@@ -1432,7 +1470,7 @@ function attachArtwork(card, artist, album, knownUrl = null) {
   // A div has no role, and ARIA forbids naming a generic element, so the label was never
   // announced. A group gives the artwork and its Get control a name.
   art.setAttribute('role', 'group');
-  art.setAttribute('aria-label', 'Album artwork and acquisition actions');
+  art.setAttribute('aria-label', 'Album artwork');
 
   const placeholder = document.createElement('div');
   placeholder.className = 'card-art-placeholder';
@@ -1628,7 +1666,7 @@ function rankingBasis(sort, items) {
 // Built with text APIs only; every value from the API is set through textContent or as text nodes.
 // `options` lets other lists reuse this row (New releases): `releaseDate` puts the API's
 // first_release_date in the leading column instead of a numeral, `meta` replaces the Discover
-// metadata lines, and `onDismiss` / `onDismissArtist` route dismissal to the server feedback
+// metadata lines, and `onDismiss` routes dismissal to the server feedback
 // that list already uses instead of the Discover local list.
 function buildRecommendationRow(item, rank, options = {}) {
   const row = document.createElement('article');
@@ -1680,42 +1718,23 @@ function buildRecommendationRow(item, rank, options = {}) {
 
   const actions = document.createElement('div');
   actions.className = 'row-actions';
-  // An album already in the library has nothing to get.
-  if (!options.owned) actions.append(createGetButton(artist, album, item));
-  if (options.listName) actions.append(createSaveButton(artist, album, item, options.listName));
-  if (options.saved) {
-    // Every row on the Saved page is saved: the control starts pressed, and its next press undoes.
-    setSaveButtonState(actions.querySelector('.save-album'), true, album);
-    row.append(actions);
-    return row;
-  }
-  const dismissButton = document.createElement('button');
-  dismissButton.type = 'button';
-  dismissButton.className = 'deep-dive-dismiss';
-  dismissButton.textContent = '×';
-  dismissButton.title = 'Not for me';
-  dismissButton.setAttribute('aria-label', 'Not for me: ' + album);
-  dismissButton.addEventListener('click', () => {
-    if (options.onDismiss) {
-      options.onDismiss(artist, album, item, row);
-      return;
-    }
+  // Every row on the Saved page is saved and cannot be dismissed: the Save control starts
+  // pressed, and its next press undoes. The other lists dismiss through the server feedback
+  // endpoint they pass in, or through the Discover local list.
+  const onDismiss = options.saved ? null : options.onDismiss || (() => {
     const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
     const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
     dismissed.add(key);
     localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
     applyRecommendationFilters();
   });
-  actions.append(dismissButton);
-  if (options.onDismissArtist) {
-    const dismissArtist = document.createElement('button');
-    dismissArtist.type = 'button';
-    dismissArtist.className = 'row-dismiss-artist';
-    dismissArtist.textContent = 'Dismiss artist';
-    dismissArtist.setAttribute('aria-label', 'Dismiss artist ' + artist);
-    dismissArtist.addEventListener('click', () => options.onDismissArtist(artist, album, item, row));
-    actions.append(dismissArtist);
-  }
+  const group = createActionGroup(artist, album, item, {
+    owned: options.owned,
+    listName: options.listName,
+    onDismiss: onDismiss && (() => options.onDismiss ? options.onDismiss(artist, album, item, row) : onDismiss())
+  });
+  if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, album);
+  actions.append(group);
   row.append(actions);
   return row;
 }
@@ -1765,8 +1784,7 @@ function buildNewReleaseRow(item) {
     artistBio: true,
     meta: [],
     listName: 'new_releases',
-    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', row),
-    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', row)
   });
 }
 
@@ -1799,8 +1817,7 @@ function buildLensRow(item) {
       Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''
     ],
     listName: 'lens_lists',
-    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row),
-    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'lens_lists', row)
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', row)
   });
   row.setAttribute('role', 'listitem');
   return row;
@@ -1855,15 +1872,14 @@ function buildPersonalRow(item, index) {
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
     listName: 'personal',
-    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'personal', row),
-    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'personal', row)
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'personal', row)
   });
 }
 
 // Add to your collection rows (DESIGN_SYSTEM.md sections 8 and 9.4). The server orders candidates
 // by an exploration score that includes random jitter, and Load albums rotates them on the client,
 // so the order is not a ranking. Rows show a muted position and no red rank numeral, and the
-// status line says what the order is. Not for me and Dismiss artist go through the server
+// status line says what the order is. Not for me goes through the server
 // feedback endpoint for this list, as the old card did, and the artist bio follows the same
 // connection-reason rule as the card.
 function buildClassicsRow(item, index) {
@@ -1878,8 +1894,7 @@ function buildClassicsRow(item, index) {
       item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
     ],
     listName: 'classics',
-    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'classics', row),
-    onDismissArtist: (artist, album, metadata, row) => sendFeedback('dismiss_artist', artist, album, metadata, 'classics', row)
+    onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'classics', row)
   });
 }
 
@@ -2074,7 +2089,10 @@ async function sendJSON(url, method='POST', body={}) {
 }
 
 function discoveryStatus(name, message, kind) {
-  const el = $(discoveryViews[name][1]);
+  // The dashboard picks, the New releases shelf and the radio log are not discovery views; each
+  // reports on its own status line.
+  const own = {dashboard_shelf: 'shelfNewReleasesStatus', radio: 'radioStatus'};
+  const el = $(discoveryViews[name] ? discoveryViews[name][1] : own[name] || 'dashboardPicksStatus');
   el.textContent = message;
   setStatusState(el, kind === undefined ? classifyStatus(message) : kind);
 }
@@ -2348,37 +2366,11 @@ async function loadDiscovery(name, options = {}) {
       if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
         `Last.fm playcount: ${Number(item.lastfm_playcount).toLocaleString()}`);
 
-        const actions = document.createElement('div');
-      actions.className = 'card-actions';
-
-      const button = (label, callback, className = '', accessibleName = label) => {
-        const b = document.createElement('button');
-        b.textContent = label;
-        if (accessibleName !== label) b.setAttribute('aria-label', accessibleName);
-        if (className) b.className = className;
-        b.addEventListener('click', callback);
-        actions.append(b);
-      };
-
-      const artContainer = card.querySelector('.card-art');
-      artContainer.append(createGetButton(artist, album, item));
-
-      const notForMe = document.createElement('button');
-      notForMe.className = 'deep-dive-dismiss';
-      notForMe.append(spriteIcon('x'));
-      notForMe.title = 'Not for me';
-      notForMe.setAttribute('aria-label', 'Not for me: ' + album);
-      notForMe.addEventListener('click', () => sendFeedback('dismiss', artist, album, item, name, card));
-      artContainer.append(notForMe);
-
-      actions.append(createSaveButton(artist, album, item, name));
-
-      if (name !== 'artist_deep_dive') {
-        button('Dismiss artist',
-          () => sendFeedback('dismiss_artist', artist, album, item, name, card), '', 'Dismiss artist ' + artist);
-      }
-
-      card.append(actions);
+      // The group sits on the artwork, bottom right, so the card needs no action row.
+      card.querySelector('.card-art').append(createActionGroup(artist, album, item, {
+        listName: name,
+        onDismiss: () => sendFeedback('dismiss', artist, album, item, name, card)
+      }));
       const destination = destinationByItem.get(item) || target;
       destination.append(card);
       // A lane scrolls sideways, and the page-wide artwork observer cannot see past the lane's own
@@ -2413,9 +2405,9 @@ async function loadDiscovery(name, options = {}) {
 
 // Dismiss is reversible for a short window (see queueDismiss). Nothing is sent to the server
 // until the window closes, so Undo never has to reverse a server change.
-async function sendFeedback(action, artist, album, metadata, listName, row = null) {
+async function sendFeedback(action, artist, album, metadata, listName, row = null, restore = null) {
   if (action === 'dismiss' || action === 'dismiss_artist') {
-    queueDismiss(action, artist, album, metadata, listName, row);
+    queueDismiss(action, artist, album, metadata, listName, row, restore);
     return;
   }
   try {
@@ -2433,12 +2425,12 @@ async function sendFeedback(action, artist, album, metadata, listName, row = nul
 const UNDO_WINDOW_MS = 4200;
 let pendingDismiss = null;
 
-function queueDismiss(action, artist, album, metadata, listName, row) {
+function queueDismiss(action, artist, album, metadata, listName, row, restore = null) {
   if (pendingDismiss) commitDismiss();
   const label = action === 'dismiss_artist'
     ? 'Dismissed artist ' + artist + '.'
     : 'Dismissed ' + album + (artist ? ' by ' + artist : '') + '.';
-  const entry = {action, artist, album, metadata, listName, row, timer: null};
+  const entry = {action, artist, album, metadata, listName, row, restore, timer: null};
   if (row) {
     // Keyboard focus would be lost when the row hides, so it moves to the page heading first.
     if (row.contains(document.activeElement)) {
@@ -2463,9 +2455,10 @@ async function commitDismiss() {
       {action: entry.action, artist: entry.artist, album: entry.album, metadata: entry.metadata});
     // Lens rows are not in discoveryViews; they reload the lens that is on screen.
     if (entry.listName === 'lens_lists') await loadLensList(activeLens);
-    else await loadDiscovery(entry.listName);
+    else if (!['dashboard_picks', 'dashboard_shelf'].includes(entry.listName)) await loadDiscovery(entry.listName);
   } catch (error) {
     if (entry.row) entry.row.classList.remove('is-dismissing');
+    if (entry.restore) entry.restore();
     if (entry.listName === 'lens_lists') {
       const status = $('lensListsStatus');
       status.textContent = error.message;
@@ -2485,6 +2478,7 @@ function undoDismiss() {
   const hadFocus = !!undoButton && undoButton.contains(document.activeElement);
   if (entry.row) {
     entry.row.classList.remove('is-dismissing');
+    if (entry.restore) entry.restore();
     // The snackbar hides on this click, so focus moves back to the restored row first.
     if (hadFocus) { const first = entry.row.querySelector('button'); if (first) first.focus(); }
   }
@@ -2518,6 +2512,42 @@ function hideUndoSnackbar() {
 }
 
 if ($('undoSnackbarAction')) $('undoSnackbarAction').addEventListener('click', undoDismiss);
+
+// One joined control for the actions on an album (Get, Save, Not for me), shared by the ranked
+// rows and the editorial cards. The buttons keep their own behavior, state and accessible names;
+// the group only seats them side by side. An album already in the library has no Get, a list
+// without a `listName` has no Save, and a missing `onDismiss` leaves out Not for me.
+function createActionGroup(artist, album, metadata, options = {}) {
+  const group = document.createElement('div');
+  group.className = 'action-group';
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Actions for ' + album);
+  // `getButton` lets a list with its own request flow (the radio log) seat that button instead.
+  if (options.getButton) group.append(options.getButton);
+  else if (!options.owned) group.append(createGetButton(artist, album, metadata));
+  if (options.listName) group.append(createSaveButton(artist, album, metadata, options.listName));
+  if (options.onDismiss) {
+    const dismissButton = document.createElement('button');
+    dismissButton.type = 'button';
+    dismissButton.className = 'dismiss-album';
+    dismissButton.append(spriteIcon('trash-2'));
+    dismissButton.title = options.dismissTitle || 'Not for me';
+    dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);
+    dismissButton.addEventListener('click', options.onDismiss);
+    group.append(dismissButton);
+  }
+  return group;
+}
+
+// A lone control seated in the action group's frame, so a Get on its own matches the group.
+function wrapInActionGroup(control, label) {
+  const group = document.createElement('div');
+  group.className = 'action-group';
+  group.setAttribute('role', 'group');
+  if (label) group.setAttribute('aria-label', label);
+  group.append(control);
+  return group;
+}
 
 // Save is a bookmark: the server stores the album and its metadata and starts no search, so
 // nothing here touches /api/acquire. The list is deliberately not reloaded. The list endpoints
@@ -2704,6 +2734,9 @@ const GET_BUTTON_ICON =
   '<path class="get-album-arrow-head" d="M25.9 16.9 30.9 15.1 29.1 20.1"/>' +
   '<path class="get-album-down" d="M22 11.5V25M15.8 19.3 22 25.5l6.2-6.2"/>' +
   '<path class="get-album-tray" d="M13.5 28v4h17v-4"/>' +
+  '<g class="get-album-cloud" transform="scale(1.8333)" stroke-width="1.5" stroke-linejoin="round">' +
+  '<path d="M12 9.75v6.75m0 0-3-3m3 3 3-3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75z"/>' +
+  '</g>' +
   '</svg>';
 
 function decorateGetButton(button) {
@@ -4024,7 +4057,7 @@ function buildAlbumRow(item) {
   open.append(text);
   open.addEventListener('click', () => libraryOpen(albumTarget(item)));
   row.append(open);
-  row.append(buildAlbumState(item));
+  row.append(item.owned ? buildOwnedCheck() : wrapInActionGroup(buildAlbumState(item), 'Actions for ' + item.name));
   return row;
 }
 
@@ -4308,7 +4341,8 @@ function buildTopSongRow(item) {
   }
   // A song the library lacks gets its own Get when the source named its album, which is where it is filed.
   row.append(item.owned ? buildOwnedCheck()
-    : item.album && item.artist ? createTrackGetButton({artist: item.artist, album: item.album, title: item.name})
+    : item.album && item.artist
+      ? wrapInActionGroup(createTrackGetButton({artist: item.artist, album: item.album, title: item.name}), 'Actions for ' + item.name)
     : document.createElement('span'));
   return row;
 }

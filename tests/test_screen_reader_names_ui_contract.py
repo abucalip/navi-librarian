@@ -45,18 +45,15 @@ class ScreenReaderNamesUIContractTests(unittest.TestCase):
         attach = self.js[self.js.index("function attachArtwork("):]
         self.assertIn("art.setAttribute('role', 'group');", attach)
         self.assertLess(attach.index("art.setAttribute('role', 'group');"),
-                        attach.index("art.setAttribute('aria-label', 'Album artwork and acquisition actions');"))
+                        attach.index("art.setAttribute('aria-label', 'Album artwork');"))
 
     def test_icon_only_and_repeated_actions_name_their_album_or_artist(self):
-        self.assertIn("notForMe.setAttribute('aria-label', 'Not for me: ' + album);", self.js)
-        self.assertIn("dismissButton.setAttribute('aria-label', 'Not for me: ' + album);", self.js)
-        self.assertIn("dismissArtist.setAttribute('aria-label', 'Dismiss artist ' + artist);", self.js)
-        self.assertIn("'', 'Dismiss artist ' + artist);", self.js)
+        self.assertIn("dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);", self.js)
+        self.assertNotIn("Dismiss artist", self.js)
         self.assertIn("dismiss.setAttribute('aria-label', 'Dismiss ' + (job.album || job.artist || 'acquisition'));", self.js)
 
     def test_visible_label_is_kept_inside_each_accessible_name(self):
         # WCAG 2.5.3 (label in name): the visible words must begin the accessible name.
-        self.assertIn("dismissArtist.textContent = 'Dismiss artist';", self.js)
         self.assertIn("dismiss.textContent = 'Dismiss';", self.js)
 
     def test_acquisition_dismiss_keeps_focus_when_its_row_is_removed(self):
