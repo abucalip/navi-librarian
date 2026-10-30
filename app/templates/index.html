@@ -296,30 +296,53 @@
 <section id="library" class="page hidden" aria-labelledby="libraryHeading">
   <div class="panel">
     <h2 id="libraryHeading">Library</h2>
-    <p id="libraryIntro">Artists in your Navidrome library. Select an artist to see their bio, albums and similar artists.</p>
+    <p id="libraryIntro">Your Navidrome library by artist or album. Select one to see its page.</p>
     <div id="libraryListView">
       <div class="library-controls">
         <div class="library-control">
-          <label for="libraryFilter">Filter artists</label>
+          <label for="libraryFilter">Search your library</label>
           <div class="search-field">
-            <input id="libraryFilter" type="search" autocomplete="off" maxlength="200">
-            <svg class="search-icon search-icon-inline" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#search"></use></svg>
-          </div>
-        </div>
-        <div class="library-control">
-          <label for="librarySort">Sort by</label>
-          <div class="search-field">
-            <select id="librarySort">
-              <option value="name">Name</option>
-              <option value="album_count">Album count</option>
-            </select>
+            <input id="libraryFilter" type="search" autocomplete="off" maxlength="200" placeholder="Search your library">
+            <svg id="libraryFilterIcon" class="search-icon search-icon-inline" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#search"></use></svg>
+            <button id="libraryFilterClear" class="search-submit" type="button" title="Clear search" aria-label="Clear search" hidden><svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#x"></use></svg></button>
           </div>
         </div>
       </div>
-      <p id="libraryStatus" class="status-line" aria-live="polite"></p>
-      <ul id="libraryList" class="library-list"></ul>
-      <div id="libraryMoreGroup" class="action-group" role="group" aria-label="More artists" hidden>
-        <button id="libraryMore" type="button" title="Load more" aria-label="Load more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plus"></use></svg></button>
+      <div id="librarySearchResults" role="region" aria-label="Search results" hidden>
+        <p id="librarySearchStatus" class="status-line" aria-live="polite"></p>
+        <div id="librarySearchGroups"></div>
+      </div>
+      <div id="libraryBrowse">
+        <div class="library-toolbar">
+          <div class="action-group" role="group" aria-label="Show">
+            <button type="button" id="libraryTabArtists" class="text-button" data-library-tab="artists" aria-pressed="true">Artists</button>
+            <button type="button" id="libraryTabAlbums" class="text-button" data-library-tab="albums" aria-pressed="false">Albums</button>
+          </div>
+          <div class="library-sort">
+            <label for="librarySort">Sort by</label>
+            <div class="search-field">
+              <select id="librarySort"></select>
+            </div>
+            <div class="action-group" role="group" aria-label="Sort direction">
+              <button type="button" id="libraryOrder" title="Sort direction" aria-label="Sort direction"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-up"></use></svg></button>
+            </div>
+          </div>
+          <div class="library-display">
+            <div class="action-group" role="group" aria-label="Display">
+              <button type="button" id="libraryViewList" data-library-display="list" title="List" aria-label="List" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#list"></use></svg></button>
+              <button type="button" id="libraryViewGrid" data-library-display="grid" title="Grid" aria-label="Grid" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#layout-grid"></use></svg></button>
+            </div>
+            <label id="libraryTileSizeControl" class="library-size" hidden>
+              <span class="sr-only">Thumbnail size</span>
+              <input id="libraryTileSize" type="range" min="110" max="320" step="10" value="180" aria-valuetext="180 pixels">
+            </label>
+          </div>
+        </div>
+        <p id="libraryStatus" class="status-line" aria-live="polite"></p>
+        <ul id="libraryList" class="library-list"></ul>
+        <div id="libraryMoreGroup" class="action-group" role="group" aria-label="More" hidden>
+          <button id="libraryMore" type="button" title="Load more" aria-label="Load more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#plus"></use></svg></button>
+        </div>
       </div>
     </div>
     <div id="libraryDetailView" class="tint-backdrop" hidden>

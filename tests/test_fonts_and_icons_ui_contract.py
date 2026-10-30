@@ -21,6 +21,8 @@ ICON_NAMES = [
     "rotate-cw", "skip-forward",
     # Button groups: save, plug-zap (test connection), sparkles (generate), list-plus (load), plus (load more), chevrons up/down.
     "save", "plug-zap", "sparkles", "list-plus", "plus", "chevron-up", "chevron-down",
+    # Library display types: list and grid.
+    "list", "layout-grid",
 ]
 
 

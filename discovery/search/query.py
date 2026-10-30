@@ -15,7 +15,6 @@ SEARCH_TYPES = ("artist", "album", "song", "genre")
 OWNED_TYPES = ("artist", "album", "song")
 SOURCE_NAME = "navidrome"
 DEFAULT_LIMIT = 10
-LIBRARY_SORTS = ("name", "album_count")
 
 
 class CursorError(ValueError):
@@ -148,6 +147,23 @@ def search_owned(
     return results
 
 
+# The direction each sort starts in; the caller's ``order`` overrides it.
+ARTIST_SORTS = {"name": "asc", "album_count": "desc", "added": "desc"}
+ALBUM_SORTS = {"name": "asc", "artist": "asc", "year": "desc", "added": "desc", "song_count": "desc"}
+LIBRARY_ORDERS = ("asc", "desc")
+
+
+def _sorted(entries: list[dict[str, Any]], field: str, order: str, tie: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Sort by ``field`` in ``order``; entries without a value go last in either direction."""
+    reverse = order == "desc"
+    present = [e for e in entries if e.get(field) is not None]
+    missing = [e for e in entries if e.get(field) is None]
+    present.sort(key=lambda e: tuple(e[name] for name in tie))
+    present.sort(key=lambda e: e[field], reverse=reverse)
+    missing.sort(key=lambda e: tuple(e[name] for name in tie))
+    return present + missing
+
+
 def library_page(
     data: OwnedData,
     *,
@@ -155,13 +171,12 @@ def library_page(
     sort: str,
     offset: int,
     limit: int,
+    order: str | None = None,
 ) -> tuple[list[dict[str, Any]], int | None, int]:
     """Return one page of artists, the next offset (or None), and the filtered total."""
+    order = order or ARTIST_SORTS[sort]
     matching = [a for a in data.artists if not query or query in a["key"]]
-    if sort == "album_count":
-        matching.sort(key=lambda a: (-a["album_count"], a["key"], a["id"]))
-    else:
-        matching.sort(key=lambda a: (a["key"], a["id"]))
+    matching = _sorted(matching, "key" if sort == "name" else sort, order, ("key", "id"))
     total = len(matching)
     page = matching[offset:offset + limit]
     next_offset = offset + limit if offset + limit < total else None
@@ -171,6 +186,7 @@ def library_page(
             "key": a["key"],
             "name": a["name"],
             "album_count": a["album_count"],
+            "added": a.get("added"),
             "artwork_url": artwork_url(a["id"]),
         }
         for a in page
@@ -178,18 +194,56 @@ def library_page(
     return items, next_offset, total
 
 
-def encode_cursor(*, offset: int, query: str, sort: str) -> str:
-    raw = json.dumps({"o": offset, "q": query, "s": sort}, separators=(",", ":"))
+def library_albums_page(
+    data: OwnedData,
+    *,
+    query: str,
+    sort: str,
+    offset: int,
+    limit: int,
+    order: str | None = None,
+) -> tuple[list[dict[str, Any]], int | None, int]:
+    """Return one page of albums, the next offset (or None), and the filtered total.
+
+    The query matches the album name or its artist's name.
+    """
+    order = order or ALBUM_SORTS[sort]
+    matching = [a for a in data.albums if not query or query in a["name_key"] or query in a["artist_key"]]
+    field = {"name": "name_key", "artist": "artist_key"}.get(sort, sort)
+    tie = ("name_key", "id") if sort == "artist" else ("artist_key", "name_key", "id")
+    matching = _sorted(matching, field, order, tie)
+    total = len(matching)
+    page = matching[offset:offset + limit]
+    next_offset = offset + limit if offset + limit < total else None
+    items = [
+        {
+            "id": a["id"],
+            "key": a["key"],
+            "name": a["name"],
+            "artist": a["artist"],
+            "artist_key": a["artist_key"],
+            "year": a["year"],
+            "added": a["added"],
+            "song_count": a["song_count"],
+            "artwork_url": artwork_url(a["id"]),
+        }
+        for a in page
+    ]
+    return items, next_offset, total
+
+
+def encode_cursor(*, offset: int, query: str, sort: str, order: str = "") -> str:
+    raw = json.dumps({"o": offset, "q": query, "s": sort, "r": order}, separators=(",", ":"))
     return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
 
 
-def decode_cursor(cursor: str, *, query: str, sort: str) -> int:
-    """Return the offset stored in ``cursor``; refuse one issued for another query or sort."""
+def decode_cursor(cursor: str, *, query: str, sort: str, order: str = "") -> int:
+    """Return the offset stored in ``cursor``; refuse one issued for another query, sort or order."""
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
         payload = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")))
         offset = payload["o"]
-        matches = payload["q"] == query and payload["s"] == sort
+        matches = payload["q"] == query and payload["s"] == sort and payload.get("r", "") == order
     except (ValueError, KeyError, TypeError):
         raise CursorError("cursor is not valid")
     if not isinstance(offset, int) or offset < 0 or not matches:

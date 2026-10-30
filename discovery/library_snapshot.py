@@ -83,6 +83,7 @@ def build_library_snapshot(
                 and "artist_id" in cached["payload"]["albums"][0]
                 and "genre" in cached["payload"]["albums"][0]
                 and "release_mbid" in cached["payload"]["albums"][0]
+                and "created" in cached["payload"]["albums"][0]
             )
         )
     ):
@@ -116,6 +117,8 @@ def build_library_snapshot(
             "coverArt": album.get("coverArt"),
             # The release MBID Navidrome tags on the album (not the release-group MBID).
             "release_mbid": album.get("musicBrainzId") or None,
+            # When Navidrome first saw the album (ISO 8601); the library sorts by it as "date added".
+            "created": album.get("created") or None,
         }
         for album in raw_albums
     ]

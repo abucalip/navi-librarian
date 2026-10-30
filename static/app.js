@@ -3893,10 +3893,33 @@ const INDEX_REASON_MESSAGES = {
   index_unavailable: 'Your library could not be indexed right now.',
 };
 
-let globalSearchSource = null;
-let globalSearchTimer = 0;
-let globalSearchSeq = 0;
-const libraryView = {query: '', sort: 'name', cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, albumSeq: 0, genreSeq: 0, listReturn: null, artistCtx: null};
+// A search surface is one place that shows a streamed search: the top bar's drop-down or the library
+// page's results. Each has its own stream and sequence number, so the two never overwrite each other.
+function makeSearchSurface({status, groups, external, externalList, setOpen, setLive}) {
+  return {source: null, seq: 0, timer: 0, status, groups, external, externalList, setOpen, setLive};
+}
+
+const globalSearch = makeSearchSurface({
+  status: $('globalSearchStatus'),
+  groups: $('globalSearchGroups'),
+  external: $('globalSearchExternal'),
+  externalList: $('globalSearchExternalList'),
+  setOpen: open => setGlobalSearchOpen(open),
+  setLive: live => setSearchStatusLive(live),
+});
+// The library page's search is owned-only, so it has no "Not in your library" group. A query replaces the browse list with grouped results; no query brings it back.
+const librarySearch = makeSearchSurface({
+  status: $('librarySearchStatus'),
+  groups: $('librarySearchGroups'),
+  external: null,
+  externalList: null,
+  setOpen: open => {
+    $('librarySearchResults').hidden = !open;
+    $('libraryBrowse').hidden = open;
+  },
+  setLive: live => $('librarySearchStatus').setAttribute('aria-live', live ? 'polite' : 'off'),
+});
+const libraryView = {query: '', tab: 'artists', sort: 'name', order: '', display: 'list', tileSize: 180, cursor: null, seq: 0, cursor: null, seq: 0, resetOnRetry: false, detailSeq: 0, albumSeq: 0, genreSeq: 0, listReturn: null, artistCtx: null};
 // Open artist and album streams, so leaving a page closes them.
 const libraryStreams = new Set();
 let libraryFilterTimer = 0;
@@ -3988,14 +4011,19 @@ function setSearchExpanded(open, {focus = false} = {}) {
   if (open && focus) $('globalSearchInput').focus();
 }
 
-function closeGlobalSearch({focusInput = false} = {}) {
-  clearTimeout(globalSearchTimer);
-  if (globalSearchSource) {
-    globalSearchSource.close();
-    globalSearchSource = null;
+// Stops a surface's pending and running search and hides its results.
+function closeSearchSurface(surface) {
+  clearTimeout(surface.timer);
+  if (surface.source) {
+    surface.source.close();
+    surface.source = null;
   }
-  globalSearchSeq += 1;
-  setGlobalSearchOpen(false);
+  surface.seq += 1;
+  surface.setOpen(false);
+}
+
+function closeGlobalSearch({focusInput = false} = {}) {
+  closeSearchSurface(globalSearch);
   hideRecentSearches();
   if (focusInput) $('globalSearchInput').focus();
   else if (!$('globalSearchInput').value.trim()) setSearchExpanded(false);
@@ -4009,8 +4037,8 @@ function setSearchStatusLive(live) {
 
 // Each result lands in its type group as it arrives. Groups are created on first use and kept in
 // SEARCH_GROUPS order, so a late type never lands above an earlier one.
-function searchGroupList(type) {
-  const groupsEl = $('globalSearchGroups');
+function searchGroupList(surface, type) {
+  const groupsEl = surface.groups;
   const existing = Array.from(groupsEl.children).find(child => child.dataset.searchType === type);
   if (existing) return existing.querySelector('ul');
   const rank = SEARCH_GROUPS.findIndex(([kind]) => kind === type);
@@ -4028,53 +4056,63 @@ function searchGroupList(type) {
 }
 
 function startGlobalSearch(rawQuery) {
+  startSearch(globalSearch, rawQuery, closeGlobalSearch);
+}
+
+// Streams /api/search into a surface. ``close`` is what an empty query does.
+function startSearch(surface, rawQuery, close = () => closeSearchSurface(surface)) {
   const query = rawQuery.trim();
-  clearTimeout(globalSearchTimer);
-  if (globalSearchSource) {
-    globalSearchSource.close();
-    globalSearchSource = null;
+  clearTimeout(surface.timer);
+  if (surface.source) {
+    surface.source.close();
+    surface.source = null;
   }
-  const seq = ++globalSearchSeq;
+  const seq = ++surface.seq;
   if (!query) {
-    closeGlobalSearch();
+    close();
     return;
   }
-  const status = $('globalSearchStatus');
-  const groupsEl = $('globalSearchGroups');
-  const externalEl = $('globalSearchExternal');
-  const externalList = $('globalSearchExternalList');
+  const status = surface.status;
+  const groupsEl = surface.groups;
+  const externalEl = surface.external;
+  const externalList = surface.externalList;
   let shown = 0;
   let external = 0;
   let capabilities = null;
-  const isCurrent = () => seq === globalSearchSeq;
+  const isCurrent = () => seq === surface.seq;
   // The previous results stay on screen until this stream's first event, so the list does not
   // blank between keystrokes.
-  setGlobalSearchOpen(true);
-  setSearchStatusLive(false);
+  surface.setOpen(true);
+  surface.setLive(false);
   setStatus(status, 'Searching…', 'loading');
 
-  const source = new EventSource('/api/search?' + new URLSearchParams({q: query, limit: '10'}));
-  globalSearchSource = source;
+  // The library page searches owned music only; the top bar also looks at the outside sources.
+  const params = {q: query, limit: '10'};
+  if (surface === librarySearch) params.scope = 'owned';
+  const source = new EventSource('/api/search?' + new URLSearchParams(params));
+  surface.source = source;
   const finish = () => {
     source.close();
-    if (globalSearchSource === source) globalSearchSource = null;
+    if (surface.source === source) surface.source = null;
   };
 
   source.addEventListener('capabilities', event => {
     if (!isCurrent()) return;
     capabilities = JSON.parse(event.data);
     groupsEl.replaceChildren();
-    externalList.replaceChildren();
-    externalEl.hidden = true;
+    if (externalEl) {
+      externalList.replaceChildren();
+      externalEl.hidden = true;
+    }
   });
   source.addEventListener('result', event => {
     if (!isCurrent()) return;
     const item = JSON.parse(event.data);
     if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;
     if (item.owned) {
-      searchGroupList(item.type).append(buildSearchItem(item));
+      searchGroupList(surface, item.type).append(buildSearchItem(item, surface));
       shown += 1;
-    } else {
+    } else if (externalEl) {
       externalEl.hidden = false;
       externalList.append(buildSearchItem(item));
       external += 1;
@@ -4084,15 +4122,15 @@ function startGlobalSearch(rawQuery) {
   source.addEventListener('done', () => {
     finish();
     if (isCurrent()) {
-      setSearchStatusLive(true);
-      renderGlobalSearchSummary(query, shown, external, capabilities);
+      surface.setLive(true);
+      renderSearchSummary(status, query, shown, external, capabilities);
     }
   });
   source.addEventListener('error', event => {
     finish();
     if (!isCurrent()) return;
     // Results already shown stay on screen. A server "error" event carries data; a dropped connection does not.
-    setSearchStatusLive(true);
+    surface.setLive(true);
     const message = event.data
       ? 'Search stopped before it finished. Showing ' + pluralize(shown, 'match', 'matches') + '. Try again.'
       : 'Search is unavailable right now. Try again.';
@@ -4100,8 +4138,7 @@ function startGlobalSearch(rawQuery) {
   });
 }
 
-function renderGlobalSearchSummary(query, owned, external, capabilities) {
-  const status = $('globalSearchStatus');
+function renderSearchSummary(status, query, owned, external, capabilities) {
   const index = capabilities && capabilities.owned_index;
   const parts = [];
   let kind = 'progress';
@@ -4154,14 +4191,14 @@ function searchItemTarget(item) {
   return null;
 }
 
-function buildSearchItem(item) {
+function buildSearchItem(item, surface = globalSearch) {
   const row = document.createElement('li');
   row.className = 'search-item';
   const target = searchItemTarget(item);
   const content = target ? document.createElement('button') : document.createElement('div');
   if (target) {
     content.type = 'button';
-    content.addEventListener('click', () => openFromSearch(target));
+    content.addEventListener('click', () => (surface === librarySearch ? openFromLibrarySearch(content, target) : openFromSearch(target)));
   }
   content.className = 'search-item-content';
   content.append(buildArtwork(item.type === 'album' ? sizedArtwork(item.artwork_url, 96) : item.artwork_url, 'search-item-art'));
@@ -4182,6 +4219,12 @@ function openFromSearch(target) {
   openLibraryTarget(target);
 }
 
+// A result opened from the library page keeps the search where it was, so Back returns to the results.
+function openFromLibrarySearch(button, target) {
+  libraryView.listReturn = button;
+  libraryOpen(target);
+}
+
 // ---- Library list ----
 
 function showLibraryListMore(visible, label, resetOnRetry) {
@@ -4193,8 +4236,91 @@ function showLibraryListMore(visible, label, resetOnRetry) {
   libraryView.resetOnRetry = resetOnRetry;
 }
 
+// What each tab browses: its route, its words, and the sorts it offers. The first sort is the default.
+const LIBRARY_TABS = {
+  artists: {
+    url: '/api/library/artists', noun: ['artist', 'artists'],
+    sorts: [['name', 'Name'], ['album_count', 'Album count'], ['added', 'Date added']],
+  },
+  albums: {
+    url: '/api/library/albums', noun: ['album', 'albums'],
+    sorts: [['name', 'Album name'], ['artist', 'Artist'], ['year', 'Album year'], ['added', 'Date added'], ['song_count', 'Track count']],
+  },
+};
+// The direction a sort starts in (the server uses the same table); the direction button flips it.
+const LIBRARY_DEFAULT_ORDER = {name: 'asc', artist: 'asc', album_count: 'desc', added: 'desc', year: 'desc', song_count: 'desc'};
+const LIBRARY_PREFS_KEY = 'navidrome-library-view';
+const TILE_SIZE_MIN = 110;
+const TILE_SIZE_MAX = 320;
+
+function libraryOrder() {
+  return libraryView.order || LIBRARY_DEFAULT_ORDER[libraryView.sort];
+}
+
+// Tab, sort, direction, display and tile size are remembered between visits. Storage can be
+// unavailable or hold bad data, so each value is checked and a failure only means the defaults.
+function loadLibraryPrefs() {
+  const view = libraryView;
+  try {
+    const stored = JSON.parse(localStorage.getItem(LIBRARY_PREFS_KEY) || '{}') || {};
+    if (stored.tab in LIBRARY_TABS) view.tab = stored.tab;
+    if (LIBRARY_TABS[view.tab].sorts.some(([value]) => value === stored.sort)) view.sort = stored.sort;
+    if (stored.order === 'asc' || stored.order === 'desc') view.order = stored.order;
+    if (stored.display === 'list' || stored.display === 'grid') view.display = stored.display;
+    const size = Number(stored.tileSize);
+    if (Number.isFinite(size)) view.tileSize = Math.min(TILE_SIZE_MAX, Math.max(TILE_SIZE_MIN, Math.round(size)));
+  } catch (error) {
+    // Defaults stay.
+  }
+  if (!LIBRARY_TABS[view.tab].sorts.some(([value]) => value === view.sort)) view.sort = LIBRARY_TABS[view.tab].sorts[0][0];
+}
+
+function saveLibraryPrefs() {
+  const {tab, sort, order, display, tileSize} = libraryView;
+  try {
+    localStorage.setItem(LIBRARY_PREFS_KEY, JSON.stringify({tab, sort, order, display, tileSize}));
+  } catch (error) {
+    // Preferences are a convenience; nothing breaks without them.
+  }
+}
+
+// Brings every toolbar control in line with libraryView.
+function syncLibraryControls() {
+  const view = libraryView;
+  const tab = LIBRARY_TABS[view.tab];
+  for (const button of document.querySelectorAll('[data-library-tab]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.libraryTab === view.tab));
+  }
+  const select = $('librarySort');
+  select.replaceChildren(...tab.sorts.map(([value, label]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    return option;
+  }));
+  select.value = view.sort;
+  const order = libraryOrder();
+  const label = 'Sort direction: ' + (order === 'asc' ? 'ascending' : 'descending');
+  const orderButton = $('libraryOrder');
+  orderButton.title = label;
+  orderButton.setAttribute('aria-label', label);
+  orderButton.replaceChildren(spriteIcon(order === 'asc' ? 'chevron-up' : 'chevron-down'));
+  for (const button of document.querySelectorAll('[data-library-display]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.libraryDisplay === view.display));
+  }
+  const grid = view.display === 'grid';
+  $('libraryTileSizeControl').hidden = !grid;
+  $('libraryTileSize').value = String(view.tileSize);
+  $('libraryTileSize').setAttribute('aria-valuetext', view.tileSize + ' pixels');
+  const list = $('libraryList');
+  list.classList.toggle('is-grid', grid);
+  list.classList.toggle('is-albums', view.tab === 'albums');
+  list.style.setProperty('--tile-size', view.tileSize + 'px');
+}
+
 async function loadLibrary({reset = true} = {}) {
   const view = libraryView;
+  const tab = LIBRARY_TABS[view.tab];
   if (reset) {
     view.cursor = null;
     view.seq += 1;
@@ -4202,18 +4328,17 @@ async function loadLibrary({reset = true} = {}) {
   const seq = view.seq;
   const list = $('libraryList');
   const status = $('libraryStatus');
-  const params = new URLSearchParams({limit: String(LIBRARY_PAGE_SIZE), sort: view.sort});
-  if (view.query) params.set('q', view.query);
+  const params = new URLSearchParams({limit: String(LIBRARY_PAGE_SIZE), sort: view.sort, order: libraryOrder()});
   if (!reset && view.cursor) params.set('cursor', view.cursor);
   if (reset) {
     list.replaceChildren();
     showLibraryListMore(false, 'Load more', false);
-    setStatus(status, 'Loading artists…', 'loading');
+    setStatus(status, 'Loading ' + tab.noun[1] + '…', 'loading');
   } else {
     $('libraryMore').disabled = true;
   }
   try {
-    const data = await requestJSON('/api/library/artists?' + params);
+    const data = await requestJSON(tab.url + '?' + params);
     if (seq !== view.seq) return;
     $('libraryMore').disabled = false;
     if (data.index_state === 'building' || data.index_state === 'unavailable') {
@@ -4224,15 +4349,15 @@ async function loadLibrary({reset = true} = {}) {
       showLibraryListMore(true, 'Try again', true);
       return;
     }
-    for (const artist of data.items) list.append(buildLibraryRow(artist));
+    for (const item of data.items) list.append(buildLibraryRow(item));
     view.cursor = data.next_cursor;
     const shown = list.children.length;
     if (!data.total) {
-      setStatus(status, view.query ? 'No artists match “' + view.query + '”.' : 'No artists in your library.', 'empty');
+      setStatus(status, 'No ' + tab.noun[1] + ' in your library.', 'empty');
     } else {
       const countText = data.next_cursor
-        ? 'Showing ' + shown + ' of ' + pluralize(data.total, 'artist', 'artists')
-        : pluralize(data.total, 'artist', 'artists');
+        ? 'Showing ' + shown + ' of ' + pluralize(data.total, tab.noun[0], tab.noun[1])
+        : pluralize(data.total, tab.noun[0], tab.noun[1]);
       setStatus(status, countText + (data.index_state === 'stale' ? ' · Showing the last indexed library' : ''), 'progress');
     }
     showLibraryListMore(Boolean(data.next_cursor), 'Load more', false);
@@ -4245,20 +4370,36 @@ async function loadLibrary({reset = true} = {}) {
   }
 }
 
-function buildLibraryRow(artist) {
+function formatLibraryDate(iso) {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'});
+}
+
+function libraryItemDetail(item) {
+  const added = libraryView.sort === 'added' && item.added ? 'Added ' + formatLibraryDate(item.added) : '';
+  const base = libraryView.tab === 'albums'
+    ? [item.artist, item.year]
+    : [pluralize(item.album_count, 'album', 'albums')];
+  return [...base, added].filter(Boolean).join(' · ');
+}
+
+function buildLibraryRow(item) {
+  const albums = libraryView.tab === 'albums';
   const row = document.createElement('li');
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'library-artist';
-  button.append(buildArtwork(artist.artwork_url, 'library-art'));
+  // A grid tile is much larger than a list thumbnail, so it asks for a bigger image.
+  const art = libraryView.display === 'grid' ? 400 : 96;
+  button.append(buildArtwork(sizedArtwork(item.artwork_url, art), 'library-art'));
   const text = document.createElement('span');
   text.className = 'library-artist-text';
-  addTextElement(text, 'span', 'library-artist-name', artist.name);
-  addTextElement(text, 'span', 'library-artist-count', pluralize(artist.album_count, 'album', 'albums'));
+  addTextElement(text, 'span', 'library-artist-name', item.name);
+  addTextElement(text, 'span', 'library-artist-count', libraryItemDetail(item));
   button.append(text);
   button.addEventListener('click', () => {
     libraryView.listReturn = button;
-    libraryOpen(artistTarget(artist));
+    libraryOpen(albums ? albumTarget(item) : artistTarget(item));
   });
   row.append(button);
   return row;
@@ -4298,6 +4439,11 @@ function closeLibraryStreams() {
 
 function libraryReset() {
   closeLibraryStreams();
+  // Each visit starts without a search; the tab, sort and display stay as they were.
+  closeSearchSurface(librarySearch);
+  $('libraryFilter').value = '';
+  syncLibraryFilterClear();
+  syncLibraryControls();
   libraryNav.stack = [];
   libraryNav.current = null;
   libraryShow('list');
@@ -5387,6 +5533,14 @@ async function renderGenre(tag) {
 
 // ---- Wiring ----
 
+function refreshLibrary() {
+  saveLibraryPrefs();
+  syncLibraryControls();
+  loadLibrary({reset: true});
+}
+loadLibraryPrefs();
+syncLibraryControls();
+
 $('globalSearch').addEventListener('submit', event => {
   event.preventDefault();
   rememberSearch($('globalSearchInput').value);
@@ -5407,8 +5561,8 @@ $('globalSearchRecent').addEventListener('click', event => {
 });
 $('globalSearchInput').addEventListener('input', () => {
   hideRecentSearches();
-  clearTimeout(globalSearchTimer);
-  globalSearchTimer = setTimeout(() => startGlobalSearch($('globalSearchInput').value), SEARCH_DEBOUNCE_MS);
+  clearTimeout(globalSearch.timer);
+  globalSearch.timer = setTimeout(() => startGlobalSearch($('globalSearchInput').value), SEARCH_DEBOUNCE_MS);
 });
 // Escape works from the input and from any result, because keydown bubbles to the form.
 $('globalSearch').addEventListener('keydown', event => {
@@ -5433,17 +5587,66 @@ $('globalSearch').addEventListener('focusout', event => {
 document.addEventListener('click', event => {
   if (!$('globalSearch').contains(event.target)) closeGlobalSearch();
 });
-$('libraryFilter').addEventListener('input', () => {
-  clearTimeout(libraryFilterTimer);
-  libraryFilterTimer = setTimeout(() => {
-    libraryView.query = $('libraryFilter').value.trim();
-    loadLibrary({reset: true});
-  }, SEARCH_DEBOUNCE_MS);
+// The X shows only while the field holds text, and takes the magnifier's place.
+function syncLibraryFilterClear() {
+  const has = Boolean($('libraryFilter').value);
+  $('libraryFilterClear').hidden = !has;
+  $('libraryFilterIcon').style.display = has ? 'none' : '';
+}
+
+function clearLibrarySearch() {
+  $('libraryFilter').value = '';
+  syncLibraryFilterClear();
+  closeSearchSurface(librarySearch);
+}
+
+$('libraryFilterClear').addEventListener('click', () => {
+  clearLibrarySearch();
+  $('libraryFilter').focus();
 });
+$('libraryFilter').addEventListener('input', () => {
+  syncLibraryFilterClear();
+  clearTimeout(librarySearch.timer);
+  librarySearch.timer = setTimeout(() => startSearch(librarySearch, $('libraryFilter').value), SEARCH_DEBOUNCE_MS);
+});
+// Escape clears the search and returns to the browse list.
+$('libraryFilter').addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !$('libraryFilter').value) return;
+  event.preventDefault();
+  clearLibrarySearch();
+});
+for (const button of document.querySelectorAll('[data-library-tab]')) {
+  button.addEventListener('click', () => {
+    if (libraryView.tab === button.dataset.libraryTab) return;
+    libraryView.tab = button.dataset.libraryTab;
+    libraryView.sort = LIBRARY_TABS[libraryView.tab].sorts[0][0];
+    libraryView.order = '';
+    refreshLibrary();
+  });
+}
 $('librarySort').addEventListener('change', () => {
   libraryView.sort = $('librarySort').value;
-  loadLibrary({reset: true});
+  libraryView.order = '';
+  refreshLibrary();
 });
+$('libraryOrder').addEventListener('click', () => {
+  libraryView.order = libraryOrder() === 'asc' ? 'desc' : 'asc';
+  refreshLibrary();
+});
+for (const button of document.querySelectorAll('[data-library-display]')) {
+  button.addEventListener('click', () => {
+    if (libraryView.display === button.dataset.libraryDisplay) return;
+    libraryView.display = button.dataset.libraryDisplay;
+    refreshLibrary();
+  });
+}
+// The slider only resizes tiles already on screen, so dragging it never reloads the list.
+$('libraryTileSize').addEventListener('input', () => {
+  libraryView.tileSize = Number($('libraryTileSize').value);
+  $('libraryList').style.setProperty('--tile-size', libraryView.tileSize + 'px');
+  $('libraryTileSize').setAttribute('aria-valuetext', libraryView.tileSize + ' pixels');
+});
+$('libraryTileSize').addEventListener('change', saveLibraryPrefs);
 $('libraryMore').addEventListener('click', () => loadLibrary({reset: libraryView.resetOnRetry}));
 for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListener('click', libraryBack);
 $('artistBioToggle').addEventListener('click', toggleArtistBio);

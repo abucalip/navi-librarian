@@ -348,6 +348,22 @@ class SearchRouteTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_library_albums_sort_order_and_validation(self):
+        body = self.client.get("/api/library/albums", params={"sort": "year", "order": "asc"}).json()
+        self.assertEqual([a["name"] for a in body["items"]], ["1977", "Kid A", "Airbag"])
+        self.assertEqual(body["total"], 3)
+        self.assertEqual(self.client.get("/api/library/albums", params={"sort": "album_count"}).status_code, 400)
+        self.assertEqual(self.client.get("/api/library/albums", params={"order": "up"}).status_code, 400)
+        first = self.client.get("/api/library/albums", params={"limit": "1", "sort": "year"}).json()
+        self.assertEqual(self.client.get(
+            "/api/library/albums",
+            params={"limit": "1", "sort": "year", "order": "asc", "cursor": first["next_cursor"]},
+        ).status_code, 400)
+
+    def test_library_albums_building_is_not_an_empty_library(self):
+        self.building_index()
+        self.assertEqual(self.client.get("/api/library/albums").json()["index_state"], "building")
+
 
 class AlbumAndUnownedArtistRouteTests(SearchRouteTests):
     def setUp(self):
