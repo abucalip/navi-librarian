@@ -40,7 +40,7 @@ docker compose up -d
 
 ## GitHub Container Registry
 
-Images are published by `.github/workflows/docker-release.yml` only when the owner authorizes a release tag (`vMAJOR.MINOR` or `vMAJOR.MINOR.PATCH`) that points at the exact current `main` commit. It builds `linux/amd64` and `linux/arm64` images and publishes `ghcr.io/abucalip/navi-librarian:<version>` and `:sha-<commit>`. The `latest` tag is **not** moved by releases, and pushes to `main` do not publish; `docker-publish.yml` is validation-only.
+Images are published by `.github/workflows/docker-release.yml` only when the owner authorizes a release tag (`vMAJOR.MINOR` or `vMAJOR.MINOR.PATCH`) that points at the exact current `main` commit. It builds `linux/amd64` and `linux/arm64` images and publishes `ghcr.io/abucalip/navi-librarian:<version>` and `:sha-<commit>`. The `latest` tag is **not** moved by releases, and pushes to `main` do not publish; `docker-publish.yml` is validation-only. The release build passes the tag as the `APP_VERSION` build argument, which the page rail shows; a local or untagged build shows `git describe` output or `dev`.
 
 To deploy a published release, replace `build: context: .` in `compose.yaml` with `image: ghcr.io/abucalip/navi-librarian:<version>` (for example `v0.2.2`), remove the `build` section, then run `docker compose pull && docker compose up -d`. Keep the `librarian_data` volume and note the previous image tag or digest as a rollback reference. If the repository/package is private, authenticate to GHCR on the deployment host before pulling.
 
