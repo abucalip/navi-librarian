@@ -21,17 +21,13 @@
     <label for="globalSearchInput" class="sr-only">Search your library or discover new music</label>
     <!-- Phone only: the magnifier that opens the field (hidden by the stylesheet on wider screens). -->
     <button id="searchToggle" class="search-toggle" type="button" aria-label="Search" aria-expanded="false" aria-controls="globalSearchInput">
-      <svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-        <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"></path>
-      </svg>
+      <svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#search"></use></svg>
     </button>
     <div class="search-field">
       <input id="globalSearchInput" type="search" name="q" maxlength="200"
              placeholder="Search your library or discover new music">
       <button class="search-submit" type="submit" aria-label="Search">
-        <svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-          <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"></path>
-        </svg>
+        <svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#search"></use></svg>
       </button>
     </div>
     <div id="globalSearchRecent" class="search-results search-recent" role="region" aria-label="Recent searches" hidden>
@@ -52,12 +48,7 @@
       <button id="appMenuButton" class="header-menu-toggle" type="button"
               aria-label="Settings and account" title="Settings and account"
               aria-expanded="false" aria-controls="appMenu">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true" focusable="false">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#settings"></use></svg>
       </button>
       <div id="appMenu" class="header-menu-panel" hidden>
         <button type="button" data-page="library">Library</button>
@@ -300,9 +291,7 @@
           <label for="libraryFilter">Filter artists</label>
           <div class="search-field">
             <input id="libraryFilter" type="search" autocomplete="off" maxlength="200">
-            <svg class="search-icon search-icon-inline" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-              <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"></path>
-            </svg>
+            <svg class="search-icon search-icon-inline" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><use href="/static/icons.svg#search"></use></svg>
           </div>
         </div>
         <div class="library-control">

@@ -725,8 +725,8 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .global-search input[type="search"]:focus, .library-control input[type="search"]:focus, .library-control select:focus { background: var(--surface-raised); }
 .search-submit { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 100%; padding: 0; background: transparent; border: 0; border-radius: 0 30px 30px 0; cursor: pointer; }
 .search-submit:hover { background: transparent; }
-.search-icon { width: 1.3em; height: 1.3em; fill: var(--text-subtle); }
-.search-submit:hover .search-icon, .global-search input[type="search"]:focus + .search-submit .search-icon { fill: var(--accent); }
+.search-icon { width: 1.3em; height: 1.3em; color: var(--text-subtle); }
+.search-submit:hover .search-icon, .global-search input[type="search"]:focus + .search-submit .search-icon { color: var(--accent); }
 .search-recent { padding: var(--space-2); }
 .search-recent[hidden] { display: none; }
 /* The library filter filters as you type, so its icon is decoration rather than a button. */
@@ -1082,7 +1082,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
   header.is-searching h1 { gap: 0; font-size: 0; }
   .search-toggle { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border-color: transparent; }
   .search-toggle:hover { background: transparent; border-color: transparent; }
-  .search-toggle .search-icon { fill: var(--text); }
+  .search-toggle .search-icon { color: var(--text); }
   .global-search:not(.is-expanded) .search-field { display: none; }
   .global-search.is-expanded .search-toggle { display: none; }
   .global-search.is-expanded { flex: 1 1 auto; min-width: 0; margin: 0 14px 0 12px; }
