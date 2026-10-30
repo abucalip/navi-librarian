@@ -45,6 +45,17 @@ def radio_stations(librarian=Depends(get_librarian), store=Depends(get_store)):
     return {"items": _station_call(lambda: stations.list_stations(librarian.api_call, store))}
 
 
+@router.get("/api/radio/settings")
+def radio_settings(store=Depends(get_store)):
+    return {"app_url": store.get_setting(stations.APP_URL_KEY)}
+
+
+@router.put("/api/radio/settings")
+def radio_save_settings(payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
+    """The address Navidrome clients (a phone on Tailscale, say) reach this app at."""
+    return _station_call(lambda: stations.set_app_url(librarian.api_call, store, str(payload.get("app_url") or "")))
+
+
 @router.post("/api/radio/stations/{station_id}/enable")
 def radio_enable(station_id: str, payload: dict, librarian=Depends(get_librarian), store=Depends(get_store)):
     base_url = str(payload.get("base_url") or "")

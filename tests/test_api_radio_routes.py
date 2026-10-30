@@ -53,6 +53,13 @@ class RadioRouteTests(unittest.TestCase):
         app.dependency_overrides[get_librarian] = lambda: self.librarian
         return TestClient(app)
 
+    def test_app_address_is_saved_and_read_back(self):
+        self.librarian.api_call.return_value = {}
+        saved = self.client.put("/api/radio/settings", json={"app_url": "http://box.tailnet.ts.net:8000/"})
+        self.assertEqual(saved.json(), {"app_url": "http://box.tailnet.ts.net:8000", "moved": 0})
+        self.assertEqual(self.client.get("/api/radio/settings").json(), {"app_url": "http://box.tailnet.ts.net:8000"})
+        self.assertEqual(self.client.put("/api/radio/settings", json={"app_url": "ftp://x"}).status_code, 400)
+
     def tearDown(self):
         radio.client_factory = httpx.AsyncClient
         radio._STORES.clear()

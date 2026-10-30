@@ -58,11 +58,45 @@ def _find(api_call, station_id: str) -> dict:
     return found
 
 
+APP_URL_KEY = "app_url"
+
+
+def clean_app_url(value: str) -> str:
+    """A plain http(s) address for this app (no credentials, query or fragment), or ''."""
+    value = (value or "").strip().rstrip("/")
+    if not value:
+        return ""
+    parts = urlsplit(value)
+    if not _http_url(value) or parts.query or parts.fragment or parts.username or parts.password:
+        raise StationError("The app address must be a plain http(s) address.")
+    return value
+
+
+def effective_app_url(store, browser_url: str) -> str:
+    """The saved app address if there is one, else the address the browser reached the app at."""
+    return store.get_setting(APP_URL_KEY) or browser_url
+
+
+def set_app_url(api_call, store, value: str) -> dict:
+    """Save the address Navidrome clients reach this app at and move relayed stations onto it."""
+    url = clean_app_url(value)
+    store.set_setting(APP_URL_KEY, url)
+    moved = 0
+    if url:
+        current = {s["id"]: s for s in fetch_stations(api_call)}
+        for local in store.enabled_stations():
+            station = current.get(local["station_id"])
+            wanted = f"{url}{STREAM_PATH}{local['token']}"
+            if station and _is_proxied(station, local) and station["stream_url"] != wanted:
+                _update(api_call, station, wanted)
+                moved += 1
+    return {"app_url": url, "moved": moved}
+
+
 def enable(api_call, store, station_id: str, base_url: str) -> dict:
     """Point the station at this app's relay. The station's own URL is kept for the way back."""
-    base_url = (base_url or "").strip().rstrip("/")
-    parts = urlsplit(base_url)
-    if not _http_url(base_url) or parts.query or parts.fragment or parts.username or parts.password:
+    base_url = clean_app_url(effective_app_url(store, base_url))
+    if not base_url:
         raise StationError("The app address must be a plain http(s) address.")
     station = _find(api_call, station_id)
     local = store.get_station(station_id)

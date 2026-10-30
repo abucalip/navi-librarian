@@ -26,9 +26,11 @@ function radioWhen(epoch) {
 
 async function loadRadio() {
   radioStatus('Loading…', 'loading');
-  const [stations, plays] = await Promise.allSettled([
-    sendJSON('/api/radio/stations', 'GET'), sendJSON('/api/radio/plays', 'GET')]);
-  const failure = [stations, plays].find(result => result.status === 'rejected');
+  const [stations, plays, settings] = await Promise.allSettled([
+    sendJSON('/api/radio/stations', 'GET'), sendJSON('/api/radio/plays', 'GET'),
+    sendJSON('/api/radio/settings', 'GET')]);
+  const failure = [stations, plays, settings].find(result => result.status === 'rejected');
+  if (settings.status === 'fulfilled') $('radioAppUrl').value = settings.value.app_url;
   if (stations.status === 'fulfilled') renderRadioStations(stations.value.items);
   else renderRadioStations([]);
   if (plays.status === 'fulfilled') renderRadioPlays(plays.value.items);
@@ -55,7 +57,7 @@ function renderRadioStations(items) {
     toggle.addEventListener('click', async () => {
       toggle.disabled = true;
       try {
-        // The address the owner reached this app at is the one the Navidrome clients can use.
+        // The saved app address wins on the server; without one, the address this tab was opened at.
         await sendJSON('/api/radio/stations/' + encodeURIComponent(station.id) + (station.proxied ? '/disable' : '/enable'),
           'POST', {base_url: window.location.origin});
         await loadRadio();
@@ -157,3 +159,18 @@ function renderRadioPlays(items) {
 }
 
 $('refreshRadio').addEventListener('click', loadRadio);
+
+$('radioAddressForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = $('saveRadioAddress');
+  button.disabled = true;
+  try {
+    const result = await sendJSON('/api/radio/settings', 'PUT', {app_url: $('radioAppUrl').value});
+    await loadRadio();
+    radioStatus(result.moved ? 'Saved. ' + result.moved + ' relayed station(s) now use this address.' : 'Saved.', 'success');
+  } catch (error) {
+    radioStatus(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
