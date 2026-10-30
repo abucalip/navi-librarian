@@ -3413,6 +3413,58 @@ function buildArtwork(url, className) {
 
 function setGlobalSearchOpen(open) {
   $('globalSearchResults').hidden = !open;
+  if (open) $('globalSearchRecent').hidden = true;
+}
+
+// The last three submitted searches, newest first. Storage can be unavailable or hold bad data,
+// so every access degrades to "no history" instead of throwing.
+const RECENT_SEARCHES_KEY = 'navidrome-recent-searches';
+const RECENT_SEARCHES_MAX = 3;
+
+function loadRecentSearches() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]');
+    return Array.isArray(stored) ? stored.filter(item => typeof item === 'string' && item).slice(0, RECENT_SEARCHES_MAX) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function rememberSearch(rawQuery) {
+  const query = rawQuery.trim();
+  if (!query) return;
+  const recent = [query, ...loadRecentSearches().filter(item => item.toLowerCase() !== query.toLowerCase())];
+  try {
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent.slice(0, RECENT_SEARCHES_MAX)));
+  } catch (error) {
+    // History is a convenience; a full or blocked store only means nothing is remembered.
+  }
+}
+
+function hideRecentSearches() {
+  $('globalSearchRecent').hidden = true;
+}
+
+// Shown on click or focus while the field is empty; once the person types, results take over.
+function showRecentSearches() {
+  const recent = loadRecentSearches();
+  if ($('globalSearchInput').value.trim() || !recent.length || !$('globalSearchResults').hidden) {
+    hideRecentSearches();
+    return;
+  }
+  const list = $('globalSearchRecentList');
+  list.replaceChildren();
+  for (const term of recent) {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'search-item-content';
+    button.dataset.recentSearch = term;
+    addTextElement(button, 'span', 'search-item-name', term);
+    item.append(button);
+    list.append(item);
+  }
+  $('globalSearchRecent').hidden = false;
 }
 
 function closeGlobalSearch({focusInput = false} = {}) {
@@ -3423,6 +3475,7 @@ function closeGlobalSearch({focusInput = false} = {}) {
   }
   globalSearchSeq += 1;
   setGlobalSearchOpen(false);
+  hideRecentSearches();
   if (focusInput) $('globalSearchInput').focus();
 }
 
@@ -3600,6 +3653,8 @@ function buildSearchItem(item) {
 }
 
 function openFromSearch(target) {
+  // Opening a result is a signal the query was worth keeping; save it before the field is cleared.
+  rememberSearch($('globalSearchInput').value);
   closeGlobalSearch();
   $('globalSearchInput').value = '';
   openLibraryTarget(target);
@@ -4722,15 +4777,32 @@ async function renderGenre(tag) {
 
 $('globalSearch').addEventListener('submit', event => {
   event.preventDefault();
+  rememberSearch($('globalSearchInput').value);
   startGlobalSearch($('globalSearchInput').value);
 });
+$('globalSearchInput').addEventListener('focus', showRecentSearches);
+$('globalSearchInput').addEventListener('click', showRecentSearches);
+$('globalSearchRecent').addEventListener('click', event => {
+  const button = event.target.closest('button[data-recent-search]');
+  if (!button) return;
+  const input = $('globalSearchInput');
+  input.value = button.dataset.recentSearch;
+  hideRecentSearches();
+  rememberSearch(input.value);
+  startGlobalSearch(input.value);
+  input.focus();
+});
 $('globalSearchInput').addEventListener('input', () => {
+  hideRecentSearches();
   clearTimeout(globalSearchTimer);
   globalSearchTimer = setTimeout(() => startGlobalSearch($('globalSearchInput').value), SEARCH_DEBOUNCE_MS);
 });
 // Escape works from the input and from any result, because keydown bubbles to the form.
 $('globalSearch').addEventListener('keydown', event => {
   if (event.key === 'Escape' && !$('globalSearchResults').hidden) {
+    event.preventDefault();
+    closeGlobalSearch({focusInput: true});
+  } else if (event.key === 'Escape' && !$('globalSearchRecent').hidden) {
     event.preventDefault();
     closeGlobalSearch({focusInput: true});
   }
