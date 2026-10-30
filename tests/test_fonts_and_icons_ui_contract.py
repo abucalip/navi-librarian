@@ -17,6 +17,8 @@ ICON_NAMES = [
     "layout-dashboard", "compass", "calendar-plus", "user-round", "list-music", "library", "mic-vocal",
     "download", "settings", "log-out", "search", "chevron-left", "chevron-right", "x", "trash-2",
     "bookmark", "bookmark-check",
+    # rotate-cw: shuffle, refresh and try again; skip-forward: use next source (acquisitions group).
+    "rotate-cw", "skip-forward",
 ]
 
 

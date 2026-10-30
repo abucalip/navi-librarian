@@ -1,5 +1,9 @@
 FROM python:3.12-slim
 
+# Shown in the page rail; pass --build-arg APP_VERSION=<tag> when building a release image.
+ARG APP_VERSION=
+ENV APP_VERSION=${APP_VERSION}
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     NAVIDROME_LIBRARIAN_DATA_DIR=/data \

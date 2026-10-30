@@ -318,5 +318,18 @@ class LastFmClientTests(unittest.TestCase):
             self.assertEqual(navidrome_server._lastfm_top_albums("Artist", limit=2), [records[0]])
         call.assert_called_once_with("Artist", limit=2)
 
+class CachedAlbumPopularityTests(LastFmClientTests):
+    def test_reads_album_info_cache_then_top_albums_cache_and_never_requests(self):
+        client = self.make_client()
+        self.assertIsNone(client.cached_album_popularity("Artist", "Album"))
+        self.cache["lastfm:album-info-v2:" + client._key_normalizer("Artist") + ":" + client._key_normalizer("Album")] = {
+            "listeners": 10, "playcount": 20, "tags": []}
+        self.assertEqual(client.cached_album_popularity("Artist", "Album"), {"listeners": 10, "playcount": 20})
+        self.cache[client._call_cache_key("artist.getTopAlbums", {"artist": "Artist", "limit": 8})] = {
+            "topalbums": {"album": [{"name": "Other One", "listeners": "7", "playcount": "9"}]}}
+        self.assertEqual(client.cached_album_popularity("Artist", "other one"), {"listeners": 7, "playcount": 9})
+        self.assertFalse([row for row in self.calls if row[0] in ("http_get", "cache_set")])
+
+
 if __name__ == "__main__":
     unittest.main()

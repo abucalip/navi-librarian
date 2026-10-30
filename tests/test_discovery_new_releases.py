@@ -1,5 +1,5 @@
 import unittest
-from discovery.new_releases import fetch_artist_release_groups
+from discovery.new_releases import fetch_artist_release_groups, enrich_new_release_listeners
 
 from discovery.new_releases import new_release_window, build_new_release_lookup, build_new_release_response, merge_release_candidates, prepare_new_release_library_scope, select_artist_release_candidates
 from discovery.recommendations import is_album_candidate, is_various_artists, music_key
@@ -212,8 +212,6 @@ class NewReleaseProviderLookupTests(unittest.TestCase):
         self.assertEqual(error, "ValueError")
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class NewReleaseGlobalMergeTests(unittest.TestCase):
@@ -326,3 +324,53 @@ class NewReleaseWindowPolicyTests(unittest.TestCase):
     def test_leap_day_boundary_is_calendar_correct(self):
         from datetime import date
         self.assertEqual(new_release_window(date(2024, 2, 29)), ("2022-03-01", 2022, 2024))
+
+
+class NewReleaseListenerEnrichmentTests(unittest.TestCase):
+    def test_attaches_listeners_and_playcount_and_skips_misses(self):
+        items = [{"artist": "A", "album": "One"}, {"artist": "B", "album": "Two"}, {"artist": "C", "album": "Three"}]
+
+        def lookup(artist, album):
+            if artist == "A":
+                return {"listeners": 1200, "playcount": 5000}
+            if artist == "B":
+                return None
+            raise RuntimeError("provider down")
+
+        pauses = []
+        enrich_new_release_listeners(items, lookup, pause=lambda: pauses.append(1))
+        self.assertEqual((items[0]["lastfm_listeners"], items[0]["lastfm_playcount"]), (1200, 5000))
+        self.assertNotIn("lastfm_listeners", items[1])
+        self.assertNotIn("lastfm_listeners", items[2])
+        self.assertEqual(len(pauses), 3)
+
+    def test_limit_bounds_lookups(self):
+        calls = []
+        items = [{"artist": str(i), "album": "x"} for i in range(5)]
+        enrich_new_release_listeners(items, lambda a, b: calls.append(a), limit=2)
+        self.assertEqual(calls, ["0", "1"])
+
+
+class NewReleaseRouteEnrichmentTests(unittest.TestCase):
+    def test_route_adds_cached_listener_counts_to_new_release_items_only(self):
+        from app.api import discovery
+
+        class Lastfm:
+            def cached_album_popularity(self, artist, album):
+                return {"listeners": 5, "playcount": 9} if album == "Known" else None
+
+        class Library:
+            _lastfm_client = Lastfm()
+
+            def discovery_get_list(self, list_name, count):
+                return {"items": [{"artist": "A", "album": "Known"}, {"artist": "A", "album": "Unknown"}]}
+
+        data = discovery.discovery_list("new_releases", 30, Library())
+        self.assertEqual(data["items"][0]["lastfm_playcount"], 9)
+        self.assertNotIn("lastfm_playcount", data["items"][1])
+        classics = discovery.discovery_list("classics", 30, Library())
+        self.assertNotIn("lastfm_playcount", classics["items"][0])
+
+
+if __name__ == "__main__":
+    unittest.main()

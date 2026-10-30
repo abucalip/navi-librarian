@@ -200,7 +200,9 @@ app.include_router(metadata_router)
 app.include_router(dashboard_router)
 app.include_router(radio_router)
 
-PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+from app.version import app_version
+
+PAGE = (_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8").replace("__APP_VERSION__", app_version())
 app.include_router(create_pages_router(
     page_html=PAGE,
     cassette_icon_path=_APP_ROOT / "cassette.png",

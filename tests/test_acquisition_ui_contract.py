@@ -75,7 +75,9 @@ class AcquisitionUIRegressionTests(unittest.TestCase):
         )
 
         self.assertIn("if (job.status !== 'dismissed')", render)
-        self.assertIn("dismiss.textContent = 'Dismiss';", render)
+        # The control is an icon button in the row's action group; its name is the accessible label.
+        self.assertIn("buildAcquisitionIconButton('trash-2', 'dismiss-album',", render)
+        self.assertIn("'Dismiss ' + (job.album || job.artist || 'acquisition')", render)
         self.assertIn("await sendJSON('/api/acquisitions/dismiss', 'POST'", render)
         # Phase 5 (status rows): the record is a row, so the removal targets `row`. Only the element name
         # changed; the success-only removal and its ordering are asserted exactly as before.
@@ -91,7 +93,7 @@ class AcquisitionUIRegressionTests(unittest.TestCase):
             "function renderAcquisitions(",
             "const ACTIVE_DOWNLOAD_STATUSES",
         )
-        dismiss_block = render[render.index("const dismiss = document.createElement('button');"):render.index("actions.append(dismiss);")]
+        dismiss_block = render[render.index("const dismiss = buildAcquisitionIconButton("):render.index("group.append(dismiss);")]
 
         self.assertNotRegex(dismiss_block, r"job\.status\s*(?:===|!==|==|!=)")
         self.assertIn("if (job.status !== 'dismissed')", render)

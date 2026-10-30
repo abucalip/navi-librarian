@@ -80,7 +80,8 @@ class AddToCollectionRowContractTests(unittest.TestCase):
     def test_meta_lines_come_from_the_api_and_are_text_only(self):
         body = self._function_body("function buildClassicsRow(", "// Lazy artist bio for a ranked row.")
         self.assertIn("item.anchor_artist", body)
-        self.assertIn("item.lastfm_playcount", body)
+        # The listen count moved to the title line (addAlbumListens in buildRecommendationRow).
+        self.assertNotIn("lastfm_playcount", body)
         self.assertNotIn("discovery_score", body)
         self.assertNotIn("innerHTML", body)
 

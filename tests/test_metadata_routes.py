@@ -68,6 +68,36 @@ class MetadataRoutesTests(unittest.TestCase):
             })
         client.get.assert_not_called()
 
+    def test_bio_route_prefers_navidrome_bio_for_library_artists_without_web_requests(self):
+        class Library:
+            _music_key = staticmethod(lambda value: str(value).casefold())
+            calls = []
+
+            def _discovery_library_snapshot(self):
+                return {"artists": [{"id": "ar-1", "name": "Artist"}]}
+
+            def api_call(self, method, **params):
+                self.calls.append((method, params))
+                return {"artistInfo2": {"biography": 'A musician. <a href="https://x">Read more</a>'}}
+
+        library = Library()
+        with patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            self.assertEqual(metadata.artist_bio_route("Artist", library), {"artist": "Artist", "bio": "A musician."})
+            self.assertEqual(metadata.artist_bio_route("Artist", library)["bio"], "A musician.")
+        client.get.assert_not_called()
+        self.assertEqual(library.calls, [("getArtistInfo2", {"id": "ar-1"})])
+
+    def test_bio_route_falls_back_to_web_lookup_when_navidrome_has_nothing(self):
+        class Library:
+            _music_key = staticmethod(lambda value: str(value).casefold())
+
+            def _discovery_library_snapshot(self):
+                return {"artists": []}
+
+        with patch.object(metadata, "artist_bio", return_value={"artist": "Nobody", "bio": "web"}) as web:
+            self.assertEqual(metadata.artist_bio_route("Nobody", Library())["bio"], "web")
+        web.assert_called_once_with("Nobody")
+
     def test_artist_bio_client_sends_json_accept_header(self):
         # Wikimedia returns 403 for the default `Accept: */*`; every bio was empty because of it.
         self.assertEqual(metadata._EXTERNAL_HTTP.headers["accept"], "application/json")
@@ -105,6 +135,30 @@ class MetadataRoutesTests(unittest.TestCase):
             {"artist": "A", "album": "One", "year": 1999},
             {"artist": "B", "album": "Two", "year": None},
         ])
+
+    def test_album_years_reuses_and_stores_years_in_the_persistent_cache(self):
+        class Library:
+            def __init__(self):
+                self.store = {}
+
+            def _metadata_cache_get(self, key, ttl):
+                return self.store.get(key)
+
+            def _metadata_cache_set(self, key, value):
+                self.store[key] = value
+
+        library = Library()
+        body = metadata.AlbumYearsRequest(items=[{"artist": "A", "album": "One"}, {"artist": "B", "album": "Two"}])
+        with patch.object(metadata, "_lookup_musicbrainz_album_years",
+                          return_value={("A", "One"): 1999, ("B", "Two"): None}) as lookup:
+            first = metadata.album_years(body, library)
+        self.assertEqual({(e["artist"], e["album"]): e["year"] for e in first["years"]},
+                         {("A", "One"): 1999, ("B", "Two"): None})
+        self.assertEqual(list(library.store.values()), [1999])
+        with patch.object(metadata, "_lookup_musicbrainz_album_years", return_value={("B", "Two"): 2001}) as lookup:
+            second = metadata.album_years(body, library)
+        lookup.assert_called_once_with([("B", "Two")])
+        self.assertEqual({e["year"] for e in second["years"]}, {1999, 2001})
 
     def test_album_years_rejects_oversized_requests(self):
         from pydantic import ValidationError

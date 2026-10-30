@@ -230,3 +230,29 @@ def build_new_release_response(
             "The initial refresh is bounded to the 120 library artists with the largest album counts.",
         ],
     }
+
+
+def enrich_new_release_listeners(items, popularity_lookup, *, pause=None, limit=200):
+    """Attach Last.fm ``lastfm_listeners`` and ``lastfm_playcount`` to new-release items.
+
+    ``popularity_lookup(artist, album)`` returns a dict with ``listeners`` and ``playcount``
+    or None; an item with no result is left without the fields. The server passes a cache-only
+    lookup, so no provider request is made; ``pause`` exists for a lookup that does call out.
+    A lookup that raises is treated as a miss.
+    """
+    for item in list(items)[:limit]:
+        try:
+            stats = popularity_lookup(item.get("artist", ""), item.get("album", ""))
+        except Exception:
+            stats = None
+        if pause is not None:
+            pause()
+        if not isinstance(stats, dict):
+            continue
+        listeners = stats.get("listeners")
+        playcount = stats.get("playcount")
+        if listeners is not None:
+            item["lastfm_listeners"] = int(listeners)
+        if playcount is not None:
+            item["lastfm_playcount"] = int(playcount)
+    return items

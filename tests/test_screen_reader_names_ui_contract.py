@@ -50,15 +50,16 @@ class ScreenReaderNamesUIContractTests(unittest.TestCase):
     def test_icon_only_and_repeated_actions_name_their_album_or_artist(self):
         self.assertIn("dismissButton.setAttribute('aria-label', options.dismissLabel || 'Not for me: ' + album);", self.js)
         self.assertNotIn("Dismiss artist", self.js)
-        self.assertIn("dismiss.setAttribute('aria-label', 'Dismiss ' + (job.album || job.artist || 'acquisition'));", self.js)
+        self.assertIn("'Dismiss ' + (job.album || job.artist || 'acquisition'), 'Dismiss');", self.js)
 
     def test_visible_label_is_kept_inside_each_accessible_name(self):
         # WCAG 2.5.3 (label in name): the visible words must begin the accessible name.
-        self.assertIn("dismiss.textContent = 'Dismiss';", self.js)
+        # The control is an icon button; "Dismiss" stays inside its accessible name.
+        self.assertIn("buildAcquisitionIconButton('trash-2', 'dismiss-album',", self.js)
 
     def test_acquisition_dismiss_keeps_focus_when_its_row_is_removed(self):
-        render = self.js[self.js.index("dismiss.textContent = 'Dismiss';"):]
-        render = render[:render.index("actions.append(dismiss);")]
+        render = self.js[self.js.index("const dismiss = buildAcquisitionIconButton("):]
+        render = render[:render.index("group.append(dismiss);")]
         self.assertIn("const hadFocus = document.activeElement === dismiss;", render)
         self.assertIn("const neighbour = row.nextElementSibling || row.previousElementSibling;", render)
         self.assertLess(render.index("const neighbour = row.nextElementSibling"), render.index("row.remove();"))
