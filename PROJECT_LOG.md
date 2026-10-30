@@ -1,3 +1,13 @@
+## 2026-10-30 — Sprite icons for the gear and search: PR #648 merged
+
+- **Change:** PR [#648](https://github.com/abucalip/navi-librarian/pull/648), squash `84b8b2ff53f36ef64663a345fa20fc80a9d59445`, from tested head `e4a9ac965fa60ba8581ee13dbf6130ed41e8c936`. The header gear and the three magnifiers (top-bar toggle, top-bar submit, Library filter) were inline SVG copies; they now use the vendored Lucide sprite (`/static/icons.svg#settings`, `#search`) on phone and desktop. Search icon colour moves from `fill` to `color` (sprite icons are stroke-based) and is the gear's `--text-muted` grey, with the yellow hover and focus kept. Changed: `app/templates/index.html`, `static/app.css`.
+- **Tests run:** every `*_ui_contract` module and `test_ui_keyboard_and_feedback_contract`, one at a time; the flat-surfaces test again after the colour change. The full suite ran in CI only.
+- **CI:** compile, container-smoke, test-and-build, validate-container and validate-release-workflow passed on the head; publish-release was skipped.
+- **UI results:** the owner saw the icons in the local app after a server restart and asked for the lighter grey, which is included. No checklist from `LOCAL_UI_TESTING.md` was recorded.
+- **Limitation:** `index.html` is read once at server start, so a running server needs a restart for the HTML change.
+- **Not done:** the browser checklist, publication, deployment.
+- **Next action:** the owner runs the phone and desktop browser checks (see the PR #647 entry).
+
 ## 2026-10-30 — Phone UI pass: PR #647 merged
 
 - **Change:** PR [#647](https://github.com/abucalip/navi-librarian/pull/647), squash `1fe4a60a42e0dd8108ce438a691e9373f3a8ddb7`, from tested head `a1f4242550603ecd94f06159519888424219b05b`. Phone layout only (620px and under); the desktop UI is unchanged. Top bar: a magnifier beside the gear grows into the search field and hides the title text (cassette stays). Dashboard picks: swipeable cards with dots (no arrows or count), tags "discovery" and "deep dive", artwork at 60% of the card, album / artist / year and listens order; genre tiles four to a line. A round "i" button on card artwork toggles the artist bio overlay. New releases, Recommendations, Personal Discoveries, Add to your collection and Saved are sideways-scrolling album cards; Daily picks shows its four lists in sequence with no lens picker. Similar artists swipe in one row with larger circles and wrapping names. Acquisition button groups and the Acquisitions and Radio refresh buttons are centred. Changed: `static/app.js`, `static/app.css`, `app/templates/index.html`. The layout is chosen with a `matchMedia` query and lists rebuild when the breakpoint is crossed.
