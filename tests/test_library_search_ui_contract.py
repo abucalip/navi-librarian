@@ -234,7 +234,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("}, ARTIST_TAGS_SHOWN);", self.new_js)
 
     def test_album_page_is_one_centered_column_in_the_owner_s_order(self):
-        album = self.html[self.html.index('<div id="libraryAlbumView" hidden>'):self.html.index('<div id="libraryGenreView"')]
+        album = self.html[self.html.index('<div id="libraryAlbumView" class="tint-backdrop" hidden>'):self.html.index('<div id="libraryGenreView"')]
         order = ['id="albumAction"', 'id="albumHeading"', 'id="albumArtist"', 'id="albumGenre"', 'id="albumYear"',
                  'id="albumDescription"', 'id="albumTracks"', 'id="albumPlatformLinks"', 'id="albumSimilarAlbums"',
                  'id="albumSimilarArtists"']

@@ -73,7 +73,8 @@ class TrackGetUIContractTests(unittest.TestCase):
         script = (
             "const made = [];\n"
             "const $ = () => ({replaceChildren: x => made.push(x)});\n"
-            "const buildAlbumState = item => item;\n" + source +
+            "const buildAlbumState = item => item;\n"
+            "const wrapInActionGroup = control => control;\n" + source +
             "const album = {artist: 'A', name: 'B', year: 1999, release_group_mbid: null, owned: true};\n"
             "const out = [];\n"
             "setAlbumAction(album); out.push(made.pop().owned);\n"

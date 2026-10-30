@@ -332,7 +332,8 @@ p { line-height: 1.55; }
 .album-modal-art-column .album-platform-links a img { display: block; flex: 0 0 auto; width: 22px; height: 22px; }
 .album-modal-art-column .album-platform-links a:hover { border-color: var(--accent); background: var(--surface-hover); }
 .album-modal-art-column .album-platform-links a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.album-modal-art .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 40px; height: 40px; font-size: var(--text-xs); }
+.album-modal-art > .action-group { position: absolute; right: var(--space-3); bottom: var(--space-3); }
+.album-modal-art .action-group > .get-album { width: 44px; height: var(--group-h); }
 .album-modal-copy h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl)/1.05 var(--display); overflow-wrap: anywhere; text-wrap: balance; }
 .album-modal-artist { margin: 0 0 var(--space-4); color: var(--text-muted); }
 .album-modal-bio { margin: var(--space-3) 0 0; color: var(--text-muted); font: 400 var(--text-sm)/1.5 var(--body); max-width: 60ch; }
@@ -779,6 +780,8 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .album-hero-art { width: 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-hover); border-radius: 4px; }
 .album-hero-action { display: contents; }
 .album-hero-action .get-album { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 40px; height: 40px; font-size: var(--text-xs); }
+.album-hero-action > .action-group { position: absolute; right: var(--space-3); bottom: var(--space-3); box-shadow: 0 3px 12px rgba(0,0,0,.55); }
+.album-hero-action .action-group > .get-album { position: static; width: 44px; height: var(--group-h); }
 .album-hero-action .owned-check { position: absolute; right: var(--space-3); bottom: var(--space-3); width: 58px; height: 58px; border-radius: 50%; background: var(--surface-raised); border: 2px solid var(--ok); box-shadow: 0 3px 12px rgba(0,0,0,.55); }
 
 .section-heading-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-top: var(--space-5); }
@@ -899,7 +902,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 #artistDetailStatus:not([class*="is-"])::before { content: none; }
 .artist-back { position: absolute; top: var(--space-3); left: var(--space-3); display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: rgba(20, 18, 17, .72); }
 .artist-back .icon { display: block; width: 22px; height: 22px; }
-.artist-top-songs { min-width: 0; padding: var(--space-4); background: var(--surface); border-radius: var(--radius-panel); }
+.artist-top-songs { min-width: 0; padding: var(--space-4); background: color-mix(in srgb, var(--surface) 70%, transparent); border-radius: var(--radius-panel); }
 .artist-top-songs[hidden] { display: none; }
 .artist-top-songs h3 { margin: 0 0 var(--space-3); font: 600 var(--text-xl)/1.1 var(--display); letter-spacing: .01em; }
 /* "All top songs" and "All missing albums" are plain clickable text, like the genres under the name; the 44px hit area stays. */
@@ -939,6 +942,10 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 
 /* Album page: one centered column. Large cover, title, artist, genre and year, a three-line description,
    the tracklist, the services, similar albums (ranked) and similar artists as circles. */
+/* Backdrop tinted from the cover (tintPage, album and artist pages). Fades from the tint to the page ground, fixed behind the page; --page-tint is a dark, capped colour. */
+.tint-backdrop::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity var(--dur-slow) var(--ease-out); background: linear-gradient(to bottom, var(--page-tint, transparent) 0, var(--ink) 85%); }
+.tint-backdrop.has-tint::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tint-backdrop::before { transition: none; } }
 .album-page { position: relative; max-width: 880px; margin: 0 auto; min-width: 0; }
 .album-back { position: absolute; top: 0; left: 0; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 .album-back .icon { display: block; width: 22px; height: 22px; }

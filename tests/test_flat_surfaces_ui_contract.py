@@ -25,10 +25,13 @@ class FlatSurfaceUIContractTests(unittest.TestCase):
 
     def test_stylesheet_has_no_gradients_except_the_artist_photo_scrim(self):
         # The owner asked for the artist name over a large photo (docs/ARTIST_PAGE_REDESIGN_PROPOSAL.md).
-        # The one scrim keeps the name legible on a light photo; nothing else may use a gradient.
+        # The one scrim keeps the name legible on a light photo; nothing else may use a gradient except the album page backdrop below.
         scrim = rule_body(self.css, ".artist-stage::after")
         self.assertEqual(scrim.count("linear-gradient"), 1)
-        self.assertEqual(self.css.count("gradient"), 1)
+        # The owner asked for the album page backdrop to fade from the cover's colour to the page ground (album and artist pages).
+        backdrop = rule_body(self.css, ".tint-backdrop::before")
+        self.assertEqual(backdrop.count("linear-gradient"), 1)
+        self.assertEqual(self.css.count("gradient"), 2)
 
     def test_artwork_placeholder_is_a_flat_raised_surface(self):
         self.assertIn("background: var(--surface-raised);", rule_body(self.css, ".card-art"))
