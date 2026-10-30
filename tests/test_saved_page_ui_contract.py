@@ -40,10 +40,9 @@ class SavedPageTests(unittest.TestCase):
         self.assertIn("saved: true", row)
         self.assertIn("owned", row)
         build = between(JS, "function buildRecommendationRow", "const monthAbbreviations")
-        self.assertIn("if (!options.owned) actions.append(createGetButton", build)
-        saved_branch = between(build, "if (options.saved) {", "const dismissButton")
-        self.assertIn("setSaveButtonState(", saved_branch)
-        self.assertIn("return row;", saved_branch)
+        self.assertIn("if (!options.owned) group.append(createGetButton", JS)
+        self.assertIn("const onDismiss = options.saved ? null :", build)
+        self.assertIn("if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, album);", build)
 
 
 if __name__ == "__main__":

@@ -353,11 +353,7 @@ p { line-height: 1.55; }
 .card .card-art .get-album { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 34px; height: 34px; font-size: var(--text-xs); }
 /* 44x44 hit area in the artwork corner, 20px sprite icon (DESIGN_SYSTEM.md 9.1). The icon is
    inside the clipped artwork, so its focus ring is drawn inside the box. */
-.card .card-art .deep-dive-dismiss { position: absolute; z-index: 4; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--chart-red-text); box-shadow: none; }
-.card .card-art .deep-dive-dismiss:hover { background: transparent; color: var(--text); border: 0; }
-.card .card-art .deep-dive-dismiss:focus-visible { outline-offset: -4px; }
 .card .card-actions { display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px; }
-.card .card-actions .get-album { width: 32px; height: 32px; font-size: var(--text-xs); }
 /* One get/request control. The modal, artwork-overlay and card-action variants were
    three copies of the same declarations differing only in size and border width; they
    now share one base and set only their own geometry. State is carried by text and a
@@ -372,6 +368,8 @@ p { line-height: 1.55; }
 .get-album:hover:not(:disabled):not(.is-failed) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 /* Idle face: a download arrow over a tray. On hover the arrow slides in from above (transform and opacity only). */
 .get-album-label { display: none; }
+/* The cloud is the idle face only inside an action group; a lone Get keeps the arrow over a tray. */
+.get-album-cloud { opacity: 0; }
 .get-album-down, .get-album-tray { opacity: 0; }
 .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-down, .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-tray { opacity: 1; }
 .get-album:hover:not(:disabled):not(.is-failed) .get-album-down { animation: get-arrow-in var(--dur-slow) var(--ease-out) both; }
@@ -567,9 +565,11 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .ranked-row {
   position: relative; min-width: 0; cursor: pointer;
   display: grid; grid-template-columns: 72px var(--row-art) minmax(0, 1fr) 220px auto;
-  align-items: center; gap: 0 16px; padding: 4px 16px 4px 6px;
+  align-items: center; gap: 0 16px; padding: 4px var(--row-edge-x) 4px 6px;
   background: var(--surface); border-bottom: 1px solid var(--edge);
   --row-art: 136px;
+  /* The action group sits as far from the right edge as it does from the row's top and bottom edges. */
+  --row-edge-x: calc((var(--row-art) + 8px - 38px) / 2);
 }
 .ranked-row:hover { background: var(--surface-hover); }
 .ranked-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -603,7 +603,6 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 }
 .row-date-day { font: 600 var(--text-md)/1.2 var(--display); color: var(--text); white-space: nowrap; }
 .row-date-year { font: 500 var(--text-xs)/1.2 var(--mono); color: var(--text-muted); }
-.row-dismiss-artist { min-height: 44px; }
 .ranked-row .card-art {
   width: var(--row-art); height: var(--row-art); aspect-ratio: auto; border: 1px solid var(--edge); border-radius: var(--radius-control);
   background: var(--surface-raised);
@@ -628,13 +627,6 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
 .row-category { color: var(--text); font-weight: 600; }
 .row-source { color: var(--text-subtle); }
 .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.ranked-row .get-album { width: 32px; height: 32px; }
-.ranked-row .deep-dive-dismiss {
-  width: 44px; height: 44px; padding: 0; display: grid; place-items: center;
-  background: transparent; border: 1px solid var(--edge-strong); border-radius: 4px;
-  color: var(--text-muted); font: 400 var(--text-xl)/1 var(--body);
-}
-.ranked-row .deep-dive-dismiss:hover { color: var(--text); }
 .ranked-empty { margin: 16px 0; color: var(--text-muted); }
 
 /* Loading variant: the same grid as a row, with an opacity pulse only (section 11). */
@@ -672,21 +664,42 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   .ranked-row.is-skeleton { animation: none; }
 }
 
-/* Save: a bookmark toggle beside Get. State is the icon (outline vs. check), the word, and
-   aria-pressed; the fill is a reinforcement, never the only signal. */
-.save-album {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-width: 44px; min-height: 44px; padding: 0 12px;
-  background: transparent; border: 1px solid var(--edge-strong); border-radius: 999px;
-  color: var(--text-muted); font: 700 var(--text-xs)/1 var(--mono); text-transform: uppercase;
-  cursor: pointer;
+/* Action group: Get, Save and Not for me as one joined control with hairline dividers between
+   the buttons. Each button is an icon on a 44px-high target; its name is the aria-label. State is
+   the icon (cloud, outline vs. checked bookmark, tick, retry arrow) and aria-pressed; the colour
+   is a reinforcement, never the only signal. */
+.action-group { --group-h: 38px; display: inline-flex; overflow: hidden; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); }
+.action-group > button {
+  display: inline-grid; place-items: center; box-sizing: border-box;
+  width: 44px; height: var(--group-h); padding: 0;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  color: var(--text-muted); cursor: pointer;
 }
-.save-album:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
-.save-album:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.save-album .icon { width: 18px; height: 18px; flex: none; }
-.save-album.is-saved { color: var(--text); border-color: var(--accent); background: var(--surface-raised); }
-.save-album.is-failed { color: var(--chart-red-text); border-color: var(--chart-red); }
-.save-album[aria-busy="true"] { cursor: progress; opacity: .7; }
+.action-group > button + button { border-left: 1px solid var(--edge-strong); }
+.action-group > button:hover:not(:disabled):not(.is-failed) { background: var(--surface-raised); color: var(--text); }
+.action-group > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+/* On a card the group floats over the artwork, bottom right; the solid ground and shadow keep it legible on any cover. */
+.card-art > .action-group { position: absolute; z-index: 3; left: 0; right: 0; bottom: 8px; margin: 0 auto; width: max-content; box-shadow: 0 3px 12px rgba(0,0,0,.55); }
+/* The tile rule that pins a lone Get to the artwork corner must not apply inside the group. */
+.card .card-art .action-group > .get-album { position: static; width: 44px; height: var(--group-h); }
+.action-group .icon, .action-group .get-album-glyph { width: 14px; height: 14px; flex: none; }
+.action-group .get-album-label, .action-group .save-album-label { display: none; }
+/* A download button on its own (artist and album pages) has the room for a larger icon. */
+.action-group > .get-album:only-child .get-album-glyph { width: 22px; height: 22px; }
+.action-group > .get-album.is-pending:only-child .get-album-glyph, .action-group > .get-album.requested:only-child .get-album-glyph, .action-group > .get-album.is-failed:only-child .get-album-glyph { width: 26px; height: 26px; }
+/* The state glyphs are drawn for the 44-unit box; at 24px they read thin beside the cloud. */
+.action-group .get-album.is-pending .get-album-glyph, .action-group .get-album.requested .get-album-glyph, .action-group .get-album.is-failed .get-album-glyph { width: 18px; height: 18px; }
+/* Get keeps its pending, requested and failed faces; only the idle face becomes the cloud. */
+.action-group .get-album-down, .action-group .get-album-tray { display: none; }
+.action-group .get-album:not(.is-pending):not(.requested):not(.is-failed) .get-album-cloud { opacity: 1; }
+.action-group .get-album:hover:not(:disabled):not(.is-failed) { color: var(--accent); }
+.action-group .get-album.is-pending { background: transparent; }
+.action-group .get-album.requested, .action-group .get-album.requested:hover { background: var(--accent); color: var(--on-accent); }
+.action-group .get-album.is-failed { background: transparent; color: var(--chart-red-text); }
+.action-group .save-album.is-saved { color: var(--accent); }
+.action-group .save-album.is-failed { color: var(--chart-red-text); }
+.action-group .save-album[aria-busy="true"] { cursor: progress; opacity: .7; }
+.action-group .dismiss-album:hover { color: var(--chart-red-text); }
 
 /* ---- Global search and library (SEARCH_CONTRACT P1) ---- */
 .global-search { position: relative; flex: 0 1 420px; min-width: 0; margin-left: auto; }
@@ -741,7 +754,8 @@ button.search-item-content:hover, .library-artist:hover { background: var(--surf
 .album-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .album-row-listens, .album-row-artist { flex: 0 1 auto; overflow: hidden; color: var(--text-muted); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
 .album-row-detail { color: var(--text-muted); font-size: var(--text-sm); }
-.album-row .get-album, .album-row .owned-check { flex: 0 0 44px; margin-right: 8px; }
+.album-row > .get-album, .album-row > .owned-check { flex: 0 0 44px; margin-right: 8px; }
+.album-row > .action-group { flex: none; margin-right: 8px; }
 .owned-check { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: var(--ok); }
 .owned-check-glyph { width: 24px; height: 24px; }
 .album-hero-art-wrap { position: relative; }
@@ -821,7 +835,7 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .dashboard-slider > .card[data-slot="1"] { inset: 0; width: auto; height: auto; transform: none; display: grid; grid-template-columns: var(--art) minmax(0, 1fr); align-items: center; border-radius: 12px; box-shadow: none; cursor: default; }
 .dashboard-slider > .card > .card-art { position: absolute; inset: 0; width: auto; aspect-ratio: auto; border: 0; }
 .dashboard-slider > .card[data-slot="1"] > .card-art { position: relative; inset: auto; width: 100%; height: 100%; aspect-ratio: auto; }
-.dashboard-slider > .card:not([data-slot="1"]) .get-album, .dashboard-slider > .card:not([data-slot="1"]) .dashboard-tile-meta { display: none; }
+.dashboard-slider > .card:not([data-slot="1"]) .action-group, .dashboard-slider > .card:not([data-slot="1"]) .dashboard-tile-meta { display: none; }
 .dashboard-slider > .card > .dashboard-tile-meta { margin: 0; padding: 0 28px; max-width: min(34rem, calc(100cqi - var(--art) - var(--thumbs) * (var(--thumb-w) + var(--thumb-gap)) - 40px)); }
 .dashboard-slider > .card[data-slot="1"] > .dashboard-tile-meta { animation: dashboard-slide-in var(--dur-slow) var(--ease-out) both; }
 .dashboard-slider > .card[data-slot="1"] h3 { font-size: var(--text-2xl); }
@@ -931,8 +945,8 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .track-duration { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .track .owned-check { width: 28px; height: 28px; }
 /* A song's own Get: the same circle, smaller. */
-.track .get-track, .top-song .get-track { width: 26px; height: 26px; }
-.track .get-track .get-album-glyph, .top-song .get-track .get-album-glyph { width: 100%; height: 100%; }
+.track > .get-track, .top-song > .get-track { width: 26px; height: 26px; }
+.track > .get-track .get-album-glyph, .top-song > .get-track .get-album-glyph { width: 100%; height: 100%; }
 .track .owned-check-glyph { width: 18px; height: 18px; }
 .album-summary { margin: var(--space-4) var(--space-2) 0; color: var(--text-muted); font-size: var(--text-sm); text-align: center; }
 .album-summary:empty { display: none; }
@@ -954,26 +968,23 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .radio-meta { margin: 2px 0 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .radio-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .radio-actions { align-items: center; }
-.radio-actions .get-album { width: 40px; height: 40px; }
-.radio-remove { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
-.radio-remove .icon { width: 20px; height: 20px; }
 /* The app's switch, after Uiverse.io's "happy-warthog-87" by Galahhad. A button with role="switch" instead of a
    checkbox, because the click is asynchronous: the state changes only once the server has. The knob is a pill as
-   wide as the track, shifted 30px left (off) or right (on) behind the clipped edge, and pressing it centres it.
+   wide as the track, shifted 20px left (off) or right (on) behind the clipped edge, and pressing it centres it.
    Only the knob's transform animates (motion contract), so the track colour changes at once. */
 .radio-switch {
-  box-sizing: content-box; flex: 0 0 auto; width: 60px; height: 30px; min-height: 0; padding: 0;
-  display: flex; align-items: center; overflow: hidden; border: 4px solid transparent; border-radius: 20px;
-  background: lightgray; box-shadow: 0 0 10px 0 rgb(0 0 0 / .25) inset; cursor: pointer;
+  box-sizing: content-box; flex: 0 0 auto; width: 40px; height: 20px; min-height: 0; padding: 0;
+  display: flex; align-items: center; overflow: hidden; border: 3px solid transparent; border-radius: 14px;
+  background: #3d3935; box-shadow: 0 0 10px 0 rgb(0 0 0 / .25) inset; cursor: pointer;
 }
-.radio-switch:hover:not(:disabled) { background: lightgray; border-color: transparent; }
+.radio-switch:hover:not(:disabled) { background: #4a4540; border-color: transparent; }
 .radio-switch::before {
-  content: ''; display: block; width: 100%; height: 100%; border-radius: 20px; background: #fff;
-  box-shadow: 0 0 10px 3px rgb(0 0 0 / .25); transform: translateX(-30px);
+  content: ''; display: block; width: 100%; height: 100%; border-radius: 14px; background: #fff;
+  box-shadow: 0 0 6px 2px rgb(0 0 0 / .25); transform: translateX(-20px);
   transition: transform var(--dur-slow) var(--ease-out);
 }
 .radio-switch[aria-checked="true"], .radio-switch[aria-checked="true"]:hover:not(:disabled) { background: var(--accent); }
-.radio-switch[aria-checked="true"]::before { transform: translateX(30px); background: var(--ink); }
+.radio-switch[aria-checked="true"]::before { transform: translateX(20px); background: var(--ink); }
 .radio-switch:active:not(:disabled)::before { transform: translate(0); }
 .radio-switch:disabled { opacity: .6; cursor: progress; }
 .radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

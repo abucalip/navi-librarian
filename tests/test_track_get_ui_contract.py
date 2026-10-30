@@ -36,9 +36,9 @@ class TrackGetUIContractTests(unittest.TestCase):
     def test_top_songs_get_a_button_when_they_name_an_album(self):
         row = block(self.js, "function buildTopSongRow(", "function paintTopSongs(")
         self.assertIn("item.owned ? buildOwnedCheck()", row)
-        self.assertIn("item.album && item.artist ? createTrackGetButton(", row)
+        self.assertIn("? wrapInActionGroup(createTrackGetButton(", row)
         self.assertIn("artist: ctx.name", block(self.js, "function paintTopSongs(", "function hideTopSongs("))
-        self.assertIn(".top-song .get-track", self.css)
+        self.assertIn(".top-song > .get-track", self.css)
 
     def test_song_get_posts_to_the_track_endpoint_and_never_claims_success_early(self):
         request = block(self.js, "async function searchTrack(", "function createTrackGetButton(")
@@ -100,7 +100,7 @@ class TrackGetUIContractTests(unittest.TestCase):
 
     def test_the_fourth_track_column_fits_the_button_and_the_button_is_a_pill(self):
         self.assertIn("minmax(28px, auto)", block(self.css, ".track {", "}"))
-        self.assertIn(".track .get-track, .top-song .get-track {", self.css)
+        self.assertIn(".track > .get-track, .top-song > .get-track {", self.css)
 
 
 if __name__ == "__main__":

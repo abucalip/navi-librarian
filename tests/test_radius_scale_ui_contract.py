@@ -32,8 +32,7 @@ class RadiusScaleUIContractTests(unittest.TestCase):
     def test_header_menu_items_use_the_chip_radius(self):
         self.assertIn("border-radius: var(--radius-chip);", rule_bodies(self.css, ".header-menu-panel button")[0])
 
-    def test_get_pill_and_circle_radii_are_kept(self):
-        self.assertIn("border-radius: 999px;", self.css)
+    def test_get_circle_radius_is_kept(self):
         self.assertIn("border-radius: 50%;", self.css)
 
 

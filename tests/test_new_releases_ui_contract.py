@@ -76,14 +76,14 @@ class NewReleasesRowContractTests(unittest.TestCase):
         start = self.js.index("function buildNewReleaseRow(")
         body = self.js[start:self.js.index("// Discover music metadata lines", start)]
         self.assertIn("sendFeedback('dismiss', artist, album, metadata, 'new_releases', row)", body)
-        self.assertIn("sendFeedback('dismiss_artist', artist, album, metadata, 'new_releases', row)", body)
+        self.assertNotIn("dismiss_artist", body)
 
     def test_get_and_modal_handling_for_release_rows_are_the_shared_ones(self):
         start = self.js.index("function buildRecommendationRow(")
         builder = self.js[start:self.js.index("$('recommendationSearch').addEventListener", start)]
         self.assertIn("makeAlbumCardInteractive(row, artist, album, item);", builder)
-        self.assertIn("actions.append(createGetButton(artist, album, item));", builder)
-        self.assertIn("dismissArtist.textContent = 'Dismiss artist';", builder)
+        self.assertIn("createActionGroup(artist, album, item, {", builder)
+        self.assertNotIn("Dismiss artist", builder)
         self.assertNotIn("innerHTML", builder, "rows must be built with text APIs only")
 
     def test_loading_shows_skeleton_rows_and_clears_them_before_rendering(self):
@@ -101,7 +101,7 @@ class NewReleasesRowContractTests(unittest.TestCase):
 
     def test_release_date_column_is_plain_text_not_the_red_numeral(self):
         start = self.css.index(".row-date {")
-        block = self.css[start:self.css.index(".row-dismiss-artist", start)]
+        block = self.css[start:self.css.index("}", self.css.index(".row-date-year", start))]
         self.assertNotIn("chart-red", block)
         self.assertIn(".row-date-day { font: 600 var(--text-md)/1.2 var(--display); color: var(--text);", block)
 

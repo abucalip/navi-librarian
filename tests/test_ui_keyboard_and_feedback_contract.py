@@ -119,7 +119,7 @@ class DashboardTileStripTests(unittest.TestCase):
         self.assertIn("open.setAttribute('aria-label', 'View details for ' + album + ' by ' + artist);", tile)
         self.assertIn("open.addEventListener('click', () => openAlbumModal(tile, open));", tile)
         # Get is appended to the artwork, never to the open button, so no control is nested.
-        self.assertIn("tile.querySelector('.card-art').append(createGetButton(artist, album, item));", tile)
+        self.assertIn("tile.querySelector('.card-art').append(createActionGroup(artist, album, item, {", tile)
         self.assertNotIn("open.append(", tile)
         # The open control precedes the artwork in the DOM, so it is the first focus stop.
         self.assertLess(tile.index("tile.append(open);"), tile.index("attachArtwork(tile, artist, album);"))
