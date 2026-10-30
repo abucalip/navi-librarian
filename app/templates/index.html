@@ -309,7 +309,7 @@
       <ul id="libraryList" class="library-list"></ul>
       <button type="button" id="libraryMore" hidden>Load more</button>
     </div>
-    <div id="libraryDetailView" hidden>
+    <div id="libraryDetailView" class="tint-backdrop" hidden>
       <div class="artist-hero">
         <div class="artist-stage">
           <button type="button" id="libraryBack" class="artist-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
@@ -344,7 +344,7 @@
         <ul id="artistSimilar" class="library-list similar-artists"></ul>
       </section>
     </div>
-    <div id="libraryAlbumView" hidden>
+    <div id="libraryAlbumView" class="tint-backdrop" hidden>
       <div class="album-page">
         <button type="button" id="albumBack" class="album-back" aria-label="Back" title="Back"><svg class="icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#chevron-left"></use></svg></button>
         <div class="album-head">
@@ -501,7 +501,7 @@
     <button id="albumModalClose" class="album-modal-close" type="button" aria-label="Close album details"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#x"></use></svg></button>
     <div class="album-modal-layout">
       <div class="album-modal-art-column">
-        <div class="album-modal-art"><button id="albumModalGet" class="get-album" type="button" title="Get this album" aria-label="Get this album">get</button></div>
+        <div class="album-modal-art"><div class="action-group" role="group" aria-label="Actions for this album"><button id="albumModalGet" class="get-album" type="button" title="Get this album" aria-label="Get this album">get</button></div></div>
         <nav id="albumModalPlatformLinks" class="album-platform-links" aria-label="Find this album on music services"></nav>
       </div>
       <div class="album-modal-copy"><h2 id="albumModalTitle">Album</h2><p id="albumModalArtist" class="album-modal-artist"></p><p id="albumModalYear" class="album-modal-year"></p><p id="albumModalBio" class="album-modal-bio" hidden></p><p id="albumModalStatus" class="album-modal-status status-line" aria-live="polite">Loading tracklist…</p><ol id="albumModalTracklist" class="album-modal-tracklist"></ol></div>

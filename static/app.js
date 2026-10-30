@@ -1162,7 +1162,7 @@ const albumArtworkImage = document.createElement('img');
 albumArtworkImage.id = 'albumModalArtwork';
 albumArtworkImage.alt = 'Album artwork';
 albumArtworkImage.hidden = true;
-$('albumModalGet').before(albumArtworkImage);
+$('albumModalGet').parentElement.before(albumArtworkImage);
 // An artwork URL that fails to load hides the image instead of showing a broken-image glyph.
 $('albumModalArtwork').addEventListener('error', () => { $('albumModalArtwork').hidden = true; });
 $('albumModalBackdrop').addEventListener('click', event => {
@@ -1407,7 +1407,8 @@ function buildShelfCard(item, withActions = false) {
       onDismiss: () => dismissShelfCard(card, item.artist, item.name, metadata)
     }));
   } else {
-    card.querySelector('.card-art').append(buildAlbumState(item));
+    const state = buildAlbumState(item);
+    card.querySelector('.card-art').append(item.owned ? state : wrapInActionGroup(state, 'Actions for ' + item.name));
   }
 
   const meta = document.createElement('div');
@@ -4203,8 +4204,9 @@ function setArtistHero(target, name) {
   // It is the first thing on the page, so it must not wait for the lazy-loading threshold.
   frame.querySelector('img')?.setAttribute('loading', 'eager');
   stage.prepend(frame);
-  if (target.artworkUrl || !name) return;
   const seq = libraryView.detailSeq;
+  tintArtistPage(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), seq);
+  if (target.artworkUrl || !name) return;
   requestJSON('/api/artist-image?' + new URLSearchParams({name}))
     .then(data => {
       if (seq !== libraryView.detailSeq || !data || !data.artwork_url) return;
@@ -4214,6 +4216,7 @@ function setArtistHero(target, name) {
       image.onerror = () => image.remove();
       image.src = data.artwork_url;
       frame.append(image);
+      tintArtistPage(data.artwork_url, seq);
     })
     .catch(() => {});
 }
@@ -4256,6 +4259,7 @@ function renderArtist(target) {
   const view = libraryView;
   const seq = ++view.detailSeq;
   libraryShow('artist');
+  clearPageTint('libraryDetailView');
   setArtistHero(target, target.name);
   const heading = $('artistDetailHeading');
   const status = $('artistDetailStatus');
@@ -4538,6 +4542,7 @@ function renderAlbum(target) {
   $('albumGenre').replaceChildren();
   $('albumSummary').textContent = '';
   $('albumOwnership').hidden = target.owned !== false;
+  clearPageTint('libraryAlbumView');
   $('albumAction').replaceChildren();
   albumPage.album = null;
   $('albumTracks').replaceChildren();
@@ -4577,14 +4582,96 @@ function renderAlbum(target) {
   });
 }
 
+// The album page takes its backdrop from the cover. The picture is shrunk to a small canvas, its
+// pixels are counted in coarse colour buckets (grey and near-black or near-white pixels count
+// for little, so a vivid cover is not averaged to mud), and the winning bucket is darkened until
+// the page text stays readable. Covers that cannot be read (a host without CORS headers, a
+// failed load) leave the normal background in place.
+function dominantColor(image) {
+  const size = 32;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext('2d', {willReadFrequently: true});
+  context.drawImage(image, 0, 0, size, size);
+  const {data} = context.getImageData(0, 0, size, size);
+  const buckets = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 200) continue;
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const saturation = max ? (max - min) / max : 0;
+    const weight = 0.15 + saturation * saturation * (max > 40 && max < 245 ? 1 : 0.2);
+    const key = (r >> 5) << 6 | (g >> 5) << 3 | (b >> 5);
+    const bucket = buckets.get(key) || {weight: 0, r: 0, g: 0, b: 0};
+    bucket.weight += weight;
+    bucket.r += r * weight; bucket.g += g * weight; bucket.b += b * weight;
+    buckets.set(key, bucket);
+  }
+  let best = null;
+  for (const bucket of buckets.values()) if (!best || bucket.weight > best.weight) best = bucket;
+  return best ? [best.r / best.weight, best.g / best.weight, best.b / best.weight] : null;
+}
+
+// Keeps the hue, caps lightness and saturation: the page text is light, so the tint stays dark.
+function backdropTint([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return 'hsl(' + Math.round(h) + ' ' + Math.round(Math.min(s, 0.7) * 100) + '% ' + Math.round(Math.min(l, 0.3) * 100) + '%)';
+}
+
+function clearPageTint(viewId) {
+  const view = $(viewId);
+  view.classList.remove('has-tint');
+  view.style.removeProperty('--page-tint');
+}
+
+// `current` says whether the page the picture was meant for is still the one open.
+function tintPage(viewId, url, current) {
+  if (!url) return;
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.decoding = 'async';
+  image.onload = () => {
+    if (!current()) return;
+    try {
+      const color = dominantColor(image);
+      if (!color) return;
+      const view = $(viewId);
+      view.style.setProperty('--page-tint', backdropTint(color));
+      view.classList.add('has-tint');
+    } catch (error) { /* tainted canvas: keep the default background */ }
+  };
+  image.src = url;
+}
+
+function tintAlbumPage(url, seq) {
+  tintPage('libraryAlbumView', url, () => seq === libraryView.albumSeq);
+}
+
+function tintArtistPage(url, seq) {
+  tintPage('libraryDetailView', url, () => seq === libraryView.detailSeq);
+}
+
 function setAlbumHero(target, seq) {
   const hero = document.querySelector('.album-hero-art-wrap');
   hero.querySelector('.album-hero-art')?.remove();
   const frame = buildAlbumArtwork({
     artwork_url: target.artworkUrl, owned: target.owned, artist: target.artist, name: target.name,
   }, 'album-hero-art', 500);
+  tintAlbumPage(sizedArtwork(target.artworkUrl, 500), seq);
   frame.onRemoteArtwork = data => {
     if (seq === libraryView.albumSeq && data.year && !$('albumYear').textContent) $('albumYear').textContent = data.year;
+    if (seq === libraryView.albumSeq) tintAlbumPage(data.artwork_url, seq);
   };
   hero.prepend(frame);
 }
@@ -4603,10 +4690,11 @@ const albumPage = {album: null};
 // Before the tracklist arrives an owned album shows the check, as it always did.
 function setAlbumAction(album, tracks) {
   const complete = tracks ? tracks.every(track => track.owned) : Boolean(album.owned);
-  $('albumAction').replaceChildren(buildAlbumState({
+  const state = buildAlbumState({
     owned: complete, artist: album.artist, name: album.name, year: album.year,
     release_group_mbid: album.release_group_mbid,
-  }));
+  });
+  $('albumAction').replaceChildren(complete ? state : wrapInActionGroup(state, 'Actions for ' + album.name));
 }
 
 // A track: number, title, length, and a green check when the library has the song.
@@ -4619,10 +4707,10 @@ function buildTrackRow(track, index) {
   // A song the library lacks gets its own Get, once the album it belongs to is known.
   const album = albumPage.album;
   row.append(track.owned ? buildOwnedCheck()
-    : album ? createTrackGetButton({
+    : album ? wrapInActionGroup(createTrackGetButton({
         artist: album.artist, album: album.name, title: track.title,
         track_number: track.track_number || index + 1, year: album.year,
-      })
+      }), 'Actions for ' + track.title)
     : document.createElement('span'));
   return row;
 }
@@ -4649,6 +4737,7 @@ function applyAlbumSection(section, target) {
       const wrap = document.querySelector('.album-hero-art-wrap');
       wrap.querySelector('.album-hero-art')?.remove();
       wrap.prepend(buildArtwork(sizedArtwork(album.artwork_url, 500), 'album-hero-art'));
+      tintAlbumPage(sizedArtwork(album.artwork_url, 500), libraryView.albumSeq);
     }
     $('albumYear').textContent = album.year || $('albumYear').textContent;
     $('albumOwnership').hidden = Boolean(album.owned);
