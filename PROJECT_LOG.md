@@ -1,3 +1,10 @@
+## 2026-10-30 — Action button group: PR #639 merged
+
+- **Merged:** PR [#639](https://github.com/abucalip/navi-librarian/pull/639), squash commit `a6a8cb29fd5e97a724d422b6286176cdc327427d`, from tested head `1724c41`, at the owner's direction. All five required checks passed on that head.
+- **What changed:** `createActionGroup()` in `static/app.js` builds one joined control (cloud-download Get, bookmark Save, trash Not for me; 44 px wide, 38 px tall, 1.5 px icons) used by the ranked rows, the editorial cards (centered over the artwork), the dashboard picks and New releases shelf (removed on Not for me, restored on Undo or a failed request), and the Heard list in Grab the radio (Remove takes the song out of the log; a song with no album is saved under its title). `wrapInActionGroup()` seats a lone download button in the same frame on Top songs and the album rows (artist-page missing albums, album-page lists), with a larger icon. Ranked rows keep the group as far from the right edge as from the top and bottom. Dismiss artist is gone from the UI; the server `dismiss_artist` action is unchanged. Heard-list song, artist and album names open their pages. The radio switch is 46x26 and dark grey when off. The artwork group is named "Album artwork".
+- **Verification:** focused UI contract tests (`tests/test_*ui_contract.py`, 365) pass; `node --check` clean; the markup was rendered in headless Chrome against the real CSS. CI ran the full suite on the PR head. No browser check of the running app is recorded, and the undo and restore path of the dashboard dismissals was not exercised.
+- **Limits:** the buttons are 38 px tall, under the 44 px target in `PRODUCT.md`, at the owner's request. Not published or deployed; not in v0.2.7.
+
 ## 2026-10-29 — Radio switch restyled: PR #638 merged
 
 - **Merged:** PR [#638](https://github.com/abucalip/navi-librarian/pull/638), squash commit `0c08d5d1d793fb01d5d5ecdd8ec599e3a2ebcd78`, from tested head `241b5f5bddda97d4c37d6a84aa403e6d7fd0591b`, at the owner's direction. All five required checks passed on that head.
