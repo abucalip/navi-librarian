@@ -24,6 +24,7 @@ class MetadataRoutesTests(unittest.TestCase):
     def setUp(self):
         metadata._artist_bio_cache.clear()
         metadata._artwork_cache.clear()
+        metadata._album_details_cache.clear()
         metadata._musicbrainz_year_cache.clear()
 
     def test_router_preserves_metadata_endpoint_paths_and_methods(self):

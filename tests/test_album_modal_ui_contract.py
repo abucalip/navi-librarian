@@ -98,8 +98,9 @@ class AlbumModalBehaviourGuardTests(unittest.TestCase):
         cls.js = APP_JS.read_text(encoding="utf-8")
 
     def test_get_state_machine_and_data_calls_are_unchanged(self):
-        self.assertIn("requestJSON('/api/album-details?' + query.toString())", self.js)
-        self.assertIn("requestJSON('/api/artwork?' + query.toString())", self.js)
+        self.assertIn("'/api/album-details?' + query.toString())", self.js)
+        self.assertIn("'/api/artwork?' + query.toString())", self.js)
+        self.assertIn("cachedJSONRequest(albumDetailRequests,", self.js)
         self.assertIn("get.onclick = () => searchAlbum(artist, album, metadata, get);", self.js)
 
     def test_close_returns_focus_to_the_opener_when_still_attached(self):

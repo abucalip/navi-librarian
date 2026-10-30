@@ -33,7 +33,9 @@ from app.api.library import router as library_router
 from app.api.owned_artwork import router as owned_artwork_router
 from app.api.radio import router as radio_router
 from app.api.search import router as search_router
+from app.api.http_cache import add_cache_headers
 from app.api.metadata import router as metadata_router
+from app.services import persistent_metadata
 from app.api.dashboard import router as dashboard_router
 from app.api.pages import create_pages_router
 from app.security.app_login_middleware import create_app_login_middleware
@@ -196,7 +198,12 @@ app.include_router(discovery_router)
 app.include_router(search_router)
 app.include_router(library_router)
 app.include_router(owned_artwork_router)
+app.middleware("http")(add_cache_headers)
 app.include_router(metadata_router)
+persistent_metadata.attach(
+    lambda key, ttl: get_librarian()._metadata_cache_get(key, ttl),
+    lambda key, value: get_librarian()._metadata_cache_set(key, value),
+)
 app.include_router(dashboard_router)
 app.include_router(radio_router)
 
