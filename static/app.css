@@ -294,7 +294,17 @@ p { line-height: 1.55; }
 .dashboard-tile-meta { min-width: 0; }
 .dashboard-carousel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .dashboard-carousel-heading p { margin: 0; color: var(--text-muted); font-size: var(--text-xs); }
-.dashboard-carousel-heading button { margin-left: auto; }
+.dashboard-picks-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.dashboard-picks-bar .dashboard-picks-status { margin: 0; }
+/* Square icon button in the Get button's frame: 38px (the action group's height), panel radius, strong edge. */
+.icon-square-button { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; padding: 0; background: var(--surface); border: 1px solid var(--edge-strong); border-radius: var(--radius-panel); color: var(--text-muted); cursor: pointer; }
+.icon-square-button .icon { width: 18px; height: 18px; }
+.icon-square-button:hover:not(:disabled) { background: var(--surface-raised); color: var(--accent); }
+.icon-square-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-square-button:disabled { cursor: progress; }
+.icon-square-button:disabled .icon { animation: icon-spin 1.15s linear infinite; }
+@keyframes icon-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .icon-square-button:disabled .icon { animation: none; } }
 .dashboard-picks-status { min-height: 18px; color: var(--text-muted); font-size: var(--text-xs); }
 .genre-row { min-width: 0; }
 .genre-row-heading { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
@@ -617,7 +627,7 @@ footer { margin: 36px 34px 0 calc(var(--rail-w) + 34px); padding-top: 14px; bord
   margin: 0; font: 600 var(--text-lg)/1.15 var(--display); letter-spacing: .005em; color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
 }
-.ranked-row h3 .album-year { margin-left: 6px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
+.ranked-row h3 .album-year { margin-left: 12px; color: var(--accent); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
 .row-artist { margin: 3px 0 0; color: var(--text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-meta { min-width: 0; color: var(--text-muted); font-size: var(--text-xs); }
 .row-meta-line { margin: 0; overflow-wrap: anywhere; }
@@ -817,6 +827,8 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .shelf-card .card-art { position: relative; }
 .shelf-card .get-album, .shelf-card .owned-check { position: absolute; right: var(--space-2); bottom: var(--space-2); z-index: 3; }
 .shelf-card .owned-check { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-raised); box-shadow: 0 2px 8px rgba(0,0,0,.55); }
+/* The title sits in a wrapper here, so the sibling rule that spaces a heading under the artwork (.card-art + h3) never matched. */
+.shelf-card > .dashboard-tile-meta { margin-top: 13px; }
 .shelf-card .dashboard-tile-meta .inline-link { position: relative; z-index: 3; }
 .shelf-card > .dashboard-tile-open { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
 .shelf-card > .dashboard-tile-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
@@ -1013,3 +1025,47 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .radio-switch:disabled { opacity: .6; cursor: progress; }
 .radio-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .radio-switch::before { transition: none; } }
+
+/* Album cards with an action group: the group sits at the foot of the card, below the text, and the
+   artist bio is a hover overlay on the artwork instead of a block of text in the card. */
+.card:has(> .action-group) { display: flex; flex-direction: column; }
+.card > .action-group { position: relative; z-index: 3; --group-h: 32px; align-self: center; margin-top: auto; margin-bottom: 13px; }
+.card > .action-group > button { width: 38px; }
+/* The shelf rule that pins a lone Get to the artwork corner must not apply inside the group. */
+.card > .action-group > .get-album { position: static; height: var(--group-h); }
+.card > :has(+ .action-group) { margin-bottom: 12px; }
+.card-art > .artist-bio { position: absolute; inset: 0; z-index: 2; box-sizing: border-box; margin: 0; padding: var(--space-3); min-height: 0; display: block; overflow: hidden; color: var(--text); background: rgb(20 18 17 / .82); opacity: 0; pointer-events: none; transition: opacity var(--dur-slow) var(--ease-out); }
+.card-art > .artist-bio.is-pending { display: none; }
+.card:is(:hover, :focus-within) .card-art > .artist-bio { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .card-art > .artist-bio { transition: none; } }
+
+/* Feature-slide tint (tintDashboardSlider): the cover's dominant colour, capped dark like the album and artist page backdrops, fading toward the page ground. */
+.dashboard-slider::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background-color: var(--slider-tint, transparent); background-image: linear-gradient(to bottom, transparent 0, var(--ink) 130%); transition: opacity var(--dur-slow) var(--ease-out); }
+.dashboard-slider.has-tint::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .dashboard-slider::before { transition: none; } }
+/* The feature slide covers the whole strip with its own surface, which hid the tint behind it. */
+.dashboard-slider > .card[data-slot="1"] { background: transparent; }
+
+/* Year and listen count: under the title on a card, beside it in a list row. */
+.card h3 .album-sub, .card-artist .album-sub { display: block; margin-top: 4px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.card h3 .album-sub .album-year, .card-artist .album-sub .album-year { margin-left: 0; }
+.album-listens { margin-left: 10px; color: var(--text-muted); font: 500 var(--text-xs)/1 var(--mono); white-space: nowrap; }
+.album-sub .album-year + .album-listens { margin-left: 10px; }
+.album-sub .album-listens:first-child { margin-left: 0; }
+.ranked-row h3 .album-listens { margin-left: 12px; }
+
+/* Acquisition row controls: icon buttons in the shared action-group frame (the global group rule gives 44 x 38 buttons). */
+.acq-actions .action-group > button { min-width: 0; min-height: 0; width: 44px; height: var(--group-h); padding: 0; }
+.acq-actions .action-group > button:disabled { opacity: .5; cursor: not-allowed; }
+/* The action group is centred in its cell, across and down the row, at every width. */
+.acq-row > .acq-actions { align-self: center; justify-content: center; }
+@media (max-width: 899px) { .acq-row > .acq-actions { justify-content: center; } }
+
+/* Bulk dismiss above the acquisition rows, on the right. */
+.acq-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); margin-bottom: var(--space-3); color: var(--text-muted); font-size: var(--text-sm); }
+.acq-toolbar[hidden] { display: none; }
+.acq-toolbar .action-group > button { width: 44px; height: var(--group-h); }
+
+/* Build version at the foot of the rail, bottom left. */
+.app-version { margin: auto 0 0; padding: var(--space-3) 15px 0; color: var(--text-subtle); font: 500 var(--text-xs)/1.4 var(--mono); overflow-wrap: anywhere; user-select: text; }
+@media (max-width: 620px) { .app-version { display: none; } }

@@ -484,18 +484,20 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
 
       const actions = document.createElement('div');
       actions.className = 'acq-actions';
+      // The row's controls share one icon group, the frame the Get, Save and Not for me controls use.
+      const group = document.createElement('div');
+      group.className = 'action-group';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', 'Actions for ' + (job.album || job.artist || 'acquisition'));
       if (job.status === 'downloading' && details.stall_detected_at && Number(details.fallback_count) > 0) {
-        const stallButton = document.createElement('button');
-        stallButton.type = 'button';
-        stallButton.className = 'skip-source-button';
         const secondsLeft = Math.max(0, 15 - Math.floor(Date.now() / 1000 - Number(details.stall_detected_at)));
-        stallButton.textContent = secondsLeft > 0
-          ? 'Skip to next source (' + secondsLeft + 's)'
-          : 'Switching source…';
+        const stallButton = buildAcquisitionIconButton('skip-forward', 'skip-source-button', secondsLeft > 0
+          ? 'Use next source (' + secondsLeft + 's)'
+          : 'Switching source…');
         stallButton.disabled = secondsLeft <= 0;
         stallButton.addEventListener('click', async () => {
           stallButton.disabled = true;
-          stallButton.textContent = 'Requesting source switch…';
+          setAcquisitionButtonLabel(stallButton, 'Requesting source switch…');
           try {
             const result = await sendJSON('/api/acquisitions/skip', 'POST', {
               artist: job.artist, album: job.album
@@ -506,17 +508,15 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             stallButton.disabled = false;
           }
         });
-        actions.append(stallButton);
+        group.append(stallButton);
       }
       if (job.status !== 'dismissed') {
         const retryableStatuses = new Set(['no_matches', 'queue_failed', 'settings_required', 'slskd_error']);
         if (retryableStatuses.has(job.status)) {
-          const retry = document.createElement('button');
-          retry.type = 'button';
-          retry.textContent = 'Try again';
+          const retry = buildAcquisitionIconButton('rotate-cw', 'retry-acquisition', 'Try again');
           retry.addEventListener('click', async () => {
             retry.disabled = true;
-            retry.textContent = 'Retrying…';
+            setAcquisitionButtonLabel(retry, 'Retrying…');
             try {
               await sendJSON(isSong ? '/api/acquire/track' : '/api/acquire', 'POST', isSong ? {
                 artist: job.artist, album, title: details.track_title,
@@ -530,16 +530,14 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             } catch (error) {
               status.textContent = error.message;
               retry.disabled = false;
-              retry.textContent = 'Try again';
+              setAcquisitionButtonLabel(retry, 'Try again');
             }
           });
-          actions.append(retry);
+          group.append(retry);
         }
-        const dismiss = document.createElement('button');
-        dismiss.type = 'button';
-        dismiss.textContent = 'Dismiss';
         // Repeated on every row, so the name says which acquisition it dismisses.
-        dismiss.setAttribute('aria-label', 'Dismiss ' + (job.album || job.artist || 'acquisition'));
+        const dismiss = buildAcquisitionIconButton('trash-2', 'dismiss-album',
+          'Dismiss ' + (job.album || job.artist || 'acquisition'), 'Dismiss');
         dismiss.addEventListener('click', async () => {
           // A disabled control drops focus, so remember it and hand focus to a neighbour on success
           // (or back to this control on failure) instead of leaving the keyboard user on <body>.
@@ -573,10 +571,13 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
             if (hadFocus) dismiss.focus();
           }
         });
-        actions.append(dismiss);
+        group.append(dismiss);
       }
+      if (group.childElementCount) actions.append(group);
       if (actions.childElementCount) row.append(actions);
       row.dataset.acqKey = dismissalKey;
+      row.dataset.acqArtist = job.artist || '';
+      row.dataset.acqAlbum = job.album || '';
       row.dataset.sig = signature;
       const oldArt = existing && existing.querySelector('.card-art');
       const newArt = row.querySelector('.card-art');
@@ -595,6 +596,47 @@ function renderAcquisitions(data, targetOverride = null, statusOverride = null, 
     status.textContent = error.message;
   }
 }
+
+// "Dismiss all successful imports": the bar above the rows shows only while an imported row is on the
+// page. Each record goes through the same dismiss endpoint as the per-row control; a record that fails
+// stays on the page and the status line says how many were left.
+function importedAcquisitionRows() {
+  return [...$('acquisitionCards').querySelectorAll('.acq-row[data-status="imported"]')];
+}
+
+function updateDismissImportedBar() {
+  $('acquisitionsToolbar').hidden = importedAcquisitionRows().length === 0;
+}
+
+new MutationObserver(updateDismissImportedBar).observe($('acquisitionCards'), {childList: true});
+
+$('dismissImportedAcquisitions').addEventListener('click', async () => {
+  const button = $('dismissImportedAcquisitions');
+  const status = $('acquisitionsStatus');
+  const rows = importedAcquisitionRows();
+  if (!rows.length) return;
+  button.disabled = true;
+  const stored = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-acquisitions') || '[]'));
+  let failed = 0;
+  for (const row of rows) {
+    try {
+      await sendJSON('/api/acquisitions/dismiss', 'POST', {artist: row.dataset.acqArtist, album: row.dataset.acqAlbum});
+      stored.add(row.dataset.acqKey);
+      row.remove();
+    } catch (error) {
+      failed += 1;
+    }
+  }
+  localStorage.setItem('navidrome-dismissed-acquisitions', JSON.stringify([...stored]));
+  const visibleRows = $('acquisitionCards').querySelectorAll('.acq-row').length;
+  status.textContent = failed
+    ? pluralize(failed, 'import', 'imports') + ' could not be dismissed.'
+    : visibleRows ? pluralize(visibleRows, 'acquisition record', 'acquisition records') + '.' : 'No acquisition records to show.';
+  setStatusState(status, failed ? 'error' : visibleRows ? 'progress' : 'empty');
+  button.disabled = false;
+  if (failed) button.focus();
+  else { status.tabIndex = -1; status.focus(); }
+});
 
 const ACTIVE_DOWNLOAD_STATUSES = new Set([
   'searching', 'requested', 'queued', 'downloading',
@@ -618,6 +660,23 @@ async function refreshActiveDownloadBadge() {
   } catch (_) {
     // The navigation badge is advisory; do not surface transient polling errors.
   }
+}
+
+// Icon-only control for an acquisition row. The name lives in aria-label and title, so a state
+// change (a countdown, "Retrying…") is announced and shown as a tooltip instead of resizing the button.
+function buildAcquisitionIconButton(icon, className, label, title = label) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.append(spriteIcon(icon));
+  button.setAttribute('aria-label', label);
+  button.title = title;
+  return button;
+}
+
+function setAcquisitionButtonLabel(button, label) {
+  button.setAttribute('aria-label', label);
+  button.title = label;
 }
 
 async function loadAcquisitions() {
@@ -682,7 +741,7 @@ function addTextElement(parent, tag, className, text) {
   if (String(tag).toLowerCase() === 'h3' && parent.dataset && parent.dataset.releaseYear) {
     const year = Number(parent.dataset.releaseYear);
     if (year >= 1900 && year <= 2100 && !el.querySelector('.album-year')) {
-      addTextElement(el, 'span', 'album-year', String(year));
+      addAlbumYear(el, year, parent.classList.contains('card'));
     }
   }
   return el;
@@ -889,12 +948,50 @@ function flushAlbumYears() {
   }
 }
 
+// Year and listen count beside an album name. In a card they take their own line under the title
+// (inside an .album-sub block); in a list row they stay on the title line. The year always comes
+// first, whichever of the two is added first.
+function albumSubline(title, block) {
+  if (!block) return title;
+  let sub = title.querySelector(':scope > .album-sub');
+  if (!sub) {
+    sub = document.createElement('span');
+    sub.className = 'album-sub';
+    title.append(sub);
+  }
+  return sub;
+}
+
+function addAlbumYear(title, year, block) {
+  const host = albumSubline(title, block);
+  if (title.querySelector('.album-year')) return;
+  const span = document.createElement('span');
+  span.className = 'album-year';
+  span.textContent = String(year);
+  host.insertBefore(span, host.querySelector('.album-listens'));
+}
+
+// "12.3K listens" from the Last.fm playcount, else "12.3K listeners"; nothing when neither is known.
+function listenCountLabel(item) {
+  const plays = Number(item && item.lastfm_playcount);
+  if (Number.isFinite(plays) && plays > 0) return compactCount(plays) + ' listens';
+  const listeners = Number(item && (item.lastfm_listeners || item.album_listeners));
+  if (Number.isFinite(listeners) && listeners > 0) return compactCount(listeners) + ' listeners';
+  return '';
+}
+
+function addAlbumListens(title, item, block) {
+  const label = listenCountLabel(item);
+  if (!label || title.querySelector('.album-listens')) return;
+  addTextElement(albumSubline(title, block), 'span', 'album-listens', label);
+}
+
 function ensureAlbumYearBadge(card) {
   const year = Number(card && card.dataset ? card.dataset.releaseYear : 0);
   // Deep Dive cards put the artist in the heading, so their year belongs on the album line.
   const title = card && card.querySelector(card.dataset.yearTarget === 'supporting' ? '.card-artist' : 'h3');
   if (title && year >= 1900 && year <= 2100 && !title.querySelector('.album-year')) {
-    addTextElement(title, 'span', 'album-year', String(year));
+    addAlbumYear(title, year, card.classList.contains('card'));
   }
 }
 
@@ -1230,7 +1327,8 @@ function buildDashboardTile(item) {
   const title = document.createElement('h3');
   linkAlbumName(title, artist, album, item);
   const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, tile.dataset.releaseYear);
-  if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
+  if (year !== null) addAlbumYear(title, year, true);
+  addAlbumListens(title, item, true);
   meta.append(title);
   linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), artist);
   if (artist !== 'Unknown artist') attachCardArtistBio(tile, meta, artist);
@@ -1274,6 +1372,54 @@ function syncDashboardSlider() {
   const active = tiles.find(tile => tile.dataset.slot === '1');
   $('dashboardSliderCount').textContent = active ? `${Number(active.dataset.pick) + 1} of ${tiles.length}` : '';
   $('dashboardPrev').disabled = $('dashboardNext').disabled = tiles.length < 2;
+  tintDashboardSlider(active);
+}
+
+// The strip takes its background from the feature slide's cover, the same colour the album and
+// artist pages use (dominantColor, backdropTint). A cover that cannot be read leaves the plain
+// background. Colours are kept by cover URL, so rotating back to a slide costs nothing.
+const sliderTintByUrl = new Map();
+let sliderTintTile = null;
+
+function setSliderTint(color) {
+  const slider = $('dashboardCarousel');
+  if (color) {
+    slider.style.setProperty('--slider-tint', color);
+    slider.classList.add('has-tint');
+  } else {
+    slider.classList.remove('has-tint');
+  }
+}
+
+function tintDashboardSlider(tile) {
+  sliderTintTile = tile || null;
+  const image = tile && tile.querySelector('.card-art img');
+  if (!image) { setSliderTint(null); return; }
+  const apply = () => {
+    if (sliderTintTile !== tile) return;
+    const url = image.currentSrc || image.src;
+    if (!url) return;
+    if (sliderTintByUrl.has(url)) { setSliderTint(sliderTintByUrl.get(url)); return; }
+    const copy = new Image();
+    copy.crossOrigin = 'anonymous';
+    copy.decoding = 'async';
+    copy.onload = () => {
+      let tint = null;
+      try {
+        const color = dominantColor(copy);
+        if (color) tint = backdropTint(color);
+      } catch (error) { /* tainted canvas: keep the default background */ }
+      sliderTintByUrl.set(url, tint);
+      if (sliderTintTile === tile) setSliderTint(tint);
+    };
+    copy.onerror = () => sliderTintByUrl.set(url, null);
+    copy.src = url;
+  };
+  if (image.complete && image.naturalWidth) apply();
+  else {
+    // Keep the previous colour until this cover arrives.
+    image.addEventListener('load', apply, {once: true});
+  }
 }
 
 function rotateDashboardSlider(direction) {
@@ -1396,16 +1542,20 @@ function buildShelfCard(item, withActions = false) {
   card.append(open);
 
   attachArtwork(card, item.artist, item.name, item.owned ? sizedArtwork(item.artwork_url, 300) : null);
+  let footGroup = null;
   // The New releases shelf carries the same group as the cards; an album already in the library
   // keeps the check, and the other shelves keep their single Get.
   if (withActions && !item.owned) {
     const metadata = {
       artist: item.artist, album: item.name, year: item.year || null, release_group_mbid: item.release_group_mbid || null,
     };
-    card.querySelector('.card-art').append(createActionGroup(item.artist, item.name, metadata, {
+    // As on the discovery cards, the group sits at the foot of the card and the bio overlays the
+    // artwork on hover.
+    footGroup = createActionGroup(item.artist, item.name, metadata, {
       listName: 'dashboard_shelf',
       onDismiss: () => dismissShelfCard(card, item.artist, item.name, metadata)
-    }));
+    });
+    if (item.artist) attachCardArtistBio(card, card.querySelector('.card-art'), item.artist);
   } else {
     const state = buildAlbumState(item);
     card.querySelector('.card-art').append(item.owned ? state : wrapInActionGroup(state, 'Actions for ' + item.name));
@@ -1417,10 +1567,12 @@ function buildShelfCard(item, withActions = false) {
   title.append(buildInlineLink(item.name, item.owned
     ? albumTarget({...item, key: foldKey(item.artist) + '/' + foldKey(item.name)})
     : namedAlbumTarget(item.artist, item.name, item)));
-  if (item.year) addTextElement(title, 'span', 'album-year', String(item.year));
+  if (item.year) addAlbumYear(title, item.year, true);
+  if (withActions) addAlbumListens(title, item, true);
   meta.append(title);
   if (item.artist) linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), item.artist);
   card.append(meta);
+  if (footGroup) card.append(footGroup);
   return card;
 }
 
@@ -1439,6 +1591,7 @@ function shelfItemFromDiscovery(item) {
     name: item.album || item.title || '', artist: item.artist || item.album_artist || '',
     year: firstReleaseYear(item.year, item.release_year, item.first_release_year),
     release_group_mbid: item.release_group_mbid || null, owned: item.owned === true,
+    lastfm_listeners: item.lastfm_listeners || null, lastfm_playcount: item.lastfm_playcount || null,
   };
 }
 
@@ -1702,9 +1855,10 @@ function buildRecommendationRow(item, rank, options = {}) {
   // The release-date column already shows the year, so a release-date row carries no year badge.
   if (!options.releaseDate) {
     const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, row.dataset.releaseYear);
-    if (year !== null) addTextElement(title, 'span', 'album-year', String(year));
+    if (year !== null) addAlbumYear(title, year, false);
     ensureAlbumYearBadge(row);
   }
+  addAlbumListens(title, item, false);
 
   const meta = document.createElement('div');
   meta.className = 'row-meta';
@@ -1869,8 +2023,7 @@ function buildPersonalRow(item, index) {
     meta: [
       categoryLine(item),
       item.discovery_category === 'unclassified' || item.genre_metadata_available === false
-        ? 'Low confidence: genre data unavailable' : '',
-      item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
+        ? 'Low confidence: genre data unavailable' : ''
     ],
     listName: 'personal',
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'personal', row)
@@ -1891,8 +2044,7 @@ function buildClassicsRow(item, index) {
     meta: [
       categoryLabel(item.discovery_type || item.discovery_category || ''),
       item.anchor_artist ? 'Similar to: ' + item.anchor_artist : '',
-      hasBio ? '' : item.reason,
-      item.lastfm_playcount ? 'Last.fm playcount: ' + Number(item.lastfm_playcount).toLocaleString() : ''
+      hasBio ? '' : item.reason
     ],
     listName: 'classics',
     onDismiss: (artist, album, metadata, row) => sendFeedback('dismiss', artist, album, metadata, 'classics', row)
@@ -1902,6 +2054,39 @@ function buildClassicsRow(item, index) {
 // Lazy artist bio for a card (Deep Dives, Discover cards, dashboard tiles). One request per artist
 // (cached in artistBioRequests), made when the card nears the viewport; the paragraph stays hidden
 // unless the API returns a bio. Text is set with textContent.
+// Shows as much of the bio as fits the artwork square, ending at the last full stop that fits. When
+// not even the first sentence fits, it is cut at a word with an ellipsis. Measured when the card is
+// hovered or focused, because the box has no size until the card is laid out; the result is kept
+// per box size, so a resize is re-fitted on the next hover.
+function fitBioToArt(bio) {
+  const full = bio.dataset.fullBio;
+  const key = bio.clientWidth + 'x' + bio.clientHeight;
+  if (!full || !bio.clientHeight || bio.dataset.fitKey === key) return;
+  bio.dataset.fitKey = key;
+  const fits = text => { bio.textContent = text; return bio.scrollHeight <= bio.clientHeight; };
+  if (fits(full)) return;
+  const ends = [];
+  const sentenceEnd = /[.!?]["')\]]*(?=\s|$)/g;
+  for (let match = sentenceEnd.exec(full); match; match = sentenceEnd.exec(full)) {
+    if (!/\b(?:Mr|Mrs|Ms|Dr|St|Jr|Sr|vs|No)$/.test(full.slice(0, match.index))) ends.push(match.index + match[0].length);
+  }
+  const search = (candidates, build) => {
+    let low = 0, high = candidates.length - 1, best = -1;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (fits(build(candidates[mid]))) { best = mid; low = mid + 1; } else high = mid - 1;
+    }
+    return best;
+  };
+  const sentence = search(ends, end => full.slice(0, end));
+  if (sentence >= 0) { bio.textContent = full.slice(0, ends[sentence]); return; }
+  const words = [];
+  const wordEnd = /\S+/g;
+  for (let match = wordEnd.exec(full); match; match = wordEnd.exec(full)) words.push(match.index + match[0].length);
+  const word = search(words, end => full.slice(0, end).trimEnd() + '…');
+  bio.textContent = word >= 0 ? full.slice(0, words[word]).trimEnd() + '…' : full;
+}
+
 function attachCardArtistBio(card, container, artist) {
   // The paragraph keeps its two-line space while the bio loads, so the card does not jump.
   const bio = addTextElement(container, 'p', 'artist-bio is-pending', '');
@@ -1916,6 +2101,13 @@ function attachCardArtistBio(card, container, artist) {
         // The card clamps the bio; the full text stays available on hover.
         bio.title = result.bio;
         bio.classList.remove('is-pending');
+        // A bio overlaid on the artwork is cut to the sentence that best fills the square.
+        if (container.classList.contains('card-art')) {
+          bio.dataset.fullBio = result.bio;
+          const fit = () => fitBioToArt(bio);
+          card.addEventListener('pointerenter', fit);
+          card.addEventListener('focusin', fit);
+        }
       })
       .catch(() => {});
   };
@@ -2343,7 +2535,8 @@ async function loadDiscovery(name, options = {}) {
       if (isDeepDive) linkArtistName(title, artist);
       else linkAlbumName(title, artist, album, item);
       const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
-      if (year !== null && !isDeepDive) addTextElement(title, 'span', 'album-year', String(year));
+      if (year !== null && !isDeepDive) addAlbumYear(title, year, true);
+      if (!isDeepDive) addAlbumListens(title, item, true);
       card.append(title);
       // Mirrors the swap above: with the artist in the heading, the supporting line carries
       // the album so no information is lost or duplicated.
@@ -2352,23 +2545,21 @@ async function loadDiscovery(name, options = {}) {
       else linkArtistName(supportingLine, artist);
       if (isDeepDive) card.dataset.yearTarget = 'supporting';
       // Keep release-year metadata with the album when the artist is the primary heading.
-      if (year !== null && isDeepDive) addTextElement(supportingLine, 'span', 'album-year', String(year));
+      if (year !== null && isDeepDive) addAlbumYear(supportingLine, year, true);
+      if (isDeepDive) addAlbumListens(supportingLine, item, true);
       ensureAlbumYearBadge(card);
 
       const needsBio = isDeepDive ||
         /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
-      if (needsBio) {
-        attachCardArtistBio(card, card, artist);
-      }
+      // The bio overlays the artwork on hover, so it takes no room in the card's text.
+      attachCardArtistBio(card, card.querySelector('.card-art'), artist);
 
       if (item.reason && !needsBio) addTextElement(card, 'p', 'card-meta', item.reason);
       if (item.anchor_artist) addTextElement(card, 'p', 'card-meta',
         `Similar to: ${item.anchor_artist}`);
-      if (item.lastfm_playcount) addTextElement(card, 'p', 'card-meta',
-        `Last.fm playcount: ${Number(item.lastfm_playcount).toLocaleString()}`);
 
-      // The group sits on the artwork, bottom right, so the card needs no action row.
-      card.querySelector('.card-art').append(createActionGroup(artist, album, item, {
+      // The group sits at the foot of the card, below the last line of text.
+      card.append(createActionGroup(artist, album, item, {
         listName: name,
         onDismiss: () => sendFeedback('dismiss', artist, album, item, name, card)
       }));

@@ -79,7 +79,8 @@ class PersonalDiscoveriesRowContractTests(unittest.TestCase):
         body = self._function_body("function buildPersonalRow(", "// Discover music metadata lines.")
         self.assertIn("item.discovery_category", body)
         self.assertIn("item.reason", body)
-        self.assertIn("item.lastfm_playcount", body)
+        # The listen count moved to the title line (addAlbumListens in buildRecommendationRow).
+        self.assertNotIn("lastfm_playcount", body)
         self.assertNotIn("discovery_score", body, "the score is not shown as a rank or a metadata line here")
 
     def test_loading_shows_skeleton_rows_and_failure_clears_them(self):

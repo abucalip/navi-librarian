@@ -105,6 +105,7 @@
       <button type="button" data-page="classics" title="Add to your collection">Add to your collection</button>
       <button type="button" data-page="artistDeepDive" title="Artist Deep Dives">Artist Deep Dives</button>
     </div>
+    <p class="app-version" title="Version">__APP_VERSION__</p>
   </nav>
 
   <section id="dashboard" class="page" aria-labelledby="dashboardHeading">
@@ -113,9 +114,11 @@
         <div>
           <h2 id="dashboardHeading">Recommended</h2>
         </div>
-        <button id="shuffleDashboard">Shuffle picks ↻</button>
       </div>
-      <p id="dashboardPicksStatus" class="dashboard-picks-status status-line" aria-live="polite">Finding something unexpected…</p>
+      <div class="dashboard-picks-bar">
+        <p id="dashboardPicksStatus" class="dashboard-picks-status status-line" aria-live="polite">Finding something unexpected…</p>
+        <button type="button" id="shuffleDashboard" class="icon-square-button" title="Shuffle picks" aria-label="Shuffle picks"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
+      </div>
       <div class="dashboard-slider-box"><div class="dashboard-slider-wrap">
         <div id="dashboardCarousel" class="dashboard-slider" role="group" aria-roledescription="carousel" aria-label="Random album recommendations" tabindex="0"></div>
         <div class="dashboard-slider-nav">
@@ -467,10 +470,16 @@
 <section id="acquisitions" class="page hidden" aria-labelledby="acquisitionsHeading">
   <div class="panel">
     <h2 id="acquisitionsHeading">Acquisition status</h2>
-    <p class="muted">Persistent download and import status, including failures. Active jobs are resumed when this page checks in.</p>
+    <p class="muted">Download and import status.</p>
     <p id="acquisitionsStatus" class="status-line" aria-live="polite"></p>
+    <div id="acquisitionsToolbar" class="acq-toolbar" hidden>
+      <span id="dismissImportedLabel">Dismiss all successful imports</span>
+      <div class="action-group" role="group" aria-labelledby="dismissImportedLabel">
+        <button type="button" id="dismissImportedAcquisitions" class="dismiss-album" title="Dismiss all successful imports" aria-label="Dismiss all successful imports"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#trash-2"></use></svg></button>
+      </div>
+    </div>
     <div id="acquisitionCards" class="acq-list"></div>
-    <button id="refreshAcquisitions">Refresh status</button>
+    <button type="button" id="refreshAcquisitions" class="icon-square-button" title="Refresh status" aria-label="Refresh status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="/static/icons.svg#rotate-cw"></use></svg></button>
   </div>
 </section>
 

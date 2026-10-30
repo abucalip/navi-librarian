@@ -48,19 +48,49 @@ class LastFmClient:
         self._key_normalizer = key_normalizer or music_key
         self._items_normalizer = items_normalizer or _default_items
 
+    @staticmethod
+    def _call_cache_key(method: str, params: Mapping[str, Any]) -> str:
+        cache_identity = json.dumps(
+            {"method": method, "params": dict(params)},
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        return "discovery:lastfm:" + hashlib.sha256(
+            cache_identity.encode("utf-8")
+        ).hexdigest()
+
+    def cached_album_popularity(
+        self, artist: str, album: str, top_albums_limit: int = 8
+    ) -> dict[str, int] | None:
+        """Return Last.fm listeners/playcount for an album from the cache only; never calls the API.
+
+        Looks in the album.getInfo cache first, then in the cached artist top-albums list that
+        the Classics and Deep Dives builds already fill. None when neither holds the album.
+        """
+        if not artist or not album:
+            return None
+        week = 30 * 24 * 60 * 60
+        cached = self._cache_get(
+            "lastfm:album-info-v2:" + self._key_normalizer(artist) + ":" + self._key_normalizer(album), week
+        )
+        if isinstance(cached, dict) and cached.get("listeners") is not None:
+            return {"listeners": int(cached["listeners"]), "playcount": int(cached.get("playcount") or 0)}
+        payload = self._cache_get(
+            self._call_cache_key("artist.getTopAlbums", {"artist": artist, "limit": top_albums_limit}), week
+        )
+        if isinstance(payload, dict):
+            wanted = self._key_normalizer(album)
+            for record in self._items_normalizer((payload.get("topalbums") or {}).get("album")):
+                if isinstance(record, dict) and self._key_normalizer(record.get("name") or "") == wanted:
+                    return {"listeners": int(record.get("listeners") or 0), "playcount": int(record.get("playcount") or 0)}
+        return None
+
     def cached_call(self, method: str, ttl_seconds: int = 30 * 24 * 60 * 60, **params: Any) -> Any:
         """Return cached provider data or fetch it with the existing pacing policy."""
         api_key = str(self._settings_reader().get("lastfm_api_key") or "").strip()
         if not api_key:
             return None
-        cache_identity = json.dumps(
-            {"method": method, "params": params},
-            sort_keys=True,
-            ensure_ascii=False,
-        )
-        cache_key = "discovery:lastfm:" + hashlib.sha256(
-            cache_identity.encode("utf-8")
-        ).hexdigest()
+        cache_key = self._call_cache_key(method, params)
         cached = self._cache_get(cache_key, ttl_seconds)
         if cached is not None:
             return cached

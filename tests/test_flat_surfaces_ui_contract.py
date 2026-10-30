@@ -31,7 +31,10 @@ class FlatSurfaceUIContractTests(unittest.TestCase):
         # The owner asked for the album page backdrop to fade from the cover's colour to the page ground (album and artist pages).
         backdrop = rule_body(self.css, ".tint-backdrop::before")
         self.assertEqual(backdrop.count("linear-gradient"), 1)
-        self.assertEqual(self.css.count("gradient"), 2)
+        # The owner asked for the dashboard carousel to take the same cover-colour fade as those pages.
+        slider = rule_body(self.css, ".dashboard-slider::before")
+        self.assertEqual(slider.count("linear-gradient"), 1)
+        self.assertEqual(self.css.count("gradient"), 3)
 
     def test_artwork_placeholder_is_a_flat_raised_surface(self):
         self.assertIn("background: var(--surface-raised);", rule_body(self.css, ".card-art"))

@@ -10,9 +10,10 @@ from time import monotonic
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.dependencies import get_librarian
 from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
@@ -48,7 +49,40 @@ _EXTERNAL_HTTP = httpx.Client(
 _ARTIST_BIO_CACHE_TTL = 24 * 60 * 60
 _artist_bio_cache = {}
 
+def _navidrome_artist_bio(librarian, name):
+    """The library's own biography for an artist, or "" when Navidrome has none.
+
+    Read-only and local: the artist id comes from the cached library snapshot and Navidrome
+    answers from its own agent cache, so no public-web request is made. Any failure is a miss.
+    """
+    try:
+        from app.api.search import clean_navidrome_bio
+
+        wanted = librarian._music_key(name)
+        match = next((a for a in librarian._discovery_library_snapshot()["artists"]
+                      if a.get("id") and librarian._music_key(a.get("name", "")) == wanted), None)
+        if match is None:
+            return ""
+        info = librarian.api_call("getArtistInfo2", id=match["id"]).get("artistInfo2", {})
+        return clean_navidrome_bio(info.get("biography")) or ""
+    except Exception:
+        return ""
+
+
 @router.get("/api/artist-bio")
+def artist_bio_route(artist: str, librarian=Depends(get_librarian)):
+    """Cache first, then Navidrome's biography for a library artist, then Wikipedia."""
+    name = str(artist or "").strip()
+    if name and len(name) <= 180:
+        key = name.casefold()
+        cached = _artist_bio_cache.get(key)
+        if not (cached and monotonic() - cached["time"] < _ARTIST_BIO_CACHE_TTL):
+            bio = _navidrome_artist_bio(librarian, name)
+            if bio:
+                _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+    return artist_bio(artist)
+
+
 def artist_bio(artist: str):
     name = str(artist or "").strip()
     if not name or len(name) > 180:
@@ -126,15 +160,56 @@ class AlbumYearsRequest(BaseModel):
     items: list[AlbumYearItem] = Field(max_length=60)
 
 
+# A found release year does not change, so it is kept in the app's persistent metadata cache and
+# survives restarts (the in-memory catalog cache does not). Only found years are stored: an album
+# with no match may be matched later. `librarian` is the route dependency; called without it
+# (direct calls, tests) the store is simply skipped.
+_YEAR_STORE_TTL = 365 * 24 * 60 * 60
+
+
+def _year_store_key(artist, album):
+    from integrations.musicbrainz.album_year import _norm
+
+    return "album-year:v1:" + _norm(artist) + ":" + _norm(album)
+
+
+def _stored_year(librarian, artist, album):
+    reader = getattr(librarian, "_metadata_cache_get", None)
+    if reader is None:
+        return None
+    try:
+        value = reader(_year_store_key(artist, album), _YEAR_STORE_TTL)
+        return int(value) if value else None
+    except Exception:
+        return None
+
+
+def _store_year(librarian, artist, album, year):
+    writer = getattr(librarian, "_metadata_cache_set", None)
+    if writer is None or not year:
+        return
+    try:
+        writer(_year_store_key(artist, album), int(year))
+    except Exception:
+        pass
+
+
 @router.post("/api/album-years")
-def album_years(body: AlbumYearsRequest):
+def album_years(body: AlbumYearsRequest, librarian=Depends(get_librarian)):
     """Years for many albums with few catalog requests (MusicBrainz exact matches only).
 
     Each result is {"artist", "album", "year"}; an album with no exact match has year null, and an
     album whose catalog request failed is left out so the page can ask again later.
     """
     pairs = [(item.artist.strip(), item.album.strip()) for item in body.items]
-    years = _lookup_musicbrainz_album_years(pairs)
+    stored = {pair: _stored_year(librarian, *pair) for pair in pairs}
+    years = {pair: year for pair, year in stored.items() if year}
+    missing = [pair for pair in pairs if pair not in years]
+    if missing:
+        found = _lookup_musicbrainz_album_years(missing)
+        for pair, year in found.items():
+            _store_year(librarian, pair[0], pair[1], year)
+        years.update(found)
     return {"years": [
         {"artist": artist, "album": album, "year": year}
         for (artist, album), year in years.items()
@@ -142,12 +217,16 @@ def album_years(body: AlbumYearsRequest):
 
 
 @router.get("/api/album-year")
-def album_year(artist: str = "", album: str = ""):
+def album_year(artist: str = "", album: str = "", librarian=Depends(get_librarian)):
     """Return a year only when an authoritative catalog has an exact album match."""
     artist = str(artist or "").strip()[:180]
     album = str(album or "").strip()[:180]
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
+
+    stored = _stored_year(librarian, artist, album)
+    if stored:
+        return {"artist": artist, "album": album, "year": stored, "source": "cache"}
 
     year = _musicbrainz_album_year(artist, album)
     source = "MusicBrainz" if year else None
@@ -168,6 +247,7 @@ def album_year(artist: str = "", album: str = ""):
         except Exception:
             pass
 
+    _store_year(librarian, artist, album, year)
     return {"artist": artist, "album": album, "year": year, "source": source}
 
 

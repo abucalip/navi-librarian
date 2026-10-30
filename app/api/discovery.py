@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_librarian
 from app.api.utils import parse_result
 from discovery import lens_service
+from discovery.new_releases import enrich_new_release_listeners
 from discovery.taste_families import deep_dive_row
 
 router = APIRouter()
@@ -72,6 +73,13 @@ def discovery_list(list_name: str, count: int = 30, librarian=Depends(get_librar
             for item in data.get(key) or []:
                 if isinstance(item, dict):
                     item.update(deep_dive_row(item))
+    if list_name == "new_releases" and isinstance(data, dict):
+        # Last.fm audience from the existing Last.fm cache only: no provider request is made, and an
+        # album the cache does not hold simply carries no count.
+        lookup = getattr(getattr(librarian, "_lastfm_client", None), "cached_album_popularity", None)
+        if lookup is not None:
+            for key in ("items", "recommendations"):
+                enrich_new_release_listeners([i for i in data.get(key) or [] if isinstance(i, dict)], lookup)
     return data
 
 
