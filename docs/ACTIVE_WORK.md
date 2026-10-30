@@ -93,8 +93,8 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 
 - Merged in PR [#637](https://github.com/abucalip/navi-librarian/pull/637) (squash `3edd12c`, RADIO-01). Stations whose address is a playlist (`.pls`, `.m3u`), stations that send no ICY titles, and servers that answer with the non-HTTP `ICY 200 OK` status line are not logged. A relayed station stops playing while the app is down; switching it off restores its address.
 - A song with no `Artist - Title` form, or with no exact MusicBrainz match, cannot be downloaded.
-- A station only works from the address it was switched on at: a phone away from home needs an app address it can reach (switch the station on from a browser opened at that address).
-- Not done: browser checklist, live slskd download of a radio song, a phone client test. Possible later work, not approved: a settings field for the app's public address.
+- A relayed station uses the app address saved on the Radio page (for example the Tailscale address); with none saved it uses the address of the browser tab it was switched on from. Saving a new address moves stations that are already relayed. Away from home, the phone must reach that address (Tailscale connected).
+- Not done: browser checklist, live slskd download of a radio song, a phone client test away from home.
 
 ## 3. Recommendation engine — gated
 

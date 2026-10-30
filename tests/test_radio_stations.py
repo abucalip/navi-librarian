@@ -72,6 +72,24 @@ class StationTests(unittest.TestCase):
         with self.assertRaises(stations.StationError):
             stations.enable(self.api, self.store, "8", "https://librarian.example")
 
+    def test_saved_app_address_beats_the_browser_address_and_moves_relayed_stations(self):
+        stations.enable(self.api, self.store, "7", "http://192.168.1.5:8000")
+        token = self.store.get_station("7")["token"]
+        result = stations.set_app_url(self.api, self.store, "http://box.tailnet.ts.net:8000/")
+        self.assertEqual(result, {"app_url": "http://box.tailnet.ts.net:8000", "moved": 1})
+        self.assertEqual(self.api.rows["7"]["streamUrl"], f"http://box.tailnet.ts.net:8000/radio/stream/{token}")
+        stations.disable(self.api, self.store, "7")
+        stations.enable(self.api, self.store, "7", "http://192.168.1.5:8000")
+        self.assertTrue(self.api.rows["7"]["streamUrl"].startswith("http://box.tailnet.ts.net:8000/radio/stream/"))
+
+    def test_blank_app_address_falls_back_and_bad_ones_are_refused(self):
+        stations.set_app_url(self.api, self.store, "http://box:8000")
+        stations.set_app_url(self.api, self.store, "")
+        stations.enable(self.api, self.store, "7", "http://192.168.1.5:8000")
+        self.assertTrue(self.api.rows["7"]["streamUrl"].startswith("http://192.168.1.5:8000/"))
+        with self.assertRaises(stations.StationError):
+            stations.set_app_url(self.api, self.store, "ftp://x")
+
     def test_disable_of_a_never_enabled_station_changes_nothing(self):
         stations.disable(self.api, self.store, "7")
         self.assertFalse([c for c in self.api.calls if c[0] == "updateInternetRadioStation"])

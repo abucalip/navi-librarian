@@ -480,6 +480,12 @@
     <h2 id="radioHeading">Grab the radio</h2>
     <p class="muted">Turn on a Navidrome radio station and this app relays its stream, so the songs you actually listen to are logged here. Songs you skip past are not. Get downloads a logged song.</p>
     <p id="radioStatus" class="status-line" aria-live="polite"></p>
+    <h3 id="radioAddressHeading">App address</h3>
+    <form id="radioAddressForm" class="radio-address">
+      <label for="radioAppUrl" class="muted">The address your Navidrome apps use to reach this app, for example its Tailscale address. Leave blank to use the address of this browser tab.</label>
+      <input id="radioAppUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://my-server.tailnet.ts.net:8000">
+      <button id="saveRadioAddress" type="submit">Save</button>
+    </form>
     <h3 id="radioStationsHeading">Stations</h3>
     <div id="radioStations" class="radio-list" aria-labelledby="radioStationsHeading"></div>
     <h3 id="radioPlaysHeading">Heard</h3>

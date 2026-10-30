@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS radio_plays (
     last_heard_at REAL NOT NULL,
     grabbed INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS radio_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS radio_plays_heard ON radio_plays (heard_at DESC);
 """
 
@@ -72,6 +76,26 @@ class RadioStore:
     def disable_station(self, station_id: str) -> None:
         with self._connect() as db:
             db.execute("UPDATE radio_stations SET enabled = 0 WHERE station_id = ?", (station_id,))
+
+    def enabled_stations(self) -> list[dict[str, Any]]:
+        with self._connect() as db:
+            rows = db.execute("SELECT * FROM radio_stations WHERE enabled = 1").fetchall()
+        return [dict(row) for row in rows]
+
+    # ---- settings ----------------------------------------------------------------------
+
+    def get_setting(self, key: str, default: str = "") -> str:
+        with self._connect() as db:
+            row = db.execute("SELECT value FROM radio_settings WHERE key = ?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def set_setting(self, key: str, value: str) -> None:
+        with self._connect() as db:
+            if value:
+                db.execute("INSERT INTO radio_settings (key, value) VALUES (?, ?) "
+                           "ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, value))
+            else:
+                db.execute("DELETE FROM radio_settings WHERE key = ?", (key,))
 
     # ---- plays -------------------------------------------------------------------------
 
