@@ -7,10 +7,54 @@ from discovery.search.query import (
     decode_cursor,
     encode_cursor,
     find_artist,
+    library_albums_page,
     library_page,
     owned_albums,
     search_owned,
 )
+
+
+class LibraryAlbumsPageTests(unittest.TestCase):
+    def data(self):
+        albums = [
+            {"id": "a1", "artist": "Radiohead", "artist_id": "r", "album": "Kid A", "year": 2000, "song_count": 10, "created": "2024-03-01T10:00:00Z"},
+            {"id": "a2", "artist": "Radiohead", "artist_id": "r", "album": "Pablo Honey", "year": 1993, "song_count": 12, "created": "2025-01-01T10:00:00Z"},
+            {"id": "a3", "artist": "Ash", "artist_id": "s", "album": "1977", "year": None, "song_count": 13, "created": None},
+        ]
+        artists = [{"id": "r", "name": "Radiohead", "album_count": 2}, {"id": "s", "name": "Ash", "album_count": 1}]
+        return build_owned_data(generation="g", built_at=0, artists=artists, albums=albums, songs=[])
+
+    def names(self, **kwargs):
+        args = {"query": "", "sort": "name", "offset": 0, "limit": 60}
+        args.update(kwargs)
+        return [a["name"] for a in library_albums_page(self.data(), **args)[0]]
+
+    def test_sorts_and_default_directions(self):
+        self.assertEqual(self.names(sort="name"), ["1977", "Kid A", "Pablo Honey"])
+        self.assertEqual(self.names(sort="artist"), ["1977", "Kid A", "Pablo Honey"])
+        self.assertEqual(self.names(sort="year"), ["Kid A", "Pablo Honey", "1977"])
+        self.assertEqual(self.names(sort="added"), ["Pablo Honey", "Kid A", "1977"])
+
+    def test_missing_values_stay_last_in_either_direction(self):
+        self.assertEqual(self.names(sort="year", order="asc"), ["Pablo Honey", "Kid A", "1977"])
+        self.assertEqual(self.names(sort="added", order="asc"), ["Kid A", "Pablo Honey", "1977"])
+
+    def test_query_matches_album_or_artist_name(self):
+        self.assertEqual(self.names(query="radio"), ["Kid A", "Pablo Honey"])
+        self.assertEqual(self.names(query="1977"), ["1977"])
+
+    def test_artist_added_is_the_newest_album(self):
+        items, _, _ = library_page(self.data(), query="", sort="added", offset=0, limit=60)
+        self.assertEqual([a["name"] for a in items], ["Radiohead", "Ash"])
+        self.assertEqual(items[0]["added"], "2025-01-01T10:00:00Z")
+
+    def test_cursor_is_bound_to_the_order(self):
+        from discovery.search.query import CursorError, decode_cursor, encode_cursor
+
+        cursor = encode_cursor(offset=2, query="", sort="year", order="asc")
+        self.assertEqual(decode_cursor(cursor, query="", sort="year", order="asc"), 2)
+        with self.assertRaises(CursorError):
+            decode_cursor(cursor, query="", sort="year", order="desc")
 
 
 def sample_data():

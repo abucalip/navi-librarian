@@ -36,7 +36,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
     def test_copy_does_not_promise_albums_or_songs_that_do_not_open(self):
         self.assertIn('placeholder="Search your library or discover new music"', self.html)
         self.assertNotIn("albums and songs", self.html)
-        self.assertIn("Select an artist to see their bio, albums and similar artists.", self.html)
+        self.assertIn("Your Navidrome library by artist or album. Select one to see its page.", self.html)
 
     def test_header_tagline_rules_do_not_reach_the_search_dropdown_paragraphs(self):
         # The dropdown's status and group headings are paragraphs inside the header, so the
@@ -53,7 +53,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
     def test_library_is_reachable_from_the_header_menu_and_has_labelled_controls(self):
         self.assertIn('<button type="button" data-page="library">Library</button>', self.html)
         self.assertIn('<section id="library" class="page hidden" aria-labelledby="libraryHeading">', self.html)
-        self.assertIn('<label for="libraryFilter">Filter artists</label>', self.html)
+        self.assertIn('<label for="libraryFilter">Search your library</label>', self.html)
         self.assertIn('<label for="librarySort">Sort by</label>', self.html)
         self.assertIn('<h2 id="artistDetailHeading" tabindex="-1"></h2>', self.html)
 
@@ -67,7 +67,7 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("source.addEventListener('done'", self.new_js)
         self.assertIn("source.addEventListener('error'", self.new_js)
         self.assertIn("const message = event.data", self.new_js)
-        self.assertIn("const isCurrent = () => seq === globalSearchSeq;", self.new_js)
+        self.assertIn("const isCurrent = () => seq === surface.seq;", self.new_js)
         self.assertIn("const finish = () => {", self.new_js)
 
     def test_artist_results_show_their_genre_after_the_name_when_there_is_one(self):
@@ -75,17 +75,17 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("addTextElement(text, 'span', 'search-item-name', searchItemName(item));", self.new_js)
 
     def test_results_stream_into_their_groups_with_a_running_count(self):
-        self.assertIn("searchGroupList(item.type).append(buildSearchItem(item));", self.new_js)
+        self.assertIn("searchGroupList(surface, item.type).append(buildSearchItem(item, surface));", self.new_js)
         self.assertIn("'Searching… ' + pluralize(shown + external, 'match', 'matches') + ' so far'", self.new_js)
-        self.assertIn("setSearchStatusLive(false);", self.new_js)
-        self.assertIn("setSearchStatusLive(true);", self.new_js)
+        self.assertIn("surface.setLive(false);", self.new_js)
+        self.assertIn("surface.setLive(true);", self.new_js)
         self.assertIn("if (!SEARCH_GROUPS.some(([type]) => type === item.type)) return;", self.new_js)
 
     def test_previous_results_are_cleared_only_when_the_new_stream_responds(self):
         capabilities_block = self.new_js[self.new_js.index("source.addEventListener('capabilities'"):]
         capabilities_block = capabilities_block[:capabilities_block.index("});")]
         self.assertIn("groupsEl.replaceChildren();", capabilities_block)
-        start_block = self.new_js[self.new_js.index("function startGlobalSearch("):self.new_js.index("source.addEventListener('capabilities'")]
+        start_block = self.new_js[self.new_js.index("function startSearch("):self.new_js.index("source.addEventListener('capabilities'")]
         self.assertNotIn("replaceChildren", start_block)
 
     def test_results_not_in_the_library_have_their_own_group_and_are_not_counted_as_owned(self):
@@ -288,9 +288,58 @@ class LibrarySearchUIContractTests(unittest.TestCase):
         self.assertIn("loadLibrary({reset: libraryView.resetOnRetry})", self.new_js)
 
     def test_styles_hide_panels_that_use_the_hidden_attribute_and_stack_search_on_phones(self):
-        self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMoreGroup[hidden] { display: none; }", self.css)
+        self.assertIn(".search-results[hidden], #libraryDetailView[hidden], #libraryListView[hidden], #libraryAlbumView[hidden], #libraryGenreView[hidden], #libraryMoreGroup[hidden], #librarySearchResults[hidden], #libraryBrowse[hidden], #libraryFilterClear[hidden], .library-size[hidden] { display: none; }", self.css)
         self.assertIn("header .global-search { order: 3; flex: 1 0 100%; margin-left: 0; }", self.css)
         self.assertIn("main { margin: 136px 14px 0;", self.css)
+
+    # --- Library page: full search, albums, sorting and display types ---
+
+    def test_library_search_is_the_top_bar_search_on_its_own_surface(self):
+        self.assertIn("startSearch(librarySearch, $('libraryFilter').value)", self.new_js)
+        self.assertIn("const librarySearch = makeSearchSurface({", self.new_js)
+        self.assertIn("startSearch(globalSearch, rawQuery, closeGlobalSearch);", self.new_js)
+        # A query replaces the browse list.
+        self.assertIn("$('libraryBrowse').hidden = open;", self.new_js)
+        # Owned music only: the library page asks for scope=owned and has no outside group.
+        self.assertIn("if (surface === librarySearch) params.scope = 'owned';", self.new_js)
+        self.assertNotIn("librarySearchExternal", self.html)
+        self.assertIn("openFromLibrarySearch(content, target)", self.new_js)
+
+    def test_library_search_has_a_clear_button_shown_only_when_the_field_has_text(self):
+        self.assertIn('id="libraryFilterClear"', self.html)
+        self.assertIn('aria-label="Clear search"', self.html)
+        self.assertIn("$('libraryFilterClear').hidden = !has;", self.new_js)
+        self.assertIn("$('libraryFilter').focus();", self.new_js)
+
+    def test_library_browses_artists_and_albums_from_their_own_routes(self):
+        self.assertIn("url: '/api/library/artists'", self.new_js)
+        self.assertIn("url: '/api/library/albums'", self.new_js)
+        self.assertIn('data-library-tab="artists"', self.html)
+        self.assertIn('data-library-tab="albums"', self.html)
+        self.assertIn("libraryOpen(albums ? albumTarget(item) : artistTarget(item));", self.new_js)
+
+    def test_library_sorts_include_date_added_and_album_year_with_a_direction_button(self):
+        for sort in ("['added', 'Date added']", "['year', 'Album year']", "['album_count', 'Album count']"):
+            self.assertIn(sort, self.new_js)
+        self.assertIn("order: libraryOrder()", self.new_js)
+        self.assertIn('id="libraryOrder"', self.html)
+
+    def test_library_has_list_and_grid_display_and_a_tile_size_slider_shown_only_in_grid(self):
+        self.assertIn('data-library-display="list"', self.html)
+        self.assertIn('data-library-display="grid"', self.html)
+        self.assertIn('<input id="libraryTileSize" type="range"', self.html)
+        self.assertIn("$('libraryTileSizeControl').hidden = !grid;", self.new_js)
+        # Dragging resizes the tiles already on screen; it does not reload the list.
+        slider = self.new_js[self.new_js.index("$('libraryTileSize').addEventListener('input'"):]
+        slider = slider[:slider.index("});")]
+        self.assertNotIn("loadLibrary", slider)
+        self.assertIn("repeat(auto-fill, minmax(var(--tile-size, 180px), 1fr))", self.css)
+
+    def test_library_view_preferences_survive_unavailable_storage(self):
+        self.assertIn("localStorage.getItem(LIBRARY_PREFS_KEY)", self.new_js)
+        prefs = self.new_js[self.new_js.index("function loadLibraryPrefs()"):self.new_js.index("function syncLibraryControls()")]
+        self.assertEqual(prefs.count("try {"), 2)
+        self.assertEqual(prefs.count("catch (error)"), 2)
 
 
 if __name__ == "__main__":

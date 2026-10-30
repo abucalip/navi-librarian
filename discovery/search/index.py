@@ -146,6 +146,7 @@ def _album_entry(album: Mapping[str, Any], artist_keys: Mapping[str, str]) -> di
         "song_count": int(album.get("song_count") or 0),
         "release_mbid": str(album.get("release_mbid") or "").strip() or None,
         "release_group_mbid": None,
+        "added": str(album.get("created") or "").strip() or None,
     }
 
 
@@ -210,6 +211,9 @@ def build_owned_data(
         plays_by_artist[song["artist_id"]] = plays_by_artist.get(song["artist_id"], 0) + song["plays"]
     for artist in artist_entries:
         artist["genre"] = _artist_genre(by_artist.get(artist["id"], ()))
+        # The newest album's date added, so a recently added album brings its artist forward.
+        added = [a["added"] for a in by_artist.get(artist["id"], ()) if a["added"]]
+        artist["added"] = max(added) if added else None
         artist["mbid"] = (identities.get(f"artist:{artist['id']}") or {}).get("mbid") or None
         # Owner play count across the artist's songs (contract 4.1 owned data; used by the similar boost).
         artist["plays"] = plays_by_artist.get(artist["id"], 0)
