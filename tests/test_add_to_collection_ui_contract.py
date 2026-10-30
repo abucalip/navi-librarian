@@ -35,8 +35,8 @@ class AddToCollectionRowContractTests(unittest.TestCase):
         self.assertNotIn('id="classicsCards" class="cards"', self.html)
 
     def test_load_refresh_and_status_line_are_unchanged(self):
-        self.assertIn('data-load-discovery="classics">Load albums</button>', self.html)
-        self.assertIn('data-refresh-discovery="classics">Refresh</button>', self.html)
+        self.assertRegex(self.html, r'<button data-load-discovery="classics"[^>]*title="Load albums" aria-label="Load albums">')
+        self.assertRegex(self.html, r'<button data-refresh-discovery="classics"[^>]*title="Refresh" aria-label="Refresh">')
         self.assertIn('id="classicsStatus" class="status-line" aria-live="polite"', self.html)
         self.assertIn("classics: ['classicsCards','classicsStatus']", self.js)
 
