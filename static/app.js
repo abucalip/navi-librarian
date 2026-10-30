@@ -1,5 +1,11 @@
 const $ = id => document.getElementById(id);
 
+// The phone layout (the same 620px breakpoint as the stylesheet). Phone-only behaviour (the search
+// toggle, the swipeable picks, album cards in place of ranked rows) is chosen from this, and a
+// change of layout re-renders what was built for the other one (see the end of this file).
+const mobileLayoutQuery = window.matchMedia('(max-width: 620px)');
+const isMobileLayout = () => mobileLayoutQuery.matches;
+
 function isAlbumRecommendation(item) {
   if (!item || typeof item !== 'object') return false;
   const title = String(item.album || item.title || item.name || '').trim();
@@ -1310,6 +1316,9 @@ function buildDashboardTile(item) {
   const album = item.album || item.title || 'Untitled album';
   const tile = document.createElement('article');
   tile.className = 'card editorial-card dashboard-tile';
+  // On a phone the year and listen count sit under the artist, as on the Deep Dives cards.
+  const phone = isMobileLayout();
+  if (phone) tile.dataset.yearTarget = 'supporting';
   // Data only: the tile is not a button itself, so the Get control is never nested in one.
   makeAlbumCardInteractive(tile, artist, album, item, true, false);
 
@@ -1326,15 +1335,19 @@ function buildDashboardTile(item) {
   // The name above carries the album and artist, so the visible copy is hidden from assistive tech.
   const meta = document.createElement('div');
   meta.className = 'dashboard-tile-meta';
-  addTextElement(meta, 'p', 'card-category', item.dashboard_category || 'Discovery');
+  addTextElement(meta, 'p', 'card-category', dashboardTag(item.dashboard_category, phone));
   const title = document.createElement('h3');
   linkAlbumName(title, artist, album, item);
   const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, tile.dataset.releaseYear);
-  if (year !== null) addAlbumYear(title, year, true);
-  addAlbumListens(title, item, true);
   meta.append(title);
   linkArtistName(addTextElement(meta, 'p', 'card-artist', ''), artist);
-  if (artist !== 'Unknown artist') attachCardArtistBio(tile, meta, artist);
+  // Phone: album, artist, then year and listens on one line. Desktop keeps the year and listens
+  // under the album name.
+  const detail = phone ? meta.querySelector('.card-artist') : title;
+  if (year !== null) addAlbumYear(detail, year, true);
+  addAlbumListens(detail, item, true);
+  // Phone: the bio is the About overlay on the artwork. Desktop shows it in the feature slide.
+  if (artist !== 'Unknown artist') attachCardArtistBio(tile, phone ? tile.querySelector('.card-art') : meta, artist);
   tile.append(meta);
   ensureAlbumYearBadge(tile);
 
@@ -1347,10 +1360,24 @@ function buildDashboardTile(item) {
 
 // Not for me on a pick takes the slide out of the strip at once, so the slider never shows an empty
 // feature, and puts it back where it was if the owner undoes the dismissal or the request fails.
+// The tag over a pick. The phone layout has room for one short word, so the two list names shrink
+// to "discovery" and "deep dive"; any other label is shown as the server sent it.
+function dashboardTag(label, phone) {
+  const text = String(label || 'Discovery');
+  if (!phone) return text;
+  if (/discover/i.test(text)) return 'discovery';
+  if (/deep dive/i.test(text)) return 'deep dive';
+  return text;
+}
+
 function dismissDashboardPick(tile, artist, album, item) {
   const slider = $('dashboardCarousel');
   const before = tile.nextElementSibling;
+  // The kept list loses the pick too, so a rebuild for the other layout does not bring it back.
+  const position = dashboardPickItems.indexOf(item);
+  if (position >= 0) dashboardPickItems.splice(position, 1);
   const restore = () => {
+    if (position >= 0) dashboardPickItems.splice(position, 0, item);
     slider.insertBefore(tile, before && before.parentNode === slider ? before : null);
     syncDashboardSlider();
   };
@@ -1365,6 +1392,18 @@ function dismissDashboardPick(tile, artist, album, item) {
 function syncDashboardSlider() {
   const slider = $('dashboardCarousel');
   const tiles = [...slider.children];
+  if (isMobileLayout()) {
+    // Phone: a swipeable strip with one card per page and a dot for each. Every card is a tab
+    // stop, and there are no slots, arrows or "x of n" count.
+    tiles.forEach(tile => {
+      tile.dataset.slot = '1';
+      const open = tile.querySelector('.dashboard-tile-open');
+      if (open) open.tabIndex = 0;
+    });
+    $('dashboardSliderCount').textContent = '';
+    syncDashboardDots();
+    return;
+  }
   tiles.forEach((tile, index) => {
     const slot = tiles.length === 1 ? 1 : Math.min(index, 5);
     tile.dataset.slot = String(slot);
@@ -1425,10 +1464,54 @@ function tintDashboardSlider(tile) {
   }
 }
 
+// The card the phone strip is showing: the one whose left edge is nearest the strip's.
+function currentDashboardIndex() {
+  const slider = $('dashboardCarousel');
+  const width = slider.clientWidth;
+  return width ? Math.max(0, Math.min(slider.children.length - 1, Math.round(slider.scrollLeft / width))) : 0;
+}
+
+// One dot per card under the phone strip, the current one filled. Tapping a dot scrolls to its card.
+function syncDashboardDots() {
+  const slider = $('dashboardCarousel');
+  const dots = $('dashboardDots');
+  const count = slider.children.length;
+  if (dots.children.length !== count) {
+    dots.replaceChildren(...Array.from({length: count}, (unused, index) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'dashboard-dot';
+      dot.setAttribute('aria-label', `Show album ${index + 1} of ${count}`);
+      dot.addEventListener('click', () =>
+        slider.scrollTo({left: index * slider.clientWidth, behavior: trackScrollBehavior()}));
+      return dot;
+    }));
+  }
+  const current = currentDashboardIndex();
+  [...dots.children].forEach((dot, index) => {
+    if (index === current) dot.setAttribute('aria-current', 'true');
+    else dot.removeAttribute('aria-current');
+  });
+  // The tint follows the card on show, and is worked out once per card, not on every scroll event.
+  const key = `${count}:${current}`;
+  if (slider.dataset.tintedFor !== key) {
+    slider.dataset.tintedFor = key;
+    tintDashboardSlider(slider.children[current]);
+  }
+}
+
+$('dashboardCarousel').addEventListener('scroll', () => {
+  if (isMobileLayout()) syncDashboardDots();
+}, {passive: true});
+
 function rotateDashboardSlider(direction) {
   const slider = $('dashboardCarousel');
   const tiles = [...slider.children];
   if (tiles.length < 2) return;
+  if (isMobileLayout()) {
+    slider.scrollBy({left: direction * slider.clientWidth, behavior: trackScrollBehavior()});
+    return;
+  }
   if (direction > 0) slider.append(tiles[0]);
   else slider.prepend(tiles[tiles.length - 1]);
   syncDashboardSlider();
@@ -1453,6 +1536,26 @@ $('dashboardCarousel').addEventListener('click', event => {
   for (let step = 1; step < slot; step += 1) rotateDashboardSlider(1);
 }, true);
 
+// The picks last fetched, kept so the strip can be rebuilt for the other layout without choosing
+// new albums (see the layout change handler at the end of this file).
+let dashboardPickItems = [];
+
+function renderDashboardPicks() {
+  const target = $('dashboardCarousel');
+  target.replaceChildren();
+  delete target.dataset.tintedFor;
+  dashboardPickItems.forEach((item, index) => {
+    const tile = buildDashboardTile(item);
+    tile.dataset.pick = String(index);
+    target.append(tile);
+  });
+  // Slot 0 is the slide just passed, so the first pick starts as the feature by moving the last one
+  // before it. The phone strip has no slots and starts at the first card.
+  if (!isMobileLayout() && target.children.length > 1) target.prepend(target.lastElementChild);
+  target.scrollLeft = 0;
+  syncDashboardSlider();
+}
+
 async function loadDashboardPicks() {
   const target = $('dashboardCarousel');
   const status = $('dashboardPicksStatus');
@@ -1465,14 +1568,8 @@ async function loadDashboardPicks() {
   try {
     const data = await requestJSON('/api/dashboard-picks?count=10&nonce=' + Date.now());
     const items = (data.items || []).filter(isAlbumRecommendation);
-    items.forEach((item, index) => {
-      const tile = buildDashboardTile(item);
-      tile.dataset.pick = String(index);
-      target.append(tile);
-    });
-    // Slot 0 is the slide just passed, so the first pick starts as the feature by moving the last one before it.
-    if (target.children.length > 1) target.prepend(target.lastElementChild);
-    syncDashboardSlider();
+    dashboardPickItems = items;
+    renderDashboardPicks();
     status.textContent = items.length
       ? `${items.length} randomly selected albums from ${data.pool_size || items.length} available suggestions.`
       : 'No suggestions yet. Open a discovery page and refresh its list first.';
@@ -1484,6 +1581,178 @@ async function loadDashboardPicks() {
 }
 
 $('shuffleDashboard').addEventListener('click', loadDashboardPicks);
+
+/* ------------------------------------------------------------ phone album cards
+
+   On a phone, Recommendations, New releases, Personal Discoveries and Daily picks show album cards
+   in a row that scrolls sideways, as on the Deep Dives page, instead of ranked rows. The card is the
+   Deep Dives card: artwork with the About overlay, tag, album with year and listens, artist, and the
+   Get, Save and Not for me group. A list that is not shown as cards keeps its rows. */
+function setCardTrack(target, on) {
+  target.classList.toggle('ranked-list', !on);
+  target.classList.toggle('genre-row-track', on);
+  if (on && !target.dataset.trackFocusable) {
+    target.dataset.trackFocusable = 'true';
+    makeScrollTrackFocusable(target, target.getAttribute('aria-label') || 'Albums');
+  } else if (!on && target.dataset.trackFocusable) {
+    delete target.dataset.trackFocusable;
+    target.removeAttribute('tabindex');
+    target.removeAttribute('role');
+  }
+}
+
+// `options`: `tag` (the small label over the title), `meta` (extra lines), `listName` (for Save and
+// the dismiss feedback), `onDismiss(artist, album, item, card)`.
+function buildListCard(item, options = {}) {
+  const artist = item.artist || item.album_artist || 'Unknown artist';
+  const album = item.album || item.title || item.name || 'Untitled album';
+  const card = document.createElement('article');
+  card.className = 'card editorial-card';
+  makeAlbumCardInteractive(card, artist, album, item);
+  attachArtwork(card, artist, album);
+  if (options.tag) addTextElement(card, 'p', 'card-category', options.tag);
+  const title = document.createElement('h3');
+  linkAlbumName(title, artist, album, item);
+  const year = firstReleaseYear(item.year, item.release_year, item.first_release_year, card.dataset.releaseYear);
+  if (year !== null) addAlbumYear(title, year, true);
+  addAlbumListens(title, item, true);
+  card.append(title);
+  linkArtistName(addTextElement(card, 'p', 'card-artist', ''), artist);
+  ensureAlbumYearBadge(card);
+  if (artist !== 'Unknown artist') attachCardArtistBio(card, card.querySelector('.card-art'), artist);
+  for (const line of options.meta || []) if (line) addTextElement(card, 'p', 'card-meta', line);
+  // Saved cards are bookmarks: no Not for me, no Get for an album already in the library, and Save
+  // starts pressed (its next press undoes), as on the Saved rows.
+  const group = createActionGroup(artist, album, item, {
+    owned: options.owned,
+    listName: options.listName,
+    onDismiss: options.onDismiss && (() => options.onDismiss(artist, album, item, card))
+  });
+  if (options.saved) setSaveButtonState(group.querySelector('.save-album'), true, album);
+  card.append(group);
+  return card;
+}
+
+function dismissRecommendationLocally(artist, album) {
+  const key = [artist, album].map(value => String(value).trim().toLocaleLowerCase()).join('::');
+  const dismissed = new Set(JSON.parse(localStorage.getItem('navidrome-dismissed-recommendations') || '[]'));
+  dismissed.add(key);
+  localStorage.setItem('navidrome-dismissed-recommendations', JSON.stringify([...dismissed]));
+  applyRecommendationFilters();
+}
+
+function buildRecommendationCard(item) {
+  const card = buildListCard(item, {
+    tag: categoryLabel(item.discovery_category || 'unclassified'),
+    meta: [item.discovery_category === 'adjacent' && Array.isArray(item.similar_to) && item.similar_to.length
+      ? 'Similar to: ' + item.similar_to.join(', ') : ''],
+    onDismiss: dismissRecommendationLocally
+  });
+  card.dataset.key = recommendationKey(item);
+  return card;
+}
+
+function buildClassicsCard(item) {
+  const hasBio = /Genre tags connect this artist to your established musical interests/i.test(item.reason || '');
+  return buildListCard(item, {
+    tag: categoryLabel(item.discovery_type || item.discovery_category || ''),
+    meta: [item.anchor_artist ? 'Similar to: ' + item.anchor_artist : '', hasBio ? '' : item.reason],
+    listName: 'classics',
+    onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'classics', card)
+  });
+}
+
+function buildSavedCard(entry) {
+  const item = {...(entry.metadata || {}), artist: entry.artist, album: entry.album};
+  const owned = entry.acquired === true;
+  return buildListCard(item, {
+    tag: formatSavedDate(entry.saved_at),
+    meta: [owned ? 'Already in your library' : ''],
+    owned,
+    saved: true,
+    listName: 'saved'
+  });
+}
+
+function buildNewReleaseCard(item) {
+  const parts = releaseDateParts(item.first_release_date);
+  return buildListCard(item, {
+    tag: parts ? parts.label : 'New release',
+    listName: 'new_releases',
+    onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'new_releases', card)
+  });
+}
+
+function buildPersonalCard(item) {
+  return buildListCard(item, {
+    tag: categoryLabel(item.discovery_category || ''),
+    meta: [item.discovery_category === 'unclassified' || item.genre_metadata_available === false
+      ? 'Low confidence: genre data unavailable' : ''],
+    listName: 'personal',
+    onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'personal', card)
+  });
+}
+
+function buildLensCard(item, name) {
+  const listeners = Number(item.album_listeners);
+  return buildListCard(item, {
+    tag: item.seed_tag || LENS_LISTS[name],
+    meta: [Number.isFinite(listeners) && listeners > 0 ? listeners.toLocaleString() + ' listeners' : ''],
+    listName: 'lens_lists',
+    onDismiss: (artist, album, metadata, card) => sendFeedback('dismiss', artist, album, metadata, 'lens_lists', card)
+  });
+}
+
+// Daily picks on a phone: the four lists one after the other, each a heading over a row of cards,
+// so there is no lens picker. A list that cannot load says so in its own place.
+async function loadAllLensLists() {
+  const requestId = ++lensRequestId;
+  const status = $('lensListsStatus');
+  const target = $('lensListsCards');
+  target.classList.remove('ranked-list');
+  target.classList.add('lens-sections');
+  target.removeAttribute('role');
+  status.textContent = 'Loading daily picks…';
+  setStatusState(status, 'loading');
+  target.replaceChildren();
+  const names = Object.keys(LENS_LISTS);
+  const results = await Promise.allSettled(names.map(name =>
+    requestJSON(`/api/discovery/${name}?count=10&nonce=${Date.now()}`)));
+  if (requestId !== lensRequestId) return;
+  let total = 0;
+  let disabled = false;
+  let failure = '';
+  results.forEach((result, index) => {
+    const name = names[index];
+    const section = document.createElement('section');
+    section.className = 'genre-row';
+    const heading = document.createElement('div');
+    heading.className = 'genre-row-heading';
+    addTextElement(heading, 'h3', '', LENS_LISTS[name]);
+    section.append(heading);
+    if (result.status === 'rejected') {
+      failure = result.reason && result.reason.message ? result.reason.message : 'Request failed.';
+      addTextElement(section, 'p', 'status-line is-error', LENS_LISTS[name] + ' could not be loaded: ' + failure);
+    } else {
+      const items = Array.isArray(result.value.items) ? result.value.items : [];
+      disabled = disabled || Boolean(result.value.disabled);
+      total += items.length;
+      addTextElement(heading, 'span', 'genre-row-count', pluralize(items.length, 'album', 'albums'));
+      const track = document.createElement('div');
+      track.className = 'genre-row-track';
+      makeScrollTrackFocusable(track, LENS_LISTS[name] + ' albums');
+      track.append(...items.map(item => buildLensCard(item, name)));
+      if (!items.length) addTextElement(track, 'p', 'ranked-empty', result.value.message || LENS_LISTS[name] + ' has no albums today.');
+      section.append(track);
+    }
+    target.append(section);
+  });
+  status.textContent = total
+    ? pluralize(total, 'album', 'albums') + ' · Fixed for today, rebuilt each morning'
+    : disabled ? 'Daily picks are turned off in Settings.'
+    : failure ? 'Daily picks could not be loaded: ' + failure : 'No albums today.';
+  setStatusState(status, total ? 'progress' : failure ? 'error' : 'empty');
+}
 
 /* ------------------------------------------------------- dashboard genres and album shelves
 
@@ -1743,7 +2012,10 @@ function applyRecommendationFilters() {
   $('recommendationCount').textContent =
     `Showing ${filtered.length} of ${allRecommendations.length} recommendations · ${basis.label}`;
 
+  const asCards = isMobileLayout();
+  setCardTrack(cards, asCards);
   filtered.forEach((item, index) => {
+    if (asCards) { cards.append(buildRecommendationCard(item)); return; }
     const row = buildRecommendationRow(item, basis.numbered ? index + 1 : null, {artistBio: true});
     row.dataset.key = recommendationKey(item);
     cards.append(row);
@@ -1982,6 +2254,11 @@ function buildLensRow(item) {
 }
 
 async function loadLensList(name) {
+  if (isMobileLayout()) return loadAllLensLists();
+  const lensTarget = $('lensListsCards');
+  lensTarget.classList.add('ranked-list');
+  lensTarget.classList.remove('lens-sections');
+  lensTarget.setAttribute('role', 'list');
   setActiveLens(name);
   const requestId = ++lensRequestId;
   const label = LENS_LISTS[name];
@@ -2090,6 +2367,28 @@ function fitBioToArt(bio) {
   bio.textContent = word >= 0 ? full.slice(0, words[word]).trimEnd() + '…' : full;
 }
 
+// Phone only (the stylesheet shows the control under 620px; hover does not exist on a touch screen).
+// "About" sits in the artwork's bottom-left corner and stays visible; each tap shows or hides the
+// bio that overlays the artwork. The control is added once the bio has loaded, so a card without a
+// bio has none.
+function addAboutToggle(card, art, bio, fit) {
+  if (art.querySelector(':scope > .about-toggle')) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'about-toggle';
+  button.textContent = 'ⓘ';
+  button.setAttribute('aria-label', 'About the artist');
+  button.setAttribute('aria-pressed', 'false');
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    const open = !card.classList.contains('is-bio-open');
+    card.classList.toggle('is-bio-open', open);
+    button.setAttribute('aria-pressed', String(open));
+    if (open) fit();
+  });
+  art.append(button);
+}
+
 function attachCardArtistBio(card, container, artist) {
   // The paragraph keeps its two-line space while the bio loads, so the card does not jump.
   const bio = addTextElement(container, 'p', 'artist-bio is-pending', '');
@@ -2110,6 +2409,7 @@ function attachCardArtistBio(card, container, artist) {
           const fit = () => fitBioToArt(bio);
           card.addEventListener('pointerenter', fit);
           card.addEventListener('focusin', fit);
+          addAboutToggle(card, container, bio, fit);
         }
       })
       .catch(() => {});
@@ -2237,7 +2537,7 @@ $('loadRecommendations').addEventListener('click', async () => {
   button.textContent = 'Generating…';
   allRecommendations = [];
   $('recommendationCount').textContent = 'Generating recommendations…';
-  $('recommendationCards').replaceChildren(...skeletonRows(Number($('count').value) || 5));
+  $('recommendationCards').replaceChildren(...(isMobileLayout() ? [] : skeletonRows(Number($('count').value) || 5)));
   $('recommendationDebug').textContent = '';
   try {
     const data = await requestJSON(
@@ -2374,7 +2674,12 @@ async function loadDiscovery(name, options = {}) {
   // The ranked-row lists show skeleton rows while they load (DESIGN_SYSTEM.md 9.6). They are
   // removed as soon as the response arrives, before any row is rendered, and on failure.
   const rankedRowList = name === 'new_releases' || name === 'personal' || name === 'classics';
+  // On a phone these lists are rows of album cards that scroll sideways; the card row has no
+  // skeleton, so the status line carries the loading state.
+  const cardList = isMobileLayout() && rankedRowList;
+  if (rankedRowList) setCardTrack(target, cardList);
   target.replaceChildren(...(rankedRowList ? skeletonRows(6) : []));
+  if (cardList) target.replaceChildren();
   target.classList.toggle('deep-dive-rows', name === 'artist_deep_dive');
   const destinationByItem = new Map();
 
@@ -2503,6 +2808,10 @@ async function loadDiscovery(name, options = {}) {
     }
 
     for (const [index, item] of items.entries()) {
+      if (cardList) {
+        target.append({personal: buildPersonalCard, classics: buildClassicsCard, new_releases: buildNewReleaseCard}[name](item));
+        continue;
+      }
       if (name === 'personal') {
         target.append(buildPersonalRow(item, index));
         continue;
@@ -2811,7 +3120,9 @@ function buildSavedRow(entry, index) {
 async function loadSaved() {
   const target = $('savedCards');
   discoveryStatus('saved', 'Loading saved albums…', 'loading');
-  target.replaceChildren(...skeletonRows(4));
+  const asCards = isMobileLayout();
+  setCardTrack(target, asCards);
+  target.replaceChildren(...(asCards ? [] : skeletonRows(4)));
   try {
     const data = await requestJSON('/api/discovery/for_me?count=150&nonce=' + Date.now());
     const entries = data.items || [];
@@ -2827,7 +3138,7 @@ async function loadSaved() {
     discoveryStatus('saved', total > entries.length
       ? 'Showing ' + entries.length + ' of ' + total + ' saved albums · Newest first'
       : pluralize(entries.length, 'saved album', 'saved albums') + ' · Newest first', 'idle');
-    for (const [index, entry] of entries.entries()) target.append(buildSavedRow(entry, index));
+    for (const [index, entry] of entries.entries()) target.append(asCards ? buildSavedCard(entry) : buildSavedRow(entry, index));
   } catch (error) {
     target.replaceChildren();
     discoveryStatus('saved', 'Saved albums could not be loaded: ' + error.message);
@@ -3662,6 +3973,15 @@ function showRecentSearches() {
   $('globalSearchRecent').hidden = false;
 }
 
+// Phone only: the search is a magnifier in the top bar that grows into the field when tapped, and
+// folds back when it is left empty. The form is the same one the desktop bar uses.
+function setSearchExpanded(open, {focus = false} = {}) {
+  $('globalSearch').classList.toggle('is-expanded', open);
+  $('searchToggle').setAttribute('aria-expanded', String(open));
+  document.querySelector('header').classList.toggle('is-searching', open);
+  if (open && focus) $('globalSearchInput').focus();
+}
+
 function closeGlobalSearch({focusInput = false} = {}) {
   clearTimeout(globalSearchTimer);
   if (globalSearchSource) {
@@ -3672,6 +3992,7 @@ function closeGlobalSearch({focusInput = false} = {}) {
   setGlobalSearchOpen(false);
   hideRecentSearches();
   if (focusInput) $('globalSearchInput').focus();
+  else if (!$('globalSearchInput').value.trim()) setSearchExpanded(false);
 }
 
 // The status line is quiet while results stream in, so a screen reader hears the final count once,
@@ -5063,6 +5384,7 @@ $('globalSearch').addEventListener('submit', event => {
   rememberSearch($('globalSearchInput').value);
   startGlobalSearch($('globalSearchInput').value);
 });
+$('searchToggle').addEventListener('click', () => setSearchExpanded(true, {focus: true}));
 $('globalSearchInput').addEventListener('focus', showRecentSearches);
 $('globalSearchInput').addEventListener('click', showRecentSearches);
 $('globalSearchRecent').addEventListener('click', event => {
@@ -5088,6 +5410,10 @@ $('globalSearch').addEventListener('keydown', event => {
   } else if (event.key === 'Escape' && !$('globalSearchRecent').hidden) {
     event.preventDefault();
     closeGlobalSearch({focusInput: true});
+  } else if (event.key === 'Escape' && $('globalSearch').classList.contains('is-expanded')) {
+    event.preventDefault();
+    setSearchExpanded(false);
+    $('searchToggle').focus();
   }
 });
 // Close when focus moves to a real element outside the form. Safari does not focus buttons on
@@ -5115,4 +5441,16 @@ for (const id of ['libraryBack', 'albumBack', 'genreBack']) $(id).addEventListen
 $('artistBioToggle').addEventListener('click', toggleArtistBio);
 window.addEventListener('resize', () => { fitArtistBio(); fitAlbumDescription(); });
 $('albumDescriptionToggle').addEventListener('click', toggleAlbumDescription);
+// Crossing the phone breakpoint (a rotation, a resized window) rebuilds what was drawn for the other
+// layout: the picks strip and the card or row lists. Lists already on screen are reloaded the way
+// they were loaded; the picks keep the albums they had.
+mobileLayoutQuery.addEventListener('change', () => {
+  if (dashboardPickItems.length) renderDashboardPicks();
+  if (allRecommendations.length) applyRecommendationFilters();
+  for (const name of ['personal', 'new_releases', 'classics']) {
+    if ($(discoveryViews[name][0]).childElementCount) loadDiscovery(name);
+  }
+  if ($('savedCards').childElementCount) loadSaved();
+  if ($('lensListsCards').childElementCount) loadLensList(activeLens);
+});
 if (window.location.hash) applyHash(window.location.hash);

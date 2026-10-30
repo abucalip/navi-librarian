@@ -19,6 +19,12 @@
   <h1>Navidrome Librarian</h1>
   <form id="globalSearch" class="global-search" role="search" autocomplete="off">
     <label for="globalSearchInput" class="sr-only">Search your library or discover new music</label>
+    <!-- Phone only: the magnifier that opens the field (hidden by the stylesheet on wider screens). -->
+    <button id="searchToggle" class="search-toggle" type="button" aria-label="Search" aria-expanded="false" aria-controls="globalSearchInput">
+      <svg class="search-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+        <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"></path>
+      </svg>
+    </button>
     <div class="search-field">
       <input id="globalSearchInput" type="search" name="q" maxlength="200"
              placeholder="Search your library or discover new music">
@@ -121,6 +127,7 @@
       </div>
       <div class="dashboard-slider-box"><div class="dashboard-slider-wrap">
         <div id="dashboardCarousel" class="dashboard-slider" role="group" aria-roledescription="carousel" aria-label="Random album recommendations" tabindex="0"></div>
+        <div id="dashboardDots" class="dashboard-dots" aria-label="Choose an album"></div>
         <div class="dashboard-slider-nav">
           <button type="button" id="dashboardPrev" aria-label="Previous album">◁</button>
           <button type="button" id="dashboardNext" aria-label="Next album">▷</button>
@@ -250,7 +257,7 @@
   <div class="panel">
     <h2 id="lensListsHeading">Daily picks</h2>
     <p>One list per lens, built each morning and fixed for the day. An album appears in at most one of them.</p>
-    <div class="controls" role="group" aria-label="Lens">
+    <div class="controls lens-picker" role="group" aria-label="Lens">
       <button type="button" data-lens="repeated_tracks" aria-pressed="true">Repeated Tracks</button>
       <button type="button" data-lens="deep_cuts" aria-pressed="false">Deep Cuts</button>
       <button type="button" data-lens="obsessions" aria-pressed="false">Obsessions</button>
