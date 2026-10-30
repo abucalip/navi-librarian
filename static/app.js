@@ -750,6 +750,7 @@ function addTextElement(parent, tag, className, text) {
 const artworkLoaders = new WeakMap();
 const bioLoaders = new WeakMap();
 const artworkRequests = new Map();
+const albumDetailRequests = new Map();
 const albumYearRequests = new Map();
 const albumYearLoaders = new WeakMap();
 const artistBioRequests = new Map();
@@ -1190,8 +1191,10 @@ async function openAlbumModal(card, returnFocus = card) {
   try {
     const query = new URLSearchParams({artist, album});
     const [details, art] = await Promise.all([
-      requestJSON('/api/album-details?' + query.toString()),
-      requestJSON('/api/artwork?' + query.toString()).catch(() => null)
+      cachedJSONRequest(albumDetailRequests, artist.trim().toLocaleLowerCase() + '::' + album.trim().toLocaleLowerCase(), '/api/album-details?' + query.toString())
+        .then(data => data || Promise.reject(new Error('album details unavailable'))),
+      // Same key as the card artwork, so a cover the card already fetched is not asked for again.
+      cachedJSONRequest(artworkRequests, artist.trim().toLocaleLowerCase() + '::' + album.trim().toLocaleLowerCase(), '/api/artwork?' + query.toString()).catch(() => null)
     ]);
     if (!activeAlbumModal || activeAlbumModal.card !== card) return;
     const artworkUrl = details.artwork_url || (art && art.artwork_url);
@@ -4398,7 +4401,7 @@ function setArtistHero(target, name) {
   const seq = libraryView.detailSeq;
   tintArtistPage(sizedArtwork(target.artworkUrl, ARTIST_HERO_PHOTO_SIZE), seq);
   if (target.artworkUrl || !name) return;
-  requestJSON('/api/artist-image?' + new URLSearchParams({name}))
+  cachedJSONRequest(artistImageRequests, name.trim().toLocaleLowerCase(), '/api/artist-image?' + new URLSearchParams({name}))
     .then(data => {
       if (seq !== libraryView.detailSeq || !data || !data.artwork_url) return;
       const image = document.createElement('img');

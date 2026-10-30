@@ -18,7 +18,7 @@ from app.services.artist_bio import resolve_artist_bio
 from app.services.deezer_tracklist import shape_tracklist
 from app.services.deezer_artwork import select_album_artwork, select_artist_artwork
 from app.services.deezer_album_details import shape_album_match
-from app.services import album_links
+from app.services import album_links, persistent_metadata
 from app.services.apple_description import parse_editorial_notes
 from app.services.deezer_album_matching import exact_album_matches, exact_album_release_year, release_year
 from integrations.musicbrainz.album_year import (
@@ -92,6 +92,10 @@ def artist_bio(artist: str):
     cached = _artist_bio_cache.get(key)
     if cached and now - cached["time"] < _ARTIST_BIO_CACHE_TTL:
         return {"artist": name, "bio": cached["bio"]}
+    stored = persistent_metadata.read("artist-bio:v1:" + key)
+    if stored:
+        _artist_bio_cache[key] = {"time": monotonic(), "bio": stored}
+        return {"artist": name, "bio": stored}
 
     bio = ""
     params = {
@@ -137,6 +141,8 @@ def artist_bio(artist: str):
     # A failed Wikidata lookup is not "this artist has no bio": do not cache it for a day.
     if search_ok:
         _artist_bio_cache[key] = {"time": monotonic(), "bio": bio}
+        if bio:
+            persistent_metadata.write("artist-bio:v1:" + key, bio)
     return {"artist": name, "bio": bio}
 
 
@@ -174,9 +180,8 @@ def _year_store_key(artist, album):
 
 
 def _stored_year(librarian, artist, album):
-    reader = getattr(librarian, "_metadata_cache_get", None)
-    if reader is None:
-        return None
+    # The artist page calls without a librarian; the attached store serves that case.
+    reader = getattr(librarian, "_metadata_cache_get", None) or persistent_metadata.read
     try:
         value = reader(_year_store_key(artist, album), _YEAR_STORE_TTL)
         return int(value) if value else None
@@ -185,8 +190,8 @@ def _stored_year(librarian, artist, album):
 
 
 def _store_year(librarian, artist, album, year):
-    writer = getattr(librarian, "_metadata_cache_set", None)
-    if writer is None or not year:
+    writer = getattr(librarian, "_metadata_cache_set", None) or persistent_metadata.write
+    if not year:
         return
     try:
         writer(_year_store_key(artist, album), int(year))
@@ -251,14 +256,43 @@ def album_year(artist: str = "", album: str = "", librarian=Depends(get_libraria
     return {"artist": artist, "album": album, "year": year, "source": source}
 
 
+_album_details_cache = {}
+_DETAILS_MISS_TTL = 60 * 60
+
+
 @router.get("/api/album-details")
 def album_details(artist: str = "", album: str = ""):
-    """Return a carefully matched Deezer album and its tracklist for the card popup."""
+    """Return a carefully matched Deezer album and its tracklist for the card popup.
+
+    A complete answer (with a tracklist) is kept for a month, in memory and on disk; an album the
+    catalog definitely does not have is remembered for an hour. A provider failure is not cached.
+    """
     artist = str(artist or "").strip()[:180]
     album = str(album or "").strip()[:180]
     if not artist or not album:
         raise HTTPException(status_code=400, detail="artist and album are required")
 
+    key = (artist.casefold(), album.casefold())
+    cached = _album_details_cache.get(key)
+    if cached and monotonic() < cached[0]:
+        return cached[1]
+    store_key = "album-details:v1:" + key[0] + ":" + key[1]
+    stored = persistent_metadata.read(store_key)
+    if stored:
+        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, stored)
+        return stored
+
+    result, definitive_miss = _fetch_album_details(artist, album)
+    if result["tracks"]:
+        _album_details_cache[key] = (monotonic() + _ARTWORK_CACHE_TTL, result)
+        persistent_metadata.write(store_key, result)
+    elif definitive_miss:
+        _album_details_cache[key] = (monotonic() + _DETAILS_MISS_TTL, result)
+    return result
+
+
+def _fetch_album_details(artist, album):
+    """The Deezer answer and whether an empty one is final (no exact catalog match)."""
     result = {"artist": artist, "album": album, "year": None, "artwork_url": None, "tracks": []}
     try:
         query = urlencode({"q": f'artist:"{artist}" album:"{album}"', "limit": 12})
@@ -268,14 +302,14 @@ def album_details(artist: str = "", album: str = ""):
         exact = exact_album_matches(albums, artist, album)
         if not exact:
             result["message"] = "No exact catalog match was found, so the tracklist is unavailable."
-            return result
+            return result, True
 
         match = exact[0]
         result.update(shape_album_match(match))
         album_id = match.get("id")
         if not album_id:
             result["message"] = "Album artwork found, but the catalog did not provide a tracklist ID."
-            return result
+            return result, False
 
         detail_response = _EXTERNAL_HTTP.get(f"https://api.deezer.com/album/{album_id}")
         detail_response.raise_for_status()
@@ -285,10 +319,10 @@ def album_details(artist: str = "", album: str = ""):
         )
         if not result["tracks"]:
             result["message"] = "The album was found, but its tracklist is unavailable."
-        return result
+        return result, False
     except Exception:
         result["message"] = "The album catalog is temporarily unavailable."
-        return result
+        return result, False
 
 
 _artist_image_cache = {}
@@ -318,11 +352,17 @@ def _apple_album_url(artist: str, album: str):
     cached = _apple_url_cache.get(key)
     if cached and monotonic() - cached[0] < 3600:
         return cached[1]
+    store_key = "apple-album-url:v1:" + key[0] + ":" + key[1]
+    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
+    if stored:
+        _apple_url_cache[key] = (monotonic(), stored)
+        return stored
     data = _json_or_none("https://itunes.apple.com/search", params={
         "term": f"{artist} {album}", "entity": "album", "limit": 10})
     url = album_links.apple_music_url((data or {}).get("results") or [], artist, album)
     if url:
         _apple_url_cache[key] = (monotonic(), url)
+        persistent_metadata.write(store_key, url)
     return url
 
 
@@ -347,6 +387,11 @@ def album_description(artist: str, album: str) -> dict:
         ttl = _DESCRIPTION_TTL if cached["value"]["paragraphs"] else _DESCRIPTION_MISS_TTL
         if monotonic() - cached["time"] < ttl:
             return cached["value"]
+    store_key = "album-description:v1:" + key[0] + ":" + key[1]
+    stored = persistent_metadata.read(store_key)
+    if stored and stored.get("paragraphs"):
+        _album_description_cache[key] = {"time": monotonic(), "value": stored}
+        return stored
     empty = {"paragraphs": [], "source": "Apple Music", "url": None}
     url = _apple_album_url(artist, album)
     if not url:
@@ -359,6 +404,8 @@ def album_description(artist: str, album: str) -> dict:
     paragraphs = parse_editorial_notes(response.text) or []
     value = {"paragraphs": paragraphs, "source": "Apple Music", "url": url}
     _album_description_cache[key] = {"time": monotonic(), "value": value}
+    if paragraphs:
+        persistent_metadata.write(store_key, value)
     return value
 
 
@@ -384,6 +431,11 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
     cached = _album_links_cache.get(key)
     if cached and monotonic() - cached["time"] < _ALBUM_LINKS_TTL:
         return cached["links"]
+    store_key = "album-links:v1:" + "|".join(key)
+    stored = persistent_metadata.read(store_key, persistent_metadata.LINKS_TTL)
+    if stored:
+        _album_links_cache[key] = {"time": monotonic(), "links": stored}
+        return stored
 
     def apple():
         return _apple_album_url(artist, album)
@@ -424,6 +476,8 @@ def album_page_links(artist: str = "", album: str = "", mbid: str = ""):
     # A missing service may only have been slow or busy, so an incomplete answer is kept for minutes, not a day.
     complete = "musicbrainz" in links and "apple_music" in links and "deezer" in links
     _album_links_cache[key] = {"time": monotonic() - (0 if complete else _ALBUM_LINKS_TTL - 10 * 60), "links": links}
+    if complete:
+        persistent_metadata.write(store_key, links)
     return links
 
 
@@ -436,6 +490,11 @@ def artist_image(name: str = ""):
     cached = _artist_image_cache.get(name.casefold())
     if cached and monotonic() - cached["time"] < _ARTWORK_CACHE_TTL:
         return cached["data"]
+    store_key = "artist-image:v1:" + name.casefold()
+    stored = persistent_metadata.read(store_key)
+    if stored and stored.get("artwork_url"):
+        _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": stored}
+        return stored
     result = {"artwork_url": None, "image_kind": "artist", "source": "Deezer"}
     try:
         response = _EXTERNAL_HTTP.get("https://api.deezer.com/search/artist?" + urlencode({"q": name, "limit": 8}))
@@ -452,6 +511,8 @@ def artist_image(name: str = ""):
         # A provider outage is not cached, so the next visit retries.
         return {**result, "retryable": True}
     _artist_image_cache[name.casefold()] = {"time": monotonic(), "data": result}
+    if result.get("artwork_url"):
+        persistent_metadata.write(store_key, result)
     return result
 
 
@@ -469,6 +530,11 @@ def album_artwork(artist: str = "", album: str = ""):
         ttl = _ARTWORK_CACHE_TTL if cached["data"].get("artwork_url") else _ARTWORK_NEGATIVE_CACHE_TTL
         if now - cached["time"] < ttl:
             return cached["data"]
+    store_key = "album-artwork:v1:" + key[0] + ":" + key[1]
+    stored = persistent_metadata.read(store_key)
+    if stored and stored.get("artwork_url"):
+        _artwork_cache[key] = {"time": monotonic(), "data": stored}
+        return stored
 
     result = {"artwork_url": None, "image_kind": "album", "source": "Deezer"}
     lookup_failed = False
@@ -511,6 +577,8 @@ def album_artwork(artist: str = "", album: str = ""):
 
     if not lookup_failed:
         _artwork_cache[key] = {"time": monotonic(), "data": result}
+        if result.get("artwork_url"):
+            persistent_metadata.write(store_key, result)
     return result
 
 
