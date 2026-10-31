@@ -12,7 +12,7 @@ class MCPRetirementTests(unittest.TestCase):
     def test_web_app_import_does_not_initialize_mcp_runtime(self):
         script = (
             "import sys; from app.main import app; "
-            "assert app.title == 'Navidrome Librarian'; "
+            "assert app.title == 'Discair'; "
             "assert not any(name == 'mcp' or name.startswith('mcp.') "
             "for name in sys.modules); "
         )

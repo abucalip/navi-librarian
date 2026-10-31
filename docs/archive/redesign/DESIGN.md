@@ -1,5 +1,5 @@
 ---
-name: Navidrome Librarian
+name: Discair
 description: An ordered, scannable chart rundown for a self-hosted music library, with requests that close the loop.
 colors:
   ink-rail: "#0f0e0d"
@@ -48,7 +48,7 @@ spacing:
   "8": "64px"
 ---
 
-# Design System: Navidrome Librarian
+# Design System: Discair
 
 <!-- Regenerated 2026-10-19 from the built front end at the end of Phase 7 (origin/main 8849e7e, after PR #394). Drift between this file and the built CSS is recorded in docs/DESIGN_SYSTEM.md section 16. -->
 

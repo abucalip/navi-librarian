@@ -26,7 +26,7 @@ def _signed_request(config_provider, params, salt_factory):
         "t": token,
         "s": salt,
         "v": "1.16.1",
-        "c": "navidrome-librarian",
+        "c": "discair",
         "f": "json",
         **params,
     }

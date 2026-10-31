@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # Listening history read for the lens lists. Obsessions and Repeated tracks need more than the
 # 30-day default; the page bound of the ListenBrainz client still applies.
 DAILY_CHECK_SECONDS = 3600
-MUSICBRAINZ_USER_AGENT = "NavidromeLibrarian/1.0 (personal music discovery)"
+MUSICBRAINZ_USER_AGENT = "Discair/1.0 (personal music discovery)"
 _REFRESH_LOCK = threading.Lock()
 
 

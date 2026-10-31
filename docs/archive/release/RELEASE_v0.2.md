@@ -17,9 +17,9 @@ Status: **prepared for review; not released or published**.
 
 **Important:** this is the preparation baseline, not the final release SHA. After this document is merged, refresh `main`, verify all four workflows against the exact resulting SHA, and use that SHA for the release/tag and image provenance.
 
-## Draft release notes — Navidrome Librarian v0.2
+## Draft release notes — Discair v0.2
 
-Navidrome Librarian is a self-hosted web interface for discovering albums missing from a Navidrome library and tracking acquisition through an existing slskd service.
+Discair is a self-hosted web interface for discovering albums missing from a Navidrome library and tracking acquisition through an existing slskd service.
 
 ### Highlights
 

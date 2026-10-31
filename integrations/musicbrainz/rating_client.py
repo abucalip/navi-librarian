@@ -34,7 +34,7 @@ def critical_rating(
         response = request(
             f"https://musicbrainz.org/ws/2/release-group/{mbid}",
             params={"fmt": "json", "inc": "ratings"},
-            headers={"User-Agent": "NavidromeLibrarian/1.0 (personal music discovery)"},
+            headers={"User-Agent": "Discair/1.0 (personal music discovery)"},
             timeout=15,
         )
         if response.status_code == 404:

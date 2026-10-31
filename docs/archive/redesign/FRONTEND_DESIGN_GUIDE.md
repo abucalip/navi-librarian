@@ -2,13 +2,13 @@
 
 Last updated: 2026-10-18
 
-This is the canonical, agent-independent design reference for Navidrome Librarian's web UI. Read it before planning or implementing any front-end change. Root `AGENTS.md` defines mandatory entry instructions, ownership, and protected paths; this document defines interaction, accessibility, and boundary rules and the design workflow.
+This is the canonical, agent-independent design reference for Discair's web UI. Read it before planning or implementing any front-end change. Root `AGENTS.md` defines mandatory entry instructions, ownership, and protected paths; this document defines interaction, accessibility, and boundary rules and the design workflow.
 
 > **Redesign notice (2026-10-18).** The visual identity (color, type, icons, motion, layout) and the prioritized backlog are now defined by `docs/DESIGN_SYSTEM.md` and `docs/REDESIGN_ROADMAP.md`. Where this guide and those documents disagree about appearance, they win. Sections 4, 6, 7 and 9 remain in force for interaction, accessibility, boundaries and workflow.
 
 ## 1. Product objective
 
-Make Navidrome Librarian feel like a deliberately designed, specialist music-discovery and collection-management application—not a generic AI SaaS dashboard. Prioritize identity, typography, composition, hierarchy, usability, and detail over decoration. Improve clarity, speed, accessibility, responsive behavior, and reliability while preserving the established API, authentication, and domain behavior.
+Make Discair feel like a deliberately designed, specialist music-discovery and collection-management application—not a generic AI SaaS dashboard. Prioritize identity, typography, composition, hierarchy, usability, and detail over decoration. Improve clarity, speed, accessibility, responsive behavior, and reliability while preserving the established API, authentication, and domain behavior.
 
 The interface helps a user explore their Navidrome library and listening taste, discover music, and request acquisitions through existing backend services. The UI must present those capabilities clearly without duplicating discovery, recommendation, acquisition, or import logic in browser code.
 

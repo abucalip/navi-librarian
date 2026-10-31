@@ -110,7 +110,7 @@ class LastFmClient:
                     "autocorrect": 1,
                     **params,
                 },
-                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                headers={"User-Agent": "Discair/1.0"},
                 timeout=15,
             )
             response.raise_for_status()
@@ -239,7 +239,7 @@ class LastFmClient:
                     "autocorrect": 1,
                     "format": "json",
                 },
-                headers={"User-Agent": "NavidromeLibrarian/1.0"},
+                headers={"User-Agent": "Discair/1.0"},
                 timeout=12,
             )
             response.raise_for_status()

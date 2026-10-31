@@ -12,7 +12,8 @@
   --dur-fast: 120ms; --ease-out: cubic-bezier(.2,.8,.2,1);
   --text-xs: .75rem; --text-sm: .8125rem; --text-base: .9375rem; --text-2xl: 1.875rem;
   --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
-  --body: "Schibsted Grotesk", sans-serif;
+  --title: "Peace Sans", "Arial Black", sans-serif;
+  --body: "Open Sans", system-ui, sans-serif;
 }
 * { box-sizing: border-box }
 body {
@@ -31,7 +32,7 @@ body {
 /* Page head: display face, uppercase, with the 3px chart-red rule (DESIGN_SYSTEM.md 6). */
 h1 {
   margin: 0 0 var(--space-3); padding-bottom: var(--space-3); border-bottom: 3px solid var(--chart-red);
-  font: 700 var(--text-2xl)/1 var(--display); letter-spacing: .02em; text-transform: uppercase;
+  color: var(--text); line-height: 0;
 }
 .intro { margin: 0 0 var(--space-4); color: var(--text-muted); }
 .field { margin-top: var(--space-4) }
@@ -64,3 +65,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @media (prefers-reduced-motion: reduce) {
   button { transition: none }
 }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+h1 .wordmark { display: block; height: 34px; width: auto; }

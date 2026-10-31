@@ -47,7 +47,7 @@ from app.security.auth_settings import AuthSettingsReader
 
 
 app = FastAPI(
-    title="Navidrome Librarian",
+    title="Discair",
     description="A read-only web interface for your music library.",
     version="0.1.0",
 )
