@@ -101,6 +101,13 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - A relayed station uses the app address saved on the Radio page (for example the Tailscale address); with none saved it uses the address of the browser tab it was switched on from. Saving a new address moves stations that are already relayed. Away from home, the phone must reach that address (Tailscale connected).
 - Not done: browser checklist, live slskd download of a radio song, a phone client test away from home.
 
+## 2f. Android client (Discair) — contract PR #651, phases 0–3 built
+
+- Branch `claude/android-client-contract`; contract and status per phase in [ANDROID_CLIENT_CONTRACT.md](ANDROID_CLIENT_CONTRACT.md), design decisions in `android/DESIGN.md`. The PR is open and awaits the owner's approval; nothing is merged, released or deployed.
+- Phase 3 (discovery lists, feedback, search, shared row) is committed and was run on an emulator against a local Librarian. It is not verified on the owner's phone over Tailscale.
+- **Next:** Phase 4 (acquisitions: launch, live progress, retry, skip, dismiss with confirmation). Still owed from earlier phases: the `/mobile-design` review of the built screens on a device (rule 9), TalkBack, landscape, Undo and "Never suggest" taps, and captured payloads for the list-refresh route and the daily lens lists (section 7 of the contract).
+- Open contract question: whether `tailscale serve` hides the client IP from the login rate limit (contract section 9).
+
 ## 3. Recommendation engine — gated
 
 - CF freshness capture repeated 2026-10-23 after the imported history was recomputed: outcome "mixed", defaults kept. Deeper CF pages measured at 4 / 6 / 8: the larger pool changed the final list by one album (9/10 overlap), so `CF_MAX_PAGES` stays 4. A recent-30-days vs all-time profile comparison showed ranking responds to listening habits but the final list barely does. Evidence and limits: `PROJECT_LOG.md` (2026-10-23 entry).

@@ -1,3 +1,10 @@
+## 2026-10-31 — Android client Phase 3 (Discover, Search, shared row): committed on the PR #651 branch
+
+- Commit `2841dba` on `claude/android-client-contract`: Discover tab (six lists in server order), Search tab (SSE, owned first), shared ranked row with Save and Not for me (Undo window, Save shown only after the server's `ok`), New releases shelf on Home.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` (51 unit tests) and a manual emulator run on Android 36 against a local Librarian over HTTPS with a test CA and a fresh data directory (removed afterwards). Save and dismiss reached `/api/discovery/feedback`; dismiss was held for the 6 s Undo window; the saved and dismissed albums left the list on reload; search streamed owned results first.
+- Fixed from the run: header gap, mono-face reason text, duplicate empty message on Daily picks, keyboard over search results, bottom-bar labels splitting at 200% text (bar capped at 130%).
+- Not verified: the owner's phone over Tailscale, TalkBack, landscape, Undo and "Never suggest" taps, populated Saved and New releases lists, list-refresh and lens-list payloads. Not merged, released or deployed.
+
 ## 2026-10-30 — Image v0.3.1 published
 
 - **Published:** annotated tag `v0.3.1` at `a0358e3d35ab97633ed08965604cc7717108b0ff` (the exact `main` after PR #650 and its docs commit), with the owner's authorization; release run [41134598870](https://github.com/abucalip/navi-librarian/actions/runs/41134598870) succeeded. Image `ghcr.io/abucalip/navi-librarian:v0.3.1`, digest `sha256:2fb12eabdb0395707409df67fab9953c84618688904ce195be39eb5bc89871f2`. It adds PR #650 (Library albums, owned-only search, sorting, list/grid) to v0.3, which is the rollback reference. The version label on a running v0.3.1 container was not checked.
