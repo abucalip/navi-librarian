@@ -61,6 +61,14 @@ class AlbumTabsUIContractTests(unittest.TestCase):
         self.assertLess(panel.index('id="albumReviews"'), panel.index('id="albumReviewsNote"'))
         self.assertLess(panel.index('id="albumReviewsNote"'), panel.index('id="albumReviewsRetry"'))
 
+    def test_the_tabs_keep_one_centred_width_in_every_state(self):
+        # .album-head centres its children, which would shrink the block to its content: a short state such as
+        # "No reviews found" must not narrow or shift the tabs.
+        self.assertIn(".album-about { width: min(60ch, 100%);", CSS)
+        self.assertIn(".album-tabs { display: flex; justify-content: center;", CSS)
+        self.assertIn(".album-about .section-note { text-align: center; }", CSS)
+        self.assertIn("#albumReviewsRetry { display: block; margin: var(--space-2) auto 0; }", CSS)
+
     def test_tab_styles_cover_the_active_tab_and_hidden_panels(self):
         for rule in (".album-tabs .album-tab.active {", ".album-tab-panel[hidden] { display: none; }",
                      ".album-review blockquote {", ".album-review-link {"):

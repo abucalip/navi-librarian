@@ -842,8 +842,10 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 .album-description-source { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--text-xs); }
 
 /* Album page tabs: Info (the description) and Reviews (outlets' summary lines with links to the full reviews). */
-.album-about { max-width: 60ch; margin-top: var(--space-3); text-align: left; }
-.album-tabs { display: flex; gap: 0 4px; border-bottom: 1px solid var(--edge); }
+.album-about { width: min(60ch, 100%); margin-top: var(--space-3); text-align: left; }
+.album-tabs { display: flex; justify-content: center; gap: 0 4px; border-bottom: 1px solid var(--edge); }
+.album-about .section-note { text-align: center; }
+.album-head .album-about #albumReviewsRetry { display: block; margin: var(--space-2) auto 0; }
 .album-tabs .album-tab { min-height: 44px; margin-bottom: -1px; padding: 0 14px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent; font-size: var(--text-sm); font-weight: 600; }
 .album-tabs .album-tab:hover { color: var(--text); border-bottom-color: var(--edge-strong); background: transparent; }
 .album-tabs .album-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
