@@ -1,0 +1,76 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/getArtist",
+    "query": {
+      "id": "3rPoD7qONIBTqzc4kSCBON"
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true,
+        "artist": {
+          "id": "3rPoD7qONIBTqzc4kSCBON",
+          "name": "5.6.7.8's",
+          "albumCount": 1,
+          "musicBrainzId": "",
+          "sortName": "5.6.7.8's",
+          "roles": [
+            "maincredit",
+            "albumartist"
+          ],
+          "album": [
+            {
+              "id": "7y8UEyluchKVjyUsqNJQRQ",
+              "name": "Kill Bill (Volume One)",
+              "artist": "5.6.7.8's",
+              "artistId": "3rPoD7qONIBTqzc4kSCBON",
+              "coverArt": "al-7y8UEyluchKVjyUsqNJQRQ_a83305b4cffa73be",
+              "songCount": 1,
+              "duration": 118,
+              "created": "2026-09-14T17:09:24.010074285Z",
+              "year": 2003,
+              "genre": "Soundtrack",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Soundtrack"
+                }
+              ],
+              "musicBrainzId": "",
+              "isCompilation": false,
+              "sortName": "kill bill (volume one)",
+              "discTitles": [],
+              "originalReleaseDate": {},
+              "releaseDate": {},
+              "releaseTypes": [],
+              "recordLabels": [
+                {
+                  "name": "Maverick"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "3rPoD7qONIBTqzc4kSCBON",
+                  "name": "5.6.7.8's"
+                }
+              ],
+              "displayArtist": "5.6.7.8's",
+              "explicitStatus": "",
+              "version": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}

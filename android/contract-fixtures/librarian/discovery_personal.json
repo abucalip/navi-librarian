@@ -1,0 +1,274 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/discovery/personal",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.02,
+    "body": {
+      "list": "personal",
+      "generated_at": 1793401978.753939,
+      "total_before_feedback": 20,
+      "count": 10,
+      "items": [
+        {
+          "artist": "Black Sabbath",
+          "album": "Paranoid",
+          "discovery_category": "adjacent",
+          "diversity_style": "rock",
+          "genres": [
+            "blues rock",
+            "classic rock",
+            "doom metal"
+          ],
+          "genre_families": [
+            "metal",
+            "rock"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "rock"
+          ],
+          "recent_profile_bonus": 1.059,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.08994156122207642,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.109255,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [
+            "Paranoid",
+            "Planet Caravan",
+            "Iron Man"
+          ],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Queen",
+            "Guns N’ Roses",
+            "Pink Floyd"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "Dave Grusin",
+          "album": "Migration",
+          "discovery_category": "adjacent",
+          "diversity_style": "jazz",
+          "genres": [
+            "jazz"
+          ],
+          "genre_families": [
+            "jazz"
+          ],
+          "recent_profile_family": "jazz",
+          "recent_profile_families": [
+            "jazz"
+          ],
+          "recent_profile_bonus": 1.25,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.050185,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Gétatchèw Mèkurya",
+            "Mulatu Astatke",
+            "The Dave Brubeck Quartet"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "The Delfonics",
+          "album": "The Delfonics",
+          "discovery_category": "adjacent",
+          "diversity_style": "rnb_soul",
+          "genres": [
+            "philly soul",
+            "pop soul",
+            "r&b"
+          ],
+          "genre_families": [
+            "rnb-soul"
+          ],
+          "recent_profile_family": "soul",
+          "recent_profile_families": [
+            "pop",
+            "soul"
+          ],
+          "recent_profile_bonus": 1.09,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.043768,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Adele",
+            "Billie Holiday",
+            "Jamiroquai"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        }
+      ],
+      "source": "ListenBrainz + MusicBrainz + Last.fm + Navidrome",
+      "limitations": [
+        "Up to the first 100 ListenBrainz recording recommendations are resolved.",
+        "Genre tags are community-supplied and may be missing or incomplete.",
+        "Candidates without genre tags are classified as unclassified, not adventurous."
+      ],
+      "recommendations": [
+        {
+          "artist": "Black Sabbath",
+          "album": "Paranoid",
+          "discovery_category": "adjacent",
+          "diversity_style": "rock",
+          "genres": [
+            "blues rock",
+            "classic rock",
+            "doom metal"
+          ],
+          "genre_families": [
+            "metal",
+            "rock"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "rock"
+          ],
+          "recent_profile_bonus": 1.059,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.08994156122207642,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.109255,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [
+            "Paranoid",
+            "Planet Caravan",
+            "Iron Man"
+          ],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Queen",
+            "Guns N’ Roses",
+            "Pink Floyd"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "Dave Grusin",
+          "album": "Migration",
+          "discovery_category": "adjacent",
+          "diversity_style": "jazz",
+          "genres": [
+            "jazz"
+          ],
+          "genre_families": [
+            "jazz"
+          ],
+          "recent_profile_family": "jazz",
+          "recent_profile_families": [
+            "jazz"
+          ],
+          "recent_profile_bonus": 1.25,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.050185,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Gétatchèw Mèkurya",
+            "Mulatu Astatke",
+            "The Dave Brubeck Quartet"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "The Delfonics",
+          "album": "The Delfonics",
+          "discovery_category": "adjacent",
+          "diversity_style": "rnb_soul",
+          "genres": [
+            "philly soul",
+            "pop soul",
+            "r&b"
+          ],
+          "genre_families": [
+            "rnb-soul"
+          ],
+          "recent_profile_family": "soul",
+          "recent_profile_families": [
+            "pop",
+            "soul"
+          ],
+          "recent_profile_bonus": 1.09,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.043768,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Adele",
+            "Billie Holiday",
+            "Jamiroquai"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        }
+      ],
+      "diagnostics": {
+        "source": "ListenBrainz + MusicBrainz + Last.fm + Navidrome",
+        "recent_listens_retrieved": 300,
+        "library_albums_indexed": 1755,
+        "metadata_lookup_errors": [],
+        "limitations": [
+          "Up to the first 100 ListenBrainz recording recommendations are resolved.",
+          "Genre tags are community-supplied and may be missing or incomplete.",
+          "Candidates without genre tags are classified as unclassified, not adventurous."
+        ],
+        "read_filter": {
+          "ownership_checked": true,
+          "kept": 20,
+          "owned": 0,
+          "duplicate": 0,
+          "unidentified": 0
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

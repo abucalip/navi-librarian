@@ -1,10 +1,10 @@
-# Android client contract
+# Android client contract (Discair)
 
-Status: **proposal, pending owner approval of the PR. Nothing here is implemented.** Owner decisions on the former open items 2, 3 and 6 are recorded in section 9. Written against local `main` (clean, matching `origin/main` at last fetch). Payload shapes are not yet recorded; Phase 0 produces them (section 7).
+Status: **proposal, pending owner approval of the PR. Nothing here is implemented.** Owner decisions on the former open items 2, 3 and 6 are recorded in section 9. Written against local `main` (clean, matching `origin/main` at last fetch). Phase 0 is drafted on this branch: payload fixtures, a contract test and `android/DESIGN.md` (section 7).
 
 ## 1. Purpose and scope
 
-A native Android app for the owner, on Android 13. It displays library metadata from Navidrome and recommendation data from Librarian, and it can launch acquisitions and show their progress. It is a thin client: **Librarian is the only component that calculates or recommends** similar artists, albums, discovery lists and ranking. The app renders what it receives, in the order received.
+A native Android app for the owner, named **Discair**, on Android 13. It displays library metadata from Navidrome and recommendation data from Librarian, and it can launch acquisitions and show their progress. It is a thin client: **Librarian is the only component that calculates or recommends** similar artists, albums, discovery lists and ranking. The app renders what it receives, in the order received.
 
 In scope (v1):
 - Dashboard, Library, Artist page, Album page, global search.
@@ -108,6 +108,15 @@ Behaviour:
 6. Dark theme only in v1, matching the web UI.
 
 ## 7. Phase 0: payload fixtures (gate before any UI work)
+
+**Status: drafted, pending owner review of the shapes.** Fixtures: `android/contract-fixtures/` (see its README for what was and was not captured). Test: `tests/test_android_contract_fixtures.py` (6 tests, run and passing locally; CI not yet run). Design: `android/DESIGN.md`. Findings so far:
+- Search, the acquisition stream and every list endpoint behaved as section 5 describes; search ends with a `done` event.
+- Album launch and song launch both returned HTTP 200 with `ok: false` and `status: "settings_required"` when slskd is not configured, so the app must read `ok` and `status`, not the HTTP code.
+- `POST /api/acquisitions/skip` for an unknown acquisition returned 409.
+- Not captured: refresh routes and any acquisition with real items (slskd disabled). The progress item shape remains to be recorded.
+- The `tailscale serve` client-IP question (section 9) cannot be answered locally and is still open.
+
+Steps:
 
 1. Run the local test helper (`docs/LOCAL_UI_TESTING.md`, sandbox music paths, slskd disabled) and record one real response from every endpoint in section 5, including an acquisition status snapshot and a captured SSE sample.
 2. Store them in `android/contract-fixtures/` with the request that produced them.

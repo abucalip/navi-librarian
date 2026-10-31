@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/artist-image",
+    "query": {
+      "name": "Abd Al Malik"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "artwork_url": "https://cdn-images.dzcdn.net/images/artist/bf841a7ea74c904e5c7bed729c75193a/1000x1000-000000-80-0-0.jpg",
+      "image_kind": "artist",
+      "source": "Deezer",
+      "matched_artist": "Abd al Malik",
+      "year": null
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

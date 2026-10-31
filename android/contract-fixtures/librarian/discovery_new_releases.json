@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/discovery/new_releases",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "list": "new_releases",
+      "generated_at": null,
+      "items": [],
+      "message": "No saved list yet. Use discovery_refresh_list or wait for the daily background refresh."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

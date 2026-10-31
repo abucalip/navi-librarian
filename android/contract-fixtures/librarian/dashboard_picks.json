@@ -1,0 +1,129 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/dashboard-picks",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.02,
+    "body": {
+      "items": [
+        {
+          "artist": "Arctic Monkeys",
+          "album": "AM",
+          "discovery_category": "cross_genre",
+          "diversity_style": "alternative",
+          "genres": [
+            "alternative rock",
+            "art rock",
+            "baroque pop"
+          ],
+          "genre_families": [
+            "alternative",
+            "electronic",
+            "pop"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "electronic",
+            "pop",
+            "rock"
+          ],
+          "recent_profile_bonus": 1.08,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.13803164660930634,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.215036,
+          "recent_artist_listens": 1,
+          "lastfm_listeners": 22780,
+          "lastfm_playcount": 1105338,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.093,
+          "suggested_tracks": [
+            "Arabella",
+            "R U Mine?",
+            "Do I Wanna Know?"
+          ],
+          "reason": "Genre tags suggest a bridge between multiple musical families in your profile.",
+          "similar_to": [
+            "The Strokes",
+            "Gorillaz",
+            "The Black Keys"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist.",
+          "dashboard_category": "Personal discoveries"
+        },
+        {
+          "artist": "Dave Grusin",
+          "album": "Migration",
+          "discovery_category": "adjacent",
+          "diversity_style": "jazz",
+          "genres": [
+            "jazz"
+          ],
+          "genre_families": [
+            "jazz"
+          ],
+          "recent_profile_family": "jazz",
+          "recent_profile_families": [
+            "jazz"
+          ],
+          "recent_profile_bonus": 1.25,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.050185,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Gétatchèw Mèkurya",
+            "Mulatu Astatke",
+            "The Dave Brubeck Quartet"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist.",
+          "dashboard_category": "Personal discoveries"
+        },
+        {
+          "artist": "Amoeba",
+          "album": "Pivot",
+          "discovery_category": "adventurous",
+          "diversity_style": "other",
+          "genres": [],
+          "genre_families": [
+            "alternative"
+          ],
+          "recent_profile_family": null,
+          "recent_profile_families": [],
+          "recent_profile_bonus": 1.0,
+          "genre_metadata_available": false,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.040148,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Available genre tags suggest a departure from the strongest mapped genre matches. Genre metadata was unavailable, so this classification has low confidence.",
+          "similar_to": [],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist.",
+          "dashboard_category": "Personal discoveries"
+        }
+      ],
+      "count": 10,
+      "pool_size": 20
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

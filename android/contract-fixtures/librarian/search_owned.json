@@ -1,0 +1,96 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/search",
+    "query": {
+      "q": "Abd Al Malik",
+      "scope": "owned"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "text/event-stream",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "sse_events": [
+        {
+          "event": "capabilities",
+          "data": {
+            "types": {
+              "artist": {
+                "available": true,
+                "reason": null
+              },
+              "album": {
+                "available": true,
+                "reason": null
+              },
+              "song": {
+                "available": true,
+                "reason": null
+              },
+              "genre": {
+                "available": true,
+                "reason": null
+              }
+            },
+            "sources": {
+              "navidrome": {
+                "available": true,
+                "reason": null
+              },
+              "musicbrainz": {
+                "available": false,
+                "reason": "not_in_this_build"
+              },
+              "lastfm": {
+                "available": false,
+                "reason": "not_in_this_build"
+              },
+              "listenbrainz": {
+                "available": false,
+                "reason": "not_in_this_build"
+              },
+              "discogs": {
+                "available": false,
+                "reason": "not_in_this_build"
+              }
+            },
+            "owned_index": {
+              "available": true,
+              "reason": null,
+              "state": "fresh"
+            }
+          }
+        },
+        {
+          "event": "result",
+          "data": {
+            "type": "artist",
+            "owned": true,
+            "id": "2oQcvqplsiJFiOwhVpp2Ow",
+            "key": "abd al malik",
+            "name": "Abd Al Malik",
+            "mbid": "4c7a7959-7cf8-4de8-b7b7-6fe83122926b",
+            "album_count": 2,
+            "genre": "Rap",
+            "sources": [
+              "navidrome"
+            ],
+            "artwork_url": "/api/owned/artwork/2oQcvqplsiJFiOwhVpp2Ow"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "elapsed_ms": 5,
+            "deadline_hit": false,
+            "partial": false
+          }
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

@@ -1,0 +1,137 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/genres/rock",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "capabilities": {
+        "sections": {
+          "artists": {
+            "available": true,
+            "reason": null
+          },
+          "albums": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "sources": {
+          "navidrome": {
+            "available": true,
+            "reason": null
+          },
+          "musicbrainz": {
+            "available": true,
+            "reason": null
+          },
+          "discogs": {
+            "available": false,
+            "reason": "source_disabled"
+          }
+        },
+        "owned_index": {
+          "available": true,
+          "reason": null,
+          "state": "fresh"
+        }
+      },
+      "sections": {
+        "artists": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "owned": true,
+              "id": "6QiT23Pg8GAJHZop58uMKH",
+              "key": "unknown artist",
+              "name": "[Unknown Artist]",
+              "mbid": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+              "sources": [
+                "navidrome"
+              ]
+            },
+            {
+              "owned": true,
+              "id": "3ORCh72CnEh7ObAnV2gceI",
+              "key": "arcade fire",
+              "name": "Arcade Fire",
+              "mbid": "52074ba6-e495-4ef3-9bb4-0703888a9f68",
+              "sources": [
+                "navidrome"
+              ]
+            },
+            {
+              "owned": true,
+              "id": "4sHtnxeUncBFkuR3NqyEiy",
+              "key": "archive",
+              "name": "Archive",
+              "mbid": "bd513de0-e42f-425e-ae46-817d7bc5fb1c",
+              "sources": [
+                "navidrome"
+              ]
+            }
+          ]
+        },
+        "albums": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "owned": true,
+              "id": "16lqWg6DURvDP9PshGHGNS",
+              "key": "unknown artist/radio 1 s big weekend 2006",
+              "name": "Radio 1's Big Weekend 2006",
+              "artist": "[Unknown Artist]",
+              "artist_key": "unknown artist",
+              "year": 2006,
+              "release_group_mbid": null,
+              "sources": [
+                "navidrome"
+              ]
+            },
+            {
+              "owned": true,
+              "id": "70Mmr0nhTjBneXcgMpSABh",
+              "key": "arcade fire/suburbs",
+              "name": "The Suburbs",
+              "artist": "Arcade Fire",
+              "artist_key": "arcade fire",
+              "year": 2010,
+              "release_group_mbid": "bf306022-c851-449d-a619-7864caddf5c7",
+              "sources": [
+                "navidrome"
+              ]
+            },
+            {
+              "owned": true,
+              "id": "7FlZgZVgl0oh6JMFAM6MYT",
+              "key": "archive/you all look the same to me",
+              "name": "You All Look the Same to Me",
+              "artist": "Archive",
+              "artist_key": "archive",
+              "year": 2001,
+              "release_group_mbid": "535c5c56-0f72-449d-b031-71fbb9ecd98a",
+              "sources": [
+                "navidrome"
+              ]
+            }
+          ]
+        }
+      },
+      "done": {
+        "elapsed_ms": 7,
+        "deadline_hit": false,
+        "partial": false
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

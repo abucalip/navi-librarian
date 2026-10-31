@@ -1,0 +1,241 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/albums/beatles/1",
+    "query": {
+      "id": "13g3SB0vxsIQUQGACCbLnQ",
+      "artist": "The Beatles",
+      "name": "1",
+      "year": 2000
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.02,
+    "body": {
+      "capabilities": {
+        "sections": {
+          "album": {
+            "available": true,
+            "reason": null
+          },
+          "year": {
+            "available": true,
+            "reason": null
+          },
+          "genre": {
+            "available": true,
+            "reason": null
+          },
+          "description": {
+            "available": true,
+            "reason": null
+          },
+          "tracks": {
+            "available": true,
+            "reason": null
+          },
+          "similar_artists": {
+            "available": true,
+            "reason": null
+          },
+          "similar_albums": {
+            "available": true,
+            "reason": null
+          }
+        },
+        "sources": {
+          "navidrome": {
+            "available": true,
+            "reason": null
+          },
+          "musicbrainz": {
+            "available": true,
+            "reason": null
+          },
+          "lastfm": {
+            "available": true,
+            "reason": null
+          },
+          "listenbrainz": {
+            "available": true,
+            "reason": null
+          },
+          "discogs": {
+            "available": false,
+            "reason": "source_disabled"
+          }
+        },
+        "owned_index": {
+          "available": true,
+          "reason": null,
+          "state": "fresh"
+        }
+      },
+      "sections": {
+        "album": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "album": {
+            "name": "1",
+            "artist": "The Beatles",
+            "artist_key": "beatles",
+            "artist_id": "52vufDnmCH43ILVOiWyQ8r",
+            "key": "beatles/1",
+            "year": 2000,
+            "owned": true,
+            "id": "13g3SB0vxsIQUQGACCbLnQ",
+            "artwork_url": "/api/owned/artwork/13g3SB0vxsIQUQGACCbLnQ",
+            "release_group_mbid": "4f539c70-1a19-37a3-ba14-979f11fc0686",
+            "song_count": 10
+          }
+        },
+        "year": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "year": 2000
+        },
+        "genre": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "genre": "rock"
+        },
+        "description": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "description": {
+            "paragraphs": [],
+            "source": "Apple Music",
+            "url": "https://music.apple.com/us/album/1/1440833098"
+          }
+        },
+        "tracks": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "track_number": 1,
+              "title": "Love Me Do",
+              "duration_seconds": 133,
+              "owned": true
+            },
+            {
+              "track_number": 2,
+              "title": "From Me to You",
+              "duration_seconds": 115,
+              "owned": true
+            },
+            {
+              "track_number": 3,
+              "title": "She Loves You",
+              "duration_seconds": 151,
+              "owned": true
+            }
+          ]
+        },
+        "similar_artists": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "George Harrison",
+              "key": "george harrison",
+              "artwork_url": null,
+              "mbid": "42a8f507-8412-4611-854f-926571049fa0",
+              "owned": false,
+              "id": null,
+              "score": 0.962,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: british, pop, pop rock"
+              ]
+            },
+            {
+              "name": "Paul McCartney",
+              "key": "paul mccartney",
+              "artwork_url": null,
+              "mbid": "ba550d0e-adac-4864-b88b-407cab5e76af",
+              "owned": false,
+              "id": null,
+              "score": 0.905,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: british, classic rock, english"
+              ]
+            },
+            {
+              "name": "Ringo Starr",
+              "key": "ringo starr",
+              "artwork_url": null,
+              "mbid": "300c4c73-33ac-4255-9d57-4e32627f5e13",
+              "owned": false,
+              "id": null,
+              "score": 0.579,
+              "reasons": [
+                "Last.fm similar artist",
+                "Shared tags: rock"
+              ]
+            }
+          ]
+        },
+        "similar_albums": {
+          "available": true,
+          "complete": true,
+          "reason": null,
+          "items": [
+            {
+              "name": "All Things Must Pass (2014 Remaster)",
+              "artist": "George Harrison",
+              "artist_key": "george harrison",
+              "key": "george harrison/all things must pass 2014 remaster",
+              "year": null,
+              "owned": false,
+              "release_group_mbid": null,
+              "sources": [
+                "lastfm"
+              ]
+            },
+            {
+              "name": "McCartney II (Special Edition)",
+              "artist": "Paul McCartney",
+              "artist_key": "paul mccartney",
+              "key": "paul mccartney/mccartney ii special edition",
+              "year": null,
+              "owned": false,
+              "release_group_mbid": null,
+              "sources": [
+                "lastfm"
+              ]
+            },
+            {
+              "name": "Ringo",
+              "artist": "Ringo Starr",
+              "artist_key": "ringo starr",
+              "key": "ringo starr/ringo",
+              "year": null,
+              "owned": false,
+              "release_group_mbid": null,
+              "sources": [
+                "lastfm"
+              ]
+            }
+          ]
+        }
+      },
+      "done": {
+        "elapsed_ms": 13,
+        "deadline_hit": false,
+        "partial": false
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

@@ -1,0 +1,59 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/discovery/lens-feedback",
+    "query": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "disabled": false,
+      "lenses": {
+        "repeated_tracks": {
+          "saved": 0,
+          "dismissed": 0,
+          "actions": 0,
+          "save_rate": null,
+          "acquisitions": {
+            "requests": 0,
+            "by_status": {}
+          }
+        },
+        "deep_cuts": {
+          "saved": 0,
+          "dismissed": 0,
+          "actions": 0,
+          "save_rate": null,
+          "acquisitions": {
+            "requests": 0,
+            "by_status": {}
+          }
+        },
+        "obsessions": {
+          "saved": 0,
+          "dismissed": 0,
+          "actions": 0,
+          "save_rate": null,
+          "acquisitions": {
+            "requests": 0,
+            "by_status": {}
+          }
+        },
+        "current_tastes": {
+          "saved": 0,
+          "dismissed": 0,
+          "actions": 0,
+          "save_rate": null,
+          "acquisitions": {
+            "requests": 0,
+            "by_status": {}
+          }
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}
