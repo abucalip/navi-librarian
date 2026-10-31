@@ -95,6 +95,17 @@ interface LibraryRepository : AcquisitionApi {
     fun artistPage(key: String, id: String?, name: String?, mbid: String?): ArtistPage
     fun albumPage(key: String, id: String?, artist: String?, name: String?, year: Int?): AlbumPage
     fun genrePage(tag: String): GenrePage
+
+    /**
+     * The album page as it fills in: [onPage] gets the page after each section the server finishes, as
+     * the web does, so the header and tracks show before the slow network sections arrive.
+     */
+    fun albumPageStream(key: String, id: String?, artist: String?, name: String?, year: Int?, onPage: (AlbumPage) -> Unit) =
+        onPage(albumPage(key, id, artist, name, year))
+
+    /** The artist page as it fills in; owned albums arrive first. */
+    fun artistPageStream(key: String, id: String?, name: String?, mbid: String?, onPage: (ArtistPage) -> Unit) =
+        onPage(artistPage(key, id, name, mbid))
     fun albumLinks(artist: String, album: String, mbid: String?): AlbumLinks
 
     /** One discovery list in the server's order. [list] is a path name such as `new_releases` or a lens name. */
@@ -114,6 +125,9 @@ interface LibraryRepository : AcquisitionApi {
 
     /** Cover for an album the library does not own; null when no source has one. */
     fun albumImage(artist: String, album: String): String?
+
+    /** The year of an album the list did not date, or null when the catalogue has no exact match. */
+    fun albumYear(artist: String, album: String): Int? = null
     fun artistImage(name: String): String?
 }
 
@@ -126,6 +140,7 @@ class LibrarianRepository(
     override val staleSince: Long? get() = stale
 
     private val images = ConcurrentHashMap<String, String>()
+    private val years = ConcurrentHashMap<String, Int>()
     private val noImage = ConcurrentHashMap.newKeySet<String>()
 
     override fun absolute(path: String) = if (path.startsWith("http")) path else baseUrl + path
@@ -151,6 +166,56 @@ class LibrarianRepository(
             listOf("api", "albums", artistKey, albumKey),
             mapOf("id" to id, "artist" to artist, "name" to name, "year" to year?.toString()),
         )
+    }
+
+    override fun albumPageStream(key: String, id: String?, artist: String?, name: String?, year: Int?, onPage: (AlbumPage) -> Unit) {
+        val (artistKey, albumKey) = key.split("/", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+        streamSections(
+            listOf("api", "albums", artistKey, albumKey),
+            mapOf("id" to id, "artist" to artist, "name" to name, "year" to year?.toString()),
+        ) { onPage(ApiJson.decodeFromString(AlbumPage.serializer(), it)) }
+    }
+
+    override fun artistPageStream(key: String, id: String?, name: String?, mbid: String?, onPage: (ArtistPage) -> Unit) =
+        streamSections(listOf("api", "artists", key), mapOf("id" to id, "name" to name, "mbid" to mbid)) {
+            onPage(ApiJson.decodeFromString(ArtistPage.serializer(), it))
+        }
+
+    /**
+     * Reads a page's `section` events and hands [onBody] the page JSON built so far after each one.
+     * The finished page is saved under the same key a plain read uses, so offline reads still work, and
+     * a phone that cannot stream gets the saved copy, as any other read does.
+     */
+    private fun streamSections(segments: List<String>, query: Map<String, String?>, onBody: (String) -> Unit) {
+        if (ReadMode.isCacheOnly) return onBody(fetch(segments, query))
+        val sections = linkedMapOf<String, kotlinx.serialization.json.JsonElement>()
+        var done: kotlinx.serialization.json.JsonElement? = null
+        fun page(): String = JsonObject(buildMap {
+            put("sections", JsonObject(sections))
+            done?.let { put("done", it) }
+        }).toString()
+        try {
+            client.stream(segments, query) { name, data ->
+                when (name) {
+                    "section" -> (ApiJson.parseToJsonElement(data) as? JsonObject)?.let { o ->
+                        val section = (o["section"] as? kotlinx.serialization.json.JsonPrimitive)?.content ?: return@let
+                        sections[section] = JsonObject(o.filterKeys { it != "section" })
+                        onBody(page())
+                    }
+                    "done" -> done = ApiJson.parseToJsonElement(data)
+                }
+            }
+        } catch (e: Exception) {
+            if (!isOffline(e)) throw e
+            onBody(fetch(segments, query))
+            return
+        }
+        if (sections.isEmpty()) {
+            onBody(fetch(segments, query))
+            return
+        }
+        cache.put(cacheKey(segments, query), page())
+        stale = null
     }
 
     override fun genrePage(tag: String) = read<GenrePage>(listOf("api", "genres", tag))
@@ -218,6 +283,29 @@ class LibrarianRepository(
     override fun albumImage(artist: String, album: String) =
         lookup("album|$artist|$album", listOf("api", "artwork"), mapOf("artist" to artist, "album" to album))
 
+    override fun albumYear(artist: String, album: String): Int? {
+        val key = "${artist.trim().lowercase()}::${album.trim().lowercase()}"
+        years[key]?.let { return it.takeIf { y -> y > 0 } }
+        // A year found before survives restarts; the answer "no year" is not saved, so it is asked again.
+        cache.get("year|$key")?.body?.toIntOrNull()?.let { years[key] = it; return it }
+        val body = JsonObject(mapOf("items" to kotlinx.serialization.json.JsonArray(listOf(JsonObject(mapOf(
+            "artist" to kotlinx.serialization.json.JsonPrimitive(artist),
+            "album" to kotlinx.serialization.json.JsonPrimitive(album),
+        ))))))
+        return try {
+            val answer = (ApiJson.parseToJsonElement(client.post(listOf("api", "album-years"), body.toString())) as? JsonObject)
+                ?.get("years") as? kotlinx.serialization.json.JsonArray
+            // An album the catalogue call failed for is left out of the answer, so it is not remembered.
+            val entry = answer?.firstOrNull() as? JsonObject ?: return null
+            val year = (entry["year"] as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull()
+            years[key] = year ?: 0
+            if (year != null) cache.put("year|$key", year.toString())
+            year
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override fun artistImage(name: String) =
         lookup("artist|$name", listOf("api", "artist-image"), mapOf("name" to name))
 
@@ -244,14 +332,19 @@ class LibrarianRepository(
     private inline fun <reified T> read(segments: List<String>, query: Map<String, String?> = emptyMap()): T =
         ApiJson.decodeFromString(serializer<T>(), fetch(segments, query))
 
+    private fun cacheKey(segments: List<String>, query: Map<String, String?>) =
+        baseUrl + "/" + segments.joinToString("/") + "?" +
+            query.filterValues { it != null }.toSortedMap().entries.joinToString("&") { "${it.key}=${it.value}" }
+
     /**
      * A read-only GET with the last good answer as a fallback when the phone cannot reach the server
      * (no connection, timeout, unreachable). A server error, a refusal or a bad certificate is never
      * answered from the cache: those say something is wrong, not that the phone is offline.
      */
     private fun fetch(segments: List<String>, query: Map<String, String?> = emptyMap()): String {
-        val key = baseUrl + "/" + segments.joinToString("/") + "?" +
-            query.filterValues { it != null }.toSortedMap().entries.joinToString("&") { "${it.key}=${it.value}" }
+        val key = cacheKey(segments, query)
+        // First paint from the saved copy: no request, and the offline banner is left alone.
+        if (ReadMode.isCacheOnly) return cache.get(key)?.body ?: throw CacheMiss()
         return try {
             client.get(segments, query).also { cache.put(key, it); stale = null }
         } catch (e: Exception) {

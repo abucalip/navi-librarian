@@ -24,6 +24,8 @@ fun httpClient(cookies: CookieJar = CookieJar.NO_COOKIES): OkHttpClient = OkHttp
     .cookieJar(cookies)
     .connectTimeout(10, TimeUnit.SECONDS)
     .readTimeout(30, TimeUnit.SECONDS)
+    // OkHttp's default is 5 at once per host, which made page data queue behind covers and bios.
+    .dispatcher(okhttp3.Dispatcher().apply { maxRequestsPerHost = 16 })
     .build()
 
 /** Pulls the server's `detail` text out of an error body, if there is one. */

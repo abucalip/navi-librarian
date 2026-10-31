@@ -133,19 +133,24 @@ fun RankedRow(
 
 /** The artist biography, three lines until tapped. Fetched when the row first appears. */
 @Composable
-private fun ArtistBio(artist: String) {
+fun ArtistBio(artist: String, reserveLines: Int = 0, expandable: Boolean = true) {
     val repo = LocalRepository.current
-    val bio by produceState<String?>(null, artist) { value = withContext(Dispatchers.IO) { repo.artistBio(artist) } }
+    val bio by produceState<String?>(null, artist) { value = withContext(LookupDispatcher) { repo.artistBio(artist) } }
     var expanded by remember(artist) { mutableStateOf(false) }
+    val style = MaterialTheme.typography.bodySmall
+    // A fixed number of lines is held back until the text arrives, so a card never changes height.
     bio?.let {
         Text(
-            it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp).clickable(role = Role.Button) { expanded = !expanded }.semantics {
-                stateDescription = if (expanded) "Expanded" else "Collapsed"
-            },
+            it, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            minLines = reserveLines, maxLines = if (expanded && expandable) Int.MAX_VALUE else if (reserveLines > 0) reserveLines else 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 2.dp).then(
+                if (expandable) Modifier.clickable(role = Role.Button) { expanded = !expanded }.semantics {
+                    stateDescription = if (expanded) "Expanded" else "Collapsed"
+                } else Modifier,
+            ),
         )
-    }
+    } ?: if (reserveLines > 0) Text("", style = style, minLines = reserveLines, modifier = Modifier.padding(top = 2.dp)) else Unit
 }
 
 /** Save is a bookmark. The four states differ by icon and spoken state, not by colour alone. */
@@ -174,7 +179,7 @@ fun SaveButton(album: String, state: SaveState, onClick: () -> Unit) {
 
 /** "Not for me": the choice between the album and the whole artist is a menu, so neither is gesture-only. */
 @Composable
-private fun DismissMenu(album: String, artist: String, onDismiss: (Boolean) -> Unit) {
+fun DismissMenu(album: String, artist: String, onDismiss: (Boolean) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }, Modifier.size(Target)) {

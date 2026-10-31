@@ -63,6 +63,7 @@ import app.discair.ui.common.TintedPage
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
+import app.discair.ui.common.rememberStreamLoad
 import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
@@ -74,7 +75,7 @@ private const val SIMILAR_ARTISTS_SHOWN = 5
 @Composable
 fun AlbumScreen(route: AlbumRoute, open: Opener) {
     val repo = LocalRepository.current
-    val loaded = rememberLoad(route) { repo.albumPage(route.key, route.id, route.artist, route.name, route.year) }
+    val loaded = rememberStreamLoad<AlbumPage>(route) { show -> repo.albumPageStream(route.key, route.id, route.artist, route.name, route.year, show) }
     var tint by remember(route) { mutableStateOf<Color?>(null) }
     val list = androidx.compose.foundation.lazy.rememberLazyListState()
     TintedPage(tint, list) {

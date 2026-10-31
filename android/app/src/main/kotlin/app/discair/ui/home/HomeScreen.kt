@@ -62,6 +62,7 @@ import app.discair.ui.common.Target
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.genreHue
 import app.discair.ui.common.plural
+import app.discair.ui.common.rememberAlbumYear
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.common.routeKey
 import app.discair.ui.theme.Display
@@ -69,21 +70,16 @@ import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
 import kotlinx.coroutines.launch
 
-private const val GENRES_SHOWN = 12
-private const val GENRES_PER_LINE = 4
-private const val GENRES_MAX = 60
+/** The genre row shows this many, drawn at random each time Home opens. */
+private const val GENRES_SHOWN = 6
 
 @Composable
 fun HomeScreen(open: Opener) {
     val repo = LocalRepository.current
     val picks = rememberLoad("picks") { repo.picks(10).items }
     val genres = rememberLoad("genres") { repo.genres().items }
-    var showAllGenres by remember { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)) {
-        // The web hides this heading on a phone; it stays for screen readers.
-        item {
-            Text("Recommended", Modifier.size(1.dp).semantics { heading() }, color = Color.Transparent)
-        }
+        item { PageHeading("For you", Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) }
         item {
             Box(Modifier.heightIn(min = 120.dp)) {
                 when (val state = picks.state) {
@@ -96,24 +92,13 @@ fun HomeScreen(open: Opener) {
             }
         }
         item {
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 24.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                PageHeading("Genres", Modifier.weight(1f))
-                val ready = (genres.state as? Load.Ready)?.value
-                if (ready != null && ready.size > GENRES_SHOWN && !showAllGenres) {
-                    TextButton(onClick = { showAllGenres = true }, Modifier.heightIn(min = Target)) {
-                        Text("View more", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+            PageHeading("Genres", Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp))
         }
         item {
             when (val state = genres.state) {
                 Load.Loading -> Muted("Loading…")
                 is Load.Failed -> Inline(state.failure.message, genres.reload)
-                is Load.Ready -> GenreGrid(state.value, open, if (showAllGenres) GENRES_MAX else GENRES_SHOWN)
+                is Load.Ready -> GenreRow(state.value, open)
             }
         }
         item(key = "new_releases") { ShelfRow("new_releases", "New releases", open) { repo.newReleases() } }
@@ -157,26 +142,38 @@ private fun TagChip(text: String) {
 }
 
 /**
- * The phone strip from the mobile web: swipeable cards, one per page, centred, with a dot for each
- * and no arrows or count. The dots are buttons, so the strip never depends on swiping alone.
+ * The phone strip: swipeable cards, one per page, with the position ("3/10") in the top-left corner.
+ * The Get cloud sits on the cover's bottom-left corner. Under the cover come the artist's first
+ * one or two genres in small grey text; the year (accent) and the listener count (grey) follow the artist.
  */
 @Composable
 private fun Recommended(items: List<Pick>, open: Opener) {
     val pager = rememberPagerState { items.size }
-    val scope = rememberCoroutineScope()
-    Column {
-        HorizontalPager(pager, Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp), pageSpacing = 8.dp) { page ->
-            val pick = items[page]
-            var tint by remember(pick) { mutableStateOf<Color?>(null) }
+    HorizontalPager(pager, Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 12.dp), pageSpacing = 8.dp) { page ->
+        val pick = items[page]
+        var tint by remember(pick) { mutableStateOf<Color?>(null) }
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(tint?.let { lerp(Ink.Surface, it, 0.7f) } ?: Ink.Surface)
+                .clickable(role = Role.Button) { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) },
+        ) {
             Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                    .background(tint?.let { lerp(Ink.Surface, it, 0.7f) } ?: Ink.Surface)
-                    .clickable(role = Role.Button) { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) }
-                    .padding(vertical = 16.dp, horizontal = 16.dp),
+                Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                AlbumCover(pick.artist, pick.album, null, Modifier.fillMaxWidth(0.6f).aspectSquare(), onColor = { tint = it })
-                Spacer(Modifier.size(12.dp))
+                Box(Modifier.fillMaxWidth(0.6f)) {
+                    AlbumCover(pick.artist, pick.album, null, Modifier.fillMaxWidth().aspectSquare(), onColor = { tint = it })
+                    Box(
+                        Modifier.align(Alignment.BottomStart).padding(4.dp).clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.55f)),
+                    ) { GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year)) }
+                }
+                val tags = pick.genres.filter { it.isNotBlank() }.take(2).joinToString(" · ")
+                if (tags.isNotEmpty()) Text(
+                    tags, style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp),
+                )
+                Spacer(Modifier.size(8.dp))
                 TagChip(pickTag(pick.dashboardCategory))
                 Text(
                     pick.album, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center,
@@ -184,67 +181,44 @@ private fun Recommended(items: List<Pick>, open: Opener) {
                 )
                 Text(
                     pick.artist, style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
+                    color = Ink.Text, textAlign = TextAlign.Center,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                val extra = listOfNotNull(
-                    pick.year?.toString(),
-                    pick.listeners?.takeIf { it > 0 }?.let { "%,d listeners".format(it) },
-                ).joinToString(" · ")
-                if (extra.isNotEmpty()) Text(extra, style = MaterialTheme.typography.labelMedium, color = Ink.Accent)
-                GetAlbumButton(pick.artist, pick.album, pageMetadata(pick.artist, pick.album, pick.year))
-            }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            items.indices.forEach { index ->
-                val current = pager.currentPage == index
-                Box(
-                    // 32dp wide so ten dots fit a 360dp phone; still 48dp tall. Each dot is a button.
-                    Modifier.size(width = 32.dp, height = Target)
-                        .clickable(role = Role.Button) { scope.launch { pager.animateScrollToPage(index) } }
-                        .semantics {
-                            contentDescription = "Show album ${index + 1} of ${items.size}"
-                            selected = current
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        Modifier.size(8.dp).clip(CircleShape).background(
-                            if (current) MaterialTheme.colorScheme.primary else Ink.TextMuted.copy(alpha = 0.3f),
-                        ),
-                    )
+                val listeners = pick.listeners?.takeIf { it > 0 }?.let { "%,d listeners".format(it) }
+                val year = rememberAlbumYear(pick.artist, pick.album, pick.year)
+                if (year != null || listeners != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    year?.let { Text("$it", style = MaterialTheme.typography.labelMedium, color = Ink.Accent) }
+                    listeners?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = Ink.TextMuted) }
                 }
             }
+            Text(
+                "${page + 1}/${items.size}", style = MaterialTheme.typography.labelSmall, color = Ink.TextMuted,
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 10.dp)
+                    .semantics { contentDescription = "Album ${page + 1} of ${items.size}" },
+            )
         }
     }
 }
 
-/** Genre tiles as on the web phone: a name and a coloured left bar, four to a line. Counts go in the spoken label. */
+/** A slideable row of genre tiles: the name only. A new random few each time Home opens. */
 @Composable
-private fun GenreGrid(all: List<GenreTile>, open: Opener, limit: Int) {
-    val tiles = all.take(minOf(limit, GENRES_MAX))
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        tiles.chunked(GENRES_PER_LINE).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { genre ->
-                    val bar = Color.hsl(genreHue(genre.tag).toFloat(), 0.55f, 0.55f)
-                    Row(
-                        Modifier.weight(1f).heightIn(min = Target)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable(role = Role.Button) { open.genre(genre.tag, genre.name) }
-                            .semantics { contentDescription = "${genre.name}, " + plural(genre.albumCount, "album") },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(Modifier.width(4.dp).heightIn(min = Target).fillMaxHeight().background(bar))
-                        Text(
-                            genre.name, style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 6.dp),
-                        )
-                    }
-                }
-                repeat(GENRES_PER_LINE - row.size) { Spacer(Modifier.weight(1f)) }
+private fun GenreRow(all: List<GenreTile>, open: Opener) {
+    val tiles = remember(all) { all.shuffled().take(GENRES_SHOWN) }
+    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(tiles, key = { it.tag }) { genre ->
+            Row(
+                Modifier.heightIn(min = Target)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(role = Role.Button) { open.genre(genre.tag, genre.name) }
+                    .semantics { contentDescription = "${genre.name}, " + plural(genre.albumCount, "album") },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    genre.name, style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 12.dp),
+                )
             }
         }
     }

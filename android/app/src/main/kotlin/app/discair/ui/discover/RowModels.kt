@@ -49,7 +49,7 @@ private fun buildRow(list: DiscoveryList, item: app.discair.model.DiscoveryItem,
         )
         else -> RowModel(
             item.artistName, item.album, item.year, RowLead.Rank(position),
-            listOfNotNull(item.year?.toString(), listeners, item.reason.takeIf { it.isNotBlank() }), bio = true,
+            listOfNotNull(item.year?.toString(), listeners), bio = true,
         )
     }
 }

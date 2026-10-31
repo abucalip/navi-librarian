@@ -63,6 +63,7 @@ import app.discair.ui.common.abbreviate
 import app.discair.ui.common.aspectSquare
 import app.discair.ui.common.plural
 import app.discair.ui.common.rememberLoad
+import app.discair.ui.common.rememberStreamLoad
 import app.discair.ui.theme.Display
 import app.discair.ui.theme.Ink
 import app.discair.ui.theme.Mono
@@ -75,7 +76,7 @@ private const val MISSING_SHOWN = 10
 @Composable
 fun ArtistScreen(route: ArtistRoute, open: Opener) {
     val repo = LocalRepository.current
-    val loaded = rememberLoad(route) { repo.artistPage(route.key, route.id, route.name, route.mbid) }
+    val loaded = rememberStreamLoad<ArtistPage>(route) { show -> repo.artistPageStream(route.key, route.id, route.name, route.mbid, show) }
     var tint by remember(route) { mutableStateOf<Color?>(null) }
     val list = androidx.compose.foundation.lazy.rememberLazyListState()
     TintedPage(tint, list) {

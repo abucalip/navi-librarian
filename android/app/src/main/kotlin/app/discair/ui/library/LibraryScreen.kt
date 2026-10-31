@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -164,20 +165,21 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
     var open by remember { mutableStateOf(false) }
     val label = if (state.tab == LibraryTab.Artists) state.artistSort.label else state.albumSort.label
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
     ) {
-        Text("Sort by", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Box(Modifier.weight(1f)) {
+        Text("Sort by", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box {
             Row(
-                Modifier.fillMaxWidth().heightIn(min = Target).clip(RoundedCornerShape(24.dp))
+                Modifier.height(32.dp).clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) { open = true }
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Text("▾", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.labelMedium)
+                Text("▾", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 if (state.tab == LibraryTab.Artists) ArtistSort.entries.forEach { sort ->
@@ -190,11 +192,11 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
         // The arrow points the way the list runs: up for ascending, down for descending.
         OutlinedIconButton(
             onClick = model::flipDirection,
-            modifier = Modifier.size(Target).semantics { contentDescription = directionLabel(state) + ". Switch the order." },
+            modifier = Modifier.size(32.dp).semantics { contentDescription = directionLabel(state) + ". Switch the order." },
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null,
-                modifier = Modifier.rotate(if (state.effectiveDescending) -90f else 90f),
+                modifier = Modifier.size(16.dp).rotate(if (state.effectiveDescending) -90f else 90f),
             )
         }
     }

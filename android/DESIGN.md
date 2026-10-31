@@ -143,3 +143,10 @@ Decided without a device run; the owner then ran the signed build on their phone
 - **Session expiry returns to setup with a reason** in red text (announced politely) and the saved values filled in, instead of every page showing "Not authorised".
 - **Accessibility:** clickable rows, covers and names now announce as buttons. Known open: a ranked row's cover and title both open the same page (two TalkBack stops).
 
+## UI and speed pass (2026-10-31, owner's requests)
+
+- **Tabs swipe, stacked pages swipe back.** A drag no child used (carousels, rows and pagers take theirs first) moves to the neighbouring top-level tab, or pops a stacked page. A pager at its first or last tab keeps the drag, so Daily picks and Artist deep dives are left with the bottom bar.
+- **Discover is cards, two to a row.** Controls sit on the cover over a dark round backing so they read on any art. Cards are a fixed height: the title reserves two lines, the year line one, the bio three, and the bio does not expand in a card. The server's "reason" text is never shown.
+- **Artist names are white; the year is the accent colour and the listener count grey.** Categories use the dark pill with a lighter border and a glow while pressed; the selected one has the accent border and is announced as selected.
+- **Pages show what they have.** First paint comes from the saved copy, then the server replaces it; an album or artist page shows each section as the server finishes it. A failure after something is on screen keeps it. Cosmetic lookups (covers, bios, years) run on a few threads so they never delay page data.
+- **Open:** the Sort by pill and its direction button are 32 dp tall, below the 48 dp touch target used elsewhere; the owner asked for them small. Thumb reach of the on-cover buttons belongs to the deferred device review.

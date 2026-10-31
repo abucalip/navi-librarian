@@ -20,7 +20,7 @@ class AppContainer(val app: Application) {
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(app)
             .allowHardware(false)
-            .components { add(OkHttpNetworkFetcherFactory(callFactory = { http })) }
+            .components { add(OkHttpNetworkFetcherFactory(callFactory = { http.newBuilder().dispatcher(okhttp3.Dispatcher().apply { maxRequestsPerHost = 6 }).build() })) }
             .build()
     }
 

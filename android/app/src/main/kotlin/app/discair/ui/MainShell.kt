@@ -40,6 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -94,6 +99,16 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         Tab(LibraryRoute, "Library", Icons.AutoMirrored.Filled.List),
     )
     val onTopLevel = tabs.any { destination?.hasRoute(it.route::class) == true }
+    val tabIndex = tabs.indexOfFirst { destination?.hasRoute(it.route::class) == true }
+    val goTab: (Tab) -> Unit = { tab ->
+        nav.navigate(tab.route) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    /** Which top-level tab a route is, for choosing the slide direction; -1 for every other page. */
+    fun indexOf(e: androidx.navigation.NavBackStackEntry) = tabs.indexOfFirst { e.destination.hasRoute(it.route::class) }
 
     val open = remember(nav) {
         Opener(
@@ -129,13 +144,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = destination?.hasRoute(tab.route::class) == true,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { goTab(tab) },
                             icon = { Icon(tab.icon, contentDescription = null) },
                             label = { Text(tab.label, maxLines = 1) },
                         )
@@ -145,7 +154,45 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
             OfflineBanner(repo.staleSince)
-            NavHost(nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth()) {
+            val swipeThreshold = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.toPx() }
+            // Swiping sideways on a top-level page moves to the next tab. Carousels and rows inside the
+            // page take their own swipes first; only a drag nothing else used reaches this.
+            val swipe = if (!onTopLevel) Modifier.pointerInput(Unit) {
+                // On an artist, album, genre or other stacked page, a swipe to the right goes back.
+                var total = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { total = 0f },
+                    onDragCancel = { total = 0f },
+                    onDragEnd = { if (total > swipeThreshold) nav.popBackStack() },
+                ) { _, delta -> total += delta }
+            } else Modifier.pointerInput(tabIndex) {
+                var total = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { total = 0f },
+                    onDragCancel = { total = 0f },
+                    onDragEnd = {
+                        val target = tabIndex + if (total < -swipeThreshold) 1 else if (total > swipeThreshold) -1 else 0
+                        if (target != tabIndex && target in tabs.indices) goTab(tabs[target])
+                    },
+                ) { _, delta -> total += delta }
+            }
+            NavHost(
+                nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth().then(swipe),
+                enterTransition = {
+                    val from = indexOf(initialState); val to = indexOf(targetState)
+                    if (from >= 0 && to >= 0) slideIntoContainer(
+                        if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
+                    ) else fadeIn()
+                },
+                exitTransition = {
+                    val from = indexOf(initialState); val to = indexOf(targetState)
+                    if (from >= 0 && to >= 0) slideOutOfContainer(
+                        if (to > from) AnimatedContentTransitionScope.SlideDirection.Start else AnimatedContentTransitionScope.SlideDirection.End,
+                    ) else fadeOut()
+                },
+                popEnterTransition = { fadeIn() },
+                popExitTransition = { fadeOut() },
+            ) {
                 composable<HomeRoute> { HomeScreen(open) }
                 composable<DiscoverRoute> { DiscoverScreen(open) }
                 composable<SearchRoute> { SearchScreen(open) }

@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.discair.data.LibraryRepository
+import app.discair.data.ReadMode
 import app.discair.net.ConnectionFailure
 import app.discair.net.classifyException
 import app.discair.ui.theme.Ink
@@ -65,6 +66,27 @@ val LocalImageLoader = compositionLocalOf<ImageLoader> { error("No image loader"
 
 val Target = 48.dp
 
+/**
+ * Cover, bio and year lookups are cosmetic and some are slow (they reach other catalogues), so they
+ * share a few threads. That leaves the connection free for the page data the screen is waiting on.
+ */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+val LookupDispatcher = Dispatchers.IO.limitedParallelism(3)
+
+/** Years come from a rate-limited catalogue: one at a time, as on the web. */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+val YearDispatcher = Dispatchers.IO.limitedParallelism(1)
+
+/** The release year of an album: [known] when the list had it, otherwise looked up once and remembered. */
+@Composable
+fun rememberAlbumYear(artist: String, album: String, known: Int?): Int? {
+    val repo = LocalRepository.current
+    val year by produceState(known, artist, album, known) {
+        if (known == null) value = withContext(YearDispatcher) { repo.albumYear(artist, album) }
+    }
+    return year
+}
+
 // ---- Loading
 
 sealed interface Load<out T> {
@@ -75,19 +97,60 @@ sealed interface Load<out T> {
 
 class Loaded<T>(val state: Load<T>, val reload: () -> Unit)
 
-/** Runs [block] off the main thread whenever [keys] change or [Loaded.reload] is called. */
+/**
+ * Runs [block] off the main thread whenever [keys] change or [Loaded.reload] is called. A saved copy of
+ * the answer, if there is one, is shown at once; the server's answer then replaces it. If the server
+ * cannot be read while a saved copy is showing, the copy stays.
+ */
 @Composable
 fun <T> rememberLoad(vararg keys: Any?, block: () -> T): Loaded<T> {
     var attempt by remember { mutableIntStateOf(0) }
     val state by produceState<Load<T>>(Load.Loading, keys.toList(), attempt) {
         value = Load.Loading
-        value = withContext(Dispatchers.IO) {
-            try {
+        withContext(Dispatchers.IO) {
+            val saved = try {
+                ReadMode.only(true, block)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (saved != null) value = Load.Ready(saved)
+            value = try {
                 Load.Ready(block())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Load.Failed(classifyException(e, networkAvailable = true))
+                if (saved != null) Load.Ready(saved) else Load.Failed(classifyException(e, networkAvailable = true))
+            }
+        }
+    }
+    return Loaded(state) { attempt++ }
+}
+
+/**
+ * Like [rememberLoad], for a page that arrives in pieces: [block] calls its argument with the page so far,
+ * and the first call replaces the spinner. A failure after something has shown leaves what is on screen.
+ */
+@Composable
+fun <T> rememberStreamLoad(vararg keys: Any?, block: (onPage: (T) -> Unit) -> Unit): Loaded<T> {
+    var attempt by remember { mutableIntStateOf(0) }
+    val state by produceState<Load<T>>(Load.Loading, keys.toList(), attempt) {
+        value = Load.Loading
+        withContext(Dispatchers.IO) {
+            try {
+                ReadMode.only(true) { block { page -> value = Load.Ready(page) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // No saved copy: the spinner stays until the server answers.
+            }
+            try {
+                block { page -> value = Load.Ready(page) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (value !is Load.Ready<*>) value = Load.Failed(classifyException(e, networkAvailable = true))
             }
         }
     }
@@ -203,7 +266,7 @@ fun AlbumCover(
     val repo = LocalRepository.current
     val url by produceState<String?>(ownedPath?.let(repo::absolute), artist, album, ownedPath) {
         value = ownedPath?.let(repo::absolute)
-            ?: withContext(Dispatchers.IO) { repo.albumImage(artist, album) }
+            ?: withContext(LookupDispatcher) { repo.albumImage(artist, album) }
     }
     Cover(url, modifier, rect = rect, onColor = onColor)
 }
@@ -218,7 +281,7 @@ fun ArtistPhoto(
 ) {
     val repo = LocalRepository.current
     val url by produceState<String?>(null, name, ownedPath) {
-        value = withContext(Dispatchers.IO) { repo.artistImage(name) } ?: ownedPath?.let(repo::absolute)
+        value = withContext(LookupDispatcher) { repo.artistImage(name) } ?: ownedPath?.let(repo::absolute)
     }
     Cover(url, modifier, circle, onColor = onColor)
 }

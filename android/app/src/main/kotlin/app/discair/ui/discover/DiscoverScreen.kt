@@ -7,11 +7,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -21,6 +27,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -43,13 +51,13 @@ import app.discair.ui.Opener
 import app.discair.ui.common.Load
 import app.discair.ui.common.LocalRepository
 import app.discair.ui.common.PageHeading
-import app.discair.ui.common.RankedRow
-import app.discair.ui.common.RowDivider
+import app.discair.ui.common.ElegantButton
 import app.discair.ui.common.SaveState
 import app.discair.ui.common.Target
 import app.discair.ui.common.rememberLoad
 import app.discair.ui.theme.Ink
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -80,12 +88,22 @@ fun DiscoverScreen(open: Opener) {
     var pending by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
 
     val loaded = rememberLoad(list) {
-        if (list == DiscoveryList.Daily) LensLists.map { (path, title) ->
-            try {
-                Section(title, path, repo.discovery(path, 10), null)
-            } catch (e: Exception) {
-                Section(title, path, null, e.message ?: "Request failed.")
-            }
+        if (list == DiscoveryList.Daily) kotlinx.coroutines.runBlocking {
+            // The four lens lists are read together, not one after the other.
+            val cacheOnly = app.discair.data.ReadMode.isCacheOnly
+            LensLists.map { (path, title) ->
+                async(Dispatchers.IO) {
+                    try {
+                        app.discair.data.ReadMode.only(cacheOnly) {
+                        Section(title, path, repo.discovery(path, 10), null)
+                        }
+                    } catch (e: Exception) {
+                        // A missing saved copy fails the whole first paint, so the page waits for the server.
+                        if (cacheOnly) throw e
+                        Section(title, path, null, e.message ?: "Request failed.")
+                    }
+                }
+            }.map { it.await() }
         } else listOf(Section(null, list.path, repo.discovery(list.path, countFor(list)), null))
     }
 
@@ -165,11 +183,9 @@ fun DiscoverScreen(open: Opener) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(DiscoveryList.entries.toList(), key = { it.name }) { option ->
-                    FilterChip(
-                        selected = option == list,
+                    ElegantButton(
+                        option.label, selected = option == list,
                         onClick = { if (option != list) { selected = option.name; statusLine = null } },
-                        label = { Text(option.label) },
-                        modifier = Modifier.heightIn(min = Target),
                     )
                 }
             }
@@ -211,6 +227,31 @@ fun DiscoverScreen(open: Opener) {
     }
 }
 
+/** One swipeable page of a list: a tab title (null when the list has no tabs) and the cards on it. */
+private data class CardPage(val title: String?, val entries: List<DiscoveryEntry>, val empty: String)
+
+private fun pagesFor(list: DiscoveryList, sections: List<Section>, hidden: Map<String, Boolean>): List<CardPage> {
+    fun visible(s: Section) = s.result?.entries.orEmpty().distinctBy { it.key }.filter { hidden[it.key] != true }
+    return when (list) {
+        // Each lens list is its own tab, in the server's order.
+        DiscoveryList.Daily -> sections.map {
+            CardPage(
+                it.title, visible(it),
+                it.error?.let { e -> "${it.title} could not be loaded: $e" }
+                    ?: if (it.result?.disabled == true) "Daily picks are turned off in Settings." else it.result?.message ?: "No albums today.",
+            )
+        }
+        // The server groups deep dives by genre row; each group is a tab.
+        DiscoveryList.DeepDive -> {
+            val rows = sections.flatMap { visible(it) }
+            val groups = rows.groupBy { it.item.genreRowLabel ?: "" }
+            if (groups.keys.all { it.isEmpty() }) listOf(CardPage(null, rows, list.empty))
+            else groups.map { (label, entries) -> CardPage(label.ifEmpty { "More" }, entries, list.empty) }
+        }
+        else -> listOf(CardPage(null, sections.flatMap { visible(it) }, list.empty))
+    }
+}
+
 @Composable
 private fun ListBody(
     list: DiscoveryList,
@@ -222,62 +263,79 @@ private fun ListBody(
     onDismiss: (DiscoveryEntry, Boolean) -> Unit,
     onRefresh: () -> Unit,
 ) {
-    val anyRows = sections.any { s -> s.result?.entries?.any { hidden[it.key] != true } == true }
-    LazyColumn(Modifier.fillMaxSize()) {
-        // Sectioned pages (Daily picks) say it per section, so the shared message is only for plain lists.
-        if (!anyRows && sections.firstOrNull()?.title == null) item {
-            val first = sections.firstOrNull()?.result
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    when {
-                        first?.disabled == true -> "Daily picks are turned off in Settings."
-                        else -> first?.message ?: sections.firstNotNullOfOrNull { it.error } ?: list.empty
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (list != DiscoveryList.Saved && list != DiscoveryList.Daily) {
-                    OutlinedButton(onClick = onRefresh, Modifier.heightIn(min = Target)) { Text("Build this list") }
-                }
+    val pages = pagesFor(list, sections, hidden)
+    val first = sections.firstOrNull()?.result
+    // A single plain list says why it is empty, and offers to build it; tabbed lists say it per tab.
+    val emptyNote: @Composable () -> Unit = {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                when {
+                    first?.disabled == true -> "Daily picks are turned off in Settings."
+                    else -> first?.message ?: sections.firstNotNullOfOrNull { it.error } ?: list.empty
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (list != DiscoveryList.Saved && list != DiscoveryList.Daily) {
+                OutlinedButton(onClick = onRefresh, Modifier.heightIn(min = Target)) { Text("Build this list") }
             }
         }
-        sections.forEach { section ->
-            section.title?.let { title ->
-                item(key = "h-${section.path}") {
-                    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp)) {
-                        PageHeading(title)
-                    }
-                    section.error?.let {
-                        Text("$title could not be loaded: $it", color = Ink.ChartRedText,
-                            modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                    if (section.error == null && section.result?.entries.isNullOrEmpty()) {
-                        Text(section.result?.message ?: "No albums today.", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                    }
+    }
+    val cards: @Composable (CardPage) -> Unit = { page ->
+        if (page.entries.isEmpty()) {
+            if (page.title == null) emptyNote()
+            else Text(page.empty, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
+        } else CardGrid(list, page.entries, open, saves, onSave, onDismiss)
+    }
+    if (pages.size == 1) {
+        cards(pages.single())
+        return
+    }
+    key(list) {
+        val pager = rememberPagerState { pages.size }
+        val scope = rememberCoroutineScope()
+        Column(Modifier.fillMaxSize()) {
+            ScrollableTabRow(
+                selectedTabIndex = pager.currentPage, edgePadding = 8.dp,
+                containerColor = Color.Transparent, divider = {},
+            ) {
+                pages.forEachIndexed { index, page ->
+                    Tab(
+                        selected = pager.currentPage == index,
+                        onClick = { scope.launch { pager.animateScrollToPage(index) } },
+                        modifier = Modifier.heightIn(min = Target),
+                    ) { Text(page.title.orEmpty(), maxLines = 1, modifier = Modifier.padding(horizontal = 8.dp)) }
                 }
             }
-            val rows = section.result?.entries.orEmpty().distinctBy { it.key }.filter { hidden[it.key] != true }
-            var lastGroup: String? = null
-            rows.forEachIndexed { index, entry ->
-                val group = entry.item.genreRowLabel
-                val header = list == DiscoveryList.DeepDive && group != null && group != lastGroup
-                lastGroup = group
-                item(key = "${section.path}/${entry.key}") {
-                    Column {
-                        if (header) Text(
-                            group!!, style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp).semantics { heading() },
-                        )
-                        RankedRow(
-                            rowModel(list, entry, index + 1), open,
-                            saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
-                            onSave = { onSave(entry) },
-                            onDismiss = { artistToo -> onDismiss(entry, artistToo) },
-                        )
-                        RowDivider()
-                    }
-                }
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), key = { pages[it].title ?: it }) { index ->
+                cards(pages[index])
             }
+        }
+    }
+}
+
+/** Two cards to a row. */
+@Composable
+private fun CardGrid(
+    list: DiscoveryList,
+    entries: List<DiscoveryEntry>,
+    open: Opener,
+    saves: Map<String, SaveState>,
+    onSave: (DiscoveryEntry) -> Unit,
+    onDismiss: (DiscoveryEntry, Boolean) -> Unit,
+) {
+    LazyVerticalGrid(
+        GridCells.Fixed(2), Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        gridItems(entries, key = { it.key }) { entry ->
+            DiscoverCard(
+                entry, open,
+                saveState = saves[entry.key] ?: if (list == DiscoveryList.Saved) SaveState.Saved else SaveState.Idle,
+                onSave = { onSave(entry) },
+                onDismiss = { artistToo -> onDismiss(entry, artistToo) },
+            )
         }
     }
 }
