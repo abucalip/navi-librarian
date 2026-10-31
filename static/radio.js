@@ -160,6 +160,20 @@ function renderRadioPlays(items) {
 
 $('refreshRadio').addEventListener('click', loadRadio);
 
+$('clearRadioPlays').addEventListener('click', async event => {
+  if (!window.confirm('Clear every song from the Heard list?')) return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    await sendJSON('/api/radio/plays', 'DELETE');
+    await loadRadio();
+  } catch (error) {
+    radioStatus(error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
 $('radioAddressForm').addEventListener('submit', async event => {
   event.preventDefault();
   const button = $('saveRadioAddress');

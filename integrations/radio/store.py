@@ -134,6 +134,10 @@ class RadioStore:
         with self._connect() as db:
             return db.execute("DELETE FROM radio_plays WHERE id = ?", (play_id,)).rowcount > 0
 
+    def clear_plays(self) -> int:
+        with self._connect() as db:
+            return db.execute("DELETE FROM radio_plays").rowcount
+
     def set_album(self, play_id: int, album: str, year: int | None) -> None:
         with self._connect() as db:
             db.execute("UPDATE radio_plays SET album = ?, year = ? WHERE id = ?", (album, year, play_id))

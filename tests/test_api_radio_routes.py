@@ -129,6 +129,13 @@ class RadioRouteTests(unittest.TestCase):
             "Pink Floyd", "The Dark Side of the Moon", "Time", None, 1973, None))
         self.assertEqual(self.store.get_play(play)["grabbed"], 1)
 
+    def test_clear_all_empties_the_log(self):
+        self.logged_play()
+        self.store.record_play("1", "Rock FM", "Jingle", None, "Jingle", 90)
+        body = self.client.delete("/api/radio/plays").json()
+        self.assertEqual(body, {"ok": True, "removed": 2})
+        self.assertEqual(self.store.list_plays(), [])
+
     def test_get_without_artist_or_album_does_not_search(self):
         unnamed = self.store.record_play("1", "Rock FM", "Jingle", None, "Jingle", 90)
         play = self.logged_play()

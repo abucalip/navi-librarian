@@ -28,6 +28,13 @@ class RadioUiContractTests(unittest.TestCase):
         self.assertNotIn("Turn on", RADIO_JS)
         self.assertNotIn("radio-switch-knob", RADIO_JS)
 
+    def test_heard_list_has_refresh_and_clear_all_in_one_group_above_the_list(self):
+        toolbar = INDEX.index('class="radio-toolbar"')
+        self.assertLess(toolbar, INDEX.index('id="radioPlays"'))
+        self.assertLess(INDEX.index('id="refreshRadio"'), INDEX.index('id="clearRadioPlays"'))
+        self.assertLess(INDEX.index('id="clearRadioPlays"'), INDEX.index('id="radioPlays"'))
+        self.assertIn("sendJSON('/api/radio/plays', 'DELETE')", RADIO_JS)
+
     def test_every_radio_endpoint_the_page_calls_exists(self):
         routes = (ROOT / "app" / "api" / "radio.py").read_text(encoding="utf-8")
         for path in re.findall(r"'(/api/radio/[a-z/]+)", RADIO_JS):
