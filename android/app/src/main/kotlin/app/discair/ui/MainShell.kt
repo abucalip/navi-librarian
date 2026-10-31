@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
@@ -72,7 +74,7 @@ private data class Tab(val route: Any, val label: String, val icon: ImageVector)
 /** Signed-in shell: bottom bar on the two top-level tabs, stack destinations for every page. */
 @Composable
 fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
-    val repo = remember(state.saved) { container.repository(state.saved) }
+    val repo = remember(state.saved) { container.repository(state.saved, onSessionLost = model::sessionExpired) }
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
     val hub = remember(repo) { AcquisitionHub({ repo }, scope, Dispatchers.IO) }
@@ -141,7 +143,9 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 } }
             },
         ) { padding ->
-            NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(padding).fillMaxSize()) {
+            Column(Modifier.padding(padding).fillMaxSize()) {
+            OfflineBanner(repo.staleSince)
+            NavHost(nav, startDestination = HomeRoute, modifier = Modifier.weight(1f).fillMaxWidth()) {
                 composable<HomeRoute> { HomeScreen(open) }
                 composable<DiscoverRoute> { DiscoverScreen(open) }
                 composable<SearchRoute> { SearchScreen(open) }
@@ -151,6 +155,7 @@ fun MainShell(state: UiState, model: AppViewModel, container: AppContainer) {
                 composable<ArtistRoute> { ArtistScreen(it.toRoute(), open) }
                 composable<AlbumRoute> { AlbumScreen(it.toRoute(), open) }
                 composable<GenreRoute> { GenreScreen(it.toRoute(), open) }
+            }
             }
         }
     }
@@ -180,5 +185,28 @@ private fun AppHeader(active: Int, onDownloads: () -> Unit, onSettings: () -> Un
             }
         }
         RowDivider()
+    }
+}
+
+/**
+ * Shown while pages are being answered from saved copies because the phone cannot reach Librarian.
+ * Words and an icon say it; the line is announced politely when it appears.
+ */
+@Composable
+private fun OfflineBanner(staleSince: Long?) {
+    if (staleSince == null) return
+    val saved = android.text.format.DateUtils.getRelativeTimeSpanString(
+        staleSince, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS,
+    )
+    Row(
+        Modifier.fillMaxWidth().background(app.discair.ui.theme.Ink.Raised).padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Default.Info, contentDescription = null, tint = app.discair.ui.theme.Ink.Caution, modifier = Modifier.size(18.dp))
+        Text(
+            "Can't reach Librarian. Showing a copy saved $saved.",
+            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }

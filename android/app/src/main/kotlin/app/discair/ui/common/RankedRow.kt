@@ -1,6 +1,7 @@
 package app.discair.ui.common
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -95,7 +96,7 @@ fun RankedRow(
         }
         AlbumCover(
             model.artist, model.album, null,
-            Modifier.size(72.dp).clickable {
+            Modifier.size(72.dp).clickable(role = Role.Button) {
                 open.album(routeKey(model.artist, model.album), model.artist, model.album, null, model.year)
             },
         )
@@ -103,14 +104,14 @@ fun RankedRow(
             Text(
                 model.album, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display),
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.clickable {
+                modifier = Modifier.clickable(role = Role.Button) {
                     open.album(routeKey(model.artist, model.album), model.artist, model.album, null, model.year)
                 },
             )
             Text(
                 model.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = Target).clickable { open.artist(model.artist, null, null, null) }
+                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.artist(model.artist, null, null, null) }
                     .padding(vertical = 12.dp),
             )
             model.meta.forEach {
@@ -140,7 +141,7 @@ private fun ArtistBio(artist: String) {
         Text(
             it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp).clickable { expanded = !expanded }.semantics {
+            modifier = Modifier.padding(top = 2.dp).clickable(role = Role.Button) { expanded = !expanded }.semantics {
                 stateDescription = if (expanded) "Expanded" else "Collapsed"
             },
         )

@@ -131,6 +131,13 @@ private fun SetupScreen(state: UiState, model: AppViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        state.notice?.let {
+            Text(
+                it, style = MaterialTheme.typography.bodyMedium, color = Ink.ChartRedText,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
+
         Section("Librarian")
         Field("Address", form.librarianUrl, KeyboardType.Uri, state.showMissing, state.librarianUrlProblem) { v ->
             model.edit { it.copy(librarianUrl = v) }

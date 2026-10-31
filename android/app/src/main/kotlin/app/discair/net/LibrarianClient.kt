@@ -49,6 +49,8 @@ class LibrarianClient(
     private val baseUrl: String,
     private val username: String,
     private val password: String,
+    /** Called when the stored credentials are rejected on a re-login: the session cannot be recovered silently. */
+    private val onSessionLost: () -> Unit = {},
 ) {
     /** Signs in and confirms the session by calling the health route. Throws [ConnectionException]. */
     fun signIn() {
@@ -79,7 +81,7 @@ class LibrarianClient(
             send(request)
         } catch (e: ConnectionException) {
             if (e.failure !is ConnectionFailure.Unauthorised) throw e
-            login()
+            relogin()
             send(request)
         }
     }
@@ -104,7 +106,7 @@ class LibrarianClient(
             open(request)
         } catch (e: ConnectionException) {
             if (e.failure !is ConnectionFailure.Unauthorised) throw e
-            login()
+            relogin()
             open(request)
         }
         response.use { r ->
@@ -148,6 +150,16 @@ class LibrarianClient(
             send(Request.Builder().url("$baseUrl/api/auth/logout").post("{}".toRequestBody(JSON)).build())
         } catch (e: Exception) {
             // The local session is discarded regardless; the server cookie expires on its own.
+        }
+    }
+
+    /** The one re-login after a 401. If the server rejects the stored credentials, the app is told to sign out. */
+    private fun relogin() {
+        try {
+            login()
+        } catch (e: ConnectionException) {
+            if (e.failure is ConnectionFailure.Unauthorised) onSessionLost()
+            throw e
         }
     }
 

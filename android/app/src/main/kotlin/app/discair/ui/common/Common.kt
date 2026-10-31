@@ -3,6 +3,7 @@ package app.discair.ui.common
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -242,7 +243,7 @@ fun NameLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, m
         color = MaterialTheme.colorScheme.primary,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
-        modifier = modifier.defaultMinSize(minHeight = Target).clickable(onClick = onClick)
+        modifier = modifier.defaultMinSize(minHeight = Target).clickable(role = Role.Button, onClick = onClick)
             .padding(vertical = 12.dp),
     )
 }
@@ -301,7 +302,7 @@ fun ArtistCircle(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier.clickable(onClick = onClick).padding(4.dp),
+        modifier.clickable(role = Role.Button, onClick = onClick).padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ArtistPhoto(name, ownedPath, Modifier.fillMaxWidth().aspectSquare(), circle = true)
@@ -326,7 +327,7 @@ fun AlbumCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.clickable(onClick = onClick).padding(4.dp)) {
+    Column(modifier.clickable(role = Role.Button, onClick = onClick).padding(4.dp)) {
         Box {
             AlbumCover(artist, title, ownedPath, Modifier.fillMaxWidth().aspectSquare())
         }
@@ -402,7 +403,7 @@ fun OverlayBack(onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier.size(Target).clip(RoundedCornerShape(6.dp))
             .background(Ink.Ink.copy(alpha = 0.78f))
-            .clickable(onClick = onBack),
+            .clickable(role = Role.Button, onClick = onBack),
         contentAlignment = Alignment.Center,
     ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
 }

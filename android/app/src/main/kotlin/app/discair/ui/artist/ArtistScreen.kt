@@ -2,6 +2,7 @@ package app.discair.ui.artist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -121,7 +122,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                         genres.forEach { g ->
                             Text(
                                 g, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.heightIn(min = Target).clickable { open.genre(g.lowercase(), g) }.padding(vertical = 12.dp),
+                                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(g.lowercase(), g) }.padding(vertical = 12.dp),
                             )
                         }
                     }
@@ -181,7 +182,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 Row(Modifier.padding(horizontal = 12.dp)) {
                     row.forEach { album ->
                         Column(
-                            Modifier.weight(1f).padding(4.dp).clickable { open.album(album.key, name, album.name, album.id, album.year) },
+                            Modifier.weight(1f).padding(4.dp).clickable(role = Role.Button) { open.album(album.key, name, album.name, album.id, album.year) },
                         ) {
                             Box {
                                 AlbumCover(name, album.name, album.artworkUrl, Modifier.fillMaxWidth().aspectSquare())
@@ -210,7 +211,7 @@ private fun ArtistContent(route: ArtistRoute, page: ArtistPage, open: Opener, li
                 Column {
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                            .clickable { open.album(album.key, name, album.name, null, album.year) }
+                            .clickable(role = Role.Button) { open.album(album.key, name, album.name, null, album.year) }
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

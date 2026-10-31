@@ -1,6 +1,7 @@
 package app.discair.ui.search
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -202,7 +203,7 @@ private fun ResultRow(r: SearchResult, open: Opener, showType: Boolean = false) 
     }
     Column {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).let { if (go != null) it.clickable(onClick = go) else it }
+            Modifier.fillMaxWidth().heightIn(min = 64.dp).let { if (go != null) it.clickable(role = Role.Button, onClick = go) else it }
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

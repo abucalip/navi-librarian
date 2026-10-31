@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -181,26 +182,26 @@ private fun JobRow(job: AcquisitionJob, hub: AcquisitionHub, now: Double, open: 
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         AlbumCover(
             job.artistName, job.albumName, null,
-            Modifier.size(64.dp).clickable { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
+            Modifier.size(64.dp).clickable(role = Role.Button) { open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year) },
         )
         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 job.title, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Display),
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
-                modifier = if (job.isSong) Modifier else Modifier.clickable {
+                modifier = if (job.isSong) Modifier else Modifier.clickable(role = Role.Button) {
                     open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
                 },
             )
             Text(
                 job.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = Target).clickable { open.artist(job.artistName, null, null, null) }
+                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.artist(job.artistName, null, null, null) }
                     .padding(vertical = 12.dp),
             )
             if (job.isSong) Text(
                 "Song on ${job.albumName}", style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.heightIn(min = Target).clickable {
+                modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) {
                     open.album(routeKey(job.artist, job.albumName), job.artist, job.albumName, null, job.year)
                 }.padding(vertical = 12.dp),
             )

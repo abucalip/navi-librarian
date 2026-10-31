@@ -32,6 +32,8 @@ class AppViewModelTest {
         var navidrome: Check = Check.Ok,
     ) : Connector {
         var signedOut = false
+        var offlineData = false
+        override fun hasOfflineData() = offlineData
         override fun networkAvailable() = true
         override fun checkLibrarian(url: String, user: String, password: String) = librarian
         override fun checkNavidrome(url: String, user: String, password: String) = navidrome
@@ -61,6 +63,33 @@ class AppViewModelTest {
         assertEquals(complete, vm.state.value.saved)
         assertEquals(Check.Failed(ConnectionFailure.Unreachable), vm.state.value.librarian)
         assertEquals(Check.Ok, vm.state.value.navidrome)
+    }
+
+    @Test fun noConnectionWithSavedCopiesOpensHomeInsteadOfADeadEnd() {
+        val connector = FakeConnector(librarian = Check.Failed(ConnectionFailure.Unreachable)).also { it.offlineData = true }
+        assertEquals(Screen.Home, model(MemoryStore(complete), connector).state.value.screen)
+        connector.librarian = Check.Failed(ConnectionFailure.NoNetwork)
+        assertEquals(Screen.Home, model(MemoryStore(complete), connector).state.value.screen)
+    }
+
+    @Test fun aRefusalIsNotTreatedAsOfflineEvenWithSavedCopies() {
+        val connector = FakeConnector(librarian = Check.Failed(ConnectionFailure.Unauthorised())).also { it.offlineData = true }
+        assertEquals(Screen.Unavailable, model(MemoryStore(complete), connector).state.value.screen)
+        val server = FakeConnector(librarian = Check.Failed(ConnectionFailure.Server(500))).also { it.offlineData = true }
+        assertEquals(Screen.Unavailable, model(MemoryStore(complete), server).state.value.screen)
+    }
+
+    @Test fun rejectedCredentialsDuringASessionReturnToSetupWithAReason() {
+        val vm = model(MemoryStore(complete), FakeConnector())
+        assertEquals(Screen.Home, vm.state.value.screen)
+        vm.sessionExpired()
+        vm.sessionExpired() // several in-flight calls may report it; the result is the same
+        assertEquals(Screen.Setup, vm.state.value.screen)
+        assertEquals(complete, vm.state.value.form)
+        assertTrue(vm.state.value.notice!!.contains("signed out"))
+        vm.connect()
+        assertEquals(Screen.Home, vm.state.value.screen)
+        assertEquals(null, vm.state.value.notice)
     }
 
     @Test fun connectStoresSettingsOnlyWhenBothServersPass() {

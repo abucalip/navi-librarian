@@ -1,5 +1,11 @@
 package app.discair.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import app.discair.net.ConnectionException
+import java.io.IOException
+import javax.net.ssl.SSLException
 import app.discair.model.AcquisitionJob
 import app.discair.model.AlbumLinks
 import app.discair.model.GetState
@@ -75,6 +81,9 @@ interface AcquisitionApi {
  * ranks or filters. All calls block, so callers run them on the IO dispatcher.
  */
 interface LibraryRepository : AcquisitionApi {
+    /** When the saved copy now being shown was fetched (epoch ms), or null while reads come from the server. */
+    val staleSince: Long? get() = null
+
     /** Resolves a server-relative path such as an owned-artwork URL to an absolute address. */
     fun absolute(path: String): String
 
@@ -111,7 +120,11 @@ interface LibraryRepository : AcquisitionApi {
 class LibrarianRepository(
     private val client: LibrarianClient,
     private val baseUrl: String,
+    private val cache: ResponseCache = NoCache,
 ) : LibraryRepository {
+    private var stale by mutableStateOf<Long?>(null)
+    override val staleSince: Long? get() = stale
+
     private val images = ConcurrentHashMap<String, String>()
     private val noImage = ConcurrentHashMap.newKeySet<String>()
 
@@ -146,7 +159,7 @@ class LibrarianRepository(
         read<AlbumLinks>(listOf("api", "album-links"), mapOf("artist" to artist, "album" to album, "mbid" to mbid))
 
     override fun discovery(list: String, count: Int) =
-        parseDiscovery(client.get(listOf("api", "discovery", list), mapOf("count" to "$count")))
+        parseDiscovery(fetch(listOf("api", "discovery", list), mapOf("count" to "$count")))
 
     override fun feedback(action: FeedbackAction, artist: String, album: String, metadata: JsonObject) {
         val reply = ApiJson.decodeFromString(
@@ -229,5 +242,26 @@ class LibrarianRepository(
     )
 
     private inline fun <reified T> read(segments: List<String>, query: Map<String, String?> = emptyMap()): T =
-        ApiJson.decodeFromString(serializer<T>(), client.get(segments, query))
+        ApiJson.decodeFromString(serializer<T>(), fetch(segments, query))
+
+    /**
+     * A read-only GET with the last good answer as a fallback when the phone cannot reach the server
+     * (no connection, timeout, unreachable). A server error, a refusal or a bad certificate is never
+     * answered from the cache: those say something is wrong, not that the phone is offline.
+     */
+    private fun fetch(segments: List<String>, query: Map<String, String?> = emptyMap()): String {
+        val key = baseUrl + "/" + segments.joinToString("/") + "?" +
+            query.filterValues { it != null }.toSortedMap().entries.joinToString("&") { "${it.key}=${it.value}" }
+        return try {
+            client.get(segments, query).also { cache.put(key, it); stale = null }
+        } catch (e: Exception) {
+            if (!isOffline(e)) throw e
+            val hit = cache.get(key) ?: throw e
+            stale = hit.savedAtMillis
+            hit.body
+        }
+    }
 }
+
+/** The phone could not reach the server, as opposed to the server answering with a problem. */
+fun isOffline(e: Throwable) = e is IOException && e !is ConnectionException && e !is SSLException

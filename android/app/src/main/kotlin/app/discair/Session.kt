@@ -28,9 +28,12 @@ interface Connector {
     fun checkLibrarian(url: String, user: String, password: String): Check
     fun checkNavidrome(url: String, user: String, password: String): Check
     fun signOut(librarianUrl: String, user: String, password: String)
+
+    /** Saved copies of earlier reads exist, so the app can open without a connection. */
+    fun hasOfflineData(): Boolean = false
 }
 
-class AppConnector(context: Context) : Connector {
+class AppConnector(context: Context, private val cache: app.discair.data.ResponseCache = app.discair.data.NoCache) : Connector {
     private val appContext = context.applicationContext
     // Opening encrypted preferences can take hundreds of milliseconds, so it happens on first use,
     // which is always on the IO dispatcher.
@@ -55,7 +58,10 @@ class AppConnector(context: Context) : Connector {
     override fun signOut(librarianUrl: String, user: String, password: String) {
         LibrarianClient(http, librarianUrl, user, password).signOut()
         cookies.clear()
+        cache.clear() // saved copies belong to the signed-in account
     }
+
+    override fun hasOfflineData() = cache.hasContent()
 
     private inline fun run(block: () -> Unit): Check = try {
         block()

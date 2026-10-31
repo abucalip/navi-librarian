@@ -2,6 +2,7 @@ package app.discair.ui.album
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -114,14 +115,14 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 Text(
                     artist, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
                     modifier = Modifier.heightIn(min = Target)
-                        .clickable { open.artist(artist, info?.artistKey?.ifBlank { null }, info?.artistId, null) }
+                        .clickable(role = Role.Button) { open.artist(artist, info?.artistKey?.ifBlank { null }, info?.artistId, null) }
                         .padding(vertical = 12.dp),
                 )
                 val genre = s.genre.genre
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!genre.isNullOrBlank()) Text(
                         genre.lowercase(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.heightIn(min = Target).clickable { open.genre(genre.lowercase(), genre) }.padding(vertical = 14.dp),
+                        modifier = Modifier.heightIn(min = Target).clickable(role = Role.Button) { open.genre(genre.lowercase(), genre) }.padding(vertical = 14.dp),
                     )
                     if (!genre.isNullOrBlank() && year != null) Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (year != null) Text("$year", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -171,7 +172,7 @@ private fun AlbumContent(route: AlbumRoute, page: AlbumPage, open: Opener, list:
                 Column {
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                            .clickable { open.album(album.key, album.artist, album.name, null, album.year) }
+                            .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, null, album.year) }
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -250,7 +251,7 @@ private fun ServiceLinks(artist: String, album: String, mbid: String?) {
             Box(
                 Modifier.padding(horizontal = 4.dp).size(Target).clip(RoundedCornerShape(6.dp))
                     .border(1.dp, Ink.EdgeStrong, RoundedCornerShape(6.dp))
-                    .clickable { uri.openUri(target) }
+                    .clickable(role = Role.Button) { uri.openUri(target) }
                     .semantics { contentDescription = "Open ${service.name}" },
                 contentAlignment = Alignment.Center,
             ) { androidx.compose.foundation.Image(painterResource(service.icon), contentDescription = null, modifier = Modifier.size(24.dp)) }

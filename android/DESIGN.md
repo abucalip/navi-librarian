@@ -134,3 +134,12 @@ Checked against the `/mobile-design` checklist (touch targets and spacing, thumb
 - **No dead ends:** loading spinner, an error line with Try again if the first read fails, and an empty message. Rows already shown stay if a later read fails.
 - **Known gaps:** Get, Save and the menu are three stacked 48dp targets with no gap on ranked rows (Save and the menu were already adjacent); the stream is stopped on app stop and screen leave but battery use has not been measured.
 
+## Phase 5 decisions (offline, session expiry, release)
+
+Decided without a device run; the `/mobile-design` review of these screens is still owed (rule 9).
+
+- **Offline is a banner, not a mode.** One line under the header with an info icon and words: "Can't reach Librarian. Showing a copy saved 2 hours ago." It is a polite live region and appears only while a saved copy is being shown; the next live read clears it. Pages keep their normal layout, so nothing is hidden or greyed. Actions that need the server (Get, Save, Dismiss) fail with the server-unreachable message rather than queueing, so the app never shows a request as made that was not.
+- **A dead end becomes the last known state.** Starting with no connection used to stop on the Unavailable screen; with saved copies it opens Home. A server that answers with a refusal still stops there.
+- **Session expiry returns to setup with a reason** in red text (announced politely) and the saved values filled in, instead of every page showing "Not authorised".
+- **Accessibility:** clickable rows, covers and names now announce as buttons. Known open: a ranked row's cover and title both open the same page (two TalkBack stops).
+

@@ -1,6 +1,7 @@
 package app.discair.ui.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import app.discair.ui.common.PageHeading
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
@@ -171,7 +172,7 @@ private fun SortRow(state: LibraryState, model: LibraryViewModel) {
         Box(Modifier.weight(1f)) {
             Row(
                 Modifier.fillMaxWidth().heightIn(min = Target).clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surface).clickable { open = true }
+                    .background(MaterialTheme.colorScheme.surface).clickable(role = Role.Button) { open = true }
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -210,7 +211,7 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
             items(state.artists, key = { it.id }) { artist ->
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 68.dp)
-                        .clickable { open.artist(artist.name, artist.key, artist.id, null) }
+                        .clickable(role = Role.Button) { open.artist(artist.name, artist.key, artist.id, null) }
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -228,7 +229,7 @@ private fun Rows(state: LibraryState, model: LibraryViewModel, open: Opener, lis
             items(state.albums, key = { it.id }) { album ->
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                        .clickable { open.album(album.key, album.artist, album.name, album.id, album.year) }
+                        .clickable(role = Role.Button) { open.album(album.key, album.artist, album.name, album.id, album.year) }
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

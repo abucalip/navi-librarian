@@ -1,6 +1,7 @@
 package app.discair.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,7 +54,7 @@ fun GenreScreen(route: GenreRoute, open: Opener) {
                         val a = artists[i]
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                                .clickable { open.artist(a.name, a.key, a.id, null) }.padding(horizontal = 16.dp),
+                                .clickable(role = Role.Button) { open.artist(a.name, a.key, a.id, null) }.padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(a.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -68,7 +69,7 @@ fun GenreScreen(route: GenreRoute, open: Opener) {
                         val a = albums[i]
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                                .clickable { open.album(a.key, a.artist, a.name, a.id, a.year) }.padding(horizontal = 16.dp),
+                                .clickable(role = Role.Button) { open.album(a.key, a.artist, a.name, a.id, a.year) }.padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {

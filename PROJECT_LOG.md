@@ -1,3 +1,9 @@
+## 2026-10-31 — Android client Phase 5 (offline, session expiry, release build): partly built on the PR #651 branch
+
+- Added: disk cache for read-only Librarian reads with an offline banner; start on saved copies when the servers are unreachable; return to setup with a reason when stored credentials are rejected; button roles on all clickables; R8 rules for Tink; release signing read from an untracked `android/keystore.properties`.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` (97 unit tests, 16 new) and `assembleRelease` (minified, unsigned APK produced). An earlier release build had been failing in R8 and is fixed.
+- Not verified: any run on an emulator or phone (including the minified build), TalkBack, landscape, 200% text, a signed or installed build (no signing key exists yet). Not merged, released or deployed.
+
 ## 2026-10-31 — Android client Phase 4 (acquisitions): built on the PR #651 branch
 
 - Added: cloud Get button (ranked rows, Recommended card, album and artist pages, song Get), `AcquisitionHub` (Get state, snapshot, SSE stream with polling fallback, retry, next source, dismiss), Downloads page with a header badge, confirmation before any Dismiss.

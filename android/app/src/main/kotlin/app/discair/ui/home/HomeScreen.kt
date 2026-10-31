@@ -2,6 +2,7 @@ package app.discair.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -170,7 +171,7 @@ private fun Recommended(items: List<Pick>, open: Opener) {
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                     .background(tint?.let { lerp(Ink.Surface, it, 0.7f) } ?: Ink.Surface)
-                    .clickable { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) }
+                    .clickable(role = Role.Button) { open.album(routeKey(pick.artist, pick.album), pick.artist, pick.album, null, pick.year) }
                     .padding(vertical = 16.dp, horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -200,7 +201,7 @@ private fun Recommended(items: List<Pick>, open: Opener) {
                 Box(
                     // 32dp wide so ten dots fit a 360dp phone; still 48dp tall. Each dot is a button.
                     Modifier.size(width = 32.dp, height = Target)
-                        .clickable { scope.launch { pager.animateScrollToPage(index) } }
+                        .clickable(role = Role.Button) { scope.launch { pager.animateScrollToPage(index) } }
                         .semantics {
                             contentDescription = "Show album ${index + 1} of ${items.size}"
                             selected = current
@@ -231,7 +232,7 @@ private fun GenreGrid(all: List<GenreTile>, open: Opener, limit: Int) {
                         Modifier.weight(1f).heightIn(min = Target)
                             .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { open.genre(genre.tag, genre.name) }
+                            .clickable(role = Role.Button) { open.genre(genre.tag, genre.name) }
                             .semantics { contentDescription = "${genre.name}, " + plural(genre.albumCount, "album") },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -261,7 +262,7 @@ private fun ShelfRow(shelf: String, title: String, open: Opener, load: () -> Lis
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(state.value, key = { it.id.ifBlank { it.artist + '/' + it.name } }) { album: ShelfAlbum ->
-                Panel(Modifier.width(208.dp).clickable {
+                Panel(Modifier.width(208.dp).clickable(role = Role.Button) {
                     open.album(routeKey(album.artist, album.name), album.artist, album.name, album.id, album.year)
                 }) {
                     Column {

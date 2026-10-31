@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.discair.data.ServerSettings
 import app.discair.data.SettingsStore
+import app.discair.net.ConnectionFailure
 import app.discair.net.UrlProblem
 import app.discair.net.UrlResult
 import app.discair.net.normalizeBaseUrl
@@ -32,6 +33,8 @@ data class UiState(
     val navidromeUrlProblem: UrlProblem? = null,
     val librarian: Check = Check.Idle,
     val navidrome: Check = Check.Idle,
+    /** Why the app returned to setup on its own (for example the saved password was rejected). */
+    val notice: String? = null,
 ) {
     /** Editing existing settings, so Cancel and system back have somewhere to return to. */
     val canCancelEdit: Boolean get() = saved.isComplete
@@ -86,6 +89,21 @@ class AppViewModel(
     /** Re-checks the saved servers, for example after Tailscale was switched on. */
     fun recheck() = verify(_state.value.saved, save = false)
 
+    /**
+     * The server rejected the saved credentials during a session. Silent recovery is impossible, so
+     * return to setup with the saved values and say why (contract 4.1). Safe to call repeatedly.
+     */
+    fun sessionExpired() {
+        _state.update {
+            if (it.screen != Screen.Home) it else it.copy(
+                screen = Screen.Setup, form = it.saved, showMissing = false,
+                librarian = Check.Idle, navidrome = Check.Idle,
+                notice = "You were signed out: Librarian no longer accepts the saved user name and password. " +
+                    "Check them, then connect again.",
+            )
+        }
+    }
+
     fun editServers() = _state.update {
         it.copy(screen = Screen.Setup, form = it.saved, showMissing = false,
             librarianUrlProblem = null, navidromeUrlProblem = null)
@@ -127,6 +145,10 @@ class AppViewModel(
             val l = librarian.await()
             val n = navidrome.await()
             val ok = l is Check.Ok && n is Check.Ok
+            // No connection but earlier reads were saved: open on those instead of a dead end. A server
+            // that answered with a refusal is not "offline", so that case still stops here.
+            val offline = !save && !ok && withContext(io) { connector.hasOfflineData() } &&
+                (l as? Check.Failed)?.failure.let { it == ConnectionFailure.NoNetwork || it == ConnectionFailure.Unreachable }
             if (ok && save) withContext(io) { store.save(settings) }
             _state.update {
                 it.copy(
@@ -135,8 +157,9 @@ class AppViewModel(
                     form = if (ok && save) settings else it.form,
                     saved = if (ok && save) settings else it.saved,
                     showMissing = false,
+                    notice = null,
                     screen = when {
-                        ok -> Screen.Home
+                        ok || offline -> Screen.Home
                         save -> Screen.Setup
                         else -> Screen.Unavailable
                     },
