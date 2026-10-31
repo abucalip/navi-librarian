@@ -1,0 +1,387 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/recommendations",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 3.15,
+    "body": {
+      "source": "ListenBrainz + MusicBrainz + Last.fm + Navidrome",
+      "regional_candidates_added": 36,
+      "regional_search_results_seen": 61,
+      "recent_history_days": 30,
+      "recent_listens_retrieved": 300,
+      "recent_genre_profile_listens_classified": 359,
+      "recent_genre_family_counts": {
+        "jazz": 131,
+        "pop": 77,
+        "rock": 39,
+        "electronic": 33,
+        "soul": 32,
+        "bossa_nova_brazilian": 20,
+        "funk": 16,
+        "hip-hop": 6,
+        "african": 5
+      },
+      "selected_recent_genre_families": {
+        "rock": 4,
+        "hip-hop": 1,
+        "jazz": 1,
+        "soul": 1
+      },
+      "lastfm_api_configured": true,
+      "lastfm_albums_checked": 40,
+      "lastfm_last_error": null,
+      "recommendations": [
+        {
+          "artist": "The Rolling Stones",
+          "album": "Aftermath",
+          "discovery_category": "adjacent",
+          "diversity_style": "blues",
+          "genres": [
+            "blues",
+            "blues rock",
+            "british rhythm & blues"
+          ],
+          "genre_families": [
+            "blues",
+            "rock"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "pop",
+            "rock"
+          ],
+          "recent_profile_bonus": 1.092,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.08325833082199097,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.104316,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [
+            "Paint It Black"
+          ],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "The Beatles",
+            "Pink Floyd",
+            "Queen"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "Eminem",
+          "album": "The Eminem Show",
+          "discovery_category": "adjacent",
+          "diversity_style": "hip_hop",
+          "genres": [
+            "boom bap",
+            "conscious hip hop",
+            "gangsta rap"
+          ],
+          "genre_families": [
+            "hip-hop",
+            "pop"
+          ],
+          "recent_profile_family": "hip-hop",
+          "recent_profile_families": [
+            "hip-hop",
+            "pop"
+          ],
+          "recent_profile_bonus": 1.069,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.08028079569339752,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.098418,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [
+            "Without Me"
+          ],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Massive Attack",
+            "Gorillaz",
+            "Moby"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        },
+        {
+          "artist": "Branford Marsalis",
+          "album": "Trio Jeepy",
+          "discovery_category": "adjacent",
+          "diversity_style": "jazz",
+          "genres": [
+            "hard bop",
+            "jazz",
+            "post-bop"
+          ],
+          "genre_families": [
+            "jazz"
+          ],
+          "recent_profile_family": "jazz",
+          "recent_profile_families": [
+            "jazz"
+          ],
+          "recent_profile_bonus": 1.25,
+          "genre_metadata_available": true,
+          "listenbrainz_score": null,
+          "discovery_source": "musicbrainz_tag_search",
+          "discovery_score": 0.050185,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "Thelonious Monk",
+            "John Coltrane",
+            "Miles Davis"
+          ],
+          "ownership_check": "No exact normalized album-title match found in the indexed Navidrome inventory; alternate editions may still exist."
+        }
+      ],
+      "debug_candidate_category_counts": {
+        "cross_genre": 90,
+        "adventurous": 38,
+        "adjacent": 25
+      },
+      "debug_all_candidates": [
+        {
+          "discovery_source": "listenbrainz",
+          "artist": "The Strokes",
+          "album": "Is This It",
+          "diversity_style": "alternative",
+          "score": 0.13726334273815155,
+          "recent_artist_play_count": 2,
+          "exploration_family_match": true,
+          "discovery_score": 0.219946,
+          "genre_tags": [
+            "alternative rock",
+            "garage rock",
+            "garage rock revival"
+          ],
+          "genre_families": [
+            "alternative",
+            "electronic",
+            "pop"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "electronic",
+            "pop",
+            "rock"
+          ],
+          "recent_profile_bonus": 1.08,
+          "lastfm_listeners": 16127,
+          "lastfm_playcount": 661122,
+          "lastfm_popularity_bonus": 1.089,
+          "assigned_category": "cross_genre",
+          "allocation_category": "cross_genre",
+          "genre_metadata_available": true,
+          "exact_owned": true,
+          "same_title_library_matches": 1,
+          "already_selected_artist": false,
+          "selection_decision": "already_owned",
+          "selection_reason": "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory."
+        },
+        {
+          "discovery_source": "listenbrainz",
+          "artist": "Arctic Monkeys",
+          "album": "Whatever People Say I Am, That’s What I’m Not",
+          "diversity_style": "alternative",
+          "score": 0.1409849375486374,
+          "recent_artist_play_count": 1,
+          "exploration_family_match": true,
+          "discovery_score": 0.218886,
+          "genre_tags": [
+            "alternative rock",
+            "art rock",
+            "baroque pop"
+          ],
+          "genre_families": [
+            "alternative",
+            "electronic",
+            "pop"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "electronic",
+            "pop",
+            "rock"
+          ],
+          "recent_profile_bonus": 1.08,
+          "lastfm_listeners": 14329,
+          "lastfm_playcount": 724250,
+          "lastfm_popularity_bonus": 1.089,
+          "assigned_category": "cross_genre",
+          "allocation_category": "cross_genre",
+          "genre_metadata_available": true,
+          "exact_owned": true,
+          "same_title_library_matches": 1,
+          "already_selected_artist": true,
+          "selection_decision": "already_owned",
+          "selection_reason": "A normalized album-title and artist-credit match exists in the indexed Navidrome inventory."
+        },
+        {
+          "discovery_source": "listenbrainz",
+          "artist": "Arctic Monkeys",
+          "album": "AM",
+          "diversity_style": "alternative",
+          "score": 0.13803164660930634,
+          "recent_artist_play_count": 1,
+          "exploration_family_match": true,
+          "discovery_score": 0.215036,
+          "genre_tags": [
+            "alternative rock",
+            "art rock",
+            "baroque pop"
+          ],
+          "genre_families": [
+            "alternative",
+            "electronic",
+            "pop"
+          ],
+          "recent_profile_family": "rock",
+          "recent_profile_families": [
+            "electronic",
+            "pop",
+            "rock"
+          ],
+          "recent_profile_bonus": 1.08,
+          "lastfm_listeners": 22780,
+          "lastfm_playcount": 1105338,
+          "lastfm_popularity_bonus": 1.093,
+          "assigned_category": "cross_genre",
+          "allocation_category": "cross_genre",
+          "genre_metadata_available": true,
+          "exact_owned": false,
+          "same_title_library_matches": 0,
+          "already_selected_artist": true,
+          "selection_decision": "selected",
+          "selection_reason": "Passed the ownership checks and was added to the recommendations."
+        }
+      ],
+      "category_targets": {
+        "adjacent": 4,
+        "cross_genre": 3,
+        "adventurous": 3
+      },
+      "allocator_checked_count": 26,
+      "allocator_max_checks": 60,
+      "allocator_phase_diagnostics": {
+        "diversity_reservation_attempts": 0,
+        "category_quota_attempts": 143,
+        "family_cap_relaxation_attempts": 14,
+        "quota_retry_attempts": 0,
+        "unclassified_fallback_attempts": 0,
+        "final_fallback_entered": 0,
+        "final_fallback_attempts": 0
+      },
+      "allocator_decision_counts": {
+        "already_owned": 15,
+        "held_for_ownership_review": 1,
+        "selected": 10,
+        "recent_genre_cap_reached": 117
+      },
+      "category_counts": {
+        "adjacent": 4,
+        "adventurous": 3,
+        "cross_genre": 3
+      },
+      "category_shortfalls": {
+        "adjacent": 0,
+        "cross_genre": 0,
+        "adventurous": 0
+      },
+      "category_targets_met": true,
+      "recommendations_returned": 10,
+      "unclassified_recommendations": 0,
+      "diversity_style_targets": {},
+      "diversity_style_counts": {},
+      "possible_library_matches": [
+        {
+          "artist": "Dave Brubeck Quartet",
+          "album": "Time Out",
+          "discovery_category": "adjacent",
+          "diversity_style": "jazz",
+          "genres": [
+            "cool jazz",
+            "jazz"
+          ],
+          "genre_families": [
+            "jazz"
+          ],
+          "recent_profile_family": "jazz",
+          "recent_profile_families": [
+            "jazz"
+          ],
+          "recent_profile_bonus": 1.25,
+          "genre_metadata_available": true,
+          "listenbrainz_score": 0.08935987204313278,
+          "discovery_source": "listenbrainz",
+          "discovery_score": 0.12813,
+          "recent_artist_listens": 0,
+          "lastfm_listeners": null,
+          "lastfm_playcount": null,
+          "lastfm_tags": [],
+          "lastfm_popularity_bonus": 1.0,
+          "suggested_tracks": [
+            "Take Five"
+          ],
+          "reason": "Genre tags connect this artist to your established musical interests.",
+          "similar_to": [
+            "The Dave Brubeck Quartet",
+            "Miles Davis",
+            "Gétatchèw Mèkurya"
+          ],
+          "ownership_note": "A same-title album exists in Navidrome under a different artist credit. Review before treating this as new."
+        }
+      ],
+      "pool_diagnostics": {
+        "generated_at": 1793402163.5939882,
+        "cf_pool_fingerprint": "965ba9af8125f71d40d801a0730089d567ebf19410244ff183bddadae242d89c",
+        "cf_recordings_returned": 400,
+        "cf_recordings_with_metadata": 400,
+        "resolved_album_count": 153,
+        "cf_recording_jaccard_previous": 1.0,
+        "final_list_fingerprint": "88da17600e1a491c3fdc558bc1be8e56c1bb5fabf4ff06d9ca4465792626d532",
+        "final_list_jaccard_previous": 1.0,
+        "supplementary_cache_hits": 8,
+        "supplementary_cache_misses": 0,
+        "candidate_counts_by_source": {
+          "listenbrainz": 117,
+          "musicbrainz_tag_search": 36
+        },
+        "profile_list_generated_at": 1793402163.5939882
+      },
+      "candidate_albums_resolved": 153,
+      "artists_genre_checked": 109,
+      "library_albums_indexed": 1755,
+      "metadata_lookup_errors": [],
+      "provider_failure_count": 0,
+      "provider_lookup_count": 400,
+      "limitations": [
+        "Up to the first 100 ListenBrainz recording recommendations are resolved.",
+        "Genre tags are community-supplied and may be missing or incomplete.",
+        "Candidates without genre tags are classified as unclassified, not adventurous."
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:03Z"
+}

@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/dashboard/albums/recent",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.01,
+    "body": {
+      "items": [
+        {
+          "id": "70w7J90NwNB2NfjZIMXU5b",
+          "name": "Love and Death",
+          "artist": "Ebo Taylor",
+          "artist_id": "7g4FMa9OOBTzC1wOFq18eh",
+          "year": 2010,
+          "artwork_url": "/api/owned/artwork/al-70w7J90NwNB2NfjZIMXU5b_d64c869240383082",
+          "owned": true
+        },
+        {
+          "id": "5skZoiuc6X4eszaIp0AL8m",
+          "name": "Resistance",
+          "artist": "The Souljazz Orchestra",
+          "artist_id": "6T6WzkdBLfaCjsbOVnXxF5",
+          "year": 2015,
+          "artwork_url": "/api/owned/artwork/al-5skZoiuc6X4eszaIp0AL8m_aedcf9fd3d2ad2e1",
+          "owned": true
+        },
+        {
+          "id": "4FctASz6Rt7QRhfe7kIip4",
+          "name": "Film of Life (Deluxe Edition)",
+          "artist": "Tony Allen",
+          "artist_id": "5zugCayEneFHpOgt5zzWb7",
+          "year": 2014,
+          "artwork_url": "/api/owned/artwork/al-4FctASz6Rt7QRhfe7kIip4_52f0c06340b882c7",
+          "owned": true
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}

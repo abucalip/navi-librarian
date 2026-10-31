@@ -1,0 +1,162 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/getArtists",
+    "query": {}
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true,
+        "artists": {
+          "index": [
+            {
+              "name": "#",
+              "artist": [
+                {
+                  "id": "3rPoD7qONIBTqzc4kSCBON",
+                  "name": "5.6.7.8's",
+                  "albumCount": 1,
+                  "musicBrainzId": "",
+                  "sortName": "5.6.7.8's",
+                  "roles": [
+                    "maincredit",
+                    "albumartist"
+                  ]
+                },
+                {
+                  "id": "4fpO2ZcWAZsfRGxxrJcvCl",
+                  "name": "764-HERO",
+                  "coverArt": "ar-4fpO2ZcWAZsfRGxxrJcvCl_c91a217b15864ece",
+                  "albumCount": 1,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "c8c21975-7d9e-4eb9-802f-ded3d7493fbf",
+                  "sortName": "764-hero",
+                  "roles": [
+                    "artist",
+                    "maincredit",
+                    "albumartist"
+                  ]
+                },
+                {
+                  "id": "13iJm345J4S6idMLgMvjn0",
+                  "name": "Различные исполнители",
+                  "albumCount": 1,
+                  "musicBrainzId": "",
+                  "sortName": "различные исполнители",
+                  "roles": [
+                    "albumartist",
+                    "maincredit"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "artist": [
+                {
+                  "id": "2oQcvqplsiJFiOwhVpp2Ow",
+                  "name": "Abd Al Malik",
+                  "coverArt": "ar-2oQcvqplsiJFiOwhVpp2Ow_298c12e634d53033",
+                  "albumCount": 2,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "4c7a7959-7cf8-4de8-b7b7-6fe83122926b",
+                  "sortName": "abd al malik",
+                  "roles": [
+                    "albumartist",
+                    "artist",
+                    "maincredit"
+                  ]
+                },
+                {
+                  "id": "2eHYgJLFKLVbUsiLwBWHs9",
+                  "name": "Abdel Halim Hafez",
+                  "coverArt": "ar-2eHYgJLFKLVbUsiLwBWHs9_c263f844a678c664",
+                  "albumCount": 2,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "9c22e6c5-56a0-4559-b017-5b4e305141a2",
+                  "sortName": "abdel halim hafez",
+                  "roles": [
+                    "albumartist",
+                    "artist",
+                    "maincredit"
+                  ]
+                },
+                {
+                  "id": "7g3jiiXYrBB3lylbswRGoV",
+                  "name": "Abdelkrim Dali",
+                  "coverArt": "ar-7g3jiiXYrBB3lylbswRGoV_9c47a13f29f572ff",
+                  "albumCount": 1,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "",
+                  "sortName": "abdelkrim dali",
+                  "roles": [
+                    "maincredit",
+                    "albumartist",
+                    "artist"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "artist": [
+                {
+                  "id": "7kkn5CXckLNP85vTjVdt1L",
+                  "name": "B.B. King",
+                  "coverArt": "ar-7kkn5CXckLNP85vTjVdt1L_7b7727372146344a",
+                  "albumCount": 1,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "dcb03ce3-67a5-4eb3-b2d1-2a12d93a38f3",
+                  "sortName": "b.b. king",
+                  "roles": [
+                    "maincredit",
+                    "albumartist",
+                    "artist"
+                  ]
+                },
+                {
+                  "id": "7qvqXUKcJbFdOXmtdHbzYj",
+                  "name": "Baaba Maal",
+                  "coverArt": "ar-7qvqXUKcJbFdOXmtdHbzYj_9ed4ffae8da6be9d",
+                  "albumCount": 1,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "cec7447d-a39c-41c5-ba74-5d7057e5c731",
+                  "sortName": "baaba maal",
+                  "roles": [
+                    "composer",
+                    "maincredit",
+                    "albumartist"
+                  ]
+                },
+                {
+                  "id": "3ex8ahCuafsUyrhtV3NRTu",
+                  "name": "Bach",
+                  "coverArt": "ar-3ex8ahCuafsUyrhtV3NRTu_fb281178264c821d",
+                  "albumCount": 1,
+                  "artistImageUrl": "https://navidrome.example.ts.net/share/img/REDACTED?size=600",
+                  "musicBrainzId": "24f1766e-9635-4d58-a4d4-9413f9f98a4c",
+                  "sortName": "bach",
+                  "roles": [
+                    "albumartist",
+                    "artist",
+                    "maincredit"
+                  ]
+                }
+              ]
+            }
+          ],
+          "lastModified": 1793398418000,
+          "ignoredArticles": "The El La Los Las Le Les Os As O A"
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}

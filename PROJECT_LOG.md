@@ -1,3 +1,39 @@
+## 2026-10-31 — Android client: UI and speed pass (owner's requests), built and installed
+
+- Changed (uncommitted on the PR #651 branch `claude/android-client-contract`):
+  - **Home:** visible "For you" heading; the carousel has no dots and shows "n/10" at the top right; the Get cloud sits on the cover's bottom-left corner; the year (accent) and listeners (grey) follow the artist, whose name is white; one or two genres under the cover in small grey text; genres are a slideable row of six drawn at random each time Home opens, without the coloured bar.
+  - **Discover:** categories use the "boton-elegante" pill; every list is a two-per-row album card grid (cover with Get, Save and Not for me laid over it, title, artist, year and listeners, artist bio) with a fixed card height; Daily picks (four lists) and Artist deep dives (one tab per genre row) are swipeable secondary tabs. The server's "reason" line is no longer shown anywhere in the app; the server text is unchanged.
+  - **Navigation:** swiping sideways on Home, Discover, Search or Library moves to the next tab; swiping right on any stacked page (artist, album, genre, Downloads, Settings) goes back.
+  - **Library:** the "Sort by" control is a small right-aligned pill with a 32 dp direction button.
+  - **Years:** looked up through `POST /api/album-years`, one at a time, and a found year is saved on the phone.
+  - **Speed:** album and artist pages read the server's `text/event-stream` form, as the web does, and show each section as it arrives; the finished page is saved under the usual cache key. Every list and page paints from its saved copy first (`ReadMode`, cache-only first read), then the server's answer replaces it; a saved copy stays if the server cannot be read. The HTTP client allows 16 requests per host (was 5), cover, bio and year lookups share three threads, the Daily picks lists load in parallel.
+- Verified: `compileDebugKotlin`, `installDebug` on the Android 36 emulator against the local Librarian, and these focused test classes: `DiscoveryTest`, `DtoFixtureTest`, `OfflineReadTest`, `LibraryViewModelTest`, `AppViewModelTest` (pass). On the emulator, Home answered in 150–300 ms per request; the album page that took 2.8 s as one request showed its header and tracks in about 1.5 s streamed; swipe back returned to Home. The full suite was not run.
+- Not verified: speed on the owner's phone over Tailscale (the owner built and installed the release build; no result was reported), the saved-copy first paint on a page that was already saved (the emulator test opened an unsaved album), the tab swipe on a device, TalkBack, landscape, 200% text. The 20 MB response cache may be tight now that pages are saved after streaming. No new unit tests were added for the card grid, tabs, swipe gestures or `ReadMode`. Not committed, merged, released or deployed.
+
+## 2026-10-31 — Android client: signed Phase 5 build run on the owner's phone
+
+- Result (owner's report): the signed, minified release build installed and ran over Tailscale with no crash. Sign-in to Librarian and Navidrome, Library navigation, search and Home worked; a Get launched from the app finished and was imported; the Downloads page showed progress; in airplane mode the "Can't reach Librarian" banner appeared and a cold start opened on saved pages. The first attempt failed with "Unable to parse TLS packet header" until the addresses pointed at `tailscale serve` HTTPS endpoints (a setup mistake, not an app fault). Signing key created by the owner; `keystore.properties` and the `.jks` are untracked.
+- Not verified: session expiry, skip, retry and dismiss on real jobs, TalkBack, landscape, 200% text, use away from home, low-end device, the `/mobile-design` review on a device. The owner deferred UI polish, including that device review, to a later pass. Not merged, released or deployed; PR #651 awaits the owner.
+
+## 2026-10-31 — Android client Phase 5 (offline, session expiry, release build): partly built on the PR #651 branch
+
+- Added: disk cache for read-only Librarian reads with an offline banner; start on saved copies when the servers are unreachable; return to setup with a reason when stored credentials are rejected; button roles on all clickables; R8 rules for Tink; release signing read from an untracked `android/keystore.properties`.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` (97 unit tests, 16 new) and `assembleRelease` (minified, unsigned APK produced). An earlier release build had been failing in R8 and is fixed.
+- Not verified: any run on an emulator or phone (including the minified build), TalkBack, landscape, 200% text, a signed or installed build (no signing key exists yet). Not merged, released or deployed.
+
+## 2026-10-31 — Android client Phase 4 (acquisitions): built on the PR #651 branch
+
+- Added: cloud Get button (ranked rows, Recommended card, album and artist pages, song Get), `AcquisitionHub` (Get state, snapshot, SSE stream with polling fallback, retry, next source, dismiss), Downloads page with a header badge, confirmation before any Dismiss.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` with JDK 17 (81 unit tests, 30 new; all pass). The `/mobile-design` checklist found one gap (no retry when the first read fails), fixed.
+- Not verified: emulator or phone run, any real slskd download, skip, retry or dismiss, the `live_progress` shape (never captured), the stream over Tailscale, TalkBack, landscape. Not merged, released or deployed.
+
+## 2026-10-31 — Android client Phase 3 (Discover, Search, shared row): committed on the PR #651 branch
+
+- Commit `2841dba` on `claude/android-client-contract`: Discover tab (six lists in server order), Search tab (SSE, owned first), shared ranked row with Save and Not for me (Undo window, Save shown only after the server's `ok`), New releases shelf on Home.
+- Verified: `./gradlew testDebugUnitTest assembleDebug lintDebug` (51 unit tests) and a manual emulator run on Android 36 against a local Librarian over HTTPS with a test CA and a fresh data directory (removed afterwards). Save and dismiss reached `/api/discovery/feedback`; dismiss was held for the 6 s Undo window; the saved and dismissed albums left the list on reload; search streamed owned results first.
+- Fixed from the run: header gap, mono-face reason text, duplicate empty message on Daily picks, keyboard over search results, bottom-bar labels splitting at 200% text (bar capped at 130%).
+- Not verified: the owner's phone over Tailscale, TalkBack, landscape, Undo and "Never suggest" taps, populated Saved and New releases lists, list-refresh and lens-list payloads. Not merged, released or deployed.
+
 ## 2026-10-30 — Image v0.3.1 published
 
 - **Published:** annotated tag `v0.3.1` at `a0358e3d35ab97633ed08965604cc7717108b0ff` (the exact `main` after PR #650 and its docs commit), with the owner's authorization; release run [41134598870](https://github.com/abucalip/navi-librarian/actions/runs/41134598870) succeeded. Image `ghcr.io/abucalip/navi-librarian:v0.3.1`, digest `sha256:2fb12eabdb0395707409df67fab9953c84618688904ce195be39eb5bc89871f2`. It adds PR #650 (Library albums, owned-only search, sorting, list/grid) to v0.3, which is the rollback reference. The version label on a running v0.3.1 container was not checked.

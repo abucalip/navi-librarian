@@ -1,0 +1,147 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rest/getAlbumList2",
+    "query": {
+      "type": "newest",
+      "size": 10
+    }
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "body": {
+      "subsonic-response": {
+        "status": "ok",
+        "version": "1.16.1",
+        "type": "navidrome",
+        "serverVersion": "0.64.2 (10114574)",
+        "openSubsonic": true,
+        "albumList2": {
+          "album": [
+            {
+              "id": "7mPRt64G2tRJSy3i60KLd0",
+              "name": "Ken Andi Habib",
+              "artist": "Freh Khodja",
+              "artistId": "0U62cIVPISeJzxDgGra1wa",
+              "coverArt": "al-7mPRt64G2tRJSy3i60KLd0_878c3d446ba3e096",
+              "songCount": 8,
+              "duration": 1987,
+              "created": "2026-10-30T22:13:31.886267343Z",
+              "genre": "Regional",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Regional"
+                }
+              ],
+              "musicBrainzId": "",
+              "isCompilation": false,
+              "sortName": "ken andi habib",
+              "discTitles": [],
+              "originalReleaseDate": {},
+              "releaseDate": {},
+              "releaseTypes": [],
+              "recordLabels": [],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "0U62cIVPISeJzxDgGra1wa",
+                  "name": "Freh Khodja"
+                }
+              ],
+              "displayArtist": "Freh Khodja",
+              "explicitStatus": "",
+              "version": ""
+            },
+            {
+              "id": "4n1XUdR5fFVlHiLOvFrp8a",
+              "name": "Conflict Nkru!",
+              "artist": "Ebo Taylor & Uhuru Yenzu",
+              "artistId": "4Ltxn07co6TIyEy28748MQ",
+              "coverArt": "al-4n1XUdR5fFVlHiLOvFrp8a_8028f3e62d4ed17b",
+              "songCount": 5,
+              "duration": 1889,
+              "created": "2026-10-30T21:04:42.172128624Z",
+              "year": 1980,
+              "genre": "Afrobeat",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "Afrobeat"
+                }
+              ],
+              "musicBrainzId": "5b907a13-b537-4c3b-92b1-736973d90390",
+              "isCompilation": false,
+              "sortName": "conflict nkru!",
+              "discTitles": [],
+              "originalReleaseDate": {
+                "year": 1980
+              },
+              "releaseDate": {
+                "year": 1980
+              },
+              "releaseTypes": [
+                "album"
+              ],
+              "recordLabels": [
+                {
+                  "name": "Essiebons"
+                }
+              ],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "4Ltxn07co6TIyEy28748MQ",
+                  "name": "Ebo Taylor & Uhuru Yenzu"
+                }
+              ],
+              "displayArtist": "Ebo Taylor & Uhuru Yenzu",
+              "explicitStatus": "",
+              "version": ""
+            },
+            {
+              "id": "5skZoiuc6X4eszaIp0AL8m",
+              "name": "Resistance",
+              "artist": "The Souljazz Orchestra",
+              "artistId": "6T6WzkdBLfaCjsbOVnXxF5",
+              "coverArt": "al-5skZoiuc6X4eszaIp0AL8m_aedcf9fd3d2ad2e1",
+              "songCount": 10,
+              "duration": 2547,
+              "playCount": 4,
+              "created": "2026-10-30T15:55:58.083026923Z",
+              "year": 2015,
+              "genre": "World",
+              "played": "2026-10-30T17:56:48Z",
+              "userRating": 0,
+              "genres": [
+                {
+                  "name": "World"
+                }
+              ],
+              "musicBrainzId": "",
+              "isCompilation": false,
+              "sortName": "resistance",
+              "discTitles": [],
+              "originalReleaseDate": {},
+              "releaseDate": {},
+              "releaseTypes": [],
+              "recordLabels": [],
+              "moods": [],
+              "artists": [
+                {
+                  "id": "6T6WzkdBLfaCjsbOVnXxF5",
+                  "name": "The Souljazz Orchestra"
+                }
+              ],
+              "displayArtist": "The Souljazz Orchestra",
+              "explicitStatus": "",
+              "version": ""
+            }
+          ]
+        }
+      }
+    }
+  },
+  "captured_at": "2026-10-30T23:14:33Z"
+}

@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/search",
+    "query": {
+      "q": ""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.0,
+    "body": {
+      "detail": "q must be 1 to 200 characters."
+    }
+  },
+  "captured_at": "2026-10-30T23:16:05Z"
+}

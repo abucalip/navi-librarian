@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/api/dashboard/albums/frequent",
+    "query": {
+      "count": 10
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "content_type": "application/json",
+    "elapsed_seconds": 0.02,
+    "body": {
+      "items": [
+        {
+          "id": "1AKuAm4VJUDJkpST26lyza",
+          "name": "Ethiopiques 4: Ethio Jazz & Musique Instrumentale, 1969-1974",
+          "artist": "Mulatu Astatke",
+          "artist_id": "3mlywWbZnQDIPuPa9IeqFE",
+          "year": 1998,
+          "artwork_url": "/api/owned/artwork/al-1AKuAm4VJUDJkpST26lyza_fde68f2b8755c842",
+          "owned": true
+        },
+        {
+          "id": "2LYyLr4OvQlXRiGPBmdTDW",
+          "name": "Éthiopiques 7: Erè mèla mèla",
+          "artist": "Mahmoud Ahmed",
+          "artist_id": "0Pr7BudgWvtLmCk7tNHTXf",
+          "year": 1975,
+          "artwork_url": "/api/owned/artwork/al-2LYyLr4OvQlXRiGPBmdTDW_d9b26cf1d6817716",
+          "owned": true
+        },
+        {
+          "id": "1axDiZjQVJppZNl3AI17XY",
+          "name": "Samba esquema novo",
+          "artist": "Jorge Ben",
+          "artist_id": "5VIRsaoQKcMzxh7hyKP0Ll",
+          "year": 1963,
+          "artwork_url": "/api/owned/artwork/al-1axDiZjQVJppZNl3AI17XY_5835fdfb05b2ac30",
+          "owned": true
+        }
+      ]
+    }
+  },
+  "captured_at": "2026-10-30T23:16:00Z"
+}
