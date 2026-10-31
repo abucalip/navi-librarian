@@ -101,11 +101,11 @@ Done: Genres grid and four album shelves on the dashboard, the Recommended slide
 - A relayed station uses the app address saved on the Radio page (for example the Tailscale address); with none saved it uses the address of the browser tab it was switched on from. Saving a new address moves stations that are already relayed. Away from home, the phone must reach that address (Tailscale connected).
 - Not done: browser checklist, live slskd download of a radio song, a phone client test away from home.
 
-## 2f. Android client (Discair) — contract PR #651, phases 0–4 built, phase 5 partly built
+## 2f. Android client (Discair) — contract PR #651, phases 0–4 built, phase 5 built and run on the owner's phone
 
 - Branch `claude/android-client-contract`; contract and status per phase in [ANDROID_CLIENT_CONTRACT.md](ANDROID_CLIENT_CONTRACT.md), design decisions in `android/DESIGN.md`. The PR is open and awaits the owner's approval; nothing is merged, released or deployed.
 - Phases 3 and 4 are committed and unit-tested (Phase 4: Get everywhere, Downloads page with live progress, retry, next source, confirmed dismiss). Phase 3 was run on an emulator against a local Librarian; Phase 4 was not run on an emulator, a phone or against slskd.
-- Phase 5 is partly built and unit-tested: offline cache and banner, open-on-saved-copies at start, session-expiry return to setup, button roles, minified (unsigned) release build. **Next:** the owner creates the signing key (`android/README.md`), then a signed build is installed on the phone and run with Tailscale off and on (offline start, banner, session expiry, the minified build), plus TalkBack, landscape and 200% text. Still owed from earlier phases: running Phase 4 on an emulator with a stub of the acquisition routes, the `/mobile-design` review of built screens on a device (rule 9), Undo and "Never suggest" taps, and captured payloads for the list-refresh route and the daily lens lists (section 7 of the contract).
+- Phase 5 is built, unit-tested and was run on the owner's phone (signed minified build, Tailscale, 2026-10-31, no crash): sign-in, Library, search, Home, a real Get that finished and imported, Downloads progress, offline banner, offline cold start on saved pages. **Next:** session expiry on a device, skip/retry/dismiss on real jobs, TalkBack, landscape, 200% text, use away from home, the `/mobile-design` review of built screens (rule 9), Undo and "Never suggest" taps, captured payloads for the list-refresh route and the daily lens lists (contract section 7), and the owner's approval of PR #651.
 - Open contract question: whether `tailscale serve` hides the client IP from the login rate limit (contract section 9).
 
 ## 3. Recommendation engine — gated

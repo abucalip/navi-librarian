@@ -136,7 +136,7 @@ Checked against the `/mobile-design` checklist (touch targets and spacing, thumb
 
 ## Phase 5 decisions (offline, session expiry, release)
 
-Decided without a device run; the `/mobile-design` review of these screens is still owed (rule 9).
+Decided without a device run; the owner then ran the signed build on their phone (2026-10-31): banner, offline cold start on saved pages and the Downloads page behaved as designed, no crash. The `/mobile-design` review of these screens on a device is still owed (rule 9).
 
 - **Offline is a banner, not a mode.** One line under the header with an info icon and words: "Can't reach Librarian. Showing a copy saved 2 hours ago." It is a polite live region and appears only while a saved copy is being shown; the next live read clears it. Pages keep their normal layout, so nothing is hidden or greyed. Actions that need the server (Get, Save, Dismiss) fail with the server-unreachable message rather than queueing, so the app never shows a request as made that was not.
 - **A dead end becomes the last known state.** Starting with no connection used to stop on the Unavailable screen; with saved copies it opens Home. A server that answers with a refusal still stops there.
