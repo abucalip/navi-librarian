@@ -61,6 +61,9 @@ class HeadlineTests(unittest.TestCase):
             ("Opeth : In cauda venenum", "Opeth", "In Cauda Venenum"),
             ("Tony Allen and Hugh Masekela: Rejoice review – a joyous farewell", "Tony Allen & Hugh Masekela", "Rejoice"),
             ("Watershed – Opeth", "Opeth", "Watershed"),
+            ("Radiohead: The King of Limbs review – eight new tracks", "Radiohead", "The King of Limbs"),
+            ("Muse: The Wow! Signal review | Alexis Petridis's album of the week", "Muse", "The Wow! Signal"),
+            ("The Smile: Cutouts review – as intricately crafted", "Smile", "Cutouts"),
             ("The Doors: Morrison Hotel Review", "Doors", "Morrison Hotel [Remastered]"),
         ):
             self.assertTrue(reviews.title_matches(title, artist, album), title)
@@ -152,6 +155,25 @@ class GuardianTests(unittest.TestCase):
     def test_odd_payloads_are_ignored(self):
         for payload in (None, {}, {"response": {}}, {"response": {"results": [None, 3]}}, "text"):
             self.assertIsNone(reviews.pick_guardian(payload, "Tony Allen", "Rejoice"))
+            self.assertIsNone(reviews.pick_guardian_tag(payload, "Tony Allen"))
+
+    def test_a_useless_standfirst_falls_back_to_the_headline_tagline(self):
+        # The standfirst of Kamasi Washington's review is only the label name.
+        found = reviews.pick_guardian(
+            self.payload("Kamasi Washington: Heaven and Earth review – a second album that sprawls and soars", "(Young Turks)"),
+            "Kamasi Washington", "Heaven and Earth")
+        self.assertEqual(found["quote"], "A second album that sprawls and soars.")
+        # No usable standfirst and no tagline: nothing to quote.
+        self.assertIsNone(reviews.pick_guardian(
+            self.payload("Muse: The Wow! Signal review | Alexis Petridis's album of the week", "Short."), "Muse", "The Wow! Signal"))
+
+    def test_the_artist_tag_must_name_the_artist_exactly(self):
+        tags = {"response": {"results": [
+            {"id": "world/acid-attack", "webTitle": "Acid attacks"},
+            {"id": "music/massive-attack", "webTitle": "Massive Attack"}]}}
+        self.assertEqual(reviews.pick_guardian_tag(tags, "Massive Attack"), "music/massive-attack")
+        self.assertIsNone(reviews.pick_guardian_tag(tags, "Attack"))
+        self.assertIsNone(reviews.pick_guardian_tag({"response": {"results": [{"id": "music/the-smile", "webTitle": "The Smile"}]}}, "Smile Smile"))
 
 
 class WordPressTests(unittest.TestCase):

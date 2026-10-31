@@ -6,6 +6,7 @@ invalid request parameters; discovery itself does not depend on metadata.
 """
 import json
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor, wait
 from time import monotonic
 from urllib.parse import quote, urlencode
@@ -475,16 +476,53 @@ def _pitchfork_review(artist: str, album: str):
     return album_reviews.pick_pitchfork(album_reviews.parse_pitchfork_search(response.text), artist, album)
 
 
+def _guardian_get(api_key: str, path: str, **params):
+    response = _EXTERNAL_HTTP.get(
+        "https://content.guardianapis.com/" + path, params={**params, "api-key": api_key}, timeout=_REVIEW_PAGE_TIMEOUT)
+    response.raise_for_status()
+    return response.json()
+
+
+def _guardian_text(text: str) -> str:
+    """Query text the Guardian accepts: it answers 400 to colons, brackets and similar inside a phrase."""
+    return re.sub(r"\s+", " ", re.sub(r"[^\w'\u2019 -]+", " ", text)).strip()
+
+
+def _guardian_artist_tag(api_key: str, artist: str):
+    """The Guardian's tag for an artist, remembered for a month once found.
+
+    A collaboration ("Tony Allen & Hugh Masekela") has no tag of its own, so the first name is tried next.
+    """
+    store_key = "guardian-artist-tag:v1:" + artist.casefold()
+    stored = persistent_metadata.read(store_key)
+    if stored:
+        return stored
+    names = [artist] + [part for part in re.split(r"\s+(?:&|and|with|feat\.?|featuring|/)\s+|,\s*", artist)[:1] if part != artist]
+    for name in names:
+        query = _guardian_text(album_reviews.search_text(name, ""))
+        tag = album_reviews.pick_guardian_tag(
+            _guardian_get(api_key, "tags", q=query, type="keyword", **{"page-size": 5}), name) if query else None
+        if tag:
+            persistent_metadata.write(store_key, tag)
+            return tag
+    return None
+
+
 def _guardian_review(artist: str, album: str):
+    """The Guardian's album review: through the artist's tag when it has one, else by text search."""
     api_key = os.environ.get("GUARDIAN_API_KEY", "").strip()
     if not api_key:
         return None
-    response = _EXTERNAL_HTTP.get("https://content.guardianapis.com/search", params={
-        "q": f'"{album_reviews.search_text(artist, "")}" "{album_reviews.search_text("", album)}"',
-        "tag": "tone/albums", "show-fields": "trailText", "page-size": 8, "api-key": api_key},
-        timeout=_REVIEW_PAGE_TIMEOUT)
-    response.raise_for_status()
-    return album_reviews.pick_guardian(response.json(), artist, album)
+    album_text = _guardian_text(album_reviews.search_text("", album))
+    if not album_text:
+        return None
+    tag = _guardian_artist_tag(api_key, artist)
+    if tag:
+        query = {"tag": f"{tag},tone/albumreview", "q": f'"{album_text}"'}
+    else:
+        query = {"tag": "tone/albumreview", "q": f'"{_guardian_text(album_reviews.search_text(artist, ""))}" "{album_text}"'}
+    payload = _guardian_get(api_key, "search", **query, **{"order-by": "relevance", "show-fields": "trailText", "page-size": 10})
+    return album_reviews.pick_guardian(payload, artist, album)
 
 
 def _wordpress_review(name: str, site: str, artist: str, album: str):

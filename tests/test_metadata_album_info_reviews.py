@@ -153,18 +153,67 @@ class ReviewTests(StoreCase):
         self.assertEqual([r["source"] for r in answer["reviews"]], ["A"])
         self.assertTrue(answer["retryable"])
 
-    def test_guardian_is_skipped_without_a_key_and_asked_with_one(self):
+    def guardian_answers(self, *payloads):
+        return [type("R", (), {"raise_for_status": lambda self: None, "json": lambda self, p=p: p})() for p in payloads]
+
+    def test_guardian_is_skipped_without_a_key(self):
         with patch.dict(os.environ, {"GUARDIAN_API_KEY": ""}), patch.object(metadata, "_EXTERNAL_HTTP") as client:
             self.assertIsNone(metadata._guardian_review("Opeth", "Watershed"))
             client.get.assert_not_called()
-        payload = {"response": {"results": [{
-            "webTitle": "Opeth: Watershed review", "webUrl": "https://www.theguardian.com/x",
-            "fields": {"trailText": "Swedish prog-metal greats unexpectedly fly their freak flag."}}]}}
+
+    def test_guardian_asks_the_artist_s_album_reviews_and_remembers_the_tag(self):
+        tags = {"response": {"results": [{"id": "music/radiohead", "webTitle": "Radiohead"}]}}
+        reviews = {"response": {"results": [{
+            "webTitle": "Radiohead: The King of Limbs – review", "webUrl": "https://www.theguardian.com/music/2011/feb/18/king",
+            "fields": {"trailText": "After another short-notice Radiohead release, people haven't stopped talking."}}]}}
         with patch.dict(os.environ, {"GUARDIAN_API_KEY": "k"}), patch.object(metadata, "_EXTERNAL_HTTP") as client:
-            client.get.return_value.json.return_value = payload
-            found = metadata._guardian_review("Opeth", "Watershed")
+            client.get.side_effect = self.guardian_answers(tags, reviews)
+            found = metadata._guardian_review("Radiohead", "The King of Limbs")
+            self.assertEqual(found["source"], "The Guardian")
+            self.assertEqual(found["url"], "https://www.theguardian.com/music/2011/feb/18/king")
+            search = client.get.call_args_list[1]
+            self.assertEqual(search.args[0], "https://content.guardianapis.com/search")
+            self.assertEqual(search.kwargs["params"]["tag"], "music/radiohead,tone/albumreview")
+            self.assertEqual(search.kwargs["params"]["q"], '"The King of Limbs"')
+            self.assertEqual(search.kwargs["params"]["api-key"], "k")
+            client.get.side_effect = self.guardian_answers(reviews)
+            metadata._guardian_review("Radiohead", "The King of Limbs")
+            self.assertEqual(client.get.call_count, 3, "the second visit skips the tag lookup")
+        self.assertEqual(self.store.data["guardian-artist-tag:v1:radiohead"], "music/radiohead")
+
+    def test_guardian_query_text_has_no_characters_it_rejects(self):
+        self.assertEqual(metadata._guardian_text("Spiritual Jazz 2: Europe"), "Spiritual Jazz 2 Europe")
+        self.assertEqual(metadata._guardian_text("(Down Home) Blues"), "Down Home Blues")
+        self.assertEqual(metadata._guardian_text("Gene Harris & Jack McDuff"), "Gene Harris Jack McDuff")
+        self.assertEqual(metadata._guardian_text("Don't Fear the Reaper"), "Don't Fear the Reaper")
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": "k"}), patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = self.guardian_answers({"response": {"results": []}}, {"response": {"results": []}})
+            metadata._guardian_review("Albert Mangelsdorff", "Spiritual Jazz 2: Europe")
+        self.assertEqual(client.get.call_args_list[1].kwargs["params"]["q"], '"Albert Mangelsdorff" "Spiritual Jazz 2 Europe"')
+
+    def test_guardian_tries_the_first_name_of_a_collaboration_for_the_tag(self):
+        tags = lambda *titles: {"response": {"results": [{"id": "music/" + t.lower().replace(" ", "-"), "webTitle": t} for t in titles]}}
+        review = {"response": {"results": [{
+            "webTitle": "Tony Allen and Hugh Masekela: Rejoice review – a joyous last session", "webUrl": "https://www.theguardian.com/music/r",
+            "fields": {"trailText": "The late drummer's final studio session is cautious, joyful and loose."}}]}}
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": "k"}), patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = self.guardian_answers(tags(), tags("Tony Allen"), review)
+            found = metadata._guardian_review("Tony Allen & Hugh Masekela", "Rejoice")
         self.assertEqual(found["source"], "The Guardian")
-        self.assertEqual(client.get.call_args.kwargs["params"]["api-key"], "k")
+        self.assertEqual(client.get.call_args_list[2].kwargs["params"]["tag"], "music/tony-allen,tone/albumreview")
+
+    def test_guardian_falls_back_to_a_text_search_when_the_artist_has_no_tag(self):
+        none = {"response": {"results": [{"id": "world/acid-attack", "webTitle": "Acid attacks"}]}}
+        reviews = {"response": {"results": [{
+            "webTitle": "Souad Massi: O Houria review – varied but lightweight", "webUrl": "https://www.theguardian.com/music/x",
+            "fields": {"trailText": "This new album is varied but lightweight: her voice is as cool as ever."}}]}}
+        with patch.dict(os.environ, {"GUARDIAN_API_KEY": "k"}), patch.object(metadata, "_EXTERNAL_HTTP") as client:
+            client.get.side_effect = self.guardian_answers(none, reviews)
+            self.assertEqual(metadata._guardian_review("Souad Massi", "O Houria")["source"], "The Guardian")
+            params = client.get.call_args_list[1].kwargs["params"]
+        self.assertEqual(params["tag"], "tone/albumreview")
+        self.assertEqual(params["q"], '"Souad Massi" "O Houria"')
+        self.assertNotIn("guardian-artist-tag:v1:souad massi", self.store.data)
 
     def test_wordpress_outlet_reads_the_dek_only_after_an_exact_headline_match(self):
         dek = "Swedish prog-metal greats unexpectedly fly their freak flag on their ninth full-length."

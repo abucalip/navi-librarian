@@ -102,13 +102,19 @@ def _title_candidates(title: object) -> list[str]:
     return found
 
 
+def _without_the(key: str) -> str:
+    return " ".join(word for word in key.split() if word != "the")
+
+
 def title_matches(title: object, artist: str, album: str) -> bool:
     """True when a headline is exactly "Artist: Album" in either order, before any review label or tagline."""
     artist_key, album_key = match_key(artist), match_key(album)
     if not artist_key or not album_key:
         return False
     wanted = (f"{artist_key} {album_key}", f"{album_key} {artist_key}")
-    return any(match_key(candidate) in wanted for candidate in _title_candidates(title))
+    # "Radiohead: The King of Limbs" must match the album "The King of Limbs", whose own "The" match_key keeps.
+    wanted = {_without_the(key) for key in wanted}
+    return any(_without_the(match_key(candidate)) in wanted for candidate in _title_candidates(title))
 
 
 # --- Pitchfork -----------------------------------------------------------------------------------
@@ -148,13 +154,36 @@ def pick_pitchfork(results: list[dict[str, str]], artist: str, album: str) -> di
 
 # --- The Guardian --------------------------------------------------------------------------------
 
+_HEADLINE_TAGLINE = re.compile(r"\breview\s*[–—]\s*(.+?)\s*$", re.IGNORECASE)
+
+
+def pick_guardian_tag(payload: Any, artist: str) -> str | None:
+    """The Guardian's tag id for an artist (``music/<name>``) from a tag-search answer, when the name matches exactly."""
+    results = ((payload or {}).get("response") or {}).get("results") if isinstance(payload, dict) else None
+    for tag in results or []:
+        if isinstance(tag, dict) and str(tag.get("id") or "").startswith("music/") \
+                and match_key(tag.get("webTitle")) == match_key(artist):
+            return str(tag["id"])
+    return None
+
+
+def _guardian_quote(item: dict[str, Any]) -> str | None:
+    """The standfirst, else the tagline of the headline ("Artist: Album review – a bold second album")."""
+    dek = clean_dek((item.get("fields") or {}).get("trailText"))
+    if dek:
+        return dek
+    tagline = _HEADLINE_TAGLINE.search(_plain(item.get("webTitle")))
+    text = tagline.group(1) if tagline else ""
+    return clean_dek(text[:1].upper() + text[1:] + ("" if text.endswith((".", "!", "?")) else "."))
+
+
 def pick_guardian(payload: Any, artist: str, album: str) -> dict[str, str] | None:
     """The Guardian Open Platform answer's first review whose headline names the album exactly."""
     results = ((payload or {}).get("response") or {}).get("results") if isinstance(payload, dict) else None
     for item in results or []:
         if not isinstance(item, dict) or not title_matches(item.get("webTitle"), artist, album):
             continue
-        found = review("The Guardian", (item.get("fields") or {}).get("trailText"), str(item.get("webUrl") or ""))
+        found = review("The Guardian", _guardian_quote(item), str(item.get("webUrl") or ""))
         if found:
             return found
     return None
