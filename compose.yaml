@@ -17,6 +17,7 @@ services:
       SLSKD_URL: ${SLSKD_URL:-}
       SLSKD_API_KEY: ${SLSKD_API_KEY:-}
       LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      GUARDIAN_API_KEY: ${GUARDIAN_API_KEY:-}
       LISTENBRAINZ_USERNAME: ${LISTENBRAINZ_USERNAME:-}
     volumes:
       - librarian_data:/data
