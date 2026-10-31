@@ -841,6 +841,21 @@ button.inline-link:focus-visible { outline: 2px solid var(--accent); outline-off
 @media (max-width: 620px) { .album-description-text.is-collapsed p:first-child { -webkit-line-clamp: 6; } }
 .album-description-source { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--text-xs); }
 
+/* Album page tabs: Info (the description) and Reviews (outlets' summary lines with links to the full reviews). */
+.album-about { max-width: 60ch; margin-top: var(--space-3); text-align: left; }
+.album-tabs { display: flex; gap: 0 4px; border-bottom: 1px solid var(--edge); }
+.album-tabs .album-tab { min-height: 44px; margin-bottom: -1px; padding: 0 14px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent; font-size: var(--text-sm); font-weight: 600; }
+.album-tabs .album-tab:hover { color: var(--text); border-bottom-color: var(--edge-strong); background: transparent; }
+.album-tabs .album-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; }
+.album-tab-panel { padding-top: var(--space-3); }
+.album-tab-panel[hidden] { display: none; }
+.album-head .album-about .album-description { margin-top: 0; }
+.album-reviews { margin: 0; padding: 0; list-style: none; }
+.album-review { margin: 0 0 var(--space-4); }
+.album-review blockquote { margin: 0; padding-left: var(--space-3); border-left: 2px solid var(--edge-strong); line-height: 1.55; }
+.album-review-link { display: inline-block; margin-top: var(--space-2); padding-left: var(--space-3); color: var(--text-muted); font-size: var(--text-xs); }
+.album-review-link:hover { color: var(--accent); }
+
 /* Dashboard genre tiles and album shelves */
 .dashboard-shelf, .dashboard-genres { margin-top: var(--space-4); }
 .dashboard-shelf-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
